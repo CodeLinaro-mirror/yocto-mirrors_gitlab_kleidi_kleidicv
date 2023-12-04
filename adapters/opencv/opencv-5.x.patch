@@ -1,0 +1,187 @@
+// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+diff --git a/3rdparty/intrinsiccv/CMakeLists.txt b/3rdparty/intrinsiccv/CMakeLists.txt
+new file mode 100644
+index 0000000000..8764ee5e99
+--- /dev/null
++++ b/3rdparty/intrinsiccv/CMakeLists.txt
+@@ -0,0 +1,3 @@
++set(INTRINSICCV_SOURCE_PATH "${CMAKE_SOURCE_DIR}/intrinsiccv" CACHE PATH "Directory containing IntrinsicCV sources")
++
++include("${INTRINSICCV_SOURCE_PATH}/adapters/opencv/CMakeLists.txt")
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 25e808bec3..51519ebfa3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -246,6 +246,8 @@ OCV_OPTION(WITH_CAP_IOS "Enable iOS video capture" ON
+   VERIFY HAVE_CAP_IOS)
+ OCV_OPTION(WITH_CAROTENE "Use NVidia carotene acceleration library for ARM platform" (NOT CV_DISABLE_OPTIMIZATION)
+   VISIBLE_IF (ARM OR AARCH64) AND NOT IOS)
++OCV_OPTION(WITH_INTRINSICCV "Use IntrinsicCV library for ARM platforms" OFF
++  VISIBLE_IF (AARCH64))
+ OCV_OPTION(WITH_CPUFEATURES "Use cpufeatures Android library" ON
+   VISIBLE_IF ANDROID
+   VERIFY HAVE_CPUFEATURES)
+@@ -889,6 +891,13 @@ if(HAVE_OPENVX)
+   endif()
+ endif()
+ 
++if(WITH_INTRINSICCV)
++  ocv_debug_message(STATUS "Enable IntrinsicCV acceleration")
++  if(NOT ";${OpenCV_HAL};" MATCHES ";intrinsiccv;")
++    set(OpenCV_HAL "intrinsiccv;${OpenCV_HAL}")
++  endif()
++endif()
++
+ if(WITH_CAROTENE)
+   ocv_debug_message(STATUS "Enable carotene acceleration")
+   if(NOT ";${OpenCV_HAL};" MATCHES ";carotene;")
+@@ -905,6 +914,10 @@ foreach(hal ${OpenCV_HAL})
+     else()
+       message(STATUS "Carotene: NEON is not available, disabling carotene...")
+     endif()
++  elseif(hal STREQUAL "intrinsiccv")
++    add_subdirectory(3rdparty/intrinsiccv)
++    ocv_hal_register(INTRINSICCV_HAL_LIBRARIES INTRINSICCV_HAL_HEADERS INTRINSICCV_HAL_INCLUDE_DIRS)
++    list(APPEND OpenCV_USED_HAL "IntrinsicCV (ver ${INTRINSICCV_HAL_VERSION})")
+   elseif(hal STREQUAL "openvx")
+     add_subdirectory(3rdparty/openvx)
+     ocv_hal_register(OPENVX_HAL_LIBRARIES OPENVX_HAL_HEADERS OPENVX_HAL_INCLUDE_DIRS)
+diff --git a/doc/tutorials/introduction/config_reference/config_reference.markdown b/doc/tutorials/introduction/config_reference/config_reference.markdown
+index 6b8d71341a..7958051561 100644
+--- a/doc/tutorials/introduction/config_reference/config_reference.markdown
++++ b/doc/tutorials/introduction/config_reference/config_reference.markdown
+@@ -612,6 +612,7 @@ Following build options are utilized in `opencv_contrib` modules, as stated [pre
+ `CMAKE_TOOLCHAIN_FILE`
+ 
+ `WITH_CAROTENE`
++`WITH_INTRINSICCV`
+ `WITH_CPUFEATURES`
+ `WITH_EIGEN`
+ `WITH_OPENVX`
+diff --git a/modules/core/include/opencv2/core/hal/interface.h b/modules/core/include/opencv2/core/hal/interface.h
+index 6f0a83d359..4c294962ca 100644
+--- a/modules/core/include/opencv2/core/hal/interface.h
++++ b/modules/core/include/opencv2/core/hal/interface.h
+@@ -81,6 +81,8 @@ typedef signed char schar;
+ 
+ #define CV_MAT_DEPTH_MASK       (CV_DEPTH_MAX - 1)
+ #define CV_MAT_DEPTH(flags)     ((flags) & CV_MAT_DEPTH_MASK)
++#define CV_MAT_CN_MASK          ((CV_CN_MAX - 1) << CV_CN_SHIFT)
++#define CV_MAT_CN(flags)        ((((flags) & CV_MAT_CN_MASK) >> CV_CN_SHIFT) + 1)
+ 
+ #define CV_MAKETYPE(depth,cn) (CV_MAT_DEPTH(depth) + (((cn)-1) << CV_CN_SHIFT))
+ #define CV_MAKE_TYPE CV_MAKETYPE
+diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
+index 345b4624cb..1ace8f1d5c 100644
+--- a/modules/core/src/convert.dispatch.cpp
++++ b/modules/core/src/convert.dispatch.cpp
+@@ -202,6 +202,9 @@ void Mat::convertTo(OutputArray _dst, int _type, double alpha, double beta) cons
+         _dst.create( dims, size, _type );
+     Mat dst = _dst.getMat();
+ 
++    if( dims <= 2 )
++        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dst.data, dst.step, dst.depth(), src.cols, src.rows, alpha, beta);
++
+     BinaryFunc func = noScale ? getConvertFunc(sdepth, ddepth) : getConvertScaleFunc(sdepth, ddepth);
+     double scale[] = {alpha, beta};
+     int cn = channels();
+diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
+index 6ed795b5e1..32baf11ece 100644
+--- a/modules/core/src/hal_replacement.hpp
++++ b/modules/core/src/hal_replacement.hpp
+@@ -731,6 +731,35 @@ inline int hal_ni_minMaxIdx(const uchar* src_data, size_t src_step, int width, i
+ #define cv_hal_minMaxIdx hal_ni_minMaxIdx
+ //! @endcond
+ 
++/**
++   @brief Transpose
++   @param src_data,src_step Source image
++   @param dst_data,dst_step Destination image
++   @param src_width,src_height Source image dimensions
++   @param element_size Size of an element in bytes
++*/
++inline int hal_ni_transpose(const uchar* src_data, size_t src_step, uchar* dst_data, size_t dst_step, int src_width,
++                            int src_height, int element_size) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++
++//! @cond IGNORED
++#define cv_hal_transpose hal_ni_transpose
++//! @endcond
++
++/**
++   @brief convertTo
++   @param src_data,src_step,src_depth Source image
++   @param dst_data,dst_step,dst_depth Destination image
++   @param width,height Source image dimensions
++   @param scale,shift Dst values = src_value * scale + shift
++*/
++inline int hal_ni_convertTo(const uchar *src_data, size_t src_step, int src_depth,
++              uchar *dst_data, size_t dst_step, int dst_depth, int width,
++              int height, double scale, double shift) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++
++//! @cond IGNORED
++#define cv_hal_convertTo hal_ni_convertTo
++//! @endcond
++
+ //! @}
+ 
+ 
+diff --git a/modules/core/src/matrix_transform.cpp b/modules/core/src/matrix_transform.cpp
+index 57fd0c6509..658c1f1ca9 100644
+--- a/modules/core/src/matrix_transform.cpp
++++ b/modules/core/src/matrix_transform.cpp
+@@ -5,6 +5,7 @@
+ #include "precomp.hpp"
+ #include "opencl_kernels_core.hpp"
+ #include "opencv2/core/detail/dispatch_helper.impl.hpp"
++#include "hal_replacement.hpp"
+ 
+ #include <algorithm> // std::swap_ranges
+ 
+@@ -267,6 +268,8 @@ void transpose( InputArray _src, OutputArray _dst )
+         return;
+     }
+ 
++    CALL_HAL(transpose, cv_hal_transpose, src.data, src.step, dst.data, dst.step, src.cols, src.rows, esz);
++
+     CV_IPP_RUN_FAST(ipp_transpose(src, dst))
+ 
+     if( dst.data == src.data )
+diff --git a/modules/imgproc/src/smooth.dispatch.cpp b/modules/imgproc/src/smooth.dispatch.cpp
+index 3ab8501601..8bb2e8d497 100644
+--- a/modules/imgproc/src/smooth.dispatch.cpp
++++ b/modules/imgproc/src/smooth.dispatch.cpp
+@@ -654,6 +654,20 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
+             ocl_GaussianBlur_8UC1(_src, _dst, ksize, CV_MAT_DEPTH(type), kx, ky, borderType)
+     );
+ 
++    {
++        Mat src = _src.getMat();
++        Mat dst = _dst.getMat();
++
++        Point ofs;
++        Size wsz(src.cols, src.rows);
++        if(!(borderType & BORDER_ISOLATED))
++            src.locateROI( wsz, ofs );
++
++        CALL_HAL(gaussianBlur, cv_hal_gaussianBlur, src.ptr(), src.step, dst.ptr(), dst.step, src.cols, src.rows, sdepth, cn,
++                ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, ksize.height,
++                sigma1, sigma2, borderType&~BORDER_ISOLATED);
++    }
++
+     if(sdepth == CV_8U && ((borderType & BORDER_ISOLATED) || !_src.isSubmatrix()))
+     {
+         std::vector<ufixedpoint16> fkx, fky;
+@@ -742,10 +756,6 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
+     if(!(borderType & BORDER_ISOLATED))
+         src.locateROI( wsz, ofs );
+ 
+-    CALL_HAL(gaussianBlur, cv_hal_gaussianBlur, src.ptr(), src.step, dst.ptr(), dst.step, src.cols, src.rows, sdepth, cn,
+-             ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, ksize.height,
+-             sigma1, sigma2, borderType&~BORDER_ISOLATED);
+-
+     CV_OVX_RUN(true,
+                openvx_gaussianBlur(src, dst, ksize, sigma1, sigma2, borderType))
+ 

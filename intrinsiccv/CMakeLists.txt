@@ -1,0 +1,153 @@
+# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.16)
+
+project("IntrinsicCV")
+
+include(CheckCXXCompilerFlag)
+
+option(INTRINSICCV_ENABLE_SVE2 "Explicitly enables or disables SVE2 code paths for all supported algorithms" OFF)
+option(INTRINSICCV_ENABLE_SVE2_SELECTIVELY "Explicitly enables or disables SVE2 code paths for selected algorithms" ON)
+option(INTRINSICCV_ENABLE_SME2 "Explicitly enables or disables SME2 code paths for all supported algorithms" ON)
+option(INTRINSICCV_ASSUME_128BIT_SVE2 "If turned ON 128-bit SVE2 vector length is assumed" OFF)
+
+if (INTRINSICCV_ENABLE_SVE2 AND INTRINSICCV_ENABLE_SVE2_SELECTIVELY)
+  message(FATAL_ERROR "[IntrinsicCV] INTRINSICCV_ENABLE_SVE2 and INTRINSICCV_ENABLE_SVE2_SELECTIVELY cannot be set at the same time")
+endif()
+
+set(INTRINSICCV_BUILD_SVE2, INTRINSICCV_ENABLE_SVE2 OR INTRINSICCV_ENABLE_SVE2_SELECTIVELY)
+
+if (INTRINSICCV_BUILD_SVE2)
+  check_cxx_compiler_flag("-march=armv8-a+sve2" INTRINSICCV_COMPILER_SUPPORTS_SVE2)
+  if (NOT INTRINSICCV_COMPILER_SUPPORTS_SVE2)
+    set(INTRINSICCV_BUILD_SVE2 OFF)
+    message(STATUS "[IntrinsicCV] Compiler does not support SVE2")
+  endif()
+endif()
+
+# Assuming clang
+if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18)
+  set(INTRINSICCV_COMPILER_SUPPORTS_SME2 OFF)
+else()
+  set(INTRINSICCV_COMPILER_SUPPORTS_SME2 ON)
+endif()
+
+if (INTRINSICCV_COMPILER_SUPPORTS_SME2 AND INTRINSICCV_ENABLE_SME2)
+  check_cxx_compiler_flag("-march=armv9-a+sve2+sme2" INTRINSICCV_COMPILER_SUPPORTS_SME2)
+endif()
+
+if (NOT INTRINSICCV_COMPILER_SUPPORTS_SME2 AND INTRINSICCV_ENABLE_SME2)
+  set(INTRINSICCV_ENABLE_SME2 OFF)
+  message(STATUS "[IntrinsicCV] Compiler does not support SME2")
+endif()
+
+file(GLOB INTRINSICCV_API_SOURCES
+  "${CMAKE_CURRENT_LIST_DIR}/src/*_api.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_api.cpp"
+)
+
+file(GLOB INTRINSICCV_NEON_SOURCES
+  "${CMAKE_CURRENT_LIST_DIR}/src/*_neon.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_neon.cpp"
+)
+
+file(GLOB INTRINSICCV_SVE2_SOURCES
+  "${CMAKE_CURRENT_LIST_DIR}/src/*_sve2.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sve2.cpp"
+)
+
+file(GLOB INTRINSICCV_SME2_SOURCES
+  "${CMAKE_CURRENT_LIST_DIR}/src/*_sme2.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sme2.cpp"
+)
+
+set(INTRINSICCV_INCLUDE_DIRS
+  "${CMAKE_CURRENT_LIST_DIR}/include"
+)
+
+set(INTRINSICCV_WARNING_FLAGS
+  "-Werror"
+  "-Wall"
+  "-Wextra"
+  "-Wold-style-cast"
+)
+
+set(INTRINSICCV_CLANG_FLAGS
+  "-mllvm"
+  "-inline-threshold=10000"
+  "-fno-unroll-loops"
+)
+
+set(INTRINSICCV_CXX_FLAGS
+  "-O2"
+  "-g0"
+  "-fomit-frame-pointer"
+  "-fno-stack-protector"
+  "-fno-exceptions"
+  "-fno-rtti"
+  ${INTRINSICCV_CLANG_FLAGS}
+  ${INTRINSICCV_WARNING_FLAGS}
+)
+
+if(INTRINSICCV_ENABLE_SVE2)
+  list(APPEND INTRINSICCV_CXX_FLAGS "-DINTRINSICCV_ALWAYS_ENABLE_SVE2=1")
+endif()
+
+if (INTRINSICCV_ASSUME_128BIT_SVE2)
+  list(APPEND INTRINSICCV_CXX_FLAGS "-DINTRINSICCV_SVE2_128=1")
+endif()
+
+if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+  list(APPEND INTRINSICCV_CXX_FLAGS "-O0" "-g")
+else()
+  list(APPEND INTRINSICCV_CXX_FLAGS "-O2" "-g0")
+endif()
+
+add_library(intrinsiccv_neon OBJECT ${INTRINSICCV_NEON_SOURCES})
+target_include_directories(intrinsiccv_neon PRIVATE ${INTRINSICCV_INCLUDE_DIRS})
+set_target_properties(intrinsiccv_neon PROPERTIES CXX_STANDARD 17)
+target_compile_options(intrinsiccv_neon PRIVATE
+  ${INTRINSICCV_CXX_FLAGS}
+  "-march=armv8-a"
+  "-DINTRINSICCV_TARGET_NEON=1"
+)
+
+if(INTRINSICCV_BUILD_SVE2)
+  add_library(intrinsiccv_sve2 OBJECT ${INTRINSICCV_SVE2_SOURCES})
+  target_include_directories(intrinsiccv_sve2 PRIVATE ${INTRINSICCV_INCLUDE_DIRS})
+  set_target_properties(intrinsiccv_sve2 PROPERTIES CXX_STANDARD 17)
+  target_compile_options(intrinsiccv_sve2 PRIVATE
+    ${INTRINSICCV_CXX_FLAGS}
+    "-march=armv8-a+sve2"
+    "-DINTRINSICCV_TARGET_SVE2=1"
+  )
+endif()
+
+if(INTRINSICCV_ENABLE_SME2)
+  add_library(intrinsiccv_sme2 OBJECT ${INTRINSICCV_SME2_SOURCES})
+  target_include_directories(intrinsiccv_sme2 PRIVATE ${INTRINSICCV_INCLUDE_DIRS})
+  set_target_properties(intrinsiccv_sme2 PROPERTIES CXX_STANDARD 17)
+  target_compile_options(intrinsiccv_sme2 PRIVATE
+    ${INTRINSICCV_CXX_FLAGS}
+    "-march=armv9-a+sve2+sme2"
+    "-DINTRINSICCV_TARGET_SME2=1"
+  )
+endif()
+
+add_library(intrinsiccv STATIC ${INTRINSICCV_API_SOURCES})
+target_include_directories(intrinsiccv PRIVATE ${INTRINSICCV_INCLUDE_DIRS})
+set_target_properties(intrinsiccv PROPERTIES CXX_STANDARD 17)
+target_compile_options(intrinsiccv PRIVATE ${INTRINSICCV_CXX_FLAGS})
+target_link_libraries(intrinsiccv PRIVATE intrinsiccv_neon)
+
+if(INTRINSICCV_BUILD_SVE2)
+  target_compile_definitions(intrinsiccv PRIVATE INTRINSICCV_HAVE_SVE2)
+  target_link_libraries(intrinsiccv PRIVATE intrinsiccv_sve2)
+endif()
+
+if(INTRINSICCV_ENABLE_SME2)
+  target_compile_definitions(intrinsiccv PRIVATE INTRINSICCV_HAVE_SME2)
+  target_link_libraries(intrinsiccv PRIVATE intrinsiccv_sme2)
+endif()

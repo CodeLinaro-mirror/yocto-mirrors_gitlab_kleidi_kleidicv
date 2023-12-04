@@ -1,0 +1,60 @@
+// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#include <algorithm>
+#include <limits>
+
+#include "intrinsiccv.h"
+#include "neon.h"
+
+namespace intrinsiccv::neon {
+
+template <typename ScalarType>
+class SaturatingAbsDiff final : public UnrollTwice {
+ public:
+  using VecTraits = neon::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+
+  VectorType vector_path(VectorType src_a, VectorType src_b) {
+    if constexpr (std::numeric_limits<ScalarType>::is_signed) {
+      // Results of VABD may be outside the signed range so use two
+      // saturating instructions instead.
+      return vqabsq(vqsubq(src_a, src_b));
+    }
+    return vabdq(src_a, src_b);
+  }
+
+  ScalarType scalar_path(ScalarType src_a, ScalarType src_b) {
+    return std::min<decltype(src_a - src_b)>(
+        src_a > src_b ? src_a - src_b : src_b - src_a,
+        std::numeric_limits<ScalarType>::max());
+  }
+};  // end of class SaturatingAbsDiff<ScalarType>
+
+template <typename T>
+void saturating_absdiff(const T *src_a, size_t src_a_stride, const T *src_b,
+                        size_t src_b_stride, T *dst, size_t dst_stride,
+                        size_t width, size_t height) {
+  SaturatingAbsDiff<T> operation;
+  Rectangle rect{width, height};
+  Rows<const T> src_a_rows{src_a, src_a_stride};
+  Rows<const T> src_b_rows{src_b, src_b_stride};
+  Rows<T> dst_rows{dst, dst_stride};
+  neon::apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
+                                dst_rows);
+}
+
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
+  template INTRINSICCV_TARGET_FN_ATTS void saturating_absdiff<type>(   \
+      const type *src_a, size_t src_a_stride, const type *src_b,       \
+      size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
+      size_t height)
+
+INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(uint16_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(int16_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(int32_t);
+
+}  // namespace intrinsiccv::neon

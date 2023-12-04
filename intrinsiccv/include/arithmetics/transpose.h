@@ -1,0 +1,24 @@
+// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef INTRINSICCV_ARITHMETICS_TRANSPOSE_H
+#define INTRINSICCV_ARITHMETICS_TRANSPOSE_H
+
+#include <cstddef>
+#include <cstdint>
+
+namespace intrinsiccv {
+
+namespace neon {
+void transpose(const void *src, size_t src_stride, void *dst, size_t dst_stride,
+               size_t width, size_t height, size_t element_size);
+}  // namespace neon
+
+namespace sve2 {}  // namespace sve2
+
+namespace sme2 {}  // namespace sme2
+
+}  // namespace intrinsiccv
+
+#endif  // INTRINSICCV_ARITHMETICS_TRANSPOSE_H

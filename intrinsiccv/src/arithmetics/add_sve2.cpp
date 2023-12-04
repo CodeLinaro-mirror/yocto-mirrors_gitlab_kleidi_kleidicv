@@ -1,0 +1,52 @@
+// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#include <limits>
+
+#include "intrinsiccv.h"
+#include "sve2.h"
+
+namespace intrinsiccv::sve2 {
+
+template <typename ScalarType>
+class SaturatingAdd final : public UnrollTwice {
+ public:
+  using ContextType = sve2::Context;
+  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+
+  VectorType vector_path(ContextType ctx, VectorType src_a, VectorType src_b) {
+    return svqadd_m(ctx.predicate(), src_a, src_b);
+  }
+};  // end of class SaturatingAdd<ScalarType>
+
+template <typename T>
+void saturating_add(const T *src_a, size_t src_a_stride, const T *src_b,
+                    size_t src_b_stride, T *dst, size_t dst_stride,
+                    size_t width, size_t height) {
+  SaturatingAdd<T> operation;
+  Rectangle rect{width, height};
+  Rows<const T> src_a_rows{src_a, src_a_stride};
+  Rows<const T> src_b_rows{src_b, src_b_stride};
+  Rows<T> dst_rows{dst, dst_stride};
+  sve2::apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
+                                dst_rows);
+}
+
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
+  template INTRINSICCV_TARGET_FN_ATTS void saturating_add<type>(       \
+      const type *src_a, size_t src_a_stride, const type *src_b,       \
+      size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
+      size_t height)
+
+INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(int16_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(uint16_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(int32_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(uint32_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(int64_t);
+INTRINSICCV_INSTANTIATE_TEMPLATE(uint64_t);
+
+}  // namespace intrinsiccv::sve2
