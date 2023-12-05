@@ -14,8 +14,8 @@ This project is in the early stages of development and is not ready for use
 except as a preview.
 
 This is a Computer Vision Library aiming to give high-performing image
-processing functions on Arm. It is designed to be simple to import into a wide variety
-of projects.
+processing functions on Arm. It is designed to be simple to import into a wide
+variety of projects.
 
 Library provides a C interface.
 
@@ -33,12 +33,16 @@ API and unit tests for the library. All supporting scripts are located in
 
 The library can be built using CMake:
 ```
-cmake -S /path/to/intrinsiccv -B build-intrinsiccv -DCMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a
+cmake \
+-S /path/to/intrinsiccv \
+-B build-intrinsiccv \
+-DCMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
+-DANDROID_ABI=arm64-v8a
 cmake --build build-intrinsiccv --parallel
 ```
 
-Builds scripts for Linux/macOS are also provided for convenience. To target Android
-devices the following command should work:
+Builds scripts for Linux/macOS are also provided for convenience. To target
+Android devices the following command should work:
 
 ```
 BUILD_ID=android \
