@@ -14,7 +14,7 @@
 #   BUILD_PATH:                    Directory for all the files associated with a build.
 #   CLEAN:                         Clean builds if set to 'ON'. Defaults to 'OFF'.
 #   CMAKE:                         Full path of the CMake executable.
-#   CMAKE_BUILD_TYPE:              Specifies the build type. Defaults to 'Debug'.
+#   CMAKE_BUILD_TYPE:              Specifies the build type. Defaults to 'Release'.
 #   CMAKE_CROSSCOMPILING_EMULATOR: If set, it is the full path to an emulator that can run the binary target.
 #   CMAKE_CXX_FLAGS:               General C++ flags for all compiler commands.
 #   CMAKE_EXE_LINKER_FLAGS:        General flags for all linker commands for executables.
@@ -36,6 +36,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
 : "${BUILD_ID:=intrinsiccv}"
 : "${BUILD_PATH:=${SCRIPT_PATH}/../build/${BUILD_ID}}"
+: "${CLEAN:=OFF}"
 : "${CMAKE:=cmake}"
 : "${CMAKE_BUILD_TYPE:=Release}"
 : "${CMAKE_CROSSCOMPILING_EMULATOR:=}"
@@ -65,7 +66,7 @@ fi
 # Configuration
 # ------------------------------------------------------------------------------
 
-if [[ "${CLEAN:-OFF}" == "ON" ]]; then
+if [[ "${CLEAN}" == "ON" ]]; then
     rm -rf "${BUILD_PATH}"
 fi
 
