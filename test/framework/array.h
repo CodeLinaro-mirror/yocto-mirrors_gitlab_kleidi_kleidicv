@@ -22,6 +22,8 @@ namespace test {
 template <typename ElementType>
 class Array2D final {
  public:
+  Array2D() = default;
+
   explicit Array2D(size_t width, size_t height) : Array2D(width, height, 0) {}
 
   explicit Array2D(size_t width, size_t height, size_t padding_bytes)
@@ -51,7 +53,14 @@ class Array2D final {
   Array2D &operator=(const Array2D &other) = delete;
 
   /// Move assignment operator.
-  Array2D &operator=(Array2D &&other) = delete;
+  Array2D &operator=(Array2D &&other) {
+    data_ = std::move(other.data_);
+    width_ = other.width_;
+    height_ = other.height_;
+    stride_ = other.stride_;
+    other.width_ = other.height_ = other.stride_ = 0;
+    return *this;
+  }
 
   /// Fills the underlying memory range with a given value skipping padding
   /// bytes.
@@ -70,7 +79,7 @@ class Array2D final {
   /// false if there is not enough space in the row.
   void set(size_t row, size_t column,
            std::initializer_list<ElementType> values) {
-    ElementType *ptr = at(row, +column);
+    ElementType *ptr = at(row, column);
     if (!ptr) {
       return;
     }
@@ -121,12 +130,8 @@ class Array2D final {
   /// Returns a pointer to a data element at a given row and column position, or
   /// nullptr if the requested position is invalid.
   ElementType *at(size_t row, size_t column) {
-    if (!check_access(row, column)) {
-      return nullptr;
-    }
-
-    ElementType *ptr = add_stride(data(), row);
-    return &ptr[column];
+    return const_cast<ElementType *>(
+        const_cast<const Array2D<ElementType> *>(this)->at(row, column));
   }
 
   /// Returns a constant pointer to a data element at a given row and column
@@ -208,11 +213,11 @@ class Array2D final {
   /// Smart pointer to the managed memory.
   std::unique_ptr<uint8_t[]> data_;
   /// Width a row in the array.
-  size_t width_;
+  size_t width_{0};
   /// Number of rows in the array.
-  size_t height_;
+  size_t height_{0};
   /// Stride in bytes between the first elements of two consecutive rows.
-  size_t stride_;
+  size_t stride_{0};
 };  // end of class Array2D<ElementType>
 
 /// Compares two \ref Array2D objects for equality.

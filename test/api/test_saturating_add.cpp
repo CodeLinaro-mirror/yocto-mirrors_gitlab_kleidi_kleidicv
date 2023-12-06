@@ -5,54 +5,93 @@
 #include <gtest/gtest.h>
 #include <intrinsiccv.h>
 
-#include "framework/array.h"
-#include "framework/utils.h"
+#include <type_traits>
 
-static void test_intrinsiccv_saturating_add_u8(size_t src_a_padding,
-                                               size_t src_b_padding,
-                                               size_t dst_padding) {
-  // '3': The operation is unrolled twice. We need a full vector path and some
-  // scalar processing.
-  const size_t width = 3 * test::Options::vector_length() - 1;
-  const size_t height = 1;
+#include "framework/operation.h"
 
-  test::Array2D<uint8_t> source_a{width, height, src_a_padding};
-  ASSERT_TRUE(source_a.valid());
-  test::Array2D<uint8_t> source_b{width, height, src_b_padding};
-  ASSERT_TRUE(source_b.valid());
-  test::Array2D<uint8_t> actual{width, height, dst_padding};
-  ASSERT_TRUE(actual.valid());
-  test::Array2D<uint8_t> expected{width, height};
-  ASSERT_TRUE(expected.valid());
+#define INTINSICCV_SATURATING_ADD(type, suffix) \
+  INTINSICCV_API(saturating_add, intrinsiccv_saturating_add_##suffix, type)
 
-  // This will test the vector path.
-  // clang-format off
-  source_a.set(0, 0, {0, 1, 127, 127, 254, 254, 255});
-  source_b.set(0, 0, {0, 1, 127, 128,   1,   2, 255});
-  expected.set(0, 0, {0, 2, 254, 255, 255, 255, 255});
-  // clang-format on
+INTINSICCV_SATURATING_ADD(int8_t, s8);
+INTINSICCV_SATURATING_ADD(uint8_t, u8);
+INTINSICCV_SATURATING_ADD(int16_t, s16);
+INTINSICCV_SATURATING_ADD(uint16_t, u16);
+INTINSICCV_SATURATING_ADD(int32_t, s32);
+INTINSICCV_SATURATING_ADD(uint32_t, u32);
+INTINSICCV_SATURATING_ADD(int64_t, s64);
+INTINSICCV_SATURATING_ADD(uint64_t, u64);
 
-  // This will test the scalar path, if present.
-  size_t col = 2 * test::Options::vector_length();
-  // clang-format off
-  source_a.set(0, col, {0, 1, 127, 127, 254, 254, 255});
-  source_b.set(0, col, {0, 1, 127, 128,   1,   2, 255});
-  expected.set(0, col, {0, 2, 254, 255, 255, 255, 255});
-  // clang-format on
+template <typename ElementType>
+class SaturatingAddTest final : public BinaryOperationTest<ElementType> {
+  /// Expose constructor of base class.
+  using BinaryOperationTest<ElementType>::BinaryOperationTest;
 
-  intrinsiccv_saturating_add_u8(source_a.data(), source_a.stride(),
-                                source_b.data(), source_b.stride(),
-                                actual.data(), actual.stride(), width, height);
-  EXPECT_EQ_ARRAY2D(expected, actual);
-}
+ protected:
+  using Elements = typename BinaryOperationTest<ElementType>::Elements;
+  using BinaryOperationTest<ElementType>::min;
+  using BinaryOperationTest<ElementType>::max;
 
-/// Tests that \ref intrinsiccv_saturating_add_u8 works when there are no
-/// padding bytes at the end of rows.
-TEST(Add, U8_NoPadding) { test_intrinsiccv_saturating_add_u8(0, 0, 0); }
+  /// Calls the API-under-test in the appropriate way.
+  void call_api() override {
+    saturating_add<ElementType>()(
+        this->inputs_[0].data(), this->inputs_[0].stride(),
+        this->inputs_[1].data(), this->inputs_[1].stride(),
+        this->actual_[0].data(), this->actual_[0].stride(), this->width(),
+        this->height());
+  }
 
-/// Tests that \ref intrinsiccv_saturating_add_u8 works when there are padding
-/// bytes at the end of rows.
-TEST(Add, U8_WithPadding) {
-  size_t padding = test::Options::vector_length();
-  test_intrinsiccv_saturating_add_u8(padding, 0, 0);
+  /// Returns different test data for signed and unsigned element types.
+  const std::vector<Elements>& test_elements() override {
+    if constexpr (std::is_unsigned_v<ElementType>) {
+      static const std::vector<Elements> kTestElements = {
+          // clang-format off
+          {        0,     0,     0},
+          {        1,     1,     2},
+          {max() - 1,     1, max()},
+          {max() - 1,     2, max()},
+          {    max(), max(), max()},
+          // clang-format on
+      };
+
+      return kTestElements;
+    } else {
+      static const std::vector<Elements> kTestElements = {
+          // clang-format off
+          {    min(), min(), min()},
+          {min() + 1,    -2, min()},
+          {min() + 1,    -1, min()},
+          {       -1,    -1,    -2},
+          {        0,     0,     0},
+          {        1,     1,     2},
+          {max() - 1,     1, max()},
+          {max() - 1,     2, max()},
+          {    max(), max(), max()},
+          // clang-format on
+      };
+
+      return kTestElements;
+    }
+  }
+};  // end of class SaturatingAddTest<ElementType>
+
+template <typename ElementType>
+class SaturatingAdd : public testing::Test {
+ public:
+  /// Dummy value, only used to get the type.
+  ElementType value_;
+};  // end of class SaturatingAdd<ElementType>
+
+using ElementTypes = ::testing::Types<int8_t, uint8_t, int16_t, uint16_t,
+                                      int32_t, uint32_t, int64_t, uint64_t>;
+TYPED_TEST_SUITE(SaturatingAdd, ElementTypes);
+
+/// Tests \ref intrinsiccv_saturating_add_<type> API.
+TYPED_TEST(SaturatingAdd, API) {
+  using ElementType = decltype(this->value_);
+  // Test without padding.
+  SaturatingAddTest<ElementType>{}.test();
+  // Test with padding.
+  SaturatingAddTest<ElementType>{}
+      .with_padding(test::Options::vector_length())
+      .test();
 }

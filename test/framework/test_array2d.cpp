@@ -5,20 +5,54 @@
 #include <gtest/gtest-spi.h>
 #include <gtest/gtest.h>
 
+#include <utility>
+
 #include "framework/array.h"
 #include "framework/utils.h"
 
+/// Tests that the default constructor of test::Array2D<T> default constructor
+/// always creates an empty object.
+TEST(Array2D, DefaultConstructor) {
+  test::Array2D<uint32_t> array;
+  EXPECT_EQ(array.width(), 0);
+  EXPECT_EQ(array.height(), 0);
+  EXPECT_EQ(array.stride(), 0);
+  EXPECT_FALSE(array.valid());
+}
+
 /// Tests that test::Array2D<T> constructor always creates an object with the
 /// same contents.
-TEST(Array2D, constructor) {
+TEST(Array2D, Constructor) {
   size_t width = 5, height = 5;
   test::Array2D<uint32_t> array_1{width, height};
+  EXPECT_EQ(array_1.width(), width);
+  EXPECT_EQ(array_1.height(), height);
+  EXPECT_EQ(array_1.stride(), width * sizeof(uint32_t));
+  EXPECT_TRUE(array_1.valid());
+
   test::Array2D<uint32_t> array_2{width, height};
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
-/// Tests that test::Array2D<T>.get() works for set/get.
-TEST(Array2D, get) {
+/// Tests that the move assignment operator of test::Array2D<T> works.
+TEST(Array2D, MoveAssignment) {
+  size_t width = 5, height = 5;
+  test::Array2D<uint32_t> array_1{width, height};
+  test::Array2D<uint32_t> array_2;
+
+  array_2 = std::move(array_1);
+  EXPECT_EQ(array_2.width(), width);
+  EXPECT_EQ(array_2.height(), height);
+  EXPECT_EQ(array_2.stride(), width * sizeof(uint32_t));
+  EXPECT_TRUE(array_2.valid());
+  EXPECT_EQ(array_1.width(), 0);
+  EXPECT_EQ(array_1.height(), 0);
+  EXPECT_EQ(array_1.stride(), 0);
+  EXPECT_FALSE(array_1.valid());
+}
+
+/// Tests that test::Array2D<T>.at() works for set/get.
+TEST(Array2D, At) {
   size_t width = 1, height = 1;
   test::Array2D<uint32_t> array_1{width, height};
   test::Array2D<uint32_t> array_2{width, height};
@@ -28,10 +62,21 @@ TEST(Array2D, get) {
 
   array_1.at(0, 0)[0] = 2;
   EXPECT_EQ(array_1.at(0, 0)[0], 2);
+
+  EXPECT_EQ(array_1.at(0, 1), nullptr);
+  EXPECT_EQ(array_1.at(1, 0), nullptr);
+  EXPECT_EQ(array_1.at(1, 1), nullptr);
+
+  // Constant array
+  const test::Array2D<uint32_t> const_array{width, height};
+
+  EXPECT_EQ(const_array.at(0, 1), nullptr);
+  EXPECT_EQ(const_array.at(0, 1), nullptr);
+  EXPECT_EQ(const_array.at(0, 1), nullptr);
 }
 
 /// Tests that test::Array2D<T>.set() works.
-TEST(Array2D, set) {
+TEST(Array2D, Set) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
 
@@ -50,7 +95,7 @@ TEST(Array2D, set) {
 }
 
 /// Tests that test::Array2D<T>.fill() works.
-TEST(Array2D, fill) {
+TEST(Array2D, Fill) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
   test::Array2D<uint32_t> array_2{width, height};
@@ -195,7 +240,7 @@ static void PaddingClobbered(size_t row, size_t offset) {
   size_t stride = width * sizeof(ElementType) + padding;
   test::Array2D<ElementType> array(width, height, padding);
 
-  uint8_t *ptr = reinterpret_cast<uint8_t *>(array.data());
+  uint8_t* ptr = reinterpret_cast<uint8_t*>(array.data());
   ptr[row * stride + width * sizeof(ElementType) + offset] = 1;
 }
 
@@ -230,6 +275,6 @@ TEST(Array2D, Coverage) {
 
   array.set(0, 0, {});
 
-  uint64_t *ptr_1 = array.at(0, 0);
+  uint64_t* ptr_1 = array.at(0, 0);
   EXPECT_EQ(ptr_1, nullptr);
 }
