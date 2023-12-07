@@ -9,9 +9,9 @@
 # Arguments:
 #   1: Absolute path to build folder.
 #   2: Absolute path to the executable to run.
+#   3-*: Optional arguments to the executable.
 #
 # Options:
-#   BINARY_ARGS:        Arguments passed to the executable binary.
 #   COVERAGE:           Enables collection of coverage metrics if set to 'ON'. Defaults to 'OFF'.
 #   DEVICE_HOST:        Passed to adb. It sets the host where the device is found. Defaults to '127.0.0.1'.
 #   DEVICE_PORT:        Passed to adb. It sets the port where the device is found. Defaults to '5037'.
@@ -33,7 +33,6 @@ fi
 # Automatic configuration
 # ------------------------------------------------------------------------------
 
-: "${BINARY_ARGS:=}"
 : "${COVERAGE:=OFF}"
 : "${DEVICE_HOST:=127.0.0.1}"
 : "${DEVICE_PORT:=5037}"
@@ -43,6 +42,7 @@ fi
 
 BUILD_PATH="$(realpath "${1}")"
 BINARY_HOST_PATH="$(realpath "${2}")"
+BINARY_ARGS="${*:3}"
 BINARY_NAME="$(basename "${BINARY_HOST_PATH}")"
 BINARY_DEVICE_PATH="${DEVICE_TMP_PATH}"/"${BINARY_NAME}"
 
@@ -85,13 +85,13 @@ run_adb_command push "${BINARY_HOST_PATH}" "${BINARY_DEVICE_PATH}"
 command="${BINARY_DEVICE_PATH} ${BINARY_ARGS}"
 
 # Execute the binary with appropriate GCOV settings.
-if [[ "${COVERAGE}" == "1" ]]; then
+if [[ "${COVERAGE}" == "ON" ]]; then
     command="$(with_coverage "${BUILD_PATH}" "${command}")"
 fi
 
 run_adb_command shell "${command}"
 
-if [[ "${COVERAGE}" == "1" ]]; then
+if [[ "${COVERAGE}" == "ON" ]]; then
     # Pull generated .gcda files.
     run_adb_command pull "${GCOV_PREFIX}" "${BUILD_PATH}"
 
@@ -105,7 +105,7 @@ fi
 
 run_adb_command shell rm -rf "${BINARY_DEVICE_PATH}"
 
-if [[ "${COVERAGE}" == "1" ]]; then
+if [[ "${COVERAGE}" == "ON" ]]; then
     run_adb_command shell rm -rf "${GCOV_PREFIX}"
 fi
 
@@ -113,7 +113,7 @@ fi
 # Cleanup from host.
 # ------------------------------------------------------------------------------
 
-if [[ "${COVERAGE}" == "1" ]]; then
+if [[ "${COVERAGE}" == "ON" ]]; then
     rm -rf "${BUILD_PATH}"/gcov
 fi
 
