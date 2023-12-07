@@ -29,7 +29,7 @@
 set -exu
 
 # ------------------------------------------------------------------------------
-# Automatic configuration
+# Automatic configuration
 # ------------------------------------------------------------------------------
 
 SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"

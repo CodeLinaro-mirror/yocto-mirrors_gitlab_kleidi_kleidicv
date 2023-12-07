@@ -26,7 +26,7 @@ SOURCES="$(find \
     -print)"
 
 # shellcheck disable=2086
-# Split ${SOURCES}.
+# Split ${SOURCES}.
 "${CLANG_FORMAT_BIN_PATH}" -i --verbose ${SOURCES}
 
 # ------------------------------------------------------------------------------

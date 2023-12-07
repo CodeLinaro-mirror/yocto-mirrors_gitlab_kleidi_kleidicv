@@ -21,7 +21,7 @@ if [[ -z "${LLVM_COV}" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# Automatic configuration
+# Automatic configuration
 # ------------------------------------------------------------------------------
 
 SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"

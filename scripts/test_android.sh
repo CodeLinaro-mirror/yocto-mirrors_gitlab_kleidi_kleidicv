@@ -30,14 +30,14 @@ if [[ -z "${ADB}" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# Automatic configuration
+# Automatic configuration
 # ------------------------------------------------------------------------------
 
 : "${COVERAGE:=OFF}"
 : "${DEVICE_HOST:=127.0.0.1}"
 : "${DEVICE_PORT:=5037}"
 : "${DEVICE_TMP_PATH:=/data/local/tmp}"
-# Generated coverage metrics are placed into '${DEVICE_TMP_PATH}/gcov'.
+# Generated coverage metrics are placed into '${DEVICE_TMP_PATH}/gcov'.
 : "${GCOV_PREFIX:=${DEVICE_TMP_PATH}/gcov}"
 
 BUILD_PATH="$(realpath "${1}")"
@@ -48,8 +48,8 @@ BINARY_DEVICE_PATH="${DEVICE_TMP_PATH}"/"${BINARY_NAME}"
 
 # ------------------------------------------------------------------------------
 
-# Returns a command which is suitable for collecting coverage info.
-# Arguments:
+# Returns a command which is suitable for collecting coverage info.
+# Arguments:
 #  1: Build directory on host.
 #  2+: The command to wrap.
 with_coverage() {
@@ -66,7 +66,7 @@ run_adb_command() {
 }
 
 # ------------------------------------------------------------------------------
-# Cleanup from host.
+# Cleanup from host.
 # ------------------------------------------------------------------------------
 
 # Remove gcov folder from device.
@@ -110,7 +110,7 @@ if [[ "${COVERAGE}" == "ON" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# Cleanup from host.
+# Cleanup from host.
 # ------------------------------------------------------------------------------
 
 if [[ "${COVERAGE}" == "ON" ]]; then
