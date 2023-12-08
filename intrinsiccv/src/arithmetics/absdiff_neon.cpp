@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <algorithm>
-#include <limits>
+#include <type_traits>
 
 #include "intrinsiccv.h"
 #include "neon.h"
@@ -26,9 +25,13 @@ class SaturatingAbsDiff final : public UnrollTwice {
   }
 
   ScalarType scalar_path(ScalarType src_a, ScalarType src_b) {
-    return std::min<decltype(src_a - src_b)>(
-        src_a > src_b ? src_a - src_b : src_b - src_a,
-        std::numeric_limits<ScalarType>::max());
+    using UnsignedScalarType = std::make_unsigned_t<ScalarType>;
+    // Calculate unsigned difference and then apply saturating cast.
+    UnsignedScalarType u_src_a = static_cast<UnsignedScalarType>(src_a);
+    UnsignedScalarType u_src_b = static_cast<UnsignedScalarType>(src_b);
+    UnsignedScalarType difference =
+        src_a > src_b ? u_src_a - u_src_b : u_src_b - u_src_a;
+    return saturating_cast<UnsignedScalarType, ScalarType>(difference);
   }
 };  // end of class SaturatingAbsDiff<ScalarType>
 

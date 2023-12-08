@@ -27,6 +27,30 @@ static U saturating_cast(S value) INTRINSICCV_STREAMING_COMPATIBLE {
   return static_cast<U>(value);
 }
 
+// Saturating cast from unsigned to unsigned type.
+template <
+    typename SrcType, typename DstType,
+    std::enable_if_t<std::is_unsigned_v<DstType> && std::is_unsigned_v<SrcType>,
+                     bool> = true>
+static DstType saturating_cast(SrcType value) INTRINSICCV_STREAMING_COMPATIBLE {
+  return static_cast<DstType>(value);
+}
+
+// Saturating cast from unsigned to signed type.
+template <
+    typename SrcType, typename DstType,
+    std::enable_if_t<std::is_signed_v<DstType> && std::is_unsigned_v<SrcType>,
+                     bool> = true>
+static DstType saturating_cast(SrcType value) INTRINSICCV_STREAMING_COMPATIBLE {
+  DstType max_value = std::numeric_limits<DstType>::max();
+
+  if (value > static_cast<SrcType>(max_value)) {
+    return max_value;
+  }
+
+  return static_cast<DstType>(value);
+}
+
 // Rounding shift right.
 template <typename T>
 static T rounding_shift_right(T value,
