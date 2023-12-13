@@ -117,9 +117,13 @@ cmake \
 cmake --build build-opencv --parallel
 ```
 
-### Dependencies
+### Build Prerequisites
+While the core functionality of the library does not rely on any third-party libraries, there are
+build prerequisites that are essential for compiling the source code and generating the executable.
+Please ensure that these tools are installed on your system before proceeding with the build
+process.
 
-There are only a few dependencies and requirements:
+To successfully build and compile this project, you'll need the following tools:
 - [cmake](https://cmake.org) version 3.16 or newer (3.21 is recommended),
 - [ninja](https://ninja-build.org),
 - [gcovr](https://gcovr.com/) and its dependencies for coverage reports,
