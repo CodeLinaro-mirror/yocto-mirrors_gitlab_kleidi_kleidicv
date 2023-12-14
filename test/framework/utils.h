@@ -24,6 +24,9 @@ class Options {
   /// Returns the vector length being tested. This is in bytes.
   static size_t vector_length() { return vector_length_; }
 
+  /// Returns seed to use.
+  static uint64_t seed() { return seed_; }
+
   /// Returns the number of lanes in a vector for a given integral type.
   template <typename ElementType,
             std::enable_if_t<std::is_integral_v<ElementType>, bool> = true>
@@ -43,9 +46,14 @@ class Options {
     vector_length_ = value;
   }
 
+  /// Sets the seed.
+  static void set_seed(uint64_t value) { seed_ = value; }
+
  private:
   /// Vector length being tested.
   static size_t vector_length_;
+  /// Seed to use.
+  static uint64_t seed_;
 };  // end of class Options
 
 }  // namespace test
