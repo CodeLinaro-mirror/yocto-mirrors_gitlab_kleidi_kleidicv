@@ -14,7 +14,10 @@ set(INTRINSICCV_WARNING_FLAGS
   "-Wold-style-cast"
 )
 
-set(INTRINSICCV_TEST_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/framework/test_main.cpp)
+set(INTRINSICCV_TEST_FRAMEWORK_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/framework/test_main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/framework/utils.cpp
+)
 
 include(FetchContent)
 FetchContent_Declare(

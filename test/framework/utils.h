@@ -10,6 +10,8 @@
 #include <iostream>
 #include <type_traits>
 
+#include "framework/abstract.h"
+
 #define INTRINSICCV_API(name, impl, type)                                     \
   template <typename ElementType,                                             \
             std::enable_if_t<std::is_same_v<ElementType, type>, bool> = true> \
@@ -55,6 +57,10 @@ class Options {
   /// Seed to use.
   static uint64_t seed_;
 };  // end of class Options
+
+/// Prints all the elements in a two-dimensional space.
+template <typename ElementType>
+void dump(const TwoDimensional<ElementType> *elements);
 
 }  // namespace test
 

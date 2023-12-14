@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-file(GLOB intrinsiccv_api_test_sources CONFIGURE_DEPENDS "*.h" "*.cpp")
+file(GLOB intrinsiccv_api_test_sources CONFIGURE_DEPENDS "*.h" "test_*.cpp")
 
-list(APPEND intrinsiccv_api_test_sources ${INTRINSICCV_TEST_MAIN})
+list(APPEND intrinsiccv_api_test_sources ${INTRINSICCV_TEST_FRAMEWORK_SOURCES})
 
 set_source_files_properties(
   ${intrinsiccv_api_test_sources}
