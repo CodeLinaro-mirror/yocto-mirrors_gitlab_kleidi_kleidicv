@@ -16,20 +16,26 @@
 #include <utility>
 #include <vector>
 
+#include "framework/abstract.h"
+
 namespace test {
 
 /// A simple two-dimensional array representation.
 template <typename ElementType>
-class Array2D final {
+class Array2D final : public TwoDimensional<ElementType> {
  public:
   Array2D() = default;
 
   explicit Array2D(size_t width, size_t height) : Array2D(width, height, 0) {}
 
-  explicit Array2D(size_t width, size_t height, size_t padding_bytes)
+  explicit Array2D(size_t width, size_t height, size_t padding)
+      : Array2D(width, height, padding, 1) {}
+
+  explicit Array2D(size_t width, size_t height, size_t padding, size_t channels)
       : width_{width},
         height_{height},
-        stride_{width * sizeof(ElementType) + padding_bytes} {
+        channels_{channels},
+        stride_{width * sizeof(ElementType) + padding} {
     try {
       data_ = std::make_unique<uint8_t[]>(height_ * stride_);
     } catch (...) {
@@ -57,8 +63,9 @@ class Array2D final {
     data_ = std::move(other.data_);
     width_ = other.width_;
     height_ = other.height_;
+    channels_ = other.channels_;
     stride_ = other.stride_;
-    other.width_ = other.height_ = other.stride_ = 0;
+    other.width_ = other.height_ = other.channels_ = other.stride_ = 0;
     return *this;
   }
 
@@ -116,10 +123,13 @@ class Array2D final {
   }
 
   /// Returns the width of this array.
-  size_t width() const { return width_; }
+  size_t width() const override { return width_; }
 
   /// Returns the height of this array.
-  size_t height() const { return height_; }
+  size_t height() const override { return height_; }
+
+  /// Returns the number of channels.
+  size_t channels() const override { return channels_; };
 
   /// Returns the stride of this array.
   size_t stride() const { return stride_; }
@@ -129,14 +139,14 @@ class Array2D final {
 
   /// Returns a pointer to a data element at a given row and column position, or
   /// nullptr if the requested position is invalid.
-  ElementType *at(size_t row, size_t column) {
+  ElementType *at(size_t row, size_t column) override {
     return const_cast<ElementType *>(
         const_cast<const Array2D<ElementType> *>(this)->at(row, column));
   }
 
   /// Returns a constant pointer to a data element at a given row and column
   /// position, or nullptr if the requested position is invalid.
-  const ElementType *at(size_t row, size_t column) const {
+  const ElementType *at(size_t row, size_t column) const override {
     if (!check_access(row, column)) {
       return nullptr;
     }
@@ -216,6 +226,8 @@ class Array2D final {
   size_t width_{0};
   /// Number of rows in the array.
   size_t height_{0};
+  /// Number of channels.
+  size_t channels_{0};
   /// Stride in bytes between the first elements of two consecutive rows.
   size_t stride_{0};
 };  // end of class Array2D<ElementType>
@@ -227,6 +239,8 @@ class Array2D final {
         << "Mismatch in width." << std::endl;                 \
     ASSERT_EQ((__lhs).height(), (__rhs).height())             \
         << "Mismatch in height." << std::endl;                \
+    ASSERT_EQ((__lhs).channels(), (__rhs).channels())         \
+        << "Mismatch in channels." << std::endl;              \
     auto mismatch = (__lhs).compare_to((__rhs));              \
     if (mismatch) {                                           \
       auto [row, col] = *mismatch;                            \
@@ -243,6 +257,8 @@ class Array2D final {
         << "Mismatch in width." << std::endl;                              \
     ASSERT_EQ((__lhs).height(), (__rhs).height())                          \
         << "Mismatch in height." << std::endl;                             \
+    ASSERT_EQ((__lhs).channels(), (__rhs).channels())                      \
+        << "Mismatch in channels." << std::endl;                           \
     auto mismatch = (__lhs).compare_to((__rhs));                           \
     if (!mismatch) {                                                       \
       FAIL() << "Objects are equal, but expected to differ." << std::endl; \

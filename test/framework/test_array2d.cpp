@@ -16,6 +16,7 @@ TEST(Array2D, DefaultConstructor) {
   test::Array2D<uint32_t> array;
   EXPECT_EQ(array.width(), 0);
   EXPECT_EQ(array.height(), 0);
+  EXPECT_EQ(array.channels(), 0);
   EXPECT_EQ(array.stride(), 0);
   EXPECT_FALSE(array.valid());
 }
@@ -27,6 +28,7 @@ TEST(Array2D, Constructor) {
   test::Array2D<uint32_t> array_1{width, height};
   EXPECT_EQ(array_1.width(), width);
   EXPECT_EQ(array_1.height(), height);
+  EXPECT_EQ(array_1.channels(), 1);
   EXPECT_EQ(array_1.stride(), width * sizeof(uint32_t));
   EXPECT_TRUE(array_1.valid());
 
@@ -36,17 +38,20 @@ TEST(Array2D, Constructor) {
 
 /// Tests that the move assignment operator of test::Array2D<T> works.
 TEST(Array2D, MoveAssignment) {
-  size_t width = 5, height = 5;
-  test::Array2D<uint32_t> array_1{width, height};
+  size_t width = 5, height = 5, channels = 3;
+  test::Array2D<uint32_t> array_1{width, height, 0, channels};
   test::Array2D<uint32_t> array_2;
 
   array_2 = std::move(array_1);
   EXPECT_EQ(array_2.width(), width);
   EXPECT_EQ(array_2.height(), height);
+  EXPECT_EQ(array_2.channels(), channels);
   EXPECT_EQ(array_2.stride(), width * sizeof(uint32_t));
   EXPECT_TRUE(array_2.valid());
+
   EXPECT_EQ(array_1.width(), 0);
   EXPECT_EQ(array_1.height(), 0);
+  EXPECT_EQ(array_1.channels(), 0);
   EXPECT_EQ(array_1.stride(), 0);
   EXPECT_FALSE(array_1.valid());
 }
@@ -162,6 +167,21 @@ TEST(Array2D, ExpectEq_NotEqual_Height) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in height.");
 }
 
+/// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where
+/// channels is different.
+TEST(Array2D, ExpectEq_NotEqual_Channels) {
+  struct Test {
+    static void test() {
+      size_t width = 5, height = 2;
+      test::Array2D<uint32_t> array_1{width, height, 0, 1};
+      test::Array2D<uint32_t> array_2{width, height, 0, 2};
+      EXPECT_EQ_ARRAY2D(array_1, array_2);
+    }
+  };
+
+  EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in channels.");
+}
+
 /// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where data
 /// is different.
 TEST(Array2D, ExpectEq_NotEqual_Data) {
@@ -221,6 +241,21 @@ TEST(Array2D, ExpectNe_NotEqual_Height) {
   };
 
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in height.");
+}
+
+/// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where
+/// channels is different.
+TEST(Array2D, ExpectNe_NotEqual_Channels) {
+  struct Test {
+    static void test() {
+      size_t width = 5, height = 2;
+      test::Array2D<uint32_t> array_1{width, height, 0, 1};
+      test::Array2D<uint32_t> array_2{width, height, 0, 2};
+      EXPECT_NE_ARRAY2D(array_1, array_2);
+    }
+  };
+
+  EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in channels.");
 }
 
 /// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where there
