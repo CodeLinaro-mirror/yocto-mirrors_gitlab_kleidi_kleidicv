@@ -5,8 +5,16 @@
 #ifndef INTRINSICCV_TEST_FRAMEWORK_KERNEL_H_
 #define INTRINSICCV_TEST_FRAMEWORK_KERNEL_H_
 
+#include <gtest/gtest.h>
+#include <intrinsiccv.h>
+
+#include <algorithm>
+#include <optional>
+
 #include "framework/abstract.h"
 #include "framework/array.h"
+#include "framework/border.h"
+#include "framework/generator.h"
 #include "framework/types.h"
 
 namespace test {
@@ -48,6 +56,207 @@ class Kernel : protected Array2D<ElementType>, public Bordered {
   /// The anchor point of the kernel.
   Point anchor_;
 };  // end of class Kernel<ElementType>
+
+/// Abstract class to help implement a kernel operation.
+///
+/// Required:
+///   - KernelTestParams::InputType: Input type to the operation.
+///   - KernelTestParams::IntermediateType: Type which is used during element
+///   calculations.
+///   - KernelTestParams::OutputType: Output type of the operation.
+template <class KernelTestParams>
+class KernelTest {
+ public:
+  using InputType = typename KernelTestParams::InputType;
+  using IntermediateType = typename KernelTestParams::IntermediateType;
+  using OutputType = typename KernelTestParams::OutputType;
+
+  KernelTest() : debug_{false} {}
+
+  /// Enables debug mode.
+  KernelTest<KernelTestParams> &with_debug() {
+    debug_ = true;
+    return *this;
+  }
+
+  void test(Generator<Kernel<IntermediateType>> *kernel_generator,
+            Generator<ArrayLayout> *array_layout_generator,
+            Generator<intrinsiccv_border_type_t> *border_type_generator,
+            Generator<InputType> *element_generator) {
+    ASSERT_NE(kernel_generator, nullptr);
+    kernel_generator->reset();
+
+    std::optional<Kernel<IntermediateType>> maybe_kernel;
+    while ((maybe_kernel = kernel_generator->next()) != std::nullopt) {
+      test(*maybe_kernel, array_layout_generator, border_type_generator,
+           element_generator);
+      ASSERT_NO_FAILURES();
+    }
+  }
+
+  void test(Kernel<IntermediateType> kernel,
+            Generator<ArrayLayout> *array_layout_generator,
+            Generator<intrinsiccv_border_type_t> *border_type_generator,
+            Generator<InputType> *element_generator) {
+    ASSERT_NE(array_layout_generator, nullptr);
+    array_layout_generator->reset();
+
+    std::optional<ArrayLayout> maybe_array_layout;
+    while ((maybe_array_layout = array_layout_generator->next()) !=
+           std::nullopt) {
+      ArrayLayout array_layout = *maybe_array_layout;
+      create_arrays(kernel, array_layout);
+      ASSERT_NO_FAILURES();
+      test(kernel, array_layout, border_type_generator, element_generator);
+      ASSERT_NO_FAILURES();
+    }
+  }
+
+  void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
+            Generator<intrinsiccv_border_type_t> *border_type_generator,
+            Generator<InputType> *element_generator) {
+    ASSERT_NE(border_type_generator, nullptr);
+    border_type_generator->reset();
+
+    std::optional<intrinsiccv_border_type_t> maybe_border_type;
+    while ((maybe_border_type = border_type_generator->next()) !=
+           std::nullopt) {
+      test(kernel, array_layout, *maybe_border_type, element_generator);
+      ASSERT_NO_FAILURES();
+    }
+  }
+
+  void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
+            intrinsiccv_border_type_t border_type,
+            Generator<InputType> *element_generator) {
+    prepare_source(element_generator);
+    prepare_expected(kernel, array_layout, border_type);
+    prepare_actual();
+    this->call_api(&input_, &actual_, border_type);
+    check_results();
+  }
+
+ protected:
+  /// Calls the API-under-test in the appropriate way.
+  ///
+  /// The arguments are never nullptr.
+  virtual void call_api(const Array2D<InputType> *input,
+                        Array2D<OutputType> *output,
+                        intrinsiccv_border_type_t border_type) = 0;
+
+  /// Calculates the expected output.
+  virtual void calculate_expected(const Kernel<IntermediateType> &kernel,
+                                  const TwoDimensional<InputType> &source) {
+    for (size_t row = 0; row < expected_.height(); ++row) {
+      for (size_t column = 0; column < expected_.width(); ++column) {
+        IntermediateType result;
+        result = calculate_expected_at(kernel, source, row, column);
+        expected_.at(row, column)[0] = static_cast<OutputType>(result);
+      }
+    }
+  }
+
+  /// Calculates the expected element at a given position.
+  virtual IntermediateType calculate_expected_at(
+      const Kernel<IntermediateType> &kernel,
+      const TwoDimensional<InputType> &source, size_t row, size_t column) {
+    IntermediateType result{0};
+    for (size_t height = 0; height < kernel.height(); ++height) {
+      for (size_t width = 0; width < kernel.width(); ++width) {
+        IntermediateType coefficient = kernel.at(height, width)[0];
+        InputType value =
+            source.at(row + height, column + width * source.channels())[0];
+        result += coefficient * static_cast<IntermediateType>(value);
+      }
+    }
+
+    return result;
+  }
+
+  /// Creates arrays for a given layout.
+  void create_arrays(const Kernel<IntermediateType> &kernel,
+                     const ArrayLayout &array_layout) {
+    input_ = Array2D<InputType>{array_layout};
+    ASSERT_TRUE(input_.valid());
+
+    expected_ = Array2D<OutputType>{array_layout};
+    ASSERT_TRUE(expected_.valid());
+
+    actual_ = Array2D<OutputType>{array_layout};
+    ASSERT_TRUE(actual_.valid());
+
+    input_with_borders_ = Array2D<InputType>{
+        array_layout.width +
+            (kernel.left() + kernel.right()) * array_layout.channels,
+        array_layout.height + kernel.top() + kernel.bottom(), 0,
+        array_layout.channels};
+    ASSERT_TRUE(input_with_borders_.valid());
+  }
+
+  /// Prepares input to the kernel-based operation.
+  void prepare_source(Generator<InputType> *element_generator) {
+    ASSERT_NE(element_generator, nullptr);
+    element_generator->reset();
+    input_.fill(element_generator);
+
+    if (debug_) {
+      std::cout << "[source]" << std::endl;
+      dump(&input_);
+    }
+  }
+
+  /// Computes expected output of the kernel-based operation.
+  void prepare_expected(const Kernel<IntermediateType> &kernel,
+                        const ArrayLayout &array_layout,
+                        intrinsiccv_border_type_t border_type) {
+    input_with_borders_.set(kernel.anchor().x,
+                            kernel.anchor().y * array_layout.channels, &input_);
+
+    if (debug_) {
+      std::cout << "[input_with_borders without borders]" << std::endl;
+      dump(&input_with_borders_);
+    }
+
+    prepare_borders<InputType>(border_type, &kernel, &input_with_borders_);
+
+    if (debug_) {
+      std::cout << "[input_with_borders with borders]" << std::endl;
+      dump(&input_with_borders_);
+    }
+
+    calculate_expected(kernel, input_with_borders_);
+
+    if (debug_) {
+      std::cout << "[expected]" << std::endl;
+      dump(&expected_);
+    }
+  }
+
+  /// Prepares the actual output of the kernel-based operation.
+  void prepare_actual() { actual_.fill(42); }
+
+  /// Checks that the actual output matches the expectations.
+  void check_results() {
+    if (debug_) {
+      std::cout << "[actual]" << std::endl;
+      dump(&actual_);
+    }
+
+    // Check that the actual result matches the expectation.
+    EXPECT_EQ_ARRAY2D(expected_, actual_);
+  }
+
+  /// Input operand for the operation.
+  Array2D<InputType> input_;
+  /// Input operand with borders, used to calculate expeected values.
+  Array2D<InputType> input_with_borders_;
+  /// Expected result of the operation.
+  Array2D<OutputType> expected_;
+  /// Actual result of the operation.
+  Array2D<OutputType> actual_;
+  /// Enables debug mode.
+  bool debug_;
+};  // end of class KernelTest<KernelTestParams>
 
 }  // namespace test
 

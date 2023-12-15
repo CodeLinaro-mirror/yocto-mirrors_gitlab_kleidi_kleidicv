@@ -28,6 +28,12 @@
     return (return_value);                                             \
   } while (0 != 0)
 
+// Returns if the test has any failures.
+#define ASSERT_NO_FAILURES()           \
+  if (::testing::Test::HasFailure()) { \
+    return;                            \
+  }
+
 namespace test {
 
 class Options {

@@ -3,8 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
+#include <intrinsiccv.h>
+
+#include <array>
 
 #include "framework/kernel.h"
+#include "framework/types.h"
 
 /// Tests that the constructor of test::Kernel<T> works for odd width and
 /// height.
@@ -73,4 +77,108 @@ TEST(Kernel, ConstructEmpty) {
   EXPECT_EQ(kernel.left(), 0);
   EXPECT_EQ(kernel.bottom(), 0);
   EXPECT_EQ(kernel.right(), 0);
+}
+
+class KernelTestParams {
+ public:
+  using InputType = uint8_t;
+  using IntermediateType = int32_t;
+  using OutputType = int16_t;
+};  // end of class KernelTestParams
+
+template <class KernelTestParams>
+class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
+  using InputType = typename KernelTestParams::InputType;
+  using IntermediateType = typename KernelTestParams::IntermediateType;
+  using OutputType = typename KernelTestParams::OutputType;
+
+  void call_api(const test::Array2D<InputType> *input,
+                test::Array2D<OutputType> *output,
+                intrinsiccv_border_type_t border_type) override {
+    ++api_calls_;
+
+    // Check the expected border type.
+    EXPECT_EQ(border_type, kBorders[border_count_ % kBorders.size()]);
+    ++border_count_;
+    if (border_count_ == kBorders.size()) {
+      border_count_ = 0;
+    }
+
+    // Check the expected layout.
+    const test::ArrayLayout &expected_array_layout =
+        kArrayLayouts[array_layouts_ % kArrayLayouts.size()];
+
+    EXPECT_EQ(expected_array_layout.width, input->width());
+    EXPECT_EQ(expected_array_layout.height, input->height());
+    EXPECT_EQ(expected_array_layout.padding,
+              input->stride() - input->width() * sizeof(InputType));
+    EXPECT_EQ(expected_array_layout.channels, input->channels());
+
+    EXPECT_EQ(input->width(), output->width());
+    EXPECT_EQ(input->height(), output->height());
+    // NOTE: This is not expected.
+    // EXPECT_EQ(input->stride(), output->stride());
+    EXPECT_EQ(input->channels(), output->channels());
+
+    if (border_count_ == 0) {
+      ++array_layouts_;
+    }
+
+    // Fake some result.
+    output->fill(OutputType{0});
+  }
+
+ public:
+  static const std::array<test::Kernel<IntermediateType>, 2> kKernels;
+
+  static constexpr std::array<test::ArrayLayout, 3> kArrayLayouts = {{
+      {3, 2, 10, 1},
+      {6, 5, 11, 2},
+      {9, 7, 11, 3},
+  }};
+
+  static constexpr std::array<intrinsiccv_border_type_t, 4> kBorders = {
+      // NOTE: At the time of writing this test only replicate was implemented.
+      INTRINSICCV_BORDER_TYPE_REPLICATE,
+      INTRINSICCV_BORDER_TYPE_REPLICATE,
+      INTRINSICCV_BORDER_TYPE_REPLICATE,
+      INTRINSICCV_BORDER_TYPE_REPLICATE,
+  };
+
+  size_t api_calls_{0};
+  size_t array_layouts_{0};
+  size_t border_count_{0};
+};  // end of class class ExampleKernelTest<KernelTestParams>
+
+template <class KernelTestParams>
+const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 2>
+    ExampleKernelTest<KernelTestParams>::kKernels = {
+        test::Kernel{
+            test::Array2D<typename KernelTestParams::IntermediateType>{3, 3}},
+        test::Kernel{
+            test::Array2D<typename KernelTestParams::IntermediateType>{4, 4}},
+};
+
+/// Tests that KernelTest::test() works.
+TEST(KernelTest, Test) {
+  test::SequenceGenerator tested_kernels{
+      ExampleKernelTest<KernelTestParams>::kKernels};
+  test::SequenceGenerator tested_borders{
+      ExampleKernelTest<KernelTestParams>::kBorders};
+  test::SequenceGenerator tested_array_layouts{
+      ExampleKernelTest<KernelTestParams>::kArrayLayouts};
+  test::PseudoRandomNumberGenerator<typename KernelTestParams::InputType>
+      element_generator;
+
+  ExampleKernelTest<KernelTestParams> kernel_test;
+  kernel_test.test(&tested_kernels, &tested_array_layouts, &tested_borders,
+                   &element_generator);
+
+  EXPECT_EQ(kernel_test.api_calls_,
+            ExampleKernelTest<KernelTestParams>::kKernels.size() *
+                ExampleKernelTest<KernelTestParams>::kArrayLayouts.size() *
+                ExampleKernelTest<KernelTestParams>::kBorders.size());
+  EXPECT_EQ(kernel_test.array_layouts_,
+            ExampleKernelTest<KernelTestParams>::kKernels.size() *
+                ExampleKernelTest<KernelTestParams>::kArrayLayouts.size());
 }
