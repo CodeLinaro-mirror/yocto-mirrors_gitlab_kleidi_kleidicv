@@ -23,7 +23,7 @@ namespace test {
 
 /// A simple two-dimensional array representation.
 template <typename ElementType>
-class Array2D final : public TwoDimensional<ElementType> {
+class Array2D : public TwoDimensional<ElementType> {
  public:
   Array2D() = default;
 

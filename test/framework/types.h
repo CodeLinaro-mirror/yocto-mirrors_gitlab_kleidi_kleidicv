@@ -1,0 +1,21 @@
+// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef INTRINSICCV_TEST_FRAMEWORK_TYPES_H_
+#define INTRINSICCV_TEST_FRAMEWORK_TYPES_H_
+
+#include <cstddef>
+
+namespace test {
+
+/// Represents a point with two non-negative coordinates where 'x' is the
+/// horizontal and 'y' is the vertical component.
+struct Point {
+  size_t x;
+  size_t y;
+};  // end of struct Point
+
+}  // namespace test
+
+#endif  // INTRINSICCV_TEST_FRAMEWORK_TYPES_H_
