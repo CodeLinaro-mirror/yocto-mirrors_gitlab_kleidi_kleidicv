@@ -11,6 +11,7 @@
 #include <type_traits>
 
 #include "framework/abstract.h"
+#include "framework/types.h"
 
 #define INTRINSICCV_API(name, impl, type)                                     \
   template <typename ElementType,                                             \
@@ -76,6 +77,10 @@ class Options {
 /// Prints all the elements in a two-dimensional space.
 template <typename ElementType>
 void dump(const TwoDimensional<ElementType> *elements);
+
+/// Returns an array of default tested layouts.
+std::array<test::ArrayLayout, 12> default_array_layouts(size_t min_width,
+                                                        size_t min_height);
 
 }  // namespace test
 
