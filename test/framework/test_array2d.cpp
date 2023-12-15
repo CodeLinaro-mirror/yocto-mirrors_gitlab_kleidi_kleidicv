@@ -59,25 +59,16 @@ TEST(Array2D, MoveAssignment) {
 /// Tests that test::Array2D<T>.at() works for set/get.
 TEST(Array2D, At) {
   size_t width = 1, height = 1;
-  test::Array2D<uint32_t> array_1{width, height};
-  test::Array2D<uint32_t> array_2{width, height};
+  test::Array2D<uint32_t> array{width, height};
 
-  array_1.at(0, 0)[0] = 1;
-  EXPECT_EQ(array_1.at(0, 0)[0], 1);
+  array.at(0, 0)[0] = 1;
+  EXPECT_EQ(array.at(0, 0)[0], 1);
 
-  array_1.at(0, 0)[0] = 2;
-  EXPECT_EQ(array_1.at(0, 0)[0], 2);
+  array.at(0, 0)[0] = 2;
+  EXPECT_EQ(array.at(0, 0)[0], 2);
 
-  EXPECT_EQ(array_1.at(0, 1), nullptr);
-  EXPECT_EQ(array_1.at(1, 0), nullptr);
-  EXPECT_EQ(array_1.at(1, 1), nullptr);
-
-  // Constant array
   const test::Array2D<uint32_t> const_array{width, height};
-
-  EXPECT_EQ(const_array.at(0, 1), nullptr);
-  EXPECT_EQ(const_array.at(0, 1), nullptr);
-  EXPECT_EQ(const_array.at(0, 1), nullptr);
+  EXPECT_EQ(const_array.at(0, 0)[0], 0);
 }
 
 /// Tests that test::Array2D<T>.set() works.
@@ -303,13 +294,27 @@ TEST(Array2D, PaddingClobbered_LastRow_LastByte) {
                        "Padding byte was overwritten at (row=1, offset=29)");
 }
 
-/// Additional tests for coverage purposes.
-TEST(Array2D, Coverage) {
+static void Array2DCoverageBadAlloc() {
   test::Array2D<uint64_t> array{std::numeric_limits<size_t>::max(), 1};
   EXPECT_FALSE(array.valid());
+}
 
+static void Array2DCoverageSetInvalidArray() {
+  test::Array2D<uint64_t> array;
   array.set(0, 0, {});
+}
 
-  uint64_t* ptr_1 = array.at(0, 0);
-  EXPECT_EQ(ptr_1, nullptr);
+static void Array2DCoverageAtInvalidArray() {
+  test::Array2D<uint64_t> array;
+  array.at(0, 0);
+}
+
+/// Additional tests for coverage purposes.
+TEST(Array2D, Coverage) {
+  EXPECT_FATAL_FAILURE(Array2DCoverageBadAlloc(),
+                       "Failed to allocate memory of");
+  EXPECT_FATAL_FAILURE(Array2DCoverageSetInvalidArray(), "Array is invalid.");
+  EXPECT_FATAL_FAILURE(
+      Array2DCoverageAtInvalidArray(),
+      "Access is either out-of-bounds or the array is invalid.");
 }

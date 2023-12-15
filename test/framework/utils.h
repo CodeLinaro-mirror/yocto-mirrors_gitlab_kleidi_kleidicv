@@ -19,6 +19,15 @@
     return &impl;                                                             \
   }
 
+// Generates a fatal failure with a generic message, and returns with a given
+// value.
+#define TEST_FAIL_WITH(return_value, message)                          \
+  do {                                                                 \
+    GTEST_MESSAGE_("Failed", ::testing::TestPartResult::kFatalFailure) \
+        << message;                                                    \
+    return (return_value);                                             \
+  } while (0 != 0)
+
 namespace test {
 
 class Options {
