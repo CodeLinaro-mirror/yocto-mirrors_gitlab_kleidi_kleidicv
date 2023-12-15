@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023-2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -161,6 +161,35 @@ void INTRINSICCV_C_API(rgba_to_rgb_u8)(const uint8_t *src, size_t src_stride,
                                        uint8_t *dst, size_t dst_stride,
                                        size_t width, size_t height);
 
+/// Converts an NV12 or NV21 YUV image to RGB. All channels are 8-bit wide.
+///
+/// Destination data is filled liked this:
+/// | R,G,B | R,G,B | R,G,B | ...
+/// Where each letter represents one byte of data, and one pixel is represented
+/// by 3 bytes. There is no padding between the pixels.
+/// If 4-byte alignment is required then intrinsiccv_yuv_sp_to_rgba_u8 can be
+/// used.
+///
+/// @param src_y         Pointer to the input's Y component. Must be non-null.
+/// @param src_y_stride  Distance in bytes from the start of one row to the
+///                      start of the next row for the input's Y component.
+///                      Must not be less than width * sizeof(u8).
+/// @param src_uv        Pointer to the input's interleaved UV components.
+///                      Must be non-null. If the width parameter is odd, the
+///                      width of this input stream still needs to be even.
+/// @param src_uv_stride Distance in bytes from the start of one row to the
+///                      start of the next row for the input's UV components.
+///                      Must not be less than
+///                      __builtin_align_up(width, 2) * sizeof(u8).
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row for the destination data. Must
+///                      not be less than width * sizeof(type).
+/// @param width         How many pixels are in a row for the input & output.
+/// @param height        How many rows are in the input & output.
+/// @param is_nv21       If true, input is treated as NV21, otherwise treated
+///                      as NV12.
+///
 void INTRINSICCV_C_API(yuv_sp_to_rgb_u8)(const uint8_t *src_y,
                                          size_t src_y_stride,
                                          const uint8_t *src_uv,
@@ -168,6 +197,35 @@ void INTRINSICCV_C_API(yuv_sp_to_rgb_u8)(const uint8_t *src_y,
                                          size_t dst_stride, size_t width,
                                          size_t height, bool is_nv21);
 
+/// Converts an NV12 or NV21 YUV image to BGR. All channels are 8-bit wide.
+///
+/// Destination data is filled liked this:
+/// | B,G,R | B,G,R | B,G,R | ...
+/// Where each letter represents one byte of data, and one pixel is represented
+/// by 3 bytes. There is no padding between the pixels.
+/// If 4-byte alignment is required then intrinsiccv_yuv_sp_to_bgra_u8 can be
+/// used.
+///
+/// @param src_y         Pointer to the input's Y component. Must be non-null.
+/// @param src_y_stride  Distance in bytes from the start of one row to the
+///                      start of the next row for the input's Y component.
+///                      Must not be less than width * sizeof(u8).
+/// @param src_uv        Pointer to the input's interleaved UV components.
+///                      Must be non-null. If the width parameter is odd, the
+///                      width of this input stream still needs to be even.
+/// @param src_uv_stride Distance in bytes from the start of one row to the
+///                      start of the next row for the input's UV components.
+///                      Must not be less than
+///                      __builtin_align_up(width, 2) * sizeof(u8).
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row for the destination data. Must
+///                      not be less than width * sizeof(type).
+/// @param width         How many pixels are in a row for the input & output.
+/// @param height        How many rows are in the input & output.
+/// @param is_nv21       If true, input is treated as NV21, otherwise treated
+///                      as NV12.
+///
 void INTRINSICCV_C_API(yuv_sp_to_bgr_u8)(const uint8_t *src_y,
                                          size_t src_y_stride,
                                          const uint8_t *src_uv,
@@ -175,6 +233,34 @@ void INTRINSICCV_C_API(yuv_sp_to_bgr_u8)(const uint8_t *src_y,
                                          size_t dst_stride, size_t width,
                                          size_t height, bool is_nv21);
 
+/// Converts an NV12 or NV21 YUV image to RGBA. All channels are 8-bit wide.
+/// Alpha channel is set to 0xFF.
+///
+/// Destination data is filled liked this:
+/// | R,G,B,A | R,G,B,A | R,G,B,A | ...
+/// Where each letter represents one byte of data, and one pixel is represented
+/// by 4 bytes. There is no padding between the pixels.
+///
+/// @param src_y         Pointer to the input's Y component. Must be non-null.
+/// @param src_y_stride  Distance in bytes from the start of one row to the
+///                      start of the next row for the input's Y component.
+///                      Must not be less than width * sizeof(u8).
+/// @param src_uv        Pointer to the input's interleaved UV components.
+///                      Must be non-null. If the width parameter is odd, the
+///                      width of this input stream still needs to be even.
+/// @param src_uv_stride Distance in bytes from the start of one row to the
+///                      start of the next row for the input's UV components.
+///                      Must not be less than
+///                      __builtin_align_up(width, 2) * sizeof(u8).
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row for the destination data. Must
+///                      not be less than width * sizeof(type).
+/// @param width         How many pixels are in a row for the input & output.
+/// @param height        How many rows are in the input & output.
+/// @param is_nv21       If true, input is treated as NV21, otherwise treated
+///                      as NV12.
+///
 void INTRINSICCV_C_API(yuv_sp_to_rgba_u8)(const uint8_t *src_y,
                                           size_t src_y_stride,
                                           const uint8_t *src_uv,
@@ -182,6 +268,34 @@ void INTRINSICCV_C_API(yuv_sp_to_rgba_u8)(const uint8_t *src_y,
                                           size_t dst_stride, size_t width,
                                           size_t height, bool is_nv21);
 
+/// Converts an NV12 or NV21 YUV image to BGRA. All channels are 8-bit wide.
+/// Alpha channel is set to 0xFF.
+///
+/// Destination data is filled liked this:
+/// | B,G,R,A | B,G,R,A | B,G,R,A | ...
+/// Where each letter represents one byte of data, and one pixel is represented
+/// by 4 bytes. There is no padding between the pixels.
+///
+/// @param src_y         Pointer to the input's Y component. Must be non-null.
+/// @param src_y_stride  Distance in bytes from the start of one row to the
+///                      start of the next row for the input's Y component.
+///                      Must not be less than width * sizeof(u8).
+/// @param src_uv        Pointer to the input's interleaved UV components.
+///                      Must be non-null. If the width parameter is odd, the
+///                      width of this input stream still needs to be even.
+/// @param src_uv_stride Distance in bytes from the start of one row to the
+///                      start of the next row for the input's UV components.
+///                      Must not be less than
+///                      __builtin_align_up(width, 2) * sizeof(u8).
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row for the destination data. Must
+///                      not be less than width * sizeof(type).
+/// @param width         How many pixels are in a row for the input & output.
+/// @param height        How many rows are in the input & output.
+/// @param is_nv21       If true, input is treated as NV21, otherwise treated
+///                      as NV12.
+///
 void INTRINSICCV_C_API(yuv_sp_to_bgra_u8)(const uint8_t *src_y,
                                           size_t src_y_stride,
                                           const uint8_t *src_uv,
