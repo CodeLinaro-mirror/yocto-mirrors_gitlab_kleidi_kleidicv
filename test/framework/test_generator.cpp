@@ -4,6 +4,9 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
+#include <optional>
+
 #include "framework/generator.h"
 
 /// Tests test::PseudoRandomNumberGenerator::reset() works.
@@ -16,4 +19,19 @@ TEST(PseudoRandomNumberGenerator, Reset) {
   generator.reset();
   ElementType value = generator.next().value();
   EXPECT_EQ(initial_value, value);
+}
+
+/// Tests test::SequenceGenerator::reset() works.
+TEST(SequenceGenerator, Reset) {
+  using ElementType = uint8_t;
+
+  std::array<ElementType, 3> array{1, 2, 3};
+  test::SequenceGenerator generator{array};
+  EXPECT_EQ(generator.next().value(), 1);
+  EXPECT_EQ(generator.next().value(), 2);
+  EXPECT_EQ(generator.next().value(), 3);
+  EXPECT_EQ(generator.next(), std::nullopt);
+
+  generator.reset();
+  EXPECT_EQ(generator.next().value(), 1);
 }
