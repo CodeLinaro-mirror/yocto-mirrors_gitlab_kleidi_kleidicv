@@ -36,6 +36,16 @@ TEST(Array2D, Constructor) {
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
+/// Tests that the copy assignment operator of test::Array2D<T> works.
+TEST(Array2D, CopyAssignment) {
+  size_t width = 5, height = 5;
+  test::Array2D<uint32_t> array_1{width, height};
+
+  test::Array2D<uint32_t> array_2 = array_1;
+  EXPECT_EQ_ARRAY2D(array_1, array_2);
+  EXPECT_NE(array_1.data(), array_2.data());
+}
+
 /// Tests that the move assignment operator of test::Array2D<T> works.
 TEST(Array2D, MoveAssignment) {
   size_t width = 5, height = 5, channels = 3;

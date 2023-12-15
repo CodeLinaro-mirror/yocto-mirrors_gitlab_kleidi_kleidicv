@@ -45,13 +45,27 @@ class Array2D final : public TwoDimensional<ElementType> {
   ~Array2D() { check_padding(); }
 
   /// Copy constructor.
-  Array2D(const Array2D &other) = delete;
+  Array2D(const Array2D &other) { this->operator=(other); }
 
   /// Move constructor.
   Array2D(Array2D &&other) { this->operator=(other); }
 
   /// Copy assignment operator.
-  Array2D &operator=(const Array2D &other) = delete;
+  Array2D &operator=(const Array2D &other) {
+    width_ = other.width_;
+    height_ = other.height_;
+    channels_ = other.channels_;
+    stride_ = other.stride_;
+
+    try_allocate();
+
+    EXPECT_TRUE(valid());
+    if (valid()) {
+      std::memcpy(data_.get(), other.data_.get(), height_ * stride_);
+    }
+
+    return *this;
+  }
 
   /// Move assignment operator.
   Array2D &operator=(Array2D &&other) {
