@@ -5,9 +5,11 @@
 #include <gtest/gtest-spi.h>
 #include <gtest/gtest.h>
 
+#include <array>
 #include <utility>
 
 #include "framework/array.h"
+#include "framework/generator.h"
 #include "framework/utils.h"
 
 /// Tests that the default constructor of test::Array2D<T> default constructor
@@ -120,7 +122,7 @@ TEST(Array2D, Fill) {
   test::Array2D<uint32_t> array_1{width, height};
   test::Array2D<uint32_t> array_2{width, height};
 
-  array_1.fill(0);
+  array_1.fill(uint32_t{0});
   for (size_t row = 0; row < height; ++row) {
     for (size_t column = 0; column < width; ++column) {
       EXPECT_EQ(array_1.at(row, column)[0], 0);
@@ -133,6 +135,25 @@ TEST(Array2D, Fill) {
       EXPECT_EQ(array_1.at(row, column)[0], 42);
     }
   }
+}
+
+/// Tests that test::Array2D<T>.fill(Generator<T> *) works.
+TEST(Array2D, FillWithGenerator) {
+  using ElementType = uint32_t;
+
+  const size_t width = 3, height = 2;
+  test::Array2D<ElementType> array{width, height};
+
+  const size_t num_elements = width * height;
+  std::array<ElementType, num_elements> elements = {11, 12, 13, 14, 15, 16};
+  test::SequenceGenerator generator{elements};
+  array.fill(&generator);
+  EXPECT_EQ(array.at(0, 0)[0], 11);
+  EXPECT_EQ(array.at(0, 1)[0], 12);
+  EXPECT_EQ(array.at(0, 2)[0], 13);
+  EXPECT_EQ(array.at(1, 0)[0], 14);
+  EXPECT_EQ(array.at(1, 1)[0], 15);
+  EXPECT_EQ(array.at(1, 2)[0], 16);
 }
 
 /// Tests that EXPECT_EQ_ARRAY2D() macro works for fully-equal objects.

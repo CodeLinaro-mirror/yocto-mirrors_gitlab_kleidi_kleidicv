@@ -97,6 +97,24 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
+  /// Fills the underlying memory range with a given generator skipping padding
+  /// bytes.
+  void fill(Generator<ElementType> *generator) {
+    ASSERT_NE(generator, nullptr);
+    ASSERT_EQ(valid(), true);
+
+    ElementType *ptr = data();
+    for (size_t row = 0; row < height(); ++row) {
+      for (size_t column = 0; column < width(); ++column) {
+        std::optional<ElementType> optional_value = generator->next();
+        ASSERT_NE(optional_value, std::nullopt);
+        ptr[column] = optional_value.value();
+      }
+
+      ptr = add_stride(ptr, 1);
+    }
+  }
+
   /// Sets values in a row starting at a given column.
   void set(size_t row, size_t column,
            std::initializer_list<ElementType> values) {
