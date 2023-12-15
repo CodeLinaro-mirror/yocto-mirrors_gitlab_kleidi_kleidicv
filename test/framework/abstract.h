@@ -33,6 +33,24 @@ class TwoDimensional {
   virtual const ElementType *at(size_t row, size_t column) const = 0;
 };  // end of class TwoDimensional<ElementType>
 
+/// Interface for objects which have a border.
+class Bordered {
+ public:
+  virtual ~Bordered() = default;
+
+  /// Returns left border width.
+  virtual size_t left() const = 0;
+
+  /// Returns top border height.
+  virtual size_t top() const = 0;
+
+  /// Returns right border width.
+  virtual size_t right() const = 0;
+
+  /// Returns bottom border height.
+  virtual size_t bottom() const = 0;
+};  // end of class Bordered
+
 }  // namespace test
 
 #endif  // INTRINSICCV_TEST_FRAMEWORK_ABSTRACT_H_

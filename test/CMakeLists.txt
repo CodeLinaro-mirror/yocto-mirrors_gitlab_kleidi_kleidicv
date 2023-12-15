@@ -15,6 +15,7 @@ set(INTRINSICCV_WARNING_FLAGS
 )
 
 set(INTRINSICCV_TEST_FRAMEWORK_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/framework/border.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/test_main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/utils.cpp
 )
