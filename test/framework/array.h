@@ -132,6 +132,25 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
+  /// Sets values starting in a given row starting at a given column.
+  ///
+  /// The layout of the input TwoDimensional object is not altered, meaning that
+  /// it must fit as-is at the given row and column position into the array.
+  void set(size_t row, size_t column,
+           const TwoDimensional<ElementType> *elements) {
+    ASSERT_NE(elements, nullptr);
+    ASSERT_GE(width(), column);
+    ASSERT_GE(height(), row);
+    ASSERT_GE(width() - column, elements->width());
+    ASSERT_GE(height() - row, elements->height());
+
+    for (size_t row_offset = 0; row_offset < elements->height(); ++row_offset) {
+      const ElementType *src = elements->at(row_offset, 0);
+      ElementType *dst = at(row + row_offset, column);
+      std::memcpy(dst, src, elements->width() * sizeof(ElementType));
+    }
+  }
+
   /// Compares two instances for equality considering only element bytes.
   /// Returns the location of the first mismatch, if any.
   std::optional<std::tuple<size_t, size_t>> compare_to(

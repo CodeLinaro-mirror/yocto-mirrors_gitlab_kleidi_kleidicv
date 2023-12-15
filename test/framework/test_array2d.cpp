@@ -116,6 +116,67 @@ TEST(Array2D, Set) {
   EXPECT_EQ(array_1.at(1, 0)[0], 11);
 }
 
+/// Tests that test::Array2D<T>.set() works for TwoDimensional instances.
+TEST(Array2D, SetWithTwoDimensional) {
+  using ElementType = uint32_t;
+
+  // array_1:
+  //  0 1 2
+  //  3 4 5
+  //  6 7 8
+  test::Array2D<ElementType> array_1{3, 3};
+  array_1.set(0, 0, {0, 1, 2});
+  array_1.set(1, 0, {3, 4, 5});
+  array_1.set(2, 0, {6, 7, 8});
+
+  // array_2:
+  //  9 9 9 9 9
+  //  9 9 9 9 9
+  //  9 9 9 9 9
+  //  9 9 9 9 9
+  //  9 9 9 9 9
+  test::Array2D<ElementType> array_2{5, 5};
+  array_2.fill(9);
+
+  // Expected array_2:
+  //  9 9 9 9 9
+  //  9 9 0 1 2
+  //  9 9 3 4 5
+  //  9 9 6 7 8
+  //  9 9 9 9 9
+  array_2.set(1, 2, &array_1);
+
+  EXPECT_EQ(array_2.at(0, 0)[0], 9);
+  EXPECT_EQ(array_2.at(0, 1)[0], 9);
+  EXPECT_EQ(array_2.at(0, 2)[0], 9);
+  EXPECT_EQ(array_2.at(0, 3)[0], 9);
+  EXPECT_EQ(array_2.at(0, 4)[0], 9);
+
+  EXPECT_EQ(array_2.at(1, 0)[0], 9);
+  EXPECT_EQ(array_2.at(1, 1)[0], 9);
+  EXPECT_EQ(array_2.at(1, 2)[0], 0);
+  EXPECT_EQ(array_2.at(1, 3)[0], 1);
+  EXPECT_EQ(array_2.at(1, 4)[0], 2);
+
+  EXPECT_EQ(array_2.at(2, 0)[0], 9);
+  EXPECT_EQ(array_2.at(2, 1)[0], 9);
+  EXPECT_EQ(array_2.at(2, 2)[0], 3);
+  EXPECT_EQ(array_2.at(2, 3)[0], 4);
+  EXPECT_EQ(array_2.at(2, 4)[0], 5);
+
+  EXPECT_EQ(array_2.at(3, 0)[0], 9);
+  EXPECT_EQ(array_2.at(3, 1)[0], 9);
+  EXPECT_EQ(array_2.at(3, 2)[0], 6);
+  EXPECT_EQ(array_2.at(3, 3)[0], 7);
+  EXPECT_EQ(array_2.at(3, 4)[0], 8);
+
+  EXPECT_EQ(array_2.at(4, 0)[0], 9);
+  EXPECT_EQ(array_2.at(4, 1)[0], 9);
+  EXPECT_EQ(array_2.at(4, 2)[0], 9);
+  EXPECT_EQ(array_2.at(4, 3)[0], 9);
+  EXPECT_EQ(array_2.at(4, 4)[0], 9);
+}
+
 /// Tests that test::Array2D<T>.fill() works.
 TEST(Array2D, Fill) {
   size_t width = 5, height = 2;
