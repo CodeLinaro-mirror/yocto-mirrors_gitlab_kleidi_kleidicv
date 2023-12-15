@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "framework/abstract.h"
+#include "framework/types.h"
 #include "framework/utils.h"
 
 namespace test {
@@ -31,6 +32,9 @@ class Array2D : public TwoDimensional<ElementType> {
 
   explicit Array2D(size_t width, size_t height, size_t padding)
       : Array2D(width, height, padding, 1) {}
+
+  explicit Array2D(ArrayLayout layout)
+      : Array2D(layout.width, layout.height, layout.padding, layout.channels) {}
 
   explicit Array2D(size_t width, size_t height, size_t padding, size_t channels)
       : width_{width},

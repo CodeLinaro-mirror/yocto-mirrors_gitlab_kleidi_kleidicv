@@ -16,6 +16,14 @@ struct Point {
   size_t y;
 };  // end of struct Point
 
+/// Describes the layout of a two-dimensional array.
+struct ArrayLayout {
+  size_t width;
+  size_t height;
+  size_t padding;
+  size_t channels;
+};  // end of struct ArrayLayout
+
 }  // namespace test
 
 #endif  // INTRINSICCV_TEST_FRAMEWORK_TYPES_H_

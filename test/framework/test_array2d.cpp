@@ -36,6 +36,20 @@ TEST(Array2D, Constructor) {
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
+/// Tests that test::Array2D<T> is constructible with test::ArrayLayout.
+TEST(Array2D, ConstructFromArrayLayout) {
+  using ElementType = uint32_t;
+
+  size_t width = 1, height = 2, padding = 3, channels = 4;
+  test::ArrayLayout layout{width, height, padding, channels};
+  test::Array2D<ElementType> array{layout};
+  EXPECT_EQ(array.width(), width);
+  EXPECT_EQ(array.height(), height);
+  EXPECT_EQ(array.channels(), channels);
+  EXPECT_EQ(array.stride(), width * sizeof(ElementType) + padding);
+  EXPECT_TRUE(array.valid());
+}
+
 /// Tests that the copy assignment operator of test::Array2D<T> works.
 TEST(Array2D, CopyAssignment) {
   size_t width = 5, height = 5;
