@@ -6,6 +6,7 @@
 #define INTRINSICCV_TEST_FRAMEWORK_ABSTRACT_H_
 
 #include <cstddef>
+#include <optional>
 
 namespace test {
 
@@ -50,6 +51,19 @@ class Bordered {
   /// Returns bottom border height.
   virtual size_t bottom() const = 0;
 };  // end of class Bordered
+
+/// Interface for objects which generate some values.
+template <typename ElementType>
+class Generator {
+ public:
+  virtual ~Generator() = default;
+
+  /// Resets the generator to its initial state.
+  virtual void reset() {}
+
+  /// Yields the next value or std::nullopt.
+  virtual std::optional<ElementType> next() = 0;
+};  // end of class Generator<ElementType>
 
 }  // namespace test
 
