@@ -10,7 +10,7 @@
 #include <iostream>
 #include <type_traits>
 
-#define INTINSICCV_API(name, impl, type)                                      \
+#define INTRINSICCV_API(name, impl, type)                                     \
   template <typename ElementType,                                             \
             std::enable_if_t<std::is_same_v<ElementType, type>, bool> = true> \
   static decltype(auto) name() {                                              \

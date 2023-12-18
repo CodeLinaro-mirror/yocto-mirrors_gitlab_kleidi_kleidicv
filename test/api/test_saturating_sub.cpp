@@ -9,17 +9,17 @@
 
 #include "framework/operation.h"
 
-#define INTINSICCV_SATURATING_SUB(type, suffix) \
-  INTINSICCV_API(saturating_sub, intrinsiccv_saturating_sub_##suffix, type)
+#define INTRINSICCV_SATURATING_SUB(type, suffix) \
+  INTRINSICCV_API(saturating_sub, intrinsiccv_saturating_sub_##suffix, type)
 
-INTINSICCV_SATURATING_SUB(int8_t, s8);
-INTINSICCV_SATURATING_SUB(uint8_t, u8);
-INTINSICCV_SATURATING_SUB(int16_t, s16);
-INTINSICCV_SATURATING_SUB(uint16_t, u16);
-INTINSICCV_SATURATING_SUB(int32_t, s32);
-INTINSICCV_SATURATING_SUB(uint32_t, u32);
-INTINSICCV_SATURATING_SUB(int64_t, s64);
-INTINSICCV_SATURATING_SUB(uint64_t, u64);
+INTRINSICCV_SATURATING_SUB(int8_t, s8);
+INTRINSICCV_SATURATING_SUB(uint8_t, u8);
+INTRINSICCV_SATURATING_SUB(int16_t, s16);
+INTRINSICCV_SATURATING_SUB(uint16_t, u16);
+INTRINSICCV_SATURATING_SUB(int32_t, s32);
+INTRINSICCV_SATURATING_SUB(uint32_t, u32);
+INTRINSICCV_SATURATING_SUB(int64_t, s64);
+INTRINSICCV_SATURATING_SUB(uint64_t, u64);
 
 template <typename ElementType>
 class SaturatingSubTest final : public BinaryOperationTest<ElementType> {

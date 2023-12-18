@@ -9,15 +9,15 @@
 
 #include "framework/operation.h"
 
-#define INTINSICCV_SATURATING_ABSDIFF(type, suffix)                           \
-  INTINSICCV_API(saturating_absdiff, intrinsiccv_saturating_absdiff_##suffix, \
-                 type)
+#define INTRINSICCV_SATURATING_ABSDIFF(type, suffix)                           \
+  INTRINSICCV_API(saturating_absdiff, intrinsiccv_saturating_absdiff_##suffix, \
+                  type)
 
-INTINSICCV_SATURATING_ABSDIFF(int8_t, s8);
-INTINSICCV_SATURATING_ABSDIFF(uint8_t, u8);
-INTINSICCV_SATURATING_ABSDIFF(int16_t, s16);
-INTINSICCV_SATURATING_ABSDIFF(uint16_t, u16);
-INTINSICCV_SATURATING_ABSDIFF(int32_t, s32);
+INTRINSICCV_SATURATING_ABSDIFF(int8_t, s8);
+INTRINSICCV_SATURATING_ABSDIFF(uint8_t, u8);
+INTRINSICCV_SATURATING_ABSDIFF(int16_t, s16);
+INTRINSICCV_SATURATING_ABSDIFF(uint16_t, u16);
+INTRINSICCV_SATURATING_ABSDIFF(int32_t, s32);
 
 template <typename ElementType>
 class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
