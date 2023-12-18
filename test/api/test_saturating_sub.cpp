@@ -77,11 +77,7 @@ class SaturatingSubTest final : public BinaryOperationTest<ElementType> {
 };  // end of class SaturatingSubTest<ElementType>
 
 template <typename ElementType>
-class SaturatingSub : public testing::Test {
- public:
-  /// Dummy value, only used to get the type.
-  ElementType value_;
-};  // end of class SaturatingSub<ElementType>
+class SaturatingSub : public testing::Test {};
 
 using ElementTypes = ::testing::Types<int8_t, uint8_t, int16_t, uint16_t,
                                       int32_t, uint32_t, int64_t, uint64_t>;
@@ -89,11 +85,10 @@ TYPED_TEST_SUITE(SaturatingSub, ElementTypes);
 
 /// Tests \ref intrinsiccv_saturating_sub_<type> API.
 TYPED_TEST(SaturatingSub, API) {
-  using ElementType = decltype(this->value_);
   // Test without padding.
-  SaturatingSubTest<ElementType>{}.test();
+  SaturatingSubTest<TypeParam>{}.test();
   // Test with padding.
-  SaturatingSubTest<ElementType>{}
+  SaturatingSubTest<TypeParam>{}
       .with_padding(test::Options::vector_length())
       .test();
 }
