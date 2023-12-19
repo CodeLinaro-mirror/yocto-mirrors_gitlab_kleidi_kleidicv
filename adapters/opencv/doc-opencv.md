@@ -1,0 +1,140 @@
+<!--
+SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Functionality exposed to OpenCV via adapter layer
+
+### `gray_to_bgr`
+Converts grayscale images to RGB or RGBA.
+
+Notes on parameters:
+* `depth` - only supports `CV_8U` depth.
+* `dcn` - Destination Channel Number. Supports 3 for RGB, 4 for RGBA
+
+### `bgr_to_bgr`
+RGB to RGB/RGBA image conversion. All supported permutations listed in the table below.
+|     | RGB | BGR | RGBA | BGRA |
+|-----|-----|-----|------|------|
+| RGB |  x  |  x  |   x  |   x  |
+| BGR |  x  |  x  |   x  |   x  |
+| RGBA|  x  |  x  |   x  |   x  |
+| BGRA|  x  |  x  |   x  |   x  |
+
+Notes on parameters:
+* `depth` - only supports `CV_8U` depth.
+* `scn` - Source Channel Number. Supports 3 for RGB and 4 for RGBA
+* `dcn` - Destination Channel Number. Supports 3 for RGB and 4 for RGBA
+* `swapBlue` - toggles destination channel order.
+
+### `yuv_to_bgr_ex`
+YUV to RGB/RGBA image conversion. Function accepts Y plane and UV planes separately.\
+All supported permutations listed in the table below.
+|   | RGB | BGR | RGBA | BGRA |
+|---|-----|-----|------|------|
+|YUV|  x  |  x  |   x  |  x   |
+
+Notes on parameters:
+* `dcn` - Destination Channel Number. Supports 3 for RGB and 4 for RGBA
+* `swapBlue` - toggles destination channels order.
+* `uIdx` - sets particular YUV format. NV12 (`uIdx = 0`) and NV21 (`uIdx != 0`) are supported.
+
+### `yuv_to_bgr`
+Wrapper for [`yuv_to_bgr_ex`](#yuv_to_bgr_ex) that accepts YUV as a single buffer.
+
+### `threshold`
+Binary threshold operation that would apply `maxValue` to any element above threshold, and set the rest to zero.
+
+Notes on parameters:
+* `depth` - only supports `CV_8U` depth.
+* `thresh` - threshold value elements will be compared against.
+* `maxValue` - value that elements above `thresh` will be set to.
+* `thresholdType` - currently only binary threshold operation is supported ([cv::THRESH_BINARY](https://docs.opencv.org/5.x/d7/d1b/group__imgproc__misc.html#gaa9e58d2860d4afa658ef70a9b1115576)).
+
+### `gaussian_blur`
+Blurs an image using a Gaussian filter.\
+Currently does not support non-zero margins. Kernel shape is restricted to square (`kernel  width == kernel height`). Kernel standard deviation cannot be customized via `sigmaX` and `sigmaY` and is calculated based on kernel size.
+
+Notes on parameters:
+* `depth` - only supports `CV_8U` depth.
+* `width`,`height` - Image width and height should be greater than or equal to the size of the kernel in the given direction.
+* `ksize_width == ksize_height` - kernel size. Only 3x3 and 5x5 kernels are supported.
+* `border_type` - pixel extrapolation method.
+Supported [OpenCV border types](https://docs.opencv.org/5.x/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
+  + `cv::BORDER_REPLICATE`
+  + `cv::BORDER_REFLECT`
+  + `cv::BORDER_WRAP`
+  + `cv::BORDER_REFLECT_101`
+
+### `morphology_init`
+Initialize parameters for [`morphology_operation`](#morphology_operation) and populate `context`.
+
+Notes on parameters:
+* `operation` - erode and dilate operations are supported. See [OpenCV definitions](https://docs.opencv.org/5.x/d4/d86/group__imgproc__filter.html#ga7be549266bad7b2e6a04db49827f9f32).
+* `src_type/dst_type/kernel_type` - type of source, destination and kernel. Only `CV_8U` depth is supported.
+* `border_type` - only constant border type is supported.
+* `allow_submatrix` - not supported.
+* `allow_in_place` - not supported.
+
+### `morphology_operation`
+Perform morphology operation set up by [`morphology_init`](#morphology_init) on a source buffer and put result in destination buffer.
+
+Notes on parameters:\
+Only parameters set by `morphology_init` will be used in operation. Parameters taken into account by the operation:
+* `context` - initialized using `morphology_init`.
+* `src_data`, `src_step`
+* `dst_data`, `dst_step`
+* `height`, `width`
+
+The rest of parameters for `morphology_operation` function are currently not supported.
+
+### `morphology_free`
+Release context set up by [`morphology_init`](#morphology_init).
+
+### `sobel`
+Applies Sobel gradient filter to a given image.
+
+Notes on parameters:
+* In-place operation not supported.
+* `src_depth` - only supports `CV_8U` depth.
+* `dst_depth` - only supports `CV_16U` depth.
+* `width`,`height` - image width and height should be `>=3`.
+* `ksize` - only kernel 3x3 is supported.
+* `scale` - scaling is not supported (`1.0`).
+* `delta` - delta value is not supported.
+* `border_type` - [`cv::BORDER_REPLICATE`](https://docs.opencv.org/5.x/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) is supported.
+* margins are not supported.
+* `dx`,`dy` - either vertical `{dx,dy} == {0,1}` or horizontal `{dx,dy == 1,0` operation is supported.
+
+### `canny`
+Apply Canny edge detection filter to a given image.
+
+Notes on parameters:
+* `ksize` - only kernel 3x3 is supported.
+* `L2gradient` - only default L1 norm is supported (`false`).
+* `cn` - channel count, only one channel is supported (`1`).
+
+### `transpose`
+Transposes a matrix.
+
+Notes on parameters:
+* In-place transpose is only supported for square matrixes. (`src_width == src_height`)
+* `element_size` - supported source/destination sizes
+  + `uint8_t`
+  + `uint16_t`
+
+### `min_max_idx`
+Finds the minimum and maximum element values and their positions.
+
+Notes on parameters:
+* `minIdx`,`maxIdx` - only supported for `depth == CV_8U`
+* `depth` - supported element size (without specifying index):
+  + `CV_8S`
+  + `CV_8U`
+  + `CV_16S`
+  + `CV_16U`
+  + `CV_32S`
+
+### `convertTo`
+Currently converting to different data types is not supported. This function scales given input of `src_depth == CV_8U` using `scale` and `shift`.

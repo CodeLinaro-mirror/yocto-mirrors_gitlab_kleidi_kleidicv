@@ -19,8 +19,8 @@ variety of projects.
 
 Library provides a C interface.
 
-Adapter is provided currently to:
-* OpenCV
+Adapter layer API is currently provided for:
+* OpenCV - [available functionality overview](adapters/opencv/doc-opencv.md)
 
 # Structure
 
