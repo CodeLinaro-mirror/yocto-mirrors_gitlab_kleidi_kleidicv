@@ -20,6 +20,29 @@ extern "C" {
                                type *dst, size_t dst_stride, size_t width, \
                                size_t height __VA_OPT__(, ) __VA_ARGS__)
 
+/// Adds the values of the corresponding elements in `src_a` and `src_b`, and
+/// puts the result into `dst`.
+///
+/// The addition is saturated, i.e. the result is the largest number of the
+/// type of the element if the addition result would overflow. Source data
+/// length (in bytes) is `stride` * `height`, it must be the same for the two
+/// sources.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_a_stride Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(type).
+/// @param src_b_stride Distance in bytes between the row first elements for
+///                     the second source data. Must not be less than
+///                     width * sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(type).
+/// @param width        How many elements are in a row
+/// @param height       How many rows are in the data
+///
 INTRINSICCV_BINARY_OP(saturating_add_s8, int8_t);
 INTRINSICCV_BINARY_OP(saturating_add_u8, uint8_t);
 INTRINSICCV_BINARY_OP(saturating_add_s16, int16_t);
@@ -29,6 +52,29 @@ INTRINSICCV_BINARY_OP(saturating_add_u32, uint32_t);
 INTRINSICCV_BINARY_OP(saturating_add_s64, int64_t);
 INTRINSICCV_BINARY_OP(saturating_add_u64, uint64_t);
 
+/// Subtracts the value of the corresponding element in `src_b` from `src_a`,
+/// and puts the result into `dst`.
+///
+/// The subtraction is saturated, i.e. the result is 0 (unsigned) or the
+/// smallest possible value of the type of the element if the subtraction result
+/// would underflow. Source data length (in bytes) is `stride` * `height`,
+/// it must be the same for the two sources.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_a_stride Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(type).
+/// @param src_b_stride Distance in bytes between the row first elements for
+///                     the second source data. Must not be less than
+///                     width * sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(type).
+/// @param width        How many elements are in a row
+/// @param height       How many rows are in the data
+///
 INTRINSICCV_BINARY_OP(saturating_sub_s8, int8_t);
 INTRINSICCV_BINARY_OP(saturating_sub_u8, uint8_t);
 INTRINSICCV_BINARY_OP(saturating_sub_s16, int16_t);
@@ -38,6 +84,29 @@ INTRINSICCV_BINARY_OP(saturating_sub_u32, uint32_t);
 INTRINSICCV_BINARY_OP(saturating_sub_s64, int64_t);
 INTRINSICCV_BINARY_OP(saturating_sub_u64, uint64_t);
 
+/// From the corresponding elements in `src_a` and `src_b`, subtracts the lower
+/// one from the higher one, and puts the result into `dst`.
+///
+/// The subtraction is saturated, i.e. the result is the largest number of the
+/// type of the element if the result would overflow (it is only possible with
+/// signed types). Source data length (in bytes) is `stride` * `height`, it
+/// must be the same for the two sources.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_a_stride Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(type).
+/// @param src_b_stride Distance in bytes between the row first elements for
+///                     the second source data. Must not be less than
+///                     width * sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(type).
+/// @param width        How many elements are in a row
+/// @param height       How many rows are in the data
+///
 INTRINSICCV_BINARY_OP(saturating_absdiff_u8, uint8_t);
 INTRINSICCV_BINARY_OP(saturating_absdiff_s8, int8_t);
 INTRINSICCV_BINARY_OP(saturating_absdiff_u16, uint16_t);
