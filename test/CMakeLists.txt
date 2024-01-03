@@ -21,9 +21,11 @@ set(INTRINSICCV_TEST_FRAMEWORK_SOURCES
 )
 
 include(FetchContent)
+# Please update SECURITY.md if adding, removing or changing the version of third party content.
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/release-1.12.1.tar.gz
+  URL_HASH SHA256=81964fe578e9bd7c94dfdb09c8e4d6e6759e19967e397dbea48d1c10e45d0df2
   # Disable death test feature otherwise tests may crash when run under emulation.
   PATCH_COMMAND cd <SOURCE_DIR> && patch --strip=1 --input=${CMAKE_CURRENT_SOURCE_DIR}/patches/googletest.patch
 )
