@@ -210,6 +210,15 @@ void INTRINSICCV_C_API(erode_u8)(const uint8_t *src, size_t src_stride,
                                  size_t height,
                                  const intrinsiccv_morphology_params_t *params);
 
+/// Counts how many nonzero elements are in the source data.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes between the row first elements for
+///                     the source data. Must not be less than
+///                     width * sizeof(type).
+/// @param width        How many elements are in a row
+/// @param height       How many rows are in the data
+///
 size_t INTRINSICCV_C_API(count_nonzeros_u8)(const uint8_t *src,
                                             size_t src_stride, size_t width,
                                             size_t height);
