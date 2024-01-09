@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023-2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -17,13 +17,13 @@ if (INTRINSICCV_ENABLE_SVE2 AND INTRINSICCV_ENABLE_SVE2_SELECTIVELY)
   message(FATAL_ERROR "[IntrinsicCV] INTRINSICCV_ENABLE_SVE2 and INTRINSICCV_ENABLE_SVE2_SELECTIVELY cannot be set at the same time")
 endif()
 
-set(INTRINSICCV_BUILD_SVE2, INTRINSICCV_ENABLE_SVE2 OR INTRINSICCV_ENABLE_SVE2_SELECTIVELY)
-
-if (INTRINSICCV_BUILD_SVE2)
+set(INTRINSICCV_BUILD_SVE2 OFF)
+if (INTRINSICCV_ENABLE_SVE2 OR INTRINSICCV_ENABLE_SVE2_SELECTIVELY)
   check_cxx_compiler_flag("-march=armv8-a+sve2" INTRINSICCV_COMPILER_SUPPORTS_SVE2)
   if (NOT INTRINSICCV_COMPILER_SUPPORTS_SVE2)
-    set(INTRINSICCV_BUILD_SVE2 OFF)
     message(STATUS "[IntrinsicCV] Compiler does not support SVE2")
+  else()
+    set(INTRINSICCV_BUILD_SVE2 ON)
   endif()
 endif()
 
