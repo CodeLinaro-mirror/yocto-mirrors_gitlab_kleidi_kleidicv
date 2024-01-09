@@ -87,7 +87,7 @@ TEST(Border, Replicate_1Ch_2Elements) {
 TEST(Border, Replicate_2Ch_1Element) {
   using ElementType = uint8_t;
 
-  const size_t width = 8, height = 5, channels = 2;
+  const size_t width = 4, height = 5, channels = 2;
 
   test::Array2D<ElementType> actual{width, height, 0, channels};
   actual.set(0, 0, {0, 0, 0, 0, 0, 0, 0, 0});
@@ -114,7 +114,7 @@ TEST(Border, Replicate_2Ch_1Element) {
 TEST(Border, Replicate_2Ch_2Elements) {
   using ElementType = uint8_t;
 
-  const size_t width = 12, height = 6, channels = 2;
+  const size_t width = 6, height = 6, channels = 2;
 
   test::Array2D<ElementType> actual{width, height, 0, channels};
   actual.set(0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});

@@ -186,8 +186,7 @@ class KernelTest {
     ASSERT_TRUE(actual_.valid());
 
     input_with_borders_ = Array2D<InputType>{
-        array_layout.width +
-            (kernel.left() + kernel.right()) * array_layout.channels,
+        array_layout.width + (kernel.left() + kernel.right()),
         array_layout.height + kernel.top() + kernel.bottom(), 0,
         array_layout.channels};
     ASSERT_TRUE(input_with_borders_.valid());

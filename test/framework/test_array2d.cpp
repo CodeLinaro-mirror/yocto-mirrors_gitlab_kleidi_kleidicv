@@ -45,10 +45,10 @@ TEST(Array2D, ConstructFromArrayLayout) {
   size_t width = 1, height = 2, padding = 3, channels = 4;
   test::ArrayLayout layout{width, height, padding, channels};
   test::Array2D<ElementType> array{layout};
-  EXPECT_EQ(array.width(), width);
+  EXPECT_EQ(array.width(), width * channels);
   EXPECT_EQ(array.height(), height);
   EXPECT_EQ(array.channels(), channels);
-  EXPECT_EQ(array.stride(), width * sizeof(ElementType) + padding);
+  EXPECT_EQ(array.stride(), width * sizeof(ElementType) * channels + padding);
   EXPECT_TRUE(array.valid());
 }
 
@@ -69,10 +69,10 @@ TEST(Array2D, MoveAssignment) {
   test::Array2D<uint32_t> array_2;
 
   array_2 = std::move(array_1);
-  EXPECT_EQ(array_2.width(), width);
+  EXPECT_EQ(array_2.width(), width * channels);
   EXPECT_EQ(array_2.height(), height);
   EXPECT_EQ(array_2.channels(), channels);
-  EXPECT_EQ(array_2.stride(), width * sizeof(uint32_t));
+  EXPECT_EQ(array_2.stride(), width * sizeof(uint32_t) * channels);
   EXPECT_TRUE(array_2.valid());
 
   EXPECT_EQ(array_1.width(), 0);
@@ -270,7 +270,7 @@ TEST(Array2D, ExpectEq_NotEqual_Channels) {
   struct Test {
     static void test() {
       size_t width = 5, height = 2;
-      test::Array2D<uint32_t> array_1{width, height, 0, 1};
+      test::Array2D<uint32_t> array_1{width * 2, height, 0, 1};
       test::Array2D<uint32_t> array_2{width, height, 0, 2};
       EXPECT_EQ_ARRAY2D(array_1, array_2);
     }
@@ -346,7 +346,7 @@ TEST(Array2D, ExpectNe_NotEqual_Channels) {
   struct Test {
     static void test() {
       size_t width = 5, height = 2;
-      test::Array2D<uint32_t> array_1{width, height, 0, 1};
+      test::Array2D<uint32_t> array_1{width * 2, height, 0, 1};
       test::Array2D<uint32_t> array_2{width, height, 0, 2};
       EXPECT_NE_ARRAY2D(array_1, array_2);
     }

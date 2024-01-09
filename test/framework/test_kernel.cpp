@@ -108,7 +108,7 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
     const test::ArrayLayout &expected_array_layout =
         kArrayLayouts[array_layouts_ % kArrayLayouts.size()];
 
-    EXPECT_EQ(expected_array_layout.width, input->width());
+    EXPECT_EQ(expected_array_layout.width * input->channels(), input->width());
     EXPECT_EQ(expected_array_layout.height, input->height());
     EXPECT_EQ(expected_array_layout.padding,
               input->stride() - input->width() * sizeof(InputType));

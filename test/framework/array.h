@@ -37,10 +37,10 @@ class Array2D : public TwoDimensional<ElementType> {
       : Array2D(layout.width, layout.height, layout.padding, layout.channels) {}
 
   explicit Array2D(size_t width, size_t height, size_t padding, size_t channels)
-      : width_{width},
+      : width_{width * channels},
         height_{height},
         channels_{channels},
-        stride_{width * sizeof(ElementType) + padding} {
+        stride_{width * sizeof(ElementType) * channels + padding} {
     try_allocate();
     fill_padding();
   }
