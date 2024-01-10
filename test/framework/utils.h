@@ -5,6 +5,7 @@
 #ifndef INTRINSICCV_TEST_FRAMEWORK_UTILS_H_
 #define INTRINSICCV_TEST_FRAMEWORK_UTILS_H_
 
+#include <array>
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
