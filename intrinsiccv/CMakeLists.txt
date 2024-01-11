@@ -76,6 +76,11 @@ set(INTRINSICCV_WARNING_FLAGS
   "-Wold-style-cast"
 )
 
+set(INTRINSICCV_SDL_FLAGS
+  "-include"
+  "unsafe.h"
+)
+
 set(INTRINSICCV_CLANG_FLAGS
   "-mllvm"
   "-inline-threshold=10000"
@@ -91,6 +96,7 @@ set(INTRINSICCV_CXX_FLAGS
   "-fno-rtti"
   ${INTRINSICCV_CLANG_FLAGS}
   ${INTRINSICCV_WARNING_FLAGS}
+  ${INTRINSICCV_SDL_FLAGS}
 )
 
 if(INTRINSICCV_ENABLE_SVE2)
