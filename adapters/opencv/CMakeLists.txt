@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023-2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -37,7 +37,7 @@ if(NOT BUILD_SHARED_LIBS)
     DESTINATION ${OPENCV_3P_LIB_INSTALL_PATH}
     COMPONENT dev
   )
-  if(INTRINSICCV_ENABLE_SVE2)
+  if(INTRINSICCV_BUILD_SVE2)
     ocv_install_target(intrinsiccv_sve2
       EXPORT OpenCVModules
       ARCHIVE
@@ -45,7 +45,7 @@ if(NOT BUILD_SHARED_LIBS)
       COMPONENT dev
     )
   endif()
-  if(INTRINSICCV_ENABLE_SME2)
+  if(INTRINSICCV_BUILD_SME2)
     ocv_install_target(intrinsiccv_sme2
       EXPORT OpenCVModules
       ARCHIVE
