@@ -30,19 +30,19 @@ LICENSE="Apache-2.0"
 # unrecognised formats
 annotate() {
     local file=$1
-    out=$(reuse annotate -c "$COPYRIGHT" --license "$LICENSE" --merge-copyrights $file 2> >(cat))
+    out=$(reuse annotate -c "${COPYRIGHT}" --license "${LICENSE}" --merge-copyrights "${file}" 2> >(cat))
     if [ $? -eq 2 ]; then
-        echo -e "${RED}Failed to annotate $file, enforcing c-style comment${NC}"
-        reuse annotate -c "$COPYRIGHT" --license "$LICENSE" --merge-copyrights --style c $file
+        echo -e "${RED}Failed to annotate ${file}, enforcing c-style comment${NC}"
+        reuse annotate -c "${COPYRIGHT}" --license "${LICENSE}" --merge-copyrights --style c "${file}"
     else
-        echo $out
+        echo "${out}"
     fi
 }
 
 UNSTAGED=$(git diff --name-only)
 STAGED=$(git diff --cached --name-only)
 for file in $STAGED; do
-    annotate $file
+    annotate "${file}"
 done
 
 # Run license check on the entire codebase
@@ -50,8 +50,7 @@ reuse lint
 
 # Notify user if there were changes made to staging files
 for file in $(git diff --name-only); do
-    if ! echo "$UNSTAGED" | grep -q "\b$file\b"; then
-        echo -e "${GREEN}Please stage $file for the commit${NC}"
+    if ! echo "${UNSTAGED}" | grep -q "\b${file}\b"; then
+        echo -e "${GREEN}Please stage ${file} for the commit${NC}"
     fi
 done
-
