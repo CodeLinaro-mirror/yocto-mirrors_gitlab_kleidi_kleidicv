@@ -3,6 +3,14 @@
 # SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+# Runs clang-format or checks whether the source is well-formatted.
+#
+# Options:
+#   CHECK_ONLY:             If set to 'ON', the script exists with non-zero value if source is not formatted. Defaults to 'OFF'.
+#   CLANG_FORMAT_BIN_PATH:  Clang-format binary, defaults to 'clang-format'.
+#   VERBOSE:                If set to 'ON', verbose output is printed. Defaults to 'OFF'.
+# ------------------------------------------------------------------------------
 
 set -eu
 
@@ -14,7 +22,9 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
 INTRINSICCV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 
+: "${CHECK_ONLY:=OFF}"
 : "${CLANG_FORMAT_BIN_PATH:=clang-format}"
+: "${VERBOSE:=OFF}"
 
 # ------------------------------------------------------------------------------
 
@@ -25,9 +35,19 @@ SOURCES="$(find \
     \( -name \*.cpp -o -name \*.h \) \
     -print)"
 
+if [[ "${CHECK_ONLY}" == "ON" ]]; then
+  FORMAT_FLAGS="--dry-run -Werror"
+else
+  FORMAT_FLAGS="-i"
+fi
+
+if [[ "${VERBOSE}" == "ON" ]]; then
+  FORMAT_FLAGS="${FORMAT_FLAGS} --verbose"
+fi
+
 # shellcheck disable=2086
-# Split ${SOURCES}.
-"${CLANG_FORMAT_BIN_PATH}" -i --verbose ${SOURCES}
+# Split ${SOURCES} and ${FORMAT_FLAGS}.
+"${CLANG_FORMAT_BIN_PATH}" ${FORMAT_FLAGS} ${SOURCES}
 
 # ------------------------------------------------------------------------------
 # End of script
