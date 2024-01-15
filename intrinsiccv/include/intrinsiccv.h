@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023-2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -571,6 +571,28 @@ void INTRINSICCV_C_API(gaussian_blur_5x5_u8)(
     intrinsiccv_border_type_t border_type,
     const intrinsiccv_filter_params_t *params);
 
+/// Splits a multi channel source stream into separate 1-channel streams.
+///
+/// @param src_data     Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must not be
+///                     less than width * (element size in bytes) * channels.
+/// @param dst_data     A C style array of pointers to the destination data.
+///                     Number of pointers in the array must be the same as the
+///                     channel number. All pointers must be non-null.
+/// @param dst_strides  A C style array of stride values for the destination
+///                     streams. A stride value represents the distance in
+///                     bytes from the start of one row to the start of the
+///                     next row in the given destination stream. Number of
+///                     stride values in the array must be the same as the
+///                     channel number. All stride values must not be less than
+///                     width * (element size in bytes).
+/// @param width        How many pixels are in one row of the source. (One
+///                     pixel consists of 'channels' number of elements.)
+/// @param height       How many rows are in the source.
+/// @param channels     Number of channels in the source.
+/// @param element_size Size of one element in bytes.
+///
 void INTRINSICCV_C_API(split)(const void *src_data, size_t src_stride,
                               void **dst_data, size_t *dst_strides,
                               size_t width, size_t height, size_t channels,
