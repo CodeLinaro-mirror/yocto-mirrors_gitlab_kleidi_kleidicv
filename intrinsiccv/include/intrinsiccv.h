@@ -329,7 +329,7 @@ void INTRINSICCV_C_API(erode_u8)(const uint8_t *src, size_t src_stride,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes between the row first elements for
 ///                     the source data. Must not be less than
-///                     width * sizeof(type).
+///                     width * (element size in bytes).
 /// @param width        How many elements are in a row
 /// @param height       How many rows are in the data
 ///
@@ -385,6 +385,19 @@ void INTRINSICCV_C_API(merge)(const void **srcs, const size_t *src_strides,
                               size_t height, size_t channels,
                               size_t element_size);
 
+/// Calculates minimum and maximum element value across the source data.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must not be
+///                     less than width * (element size in bytes).
+/// @param width        How many elements are in a row
+/// @param height       How many rows are in the data
+/// @param min_value    Pointer to save result minimum value to, or nullptr if
+///                     minimum is not to be calculated.
+/// @param max_value    Pointer to save result maximum value to, or nullptr if
+///                     maximum is not to be calculated.
+///
 void INTRINSICCV_C_API(min_max_u8)(const uint8_t *src, size_t src_stride,
                                    size_t width, size_t height,
                                    uint8_t *min_value, uint8_t *max_value);
