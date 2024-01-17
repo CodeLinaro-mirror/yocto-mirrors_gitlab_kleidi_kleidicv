@@ -19,8 +19,8 @@ class remove_streaming_compatible;
 
 #if INTRINSICCV_TARGET_SME2
 template <typename Ret, typename Impl, typename... Args>
-class remove_streaming_compatible<Ret INTRINSICCV_STREAMING_COMPATIBLE (
-    Impl::*)(Args...)> {
+class remove_streaming_compatible<Ret (Impl::*)(Args...)
+                                      INTRINSICCV_STREAMING_COMPATIBLE> {
  public:
   using type = Ret (Impl::*)(Args...);
 };

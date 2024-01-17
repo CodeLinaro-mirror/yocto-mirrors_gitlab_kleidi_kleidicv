@@ -7,9 +7,9 @@
 namespace intrinsiccv::sme2 {
 
 template <typename T>
-void INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING
-threshold_binary(const T *src, size_t src_stride, T *dst, size_t dst_stride,
-                 size_t width, size_t height, T threshold, T value) {
+INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void threshold_binary(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, T threshold, T value) {
   intrinsiccv::sve2::threshold_binary_sc(src, src_stride, dst, dst_stride,
                                          width, height, threshold, value);
 }

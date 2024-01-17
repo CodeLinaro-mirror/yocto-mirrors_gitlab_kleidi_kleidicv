@@ -6,44 +6,50 @@
 
 namespace intrinsiccv::sme2 {
 
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void rgb_to_bgr_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTS void rgb_to_bgr_u8(const uint8_t *src,
+                                              size_t src_stride, uint8_t *dst,
+                                              size_t dst_stride, size_t width,
+                                              size_t height) {
   intrinsiccv::sve2::rgb_to_bgr_u8_sc(src, src_stride, dst, dst_stride, width,
                                       height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void rgba_to_bgra_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTS void rgba_to_bgra_u8(const uint8_t *src,
+                                                size_t src_stride, uint8_t *dst,
+                                                size_t dst_stride, size_t width,
+                                                size_t height) {
   intrinsiccv::sve2::rgba_to_bgra_u8_sc(src, src_stride, dst, dst_stride, width,
                                         height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void rgb_to_bgra_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTS void rgb_to_bgra_u8(const uint8_t *src,
+                                               size_t src_stride, uint8_t *dst,
+                                               size_t dst_stride, size_t width,
+                                               size_t height) {
   intrinsiccv::sve2::rgb_to_bgra_u8_sc(src, src_stride, dst, dst_stride, width,
                                        height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void rgb_to_rgba_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTS void rgb_to_rgba_u8(const uint8_t *src,
+                                               size_t src_stride, uint8_t *dst,
+                                               size_t dst_stride, size_t width,
+                                               size_t height) {
   intrinsiccv::sve2::rgb_to_rgba_u8_sc(src, src_stride, dst, dst_stride, width,
                                        height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void rgba_to_bgr_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTS void rgba_to_bgr_u8(const uint8_t *src,
+                                               size_t src_stride, uint8_t *dst,
+                                               size_t dst_stride, size_t width,
+                                               size_t height) {
   intrinsiccv::sve2::rgba_to_bgr_u8_sc(src, src_stride, dst, dst_stride, width,
                                        height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void rgba_to_rgb_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTS void rgba_to_rgb_u8(const uint8_t *src,
+                                               size_t src_stride, uint8_t *dst,
+                                               size_t dst_stride, size_t width,
+                                               size_t height) {
   intrinsiccv::sve2::rgba_to_rgb_u8_sc(src, src_stride, dst, dst_stride, width,
                                        height);
 }

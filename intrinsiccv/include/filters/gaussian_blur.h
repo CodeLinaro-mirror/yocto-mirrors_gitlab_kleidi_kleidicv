@@ -38,6 +38,7 @@ void gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
 
 namespace sme2 {
 
+INTRINSICCV_LOCALLY_STREAMING
 void gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                           size_t dst_stride, size_t width, size_t height,
                           size_t channels,

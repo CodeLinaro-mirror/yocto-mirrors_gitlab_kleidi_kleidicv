@@ -37,7 +37,7 @@ class SaturatingAbsDiff final : public UnrollTwice {
 };  // end of class SaturatingAbsDiff<ScalarType>
 
 template <typename T>
-void INTRINSICCV_LOCALLY_STREAMING saturating_absdiff(
+INTRINSICCV_LOCALLY_STREAMING void saturating_absdiff(
     const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
     T *dst, size_t dst_stride, size_t width, size_t height) {
   SaturatingAbsDiff<T> operation;

@@ -60,9 +60,8 @@
 #undef INTRINSICCV_SVE2_128
 #define INTRINSICCV_SVE2_128 0
 #define INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_ATTR_SECTION(".text.sme2")
-#define INTRINSICCV_LOCALLY_STREAMING __attribute__((arm_locally_streaming))
-#define INTRINSICCV_STREAMING_COMPATIBLE \
-  __attribute__((arm_streaming_compatible))
+#define INTRINSICCV_LOCALLY_STREAMING __arm_locally_streaming
+#define INTRINSICCV_STREAMING_COMPATIBLE __arm_streaming_compatible
 #else
 #define INTRINSICCV_LOCALLY_STREAMING
 #define INTRINSICCV_STREAMING_COMPATIBLE

@@ -5,8 +5,7 @@
 #ifndef INTRINSICCV_RESIZE_RESIZE_H
 #define INTRINSICCV_RESIZE_RESIZE_H
 
-#include <cstddef>
-#include <cstdint>
+#include "intrinsiccv.h"
 
 namespace intrinsiccv {
 
@@ -25,6 +24,7 @@ void resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
 }  // namespace sve2
 
 namespace sme2 {
+INTRINSICCV_LOCALLY_STREAMING
 void resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                           size_t src_width, size_t src_height, uint8_t *dst,
                           size_t dst_stride, size_t dst_width,

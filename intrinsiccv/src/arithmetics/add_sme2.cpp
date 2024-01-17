@@ -23,7 +23,7 @@ class SaturatingAdd final : public UnrollTwice {
 };  // end of class SaturatingAdd<ScalarType>
 
 template <typename T>
-void INTRINSICCV_LOCALLY_STREAMING saturating_add(
+INTRINSICCV_LOCALLY_STREAMING void saturating_add(
     const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
     T *dst, size_t dst_stride, size_t width, size_t height) {
   SaturatingAdd<T> operation;
