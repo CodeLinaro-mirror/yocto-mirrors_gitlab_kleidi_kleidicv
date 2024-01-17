@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
@@ -17,6 +17,13 @@
 # compatible with the file type.
 # If any changes has been made as a result of running this script the user will
 # be asked to add changes to commit.
+# Script return values:
+#   0 - default, nothing was changed
+#   1 - reuse lint complains, but files haven't been modified
+#   2 - files have been modified by the script and have to be staged for commit
+#   3 - both 1 and 2
+
+set -u
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -47,10 +54,14 @@ done
 
 # Run license check on the entire codebase
 reuse lint
+EXIT_CODE="${?}"
 
 # Notify user if there were changes made to staging files
 for file in $(git diff --name-only); do
     if ! echo "${UNSTAGED}" | grep -q "\b${file}\b"; then
         echo -e "${GREEN}Please stage ${file} for the commit${NC}"
+        EXIT_CODE=$((${EXIT_CODE} | 2))
     fi
 done
+
+exit "${EXIT_CODE}"
