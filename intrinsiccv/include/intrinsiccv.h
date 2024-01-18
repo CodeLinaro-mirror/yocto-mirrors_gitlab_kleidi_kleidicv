@@ -113,6 +113,30 @@ INTRINSICCV_BINARY_OP(saturating_absdiff_u16, uint16_t);
 INTRINSICCV_BINARY_OP(saturating_absdiff_s16, int16_t);
 INTRINSICCV_BINARY_OP(saturating_absdiff_s32, int32_t);
 
+/// Multiplies the values of the corresponding elements in `src_a` and `src_b`,
+/// and puts the result into `dst`.
+///
+/// The multiplication is saturated, i.e. the result is the largest number of
+/// the type of the element if the multiplication result would overflow. Source
+/// data length (in bytes) is `stride` * `height`. Width and height are the
+/// same for the two sources.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_a_stride Distance in bytes from the start of one row to the
+///			start of the next row for the first source data.
+///			Must not be less than width * sizeof(type).
+/// @param src_b_stride Distance in bytes from the start of one row to the
+///			start of the next row for the second source data.
+///			Must not be less than width * sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride	Distance in bytes from the start of one row to the
+///			start of the next row for the destination data.
+///			Must not be less than width * sizeof(type).
+/// @param width        How many elements are in a row for the output.
+/// @param height       How many rows are in the output.
+/// @param scale        Currently unused parameter.
+///
 INTRINSICCV_BINARY_OP(saturating_multiply_u8, uint8_t, double);
 INTRINSICCV_BINARY_OP(saturating_multiply_s8, int8_t, double);
 INTRINSICCV_BINARY_OP(saturating_multiply_u16, uint16_t, double);
