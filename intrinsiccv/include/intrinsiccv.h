@@ -543,6 +543,24 @@ void INTRINSICCV_C_API(yuv_sp_to_bgra_u8)(const uint8_t *src_y,
                                           size_t dst_stride, size_t width,
                                           size_t height, bool is_nv21);
 
+/// Performs a comparison of each element's value in `src` with respect to a
+/// caller defined threshold. The strictly larger elements are set to
+/// `value` and the rest to 0.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data. Must
+///                     not be less than width * sizeof(type).
+/// @param dst          Pointer to the first destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data. Must
+///                     not be less than width * sizeof(type).
+/// @param width        How many elements are in a row for the output.
+/// @param height       How many rows are in the output.
+/// @param threshold    The value that the elements of the source data are
+///                     compared to.
+/// @param value        The value that the larger elements are set to.
+///
 void INTRINSICCV_C_API(threshold_binary_u8)(const uint8_t *src,
                                             size_t src_stride, uint8_t *dst,
                                             size_t dst_stride, size_t width,

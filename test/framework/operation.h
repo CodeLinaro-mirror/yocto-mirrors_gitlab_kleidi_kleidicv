@@ -130,4 +130,8 @@ template <typename ElementType>
 class BinaryOperationTest : public OperationTest<ElementType, 2, 1> {
 };  // end of class BinaryOperationTest<ElementType>
 
+template <typename ElementType>
+class UnaryOperationTest : public OperationTest<ElementType, 1, 1> {
+};  // end of class UnaryOperationTest<ElementType>
+
 #endif  // INTRINSICCV_TEST_FRAMEWORK_OPERATION_H_
