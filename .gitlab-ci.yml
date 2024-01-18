@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv
+
+build:
+  tags:
+    - arm64
+  script:
+    - CHECK_ONLY=ON VERBOSE=ON scripts/format.sh
+    - cmake -S . -B build -G Ninja
+    - GTEST_OUTPUT=xml:$CI_PROJECT_DIR/test-results/ ninja -C build check-intrinsiccv
+  artifacts:
+    when: always
+    reports:
+      junit: test-results/*.xml
