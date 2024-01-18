@@ -60,7 +60,7 @@ EXIT_CODE="${?}"
 for file in $(git diff --name-only); do
     if ! echo "${UNSTAGED}" | grep -q "\b${file}\b"; then
         echo -e "${GREEN}Please stage ${file} for the commit${NC}"
-        EXIT_CODE=$((${EXIT_CODE} | 2))
+        EXIT_CODE=$((EXIT_CODE | 2))
     fi
 done
 
