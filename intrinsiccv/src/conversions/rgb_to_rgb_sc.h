@@ -103,7 +103,7 @@ class RGBToBGR final :
   // Hold a reference because a sizeless types cannot be members.
   svuint8x4_t &indices_;
 #endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || !INTRINSICCV_SVE2_128
-};      // end of class RGBToBGR<ScalarType>
+};  // end of class RGBToBGR<ScalarType>
 
 template <typename ScalarType>
 class RGBAToBGRA final : public UnrollTwice {

@@ -105,7 +105,7 @@ class GrayToRGB final :
 
   svuint8x3_t &indices_;
 #endif  // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-};      // end of class GrayToRGB<ScalarType>
+};  // end of class GrayToRGB<ScalarType>
 
 template <typename ScalarType>
 class GrayToRGBA final :
@@ -211,7 +211,7 @@ class GrayToRGBA final :
 
   svuint8x4_t &indices_;
 #endif  // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-};      // end of class GrayToRGBA<ScalarType>
+};  // end of class GrayToRGBA<ScalarType>
 
 INTRINSICCV_TARGET_FN_ATTS static void gray_to_rgb_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
