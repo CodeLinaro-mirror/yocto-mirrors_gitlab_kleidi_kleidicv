@@ -16,6 +16,7 @@ RUN apt-get update \
       lsb-release \
       ninja-build \
       patch \
+      pipx \
       python3-six \
       software-properties-common \
       wget
@@ -32,6 +33,8 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
         clang-tidy-${LLVM_VERSION} \
         clang-tools-${LLVM_VERSION}
 
-ENV PATH=${PATH}:/usr/lib/llvm-${LLVM_VERSION}/bin
+RUN pipx install reuse==3.0.0
+
+ENV PATH=${PATH}:/usr/lib/llvm-${LLVM_VERSION}/bin:/root/.local/bin
 ENV CC=clang-${LLVM_VERSION}
 ENV CXX=clang++-${LLVM_VERSION}
