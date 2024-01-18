@@ -121,42 +121,218 @@ INTRINSICCV_BINARY_OP(saturating_multiply_s32, int32_t, double);
 
 INTRINSICCV_BINARY_OP(add_abs_with_threshold, int16_t, int16_t);
 
+/// Converts a grayscale image to RGB. All channels are 8-bit wide.
+///
+/// Destination data is filled as follows: R = G = B = Gray
+/// resulting in | R,G,B | R,G,B | R,G,B | ... image
+/// where each letter represents one byte of data, and one pixel is represented
+/// by 3 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(gray_to_rgb_u8)(const uint8_t *src, size_t src_stride,
                                        uint8_t *dst, size_t dst_stride,
                                        size_t width, size_t height);
 
+/// Converts a grayscale image to RGBA. All channels are 8-bit wide.
+///
+/// Destination data is filled as follows: R = G = B = Gray, A = 0xFF
+/// resulting in | R,G,B,A | R,G,B,A | R,G,B,A | ... image
+/// where each letter represents one byte of data, and one pixel is represented
+/// by 4 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(gray_to_rgba_u8)(const uint8_t *src, size_t src_stride,
                                         uint8_t *dst, size_t dst_stride,
                                         size_t width, size_t height);
 
+/// Converts an RGB image to BGR. All channels are 8-bit wide.
+///
+/// Destination data is filled as follows:
+/// | B,G,R | B,G,R | B,G,R | ...
+/// Each letter represents one byte of data, and one pixel is represented
+/// by 3 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgb_to_bgr_u8)(const uint8_t *src, size_t src_stride,
                                       uint8_t *dst, size_t dst_stride,
                                       size_t width, size_t height);
 
+/// Copies a source RBG image to destination buffer.
+/// All channels are 8-bit wide.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgb_to_rgb_u8)(const uint8_t *src, size_t src_stride,
                                       uint8_t *dst, size_t dst_stride,
                                       size_t width, size_t height);
 
+/// Converts an RGBA image to BGRA. All channels are 8-bit wide.
+///
+/// Destination data is filled as follows:
+/// | B,G,R,A | B,G,R,A | B,G,R,A | ...
+/// Each letter represents one byte of data, and one pixel is represented
+/// by 4 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgba_to_bgra_u8)(const uint8_t *src, size_t src_stride,
                                         uint8_t *dst, size_t dst_stride,
                                         size_t width, size_t height);
 
+/// Copies a source RBGA image to destination buffer.
+/// All channels are 8-bit wide.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgba_to_rgba_u8)(const uint8_t *src, size_t src_stride,
                                         uint8_t *dst, size_t dst_stride,
                                         size_t width, size_t height);
 
+/// Converts an RGB image to BGRA. All channels are 8-bit wide.
+///
+/// Corresponding colours are set while Alpha channel is set to 0xFF.
+/// Destination data is filled as follows:
+/// | B,G,R,A | B,G,R,A | B,G,R,A | ...
+/// Each letter represents one byte of data, and one pixel is represented
+/// by 4 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgb_to_bgra_u8)(const uint8_t *src, size_t src_stride,
                                        uint8_t *dst, size_t dst_stride,
                                        size_t width, size_t height);
 
+/// Converts an RGB image to RGBA. All channels are 8-bit wide.
+///
+/// Corresponding colours are set while Alpha channel is set to 0xFF.
+/// Destination data is filled as follows:
+/// | R,G,B,A | R,G,B,A | R,G,B,A | ...
+/// Each letter represents one byte of data, and one pixel is represented
+/// by 4 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgb_to_rgba_u8)(const uint8_t *src, size_t src_stride,
                                        uint8_t *dst, size_t dst_stride,
                                        size_t width, size_t height);
 
+/// Converts an RGBA image to BGR. All channels are 8-bit wide.
+///
+/// Corresponding colours are set while Alpha channel is discarded.
+/// Destination data is filled as follows:
+/// | B,G,R | B,G,R | B,G,R | ...
+/// Each letter represents one byte of data, and one pixel is represented
+/// by 3 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgba_to_bgr_u8)(const uint8_t *src, size_t src_stride,
                                        uint8_t *dst, size_t dst_stride,
                                        size_t width, size_t height);
 
+/// Converts an RGBA image to RGB. All channels are 8-bit wide.
+///
+/// Corresponding colours are set while Alpha channel is discarded.
+/// Destination data is filled as follows:
+/// | R,G,B | R,G,B | R,G,B | ...
+/// Each letter represents one byte of data, and one pixel is represented
+/// by 3 bytes. There is no padding between the pixels.
+///
+/// @param  src         Pointer to the first source data. Must be non-null.
+/// @param  src_stride  Distance in bytes between the row first elements for
+///                     the first source data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  dst         Pointer to the destination data. Must be non-null.
+/// @param  dst_stride  Distance in bytes between the row first elements for
+///                     the destination data. Must not be less than
+///                     width * sizeof(uint8).
+/// @param  width       How many elements are in a row.
+/// @param  height      How many rows are in the data.
+///
 void INTRINSICCV_C_API(rgba_to_rgb_u8)(const uint8_t *src, size_t src_stride,
                                        uint8_t *dst, size_t dst_stride,
                                        size_t width, size_t height);
