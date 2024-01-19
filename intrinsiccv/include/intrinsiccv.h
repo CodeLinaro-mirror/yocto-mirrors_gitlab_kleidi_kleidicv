@@ -418,6 +418,21 @@ void INTRINSICCV_C_API(min_max_s32)(const int32_t *src, size_t src_stride,
                                     size_t width, size_t height,
                                     int32_t *min_value, int32_t *max_value);
 
+/// Finds minimum and maximum element value across the source data,
+/// and returns their location in the source data as offset in bytes
+/// from the source beginning.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must not be
+///                     less than width * (element size in bytes).
+/// @param width        How many elements are in a row
+/// @param height       How many rows are in the data
+/// @param min_offset   Pointer to save result offset of minimum value to, or
+///                     nullptr if minimum is not to be calculated.
+/// @param max_offset   Pointer to save result offset of maximum value to, or
+///                     nullptr if maximum is not to be calculated.
+///
 void INTRINSICCV_C_API(min_max_loc_u8)(const uint8_t *src, size_t src_stride,
                                        size_t width, size_t height,
                                        size_t *min_offset, size_t *max_offset);

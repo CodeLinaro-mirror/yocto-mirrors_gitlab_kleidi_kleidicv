@@ -17,13 +17,16 @@ INTRINSICCV_MIN_MAX(int16_t, s16);
 INTRINSICCV_MIN_MAX(uint16_t, u16);
 INTRINSICCV_MIN_MAX(int32_t, s32);
 
-template <typename ElementType>
+#define INTRINSICCV_MIN_MAX_LOC(type, suffix) \
+  INTRINSICCV_API(min_max_loc, intrinsiccv_min_max_loc_##suffix, type)
+
+INTRINSICCV_MIN_MAX_LOC(uint8_t, u8);
+
+template <typename ElementType, size_t Padding>
 class MinMaxTest {
   using ArrayType = test::Array2D<ElementType>;
 
-  /// Returns the number of padding bytes at the end of rows.
-  size_t padding() const { return padding_; }
-
+ protected:
   /// Returns the minimum value for ElementType.
   static constexpr ElementType min() {
     return std::numeric_limits<ElementType>::min();
@@ -35,10 +38,22 @@ class MinMaxTest {
   }
 
   /// Returns the number of vector lanes.
-  size_t lanes() const { return test::Options::vector_lanes<ElementType>(); }
+  static size_t lanes() { return test::Options::vector_lanes<ElementType>(); }
 
-  /// Number of padding bytes at the end of rows.
-  size_t padding_{0};
+  // We have 2 rows, source_row0 and source_row1
+  static size_t height() { return 2; }
+
+  /// Tested number of elements in a row.
+  static size_t width() {
+    // Sufficient number of elements to exercise both vector and scalar paths.
+    return 3 * lanes() - 1;
+  }
+
+  // Number of bytes in a row where the scalar path begins
+  static size_t scalar_offset() { return 2 * test::Options::vector_length(); }
+
+  // Total number of bytes per row, padding included
+  static size_t stride() { return width() * sizeof(ElementType) + Padding; }
 
   struct Elements {
     std::initializer_list<ElementType> source_row0_vector;
@@ -48,171 +63,221 @@ class MinMaxTest {
     ElementType filler_value;
     ElementType expected_min;
     ElementType expected_max;
+    size_t expected_min_offset;
+    size_t expected_max_offset;
   };
 
-  // clang-format off
-  static constexpr Elements test_elements[] = {
-    {
-      {},  {},
-      {},  {},
-      10,
-      10, 10
-    },
-    {
-      {},  {},
-      {},  {},
-      min(),
-      min(), min()
-    },
-    {
-      {},  {},
-      {},  {},
-      0,
-      0, 0
-    },
-    {
-      {},  {},
-      {},  {},
-      max(),
-      max(), max()
-    },
-    {
-      {min()+10},    {},
-      {max()}, {},
-      min()+20,
-      min()+10, max()
-    },
-    {
-      {},    {min()},
-      {},    {max() - 10},
-      min()+20,
-      min(), max()-10
-    },
-    {
-      {9},  {},
-      {},  {11},
-      10,
-      9, 11
-    },
-    {
-      {},   {9},
-      {11}, {},
-      10,
-      9, 11
-    },
-    {
-      {11}, {},
-      {},  {9},
-      10,
-      9, 11
-    },
-    {
-      {10, 9, 11},  {},
-      {},           {},
-      10,
-      9, 11
-    },
-    {
-      {9, 10, 11},  {},
-      {},           {},
-      10,
-      9, 11
-    },
-    {
-      { 3,  4,  5,  6},  {15, 16, 17},
-      {20, 21, 22, 23},  {35,  2, 33},
-      10,
-      2, 35
-    },
-    {
-      { 3,  4,  5,  6},  {15, 16, 17},
-      {20,  2, 22, 23},  {35, 36, 33},
-      10,
-      2, 36
-    },
-    {
-      { 1,  2,  3,  4},  {15, 16, 42},
-      { 1,  2,  3,  4},  {15, 16, 42},
-      10,
-      1, 42
-    },
+  const std::array<Elements, 15>& test_elements() const {
+    static const std::array<Elements, 15> elements = {{
+        // clang-format off
+      {
+        {},  {},
+        {},  {},
+        10,
+        10, 10,
+        0, 0
+      },
+      {
+        {},  {},
+        {},  {},
+        min(),
+        min(), min(),
+        0, 0
+      },
+      {
+        {},  {},
+        {},  {},
+        0,
+        0, 0,
+        0, 0
+      },
+      {
+        {},  {},
+        {},  {},
+        max(),
+        max(), max(),
+        0, 0
+      },
+      {
+        {min()+10},    {},
+        {max()}, {},
+        min()+20,
+        min()+10, max(),
+        0, stride()
+      },
+      {
+        {},    {min()},
+        {},    {max() - 10},
+        min()+20,
+        min(), max()-10,
+        scalar_offset(), stride() + scalar_offset()
+      },
+      {
+        {9},  {},
+        {},  {11},
+        10,
+        9, 11,
+        0, stride() + scalar_offset()
+      },
+      {
+        {},   {9},
+        {11}, {},
+        10,
+        9, 11,
+        scalar_offset(), stride()
+      },
+      {
+        {11}, {},
+        {},  {9},
+        10,
+        9, 11,
+        stride() + scalar_offset(), 0
+      },
+      {
+        {10, 9, 11},  {},
+        {},           {},
+        10,
+        9, 11,
+        1, 2
+      },
+      {
+        {9, 10, 11},  {},
+        {},           {},
+        10,
+        9, 11,
+        0, 2
+      },
+      {
+        { 3,  4,  5,  6},  {15, 16, 17},
+        {20, 21, 22, 23},  {35,  2, 33},
+        10,
+        2, 35,
+        stride() + scalar_offset() + sizeof(ElementType), stride() + scalar_offset()
+      },
+      {
+        { 3,  4,  5,  6},  {15, 16, 17},
+        {20,  2, 22, 23},  {35, 36, 33},
+        10,
+        2, 36,
+        stride() + sizeof(ElementType), stride() + scalar_offset() + sizeof(ElementType)
+      },
+      {
+        { 1,  2,  3,  4},  {15, 16, 42},
+        { 1,  2,  3,  4},  {15, 16, 42},
+        10,
+        1, 42,
+        0, (scalar_offset() + 2 * sizeof(ElementType))
+      },
+      {
+        { 5,  6,  7,  8},  {1, 16, 42},
+        { 1,  2,  3, 42},  {1, 16, 42},
+        10,
+        1, 42,
+        scalar_offset(), (scalar_offset() + 2 * sizeof(ElementType))
+      }
+        // clang-format on
+    }};
+    return elements;
+  }
 
-  };
-  // clang-format on
+  static void setup(ArrayType& source, const Elements& testData) {
+    source.fill(testData.filler_value);
+    source.set(0, 0, testData.source_row0_vector);
+    source.set(1, 0, testData.source_row1_vector);
+    source.set(0, (width() / lanes()) * lanes(), testData.source_row0_scalar);
+    source.set(1, (width() / lanes()) * lanes(), testData.source_row1_scalar);
+  }
 
-  // We have 2 rows, source_row0 and source_row1
-  size_t height() const { return 2; }
-
-  /// Tested number of elements in a row.
-  size_t width() const {
-    // Sufficient number of elements to exercise both vector and scalar paths.
-    return 3 * lanes() - 1;
+  void one_test_call(const ArrayType& source, ElementType* p_min,
+                     ElementType* p_max, ElementType expected_min,
+                     ElementType expected_max) {
+    if (p_min) *p_min = std::numeric_limits<ElementType>::max();
+    if (p_max) *p_max = std::numeric_limits<ElementType>::min();
+    min_max<ElementType>()(source.data(), source.stride(), width(), height(),
+                           p_min, p_max);
+    if (p_min) EXPECT_EQ(*p_min, expected_min);
+    if (p_max) EXPECT_EQ(*p_max, expected_max);
   }
 
  public:
-  MinMaxTest<ElementType>& with_padding(size_t padding) {
-    padding_ = padding;
-    return *this;
-  }
-
   void test() {
-    for (auto testData : test_elements) {
-      ArrayType source{width(), height(), padding()};
+    for (auto& testData : test_elements()) {
+      ArrayType source{width(), height(), Padding};
       ASSERT_TRUE(source.valid());
-      source.fill(testData.filler_value);
 
-      // Fill elements one vector length apart.
-      for (size_t column_index = 0; column_index + lanes() < width();
-           column_index += lanes()) {
-        source.set(0, column_index, testData.source_row0_vector);
-        source.set(1, column_index, testData.source_row1_vector);
-      }
-      source.set(0, (width() / lanes()) * lanes(), testData.source_row0_scalar);
-      source.set(1, (width() / lanes()) * lanes(), testData.source_row1_scalar);
+      setup(source, testData);
 
-      ElementType expected_min = testData.expected_min;
-      ElementType expected_max = testData.expected_max;
-
-      ElementType actual_min = max();
-      ElementType actual_max = min();
-
-      min_max<ElementType>()(source.data(), source.stride(), width(), height(),
-                             nullptr, nullptr);
-      EXPECT_EQ(actual_min, max());
-      EXPECT_EQ(actual_max, min());
-
-      actual_min = max();
-      actual_max = min();
-      min_max<ElementType>()(source.data(), source.stride(), width(), height(),
-                             &actual_min, nullptr);
-      EXPECT_EQ(actual_min, expected_min);
-      EXPECT_EQ(actual_max, min());
-
-      actual_min = max();
-      actual_max = min();
-      min_max<ElementType>()(source.data(), source.stride(), width(), height(),
-                             nullptr, &actual_max);
-      EXPECT_EQ(actual_min, max());
-      EXPECT_EQ(actual_max, expected_max);
-
-      actual_min = max();
-      actual_max = min();
-      min_max<ElementType>()(source.data(), source.stride(), width(), height(),
-                             &actual_min, &actual_max);
-      EXPECT_EQ(actual_min, expected_min);
-      EXPECT_EQ(actual_max, expected_max);
+      ElementType actual_min, actual_max;
+      one_test_call(source, nullptr, nullptr, 0, 0);
+      one_test_call(source, &actual_min, nullptr, testData.expected_min, 0);
+      one_test_call(source, nullptr, &actual_max, 0, testData.expected_max);
+      one_test_call(source, &actual_min, &actual_max, testData.expected_min,
+                    testData.expected_max);
     }
   }
 };  // end of class MinMaxTest<ElementType>
 
+template <typename ElementType, size_t Padding>
+class MinMaxLocTest : public MinMaxTest<ElementType, Padding> {
+  using ArrayType = test::Array2D<ElementType>;
+  using Super = MinMaxTest<ElementType, Padding>;
+  using Super::height;
+  using Super::setup;
+  using Super::test_elements;
+  using Super::width;
+
+  void one_test_call(const ArrayType& source, size_t* p_min_offset,
+                     size_t* p_max_offset, size_t expected_min_offset,
+                     size_t expected_max_offset) {
+    if (p_min_offset) *p_min_offset = std::numeric_limits<size_t>::max();
+    if (p_max_offset) *p_max_offset = std::numeric_limits<size_t>::max();
+    min_max_loc<ElementType>()(source.data(), source.stride(), width(),
+                               height(), p_min_offset, p_max_offset);
+    if (p_min_offset) EXPECT_EQ(*p_min_offset, expected_min_offset);
+    if (p_max_offset) EXPECT_EQ(*p_max_offset, expected_max_offset);
+  }
+
+ public:
+  void test() {
+    for (auto testData : test_elements()) {
+      ArrayType source{width(), height(), Padding};
+      ASSERT_TRUE(source.valid());
+
+      setup(source, testData);
+
+      size_t min_offset, max_offset;
+      one_test_call(source, nullptr, nullptr, 0, 0);
+      one_test_call(source, &min_offset, nullptr, testData.expected_min_offset,
+                    0);
+      one_test_call(source, nullptr, &max_offset, 0,
+                    testData.expected_max_offset);
+      one_test_call(source, &min_offset, &max_offset,
+                    testData.expected_min_offset, testData.expected_max_offset);
+    }
+  }
+};  // end of class MinMaxLocTest<ElementType>
+
 template <typename ElementType>
 class MinMax : public testing::Test {};
 
-using ElementTypes =
+using MinMaxElementTypes =
     ::testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t>;
-TYPED_TEST_SUITE(MinMax, ElementTypes);
+TYPED_TEST_SUITE(MinMax, MinMaxElementTypes);
 
 TYPED_TEST(MinMax, API) {
-  MinMaxTest<TypeParam>{}.test();
-  MinMaxTest<TypeParam>{}.with_padding(test::Options::vector_length()).test();
+  MinMaxTest<TypeParam, 0>{}.test();
+  MinMaxTest<TypeParam, 100>{}.test();
+}
+
+template <typename ElementType>
+class MinMaxLoc : public testing::Test {};
+
+using MinMaxLocElementTypes = ::testing::Types<uint8_t>;
+TYPED_TEST_SUITE(MinMaxLoc, MinMaxLocElementTypes);
+
+using namespace std;
+
+TYPED_TEST(MinMaxLoc, API) {
+  MinMaxLocTest<TypeParam, 0>{}.test();
+  MinMaxLocTest<TypeParam, 100>{}.test();
 }
