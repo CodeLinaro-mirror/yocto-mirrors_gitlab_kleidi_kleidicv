@@ -25,8 +25,7 @@ extern "C" {
 ///
 /// The addition is saturated, i.e. the result is the largest number of the
 /// type of the element if the addition result would overflow. Source data
-/// length (in bytes) is `stride` * `height`, it must be the same for the two
-/// sources.
+/// length (in bytes) is `stride` * `height`.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
