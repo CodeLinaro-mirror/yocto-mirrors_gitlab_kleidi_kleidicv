@@ -25,20 +25,21 @@ extern "C" {
 ///
 /// The addition is saturated, i.e. the result is the largest number of the
 /// type of the element if the addition result would overflow. Source data
-/// length (in bytes) is `stride` * `height`.
+/// length (in bytes) is `stride` * `height`. Width and height are the same
+/// for the two sources.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
-/// @param src_a_stride Distance in bytes between the row first elements for
-///                     the first source data. Must not be less than
-///                     width * sizeof(type).
-/// @param src_b_stride Distance in bytes between the row first elements for
-///                     the second source data. Must not be less than
-///                     width * sizeof(type).
+/// @param src_a_stride Distance in bytes from the start of one row to the
+///			start of the next row for the src_a.
+///			Must not be less than width * sizeof(type).
+/// @param src_b_stride Distance in bytes from the start of one row to the
+///			start of the next row for the src_b.
+///			Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride   Distance in bytes between the row first elements for
-///                     the destination data. Must not be less than
-///                     width * sizeof(type).
+/// @param dst_stride	Distance in bytes from the start of one row to the
+///			start of the next row for the destination.
+///			Must not be less than width * sizeof(type).
 /// @param width        How many elements are in a row
 /// @param height       How many rows are in the data
 ///
