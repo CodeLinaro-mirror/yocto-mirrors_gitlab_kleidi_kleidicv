@@ -80,6 +80,7 @@ class LoopUnroll final {
                       size_t step) INTRINSICCV_STREAMING_COMPATIBLE
       : length_(length),
         step_(step),
+        index_(0),
         can_avoid_tail_(length >= step) {}
 
   // Loop unrolled four times.
