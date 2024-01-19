@@ -150,6 +150,9 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   size_t border_count_{0};
 };  // end of class class ExampleKernelTest<KernelTestParams>
 
+// Disable check for possible exceptions thrown outside main.
+// The check isn't important in a test program.
+// NOLINTBEGIN(cert-err58-cpp)
 template <class KernelTestParams>
 const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 2>
     ExampleKernelTest<KernelTestParams>::kKernels = {
@@ -158,6 +161,7 @@ const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 2>
         test::Kernel{
             test::Array2D<typename KernelTestParams::IntermediateType>{4, 4}},
 };
+// NOLINTEND(cert-err58-cpp)
 
 /// Tests that KernelTest::test() works.
 TEST(KernelTest, Test) {

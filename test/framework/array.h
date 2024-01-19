@@ -57,6 +57,7 @@ class Array2D : public TwoDimensional<ElementType> {
 
   /// Copy assignment operator.
   Array2D &operator=(const Array2D &other) {
+    if (this == &other) return *this;
     width_ = other.width_;
     height_ = other.height_;
     channels_ = other.channels_;
@@ -74,6 +75,7 @@ class Array2D : public TwoDimensional<ElementType> {
 
   /// Move assignment operator.
   Array2D &operator=(Array2D &&other) {
+    if (this == &other) return *this;
     data_ = std::move(other.data_);
     width_ = other.width_;
     height_ = other.height_;

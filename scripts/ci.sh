@@ -20,7 +20,11 @@ reuse lint
 
 # Build and run tests
 cmake -S . -B build -G Ninja \
+  -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
   -DCMAKE_CXX_FLAGS="--coverage -g -O0"
+
+# Workaround to avoid applying clang-tidy to files in build directory
+echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
 
 GTEST_OUTPUT=xml:$(pwd)/build/test-results/ \
   ninja -C build check-intrinsiccv

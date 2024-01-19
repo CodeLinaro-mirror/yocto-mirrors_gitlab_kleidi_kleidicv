@@ -58,7 +58,9 @@ class YuvTest final {
     for (size_t vindex = 0; vindex < exp_arr.height(); vindex++) {
       for (size_t hindex = 0; hindex < exp_arr.width() / channel_number_;
            hindex++) {
+        // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign)
         int32_t y = *y_arr.at(vindex, hindex);
+        // NOLINTEND(clang-analyzer-core.uninitialized.Assign)
         y = std::max(0, y - 16);
         int32_t u =
             *uv_arr.at(vindex / 2, (hindex - hindex % 2) + (is_nv21 ? 1 : 0));

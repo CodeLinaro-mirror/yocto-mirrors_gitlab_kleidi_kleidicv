@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+Checks: >-
+  -*,
+  cert-*,
+  clang-analyzer-core*,
+  clang-analyzer-cplusplus*,
+  clang-analyzer-unix.MismatchedDeallocator,
+  misc-new-delete-overloads
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(intrinsiccv|test)/.*'
+FormatStyle: google
+...

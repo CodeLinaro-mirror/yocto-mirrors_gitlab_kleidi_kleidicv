@@ -75,11 +75,15 @@ TEST(Array2D, MoveAssignment) {
   EXPECT_EQ(array_2.stride(), width * sizeof(uint32_t));
   EXPECT_TRUE(array_2.valid());
 
+  // This test is specifically to find out what happens to an object after it is
+  // moved so disable this static analysis check.
+  // NOLINTBEGIN(clang-analyzer-cplusplus.Move)
   EXPECT_EQ(array_1.width(), 0);
   EXPECT_EQ(array_1.height(), 0);
   EXPECT_EQ(array_1.channels(), 0);
   EXPECT_EQ(array_1.stride(), 0);
   EXPECT_FALSE(array_1.valid());
+  // NOLINTEND(clang-analyzer-cplusplus.Move)
 }
 
 /// Tests that test::Array2D<T>.at() works for set/get.

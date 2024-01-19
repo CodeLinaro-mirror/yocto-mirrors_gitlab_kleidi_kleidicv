@@ -173,7 +173,11 @@ class LoopUnroll final {
   LoopUnroll &unroll_n_times(CallbackType callback)
       INTRINSICCV_STREAMING_COMPATIBLE {
     const size_t step = UnrollFactor * step_;
+    // In practice step will never be zero and we don't want to spend
+    // instructions on checking that.
+    // NOLINTBEGIN(clang-analyzer-core.DivideZero)
     const size_t max_index = remaining_length() / step;
+    // NOLINTEND(clang-analyzer-core.DivideZero)
 
     for (index_ = 0; index_ < max_index; ++index_) {
       callback(step);

@@ -16,7 +16,7 @@ namespace test {
 template <typename ElementType>
 class PseudoRandomNumberGenerator : public Generator<ElementType> {
  public:
-  PseudoRandomNumberGenerator() : seed_{Options::seed()} { reset(); }
+  PseudoRandomNumberGenerator() : seed_{Options::seed()}, rng_{seed_} {}
 
   /// Resets the generator to the initial state.
   void reset() override { rng_.seed(seed_); }
