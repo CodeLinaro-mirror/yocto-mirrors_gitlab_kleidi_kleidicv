@@ -31,8 +31,11 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
         clang-${LLVM_VERSION} \
         clang-format-${LLVM_VERSION} \
         clang-tidy-${LLVM_VERSION} \
-        clang-tools-${LLVM_VERSION}
+        clang-tools-${LLVM_VERSION} \
+        libclang-rt-${LLVM_VERSION}-dev \
+        llvm-${LLVM_VERSION}
 
+RUN pipx install gcovr==6.0
 RUN pipx install reuse==3.0.0
 
 ENV PATH=${PATH}:/usr/lib/llvm-${LLVM_VERSION}/bin:/root/.local/bin
