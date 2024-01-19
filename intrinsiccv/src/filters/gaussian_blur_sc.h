@@ -50,9 +50,7 @@ class DiscreteGaussianBlur<uint8_t, 5> {
     acc_u16_b = svmad_u16_x(pg, acc_1_3_b, const_4_u16, acc_u16_b);
     acc_u16_t = svmad_u16_x(pg, acc_1_3_t, const_4_u16, acc_u16_t);
 
-    svuint16x2_t interleaved;
-    interleaved = svset2(interleaved, 0, acc_u16_b);
-    interleaved = svset2(interleaved, 1, acc_u16_t);
+    svuint16x2_t interleaved = svcreate2(acc_u16_b, acc_u16_t);
     svst2(pg, &dst[0], interleaved);
   }
 

@@ -26,12 +26,7 @@ class GrayToRGB final :
   void vector_path(ContextType ctx, VectorType src_vect,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
-    svuint8x3_t dst_vect;
-
-    dst_vect = svset3(dst_vect, 0, src_vect);
-    dst_vect = svset3(dst_vect, 1, src_vect);
-    dst_vect = svset3(dst_vect, 2, src_vect);
-
+    svuint8x3_t dst_vect = svcreate3(src_vect, src_vect, src_vect);
     svst3(pg, dst, dst_vect);
   }
 #else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
@@ -98,9 +93,7 @@ class GrayToRGB final :
         pg_all, svlsr_x(pg_all, svmulh_x(pg_all, indices_2, const_171), 1),
         (svcntb() * 2) / 3);
 
-    indices_ = svset3(indices_, 0, indices_0);
-    indices_ = svset3(indices_, 1, indices_1);
-    indices_ = svset3(indices_, 2, indices_2);
+    indices_ = svcreate3(indices_0, indices_1, indices_2);
   }
 
   svuint8x3_t &indices_;
@@ -123,12 +116,7 @@ class GrayToRGBA final :
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8_t alpha = svdup_u8(0xff);
-    svuint8x4_t dst_vect;
-
-    dst_vect = svset4(dst_vect, 0, src_vect);
-    dst_vect = svset4(dst_vect, 1, src_vect);
-    dst_vect = svset4(dst_vect, 2, src_vect);
-    dst_vect = svset4(dst_vect, 3, alpha);
+    svuint8x4_t dst_vect = svcreate4(src_vect, src_vect, src_vect, alpha);
 
     svst4(pg, dst, dst_vect);
   }
@@ -159,9 +147,7 @@ class GrayToRGBA final :
   void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
                           svbool_t pg_3, VectorType src_vect,
                           ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
-    svuint8x2_t src_and_alpha;
-    src_and_alpha = svset2(src_and_alpha, 0, src_vect);
-    src_and_alpha = svset2(src_and_alpha, 1, VecTraits::svdup(-1));
+    svuint8x2_t src_and_alpha = svcreate2(src_vect, VecTraits::svdup(-1));
 
     // Convert from gray to RGBA using table-lookups.
     VectorType dst_vec_0 = svtbl2(src_and_alpha, svget4(indices_, 0));
@@ -203,10 +189,7 @@ class GrayToRGBA final :
     VectorType indices_3 =
         svreinterpret_u8_u32(svindex_u32(start_index, 0x10101));
 
-    indices_ = svset4(indices_, 0, indices_0);
-    indices_ = svset4(indices_, 1, indices_1);
-    indices_ = svset4(indices_, 2, indices_2);
-    indices_ = svset4(indices_, 3, indices_3);
+    indices_ = svcreate4(indices_0, indices_1, indices_2, indices_3);
   }
 
   svuint8x4_t &indices_;

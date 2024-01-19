@@ -27,11 +27,8 @@ class RGBToBGR final :
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8x3_t src_vect = svld3(pg, src);
-    svuint8x3_t dst_vect;
-
-    dst_vect = svset3(dst_vect, 0, svget3(src_vect, 2));
-    dst_vect = svset3(dst_vect, 1, svget3(src_vect, 1));
-    dst_vect = svset3(dst_vect, 2, svget3(src_vect, 0));
+    svuint8x3_t dst_vect = svcreate3(svget3(src_vect, 2), svget3(src_vect, 1),
+                                     svget3(src_vect, 0));
 
     svst3(pg, dst, dst_vect);
   }
@@ -66,19 +63,13 @@ class RGBToBGR final :
     VectorType src_1 = svld1_vnum(pg_1, &src[0], 1);
     VectorType src_2 = svld1_vnum(pg_2, &src[0], 2);
 
-    svuint8x2_t src_vect_0_1;
-    src_vect_0_1 = svset2(src_vect_0_1, 0, src_0);
-    src_vect_0_1 = svset2(src_vect_0_1, 1, src_1);
-
-    svuint8x2_t src_vect_1_2;
-    src_vect_1_2 = svset2(src_vect_1_2, 0, src_1);
-    src_vect_1_2 = svset2(src_vect_1_2, 1, src_2);
+    svuint8x2_t src_vect_0_1 = svcreate2(src_0, src_1);
+    svuint8x2_t src_vect_1_2 = svcreate2(src_1, src_2);
 
     svuint8_t dst_vec_0 = svtbl2(src_vect_0_1, svget4(indices_, 0));
     svuint8_t dst_vec_2 = svtbl2(src_vect_1_2, svget4(indices_, 3));
     svuint8_t dst_vec_1 = svtbl2(src_vect_0_1, svget4(indices_, 1));
-    src_vect_1_2 = svset2(src_vect_1_2, 0, dst_vec_1);
-    src_vect_1_2 = svset2(src_vect_1_2, 1, src_2);
+    src_vect_1_2 = svcreate2(dst_vec_1, src_2);
     dst_vec_1 = svtbl2(src_vect_1_2, svget4(indices_, 2));
 
     svst1(pg_0, &dst[0], dst_vec_0);
@@ -88,10 +79,10 @@ class RGBToBGR final :
 
   void initialize_indices() INTRINSICCV_STREAMING_COMPATIBLE {
     svbool_t pg = VecTraits::svptrue();
-    indices_ = svset4(indices_, 0, svld1(pg, &kTableIndices[0]));
-    indices_ = svset4(indices_, 1, svld1_vnum(pg, &kTableIndices[0], 1));
-    indices_ = svset4(indices_, 2, svld1_vnum(pg, &kTableIndices[0], 2));
-    indices_ = svset4(indices_, 3, svld1_vnum(pg, &kTableIndices[0], 3));
+    indices_ = svcreate4(svld1(pg, &kTableIndices[0]),
+                         svld1_vnum(pg, &kTableIndices[0], 1),
+                         svld1_vnum(pg, &kTableIndices[0], 2),
+                         svld1_vnum(pg, &kTableIndices[0], 3));
   }
 
   static constexpr uint8_t kTableIndices[64] = {
@@ -115,12 +106,8 @@ class RGBAToBGRA final : public UnrollTwice {
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8x4_t src_vect = svld4(pg, src);
-    svuint8x4_t dst_vect;
-
-    dst_vect = svset4(dst_vect, 0, svget4(src_vect, 2));
-    dst_vect = svset4(dst_vect, 1, svget4(src_vect, 1));
-    dst_vect = svset4(dst_vect, 2, svget4(src_vect, 0));
-    dst_vect = svset4(dst_vect, 3, svget4(src_vect, 3));
+    svuint8x4_t dst_vect = svcreate4(svget4(src_vect, 2), svget4(src_vect, 1),
+                                     svget4(src_vect, 0), svget4(src_vect, 3));
 
     svst4(pg, dst, dst_vect);
   }
@@ -136,12 +123,8 @@ class RGBToBGRA final : public UnrollTwice {
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8x3_t src_vect = svld3(pg, src);
-    svuint8x4_t dst_vect;
-
-    dst_vect = svset4(dst_vect, 0, svget3(src_vect, 2));
-    dst_vect = svset4(dst_vect, 1, svget3(src_vect, 1));
-    dst_vect = svset4(dst_vect, 2, svget3(src_vect, 0));
-    dst_vect = svset4(dst_vect, 3, svdup_u8(0xff));
+    svuint8x4_t dst_vect = svcreate4(svget3(src_vect, 2), svget3(src_vect, 1),
+                                     svget3(src_vect, 0), svdup_u8(0xff));
 
     svst4(pg, dst, dst_vect);
   }
@@ -157,12 +140,8 @@ class RGBToRGBA final : public UnrollTwice {
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8x3_t src_vect = svld3(pg, src);
-    svuint8x4_t dst_vect;
-
-    dst_vect = svset4(dst_vect, 0, svget3(src_vect, 0));
-    dst_vect = svset4(dst_vect, 1, svget3(src_vect, 1));
-    dst_vect = svset4(dst_vect, 2, svget3(src_vect, 2));
-    dst_vect = svset4(dst_vect, 3, svdup_u8(0xff));
+    svuint8x4_t dst_vect = svcreate4(svget3(src_vect, 0), svget3(src_vect, 1),
+                                     svget3(src_vect, 2), svdup_u8(0xff));
 
     svst4(pg, dst, dst_vect);
   }
@@ -178,11 +157,8 @@ class RGBAToBGR final : public UnrollTwice {
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8x4_t src_vect = svld4(pg, src);
-    svuint8x3_t dst_vect;
-
-    dst_vect = svset3(dst_vect, 0, svget4(src_vect, 2));
-    dst_vect = svset3(dst_vect, 1, svget4(src_vect, 1));
-    dst_vect = svset3(dst_vect, 2, svget4(src_vect, 0));
+    svuint8x3_t dst_vect = svcreate3(svget4(src_vect, 2), svget4(src_vect, 1),
+                                     svget4(src_vect, 0));
 
     svst3(pg, dst, dst_vect);
   }
@@ -198,11 +174,8 @@ class RGBAToRGB final : public UnrollTwice {
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8x4_t src_vect = svld4(pg, src);
-    svuint8x3_t dst_vect;
-
-    dst_vect = svset3(dst_vect, 0, svget4(src_vect, 0));
-    dst_vect = svset3(dst_vect, 1, svget4(src_vect, 1));
-    dst_vect = svset3(dst_vect, 2, svget4(src_vect, 2));
+    svuint8x3_t dst_vect = svcreate3(svget4(src_vect, 0), svget4(src_vect, 1),
+                                     svget4(src_vect, 2));
 
     svst3(pg, dst, dst_vect);
   }

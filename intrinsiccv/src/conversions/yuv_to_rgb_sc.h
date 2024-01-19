@@ -160,38 +160,17 @@ class YUVSpToRGBxOrBGRx final {
     b1_t = svsra(svdup_n_s16(0), b1_t, kWeightScale - 16);
     svuint8_t b1 = svqxtunt(svqxtunb(b1_b), b1_t);
 
-    // Cosntants to select where to store R and B channels.
-    static constexpr uint64_t kRIndex = BGR ? 2 : 0;
-    static constexpr uint64_t kBIndex = BGR ? 0 : 2;
-
     if constexpr (ALPHA) {
-      svuint8x4_t rgba0, rgba1;
-      // Red channel
-      rgba0 = svset4(rgba0, kRIndex, r0);
-      rgba1 = svset4(rgba1, kRIndex, r1);
-      // Green channel
-      rgba0 = svset4(rgba0, 1, g0);
-      rgba1 = svset4(rgba1, 1, g1);
-      // Blue channel
-      rgba0 = svset4(rgba0, kBIndex, b0);
-      rgba1 = svset4(rgba1, kBIndex, b1);
-      // Alpha channel
-      rgba0 = svset4(rgba0, 3, svdup_n_u8(0xFF));
-      rgba1 = svset4(rgba1, 3, svdup_n_u8(0xFF));
+      svuint8x4_t rgba0 =
+          svcreate4(BGR ? b0 : r0, g0, BGR ? r0 : b0, svdup_n_u8(0xFF));
+      svuint8x4_t rgba1 =
+          svcreate4(BGR ? b1 : r1, g1, BGR ? r1 : b1, svdup_n_u8(0xFF));
       // Store RGBA pixels to memory.
       svst4_u8(pg, rgbx_row_0, rgba0);
       svst4_u8(pg, rgbx_row_1, rgba1);
     } else {
-      svuint8x3_t rgb0, rgb1;
-      // Red channel
-      rgb0 = svset3(rgb0, kRIndex, r0);
-      rgb1 = svset3(rgb1, kRIndex, r1);
-      // Green channel
-      rgb0 = svset3(rgb0, 1, g0);
-      rgb1 = svset3(rgb1, 1, g1);
-      // Blue channel
-      rgb0 = svset3(rgb0, kBIndex, b0);
-      rgb1 = svset3(rgb1, kBIndex, b1);
+      svuint8x3_t rgb0 = svcreate3(BGR ? b0 : r0, g0, BGR ? r0 : b0);
+      svuint8x3_t rgb1 = svcreate3(BGR ? b1 : r1, g1, BGR ? r1 : b1);
       // Store RGB pixels to memory.
       svst3(pg, rgbx_row_0, rgb0);
       svst3(pg, rgbx_row_1, rgb1);

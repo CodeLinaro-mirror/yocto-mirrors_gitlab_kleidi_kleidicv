@@ -40,9 +40,8 @@ class HorizontalSobel3x3<uint8_t> {
     acc_u16_b = svmlalb(acc_u16_b, src_1, svdup_n_u8(2));
     acc_u16_t = svmlalt(acc_u16_t, src_1, svdup_n_u8(2));
 
-    svint16x2_t interleaved;
-    interleaved = svset2(interleaved, 0, svreinterpret_s16(acc_u16_b));
-    interleaved = svset2(interleaved, 1, svreinterpret_s16(acc_u16_t));
+    svint16x2_t interleaved =
+        svcreate2(svreinterpret_s16(acc_u16_b), svreinterpret_s16(acc_u16_t));
     svst2(pg, &dst[0], interleaved);
   }
 
@@ -91,9 +90,8 @@ class VerticalSobel3x3<uint8_t> {
     svuint16_t acc_u16_b = svsublb(src_2, src_0);
     svuint16_t acc_u16_t = svsublt(src_2, src_0);
 
-    svint16x2_t interleaved;
-    interleaved = svset2(interleaved, 0, svreinterpret_s16(acc_u16_b));
-    interleaved = svset2(interleaved, 1, svreinterpret_s16(acc_u16_t));
+    svint16x2_t interleaved =
+        svcreate2(svreinterpret_s16(acc_u16_b), svreinterpret_s16(acc_u16_t));
     svst2(pg, &dst[0], interleaved);
   }
 
