@@ -12,7 +12,7 @@ build:
   artifacts:
     when: always
     reports:
-      junit: build/test-results/*.xml
+      junit: build/test-results/**/*.xml
       coverage_report:
         coverage_format: cobertura
         path: build/cobertura-coverage.xml

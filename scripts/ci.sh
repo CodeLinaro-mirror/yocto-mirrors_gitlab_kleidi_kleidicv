@@ -12,22 +12,35 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # Ensure we're doing a clean build
 rm -rf build
 
+apt-get -y --no-install-recommends install qemu-user
+
 # Check format of C++ files
 CHECK_ONLY=ON VERBOSE=ON scripts/format.sh
 
 # Check license headers
 reuse lint
 
-# Build and run tests
+# Build
 cmake -S . -B build -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
-  -DCMAKE_CXX_FLAGS="--coverage -g -O0"
+  -DCMAKE_CXX_FLAGS="--coverage -g -O0" \
+  -DINTRINSICCV_ENABLE_SVE2=ON \
+  -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF
 
 # Workaround to avoid applying clang-tidy to files in build directory
 echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
 
-GTEST_OUTPUT=xml:$(pwd)/build/test-results/ \
-  ninja -C build check-intrinsiccv
+ninja -C build
+
+# Run tests
+qemu-aarch64     build/test/framework/intrinsiccv-framework-test --gtest_output=xml:build/test-results/
+qemu-aarch64 -cpu cortex-a35 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/neon/
+qemu-aarch64 -cpu cortex-a76 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sve2/
+qemu-aarch64 -cpu max        build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sme/
+
+scripts/prefix_testsuite_names.py build/test-results/neon/intrinsiccv-api-test.xml "NEON."
+scripts/prefix_testsuite_names.py build/test-results/sve2/intrinsiccv-api-test.xml "SVE2."
+scripts/prefix_testsuite_names.py build/test-results/sme/intrinsiccv-api-test.xml "SME."
 
 # Generate test coverage report
 gcovr \
