@@ -23,7 +23,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 INTRINSICCV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 
 : "${CHECK_ONLY:=OFF}"
-: "${CLANG_FORMAT_BIN_PATH:=clang-format}"
+: "${CLANG_FORMAT_BIN_PATH:=clang-format-17}"
 : "${VERBOSE:=OFF}"
 
 # ------------------------------------------------------------------------------

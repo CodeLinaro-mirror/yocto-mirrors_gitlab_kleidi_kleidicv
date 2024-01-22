@@ -13,6 +13,8 @@ RUN apt-get update \
       git \
       gpg \
       less \
+      libnuma1 \
+      liburing2 \
       lsb-release \
       ninja-build \
       patch \
@@ -21,6 +23,8 @@ RUN apt-get update \
       software-properties-common \
       wget
 
+# Install version 18 of most LLVM tools except clang-format-17 because
+# we prioritise stability when it comes to how we format our code.
 ENV LLVM_VERSION=18
 RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d/apt.llvm.org.asc \
     && echo "ce6eee4130298f79b0e0f09a89f93c1bc711cd68e7e3182d37c8e96c5227e2f0 /etc/apt/trusted.gpg.d/apt.llvm.org.asc" | sha256sum -c - \
@@ -29,7 +33,7 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
         clang-${LLVM_VERSION} \
-        clang-format-${LLVM_VERSION} \
+        clang-format-17 \
         clang-tidy-${LLVM_VERSION} \
         clang-tools-${LLVM_VERSION} \
         libclang-rt-${LLVM_VERSION}-dev \
