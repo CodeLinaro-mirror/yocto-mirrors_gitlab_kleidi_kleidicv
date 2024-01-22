@@ -76,11 +76,6 @@ set(INTRINSICCV_WARNING_FLAGS
   "-Wold-style-cast"
 )
 
-# Work around bug in pre-release Clang 18
-if (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 18.0.0)
-  list(APPEND INTRINSICCV_WARNING_FLAGS "-Wno-undefined-arm-streaming")
-endif()
-
 set(INTRINSICCV_SDL_FLAGS
   "-include"
   "unsafe.h"
