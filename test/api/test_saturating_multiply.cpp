@@ -59,21 +59,21 @@ class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
     } else {
       static const std::vector<Elements> kTestElements = {
           // clang-format off
-          {    min(), min(),    max()},
-          {    min(), max(),    min()},
-          {    min(),    -1,    max()},
-          {min() + 2,    -1,max() - 1},
-          {        6,    -8,      -48},
-          {       -2,     2,       -4},
-          {       -1,    -1,        1},
-          {        0,     0,        0},
-          {        1,     1,        1},
-          {        2,     2,        4},
-          {        6,     8,       48},
-          {max() - 2,    -1,min() + 3},
-          {    max(),     1,    max()},
-          {    max(),     2,    max()},
-          {    max(), max(),    max()},
+          {    min(), min(),     max()},
+          {    min(), max(),     min()},
+          {    min(),    -1,     max()},
+          {min() + 2,    -1, max() - 1},
+          {        6,    -8,       -48},
+          {       -2,     2,        -4},
+          {       -1,    -1,         1},
+          {        0,     0,         0},
+          {        1,     1,         1},
+          {        2,     2,         4},
+          {        6,     8,        48},
+          {max() - 2,    -1, min() + 3},
+          {    max(),     1,     max()},
+          {    max(),     2,     max()},
+          {    max(), max(),     max()},
           // clang-format on
       };
 

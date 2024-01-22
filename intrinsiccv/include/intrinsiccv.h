@@ -14,11 +14,11 @@ extern "C" {
 
 #define INTRINSICCV_C_API(name) intrinsiccv_##name
 
-#define INTRINSICCV_BINARY_OP(name, type, ...)                             \
-  void INTRINSICCV_C_API(name)(const type *src_a, size_t src_a_stride,     \
-                               const type *src_b, size_t src_b_stride,     \
-                               type *dst, size_t dst_stride, size_t width, \
-                               size_t height __VA_OPT__(, ) __VA_ARGS__)
+#define INTRINSICCV_BINARY_OP(name, type, ...)                         \
+  void INTRINSICCV_C_API(name)(                                        \
+      const type *src_a, size_t src_a_stride, const type *src_b,       \
+      size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
+      size_t height __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
 
 /// Adds the values of the corresponding elements in `src_a` and `src_b`, and
 /// puts the result into `dst`.
@@ -31,15 +31,15 @@ extern "C" {
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
-///			start of the next row for the src_a.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the src_a.
+///        Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
-///			start of the next row for the src_b.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the src_b.
+///        Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride	Distance in bytes from the start of one row to the
-///			start of the next row for the destination.
-///			Must not be less than width * sizeof(type).
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///        start of the next row for the destination.
+///        Must not be less than width * sizeof(type).
 /// @param width        How many elements are in a row
 /// @param height       How many rows are in the data
 ///
@@ -63,15 +63,15 @@ INTRINSICCV_BINARY_OP(saturating_add_u64, uint64_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
-///			start of the next row for the src_a.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the src_a.
+///        Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
-///			start of the next row for the src_b.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the src_b.
+///        Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride	Distance in bytes from the start of one row to the
-///			start of the next row for the destination.
-///			Must not be less than width * sizeof(type).
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///        start of the next row for the destination.
+///        Must not be less than width * sizeof(type).
 /// @param width        How many elements are in a row
 /// @param height       How many rows are in the data
 ///
@@ -95,15 +95,15 @@ INTRINSICCV_BINARY_OP(saturating_sub_u64, uint64_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
-///			start of the next row for the src_a.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the src_a.
+///        Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
-///			start of the next row for the src_b.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the src_b.
+///        Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride	Distance in bytes from the start of one row to the
-///			start of the next row for the destination.
-///			Must not be less than width * sizeof(type).
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///        start of the next row for the destination.
+///        Must not be less than width * sizeof(type).
 /// @param width        How many elements are in a row
 /// @param height       How many rows are in the data
 ///
@@ -124,15 +124,15 @@ INTRINSICCV_BINARY_OP(saturating_absdiff_s32, int32_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
-///			start of the next row for the first source data.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the first source data.
+///        Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
-///			start of the next row for the second source data.
-///			Must not be less than width * sizeof(type).
+///        start of the next row for the second source data.
+///        Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride	Distance in bytes from the start of one row to the
-///			start of the next row for the destination data.
-///			Must not be less than width * sizeof(type).
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///        start of the next row for the destination data.
+///        Must not be less than width * sizeof(type).
 /// @param width        How many elements are in a row for the output.
 /// @param height       How many rows are in the output.
 /// @param scale        Currently unused parameter.

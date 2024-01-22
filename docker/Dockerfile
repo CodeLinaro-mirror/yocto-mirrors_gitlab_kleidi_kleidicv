@@ -20,6 +20,7 @@ RUN apt-get update \
       patch \
       pipx \
       python3-six \
+      shellcheck \
       software-properties-common \
       wget
 
@@ -39,6 +40,7 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
         libclang-rt-${LLVM_VERSION}-dev \
         llvm-${LLVM_VERSION}
 
+RUN pipx install cpplint==1.6.1
 RUN pipx install gcovr==6.0
 RUN pipx install reuse==3.0.0
 

@@ -69,7 +69,7 @@ static void vector_path(Rows<const ScalarType> src_rows,
   constexpr size_t buffer_size = num_of_lanes;
 
   // Last transpose step is always done on 64 bit elements
-  uint64x2_t trn_result_b64[buffer_size];
+  uint64x2_t trn_result_b64[buffer_size];  // NOLINT(runtime/arrays)
 
   // The 64 bit transpose spans through all the vectors, so its "order" is the
   // same as the number of vectors
@@ -148,7 +148,7 @@ static void transpose(Rectangle rect, Rows<ScalarType> data_rows) {
 
       inner_loop.unroll_once([&](size_t hindex) {
         // Allocate temporary memory for one tile
-        ScalarType tmp[num_of_lanes * num_of_lanes];
+        ScalarType tmp[num_of_lanes * num_of_lanes];  // NOLINT(runtime/arrays)
         Rows<ScalarType> tmp_rows{tmp, num_of_lanes * sizeof(ScalarType)};
 
         // Transpose a tile from the top right area, save the result
@@ -242,7 +242,7 @@ void transpose(const void *src, size_t src_stride, void *dst, size_t dst_stride,
       transpose<uint64_t>(src, src_stride, dst, dst_stride, src_width,
                           src_height, inplace);
       break;
-  };
+  }
 }
 
 }  // namespace intrinsiccv::neon

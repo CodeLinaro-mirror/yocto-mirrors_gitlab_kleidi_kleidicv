@@ -100,7 +100,7 @@ static inline IFuncImplType default_ifunc_resolver(
       HwCapTy hwcap, __ifunc_arg_t *arg) {                                  \
     IFuncImpls impls = impls_builder();                                     \
     return default_ifunc_resolver(make_hwcaps(hwcap, arg), impls);          \
-  };                                                                        \
+  }                                                                         \
                                                                             \
   extern "C" retty intrinsiccv_##api_name(__VA_ARGS__)                      \
       INTRINSICCV_ATTR_IFUNC("intrinsiccv_" #api_name "_ifunc_resolver")

@@ -180,10 +180,9 @@ void scale(const T *src, size_t src_stride, T *dst, size_t dst_stride,
   if (width * height < 2500) {  // empirical value
     ScaleFloat<T> operation(scale, shift);
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  }
-  // For bigger inputs, it's faster to pre-calculate the table
-  // and map those values during the run
-  else {
+  } else {
+    // For bigger inputs, it's faster to pre-calculate the table
+    // and map those values during the run
     ScaleTbx<T> operation(scale, shift);
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }

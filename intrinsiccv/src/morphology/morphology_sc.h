@@ -104,18 +104,19 @@ class VerticalOp final {
       src_rows += step;
     });
 
-    loop.tail([&](size_t /* index */) INTRINSICCV_STREAMING_COMPATIBLE {
-      const ScalarType *src_row = &src_rows[index];
-      auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
-      auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
-      auto row2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
-      auto row3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
-      acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
-      acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
-      acc2 = O::operation(VecTraits::svptrue(), acc2, row2);
-      acc3 = O::operation(VecTraits::svptrue(), acc3, row3);
-      ++src_rows;
-    });
+    loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
+              INTRINSICCV_STREAMING_COMPATIBLE {
+                const ScalarType *src_row = &src_rows[index];
+                auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
+                auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+                auto row2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
+                auto row3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
+                acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
+                acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
+                acc2 = O::operation(VecTraits::svptrue(), acc2, row2);
+                acc3 = O::operation(VecTraits::svptrue(), acc3, row3);
+                ++src_rows;
+              });
 
     // Save partial results which do not contain the first row.
     auto partial_acc0 = acc0;
@@ -194,14 +195,15 @@ class VerticalOp final {
       src_rows += step;
     });
 
-    loop.tail([&](size_t /* index */) INTRINSICCV_STREAMING_COMPATIBLE {
-      const ScalarType *src_row = &src_rows[index];
-      auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
-      auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
-      acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
-      acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
-      ++src_rows;
-    });
+    loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
+              INTRINSICCV_STREAMING_COMPATIBLE {
+                const ScalarType *src_row = &src_rows[index];
+                auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
+                auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+                acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
+                acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
+                ++src_rows;
+              });
 
     // Save partial results which do not contain the first row.
     auto partial_acc0 = acc0;
@@ -253,11 +255,12 @@ class VerticalOp final {
       src_rows += step;
     });
 
-    loop.tail([&](size_t /* index */) INTRINSICCV_STREAMING_COMPATIBLE {
-      auto row = svld1(pg, &src_rows[index]);
-      acc = O::operation(pg, acc, row);
-      ++src_rows;
-    });
+    loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
+              INTRINSICCV_STREAMING_COMPATIBLE {
+                auto row = svld1(pg, &src_rows[index]);
+                acc = O::operation(pg, acc, row);
+                ++src_rows;
+              });
 
     // Save partial result which does not contain the first row.
     auto partial_acc = acc;

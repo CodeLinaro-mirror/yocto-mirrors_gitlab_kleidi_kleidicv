@@ -17,6 +17,11 @@ apt-get -y --no-install-recommends install qemu-user
 # Check format of C++ files
 CHECK_ONLY=ON VERBOSE=ON scripts/format.sh
 
+scripts/cpplint.sh
+
+# Check format of shell scripts
+shellcheck scripts/*.sh
+
 # Check license headers
 reuse lint
 

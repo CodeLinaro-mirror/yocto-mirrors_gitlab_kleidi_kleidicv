@@ -5,6 +5,8 @@
 #ifndef INTRINSICCV_YUV_TO_RGB_SC_H
 #define INTRINSICCV_YUV_TO_RGB_SC_H
 
+#include <utility>
+
 #include "conversions/yuv_to_rgb.h"
 #include "intrinsiccv.h"
 #include "sve2.h"

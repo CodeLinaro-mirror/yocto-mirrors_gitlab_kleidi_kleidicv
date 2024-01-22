@@ -5,6 +5,9 @@
 #ifndef INTRINSICCV_OPERATIONS_H
 #define INTRINSICCV_OPERATIONS_H
 
+#include <algorithm>
+#include <utility>
+
 #include "traits.h"
 #include "types.h"
 

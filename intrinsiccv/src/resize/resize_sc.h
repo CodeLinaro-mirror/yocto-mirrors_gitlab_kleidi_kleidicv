@@ -148,11 +148,13 @@ INTRINSICCV_TARGET_FN_ATTS static void resize_to_quarter_u8_sc(
   LoopUnroll2 loop{src_height, /* Process two rows */ 2};
 
   // Process two rows at once.
-  loop.unroll_once([&](size_t) INTRINSICCV_STREAMING_COMPATIBLE {
-    process_parallel_rows(src_rows, src_width, dst_rows, dst_width);
-    src_rows += 2;
-    ++dst_rows;
-  });
+  loop.unroll_once([&](size_t)  // NOLINT(readability/casting)
+                   INTRINSICCV_STREAMING_COMPATIBLE {
+                     process_parallel_rows(src_rows, src_width, dst_rows,
+                                           dst_width);
+                     src_rows += 2;
+                     ++dst_rows;
+                   });
 
   // Handle an odd row, if any.
   if (dst_height > (src_height / 2)) {

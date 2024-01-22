@@ -7,6 +7,8 @@
 
 #include <arm_sve.h>
 
+#include <utility>
+
 #include "operations.h"
 #include "utils.h"
 #include "workspace/separable.h"
@@ -482,7 +484,7 @@ class SeparableFilter<FilterType, 3ul> {
   using BorderInfoType = typename intrinsiccv::FixedBorderInfo3x3<SourceType>;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  SeparableFilter(FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE {
+  explicit SeparableFilter(FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE {
     filter_ = filter;
   }
 
@@ -618,7 +620,7 @@ class SeparableFilter<FilterType, 5ul> {
   using BorderInfoType = typename intrinsiccv::FixedBorderInfo5x5<SourceType>;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  SeparableFilter(FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE {
+  explicit SeparableFilter(FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE {
     filter_ = filter;
   }
 

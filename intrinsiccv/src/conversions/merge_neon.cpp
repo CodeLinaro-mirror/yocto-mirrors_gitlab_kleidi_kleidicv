@@ -98,8 +98,8 @@ class Merge3 final : public UnrollTwice {
     dst[2] = src_c[0];
   }
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
  private:
+#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
   template <typename T>
   static const uint8_t *lookup_table();
 
@@ -306,8 +306,8 @@ class Merge4 final : public UnrollTwice {
     dst[3] = src_d[0];
   }
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
  private:
+#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
   // Polymorphic retinterpret_cast<>() between vector types where the element
   // size is doubled. For example, if 'VectorType' is 'uint8x16_t', this
   // method returns 'reinterpret_cast<uint16x8_t>(vector)'.

@@ -5,6 +5,8 @@
 #ifndef INTRINSICCV_NEON_H
 #define INTRINSICCV_NEON_H
 
+#include <utility>
+
 #include "neon_intrinsics.h"
 #include "operations.h"
 #include "utils.h"
@@ -333,7 +335,7 @@ class SeparableFilter<FilterType, 3ul> {
   using BorderInfoType = typename intrinsiccv::FixedBorderInfo3x3<SourceType>;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  SeparableFilter(FilterType filter) { filter_ = filter; }
+  explicit SeparableFilter(FilterType filter) { filter_ = filter; }
 
   static constexpr Margin margin() { return Margin{1ul}; }
 
@@ -463,7 +465,7 @@ class SeparableFilter<FilterType, 5ul> {
   using BorderInfoType = typename intrinsiccv::FixedBorderInfo5x5<SourceType>;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  SeparableFilter(FilterType filter) { filter_ = filter; }
+  explicit SeparableFilter(FilterType filter) { filter_ = filter; }
 
   static constexpr Margin margin() { return Margin{2ul}; }
 

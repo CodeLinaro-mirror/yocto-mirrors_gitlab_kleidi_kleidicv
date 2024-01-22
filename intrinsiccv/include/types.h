@@ -7,6 +7,7 @@
 
 #include <cstring>
 #include <memory>
+#include <utility>
 
 #include "config.h"
 #include "ctypes.h"

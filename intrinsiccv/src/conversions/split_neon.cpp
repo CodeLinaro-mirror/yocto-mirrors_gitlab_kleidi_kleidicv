@@ -57,8 +57,7 @@ class Split3 final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
- public:
-  Split3() { Split3Init<ScalarType>(); };
+  Split3() { Split3Init<ScalarType>(); }
 #endif
 
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
@@ -90,8 +89,8 @@ class Split3 final : public UnrollTwice {
     dst2[0] = src[2];
   }
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
  private:
+#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
   uint8x16_t index1_, index2_, index3_;
   template <typename T>
   void Split3Init() {}

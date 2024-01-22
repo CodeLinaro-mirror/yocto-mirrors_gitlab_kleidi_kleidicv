@@ -198,7 +198,6 @@ class MorphologyWorkspace final {
         // [Step 2] Process the preloaded data.
         operation.process_horizontal(Rectangle{rect.width(), 1ul}, wide_rows,
                                      db_indirect_rows.write_at().at(index));
-
       }  // for (...; index < horizontal_height; ...)
 
       db_indirect_rows.swap();

@@ -275,8 +275,6 @@ class MinMaxLoc : public testing::Test {};
 using MinMaxLocElementTypes = ::testing::Types<uint8_t>;
 TYPED_TEST_SUITE(MinMaxLoc, MinMaxLocElementTypes);
 
-using namespace std;
-
 TYPED_TEST(MinMaxLoc, API) {
   MinMaxLocTest<TypeParam, 0>{}.test();
   MinMaxLocTest<TypeParam, 100>{}.test();

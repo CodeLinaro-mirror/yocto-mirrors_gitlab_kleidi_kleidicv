@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:2
+image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:3
 
 build:
   tags:
