@@ -33,10 +33,11 @@ echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
 ninja -C build
 
 # Run tests
-qemu-aarch64     build/test/framework/intrinsiccv-framework-test --gtest_output=xml:build/test-results/
-qemu-aarch64 -cpu cortex-a35 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/neon/
-qemu-aarch64 -cpu cortex-a76 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sve2/
-qemu-aarch64 -cpu max        build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sme/
+TESTRESULT=0
+qemu-aarch64     build/test/framework/intrinsiccv-framework-test --gtest_output=xml:build/test-results/ || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a35 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/neon/ || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a76 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sve2/ || TESTRESULT=1
+qemu-aarch64 -cpu max        build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sme/ || TESTRESULT=1
 
 scripts/prefix_testsuite_names.py build/test-results/neon/intrinsiccv-api-test.xml "NEON."
 scripts/prefix_testsuite_names.py build/test-results/sve2/intrinsiccv-api-test.xml "SVE2."
@@ -51,3 +52,5 @@ gcovr \
   --print-summary \
   --exclude build \
   build
+
+exit $TESTRESULT
