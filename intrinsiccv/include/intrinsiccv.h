@@ -602,6 +602,27 @@ void INTRINSICCV_C_API(transpose)(const void *src, size_t src_stride, void *dst,
                                   size_t dst_stride, size_t src_width,
                                   size_t src_height, size_t element_size);
 
+/// Merges separate 1-channel source streams to one multi channel stream.
+///
+/// @param srcs         A C style array of pointers to the source data.
+///                     Number of pointers in the array must be the same as the
+///                     channel number. All pointers must be non-null.
+/// @param src_strides  A C style array of stride values for the source
+///                     streams. A stride value represents the distance in
+///                     bytes from the start of one row to the start of the
+///                     next row in the given source stream. Number of
+///                     stride values in the array must be the same as the
+///                     channel number. All stride values must not be less than
+///                     width * (element size in bytes).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the destination data. Must not
+///                     be less than width * (element size in bytes) * channels.
+/// @param width        How many elements are in a row in the source.
+/// @param height       How many rows are in the source.
+/// @param channels     Number of channels in the destination.
+/// @param element_size Size of one element in bytes.
+///
 void INTRINSICCV_C_API(merge)(const void **srcs, const size_t *src_strides,
                               void *dst, size_t dst_stride, size_t width,
                               size_t height, size_t channels,
