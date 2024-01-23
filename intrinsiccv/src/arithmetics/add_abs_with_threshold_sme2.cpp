@@ -7,7 +7,7 @@
 namespace intrinsiccv::sme2 {
 
 template <typename T>
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTS void
 add_abs_with_threshold(const T *src_a, size_t src_a_stride, const T *src_b,
                        size_t src_b_stride, T *dst, size_t dst_stride,
                        size_t width, size_t height, T threshold) {

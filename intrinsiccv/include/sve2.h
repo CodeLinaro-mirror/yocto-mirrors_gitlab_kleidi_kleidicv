@@ -437,12 +437,13 @@ class RemainingPathAdapter : public OperationBase<OperationType> {
   using ContextType = Context;
 
   explicit RemainingPathAdapter(OperationType &operation)
+      INTRINSICCV_STREAMING_COMPATIBLE
       : OperationBase<OperationType>(operation) {}
 
   // Forwards remaining_path() to either vector_path() or tail_path() of the
   // inner operation depending on what is requested by the innermost operation.
   template <typename... ArgTypes>
-  void remaining_path(ArgTypes... args) {
+  void remaining_path(ArgTypes... args) INTRINSICCV_STREAMING_COMPATIBLE {
     if constexpr (OperationType::uses_tail_path()) {
       this->operation().tail_path(std::forward<ArgTypes>(args)...);
     } else {

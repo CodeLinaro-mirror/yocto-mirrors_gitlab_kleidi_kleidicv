@@ -28,11 +28,9 @@ void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
 }  // namespace sve2
 
 namespace sme2 {
-INTRINSICCV_LOCALLY_STREAMING
 void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
                                  int16_t *dst, size_t dst_stride, size_t width,
                                  size_t height, size_t channels);
-INTRINSICCV_LOCALLY_STREAMING
 void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
                                int16_t *dst, size_t dst_stride, size_t width,
                                size_t height, size_t channels);

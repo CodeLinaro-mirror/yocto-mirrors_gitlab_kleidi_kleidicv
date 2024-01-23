@@ -7,7 +7,7 @@
 namespace intrinsiccv::sme2 {
 
 template <typename T>
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void dilate(
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTS void dilate(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, const intrinsiccv_morphology_params_t *params) {
   intrinsiccv::sve2::dilate_sc<T>(src, src_stride, dst, dst_stride, width,
@@ -15,7 +15,7 @@ INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void dilate(
 }
 
 template <typename T>
-INTRINSICCV_TARGET_FN_ATTS INTRINSICCV_LOCALLY_STREAMING void erode(
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTS void erode(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, const intrinsiccv_morphology_params_t *params) {
   intrinsiccv::sve2::erode_sc<T>(src, src_stride, dst, dst_stride, width,
