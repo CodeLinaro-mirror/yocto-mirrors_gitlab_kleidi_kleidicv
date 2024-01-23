@@ -2,6 +2,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+/// @mainpage
+///
+/// For documentation of the IntrinsicCV C API see @ref intrinsiccv.h
+///
+/// Project page: https://gitlab.arm.com/intrinsiccv/intrinsiccv
+///
+/// @see <a href="coverage/coverage_report.html">Code Coverage Report</a>
+
+/// @file
+/// @brief For an overview of the functions and their supported types see
+/// @ref intrinsiccv/src/supported-types.md.
+
 #ifndef INTRINSICCV_H
 #define INTRINSICCV_H
 
@@ -14,11 +26,17 @@ extern "C" {
 
 #define INTRINSICCV_C_API(name) intrinsiccv_##name
 
-#define INTRINSICCV_BINARY_OP(name, type, ...)                         \
-  void INTRINSICCV_C_API(name)(                                        \
-      const type *src_a, size_t src_a_stride, const type *src_b,       \
-      size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
-      size_t height __VA_OPT__(, ) __VA_ARGS__)  // NOLINT(whitespace/parens)
+#define INTRINSICCV_BINARY_OP(name, type)                                  \
+  void INTRINSICCV_C_API(name)(const type *src_a, size_t src_a_stride,     \
+                               const type *src_b, size_t src_b_stride,     \
+                               type *dst, size_t dst_stride, size_t width, \
+                               size_t height)
+
+#define INTRINSICCV_BINARY_OP_SCALE(name, type, scaletype)                 \
+  void INTRINSICCV_C_API(name)(const type *src_a, size_t src_a_stride,     \
+                               const type *src_b, size_t src_b_stride,     \
+                               type *dst, size_t dst_stride, size_t width, \
+                               size_t height, scaletype scale)
 
 /// Adds the values of the corresponding elements in `src_a` and `src_b`, and
 /// puts the result into `dst`.
@@ -44,12 +62,19 @@ extern "C" {
 /// @param height       Number of rows in the data.
 ///
 INTRINSICCV_BINARY_OP(saturating_add_s8, int8_t);
+/// @copydoc intrinsiccv_saturating_add_s8
 INTRINSICCV_BINARY_OP(saturating_add_u8, uint8_t);
+/// @copydoc intrinsiccv_saturating_add_s8
 INTRINSICCV_BINARY_OP(saturating_add_s16, int16_t);
+/// @copydoc intrinsiccv_saturating_add_s8
 INTRINSICCV_BINARY_OP(saturating_add_u16, uint16_t);
+/// @copydoc intrinsiccv_saturating_add_s8
 INTRINSICCV_BINARY_OP(saturating_add_s32, int32_t);
+/// @copydoc intrinsiccv_saturating_add_s8
 INTRINSICCV_BINARY_OP(saturating_add_u32, uint32_t);
+/// @copydoc intrinsiccv_saturating_add_s8
 INTRINSICCV_BINARY_OP(saturating_add_s64, int64_t);
+/// @copydoc intrinsiccv_saturating_add_s8
 INTRINSICCV_BINARY_OP(saturating_add_u64, uint64_t);
 
 /// Subtracts the value of the corresponding element in `src_b` from `src_a`,
@@ -76,12 +101,19 @@ INTRINSICCV_BINARY_OP(saturating_add_u64, uint64_t);
 /// @param height       Number of rows in the data.
 ///
 INTRINSICCV_BINARY_OP(saturating_sub_s8, int8_t);
+/// @copydoc intrinsiccv_saturating_sub_s8
 INTRINSICCV_BINARY_OP(saturating_sub_u8, uint8_t);
+/// @copydoc intrinsiccv_saturating_sub_s8
 INTRINSICCV_BINARY_OP(saturating_sub_s16, int16_t);
+/// @copydoc intrinsiccv_saturating_sub_s8
 INTRINSICCV_BINARY_OP(saturating_sub_u16, uint16_t);
+/// @copydoc intrinsiccv_saturating_sub_s8
 INTRINSICCV_BINARY_OP(saturating_sub_s32, int32_t);
+/// @copydoc intrinsiccv_saturating_sub_s8
 INTRINSICCV_BINARY_OP(saturating_sub_u32, uint32_t);
+/// @copydoc intrinsiccv_saturating_sub_s8
 INTRINSICCV_BINARY_OP(saturating_sub_s64, int64_t);
+/// @copydoc intrinsiccv_saturating_sub_s8
 INTRINSICCV_BINARY_OP(saturating_sub_u64, uint64_t);
 
 /// From the corresponding elements in `src_a` and `src_b`, subtracts the lower
@@ -108,9 +140,13 @@ INTRINSICCV_BINARY_OP(saturating_sub_u64, uint64_t);
 /// @param height       Number of rows in the data.
 ///
 INTRINSICCV_BINARY_OP(saturating_absdiff_u8, uint8_t);
+/// @copydoc intrinsiccv_saturating_absdiff_u8
 INTRINSICCV_BINARY_OP(saturating_absdiff_s8, int8_t);
+/// @copydoc intrinsiccv_saturating_absdiff_u8
 INTRINSICCV_BINARY_OP(saturating_absdiff_u16, uint16_t);
+/// @copydoc intrinsiccv_saturating_absdiff_u8
 INTRINSICCV_BINARY_OP(saturating_absdiff_s16, int16_t);
+/// @copydoc intrinsiccv_saturating_absdiff_u8
 INTRINSICCV_BINARY_OP(saturating_absdiff_s32, int32_t);
 
 /// Multiplies the values of the corresponding elements in `src_a` and `src_b`,
@@ -137,13 +173,17 @@ INTRINSICCV_BINARY_OP(saturating_absdiff_s32, int32_t);
 /// @param height       Number of rows in the data.
 /// @param scale        Currently unused parameter.
 ///
-INTRINSICCV_BINARY_OP(saturating_multiply_u8, uint8_t, double);
-INTRINSICCV_BINARY_OP(saturating_multiply_s8, int8_t, double);
-INTRINSICCV_BINARY_OP(saturating_multiply_u16, uint16_t, double);
-INTRINSICCV_BINARY_OP(saturating_multiply_s16, int16_t, double);
-INTRINSICCV_BINARY_OP(saturating_multiply_s32, int32_t, double);
+INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_u8, uint8_t, double);
+/// @copydoc intrinsiccv_saturating_multiply_u8
+INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_s8, int8_t, double);
+/// @copydoc intrinsiccv_saturating_multiply_u8
+INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_u16, uint16_t, double);
+/// @copydoc intrinsiccv_saturating_multiply_u8
+INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_s16, int16_t, double);
+/// @copydoc intrinsiccv_saturating_multiply_u8
+INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_s32, int32_t, double);
 
-INTRINSICCV_BINARY_OP(add_abs_with_threshold, int16_t, int16_t);
+INTRINSICCV_BINARY_OP_SCALE(add_abs_with_threshold, int16_t, int16_t);
 
 /// Converts a grayscale image to RGB. All channels are 8-bit wide.
 ///
@@ -644,19 +684,19 @@ void INTRINSICCV_C_API(merge)(const void **srcs, const size_t *src_strides,
 void INTRINSICCV_C_API(min_max_u8)(const uint8_t *src, size_t src_stride,
                                    size_t width, size_t height,
                                    uint8_t *min_value, uint8_t *max_value);
-
+/// @copydoc intrinsiccv_min_max_u8
 void INTRINSICCV_C_API(min_max_s8)(const int8_t *src, size_t src_stride,
                                    size_t width, size_t height,
                                    int8_t *min_value, int8_t *max_value);
-
+/// @copydoc intrinsiccv_min_max_u8
 void INTRINSICCV_C_API(min_max_u16)(const uint16_t *src, size_t src_stride,
                                     size_t width, size_t height,
                                     uint16_t *min_value, uint16_t *max_value);
-
+/// @copydoc intrinsiccv_min_max_u8
 void INTRINSICCV_C_API(min_max_s16)(const int16_t *src, size_t src_stride,
                                     size_t width, size_t height,
                                     int16_t *min_value, int16_t *max_value);
-
+/// @copydoc intrinsiccv_min_max_u8
 void INTRINSICCV_C_API(min_max_s32)(const int32_t *src, size_t src_stride,
                                     size_t width, size_t height,
                                     int32_t *min_value, int32_t *max_value);

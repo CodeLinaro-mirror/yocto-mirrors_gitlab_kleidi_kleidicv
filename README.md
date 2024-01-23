@@ -13,13 +13,14 @@ SPDX-License-Identifier: Apache-2.0
 This project is in the early stages of development and is not ready for use
 except as a preview.
 
-This is a Computer Vision Library aiming to give high-performing image
+IntrinsicCV is a library aiming to give high-performing image
 processing functions on Arm. It is designed to be simple to import into a wide
 variety of projects.
 
-Library provides a C interface.
+The library provides a C interface. For details see
+[the C API documentation](https://intrinsiccv.sites.arm.com/intrinsiccv/).
 
-Adapter layer API is currently provided for:
+An adapter layer API is currently provided for:
 * OpenCV - [available functionality overview](adapters/opencv/doc-opencv.md)
 
 # Structure

@@ -32,12 +32,12 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
 source_path="$(realpath "${SCRIPT_PATH}"/..)"
 build_path="$(realpath "${1:-${source_path}/build}")"
-coverage_path="${build_path}"/coverage
+coverage_path="${build_path}"/html/coverage
 
 # ------------------------------------------------------------------------------
 
 rm -rf "${coverage_path}"
-mkdir "${coverage_path}"
+mkdir -p "${coverage_path}"
 
 cd "${source_path}"
 

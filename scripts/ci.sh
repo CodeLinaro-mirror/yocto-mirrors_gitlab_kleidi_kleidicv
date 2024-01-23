@@ -11,7 +11,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Ensure we're doing a clean build
 rm -rf build
-rm -rf public
 
 apt-get -y --no-install-recommends install qemu-user
 
@@ -25,6 +24,9 @@ shellcheck scripts/*.sh
 
 # Check license headers
 reuse lint
+
+# Generate documentation
+doxygen
 
 # Build
 cmake -S . -B build -G Ninja \
@@ -53,10 +55,5 @@ scripts/prefix_testsuite_names.py build/test-results/sme/intrinsiccv-api-test.xm
 
 # Generate test coverage report
 LLVM_COV=llvm-cov scripts/generate_coverage_report.sh
-
-# Set up GitLab Pages (https://docs.gitlab.com/ee/user/project/pages/)
-mkdir public
-mv build/coverage public
-echo "<meta http-equiv=\"Refresh\" content=\"0; url='coverage/coverage_report.html'\" />">public/index.html
 
 exit $TESTRESULT

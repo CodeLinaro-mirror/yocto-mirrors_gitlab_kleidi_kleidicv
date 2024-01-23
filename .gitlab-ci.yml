@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:3
+image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:4
 
 .common:
   tags:
@@ -18,7 +18,7 @@ image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:3
         coverage_format: cobertura
         path: build/cobertura-coverage.xml
     paths:
-      - public
+      - build/html
   coverage: /^branches:\s+([\d\.]+\%)/
 
 # On the main branch publish pages.
@@ -26,6 +26,7 @@ pages:
   extends: .common
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  publish: build/html
 
 # On other branches don't publish pages.
 test:
