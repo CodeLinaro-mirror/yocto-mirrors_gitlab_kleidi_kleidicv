@@ -296,7 +296,7 @@ TEST(Array2D, ExpectEq_NotEqual_Data) {
     }
   };
 
-  EXPECT_FATAL_FAILURE(Test::test(), "Mismatch at (row=0, col=0): 0 vs 42.");
+  EXPECT_FATAL_FAILURE(Test::test(), "Mismatch at (row=0, col=0): 0 vs 0x2a.");
 }
 
 /// Tests that EXPECT_NE_ARRAY2D() macro works for equal objects.

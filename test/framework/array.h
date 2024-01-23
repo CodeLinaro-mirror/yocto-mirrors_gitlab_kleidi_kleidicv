@@ -309,21 +309,23 @@ class Array2D : public TwoDimensional<ElementType> {
 };  // end of class Array2D<ElementType>
 
 /// Compares two \ref Array2D objects for equality.
-#define EXPECT_EQ_ARRAY2D(lhs, rhs)                                 \
-  do {                                                              \
-    ASSERT_EQ((lhs).width(), (rhs).width())                         \
-        << "Mismatch in width." << std::endl;                       \
-    ASSERT_EQ((lhs).height(), (rhs).height())                       \
-        << "Mismatch in height." << std::endl;                      \
-    ASSERT_EQ((lhs).channels(), (rhs).channels())                   \
-        << "Mismatch in channels." << std::endl;                    \
-    auto mismatch = (lhs).compare_to((rhs));                        \
-    if (mismatch) {                                                 \
-      auto [row, col] = *mismatch;                                  \
-      GTEST_FAIL() << "Mismatch at (row=" << row << ", col=" << col \
-                   << "): " << (lhs).at(row, col)[0] << " vs "      \
-                   << (rhs).at(row, col)[0] << "." << std::endl;    \
-    }                                                               \
+#define EXPECT_EQ_ARRAY2D(lhs, rhs)                                          \
+  do {                                                                       \
+    ASSERT_EQ((lhs).width(), (rhs).width())                                  \
+        << "Mismatch in width." << std::endl;                                \
+    ASSERT_EQ((lhs).height(), (rhs).height())                                \
+        << "Mismatch in height." << std::endl;                               \
+    ASSERT_EQ((lhs).channels(), (rhs).channels())                            \
+        << "Mismatch in channels." << std::endl;                             \
+    auto mismatch = (lhs).compare_to((rhs));                                 \
+    if (mismatch) {                                                          \
+      auto [row, col] = *mismatch;                                           \
+      GTEST_FAIL() << "Mismatch at (row=" << row << ", col=" << col          \
+                   << "): " << std::hex << std::showbase                     \
+                   << static_cast<uint64_t>((lhs).at(row, col)[0]) << " vs " \
+                   << static_cast<uint64_t>((rhs).at(row, col)[0]) << "."    \
+                   << std::endl;                                             \
+    }                                                                        \
   } while (0 != 0)
 
 /// Compares two \ref Array2D objects for inequality.
