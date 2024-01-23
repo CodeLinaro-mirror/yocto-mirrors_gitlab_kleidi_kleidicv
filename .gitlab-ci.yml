@@ -11,8 +11,12 @@ build:
     - scripts/ci.sh
   artifacts:
     when: always
+    expire_in: 1 day
     reports:
       junit: build/test-results/**/*.xml
       coverage_report:
         coverage_format: cobertura
         path: build/cobertura-coverage.xml
+    paths:
+      # GitLab Pages https://docs.gitlab.com/ee/user/project/pages/
+      - public

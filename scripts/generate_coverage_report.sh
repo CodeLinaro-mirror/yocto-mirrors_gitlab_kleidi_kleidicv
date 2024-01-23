@@ -11,14 +11,7 @@
 
 set -exu
 
-# ------------------------------------------------------------------------------
-# Mandatory arguments check
-# ------------------------------------------------------------------------------
-
-if [[ -z "${LLVM_COV}" ]]; then
-    echo "Required variable 'LLVM_COV' is not set. Please set it to point to llvm-cov command."
-    exit 1
-fi
+: "${LLVM_COV:=llvm-cov}"
 
 # ------------------------------------------------------------------------------
 # Automatic configuration
@@ -35,13 +28,14 @@ coverage_path="${build_path}"/coverage
 rm -rf "${coverage_path}"
 mkdir "${coverage_path}"
 
-pushd "${coverage_path}" || exit 1
+cd "${coverage_path}"
 
 gcovr \
     --gcov-executable "${LLVM_COV} gcov" \
     --root "${build_path}" \
     --filter "${source_path}" \
     --gcov-filter "${build_path}" \
+    --cobertura "${build_path}/cobertura-coverage.xml" \
     --html-details "${coverage_path}"/coverage_report.html \
     --html-title "IntrinsicCV Coverage Report" \
     --html-details-syntax-highlighting \
@@ -53,11 +47,3 @@ gcovr \
     --exclude ".*/CompilerIdCXX/" \
     --print-summary \
     -j
-
-popd || exit 1
-
-tar -czf "${build_path}"/coverage.tar.gz -C "${build_path}" coverage
-
-# ------------------------------------------------------------------------------
-# End of script
-# ------------------------------------------------------------------------------

@@ -11,6 +11,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Ensure we're doing a clean build
 rm -rf build
+rm -rf public
 
 apt-get -y --no-install-recommends install qemu-user
 
@@ -49,13 +50,11 @@ scripts/prefix_testsuite_names.py build/test-results/sve2/intrinsiccv-api-test.x
 scripts/prefix_testsuite_names.py build/test-results/sme/intrinsiccv-api-test.xml "SME."
 
 # Generate test coverage report
-gcovr \
-  -j \
-  --gcov-executable "llvm-cov gcov" \
-  --exclude-noncode-lines \
-  --cobertura build/cobertura-coverage.xml \
-  --print-summary \
-  --exclude build \
-  build
+scripts/generate_coverage_report.sh
+
+# Set up GitLab Pages (https://docs.gitlab.com/ee/user/project/pages/)
+mkdir public
+mv build/coverage public
+echo "<meta http-equiv=\"Refresh\" content=\"0; url='coverage/coverage_report.html'\" />">public/index.html
 
 exit $TESTRESULT
