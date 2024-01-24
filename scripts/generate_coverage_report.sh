@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Collects coverage data and generates an HTML coverage report.
+# Collects coverage data and generates Cobertura & HTML coverage reports.
 #
 # Arguments
 #   1: Path to build folder. Defaults to default build folder.
@@ -28,13 +28,11 @@ coverage_path="${build_path}"/coverage
 rm -rf "${coverage_path}"
 mkdir "${coverage_path}"
 
-cd "${coverage_path}"
+cd "${source_path}"
 
 gcovr \
+    -j \
     --gcov-executable "${LLVM_COV} gcov" \
-    --root "${build_path}" \
-    --filter "${source_path}" \
-    --gcov-filter "${build_path}" \
     --cobertura "${build_path}/cobertura-coverage.xml" \
     --html-details "${coverage_path}"/coverage_report.html \
     --html-title "IntrinsicCV Coverage Report" \
@@ -42,8 +40,6 @@ gcovr \
     --html-tab-size 2 \
     --decisions \
     --exclude-noncode-lines \
-    --exclude ".*/googletest-build/" \
-    --exclude ".*/googletest-src/" \
-    --exclude ".*/CompilerIdCXX/" \
+    --exclude "${build_path}" \
     --print-summary \
-    -j
+    "${build_path}"
