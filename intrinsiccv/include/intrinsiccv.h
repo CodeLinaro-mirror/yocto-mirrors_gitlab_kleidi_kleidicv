@@ -587,9 +587,9 @@ void INTRINSICCV_C_API(gaussian_blur_5x5_u8)(
 ///                     stride values in the array must be the same as the
 ///                     channel number. All stride values must not be less than
 ///                     width * (element size in bytes).
-/// @param width        How many pixels are in one row of the source. (One
-///                     pixel consists of 'channels' number of elements.)
-/// @param height       How many rows are in the source.
+/// @param width        Number of pixels in one row of the source. (One pixel
+///                     consists of 'channels' number of elements.)
+/// @param height       Number of rows in the source.
 /// @param channels     Number of channels in the source.
 /// @param element_size Size of one element in bytes.
 ///
@@ -618,8 +618,8 @@ void INTRINSICCV_C_API(transpose)(const void *src, size_t src_stride, void *dst,
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the destination data. Must not
 ///                     be less than width * (element size in bytes) * channels.
-/// @param width        How many elements are in a row in the source.
-/// @param height       How many rows are in the source.
+/// @param width        Number of elements in a row in the source.
+/// @param height       Number of rows in the source.
 /// @param channels     Number of channels in the destination.
 /// @param element_size Size of one element in bytes.
 ///
