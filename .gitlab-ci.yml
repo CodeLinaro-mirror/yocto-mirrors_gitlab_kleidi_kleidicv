@@ -4,7 +4,7 @@
 
 image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:3
 
-build:
+.common:
   tags:
     - arm64
   script:
@@ -18,5 +18,16 @@ build:
         coverage_format: cobertura
         path: build/cobertura-coverage.xml
     paths:
-      # GitLab Pages https://docs.gitlab.com/ee/user/project/pages/
       - public
+
+# On the main branch publish pages.
+pages:
+  extends: .common
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# On other branches don't publish pages.
+test:
+  extends: .common
+  rules:
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
