@@ -12,9 +12,10 @@
 #   3-*: Optional arguments to the executable.
 #
 # Options:
+#   ANDROID_SERIAL:     Passed to adb it selects a device by its serial number. This is optional.
 #   COVERAGE:           Enables collection of coverage metrics if set to 'ON'. Defaults to 'OFF'.
-#   DEVICE_HOST:        Passed to adb. It sets the host where the device is found. Defaults to '127.0.0.1'.
-#   DEVICE_PORT:        Passed to adb. It sets the port where the device is found. Defaults to '5037'.
+#   DEVICE_HOST:        Passed to adb it sets the host where the device is found. This is optional.
+#   DEVICE_PORT:        Passed to adb it sets the port where the device is found. This is optional.
 #   DEVICE_TMP_PATH:    Temporary path for generated files on the device. Defaults to '/data/local/tmp'.
 #   GCOV_PREFIX:        Prefix to paths for gcov. Defaults to '${DEVICE_TMP_PATH}/gcov'.
 
@@ -34,8 +35,6 @@ fi
 # ------------------------------------------------------------------------------
 
 : "${COVERAGE:=OFF}"
-: "${DEVICE_HOST:=127.0.0.1}"
-: "${DEVICE_PORT:=5037}"
 : "${DEVICE_TMP_PATH:=/data/local/tmp}"
 # Generated coverage metrics are placed into '${DEVICE_TMP_PATH}/gcov'.
 : "${GCOV_PREFIX:=${DEVICE_TMP_PATH}/gcov}"
@@ -62,7 +61,18 @@ with_coverage() {
 # ------------------------------------------------------------------------------
 
 run_adb_command() {
-    "${ADB}" -H "${DEVICE_HOST}" -P "${DEVICE_PORT}" -s "${ANDROID_SERIAL}" "$@"
+    local args=()
+    if [[ -n "${DEVICE_HOST+x}" ]]; then
+        args+=( "-H" "${DEVICE_HOST}" )
+    fi
+    if [[ -n "${DEVICE_PORT+x}" ]]; then
+        args+=( "-P" "${DEVICE_PORT}" )
+    fi
+    if [[ -n "${ANDROID_SERIAL+x}" ]]; then
+        args+=( "-s" "${ANDROID_SERIAL}" )
+    fi
+
+    "${ADB}" "${args[@]}" "$@"
 }
 
 # ------------------------------------------------------------------------------
