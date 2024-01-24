@@ -189,7 +189,7 @@ void scale(const T *src, size_t src_stride, T *dst, size_t dst_stride,
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                          \
-  template INTRINSICCV_TARGET_FN_ATTS void scale<type>(                 \
+  template INTRINSICCV_TARGET_FN_ATTRS void scale<type>(                \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
       size_t width, size_t height, float scale, float shift)
 

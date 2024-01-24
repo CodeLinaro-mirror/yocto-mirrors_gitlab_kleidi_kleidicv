@@ -35,7 +35,7 @@ void saturating_add(const T *src_a, size_t src_a_stride, const T *src_b,
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
-  template INTRINSICCV_TARGET_FN_ATTS void saturating_add<type>(       \
+  template INTRINSICCV_TARGET_FN_ATTRS void saturating_add<type>(      \
       const type *src_a, size_t src_a_stride, const type *src_b,       \
       size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
       size_t height)

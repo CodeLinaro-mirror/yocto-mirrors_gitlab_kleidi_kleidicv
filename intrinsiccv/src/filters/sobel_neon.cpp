@@ -116,7 +116,7 @@ class VerticalSobel3x3<uint8_t> {
   }
 };  // end of class VerticalSobel3x3<uint8_t>
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
                                  int16_t *dst, size_t dst_stride, size_t width,
                                  size_t height, size_t channels) {
@@ -136,7 +136,7 @@ void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
                      INTRINSICCV_BORDER_TYPE_REPLICATE, filter);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
                                int16_t *dst, size_t dst_stride, size_t width,
                                size_t height, size_t channels) {

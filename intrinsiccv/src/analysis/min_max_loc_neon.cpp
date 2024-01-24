@@ -321,7 +321,7 @@ void min_max_loc(const ScalarType *src, size_t src_stride, size_t width,
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
-  template INTRINSICCV_TARGET_FN_ATTS void min_max_loc<type>(          \
+  template INTRINSICCV_TARGET_FN_ATTRS void min_max_loc<type>(         \
       const type *src, size_t src_stride, size_t width, size_t height, \
       size_t *min_offset, size_t *max_offset)
 

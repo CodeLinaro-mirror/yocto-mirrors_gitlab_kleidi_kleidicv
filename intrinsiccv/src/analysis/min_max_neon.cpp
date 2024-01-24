@@ -60,7 +60,7 @@ void min_max(const ScalarType *src, size_t src_stride, size_t width,
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
-  template INTRINSICCV_TARGET_FN_ATTS void min_max<type>(              \
+  template INTRINSICCV_TARGET_FN_ATTRS void min_max<type>(             \
       const type *src, size_t src_stride, size_t width, size_t height, \
       type *min_value, type *max_value)
 

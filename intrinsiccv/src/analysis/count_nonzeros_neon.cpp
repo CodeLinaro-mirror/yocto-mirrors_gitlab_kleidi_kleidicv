@@ -51,10 +51,10 @@ static size_t count_nonzeros_impl(Rows<const T> src, Rectangle rect) {
 }  // namespace neon
 
 template <typename T>
-INTRINSICCV_TARGET_FN_ATTS static size_t count_nonzeros(const T *src,
-                                                        size_t src_stride,
-                                                        size_t width,
-                                                        size_t height) {
+INTRINSICCV_TARGET_FN_ATTRS static size_t count_nonzeros(const T *src,
+                                                         size_t src_stride,
+                                                         size_t width,
+                                                         size_t height) {
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};
   return neon::count_nonzeros_impl(src_rows, rect);
@@ -62,7 +62,7 @@ INTRINSICCV_TARGET_FN_ATTS static size_t count_nonzeros(const T *src,
 
 extern "C" {
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 size_t INTRINSICCV_C_API(count_nonzeros_u8)(const uint8_t *src,
                                             size_t src_stride, size_t width,
                                             size_t height) {

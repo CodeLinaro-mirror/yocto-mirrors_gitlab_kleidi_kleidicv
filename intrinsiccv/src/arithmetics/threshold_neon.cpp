@@ -49,7 +49,7 @@ void threshold_binary(const T *src, size_t src_stride, T *dst,
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                          \
-  template INTRINSICCV_TARGET_FN_ATTS void threshold_binary<type>(      \
+  template INTRINSICCV_TARGET_FN_ATTRS void threshold_binary<type>(     \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
       size_t width, size_t height, type threshold, type value)
 

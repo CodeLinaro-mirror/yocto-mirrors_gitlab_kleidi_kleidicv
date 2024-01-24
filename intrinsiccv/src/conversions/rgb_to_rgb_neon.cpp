@@ -187,7 +187,7 @@ class RGBAToRGB final : public UnrollTwice {
   }
 };  // end of class RGBAToRGB<ScalarType>
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void rgb_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                    size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};
@@ -197,7 +197,7 @@ void rgb_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void rgba_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                      size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};
@@ -207,7 +207,7 @@ void rgba_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                     size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};
@@ -217,7 +217,7 @@ void rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                     size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};
@@ -227,7 +227,7 @@ void rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void rgba_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                     size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};
@@ -237,7 +237,7 @@ void rgba_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void rgba_to_rgb_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                     size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};

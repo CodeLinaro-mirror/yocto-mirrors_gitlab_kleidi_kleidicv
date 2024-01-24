@@ -161,7 +161,7 @@ void discrete_gaussian_blur(const ScalarType *src, size_t src_stride,
   workspace->process(rect, src_rows, dst_rows, channels, border_type, filter);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void gaussian_blur_3x3_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                           size_t dst_stride, size_t width, size_t height,
                           size_t channels,
@@ -171,7 +171,7 @@ void gaussian_blur_3x3_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                                      height, channels, border_type, params);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                           size_t dst_stride, size_t width, size_t height,
                           size_t channels,

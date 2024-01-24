@@ -208,7 +208,7 @@ void yuv2rgbx_operation(OperationType &operation, const ScalarType *src_y,
   zip_parallel_rows(row_based_operation, rect, y_rows, uv_rows, rgbx_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void yuv_sp_to_rgb_u8_sc(const uint8_t *src_y, size_t src_y_stride,
                                 const uint8_t *src_uv, size_t src_uv_stride,
                                 uint8_t *dst, size_t dst_stride, size_t width,
@@ -219,7 +219,7 @@ static void yuv_sp_to_rgb_u8_sc(const uint8_t *src_y, size_t src_y_stride,
                      dst_stride, width, height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void yuv_sp_to_rgba_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
@@ -229,7 +229,7 @@ static void yuv_sp_to_rgba_u8_sc(
                      dst_stride, width, height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void yuv_sp_to_bgr_u8_sc(const uint8_t *src_y, size_t src_y_stride,
                                 const uint8_t *src_uv, size_t src_uv_stride,
                                 uint8_t *dst, size_t dst_stride, size_t width,
@@ -240,7 +240,7 @@ static void yuv_sp_to_bgr_u8_sc(const uint8_t *src_y, size_t src_y_stride,
                      dst_stride, width, height);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void yuv_sp_to_bgra_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,

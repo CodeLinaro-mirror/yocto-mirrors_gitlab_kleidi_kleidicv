@@ -181,7 +181,7 @@ class RGBAToRGB final : public UnrollTwice {
   }
 };  // end of class RGBAToRGB<ScalarType>
 
-INTRINSICCV_TARGET_FN_ATTS static void rgb_to_bgr_u8_sc(
+INTRINSICCV_TARGET_FN_ATTRS static void rgb_to_bgr_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
   Rectangle rect{width, height};
@@ -196,7 +196,7 @@ INTRINSICCV_TARGET_FN_ATTS static void rgb_to_bgr_u8_sc(
   sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void rgba_to_bgra_u8_sc(const uint8_t *src, size_t src_stride,
                                uint8_t *dst, size_t dst_stride, size_t width,
                                size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -207,7 +207,7 @@ static void rgba_to_bgra_u8_sc(const uint8_t *src, size_t src_stride,
   sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void rgb_to_bgra_u8_sc(const uint8_t *src, size_t src_stride,
                               uint8_t *dst, size_t dst_stride, size_t width,
                               size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -218,7 +218,7 @@ static void rgb_to_bgra_u8_sc(const uint8_t *src, size_t src_stride,
   sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void rgb_to_rgba_u8_sc(const uint8_t *src, size_t src_stride,
                               uint8_t *dst, size_t dst_stride, size_t width,
                               size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -229,7 +229,7 @@ static void rgb_to_rgba_u8_sc(const uint8_t *src, size_t src_stride,
   sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void rgba_to_bgr_u8_sc(const uint8_t *src, size_t src_stride,
                               uint8_t *dst, size_t dst_stride, size_t width,
                               size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -240,7 +240,7 @@ static void rgba_to_bgr_u8_sc(const uint8_t *src, size_t src_stride,
   sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 static void rgba_to_rgb_u8_sc(const uint8_t *src, size_t src_stride,
                               uint8_t *dst, size_t dst_stride, size_t width,
                               size_t height) INTRINSICCV_STREAMING_COMPATIBLE {

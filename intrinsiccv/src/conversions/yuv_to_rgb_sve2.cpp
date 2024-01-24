@@ -6,7 +6,7 @@
 
 namespace intrinsiccv::sve2 {
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
                       const uint8_t *src_uv, size_t src_uv_stride, uint8_t *dst,
                       size_t dst_stride, size_t width, size_t height,
@@ -15,7 +15,7 @@ void yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
                       dst_stride, width, height, is_nv21);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void yuv_sp_to_rgba_u8(const uint8_t *src_y, size_t src_y_stride,
                        const uint8_t *src_uv, size_t src_uv_stride,
                        uint8_t *dst, size_t dst_stride, size_t width,
@@ -24,7 +24,7 @@ void yuv_sp_to_rgba_u8(const uint8_t *src_y, size_t src_y_stride,
                        dst_stride, width, height, is_nv21);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void yuv_sp_to_bgr_u8(const uint8_t *src_y, size_t src_y_stride,
                       const uint8_t *src_uv, size_t src_uv_stride, uint8_t *dst,
                       size_t dst_stride, size_t width, size_t height,
@@ -33,7 +33,7 @@ void yuv_sp_to_bgr_u8(const uint8_t *src_y, size_t src_y_stride,
                       dst_stride, width, height, is_nv21);
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void yuv_sp_to_bgra_u8(const uint8_t *src_y, size_t src_y_stride,
                        const uint8_t *src_uv, size_t src_uv_stride,
                        uint8_t *dst, size_t dst_stride, size_t width,

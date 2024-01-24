@@ -292,7 +292,7 @@ void split(const void *src_data, const size_t src_stride, void **dst_data,
   }
 }
 
-INTRINSICCV_TARGET_FN_ATTS
+INTRINSICCV_TARGET_FN_ATTRS
 void split(const void *src_data, size_t src_stride, void **dst_data,
            size_t *dst_strides, size_t width, size_t height, size_t channels,
            size_t element_size) {
