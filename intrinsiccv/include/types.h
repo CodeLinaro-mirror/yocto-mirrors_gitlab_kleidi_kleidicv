@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -541,13 +541,14 @@ template <typename OperationType, typename... RowTypes>
 void zip_parallel_rows(OperationType &operation, Rectangle rect,
                        RowTypes... rows) INTRINSICCV_STREAMING_COMPATIBLE {
   for (size_t row_index = 0; row_index < rect.height(); row_index += 2) {
-    operation.process_row(rect.width(), rows.as_columns()...);
-    // Call pre-increment operator on all elements in the parameter pack.
-    ((++rows), ...);
     // Handle the last odd row in a special way.
     if (INTRINSICCV_UNLIKELY(row_index == (rect.height() - 1))) {
       ((rows.make_single_row(), ...));
     }
+
+    operation.process_row(rect.width(), rows.as_columns()...);
+    // Call pre-increment operator on all elements in the parameter pack.
+    ((++rows), ...);
   }
 }
 
