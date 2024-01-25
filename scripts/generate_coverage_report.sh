@@ -9,9 +9,20 @@
 # Arguments
 #   1: Path to build folder. Defaults to default build folder.
 
-set -exu
+set -eu
 
-: "${LLVM_COV:=llvm-cov}"
+# ------------------------------------------------------------------------------
+# Mandatory arguments check
+# ------------------------------------------------------------------------------
+
+if [[ -z "${LLVM_COV+x}" ]]; then
+    echo "Required variable 'LLVM_COV' is not set." \
+         "Please set it to point to an llvm-cov instance which is compatible" \
+         "with the toolchain the binaries were built with."
+    exit 1
+fi
+
+set -x
 
 # ------------------------------------------------------------------------------
 # Automatic configuration
