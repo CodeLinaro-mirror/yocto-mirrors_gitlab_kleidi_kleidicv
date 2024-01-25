@@ -49,14 +49,14 @@ extern "C" {
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
-///                     start of the next row for the src_a.
+///                     start of the next row for the first source data.
 ///                     Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
-///                     start of the next row for the src_b.
+///                     start of the next row for the second source data.
 ///                     Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination.
+///                     start of the next row for the destination data.
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -88,14 +88,14 @@ INTRINSICCV_BINARY_OP(saturating_add_u64, uint64_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
-///                     start of the next row for the src_a.
+///                     start of the next row for the first source data.
 ///                     Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
-///                     start of the next row for the src_b.
+///                     start of the next row for the second source data.
 ///                     Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination.
+///                     start of the next row for the destination data.
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -127,14 +127,14 @@ INTRINSICCV_BINARY_OP(saturating_sub_u64, uint64_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
-///                     start of the next row for the src_a.
+///                     start of the next row for the first source data.
 ///                     Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
-///                     start of the next row for the src_b.
+///                     start of the next row for the second source data.
 ///                     Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination.
+///                     start of the next row for the destination data.
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -192,14 +192,14 @@ INTRINSICCV_BINARY_OP_SCALE(add_abs_with_threshold, int16_t, int16_t);
 /// where each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -214,14 +214,14 @@ void INTRINSICCV_C_API(gray_to_rgb_u8)(const uint8_t *src, size_t src_stride,
 /// where each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -236,14 +236,14 @@ void INTRINSICCV_C_API(gray_to_rgba_u8)(const uint8_t *src, size_t src_stride,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -254,14 +254,14 @@ void INTRINSICCV_C_API(rgb_to_bgr_u8)(const uint8_t *src, size_t src_stride,
 /// Copies a source RBG image to destination buffer.
 /// All channels are 8-bit wide.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -276,14 +276,14 @@ void INTRINSICCV_C_API(rgb_to_rgb_u8)(const uint8_t *src, size_t src_stride,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -294,14 +294,14 @@ void INTRINSICCV_C_API(rgba_to_bgra_u8)(const uint8_t *src, size_t src_stride,
 /// Copies a source RBGA image to destination buffer.
 /// All channels are 8-bit wide.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -317,14 +317,14 @@ void INTRINSICCV_C_API(rgba_to_rgba_u8)(const uint8_t *src, size_t src_stride,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -340,14 +340,14 @@ void INTRINSICCV_C_API(rgb_to_bgra_u8)(const uint8_t *src, size_t src_stride,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -363,14 +363,14 @@ void INTRINSICCV_C_API(rgb_to_rgba_u8)(const uint8_t *src, size_t src_stride,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -386,14 +386,14 @@ void INTRINSICCV_C_API(rgba_to_bgr_u8)(const uint8_t *src, size_t src_stride,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
-/// @param src         Pointer to the first source data. Must be non-null.
-/// @param src_stride  Distance in bytes between the row first elements for
-///                    the first source data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Distance in bytes between the row first elements for
-///                    the destination data. Must not be less than
-///                    width * sizeof(uint8).
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * sizeof(uint8).
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -567,9 +567,9 @@ void INTRINSICCV_C_API(erode_u8)(const uint8_t *src, size_t src_stride,
 /// Counts how many nonzero elements are in the source data.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
-/// @param src_stride   Distance in bytes between the row first elements for
-///                     the source data. Must not be less than
-///                     width * (element size in bytes).
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
@@ -616,7 +616,7 @@ void INTRINSICCV_C_API(gaussian_blur_5x5_u8)(
 /// @param src_data     Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
-///                     less than width * (element size in bytes) * channels.
+///                     less than width * sizeof(type) * channels.
 /// @param dst_data     A C style array of pointers to the destination data.
 ///                     Number of pointers in the array must be the same as the
 ///                     channel number. All pointers must be non-null.
@@ -626,11 +626,10 @@ void INTRINSICCV_C_API(gaussian_blur_5x5_u8)(
 ///                     next row in the given destination stream. Number of
 ///                     stride values in the array must be the same as the
 ///                     channel number. All stride values must not be less than
-///                     width * (element size in bytes).
-/// @param width        Number of pixels in one row of the source. (One pixel
-///                     consists of 'channels' number of elements.)
-/// @param height       Number of rows in the source.
-/// @param channels     Number of channels in the source.
+///                     width * sizeof(type).
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+/// @param channels     Number of channels in the data.
 /// @param element_size Size of one element in bytes.
 ///
 void INTRINSICCV_C_API(split)(const void *src_data, size_t src_stride,
@@ -653,14 +652,14 @@ void INTRINSICCV_C_API(transpose)(const void *src, size_t src_stride, void *dst,
 ///                     next row in the given source stream. Number of
 ///                     stride values in the array must be the same as the
 ///                     channel number. All stride values must not be less than
-///                     width * (element size in bytes).
+///                     width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the destination data. Must not
-///                     be less than width * (element size in bytes) * channels.
-/// @param width        Number of elements in a row in the source.
-/// @param height       Number of rows in the source.
-/// @param channels     Number of channels in the destination.
+///                     be less than width * sizeof(type) * channels.
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+/// @param channels     Number of channels in the destination data.
 /// @param element_size Size of one element in bytes.
 ///
 void INTRINSICCV_C_API(merge)(const void **srcs, const size_t *src_strides,
@@ -673,7 +672,7 @@ void INTRINSICCV_C_API(merge)(const void **srcs, const size_t *src_strides,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
-///                     less than width * (element size in bytes).
+///                     less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param min_value    Pointer to save result minimum value to, or nullptr if
@@ -708,7 +707,7 @@ void INTRINSICCV_C_API(min_max_s32)(const int32_t *src, size_t src_stride,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
-///                     less than width * (element size in bytes).
+///                     less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param min_offset   Pointer to save result offset of minimum value to, or
