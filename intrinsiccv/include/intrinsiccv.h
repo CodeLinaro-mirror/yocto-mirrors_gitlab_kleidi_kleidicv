@@ -598,6 +598,46 @@ intrinsiccv_error_t intrinsiccv_count_nonzeros_u8(const uint8_t *src,
                                                   size_t width, size_t height,
                                                   size_t *count);
 
+/// Resizes source data by averaging 4 elements to one.
+///
+/// For even source dimensions `(2*N, 2*M)` destination dimensions should be
+/// `(N, M)`.
+/// In case of odd source dimensions `(2*N+1, 2*M+1)` destination
+/// dimensions could be either `(N+1, M+1)` or `(N, M)` or combination of both.
+/// For later cases last respective row or column of source data will not be
+/// processed. Currently only supports single-channel data.
+///
+/// Even dimension example of 2x2 to 1x1 conversion:
+/// ```
+/// | a | b | --> | (a+b+c+d)/4 |
+/// | c | d |
+/// ```
+/// Odd dimension example of 3x3 to 2x2 conversion:
+/// ```
+/// | a | b | c |     | (a+b+c+d)/4 | (c+f)/2 |
+/// | d | e | f | --> |   (g+h)/2   |    i    |
+/// | g | h | i |
+/// ```
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must not be less than width * sizeof(type).
+/// @param src_width    Number of elements in the source row.
+/// @param src_height   Number of rows in the source data.
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must not be less than width * sizeof(type).
+/// @param dst_width    Number of elements in the destination row.
+///                     Should be src_width / 2 for even src_width.
+///                     For odd src_width could be either src_width / 2
+///                     or (src_width / 2) + 1
+/// @param dst_height   Number of rows in the destination data.
+///                     Should be src_height / 2 for even src_height.
+///                     For odd src_height could be either src_height / 2
+///                     or (src_height / 2) + 1
+///
 intrinsiccv_error_t intrinsiccv_resize_to_quarter_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height);
