@@ -42,7 +42,8 @@ ninja -C build
 TESTRESULT=0
 qemu-aarch64     build/test/framework/intrinsiccv-framework-test --gtest_output=xml:build/test-results/ || TESTRESULT=1
 qemu-aarch64 -cpu cortex-a35 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/neon/ || TESTRESULT=1
-qemu-aarch64 -cpu cortex-a76 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sve2/ || TESTRESULT=1
+qemu-aarch64 -cpu max,sve128=on,sme=off \
+  build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sve2/ --vector-length=16 || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme512=on \
   build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sme/ --vector-length=64 || TESTRESULT=1
 
