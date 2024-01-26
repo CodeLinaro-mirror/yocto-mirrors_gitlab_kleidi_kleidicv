@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,6 +14,11 @@ set_source_files_properties(
 add_executable(
   intrinsiccv-framework-test
   ${intrinsiccv_framework_test_sources}
+)
+
+set_target_properties(
+  intrinsiccv-framework-test
+  PROPERTIES CXX_STANDARD 17
 )
 
 target_include_directories(
