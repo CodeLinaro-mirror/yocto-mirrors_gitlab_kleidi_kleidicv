@@ -559,8 +559,8 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_bgra_u8(
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data. Must
 ///                     not be less than width * sizeof(type).
-/// @param width        How many elements are in a row for the output.
-/// @param height       How many rows are in the output.
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
 /// @param threshold    The value that the elements of the source data are
 ///                     compared to.
 /// @param value        The value that the larger elements are set to.
@@ -642,10 +642,62 @@ intrinsiccv_error_t intrinsiccv_resize_to_quarter_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height);
 
+/// Calculates vertical derivative approximation with Sobel filter.
+///
+/// The used convolution kernel is:
+/// ```
+/// [  1  2  1 ]
+/// [  0  0  0 ]
+/// [ -1 -2 -1 ]
+/// ```
+/// Note, that the kernel is mirrored both vertically and horizontally during
+/// the convolution.
+///
+/// The only supported border type is ::INTRINSICCV_BORDER_TYPE_REPLICATE
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must not be
+///                     less than width * sizeof(type) * channels.
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the destination data. Must not
+///                     be less than width * sizeof(type) * channels.
+/// @param width        Number of pixels in the data. (One pixel consists of
+///                     'channels' number of elements.)
+/// @param height       Number of rows in the data.
+/// @param channel      Number of channels in the data.
+///
 intrinsiccv_error_t intrinsiccv_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channel);
 
+/// Calculates horizontal derivative approximation with Sobel filter.
+///
+/// The used convolution kernel is:
+/// ```
+/// [  1  0 -1 ]
+/// [  2  0 -2 ]
+/// [  1  0 -1 ]
+/// ```
+/// Note, that the kernel is mirrored both vertically and horizontally during
+/// the convolution.
+///
+/// The only supported border type is ::INTRINSICCV_BORDER_TYPE_REPLICATE
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must not be
+///                     less than width * sizeof(type) * channels.
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the destination data. Must not
+///                     be less than width * sizeof(type) * channels.
+/// @param width        Number of pixels in the data. (One pixel consists of
+///                     'channels' number of elements.)
+/// @param height       Number of rows in the data.
+/// @param channel      Number of channels in the data.
+///
 intrinsiccv_error_t intrinsiccv_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channel);
@@ -690,9 +742,10 @@ intrinsiccv_error_t intrinsiccv_gaussian_blur_5x5_u8(
 ///                     stride values in the array must be the same as the
 ///                     channel number. All stride values must not be less than
 ///                     width * sizeof(type).
-/// @param width        Number of elements in a row.
-/// @param height       Number of rows in the data.
-/// @param channels     Number of channels in the data.
+/// @param width        Number of pixels in one row of the source data. (One
+///                     pixel consists of 'channels' number of elements.)
+/// @param height       Number of rows in the source data.
+/// @param channels     Number of channels in the source data.
 /// @param element_size Size of one element in bytes.
 ///
 intrinsiccv_error_t intrinsiccv_split(const void *src_data, size_t src_stride,

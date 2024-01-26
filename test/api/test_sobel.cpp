@@ -40,7 +40,7 @@ static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
     INTRINSICCV_BORDER_TYPE_REPLICATE,
 };
 
-// Default test fo horizontal Sobel 3x3 operator.
+// Test for Sobel 3x3 operator.
 template <class KernelTestParams>
 class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
   using typename test::KernelTest<KernelTestParams>::InputType;

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,6 +12,8 @@ namespace intrinsiccv::neon {
 // Template for 3x3 Sobel filters which calculate horizontal derivative
 // approximations, often denoted as Gx.
 //
+// The applied weights, as the kernel is mirrored both vertically and
+// horizontally during the convolution:
 //      [ -1, 0, 1 ]   [ 1 ]
 //  F = [ -2, 0, 2 ] = [ 2 ] * [ -1,  0, 1 ]
 //      [ -1, 0, 1 ]   [ 1 ]
@@ -69,9 +71,11 @@ class HorizontalSobel3x3<uint8_t> {
 // Template for 3x3 Sobel filters which calculate vertical derivative
 // approximations, often denoted as Gy.
 //
-//      [ -1, -2, 1 ]   [ -1 ]
-//  F = [  0,  0, 0 ] = [  0 ] * [ 1,  2, 1 ]
-//      [  1,  2, 1 ]   [  1 ]
+// The applied weights, as the kernel is mirrored both vertically and
+// horizontally during the convolution:
+//      [ -1, -2, -1 ]   [ -1 ]
+//  F = [  0,  0,  0 ] = [  0 ] * [ 1,  2, 1 ]
+//      [  1,  2,  1 ]   [  1 ]
 template <typename T>
 class VerticalSobel3x3;
 

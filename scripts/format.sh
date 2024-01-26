@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-#
-# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Runs clang-format or checks whether the source is well-formatted.
 #
 # Options:
 #   CHECK_ONLY:             If set to 'ON', the script exists with non-zero value if source is not formatted. Defaults to 'OFF'.
-#   CLANG_FORMAT_BIN_PATH:  Clang-format binary, defaults to 'clang-format'.
+#   CLANG_FORMAT_BIN_PATH:  Clang-format binary, defaults to 'clang-format=17'.
 #   VERBOSE:                If set to 'ON', verbose output is printed. Defaults to 'OFF'.
 # ------------------------------------------------------------------------------
 

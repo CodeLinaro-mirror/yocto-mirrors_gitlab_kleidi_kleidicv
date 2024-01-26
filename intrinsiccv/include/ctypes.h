@@ -1,6 +1,10 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
+
+/// @file
+/// @brief C-style enums and structs
+///
 
 #ifndef INTRINSICCV_CTYPES_H
 #define INTRINSICCV_CTYPES_H
@@ -15,6 +19,7 @@
 
 #include <config.h>
 
+/// IntrinsicCV error types
 typedef enum INTRINSICCV_NODISCARD {
   /// Success.
   INTRINSICCV_OK = 0,
@@ -45,21 +50,25 @@ typedef struct {
   double right;
 } intrinsiccv_border_values_t;
 
+/// IntrinsicCV border types
 typedef enum {
-  // The border is a constant value.
+  /// The border is a constant value.
   INTRINSICCV_BORDER_TYPE_CONSTANT,
-  // The border is the value of the first/last element.
+  /// The border is the value of the first/last element.
   INTRINSICCV_BORDER_TYPE_REPLICATE,
-  // The border is the mirrored value of the first/last elements.
+  /// The border is the mirrored value of the first/last elements.
   INTRINSICCV_BORDER_TYPE_REFLECT,
-  // The border simply acts as a "wrap around" to the beginning/end.
+  /// The border simply acts as a "wrap around" to the beginning/end.
   INTRINSICCV_BORDER_TYPE_WRAP,
-  // Like INTRINSICCV_BORDER_TYPE_REFLECT, but the first/last elements are
-  // ignored.
+  /// Like INTRINSICCV_BORDER_TYPE_REFLECT, but the first/last elements are
+  /// ignored.
   INTRINSICCV_BORDER_TYPE_REVERSE,
-  // The border is the "continuation" of the
+  /// The border is the "continuation" of the input rows. It is the caller's
+  /// responsibility to provide the input data (and an appropriate stride value)
+  /// in a way that the rows can be under and over read. E.g. can be used when
+  /// executing an operation on a region of a picture.
   INTRINSICCV_BORDER_TYPE_TRANSPARENT,
-  // The border is a hard border, there are no additional values to use.
+  /// The border is a hard border, there are no additional values to use.
   INTRINSICCV_BORDER_TYPE_NONE,
 } intrinsiccv_border_type_t;
 
