@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -20,6 +20,7 @@
 #   CMAKE_EXE_LINKER_FLAGS:        General flags for all linker commands for executables.
 #   CMAKE_GENERATOR:               Generator to use, see cmake documentation for details. Defaults to 'Ninja'.
 #   CMAKE_SHARED_LINKER_FLAGS:     General flags for all linker commands for shared libraries.
+#   CMAKE_TOOLCHAIN_FILE:          If set, it is the full path to the CMake toolchain file.
 #   CMAKE_VERBOSE_MAKEFILE:        Enables verbose logs during builds. Defaults to 'OFF'.
 #   COVERAGE:                      Enables collection of coverage metrics if set to 'ON'. Defaults to 'OFF'.
 #   EXTRA_CMAKE_ARGS:              Any additional args to pass to CMake.
@@ -44,6 +45,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 : "${CMAKE_EXE_LINKER_FLAGS:=}"
 : "${CMAKE_GENERATOR:=Ninja}"
 : "${CMAKE_SHARED_LINKER_FLAGS:=}"
+: "${CMAKE_TOOLCHAIN_FILE:=}"
 : "${CMAKE_VERBOSE_MAKEFILE:=OFF}"
 : "${COVERAGE:=OFF}"
 : "${EXTRA_CMAKE_ARGS:=}"
@@ -80,7 +82,6 @@ cmake_config_args=(
     -G "${CMAKE_GENERATOR}"
     "-DCMAKE_VERBOSE_MAKEFILE=${CMAKE_VERBOSE_MAKEFILE}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-    "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
     "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
     "-DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}"
     "-DCMAKE_SHARED_LINKER_FLAGS=${CMAKE_SHARED_LINKER_FLAGS}"
@@ -89,6 +90,12 @@ cmake_config_args=(
 if [[ -n "${CMAKE_CROSSCOMPILING_EMULATOR}" ]]; then
     cmake_config_args+=(
         "-DCMAKE_CROSSCOMPILING_EMULATOR=${CMAKE_CROSSCOMPILING_EMULATOR}"
+    )
+fi
+
+if [[ -n "${CMAKE_TOOLCHAIN_FILE}" ]]; then
+    cmake_config_args+=(
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
     )
 fi
 

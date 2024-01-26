@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -30,21 +30,30 @@ Integration with other projects are stored in `adapters` folder. `test` contains
 API and unit tests for the library. All supporting scripts are located in
 `scripts`.
 
-# Standalone build
+# Standalone build using CMake
 
 The library can be built using CMake:
 ```
 cmake \
 -S /path/to/intrinsiccv \
 -B build-intrinsiccv \
--DCMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
--DANDROID_ABI=arm64-v8a
 cmake --build build-intrinsiccv --parallel
 ```
 
-Builds scripts for Linux/macOS are also provided for convenience. To target
-Android devices the following command should work:
+To target Android devices the following CMake flags are also required:
+```
+-DCMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
+-DANDROID_ABI=arm64-v8a
+```
 
+# Standalone build using the provided script
+
+Build scripts for Linux/macOS are provided for convenience. To build the library run:
+```
+scripts/build.sh
+```
+
+To target Android devices the following command can be used:
 ```
 BUILD_ID=android \
 CMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
@@ -52,14 +61,14 @@ EXTRA_CMAKE_ARGS="-DANDROID_ABI=arm64-v8a" \
 scripts/build.sh
 ```
 
-For further options please refer to the documentation in `./scripts/build.sh`.
+The build artifacts are placed in the `build` directory.
 
-# Build and run tests
+## Build and run tests for Android
 
-To build all the tests target `intrinsiccv-test`, to also run them use
+To build all the tests use the target `intrinsiccv-test`, to also run them use
 `check-intrinsiccv` and set a proper `CMAKE_CROSSCOMPILING_EMULATOR`.
 
-To build all tests for Android:
+To build all tests:
 ```
 BUILD_ID=android \
 CMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
@@ -67,8 +76,7 @@ EXTRA_CMAKE_ARGS="-DANDROID_ABI=arm64-v8a" \
 scripts/build.sh intrinsiccv-test
 ```
 
-To build and run all tests for Android with a single command:
-
+To run the tests:
 ```
 BUILD_ID=android \
 CMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
@@ -77,6 +85,9 @@ CMAKE_CROSSCOMPILING_EMULATOR="<path to intrinsiccv>/scripts/test_android.sh;<pa
 EXTRA_CMAKE_ARGS="-DANDROID_ABI=arm64-v8a" \
 scripts/build.sh check-intrinsiccv
 ```
+
+For further options please refer to the documentation in `./scripts/build.sh`
+and `./scripts/test_android.sh`.
 
 # Building with OpenCV
 
@@ -98,17 +109,14 @@ git apply /path/to/intrinsiccv/adapters/opencv/opencv-5.x.patch
 
 ## Build Library
 
-The project can be built using standard cmake and ninja.
+The project can be built using standard cmake.
 
 ```
 cmake \
 -S /path/to/opencv \
 -B build-opencv \
--G Ninja \
 -DWITH_INTRINSICCV=ON \
 -DINTRINSICCV_SOURCE_PATH=/path/to/intrinsiccv \
--DCMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
--DANDROID_ABI=arm64-v8a \
 -DCMAKE_CXX_STANDARD=14 \
 -DBUILD_ANDROID_EXAMPLE=OFF \
 -DBUILD_ANDROID_PROJECTS=OFF \
@@ -118,7 +126,13 @@ cmake \
 cmake --build build-opencv --parallel
 ```
 
-### Build Prerequisites
+To target Android devices the following CMake flags are required here as well:
+```
+-DCMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
+-DANDROID_ABI=arm64-v8a
+```
+
+# Build Prerequisites
 While the core functionality of the library does not rely on any third-party libraries, there are
 build prerequisites that are essential for compiling the source code and generating the executable.
 Please ensure that these tools are installed on your system before proceeding with the build
@@ -130,6 +144,11 @@ To successfully build and compile this project, you'll need the following tools:
 - [gcovr](https://gcovr.com/) and its dependencies for coverage reports,
 - [rsync](https://linux.die.net/man/1/rsync) for coverage reports,
 - recent version of [llvm](https://llvm.org), preferably 17 or newer.
+
+Building for Android requires the [Android NDK](https://developer.android.com/ndk/).
+
+Running tests on Android devices requires [ADB](https://developer.android.com/tools/adb).
+Can be installed standalone by installing [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools).
 
 OpenCV has its own
 [dependencies](https://docs.opencv.org/5.x/d7/d9f/tutorial_linux_install.html).
