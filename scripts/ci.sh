@@ -54,6 +54,6 @@ scripts/prefix_testsuite_names.py build/test-results/sve2/intrinsiccv-api-test.x
 scripts/prefix_testsuite_names.py build/test-results/sme/intrinsiccv-api-test.xml "SME."
 
 # Generate test coverage report
-LLVM_COV=llvm-cov scripts/generate_coverage_report.sh
+LLVM_COV=llvm-cov scripts/generate_coverage_report.py
 
 exit $TESTRESULT

@@ -19,7 +19,7 @@ image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:4
         path: build/cobertura-coverage.xml
     paths:
       - build/html
-  coverage: /^branches:\s+([\d\.]+\%)/
+  coverage: /^line and branch coverage:\s+([\d\.]+\%)/
 
 # On the main branch publish pages.
 pages:
