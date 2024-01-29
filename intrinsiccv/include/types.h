@@ -137,7 +137,7 @@ class Columns final {
 
   // Subscript operator to return an arbitrary column at an index. To account
   // for channel count use at() method.
-  T &operator[](ptrdiff_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+  T &operator[](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
     return ptr_[index];
   }
 
@@ -167,8 +167,7 @@ class Columns final {
   // NOLINTEND(hicpp-explicit-conversions)
 
   // Returns a new instance at a given column.
-  [[nodiscard]] Columns<T> at(ptrdiff_t column)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  [[nodiscard]] Columns<T> at(size_t column) INTRINSICCV_STREAMING_COMPATIBLE {
     return Columns<T>{&ptr_[column * channels()], channels()};
   }
 
@@ -329,12 +328,12 @@ class Rows final : public RowBase<T> {
 
   // Subscript operator to return an arbitrary position within the current row.
   // To account for stride and channel count use at() method.
-  T &operator[](ptrdiff_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+  T &operator[](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
     return ptr_[index];
   }
 
   // Addition assignment operator to navigate among rows.
-  Rows<T> &operator+=(ptrdiff_t diff) INTRINSICCV_STREAMING_COMPATIBLE {
+  Rows<T> &operator+=(size_t diff) INTRINSICCV_STREAMING_COMPATIBLE {
     ptr_ = get_pointer_at(diff);
     return *this;
   }
@@ -352,8 +351,8 @@ class Rows final : public RowBase<T> {
   // NOLINTEND(hicpp-explicit-conversions)
 
   // Returns a new instance at a given row and column.
-  [[nodiscard]] Rows<T> at(ptrdiff_t row, ptrdiff_t column = 0)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  [[nodiscard]] Rows<T> at(size_t row,
+                           size_t column = 0) INTRINSICCV_STREAMING_COMPATIBLE {
     return Rows<T>{get_pointer_at(row, column), stride(), channels()};
   }
 
@@ -374,7 +373,7 @@ class Rows final : public RowBase<T> {
  private:
   // Returns a column in a row at a given index taking stride and channels into
   // account.
-  [[nodiscard]] T *get_pointer_at(ptrdiff_t row, ptrdiff_t column = 0)
+  [[nodiscard]] T *get_pointer_at(size_t row, size_t column = 0)
       INTRINSICCV_STREAMING_COMPATIBLE {
     T *ptr = RowBase<T>::add_stride(ptr_, row * stride());
     return &ptr[column * channels()];
@@ -411,12 +410,12 @@ class IndirectRows : public RowBase<T> {
 
   // Subscript operator to return a position within the current row. To account
   // for stride and channel count use at() method.
-  T &operator[](ptrdiff_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+  T &operator[](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
     return ptr_storage_[0][index];
   }
 
   // Addition assignment operator to navigate among rows.
-  IndirectRows<T> &operator+=(ptrdiff_t diff) INTRINSICCV_STREAMING_COMPATIBLE {
+  IndirectRows<T> &operator+=(size_t diff) INTRINSICCV_STREAMING_COMPATIBLE {
     ptr_storage_ += diff;
     return *this;
   }
@@ -427,8 +426,8 @@ class IndirectRows : public RowBase<T> {
   }
 
   // Returns a new instance at a given row and column.
-  [[nodiscard]] Rows<T> at(ptrdiff_t row, ptrdiff_t column = 0)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  [[nodiscard]] Rows<T> at(size_t row,
+                           size_t column = 0) INTRINSICCV_STREAMING_COMPATIBLE {
     auto rows = Rows<T>{ptr_storage_[row], stride(), channels()};
     return rows.at(0, column);
   }
@@ -502,7 +501,7 @@ class ParallelRows final : public RowBase<T> {
       : ParallelRows(ptr, stride, 1) {}
 
   // Addition assignment operator to navigate among rows.
-  ParallelRows<T> &operator+=(ptrdiff_t diff) INTRINSICCV_STREAMING_COMPATIBLE {
+  ParallelRows<T> &operator+=(size_t diff) INTRINSICCV_STREAMING_COMPATIBLE {
     ptrs_[0] = RowBase<T>::add_stride(ptrs_[0], diff * stride());
     ptrs_[1] = RowBase<T>::add_stride(ptrs_[1], diff * stride());
     return *this;

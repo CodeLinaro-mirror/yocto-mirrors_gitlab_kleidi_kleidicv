@@ -45,7 +45,8 @@ class HorizontalSobel3x3<uint8_t> {
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
   void vertical_scalar_path(const SourceType src[3], BufferType *dst) const {
-    dst[0] = src[0] + 2 * src[1] + src[2];
+    // Explicitly narrow. Overflow is permitted.
+    dst[0] = static_cast<DestinationType>(src[0] + 2 * src[1] + src[2]);
   }
 
   // Applies horizontal filtering vector using SIMD operations.
@@ -60,7 +61,8 @@ class HorizontalSobel3x3<uint8_t> {
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
   void horizontal_scalar_path(const BufferType src[3],
                               DestinationType *dst) const {
-    dst[0] = src[2] - src[0];
+    // Explicitly narrow. Overflow is permitted.
+    dst[0] = static_cast<DestinationType>(src[2] - src[0]);
   }
 };  // end of class HorizontalSobel3x3<uint8_t>
 
@@ -97,7 +99,8 @@ class VerticalSobel3x3<uint8_t> {
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
   void vertical_scalar_path(const SourceType src[3], BufferType *dst) const {
-    dst[0] = src[2] - src[0];
+    // Explicitly narrow. Overflow is permitted.
+    dst[0] = static_cast<DestinationType>(src[2] - src[0]);
   }
 
   // Applies horizontal filtering vector using SIMD operations.
@@ -114,7 +117,8 @@ class VerticalSobel3x3<uint8_t> {
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
   void horizontal_scalar_path(const BufferType src[3],
                               DestinationType *dst) const {
-    dst[0] = src[0] + 2 * src[1] + src[2];
+    // Explicitly narrow. Overflow is permitted.
+    dst[0] = static_cast<DestinationType>(src[0] + 2 * src[1] + src[2]);
   }
 };  // end of class VerticalSobel3x3<uint8_t>
 
