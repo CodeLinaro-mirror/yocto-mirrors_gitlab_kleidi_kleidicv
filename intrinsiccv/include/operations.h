@@ -165,6 +165,7 @@ class RowBasedOperation : public OperationBase<OperationType> {
   // Instructs the loop logic to try to avoid the tail loop.
   void try_avoid_tail_loop() { try_avoid_tail_loop_ = true; }
 
+  // NOLINTBEGIN(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
   template <typename... ColumnTypes>
   void process_row(size_t length,
                    ColumnTypes... columns) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -209,6 +210,7 @@ class RowBasedOperation : public OperationBase<OperationType> {
 
     // clang-format on
   }
+  // NOLINTEND(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
 
  private:
   // True if tail loop should be avoided at all costs.

@@ -20,13 +20,9 @@ class FixedBorderInfo<T, 3UL> final {
   // Simple object holding read-only constant offsets.
   class Offsets final {
    public:
-    explicit Offsets() {}
+    Offsets() = default;
 
-    explicit Offsets(size_t o0, size_t o1, size_t o2) {
-      offsets_[0] = o0;
-      offsets_[1] = o1;
-      offsets_[2] = o2;
-    }
+    Offsets(size_t o0, size_t o1, size_t o2) : offsets_{o0, o1, o2} {}
 
     size_t c0() const { return offsets_[0]; }
     size_t c1() const { return offsets_[1]; }
@@ -119,15 +115,12 @@ class FixedBorderInfo<T, 5UL> final {
   // Simple object holding read-only constant offsets.
   class Offsets final {
    public:
-    explicit Offsets() {}
+    // NOLINTBEGIN(hicpp-member-init)
+    Offsets() = default;
+    // NOLINTEND(hicpp-member-init)
 
-    explicit Offsets(size_t o0, size_t o1, size_t o2, size_t o3, size_t o4) {
-      offsets_[0] = o0;
-      offsets_[1] = o1;
-      offsets_[2] = o2;
-      offsets_[3] = o3;
-      offsets_[4] = o4;
-    }
+    Offsets(size_t o0, size_t o1, size_t o2, size_t o3, size_t o4)
+        : offsets_{o0, o1, o2, o3, o4} {}
 
     size_t c0() const { return offsets_[0]; }
     size_t c1() const { return offsets_[1]; }

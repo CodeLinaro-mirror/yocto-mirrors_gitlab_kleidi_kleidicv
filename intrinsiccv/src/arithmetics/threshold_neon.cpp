@@ -14,11 +14,11 @@ class BinaryThreshold final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
   BinaryThreshold(ScalarType threshold, ScalarType value)
-      : threshold_(threshold), value_(value) {
-    threshold_vect_ = vdupq_n_u8(threshold);
-    value_vect_ = vdupq_n_u8(value);
-    zero_vect_ = vdupq_n_u8(0);
-  }
+      : threshold_vect_{vdupq_n_u8(threshold)},
+        value_vect_{vdupq_n_u8(value)},
+        zero_vect_{vdupq_n_u8(0)},
+        threshold_{threshold},
+        value_{value} {}
 
   VectorType vector_path(VectorType src) {
     VectorType predicate = vcgtq_u8(src, threshold_vect_);

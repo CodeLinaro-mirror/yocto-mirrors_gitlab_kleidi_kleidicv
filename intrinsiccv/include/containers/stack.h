@@ -24,6 +24,7 @@ class Stack final : public NonCopyable {
   using reference = value_type &;
   using const_reference = const value_type &;
 
+  // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   explicit Stack() noexcept {
     current_block_ = Block::make_block(nullptr);
     // Note: push_back() first increments the back_ pointer.
@@ -33,6 +34,7 @@ class Stack final : public NonCopyable {
     empty_back_ = back_min_;
     first_block_ = current_block_;
   }
+  // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
 
   ~Stack() noexcept {
     Block *block = first_block_;

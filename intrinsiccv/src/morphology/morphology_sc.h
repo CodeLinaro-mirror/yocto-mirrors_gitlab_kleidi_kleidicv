@@ -63,10 +63,7 @@ class VerticalOp final {
   void vector_path_4x(IndirectRows<ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index,
                       const size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
-    const ScalarType *src_row;
-    ScalarType *dst_row;
-
-    src_row = &src_rows[index];
+    const ScalarType *src_row = &src_rows[index];
     auto first_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto first_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
     auto first_row2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
@@ -131,7 +128,7 @@ class VerticalOp final {
     acc3 = O::operation(VecTraits::svptrue(), acc3, first_row3);
 
     // Store the results.
-    dst_row = &dst_rows[index];
+    ScalarType *dst_row = &dst_rows[index];
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 2, acc2);
@@ -166,10 +163,7 @@ class VerticalOp final {
   void vector_path_2x(IndirectRows<ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index,
                       const size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
-    const ScalarType *src_row;
-    ScalarType *dst_row;
-
-    src_row = &src_rows[index];
+    const ScalarType *src_row = &src_rows[index];
     auto first_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto first_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
     ++src_rows;
@@ -214,7 +208,7 @@ class VerticalOp final {
     acc1 = O::operation(VecTraits::svptrue(), acc1, first_row1);
 
     // Store the results.
-    dst_row = &dst_rows[index];
+    ScalarType *dst_row = &dst_rows[index];
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
 

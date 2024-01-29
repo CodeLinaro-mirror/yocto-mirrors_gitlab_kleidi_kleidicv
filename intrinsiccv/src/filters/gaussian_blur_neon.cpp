@@ -87,11 +87,10 @@ class DiscreteGaussianBlur<uint8_t, 5> {
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  DiscreteGaussianBlur() {
-    const_6_u8_ = vmov_n_u8(6);
-    const_6_u16_ = vmovq_n_u16(6);
-    const_4_u16_ = vmovq_n_u16(4);
-  }
+  DiscreteGaussianBlur()
+      : const_6_u8_{vmov_n_u8(6)},
+        const_6_u16_{vmovq_n_u16(6)},
+        const_4_u16_{vmovq_n_u16(4)} {}
 
   // Applies vertical filtering vector using SIMD operations.
   //

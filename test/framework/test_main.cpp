@@ -22,7 +22,7 @@ static void parse_arguments(int argc, char **argv) {
   static struct option long_options[] = {
     {"vector-length", required_argument, nullptr, 'v'},
     {"seed", required_argument, nullptr, 's'},
-    {0, 0, nullptr, 0}
+    {nullptr, 0, nullptr, 0}
   };
   // clang-format on
 

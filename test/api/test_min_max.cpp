@@ -261,7 +261,7 @@ class MinMaxLocTest : public MinMaxTest<ElementType, Padding> {
 
       setup(source, testData);
 
-      size_t min_offset, max_offset;
+      size_t min_offset = 0, max_offset = 0;
       one_test_call(source, nullptr, nullptr, 0, 0);
       one_test_call(source, &min_offset, nullptr, testData.expected_min_offset,
                     0);

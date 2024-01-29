@@ -19,7 +19,7 @@ class YUVSpToRGBxOrBGRx final {
   using ContextType = sve2::Context;
   using VecTraits = sve2::VecTraits<uint8_t>;
 
-  YUVSpToRGBxOrBGRx(bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE
+  explicit YUVSpToRGBxOrBGRx(bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE
       : is_nv21_(is_nv21) {}
 
   // Returns the number of channels in the output image.

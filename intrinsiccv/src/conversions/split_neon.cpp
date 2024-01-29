@@ -57,7 +57,9 @@ class Split3 final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+  // NOLINTBEGIN(hicpp-member-init)
   Split3() { Split3Init<ScalarType>(); }
+// NOLINTEND(hicpp-member-init)
 #endif
 
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
@@ -255,9 +257,8 @@ void split(const void *src_data, const size_t src_stride, void **dst_data,
            const size_t *dst_strides, size_t width, size_t height,
            size_t channels) {
   Rectangle rect{width, height};
-  ScalarType *dst0, *dst1;
-  dst0 = reinterpret_cast<ScalarType *>(dst_data[0]);
-  dst1 = reinterpret_cast<ScalarType *>(dst_data[1]);
+  ScalarType *dst0 = reinterpret_cast<ScalarType *>(dst_data[0]),
+             *dst1 = reinterpret_cast<ScalarType *>(dst_data[1]);
   Rows<ScalarType> src_rows{
       const_cast<ScalarType *>(reinterpret_cast<const ScalarType *>(src_data)),
       src_stride, channels};
@@ -269,17 +270,15 @@ void split(const void *src_data, const size_t src_stride, void **dst_data,
       apply_operation_by_rows(operation, rect, src_rows, dst_rows0, dst_rows1);
     } break;
     case 3: {
-      ScalarType *dst2;
-      dst2 = reinterpret_cast<ScalarType *>(dst_data[2]);
+      ScalarType *dst2 = reinterpret_cast<ScalarType *>(dst_data[2]);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};
       Split3<ScalarType> operation;
       apply_operation_by_rows(operation, rect, src_rows, dst_rows0, dst_rows1,
                               dst_rows2);
     } break;
     case 4: {
-      ScalarType *dst2, *dst3;
-      dst2 = reinterpret_cast<ScalarType *>(dst_data[2]);
-      dst3 = reinterpret_cast<ScalarType *>(dst_data[3]);
+      ScalarType *dst2 = reinterpret_cast<ScalarType *>(dst_data[2]),
+                 *dst3 = reinterpret_cast<ScalarType *>(dst_data[3]);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};
       Rows<ScalarType> dst_rows3{dst3, dst_strides[3]};
       Split4<ScalarType> operation;

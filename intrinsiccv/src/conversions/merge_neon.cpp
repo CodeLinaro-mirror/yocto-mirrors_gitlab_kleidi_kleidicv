@@ -68,7 +68,7 @@ class Merge3 final : public UnrollTwice {
   using Vector3Type = typename VecTraits::Vector3Type;
 
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-  Merge3() { table_indices_ = vld1q_u8_x3(lookup_table<ScalarType>()); }
+  Merge3() : table_indices_{vld1q_u8_x3(lookup_table<ScalarType>())} {}
 #endif
 
   void vector_path(VectorType src_a, VectorType src_b, VectorType src_c,

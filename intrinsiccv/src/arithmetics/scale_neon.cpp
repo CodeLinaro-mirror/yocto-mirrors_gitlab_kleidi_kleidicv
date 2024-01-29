@@ -53,10 +53,7 @@ namespace intrinsiccv::neon {
 template <typename ScalarType>
 class ScaleBase : public UnrollTwice {
  public:
-  ScaleBase(float scale, float shift) {
-    scale_ = scale;
-    shift_ = shift;
-  }
+  ScaleBase(float scale, float shift) : scale_{scale}, shift_{shift} {}
 
  protected:
   static constexpr ScalarType ScalarMax =
@@ -128,10 +125,10 @@ class ScaleFloat final : public ScaleBase<ScalarType> {
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  ScaleFloat(float scale, float shift) : ScaleBase<ScalarType>(scale, shift) {
-    vscale_ = vdupq_n_f32(scale);
-    vshift_ = vdupq_n_f32(shift);
-  }
+  ScaleFloat(float scale, float shift)
+      : ScaleBase<ScalarType>(scale, shift),
+        vscale_{vdupq_n_f32(scale)},
+        vshift_{vdupq_n_f32(shift)} {}
 
   VectorType vector_path(VectorType src) {
     // For scaling, uint8 values have to be converted to uint32

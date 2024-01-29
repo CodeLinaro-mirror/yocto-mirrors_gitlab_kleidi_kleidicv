@@ -15,10 +15,8 @@ class AddAbsWithThreshold final : public UnrollOnce, public UnrollTwice {
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  explicit AddAbsWithThreshold(ScalarType threshold) {
-    threshold_ = threshold;
-    threshold_vec_ = vdupq_n_s16(threshold);
-  }
+  explicit AddAbsWithThreshold(ScalarType threshold)
+      : threshold_{threshold}, threshold_vec_{vdupq_n_s16(threshold)} {}
 
   VectorType vector_path(VectorType src_a, VectorType src_b) {
     VectorType add_abs = vaddq_s16(vabsq_s16(src_a), vabsq_s16(src_b));

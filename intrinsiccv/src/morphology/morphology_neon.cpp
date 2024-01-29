@@ -56,10 +56,7 @@ class VerticalOp final {
   void vector_path_4x(IndirectRows<ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index,
                       const size_t height) {
-    const ScalarType *src_row;
-    ScalarType *dst_row;
-
-    src_row = &src_rows[index];
+    const ScalarType *src_row = &src_rows[index];
     auto first_row0 = vld1q(&src_row[0 * VecTraits::num_lanes()]);
     auto first_row1 = vld1q(&src_row[1 * VecTraits::num_lanes()]);
     auto first_row2 = vld1q(&src_row[2 * VecTraits::num_lanes()]);
@@ -119,7 +116,7 @@ class VerticalOp final {
     acc3 = O::operation(acc3, first_row3);
 
     // Store the results.
-    dst_row = &dst_rows[index];
+    ScalarType *dst_row = &dst_rows[index];
     vst1q(&dst_row[0 * VecTraits::num_lanes()], acc0);
     vst1q(&dst_row[1 * VecTraits::num_lanes()], acc1);
     vst1q(&dst_row[2 * VecTraits::num_lanes()], acc2);
@@ -153,10 +150,7 @@ class VerticalOp final {
   void vector_path_2x(IndirectRows<ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index,
                       const size_t height) {
-    const ScalarType *src_row;
-    ScalarType *dst_row;
-
-    src_row = &src_rows[index];
+    const ScalarType *src_row = &src_rows[index];
     auto first_row0 = vld1q(&src_row[0]);
     auto first_row1 = vld1q(&src_row[VecTraits::num_lanes()]);
     ++src_rows;
@@ -198,7 +192,7 @@ class VerticalOp final {
     acc1 = O::operation(acc1, first_row1);
 
     // Store the results.
-    dst_row = &dst_rows[index];
+    ScalarType *dst_row = &dst_rows[index];
     vst1q(&dst_row[0], acc0);
     vst1q(&dst_row[VecTraits::num_lanes()], acc1);
 

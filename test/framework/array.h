@@ -47,7 +47,7 @@ class Array2D : public TwoDimensional<ElementType> {
   }
 
   /// Destructor checks that padding bytes are not overwritten.
-  ~Array2D() { check_padding(); }
+  ~Array2D() override { check_padding(); }
 
   /// Copy constructor.
   Array2D(const Array2D &other) { this->operator=(other); }

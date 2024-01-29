@@ -24,7 +24,7 @@ class OperationTest {
     ElementType values[InputsSize + OutputsSize];
   };  // end of struct Elements
 
-  virtual ~OperationTest() {}
+  virtual ~OperationTest() = default;
 
   /// Sets the number of padding bytes at the end of rows.
   OperationTest<ElementType, InputsSize, OutputsSize>& with_padding(

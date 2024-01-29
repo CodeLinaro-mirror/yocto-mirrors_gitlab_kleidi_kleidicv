@@ -101,15 +101,14 @@ class Margin final {
 template <typename T>
 class Border final {
  public:
-  explicit Border() INTRINSICCV_STREAMING_COMPATIBLE {}
+  Border() INTRINSICCV_STREAMING_COMPATIBLE = default;
 
-  explicit Border(double left, double top, double right,
-                  double bottom) INTRINSICCV_STREAMING_COMPATIBLE {
-    left_ = saturating_cast<double, T>(left);
-    top_ = saturating_cast<double, T>(top);
-    right_ = saturating_cast<double, T>(right);
-    bottom_ = saturating_cast<double, T>(bottom);
-  }
+  Border(double left, double top, double right,
+         double bottom) INTRINSICCV_STREAMING_COMPATIBLE
+      : left_{saturating_cast<double, T>(left)},
+        top_{saturating_cast<double, T>(top)},
+        right_{saturating_cast<double, T>(right)},
+        bottom_{saturating_cast<double, T>(bottom)} {}
 
   explicit Border(intrinsiccv_border_values_t border_values)
       INTRINSICCV_STREAMING_COMPATIBLE
@@ -159,11 +158,13 @@ class Columns final {
     return operator+=(1);
   }
 
+  // NOLINTBEGIN(hicpp-explicit-conversions)
   // Implicit conversion operator from Columns<T> to Columns<const T>.
   [[nodiscard]] operator Columns<const T>() const
       INTRINSICCV_STREAMING_COMPATIBLE {
     return Columns<const T>{ptr_, channels()};
   }
+  // NOLINTEND(hicpp-explicit-conversions)
 
   // Returns a new instance at a given column.
   [[nodiscard]] Columns<T> at(ptrdiff_t column)
@@ -245,8 +246,11 @@ class RowBase {
   }
 
  protected:
-  // The default constructor creates an uninitialized instance.
-  RowBase() INTRINSICCV_STREAMING_COMPATIBLE {}
+  // TODO: default initialise members.
+  // NOLINTBEGIN(hicpp-member-init)
+  //  The default constructor creates an uninitialized instance.
+  RowBase() INTRINSICCV_STREAMING_COMPATIBLE = default;
+  // NOLINTEND(hicpp-member-init)
 
   RowBase(size_t stride, size_t channels) INTRINSICCV_STREAMING_COMPATIBLE
       : stride_(stride),
@@ -340,10 +344,12 @@ class Rows final : public RowBase<T> {
     return operator+=(1);
   }
 
+  // NOLINTBEGIN(hicpp-explicit-conversions)
   // Returns a const variant of this instance.
   [[nodiscard]] operator Rows<const T>() INTRINSICCV_STREAMING_COMPATIBLE {
     return Rows<const T>{ptr_, stride(), channels()};
   }
+  // NOLINTEND(hicpp-explicit-conversions)
 
   // Returns a new instance at a given row and column.
   [[nodiscard]] Rows<T> at(ptrdiff_t row, ptrdiff_t column = 0)
@@ -648,8 +654,8 @@ class RowsOverUniquePtr {
 
  protected:
   RowsOverUniquePtr(Rectangle rect, Margin margin)
-      : rect_{get_rectangle(rect, margin)} {
-    data_ = std::unique_ptr<T[]>(new (std::nothrow) T[rect_.area()]);
+      : rect_{get_rectangle(rect, margin)},
+        data_{std::unique_ptr<T[]>(new(std::nothrow) T[rect_.area()])} {
     if (!data_) {
       // FIXME: add error handling
       __builtin_trap();

@@ -106,6 +106,7 @@ class MinMaxLoc final : public UnrollTwice {
   using UnsignedVectorType =
       typename neon::VecTraits<std::make_unsigned_t<ScalarType>>::VectorType;
 
+  // NOLINTBEGIN(cppcoreguidelines-prefer-member-initializer)
   MinMaxLoc() {
     vmin_offsets_ = vmax_offsets_ = vmin_offsets_new_ = vmax_offsets_new_ =
         vdupq_n(ScalarType{0});
@@ -118,6 +119,7 @@ class MinMaxLoc final : public UnrollTwice {
     min_scalar_index_ = max_scalar_index_ = 0;
     running_index_ = 0;
   }
+  // NOLINTEND(cppcoreguidelines-prefer-member-initializer)
 
   void vector_path(VectorType src) {
     VectorType v_is_smaller = vcltq_u8(src, vmin_new_);

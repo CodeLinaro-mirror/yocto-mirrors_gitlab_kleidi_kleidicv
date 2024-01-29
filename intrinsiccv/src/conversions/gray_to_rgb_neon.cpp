@@ -14,11 +14,11 @@ class GrayToRGB final : public UnrollTwice {
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  GrayToRGB() {
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-    indices_ = vld1q_u8_x3(kGrayToRGBTableIndices);
+  GrayToRGB() : indices_{vld1q_u8_x3(kGrayToRGBTableIndices)} {}
+#else
+  GrayToRGB() = default;
 #endif
-  }
 
   void vector_path(VectorType src_vect, ScalarType *dst) {
     uint8x16x3_t dst_vect;
@@ -56,14 +56,15 @@ class GrayToRGBA final : public UnrollTwice {
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  GrayToRGBA() {
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-    alpha = vdupq_n_u8(0xff);
+  GrayToRGBA() : alpha_{vdupq_n_u8(0xff)} {}
 #else
-    indices_ = vld1q_u8_x4(kGrayToRGBATableIndices);
+  // NOLINTBEGIN(hicpp-member-init)
+  GrayToRGBA() : indices_{vld1q_u8_x4(kGrayToRGBATableIndices)} {
     src_and_alpha_.val[1] = vdupq_n_u8(0xff);
-#endif
   }
+  // NOLINTEND(hicpp-member-init)
+#endif
 
   void vector_path(VectorType src_vect, ScalarType *dst) {
     uint8x16x4_t dst_vect;
@@ -71,7 +72,7 @@ class GrayToRGBA final : public UnrollTwice {
     dst_vect.val[0] = src_vect;
     dst_vect.val[1] = src_vect;
     dst_vect.val[2] = src_vect;
-    dst_vect.val[3] = alpha;
+    dst_vect.val[3] = alpha_;
     vst4q_u8(dst, dst_vect);
 #else
     src_and_alpha_.val[0] = src_vect;
@@ -90,7 +91,7 @@ class GrayToRGBA final : public UnrollTwice {
 
  private:
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-  uint8x16_t alpha;
+  uint8x16_t alpha_;
 #else
   uint8x16x4_t indices_;
   uint8x16x2_t src_and_alpha_;

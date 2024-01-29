@@ -10,9 +10,8 @@
 
 class GrayTest final {
  public:
-  GrayTest(bool hasAlpha) : hasAlpha_(hasAlpha) {
-    outChannels_ = hasAlpha_ ? 4 : 3;
-  }
+  explicit GrayTest(bool hasAlpha)
+      : hasAlpha_(hasAlpha), outChannels_{hasAlpha ? 4U : 3U} {}
 
   template <typename F>
   void execute_test(F impl) {

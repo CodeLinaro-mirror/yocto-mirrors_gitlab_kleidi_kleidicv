@@ -209,7 +209,10 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce {
     const uint8_t *y_rows[2] = {y_row_0, y_row_1};
     uint8_t *rgbx_rows[2] = {rgbx_row_0, rgbx_row_1};
 
+    // These are set near the start of the first loop.
+    // NOLINTBEGIN(cppcoreguidelines-init-variables)
     int32_t u_m128, v_m128;
+    // NOLINTEND(cppcoreguidelines-init-variables)
     for (size_t index = 0; index < length; ++index) {
       disable_loop_vectorization();
 

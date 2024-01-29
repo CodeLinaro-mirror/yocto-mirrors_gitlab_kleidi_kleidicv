@@ -14,7 +14,7 @@ class SaturatingMultiply final : public UnrollTwice {
   using VecTraits = sve2::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  SaturatingMultiply(double scale = 1.0) : scale_{scale} {};
+  explicit SaturatingMultiply(double scale = 1.0) : scale_{scale} {};
 
   VectorType vector_path(ContextType ctx, VectorType src_a, VectorType src_b) {
     VectorType result;

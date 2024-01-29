@@ -335,7 +335,7 @@ class SeparableFilter<FilterType, 3UL> {
   using BorderInfoType = typename intrinsiccv::FixedBorderInfo3x3<SourceType>;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  explicit SeparableFilter(FilterType filter) { filter_ = filter; }
+  explicit SeparableFilter(FilterType filter) : filter_{filter} {}
 
   static constexpr Margin margin() { return Margin{1UL}; }
 
@@ -465,7 +465,7 @@ class SeparableFilter<FilterType, 5UL> {
   using BorderInfoType = typename intrinsiccv::FixedBorderInfo5x5<SourceType>;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  explicit SeparableFilter(FilterType filter) { filter_ = filter; }
+  explicit SeparableFilter(FilterType filter) : filter_{filter} {}
 
   static constexpr Margin margin() { return Margin{2UL}; }
 

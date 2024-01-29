@@ -13,11 +13,11 @@ class RGBToBGR final : public UnrollTwice {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
 
-  RGBToBGR() {
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-    indices_ = vld1q_u8_x3(kRGBToBGRTableIndices);
+  RGBToBGR() : indices_{vld1q_u8_x3(kRGBToBGRTableIndices)} {}
+#else
+  RGBToBGR() = default;
 #endif
-  }
 
   void vector_path(const ScalarType *src, ScalarType *dst) {
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
