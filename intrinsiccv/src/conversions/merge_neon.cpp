@@ -407,20 +407,24 @@ void merge(const void **srcs, const size_t *src_strides, void *dst,
   switch (element_size) {
     default:
     case sizeof(uint8_t):
-      return merge<uint8_t>(srcs, src_strides, dst, dst_stride, width, height,
-                            channels);
+      merge<uint8_t>(srcs, src_strides, dst, dst_stride, width, height,
+                     channels);
+      break;
 
     case sizeof(uint16_t):
-      return merge<uint16_t>(srcs, src_strides, dst, dst_stride, width, height,
-                             channels);
+      merge<uint16_t>(srcs, src_strides, dst, dst_stride, width, height,
+                      channels);
+      break;
 
     case sizeof(uint32_t):
-      return merge<uint32_t>(srcs, src_strides, dst, dst_stride, width, height,
-                             channels);
+      merge<uint32_t>(srcs, src_strides, dst, dst_stride, width, height,
+                      channels);
+      break;
 
     case sizeof(uint64_t):
-      return merge<uint64_t>(srcs, src_strides, dst, dst_stride, width, height,
-                             channels);
+      merge<uint64_t>(srcs, src_strides, dst, dst_stride, width, height,
+                      channels);
+      break;
   }
 }
 

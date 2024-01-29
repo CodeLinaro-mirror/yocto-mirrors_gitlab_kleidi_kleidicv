@@ -276,10 +276,10 @@ static void directional_masking(const int16_t *prev_rows,
                                   vreinterpretq_s8_s16(directions));
 
   // Load indices which are used to create prev and next rows.
-  const int8x16_t lane_offsets = vld1q_s8(&indices[0 * kNumLanesS8]);
-  const int8x16_t prev_row_table = vld1q_s8(&indices[1 * kNumLanesS8]);
-  const int8x16_t next_row_table = vld1q_s8(&indices[2 * kNumLanesS8]);
-  const int8x16_t current_row_table = vld1q_s8(&indices[3 * kNumLanesS8]);
+  const int8x16_t lane_offsets = vld1q_s8(&indices[0UL * kNumLanesS8]);
+  const int8x16_t prev_row_table = vld1q_s8(&indices[1UL * kNumLanesS8]);
+  const int8x16_t next_row_table = vld1q_s8(&indices[2UL * kNumLanesS8]);
+  const int8x16_t current_row_table = vld1q_s8(&indices[3UL * kNumLanesS8]);
 
   // Temporary indexing and other vectors.
   int8x16_t tmp_indices_0, tmp_indices_1;
@@ -287,9 +287,12 @@ static void directional_masking(const int16_t *prev_rows,
 
   // Load the previous row.
   int8x16x3_t prev_row;
-  prev_row.val[0] = vreinterpretq_s8_s16(vld1q_s16(&prev_rows[0 * kNumLanes]));
-  prev_row.val[1] = vreinterpretq_s8_s16(vld1q_s16(&prev_rows[1 * kNumLanes]));
-  prev_row.val[2] = vreinterpretq_s8_s16(vld1q_s16(&prev_rows[2 * kNumLanes]));
+  prev_row.val[0] =
+      vreinterpretq_s8_s16(vld1q_s16(&prev_rows[0UL * kNumLanes]));
+  prev_row.val[1] =
+      vreinterpretq_s8_s16(vld1q_s16(&prev_rows[1UL * kNumLanes]));
+  prev_row.val[2] =
+      vreinterpretq_s8_s16(vld1q_s16(&prev_rows[2UL * kNumLanes]));
 
   // 1.1
   tmp_indices_0 = vqtbl1q_s8(prev_row_table, dir);
@@ -300,9 +303,12 @@ static void directional_masking(const int16_t *prev_rows,
 
   // Load the next row.
   int8x16x3_t next_row;
-  next_row.val[0] = vreinterpretq_s8_s16(vld1q_s16(&next_rows[0 * kNumLanes]));
-  next_row.val[1] = vreinterpretq_s8_s16(vld1q_s16(&next_rows[1 * kNumLanes]));
-  next_row.val[2] = vreinterpretq_s8_s16(vld1q_s16(&next_rows[2 * kNumLanes]));
+  next_row.val[0] =
+      vreinterpretq_s8_s16(vld1q_s16(&next_rows[0UL * kNumLanes]));
+  next_row.val[1] =
+      vreinterpretq_s8_s16(vld1q_s16(&next_rows[1UL * kNumLanes]));
+  next_row.val[2] =
+      vreinterpretq_s8_s16(vld1q_s16(&next_rows[2UL * kNumLanes]));
 
   // 2.1
   tmp_indices_0 = vqtbl1q_s8(next_row_table, dir);
@@ -316,9 +322,12 @@ static void directional_masking(const int16_t *prev_rows,
 
   // Load the current row.
   int8x16x3_t curr_row;
-  curr_row.val[0] = vreinterpretq_s8_s16(vld1q_s16(&curr_rows[0 * kNumLanes]));
-  curr_row.val[1] = vreinterpretq_s8_s16(vld1q_s16(&curr_rows[1 * kNumLanes]));
-  curr_row.val[2] = vreinterpretq_s8_s16(vld1q_s16(&curr_rows[2 * kNumLanes]));
+  curr_row.val[0] =
+      vreinterpretq_s8_s16(vld1q_s16(&curr_rows[0UL * kNumLanes]));
+  curr_row.val[1] =
+      vreinterpretq_s8_s16(vld1q_s16(&curr_rows[1UL * kNumLanes]));
+  curr_row.val[2] =
+      vreinterpretq_s8_s16(vld1q_s16(&curr_rows[2UL * kNumLanes]));
 
   // 3.1
   tmp_indices_0 = vqtbl1q_s8(current_row_table, dir);
@@ -352,7 +361,7 @@ static void directional_masking(const int16_t *prev_rows,
 }
 
 static bool is_vect_len_memory_null(const int16_t *data) {
-  auto s64_data = reinterpret_cast<const int64_t *>(data);
+  const auto *s64_data = reinterpret_cast<const int64_t *>(data);
   return ((s64_data[0] | s64_data[1]) == 0);
 }
 
@@ -438,7 +447,7 @@ static void handle_potentially_strong_pixel(StrongEdgeStack &strong_edge_pixels,
 static void perform_hysteresis(StrongEdgeStack &strong_edge_pixels,
                                size_t stride) {
   while (!strong_edge_pixels.empty()) {
-    auto strong_pixel = strong_edge_pixels.back();
+    auto *strong_pixel = strong_edge_pixels.back();
     strong_edge_pixels.pop_back();
 
     handle_potentially_strong_pixel(strong_edge_pixels,

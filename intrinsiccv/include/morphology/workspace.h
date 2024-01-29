@@ -45,7 +45,7 @@ class MorphologyWorkspace final {
                         size_t channels, size_t buffer_type_size)
       INTRINSICCV_STREAMING_COMPATIBLE {
     // These values are arbitrarily choosen.
-    const size_t rows_per_iteration = std::max(2 * kernel.height(), 32ul);
+    const size_t rows_per_iteration = std::max(2 * kernel.height(), 32UL);
     // To avoid load/store penalties.
     const size_t kAlignment = 16;
 
@@ -54,7 +54,7 @@ class MorphologyWorkspace final {
     size_t wide_rows_width = margin.left() + rect.width() + margin.right();
     size_t wide_rows_stride = wide_rows_width * channels;
     wide_rows_stride = __builtin_align_up(wide_rows_stride, kAlignment);
-    size_t wide_rows_height = 1ul;  // There is only one wide row.
+    size_t wide_rows_height = 1UL;  // There is only one wide row.
     size_t wide_rows_size = wide_rows_stride * wide_rows_height;
     wide_rows_size += kAlignment - 1;
 
@@ -73,7 +73,7 @@ class MorphologyWorkspace final {
     size_t allocation_size = sizeof(MorphologyWorkspace) +
                              indirect_row_storage_size + buffer_rows_size +
                              wide_rows_size;
-    auto allocation = std::malloc(allocation_size);
+    void *allocation = std::malloc(allocation_size);
     auto workspace = MorphologyWorkspace::Pointer{
         reinterpret_cast<MorphologyWorkspace *>(allocation)};
     if (!workspace) {
@@ -84,12 +84,12 @@ class MorphologyWorkspace final {
     workspace->wide_rows_src_width_ = rect.width();
     workspace->channels_ = channels;
 
-    auto buffer_rows_address = &workspace->data_[indirect_row_storage_size];
+    auto *buffer_rows_address = &workspace->data_[indirect_row_storage_size];
     buffer_rows_address = __builtin_align_up(buffer_rows_address, kAlignment);
     workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
     workspace->buffer_rows_stride_ = buffer_rows_stride;
 
-    auto wide_rows_address =
+    auto *wide_rows_address =
         &workspace->data_[indirect_row_storage_size + buffer_rows_size];
     wide_rows_address += margin.left() * channels;
     wide_rows_address = __builtin_align_up(wide_rows_address, kAlignment);
@@ -100,6 +100,8 @@ class MorphologyWorkspace final {
     return workspace;
   }
 
+  // This function is too complex, but disable the warning for now.
+  // NOLINTBEGIN(readability-function-cognitive-complexity)
   template <typename O>
   void process(Rectangle rect, Rows<const typename O::SourceType> src_rows,
                Rows<typename O::DestinationType> dst_rows, Margin margin,
@@ -196,7 +198,7 @@ class MorphologyWorkspace final {
         }  // switch (border_type)
 
         // [Step 2] Process the preloaded data.
-        operation.process_horizontal(Rectangle{rect.width(), 1ul}, wide_rows,
+        operation.process_horizontal(Rectangle{rect.width(), 1UL}, wide_rows,
                                      db_indirect_rows.write_at().at(index));
       }  // for (...; index < horizontal_height; ...)
 
@@ -255,7 +257,7 @@ class MorphologyWorkspace final {
             break;
         }  // switch (border_type)
 
-        operation.process_horizontal(Rectangle{rect.width(), 1ul}, wide_rows,
+        operation.process_horizontal(Rectangle{rect.width(), 1UL}, wide_rows,
                                      db_indirect_rows.write_at().at(index));
       }  // for (...; index < horizontal_height; ...)
 
@@ -267,6 +269,7 @@ class MorphologyWorkspace final {
       db_indirect_rows.swap();
     }
   }
+  // NOLINTEND(readability-function-cognitive-complexity)
 
  private:
   // The number of wide rows to process in the next iteration.

@@ -44,7 +44,7 @@ class HorizontalSobel3x3<uint8_t> {
   // Applies vertical filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void vertical_scalar_path(SourceType src[3], BufferType *dst) const {
+  void vertical_scalar_path(const SourceType src[3], BufferType *dst) const {
     dst[0] = src[0] + 2 * src[1] + src[2];
   }
 
@@ -58,7 +58,8 @@ class HorizontalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void horizontal_scalar_path(BufferType src[3], DestinationType *dst) const {
+  void horizontal_scalar_path(const BufferType src[3],
+                              DestinationType *dst) const {
     dst[0] = src[2] - src[0];
   }
 };  // end of class HorizontalSobel3x3<uint8_t>
@@ -95,7 +96,7 @@ class VerticalSobel3x3<uint8_t> {
   // Applies vertical filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void vertical_scalar_path(SourceType src[3], BufferType *dst) const {
+  void vertical_scalar_path(const SourceType src[3], BufferType *dst) const {
     dst[0] = src[2] - src[0];
   }
 
@@ -111,7 +112,8 @@ class VerticalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_scalar_path(BufferType src[3], DestinationType *dst) const {
+  void horizontal_scalar_path(const BufferType src[3],
+                              DestinationType *dst) const {
     dst[0] = src[0] + 2 * src[1] + src[2];
   }
 };  // end of class VerticalSobel3x3<uint8_t>

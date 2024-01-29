@@ -329,7 +329,7 @@ class HorizontalOp final {
   void vector_path_4x(Rows<const ScalarType> src_rows,
                       Rows<ScalarType> dst_rows,
                       const size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
-    auto src_row = &src_rows[index];
+    const auto *src_row = &src_rows[index];
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
     auto acc2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
@@ -357,7 +357,7 @@ class HorizontalOp final {
   void vector_path_2x(Rows<const ScalarType> src_rows,
                       Rows<ScalarType> dst_rows,
                       const size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
-    auto src_row = &src_rows[index];
+    const auto *src_row = &src_rows[index];
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
 
@@ -380,7 +380,7 @@ class HorizontalOp final {
     auto acc = svld1(pg, &src_rows[index]);
 
     for (size_t width = 1; width < kernel_.width(); ++width) {
-      auto src_row = &src_rows[index + width * src_rows.channels()];
+      const auto *src_row = &src_rows[index + width * src_rows.channels()];
       acc = O::operation(pg, acc, svld1(pg, &src_row[0]));
     }
 
@@ -465,7 +465,7 @@ static inline void dilate_sc(const T *src, size_t src_stride, T *dst,
   Margin margin{params->kernel, params->anchor};
   Border<T> border{params->border_values};
 
-  auto workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
@@ -519,7 +519,7 @@ static inline void erode_sc(const T *src, size_t src_stride, T *dst,
   Margin margin{params->kernel, params->anchor};
   Border<T> border{params->border_values};
 
-  auto workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;

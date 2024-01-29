@@ -63,9 +63,10 @@ class ScaleBase : public UnrollTwice {
       std::numeric_limits<ScalarType>::max();
   inline ScalarType scale_value(ScalarType value) {
     int64_t v = lrintf(value * scale_ + shift_);
-    ScalarType res = static_cast<ScalarType>(
-        static_cast<uint64_t>(v) <= ScalarMax ? v : (v > 0 ? ScalarMax : 0));
-    return res;
+    if (static_cast<uint64_t>(v) <= ScalarMax) {
+      return static_cast<ScalarType>(v);
+    }
+    return static_cast<ScalarType>(v > 0 ? ScalarMax : 0);
   }
 
  private:

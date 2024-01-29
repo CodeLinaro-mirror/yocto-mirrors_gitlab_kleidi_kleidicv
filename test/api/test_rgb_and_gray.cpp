@@ -37,7 +37,7 @@ class GrayTest final {
 
  private:
   void calculate_expected(test::Array2D<uint8_t> &src,
-                          test::Array2D<uint8_t> &expected) {
+                          test::Array2D<uint8_t> &expected) const {
     for (size_t vindex = 0; vindex < expected.height(); vindex++) {
       for (size_t hindex = 0; hindex < expected.width() / outChannels_;
            hindex++) {
@@ -88,7 +88,7 @@ class ColourTest final {
 
  private:
   void calculate_expected(test::Array2D<uint8_t> &src,
-                          test::Array2D<uint8_t> &expected) {
+                          test::Array2D<uint8_t> &expected) const {
     for (size_t vindex = 0; vindex < expected.height(); vindex++) {
       for (size_t hindex = 0; hindex < expected.width() / outChannels_;
            hindex++) {

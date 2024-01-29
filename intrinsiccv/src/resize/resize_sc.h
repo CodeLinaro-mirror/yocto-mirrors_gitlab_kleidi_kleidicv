@@ -48,7 +48,7 @@ static inline void process_parallel_rows(
     Rows<ScalarType> dst_rows,
     size_t dst_width) INTRINSICCV_STREAMING_COMPATIBLE {
   using VecTraits = sve2::VecTraits<ScalarType>;
-  const size_t size_mask = ~static_cast<size_t>(1u);
+  const size_t size_mask = ~static_cast<size_t>(1U);
 
   // Process rows up to the last even pixel index.
   LoopUnroll2{src_width & size_mask, VecTraits::num_lanes()}
@@ -110,7 +110,7 @@ static inline void process_single_row(
     Rows<ScalarType> dst_rows,
     size_t dst_width) INTRINSICCV_STREAMING_COMPATIBLE {
   using VecTraits = sve2::VecTraits<ScalarType>;
-  const size_t size_mask = ~static_cast<size_t>(1u);
+  const size_t size_mask = ~static_cast<size_t>(1U);
 
   // Process rows up to the last even pixel index.
   LoopUnroll2{src_width & size_mask, VecTraits::num_lanes()}

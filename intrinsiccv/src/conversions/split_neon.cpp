@@ -196,10 +196,8 @@ class Split4 final : public UnrollTwice {
         reinterpret_cast<double_element_width_t<VectorType> >(vsrc.val[2]),
         reinterpret_cast<double_element_width_t<VectorType> >(vsrc.val[3]));
 
-    dst0 = vuzp1q(reinterpret_cast<VectorType>(halfway_unzipped_1),
-                  reinterpret_cast<VectorType>(halfway_unzipped_2));
-    dst1 = vuzp2q(reinterpret_cast<VectorType>(halfway_unzipped_1),
-                  reinterpret_cast<VectorType>(halfway_unzipped_2));
+    dst0 = vuzp1q(halfway_unzipped_1, halfway_unzipped_2);
+    dst1 = vuzp2q(halfway_unzipped_1, halfway_unzipped_2);
 
     halfway_unzipped_1 = vuzp2q(
         reinterpret_cast<double_element_width_t<VectorType> >(vsrc.val[0]),
@@ -208,10 +206,8 @@ class Split4 final : public UnrollTwice {
         reinterpret_cast<double_element_width_t<VectorType> >(vsrc.val[2]),
         reinterpret_cast<double_element_width_t<VectorType> >(vsrc.val[3]));
 
-    dst2 = vuzp1q(reinterpret_cast<VectorType>(halfway_unzipped_1),
-                  reinterpret_cast<VectorType>(halfway_unzipped_2));
-    dst3 = vuzp2q(reinterpret_cast<VectorType>(halfway_unzipped_1),
-                  reinterpret_cast<VectorType>(halfway_unzipped_2));
+    dst2 = vuzp1q(halfway_unzipped_1, halfway_unzipped_2);
+    dst3 = vuzp2q(halfway_unzipped_1, halfway_unzipped_2);
   }
 #endif
 
@@ -256,7 +252,8 @@ class Split4<uint64_t> final : public UnrollTwice {
 
 template <typename ScalarType>
 void split(const void *src_data, const size_t src_stride, void **dst_data,
-           size_t *dst_strides, size_t width, size_t height, size_t channels) {
+           const size_t *dst_strides, size_t width, size_t height,
+           size_t channels) {
   Rectangle rect{width, height};
   ScalarType *dst0, *dst1;
   dst0 = reinterpret_cast<ScalarType *>(dst_data[0]);
@@ -289,30 +286,36 @@ void split(const void *src_data, const size_t src_stride, void **dst_data,
       apply_operation_by_rows(operation, rect, src_rows, dst_rows0, dst_rows1,
                               dst_rows2, dst_rows3);
     } break;
+    default:
+      __builtin_trap();
   }
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
 void split(const void *src_data, size_t src_stride, void **dst_data,
-           size_t *dst_strides, size_t width, size_t height, size_t channels,
-           size_t element_size) {
+           const size_t *dst_strides, size_t width, size_t height,
+           size_t channels, size_t element_size) {
   switch (element_size) {
     default:
     case sizeof(uint8_t):
-      return split<uint8_t>(src_data, src_stride, dst_data, dst_strides, width,
-                            height, channels);
+      split<uint8_t>(src_data, src_stride, dst_data, dst_strides, width, height,
+                     channels);
+      break;
 
     case sizeof(uint16_t):
-      return split<uint16_t>(src_data, src_stride, dst_data, dst_strides, width,
-                             height, channels);
+      split<uint16_t>(src_data, src_stride, dst_data, dst_strides, width,
+                      height, channels);
+      break;
 
     case sizeof(uint32_t):
-      return split<uint32_t>(src_data, src_stride, dst_data, dst_strides, width,
-                             height, channels);
+      split<uint32_t>(src_data, src_stride, dst_data, dst_strides, width,
+                      height, channels);
+      break;
 
     case sizeof(uint64_t):
-      return split<uint64_t>(src_data, src_stride, dst_data, dst_strides, width,
-                             height, channels);
+      split<uint64_t>(src_data, src_stride, dst_data, dst_strides, width,
+                      height, channels);
+      break;
   }
 }
 }  // namespace intrinsiccv::neon

@@ -28,8 +28,12 @@ void INTRINSICCV_C_API(filter_release)(intrinsiccv_filter_params_t *params) {
     return;
   }
 
+  // Deliberately create and immediately destroy a unique_ptr to delete the
+  // workspace.
+  // NOLINTBEGIN(bugprone-unused-raii)
   SeparableFilterWorkspace::Pointer{
       reinterpret_cast<SeparableFilterWorkspace *>(params->workspace)};
+  // NOLINTEND(bugprone-unused-raii)
   params->workspace = nullptr;
 }
 

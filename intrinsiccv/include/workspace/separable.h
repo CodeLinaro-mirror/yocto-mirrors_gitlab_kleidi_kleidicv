@@ -70,7 +70,7 @@ class SeparableFilterWorkspaceDeleter {
 class SeparableFilterWorkspace final {
  public:
   // To avoid load/store penalties.
-  static constexpr size_t kAlignment = 16ul;
+  static constexpr size_t kAlignment = 16UL;
 
   // Shorthand for std::unique_ptr<> holding a workspace.
   using Pointer = std::unique_ptr<SeparableFilterWorkspace,
@@ -97,7 +97,7 @@ class SeparableFilterWorkspace final {
     // Try to allocate workspace at once.
     size_t allocation_size =
         sizeof(SeparableFilterWorkspace) + buffer_rows_size;
-    auto allocation = std::malloc(allocation_size);
+    void *allocation = std::malloc(allocation_size);
     auto workspace = SeparableFilterWorkspace::Pointer{
         reinterpret_cast<SeparableFilterWorkspace *>(allocation)};
 
@@ -105,7 +105,7 @@ class SeparableFilterWorkspace final {
       return workspace;
     }
 
-    auto buffer_rows_address = &workspace->data_[0];
+    auto *buffer_rows_address = &workspace->data_[0];
     buffer_rows_address = __builtin_align_up(buffer_rows_address, kAlignment);
     workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
     workspace->buffer_rows_stride_ = buffer_rows_stride;

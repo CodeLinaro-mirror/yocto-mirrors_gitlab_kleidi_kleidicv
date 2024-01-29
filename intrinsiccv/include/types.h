@@ -258,7 +258,9 @@ class RowBase {
       INTRINSICCV_STREAMING_COMPATIBLE {
     uintptr_t intptr = reinterpret_cast<uintptr_t>(ptr);
     intptr += stride;
+    // NOLINTBEGIN(performance-no-int-to-ptr)
     return reinterpret_cast<P *>(intptr);
+    // NOLINTEND(performance-no-int-to-ptr)
   }
 
   // Subtracts a stride to a pointer, and returns the new pointer.
@@ -267,7 +269,9 @@ class RowBase {
       INTRINSICCV_STREAMING_COMPATIBLE {
     uintptr_t intptr = reinterpret_cast<uintptr_t>(ptr);
     intptr -= stride;
+    // NOLINTBEGIN(performance-no-int-to-ptr)
     return reinterpret_cast<P *>(intptr);
+    // NOLINTEND(performance-no-int-to-ptr)
   }
 
  private:

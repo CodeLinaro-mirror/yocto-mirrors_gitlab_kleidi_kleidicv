@@ -36,12 +36,11 @@ class YUVSpToRGBxOrBGRx final {
     auto pg = ctx.predicate();
 
     // Both the rounding shift right constant and the -128 value are included.
-    svint32_t r_base = svdup_s32((1L << (kWeightScale - 1)) -
-                                 128 * kUVWeights[kRVWeightIndex]);
-    svint32_t g_base = svdup_s32((1L << (kWeightScale - 1)) -
-                                 128 * (kUVWeights[1] + kUVWeights[2]));
-    svint32_t b_base =
-        svdup_s32((1L << (kWeightScale - 1)) - 128 * kUVWeights[3]);
+    constexpr int32_t kOffset = 1 << (kWeightScale - 1);
+    svint32_t r_base = svdup_s32(kOffset - 128 * kUVWeights[kRVWeightIndex]);
+    svint32_t g_base =
+        svdup_s32(kOffset - 128 * (kUVWeights[1] + kUVWeights[2]));
+    svint32_t b_base = svdup_s32(kOffset - 128 * kUVWeights[3]);
 
     // Load channels: y0 and y1 are two adjacent rows.
     svuint8_t y0 = svld1(pg, y_row_0);

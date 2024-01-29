@@ -353,7 +353,7 @@ class HorizontalOp final {
  private:
   void vector_path_4x(Rows<const ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index) {
-    auto src_row = &src_rows[index];
+    const auto *src_row = &src_rows[index];
     auto acc0 = vld1q(&src_row[0 * VecTraits::num_lanes()]);
     auto acc1 = vld1q(&src_row[1 * VecTraits::num_lanes()]);
     auto acc2 = vld1q(&src_row[2 * VecTraits::num_lanes()]);
@@ -380,7 +380,7 @@ class HorizontalOp final {
 
   void vector_path_2x(Rows<const ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index) {
-    auto src_row = &src_rows[index];
+    const auto *src_row = &src_rows[index];
     auto acc0 = vld1q(&src_row[0]);
     auto acc1 = vld1q(&src_row[VecTraits::num_lanes()]);
 
@@ -403,7 +403,7 @@ class HorizontalOp final {
 
     for (size_t width = 1; width < kernel_.width(); ++width) {
       // TODO: Check if EXT was any faster.
-      auto src_row = &src_rows[index + width * src_rows.channels()];
+      const auto *src_row = &src_rows[index + width * src_rows.channels()];
       acc = O::operation(acc, vld1q(&src_row[0]));
     }
 
@@ -503,7 +503,7 @@ void dilate(const T *src, size_t src_stride, T *dst, size_t dst_stride,
   Margin margin{params->kernel, params->anchor};
   Border<T> border{params->border_values};
 
-  auto workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
@@ -553,7 +553,7 @@ void erode(const T *src, size_t src_stride, T *dst, size_t dst_stride,
   Margin margin{params->kernel, params->anchor};
   Border<T> border{params->border_values};
 
-  auto workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;

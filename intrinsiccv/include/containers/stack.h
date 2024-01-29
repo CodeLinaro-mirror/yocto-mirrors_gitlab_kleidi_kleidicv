@@ -76,7 +76,7 @@ class Stack final : public NonCopyable {
   // Granularity of blocks in bytes. Blocks are a multiple of this value in
   // size. It matches the smallest page size, therefore it should work well with
   // systems with larger page size too.
-  static constexpr size_t kBlockGranule = 2 * 4096;
+  static constexpr size_t kBlockGranule = 2 * 4096UL;
 
   static_assert(sizeof(T) <= sizeof(void *),
                 "Current implementation is limited. Please improve it.");

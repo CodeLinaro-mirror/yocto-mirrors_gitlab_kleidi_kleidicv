@@ -14,10 +14,10 @@ TEST(PseudoRandomNumberGenerator, Reset) {
   using ElementType = uint8_t;
 
   test::PseudoRandomNumberGenerator<ElementType> generator;
-  ElementType initial_value = generator.next().value();
+  ElementType initial_value = generator.next().value_or(123);
   generator.next();
   generator.reset();
-  ElementType value = generator.next().value();
+  ElementType value = generator.next().value_or(234);
   EXPECT_EQ(initial_value, value);
 }
 
@@ -27,11 +27,11 @@ TEST(SequenceGenerator, Reset) {
 
   std::array<ElementType, 3> array{1, 2, 3};
   test::SequenceGenerator generator{array};
-  EXPECT_EQ(generator.next().value(), 1);
-  EXPECT_EQ(generator.next().value(), 2);
-  EXPECT_EQ(generator.next().value(), 3);
+  EXPECT_EQ(generator.next().value_or(0), 1);
+  EXPECT_EQ(generator.next().value_or(0), 2);
+  EXPECT_EQ(generator.next().value_or(0), 3);
   EXPECT_EQ(generator.next(), std::nullopt);
 
   generator.reset();
-  EXPECT_EQ(generator.next().value(), 1);
+  EXPECT_EQ(generator.next().value_or(0), 1);
 }

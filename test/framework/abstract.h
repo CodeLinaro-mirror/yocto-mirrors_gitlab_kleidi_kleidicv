@@ -23,7 +23,7 @@ class TwoDimensional {
   virtual size_t height() const = 0;
 
   /// Returns the number of channels.
-  virtual size_t channels() const { return 1ul; }
+  virtual size_t channels() const { return 1UL; }
 
   /// Returns a pointer to a data element at a given row and column position, or
   /// nullptr if the requested position is invalid.

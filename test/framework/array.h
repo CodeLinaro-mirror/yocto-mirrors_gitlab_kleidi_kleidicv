@@ -53,11 +53,13 @@ class Array2D : public TwoDimensional<ElementType> {
   Array2D(const Array2D &other) { this->operator=(other); }
 
   /// Move constructor.
-  Array2D(Array2D &&other) { this->operator=(other); }
+  Array2D(Array2D &&other) noexcept { this->operator=(other); }
 
   /// Copy assignment operator.
   Array2D &operator=(const Array2D &other) {
-    if (this == &other) return *this;
+    if (this == &other) {
+      return *this;
+    }
     width_ = other.width_;
     height_ = other.height_;
     channels_ = other.channels_;
@@ -74,8 +76,10 @@ class Array2D : public TwoDimensional<ElementType> {
   }
 
   /// Move assignment operator.
-  Array2D &operator=(Array2D &&other) {
-    if (this == &other) return *this;
+  Array2D &operator=(Array2D &&other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
     data_ = std::move(other.data_);
     width_ = other.width_;
     height_ = other.height_;
@@ -111,7 +115,9 @@ class Array2D : public TwoDimensional<ElementType> {
       for (size_t column = 0; column < width(); ++column) {
         std::optional<ElementType> optional_value = generator->next();
         ASSERT_NE(optional_value, std::nullopt);
-        ptr[column] = optional_value.value();
+        if (optional_value.has_value()) {
+          ptr[column] = optional_value.value();
+        }
       }
 
       ptr = add_stride(ptr, 1);

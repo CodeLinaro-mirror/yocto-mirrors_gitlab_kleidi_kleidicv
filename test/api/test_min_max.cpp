@@ -191,12 +191,20 @@ class MinMaxTest {
   void one_test_call(const ArrayType& source, ElementType* p_min,
                      ElementType* p_max, ElementType expected_min,
                      ElementType expected_max) {
-    if (p_min) *p_min = std::numeric_limits<ElementType>::max();
-    if (p_max) *p_max = std::numeric_limits<ElementType>::min();
+    if (p_min) {
+      *p_min = std::numeric_limits<ElementType>::max();
+    }
+    if (p_max) {
+      *p_max = std::numeric_limits<ElementType>::min();
+    }
     min_max<ElementType>()(source.data(), source.stride(), width(), height(),
                            p_min, p_max);
-    if (p_min) EXPECT_EQ(*p_min, expected_min);
-    if (p_max) EXPECT_EQ(*p_max, expected_max);
+    if (p_min) {
+      EXPECT_EQ(*p_min, expected_min);
+    }
+    if (p_max) {
+      EXPECT_EQ(*p_max, expected_max);
+    }
   }
 
  public:
@@ -229,12 +237,20 @@ class MinMaxLocTest : public MinMaxTest<ElementType, Padding> {
   void one_test_call(const ArrayType& source, size_t* p_min_offset,
                      size_t* p_max_offset, size_t expected_min_offset,
                      size_t expected_max_offset) {
-    if (p_min_offset) *p_min_offset = std::numeric_limits<size_t>::max();
-    if (p_max_offset) *p_max_offset = std::numeric_limits<size_t>::max();
+    if (p_min_offset) {
+      *p_min_offset = std::numeric_limits<size_t>::max();
+    }
+    if (p_max_offset) {
+      *p_max_offset = std::numeric_limits<size_t>::max();
+    }
     min_max_loc<ElementType>()(source.data(), source.stride(), width(),
                                height(), p_min_offset, p_max_offset);
-    if (p_min_offset) EXPECT_EQ(*p_min_offset, expected_min_offset);
-    if (p_max_offset) EXPECT_EQ(*p_max_offset, expected_max_offset);
+    if (p_min_offset) {
+      EXPECT_EQ(*p_min_offset, expected_min_offset);
+    }
+    if (p_max_offset) {
+      EXPECT_EQ(*p_max_offset, expected_max_offset);
+    }
   }
 
  public:

@@ -304,7 +304,7 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
 
   intrinsiccv_filter_params_t params;
   params.channels = cn;
-  params.type_size = get_type_size(depth) * 2ul /* widening */;
+  params.type_size = get_type_size(depth) * 2UL /* widening */;
 
   intrinsiccv_rectangle_t image = {
       .width = static_cast<decltype(intrinsiccv_rectangle_t::width)>(width),

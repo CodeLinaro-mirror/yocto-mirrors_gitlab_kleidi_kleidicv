@@ -15,7 +15,7 @@ class FixedBorderInfo;
 
 // Border offsets for 3x3 filters.
 template <typename T>
-class FixedBorderInfo<T, 3ul> final {
+class FixedBorderInfo<T, 3UL> final {
  public:
   // Simple object holding read-only constant offsets.
   class Offsets final {
@@ -91,15 +91,15 @@ class FixedBorderInfo<T, 3ul> final {
   // Retuns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
       INTRINSICCV_STREAMING_COMPATIBLE {
-    if (row_or_column_index == 0u) {
+    if (row_or_column_index == 0U) {
       // Rows and columns have the same offsets.
       return offsets_with_left_border(row_or_column_index);
-    } else if (row_or_column_index == (height_ - 1u)) {
+    }
+    if (row_or_column_index == (height_ - 1U)) {
       // Rows and columns have the same offsets.
       return offsets_with_right_border(row_or_column_index);
-    } else {
-      return offsets_without_border();
     }
+    return offsets_without_border();
   }
 
  private:
@@ -110,11 +110,11 @@ class FixedBorderInfo<T, 3ul> final {
 
   size_t height_;
   intrinsiccv_border_type_t border_type_;
-};  // end of class FixedBorderInfo<T, 3ul>
+};  // end of class FixedBorderInfo<T, 3UL>
 
 // Border offsets for 5x5 filters.
 template <typename T>
-class FixedBorderInfo<T, 5ul> final {
+class FixedBorderInfo<T, 5UL> final {
  public:
   // Simple object holding read-only constant offsets.
   class Offsets final {
@@ -234,15 +234,15 @@ class FixedBorderInfo<T, 5ul> final {
   // Retuns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
       INTRINSICCV_STREAMING_COMPATIBLE {
-    if (row_or_column_index <= 1u) {
+    if (row_or_column_index <= 1U) {
       // Rows and columns have the same offsets.
       return offsets_with_left_border(row_or_column_index);
-    } else if (row_or_column_index >= (height_ - 2u)) {
+    }
+    if (row_or_column_index >= (height_ - 2U)) {
       // Rows and columns have the same offsets.
       return offsets_with_right_border(row_or_column_index);
-    } else {
-      return offsets_without_border();
     }
+    return offsets_without_border();
   }
 
  private:
@@ -254,15 +254,15 @@ class FixedBorderInfo<T, 5ul> final {
 
   size_t height_;
   intrinsiccv_border_type_t border_type_;
-};  // end of class FixedBorderInfo<T, 5ul>
+};  // end of class FixedBorderInfo<T, 5UL>
 
 // Shorthand for 3x3 filter border type.
 template <typename T>
-using FixedBorderInfo3x3 = FixedBorderInfo<T, 3ul>;
+using FixedBorderInfo3x3 = FixedBorderInfo<T, 3UL>;
 
 // Shorthand for 5x5 filter border type.
 template <typename T>
-using FixedBorderInfo5x5 = FixedBorderInfo<T, 5ul>;
+using FixedBorderInfo5x5 = FixedBorderInfo<T, 5UL>;
 
 }  // namespace intrinsiccv
 

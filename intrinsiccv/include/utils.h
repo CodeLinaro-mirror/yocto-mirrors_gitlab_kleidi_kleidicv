@@ -21,7 +21,8 @@ template <typename S, typename U,
 static U saturating_cast(S value) INTRINSICCV_STREAMING_COMPATIBLE {
   if (value > std::numeric_limits<U>::max()) {
     return std::numeric_limits<U>::max();
-  } else if (value < 0) {
+  }
+  if (value < 0) {
     return 0;
   }
 

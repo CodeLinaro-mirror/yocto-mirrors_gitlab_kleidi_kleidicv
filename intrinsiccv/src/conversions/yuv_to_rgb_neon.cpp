@@ -15,17 +15,19 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce {
   using ScalarType = VecTraits::ScalarType;
   using VectorType = VecTraits::VectorType;
 
-  YUVSpToRGBxOrBGRx(bool is_nv21) : is_nv21_(is_nv21) {
-    y_weight_ = vdupq_n_s32(kYWeight);
-    uv_weights_ = vld2_s32(kUVWeights);
-    // Both the rounding shift right constant and the -128 value are included.
-    r_base_ = vdupq_n_s32((1L << (kWeightScale - 1)) -
-                          128 * kUVWeights[kRVWeightIndex]);
-    g_base_ = vdupq_n_s32((1L << (kWeightScale - 1)) -
-                          128 * (kUVWeights[1] + kUVWeights[2]));
-    b_base_ = vdupq_n_s32((1L << (kWeightScale - 1)) - 128 * kUVWeights[3]);
-    de_interleave_indices_ = vld1q_s8_x4(kDeInterleaveTableIndices);
-  }
+  explicit YUVSpToRGBxOrBGRx(bool is_nv21)
+      : y_weight_{vdupq_n_s32(kYWeight)},
+        uv_weights_{vld2_s32(kUVWeights)},
+        // Both the rounding shift right constant and the -128 value are
+        // included.
+        r_base_{vdupq_n_s32(static_cast<int32_t>(1 << (kWeightScale - 1)) -
+                            128 * kUVWeights[kRVWeightIndex])},
+        g_base_{vdupq_n_s32(static_cast<int32_t>(1 << (kWeightScale - 1)) -
+                            128 * (kUVWeights[1] + kUVWeights[2]))},
+        b_base_{vdupq_n_s32(static_cast<int32_t>(1 << (kWeightScale - 1)) -
+                            128 * kUVWeights[3])},
+        de_interleave_indices_{vld1q_s8_x4(kDeInterleaveTableIndices)},
+        is_nv21_(is_nv21) {}
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() {

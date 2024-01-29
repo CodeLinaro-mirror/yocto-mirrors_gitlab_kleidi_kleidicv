@@ -472,7 +472,7 @@ class SeparableFilter;
 
 // Driver for a separable 3x3 filter.
 template <typename FilterType>
-class SeparableFilter<FilterType, 3ul> {
+class SeparableFilter<FilterType, 3UL> {
  public:
   using SourceType = typename FilterType::SourceType;
   using BufferType = typename FilterType::BufferType;
@@ -489,7 +489,7 @@ class SeparableFilter<FilterType, 3ul> {
   }
 
   static constexpr Margin margin() INTRINSICCV_STREAMING_COMPATIBLE {
-    return Margin{1ul};
+    return Margin{1UL};
   }
 
   void process_vertical(
@@ -604,11 +604,11 @@ class SeparableFilter<FilterType, 3ul> {
   }
 
   FilterType filter_;
-};  // end of class SeparableFilter<FilterType, 3ul>
+};  // end of class SeparableFilter<FilterType, 3UL>
 
 // Driver for a separable 5x5 filter.
 template <typename FilterType>
-class SeparableFilter<FilterType, 5ul> {
+class SeparableFilter<FilterType, 5UL> {
  public:
   using SourceType = typename FilterType::SourceType;
   using BufferType = typename FilterType::BufferType;
@@ -625,7 +625,7 @@ class SeparableFilter<FilterType, 5ul> {
   }
 
   static constexpr Margin margin() INTRINSICCV_STREAMING_COMPATIBLE {
-    return Margin{2ul};
+    return Margin{2UL};
   }
 
   void process_vertical(
@@ -758,15 +758,15 @@ class SeparableFilter<FilterType, 5ul> {
   }
 
   FilterType filter_;
-};  // end of class SeparableFilter<FilterType, 5ul>
+};  // end of class SeparableFilter<FilterType, 5UL>
 
 // Shorthand for 3x3 separable filters driver type.
 template <class FilterType>
-using SeparableFilter3x3 = SeparableFilter<FilterType, 3ul>;
+using SeparableFilter3x3 = SeparableFilter<FilterType, 3UL>;
 
 // Shorthand for 5x5 separable filters driver type.
 template <class FilterType>
-using SeparableFilter5x5 = SeparableFilter<FilterType, 5ul>;
+using SeparableFilter5x5 = SeparableFilter<FilterType, 5UL>;
 
 }  // namespace intrinsiccv::sve2
 

@@ -75,8 +75,8 @@ class DiscreteGaussianBlur<uint8_t, 5> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void horizontal_scalar_path(BufferType src[5], DestinationType *dst) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
+      const INTRINSICCV_STREAMING_COMPATIBLE {
     auto acc = src[0] + src[4] + 4 * (src[1] + src[3]) + 6 * src[2];
     dst[0] = rounding_shift_right(acc, 8);
   }
@@ -95,7 +95,7 @@ void discrete_gaussian_blur(const ScalarType *src, size_t src_stride,
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
 
-  auto workspace =
+  auto *workspace =
       reinterpret_cast<SeparableFilterWorkspace *>(params->workspace);
 
   GaussianBlurFilterType blur;

@@ -72,8 +72,12 @@ void INTRINSICCV_C_API(morphology_release)(
     return;
   }
 
+  // Deliberately create and immediately destroy a unique_ptr to delete the
+  // workspace.
+  // NOLINTBEGIN(bugprone-unused-raii)
   MorphologyWorkspace::Pointer{
       reinterpret_cast<MorphologyWorkspace *>(params->data)};
+  // NOLINTEND(bugprone-unused-raii)
   params->data = nullptr;
 }
 

@@ -32,7 +32,8 @@ static inline bool hwcaps_has_sve2(HwCaps hwcaps) {
 static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
   // Actually checks for SME, not SME2, but this will be changed to check for
   // SME2 in future.
-  return hwcaps.hwcap2 & (1UL << 23);
+  const int kSMEBit = 23;
+  return hwcaps.hwcap2 & (1UL << kSMEBit);
 }
 
 struct IFuncImpls final {

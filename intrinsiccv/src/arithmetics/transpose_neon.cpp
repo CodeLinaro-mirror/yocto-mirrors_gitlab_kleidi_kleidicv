@@ -216,9 +216,8 @@ void transpose(const void *src, size_t src_stride, void *dst, size_t dst_stride,
     if (src_width != src_height) {
       // Inplace transpose only implemented if width and height are the same
       return;
-    } else {
-      inplace = true;
     }
+    inplace = true;
   }
 
   switch (element_size) {

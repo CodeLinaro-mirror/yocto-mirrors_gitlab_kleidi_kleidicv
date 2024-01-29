@@ -64,7 +64,7 @@ class YuvTest final {
 
   void calculate_expected(test::Array2D<uint8_t> &y_arr,
                           test::Array2D<uint8_t> &uv_arr,
-                          test::Array2D<uint8_t> &exp_arr, bool is_nv21) {
+                          test::Array2D<uint8_t> &exp_arr, bool is_nv21) const {
     for (size_t vindex = 0; vindex < exp_arr.height(); vindex++) {
       for (size_t hindex = 0; hindex < exp_arr.width() / channel_number_;
            hindex++) {
