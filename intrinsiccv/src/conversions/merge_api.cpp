@@ -8,13 +8,9 @@
 
 namespace intrinsiccv {
 
-static IFuncImpls merge_impls_builder(void) {
-  IFuncImpls impls;
-  INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::merge);
-  return impls;
-}
-INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_merge, merge_impls_builder, void,
-                               const void **, const size_t *, void *, size_t,
-                               size_t, size_t, size_t, size_t);
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_merge, intrinsiccv::neon::merge,
+                               nullptr, nullptr, void, const void **,
+                               const size_t *, void *, size_t, size_t, size_t,
+                               size_t, size_t);
 
 }  // namespace intrinsiccv

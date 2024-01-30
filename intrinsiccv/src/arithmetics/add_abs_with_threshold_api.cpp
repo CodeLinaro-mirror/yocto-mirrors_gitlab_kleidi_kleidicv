@@ -35,20 +35,13 @@ void add_abs_with_threshold(const T *src_a, size_t src_a_stride, const T *src_b,
 
 }  // namespace sme2
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                                 \
-  static IFuncImpls name##_impls_builder(void) {                             \
-    IFuncImpls impls;                                                        \
-    INTRINSICCV_ADD_NEON_IMPL(                                               \
-        intrinsiccv::neon::add_abs_with_threshold<type>);                    \
-    INTRINSICCV_ADD_SVE2_IMPL_IF(                                            \
-        intrinsiccv::sve2::add_abs_with_threshold<type>);                    \
-    INTRINSICCV_ADD_SME2_IMPL(                                               \
-        intrinsiccv::sme2::add_abs_with_threshold<type>);                    \
-    return impls;                                                            \
-  }                                                                          \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,           \
-                                 const type *, size_t, const type *, size_t, \
-                                 type *, size_t, size_t, size_t, type)
+#define INTRINSICCV_DEFINE_C_API(name, type)                               \
+  INTRINSICCV_MULTIVERSION_C_API(                                          \
+      name, intrinsiccv::neon::add_abs_with_threshold<type>,               \
+      INTRINSICCV_SVE2_IMPL_IF(                                            \
+          intrinsiccv::sve2::add_abs_with_threshold<type>),                \
+      intrinsiccv::sme2::add_abs_with_threshold<type>, void, const type *, \
+      size_t, const type *, size_t, type *, size_t, size_t, size_t, type)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_add_abs_with_threshold, int16_t);
 

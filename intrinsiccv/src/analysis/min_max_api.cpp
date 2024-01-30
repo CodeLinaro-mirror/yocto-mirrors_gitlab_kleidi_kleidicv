@@ -25,14 +25,9 @@ namespace sve2 {}  // namespace sve2
 namespace sme2 {}  // namespace sme2
 
 #define INTRINSICCV_DEFINE_MINMAX_API(name, type)                              \
-  static IFuncImpls name##_impls_builder(void) {                               \
-    IFuncImpls impls;                                                          \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::min_max<type>);               \
-    return impls;                                                              \
-  }                                                                            \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,             \
-                                 const type *, size_t, size_t, size_t, type *, \
-                                 type *)
+  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max<type>,       \
+                                 nullptr, nullptr, void, const type *, size_t, \
+                                 size_t, size_t, type *, type *)
 
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_u8, uint8_t);
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s8, int8_t);
@@ -40,15 +35,10 @@ INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_u16, uint16_t);
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s16, int16_t);
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s32, int32_t);
 
-#define INTRINSICCV_DEFINE_MINMAXLOC_API(name, type)                   \
-  static IFuncImpls name##_impls_builder(void) {                       \
-    IFuncImpls impls;                                                  \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::min_max_loc<type>);   \
-    return impls;                                                      \
-  }                                                                    \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,     \
-                                 const type *, size_t, size_t, size_t, \
-                                 size_t *, size_t *)
+#define INTRINSICCV_DEFINE_MINMAXLOC_API(name, type)                           \
+  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max_loc<type>,   \
+                                 nullptr, nullptr, void, const type *, size_t, \
+                                 size_t, size_t, size_t *, size_t *)
 
 INTRINSICCV_DEFINE_MINMAXLOC_API(intrinsiccv_min_max_loc_u8, uint8_t);
 

@@ -82,18 +82,13 @@ void intrinsiccv_morphology_release(intrinsiccv_morphology_params_t *params) {
 
 }  // extern "C"
 
-#define INTRINSICCV_DEFINE_C_API(name, tname, type)                         \
-  static IFuncImpls name##_impls_builder(void) {                            \
-    IFuncImpls impls;                                                       \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::tname<type>);              \
-    INTRINSICCV_ADD_SVE2_IMPL_IF(intrinsiccv::sve2::tname<type>);           \
-    INTRINSICCV_ADD_SME2_IMPL(intrinsiccv::sme2::tname<type>);              \
-    return impls;                                                           \
-  }                                                                         \
-  INTRINSICCV_MULTIVERSION_C_API(                                           \
-      name, name##_impls_builder, void, const type *src, size_t src_stride, \
-      type *dst, size_t dst_stride, size_t width, size_t height,            \
-      const intrinsiccv_morphology_params_t *)
+#define INTRINSICCV_DEFINE_C_API(name, tname, type)                  \
+  INTRINSICCV_MULTIVERSION_C_API(                                    \
+      name, intrinsiccv::neon::tname<type>,                          \
+      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::tname<type>),      \
+      intrinsiccv::sme2::tname<type>, void, const type *src,         \
+      size_t src_stride, type *dst, size_t dst_stride, size_t width, \
+      size_t height, const intrinsiccv_morphology_params_t *)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_dilate_u8, dilate, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_erode_u8, erode, uint8_t);

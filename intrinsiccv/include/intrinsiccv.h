@@ -642,7 +642,7 @@ void intrinsiccv_gaussian_blur_5x5_u8(
 /// @param element_size Size of one element in bytes.
 ///
 void intrinsiccv_split(const void *src_data, size_t src_stride, void **dst_data,
-                       size_t *dst_strides, size_t width, size_t height,
+                       const size_t *dst_strides, size_t width, size_t height,
                        size_t channels, size_t element_size);
 
 void intrinsiccv_transpose(const void *src, size_t src_stride, void *dst,

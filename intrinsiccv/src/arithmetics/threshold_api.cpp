@@ -28,17 +28,12 @@ void threshold_binary(const T *src, size_t src_stride, T *dst,
                       T threshold, T value);
 }  // namespace sme2
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                                   \
-  static IFuncImpls name##_impls_builder(void) {                               \
-    IFuncImpls impls;                                                          \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::threshold_binary<type>);      \
-    INTRINSICCV_ADD_SVE2_IMPL_IF(intrinsiccv::sve2::threshold_binary<type>);   \
-    INTRINSICCV_ADD_SME2_IMPL(intrinsiccv::sme2::threshold_binary<type>);      \
-    return impls;                                                              \
-  }                                                                            \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,             \
-                                 const type *, size_t, type *, size_t, size_t, \
-                                 size_t, type, type)
+#define INTRINSICCV_DEFINE_C_API(name, type)                                 \
+  INTRINSICCV_MULTIVERSION_C_API(                                            \
+      name, intrinsiccv::neon::threshold_binary<type>,                       \
+      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::threshold_binary<type>),   \
+      intrinsiccv::sme2::threshold_binary<type>, void, const type *, size_t, \
+      type *, size_t, size_t, size_t, type, type)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_threshold_binary_u8, uint8_t);
 

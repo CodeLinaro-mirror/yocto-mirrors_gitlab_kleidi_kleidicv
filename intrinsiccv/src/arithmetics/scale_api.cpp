@@ -20,14 +20,9 @@ namespace sve2 {}  // namespace sve2
 namespace sme2 {}  // namespace sme2
 
 #define INTRINSICCV_DEFINE_SCALE_API(name, type)                               \
-  static IFuncImpls name##_impls_builder(void) {                               \
-    IFuncImpls impls;                                                          \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::scale<type>);                 \
-    return impls;                                                              \
-  }                                                                            \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,             \
-                                 const type *, size_t, type *, size_t, size_t, \
-                                 size_t, float, float)
+  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::scale<type>,         \
+                                 nullptr, nullptr, void, const type *, size_t, \
+                                 type *, size_t, size_t, size_t, float, float)
 
 INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_u8, uint8_t);
 // INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s8, int8_t);

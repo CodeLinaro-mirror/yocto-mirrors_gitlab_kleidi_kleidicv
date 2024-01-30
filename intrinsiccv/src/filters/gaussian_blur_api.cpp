@@ -39,33 +39,21 @@ void intrinsiccv_filter_release(intrinsiccv_filter_params_t *params) {
 
 }  // extern "C"
 
-static IFuncImpls gaussian_blur_3x3_u8_impls_builder(void) {
-  IFuncImpls impls;
-  INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::gaussian_blur_3x3_u8);
-  return impls;
-}
 INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_3x3_u8,
-                               gaussian_blur_3x3_u8_impls_builder, void,
-                               const uint8_t *src, size_t src_stride,
-                               uint8_t *dst, size_t dst_stride, size_t width,
-                               size_t height, size_t channels,
+                               intrinsiccv::neon::gaussian_blur_3x3_u8, nullptr,
+                               nullptr, void, const uint8_t *src,
+                               size_t src_stride, uint8_t *dst,
+                               size_t dst_stride, size_t width, size_t height,
+                               size_t channels,
                                intrinsiccv_border_type_t border_type,
                                const intrinsiccv_filter_params_t *params);
 
-static IFuncImpls gaussian_blur_5x5_u8_impls_builder(void) {
-  IFuncImpls impls;
-  INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::gaussian_blur_5x5_u8);
-  INTRINSICCV_ADD_SVE2_IMPL_IF(intrinsiccv::sve2::gaussian_blur_5x5_u8);
-  INTRINSICCV_ADD_SME2_IMPL(intrinsiccv::sme2::gaussian_blur_5x5_u8);
-  return impls;
-}
-
-INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_5x5_u8,
-                               gaussian_blur_5x5_u8_impls_builder, void,
-                               const uint8_t *src, size_t src_stride,
-                               uint8_t *dst, size_t dst_stride, size_t width,
-                               size_t height, size_t channels,
-                               intrinsiccv_border_type_t border_type,
-                               const intrinsiccv_filter_params_t *params);
+INTRINSICCV_MULTIVERSION_C_API(
+    intrinsiccv_gaussian_blur_5x5_u8, intrinsiccv::neon::gaussian_blur_5x5_u8,
+    INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::gaussian_blur_5x5_u8),
+    intrinsiccv::sme2::gaussian_blur_5x5_u8, void, const uint8_t *src,
+    size_t src_stride, uint8_t *dst, size_t dst_stride, size_t width,
+    size_t height, size_t channels, intrinsiccv_border_type_t border_type,
+    const intrinsiccv_filter_params_t *params);
 
 }  // namespace intrinsiccv

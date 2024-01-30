@@ -8,16 +8,10 @@
 
 namespace intrinsiccv {
 
-#define INTRINSICCV_DEFINE_C_API(name, partialname)              \
-  static IFuncImpls name##_impls_builder(void) {                 \
-    IFuncImpls impls;                                            \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::partialname);   \
-    INTRINSICCV_ADD_SVE2_IMPL(intrinsiccv::sve2::partialname);   \
-    INTRINSICCV_ADD_SME2_IMPL(intrinsiccv::sme2::partialname);   \
-    return impls;                                                \
-  }                                                              \
-  INTRINSICCV_MULTIVERSION_C_API(                                \
-      name, name##_impls_builder, void, const uint8_t *, size_t, \
+#define INTRINSICCV_DEFINE_C_API(name, partialname)                         \
+  INTRINSICCV_MULTIVERSION_C_API(                                           \
+      name, intrinsiccv::neon::partialname, intrinsiccv::sve2::partialname, \
+      intrinsiccv::sme2::partialname, void, const uint8_t *, size_t,        \
       const uint8_t *, size_t, uint8_t *, size_t, size_t, size_t, bool)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_yuv_sp_to_rgb_u8, yuv_sp_to_rgb_u8);

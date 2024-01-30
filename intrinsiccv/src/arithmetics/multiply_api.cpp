@@ -35,17 +35,12 @@ void saturating_multiply(const T *src_a, size_t src_a_stride, const T *src_b,
 
 // } // namespace sme2
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                                 \
-  static IFuncImpls name##_impls_builder(void) {                             \
-    IFuncImpls impls;                                                        \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::saturating_multiply<type>); \
-    INTRINSICCV_ADD_SVE2_IMPL_IF(                                            \
-        intrinsiccv::sve2::saturating_multiply<type>);                       \
-    return impls;                                                            \
-  }                                                                          \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,           \
-                                 const type *, size_t, const type *, size_t, \
-                                 type *, size_t, size_t, size_t, double)
+#define INTRINSICCV_DEFINE_C_API(name, type)                                  \
+  INTRINSICCV_MULTIVERSION_C_API(                                             \
+      name, intrinsiccv::neon::saturating_multiply<type>,                     \
+      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_multiply<type>), \
+      nullptr, void, const type *, size_t, const type *, size_t, type *,      \
+      size_t, size_t, size_t, double)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_u8, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_s8, int8_t);

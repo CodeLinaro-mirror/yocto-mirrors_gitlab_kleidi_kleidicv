@@ -8,12 +8,8 @@
 
 namespace intrinsiccv {
 
-static IFuncImpls transpose_impls_builder(void) {
-  IFuncImpls impls;
-  INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::transpose);
-  return impls;
-}
-INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_transpose, transpose_impls_builder,
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_transpose,
+                               intrinsiccv::neon::transpose, nullptr, nullptr,
                                void, const void *, size_t, void *, size_t,
                                size_t, size_t, size_t);
 

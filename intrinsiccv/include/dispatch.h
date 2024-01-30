@@ -12,7 +12,6 @@
 
 namespace intrinsiccv {
 
-using IFuncImplType = void *;
 using HwCapTy = uint64_t;
 
 struct HwCaps final {
@@ -36,74 +35,48 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
   return hwcaps.hwcap2 & (1UL << kSMEBit);
 }
 
-struct IFuncImpls final {
-  IFuncImplType neon_impl{nullptr};
-#ifdef INTRINSICCV_HAVE_SVE2
-  IFuncImplType sve2_impl{nullptr};
-#endif
-#ifdef INTRINSICCV_HAVE_SME2
-  IFuncImplType sme2_impl{nullptr};
-#endif
-};
-
-#define INTRINSICCV_ADD_NEON_IMPL(func)                         \
-  do {                                                          \
-    impls.neon_impl = reinterpret_cast<IFuncImplType>(&(func)); \
-  } while (false)
-
 #if INTRINSICCV_ALWAYS_ENABLE_SVE2
-#define INTRINSICCV_ADD_SVE2_IMPL_IF(func) INTRINSICCV_ADD_SVE2_IMPL(func)
+#define INTRINSICCV_SVE2_IMPL_IF(func) func
 #else
-#define INTRINSICCV_ADD_SVE2_IMPL_IF(func)
+#define INTRINSICCV_SVE2_IMPL_IF(func) nullptr
 #endif
 
 #ifdef INTRINSICCV_HAVE_SVE2
-#define INTRINSICCV_ADD_SVE2_IMPL(func)                         \
-  do {                                                          \
-    impls.sve2_impl = reinterpret_cast<IFuncImplType>(&(func)); \
-  } while (false)
+#define INTRINSICCV_SVE2_RESOLVE_IFUNC(sve2_impl) \
+  if (sve2_impl && hwcaps_has_sve2(hwcaps)) {     \
+    return sve2_impl;                             \
+  }
+
 #else
-#define INTRINSICCV_ADD_SVE2_IMPL(func) ((void)0)
+#define INTRINSICCV_SVE2_RESOLVE_IFUNC(sve2_impl)
 #endif
 
 #ifdef INTRINSICCV_HAVE_SME2
-#define INTRINSICCV_ADD_SME2_IMPL(func)                         \
-  do {                                                          \
-    impls.sme2_impl = reinterpret_cast<IFuncImplType>(&(func)); \
-  } while (false)
+#define INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl) \
+  if (sme2_impl && hwcaps_has_sme2(hwcaps)) {     \
+    return sme2_impl;                             \
+  }
 #else
-#define INTRINSICCV_ADD_SME2_IMPL(func) ((void)0)
+#define INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl)
 #endif
-
-static inline IFuncImplType default_ifunc_resolver(
-    [[maybe_unused]] const HwCaps hwcaps, const IFuncImpls impls) {
-#ifdef INTRINSICCV_HAVE_SME2
-  if (impls.sme2_impl && hwcaps_has_sme2(hwcaps)) {
-    return impls.sme2_impl;
-  }
-#endif
-
-#ifdef INTRINSICCV_HAVE_SVE2
-  if (impls.sve2_impl && hwcaps_has_sve2(hwcaps)) {
-    return impls.sve2_impl;
-  }
-#endif
-
-  return impls.neon_impl;
-}
 
 // Creates a multiversioned C API with an ifunc resolver for it
-#define INTRINSICCV_MULTIVERSION_C_API(api_name, impls_builder, retty, ...) \
-  extern "C" INTRINSICCV_IFUNC_RESOLVER IFuncImplType                       \
-      api_name##_ifunc_resolver(HwCapTy, __ifunc_arg_t *arg);               \
-                                                                            \
-  extern "C" IFuncImplType api_name##_ifunc_resolver(HwCapTy hwcap,         \
-                                                     __ifunc_arg_t *arg) {  \
-    IFuncImpls impls = impls_builder();                                     \
-    return default_ifunc_resolver(make_hwcaps(hwcap, arg), impls);          \
-  }                                                                         \
-                                                                            \
-  extern "C" retty api_name(__VA_ARGS__)                                    \
+#define INTRINSICCV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, \
+                                       sme2_impl, return_type, ...)    \
+  typedef return_type (*api_name##_function_type)(__VA_ARGS__);        \
+                                                                       \
+  extern "C" INTRINSICCV_IFUNC_RESOLVER api_name##_function_type       \
+      api_name##_ifunc_resolver(HwCapTy, __ifunc_arg_t *arg);          \
+                                                                       \
+  extern "C" api_name##_function_type api_name##_ifunc_resolver(       \
+      HwCapTy hwcap, __ifunc_arg_t *arg) {                             \
+    [[maybe_unused]] HwCaps hwcaps = make_hwcaps(hwcap, arg);          \
+    INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl);                         \
+    INTRINSICCV_SVE2_RESOLVE_IFUNC(sve2_impl);                         \
+    return neon_impl;                                                  \
+  }                                                                    \
+                                                                       \
+  extern "C" return_type api_name(__VA_ARGS__)                         \
       INTRINSICCV_ATTR_IFUNC(#api_name "_ifunc_resolver")
 
 }  // namespace intrinsiccv

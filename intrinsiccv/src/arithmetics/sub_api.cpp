@@ -34,17 +34,12 @@ void saturating_sub(const T *src_a, size_t src_a_stride, const T *src_b,
 
 }  // namespace sme2
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                                 \
-  static IFuncImpls name##_impls_builder(void) {                             \
-    IFuncImpls impls;                                                        \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::saturating_sub<type>);      \
-    INTRINSICCV_ADD_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_sub<type>);   \
-    INTRINSICCV_ADD_SME2_IMPL(intrinsiccv::sme2::saturating_sub<type>);      \
-    return impls;                                                            \
-  }                                                                          \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,           \
-                                 const type *, size_t, const type *, size_t, \
-                                 type *, size_t, size_t, size_t)
+#define INTRINSICCV_DEFINE_C_API(name, type)                               \
+  INTRINSICCV_MULTIVERSION_C_API(                                          \
+      name, intrinsiccv::neon::saturating_sub<type>,                       \
+      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_sub<type>),   \
+      intrinsiccv::sme2::saturating_sub<type>, void, const type *, size_t, \
+      const type *, size_t, type *, size_t, size_t, size_t)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_s8, int8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_u8, uint8_t);

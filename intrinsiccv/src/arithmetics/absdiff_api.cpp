@@ -36,16 +36,11 @@ void saturating_absdiff(const T *src_a, size_t src_a_stride, const T *src_b,
 }  // namespace sme2
 
 #define INTRINSICCV_DEFINE_C_API(name, type)                                   \
-  static IFuncImpls name##_impls_builder(void) {                               \
-    IFuncImpls impls;                                                          \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::saturating_absdiff<type>);    \
-    INTRINSICCV_ADD_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_absdiff<type>); \
-    INTRINSICCV_ADD_SME2_IMPL(intrinsiccv::sme2::saturating_absdiff<type>);    \
-    return impls;                                                              \
-  }                                                                            \
-  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,             \
-                                 const type *, size_t, const type *, size_t,   \
-                                 type *, size_t, size_t, size_t)
+  INTRINSICCV_MULTIVERSION_C_API(                                              \
+      name, intrinsiccv::neon::saturating_absdiff<type>,                       \
+      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_absdiff<type>),   \
+      intrinsiccv::sme2::saturating_absdiff<type>, void, const type *, size_t, \
+      const type *, size_t, type *, size_t, size_t, size_t)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_absdiff_u8, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_absdiff_s8, int8_t);
