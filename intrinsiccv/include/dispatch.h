@@ -95,16 +95,16 @@ static inline IFuncImplType default_ifunc_resolver(
 // Creates a multiversioned C API with an ifunc resolver for it
 #define INTRINSICCV_MULTIVERSION_C_API(api_name, impls_builder, retty, ...) \
   extern "C" INTRINSICCV_IFUNC_RESOLVER IFuncImplType                       \
-      intrinsiccv_##api_name##_ifunc_resolver(HwCapTy, __ifunc_arg_t *arg); \
+      api_name##_ifunc_resolver(HwCapTy, __ifunc_arg_t *arg);               \
                                                                             \
-  extern "C" IFuncImplType intrinsiccv_##api_name##_ifunc_resolver(         \
-      HwCapTy hwcap, __ifunc_arg_t *arg) {                                  \
+  extern "C" IFuncImplType api_name##_ifunc_resolver(HwCapTy hwcap,         \
+                                                     __ifunc_arg_t *arg) {  \
     IFuncImpls impls = impls_builder();                                     \
     return default_ifunc_resolver(make_hwcaps(hwcap, arg), impls);          \
   }                                                                         \
                                                                             \
-  extern "C" retty intrinsiccv_##api_name(__VA_ARGS__)                      \
-      INTRINSICCV_ATTR_IFUNC("intrinsiccv_" #api_name "_ifunc_resolver")
+  extern "C" retty api_name(__VA_ARGS__)                                    \
+      INTRINSICCV_ATTR_IFUNC(#api_name "_ifunc_resolver")
 
 }  // namespace intrinsiccv
 

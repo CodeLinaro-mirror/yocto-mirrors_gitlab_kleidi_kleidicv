@@ -15,7 +15,7 @@ static IFuncImpls resize_to_quarter_u8_impls_builder(void) {
   INTRINSICCV_ADD_SME2_IMPL(intrinsiccv::sme2::resize_to_quarter_u8);
   return impls;
 }
-INTRINSICCV_MULTIVERSION_C_API(resize_to_quarter_u8,
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_resize_to_quarter_u8,
                                resize_to_quarter_u8_impls_builder, void,
                                const uint8_t *src, size_t src_stride,
                                size_t src_width, size_t src_height,

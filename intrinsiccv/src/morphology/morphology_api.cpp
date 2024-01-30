@@ -52,7 +52,7 @@ void erode(const T *src, size_t src_stride, T *dst, size_t dst_stride,
 
 extern "C" {
 
-intrinsiccv_morphology_params_t *INTRINSICCV_C_API(morphology_create)(
+intrinsiccv_morphology_params_t *intrinsiccv_morphology_create(
     intrinsiccv_morphology_params_t *params, intrinsiccv_rectangle_t image) {
   auto workspace =
       MorphologyWorkspace::create(Rectangle{image}, Rectangle{params->kernel},
@@ -66,8 +66,7 @@ intrinsiccv_morphology_params_t *INTRINSICCV_C_API(morphology_create)(
   return params;
 }
 
-void INTRINSICCV_C_API(morphology_release)(
-    intrinsiccv_morphology_params_t *params) {
+void intrinsiccv_morphology_release(intrinsiccv_morphology_params_t *params) {
   if (!params->data) {
     return;
   }
@@ -96,7 +95,7 @@ void INTRINSICCV_C_API(morphology_release)(
       type *dst, size_t dst_stride, size_t width, size_t height,            \
       const intrinsiccv_morphology_params_t *)
 
-INTRINSICCV_DEFINE_C_API(dilate_u8, dilate, uint8_t);
-INTRINSICCV_DEFINE_C_API(erode_u8, erode, uint8_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_dilate_u8, dilate, uint8_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_erode_u8, erode, uint8_t);
 
 }  // namespace intrinsiccv

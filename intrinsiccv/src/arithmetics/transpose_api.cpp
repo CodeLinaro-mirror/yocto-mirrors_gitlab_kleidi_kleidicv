@@ -13,8 +13,8 @@ static IFuncImpls transpose_impls_builder(void) {
   INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::transpose);
   return impls;
 }
-INTRINSICCV_MULTIVERSION_C_API(transpose, transpose_impls_builder, void,
-                               const void *, size_t, void *, size_t, size_t,
-                               size_t, size_t);
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_transpose, transpose_impls_builder,
+                               void, const void *, size_t, void *, size_t,
+                               size_t, size_t, size_t);
 
 }  // namespace intrinsiccv

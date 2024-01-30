@@ -13,7 +13,7 @@ static IFuncImpls split_impls_builder(void) {
   INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::split);
   return impls;
 }
-INTRINSICCV_MULTIVERSION_C_API(split, split_impls_builder, void,
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_split, split_impls_builder, void,
                                const void *src_data, size_t src_stride,
                                void **dst_data, size_t *dst_strides,
                                size_t width, size_t height, size_t channels,

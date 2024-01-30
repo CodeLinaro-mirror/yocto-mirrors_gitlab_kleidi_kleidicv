@@ -46,13 +46,13 @@ void saturating_sub(const T *src_a, size_t src_a_stride, const T *src_b,
                                  const type *, size_t, const type *, size_t, \
                                  type *, size_t, size_t, size_t)
 
-INTRINSICCV_DEFINE_C_API(saturating_sub_s8, int8_t);
-INTRINSICCV_DEFINE_C_API(saturating_sub_u8, uint8_t);
-INTRINSICCV_DEFINE_C_API(saturating_sub_s16, int16_t);
-INTRINSICCV_DEFINE_C_API(saturating_sub_u16, uint16_t);
-INTRINSICCV_DEFINE_C_API(saturating_sub_s32, int32_t);
-INTRINSICCV_DEFINE_C_API(saturating_sub_u32, uint32_t);
-INTRINSICCV_DEFINE_C_API(saturating_sub_s64, int64_t);
-INTRINSICCV_DEFINE_C_API(saturating_sub_u64, uint64_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_s8, int8_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_u8, uint8_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_s16, int16_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_u16, uint16_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_s32, int32_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_u32, uint32_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_s64, int64_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_u64, uint64_t);
 
 }  // namespace intrinsiccv

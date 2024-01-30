@@ -24,19 +24,15 @@
 extern "C" {
 #endif  // __cplusplus
 
-#define INTRINSICCV_C_API(name) intrinsiccv_##name
+#define INTRINSICCV_BINARY_OP(name, type)                                    \
+  void name(const type *src_a, size_t src_a_stride, const type *src_b,       \
+            size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
+            size_t height)
 
-#define INTRINSICCV_BINARY_OP(name, type)                                  \
-  void INTRINSICCV_C_API(name)(const type *src_a, size_t src_a_stride,     \
-                               const type *src_b, size_t src_b_stride,     \
-                               type *dst, size_t dst_stride, size_t width, \
-                               size_t height)
-
-#define INTRINSICCV_BINARY_OP_SCALE(name, type, scaletype)                 \
-  void INTRINSICCV_C_API(name)(const type *src_a, size_t src_a_stride,     \
-                               const type *src_b, size_t src_b_stride,     \
-                               type *dst, size_t dst_stride, size_t width, \
-                               size_t height, scaletype scale)
+#define INTRINSICCV_BINARY_OP_SCALE(name, type, scaletype)                   \
+  void name(const type *src_a, size_t src_a_stride, const type *src_b,       \
+            size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
+            size_t height, scaletype scale)
 
 /// Adds the values of the corresponding elements in `src_a` and `src_b`, and
 /// puts the result into `dst`.
@@ -61,21 +57,21 @@ extern "C" {
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_BINARY_OP(saturating_add_s8, int8_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s8, int8_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(saturating_add_u8, uint8_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u8, uint8_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(saturating_add_s16, int16_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s16, int16_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(saturating_add_u16, uint16_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u16, uint16_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(saturating_add_s32, int32_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s32, int32_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(saturating_add_u32, uint32_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u32, uint32_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(saturating_add_s64, int64_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s64, int64_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(saturating_add_u64, uint64_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u64, uint64_t);
 
 /// Subtracts the value of the corresponding element in `src_b` from `src_a`,
 /// and puts the result into `dst`.
@@ -100,21 +96,21 @@ INTRINSICCV_BINARY_OP(saturating_add_u64, uint64_t);
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_BINARY_OP(saturating_sub_s8, int8_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s8, int8_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(saturating_sub_u8, uint8_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u8, uint8_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(saturating_sub_s16, int16_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s16, int16_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(saturating_sub_u16, uint16_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u16, uint16_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(saturating_sub_s32, int32_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s32, int32_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(saturating_sub_u32, uint32_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u32, uint32_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(saturating_sub_s64, int64_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s64, int64_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(saturating_sub_u64, uint64_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u64, uint64_t);
 
 /// From the corresponding elements in `src_a` and `src_b`, subtracts the lower
 /// one from the higher one, and puts the result into `dst`.
@@ -139,15 +135,15 @@ INTRINSICCV_BINARY_OP(saturating_sub_u64, uint64_t);
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_BINARY_OP(saturating_absdiff_u8, uint8_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_u8, uint8_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(saturating_absdiff_s8, int8_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s8, int8_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(saturating_absdiff_u16, uint16_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_u16, uint16_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(saturating_absdiff_s16, int16_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s16, int16_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(saturating_absdiff_s32, int32_t);
+INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s32, int32_t);
 
 /// Multiplies the values of the corresponding elements in `src_a` and `src_b`,
 /// and puts the result into `dst`.
@@ -173,17 +169,22 @@ INTRINSICCV_BINARY_OP(saturating_absdiff_s32, int32_t);
 /// @param height       Number of rows in the data.
 /// @param scale        Currently unused parameter.
 ///
-INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_u8, uint8_t, double);
+INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_u8, uint8_t,
+                            double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_s8, int8_t, double);
+INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s8, int8_t, double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_u16, uint16_t, double);
+INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_u16, uint16_t,
+                            double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_s16, int16_t, double);
+INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s16, int16_t,
+                            double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(saturating_multiply_s32, int32_t, double);
+INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t,
+                            double);
 
-INTRINSICCV_BINARY_OP_SCALE(add_abs_with_threshold, int16_t, int16_t);
+INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_add_abs_with_threshold, int16_t,
+                            int16_t);
 
 /// Converts a grayscale image to RGB. All channels are 8-bit wide.
 ///
@@ -203,9 +204,9 @@ INTRINSICCV_BINARY_OP_SCALE(add_abs_with_threshold, int16_t, int16_t);
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(gray_to_rgb_u8)(const uint8_t *src, size_t src_stride,
-                                       uint8_t *dst, size_t dst_stride,
-                                       size_t width, size_t height);
+void intrinsiccv_gray_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
 
 /// Converts a grayscale image to RGBA. All channels are 8-bit wide.
 ///
@@ -225,9 +226,9 @@ void INTRINSICCV_C_API(gray_to_rgb_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(gray_to_rgba_u8)(const uint8_t *src, size_t src_stride,
-                                        uint8_t *dst, size_t dst_stride,
-                                        size_t width, size_t height);
+void intrinsiccv_gray_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                 uint8_t *dst, size_t dst_stride, size_t width,
+                                 size_t height);
 
 /// Converts an RGB image to BGR. All channels are 8-bit wide.
 ///
@@ -247,9 +248,9 @@ void INTRINSICCV_C_API(gray_to_rgba_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgb_to_bgr_u8)(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height);
+void intrinsiccv_rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                               uint8_t *dst, size_t dst_stride, size_t width,
+                               size_t height);
 
 /// Copies a source RBG image to destination buffer.
 /// All channels are 8-bit wide.
@@ -265,9 +266,9 @@ void INTRINSICCV_C_API(rgb_to_bgr_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgb_to_rgb_u8)(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height);
+void intrinsiccv_rgb_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                               uint8_t *dst, size_t dst_stride, size_t width,
+                               size_t height);
 
 /// Converts an RGBA image to BGRA. All channels are 8-bit wide.
 ///
@@ -287,9 +288,9 @@ void INTRINSICCV_C_API(rgb_to_rgb_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgba_to_bgra_u8)(const uint8_t *src, size_t src_stride,
-                                        uint8_t *dst, size_t dst_stride,
-                                        size_t width, size_t height);
+void intrinsiccv_rgba_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                 uint8_t *dst, size_t dst_stride, size_t width,
+                                 size_t height);
 
 /// Copies a source RBGA image to destination buffer.
 /// All channels are 8-bit wide.
@@ -305,9 +306,9 @@ void INTRINSICCV_C_API(rgba_to_bgra_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgba_to_rgba_u8)(const uint8_t *src, size_t src_stride,
-                                        uint8_t *dst, size_t dst_stride,
-                                        size_t width, size_t height);
+void intrinsiccv_rgba_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                 uint8_t *dst, size_t dst_stride, size_t width,
+                                 size_t height);
 
 /// Converts an RGB image to BGRA. All channels are 8-bit wide.
 ///
@@ -328,9 +329,9 @@ void INTRINSICCV_C_API(rgba_to_rgba_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgb_to_bgra_u8)(const uint8_t *src, size_t src_stride,
-                                       uint8_t *dst, size_t dst_stride,
-                                       size_t width, size_t height);
+void intrinsiccv_rgb_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
 
 /// Converts an RGB image to RGBA. All channels are 8-bit wide.
 ///
@@ -351,9 +352,9 @@ void INTRINSICCV_C_API(rgb_to_bgra_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgb_to_rgba_u8)(const uint8_t *src, size_t src_stride,
-                                       uint8_t *dst, size_t dst_stride,
-                                       size_t width, size_t height);
+void intrinsiccv_rgb_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
 
 /// Converts an RGBA image to BGR. All channels are 8-bit wide.
 ///
@@ -374,9 +375,9 @@ void INTRINSICCV_C_API(rgb_to_rgba_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgba_to_bgr_u8)(const uint8_t *src, size_t src_stride,
-                                       uint8_t *dst, size_t dst_stride,
-                                       size_t width, size_t height);
+void intrinsiccv_rgba_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
 
 /// Converts an RGBA image to RGB. All channels are 8-bit wide.
 ///
@@ -397,9 +398,9 @@ void INTRINSICCV_C_API(rgba_to_bgr_u8)(const uint8_t *src, size_t src_stride,
 /// @param width       Number of elements in a row.
 /// @param height      Number of rows in the data.
 ///
-void INTRINSICCV_C_API(rgba_to_rgb_u8)(const uint8_t *src, size_t src_stride,
-                                       uint8_t *dst, size_t dst_stride,
-                                       size_t width, size_t height);
+void intrinsiccv_rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
 
 /// Converts an NV12 or NV21 YUV image to RGB. All channels are 8-bit wide.
 ///
@@ -430,12 +431,10 @@ void INTRINSICCV_C_API(rgba_to_rgb_u8)(const uint8_t *src, size_t src_stride,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-void INTRINSICCV_C_API(yuv_sp_to_rgb_u8)(const uint8_t *src_y,
-                                         size_t src_y_stride,
-                                         const uint8_t *src_uv,
-                                         size_t src_uv_stride, uint8_t *dst,
-                                         size_t dst_stride, size_t width,
-                                         size_t height, bool is_nv21);
+void intrinsiccv_yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
+                                  const uint8_t *src_uv, size_t src_uv_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height, bool is_nv21);
 
 /// Converts an NV12 or NV21 YUV image to BGR. All channels are 8-bit wide.
 ///
@@ -466,12 +465,10 @@ void INTRINSICCV_C_API(yuv_sp_to_rgb_u8)(const uint8_t *src_y,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-void INTRINSICCV_C_API(yuv_sp_to_bgr_u8)(const uint8_t *src_y,
-                                         size_t src_y_stride,
-                                         const uint8_t *src_uv,
-                                         size_t src_uv_stride, uint8_t *dst,
-                                         size_t dst_stride, size_t width,
-                                         size_t height, bool is_nv21);
+void intrinsiccv_yuv_sp_to_bgr_u8(const uint8_t *src_y, size_t src_y_stride,
+                                  const uint8_t *src_uv, size_t src_uv_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height, bool is_nv21);
 
 /// Converts an NV12 or NV21 YUV image to RGBA. All channels are 8-bit wide.
 /// Alpha channel is set to 0xFF.
@@ -501,12 +498,10 @@ void INTRINSICCV_C_API(yuv_sp_to_bgr_u8)(const uint8_t *src_y,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-void INTRINSICCV_C_API(yuv_sp_to_rgba_u8)(const uint8_t *src_y,
-                                          size_t src_y_stride,
-                                          const uint8_t *src_uv,
-                                          size_t src_uv_stride, uint8_t *dst,
-                                          size_t dst_stride, size_t width,
-                                          size_t height, bool is_nv21);
+void intrinsiccv_yuv_sp_to_rgba_u8(const uint8_t *src_y, size_t src_y_stride,
+                                   const uint8_t *src_uv, size_t src_uv_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height, bool is_nv21);
 
 /// Converts an NV12 or NV21 YUV image to BGRA. All channels are 8-bit wide.
 /// Alpha channel is set to 0xFF.
@@ -536,12 +531,10 @@ void INTRINSICCV_C_API(yuv_sp_to_rgba_u8)(const uint8_t *src_y,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-void INTRINSICCV_C_API(yuv_sp_to_bgra_u8)(const uint8_t *src_y,
-                                          size_t src_y_stride,
-                                          const uint8_t *src_uv,
-                                          size_t src_uv_stride, uint8_t *dst,
-                                          size_t dst_stride, size_t width,
-                                          size_t height, bool is_nv21);
+void intrinsiccv_yuv_sp_to_bgra_u8(const uint8_t *src_y, size_t src_y_stride,
+                                   const uint8_t *src_uv, size_t src_uv_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height, bool is_nv21);
 
 /// Performs a comparison of each element's value in `src` with respect to a
 /// caller defined threshold. The strictly larger elements are set to
@@ -561,26 +554,23 @@ void INTRINSICCV_C_API(yuv_sp_to_bgra_u8)(const uint8_t *src_y,
 ///                     compared to.
 /// @param value        The value that the larger elements are set to.
 ///
-void INTRINSICCV_C_API(threshold_binary_u8)(const uint8_t *src,
-                                            size_t src_stride, uint8_t *dst,
-                                            size_t dst_stride, size_t width,
-                                            size_t height, uint8_t threshold,
-                                            uint8_t value);
+void intrinsiccv_threshold_binary_u8(const uint8_t *src, size_t src_stride,
+                                     uint8_t *dst, size_t dst_stride,
+                                     size_t width, size_t height,
+                                     uint8_t threshold, uint8_t value);
 
-intrinsiccv_morphology_params_t *INTRINSICCV_C_API(morphology_create)(
+intrinsiccv_morphology_params_t *intrinsiccv_morphology_create(
     intrinsiccv_morphology_params_t *params, intrinsiccv_rectangle_t image);
 
-void INTRINSICCV_C_API(morphology_release)(
-    intrinsiccv_morphology_params_t *params);
+void intrinsiccv_morphology_release(intrinsiccv_morphology_params_t *params);
 
-void INTRINSICCV_C_API(dilate_u8)(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, const intrinsiccv_morphology_params_t *params);
+void intrinsiccv_dilate_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                           size_t dst_stride, size_t width, size_t height,
+                           const intrinsiccv_morphology_params_t *params);
 
-void INTRINSICCV_C_API(erode_u8)(const uint8_t *src, size_t src_stride,
-                                 uint8_t *dst, size_t dst_stride, size_t width,
-                                 size_t height,
-                                 const intrinsiccv_morphology_params_t *params);
+void intrinsiccv_erode_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                          size_t dst_stride, size_t width, size_t height,
+                          const intrinsiccv_morphology_params_t *params);
 
 /// Counts how many nonzero elements are in the source data.
 ///
@@ -591,39 +581,40 @@ void INTRINSICCV_C_API(erode_u8)(const uint8_t *src, size_t src_stride,
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-size_t INTRINSICCV_C_API(count_nonzeros_u8)(const uint8_t *src,
-                                            size_t src_stride, size_t width,
-                                            size_t height);
+size_t intrinsiccv_count_nonzeros_u8(const uint8_t *src, size_t src_stride,
+                                     size_t width, size_t height);
 
-void INTRINSICCV_C_API(resize_to_quarter_u8)(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height);
+void intrinsiccv_resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
+                                      size_t src_width, size_t src_height,
+                                      uint8_t *dst, size_t dst_stride,
+                                      size_t dst_width, size_t dst_height);
 
-void INTRINSICCV_C_API(sobel_3x3_vertical_s16_u8)(
-    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channel);
+void intrinsiccv_sobel_3x3_vertical_s16_u8(const uint8_t *src,
+                                           size_t src_stride, int16_t *dst,
+                                           size_t dst_stride, size_t width,
+                                           size_t height, size_t channel);
 
-void INTRINSICCV_C_API(sobel_3x3_horizontal_s16_u8)(
-    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channel);
+void intrinsiccv_sobel_3x3_horizontal_s16_u8(const uint8_t *src,
+                                             size_t src_stride, int16_t *dst,
+                                             size_t dst_stride, size_t width,
+                                             size_t height, size_t channel);
 
-void INTRINSICCV_C_API(canny_u8)(const uint8_t *src, size_t src_stride,
-                                 uint8_t *dst, size_t dst_stride, size_t width,
-                                 size_t height, double low_threshold,
-                                 double high_threshold);
+void intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                          size_t dst_stride, size_t width, size_t height,
+                          double low_threshold, double high_threshold);
 
-intrinsiccv_filter_params_t *INTRINSICCV_C_API(filter_create)(
+intrinsiccv_filter_params_t *intrinsiccv_filter_create(
     intrinsiccv_filter_params_t *params, intrinsiccv_rectangle_t image);
 
-void INTRINSICCV_C_API(filter_release)(intrinsiccv_filter_params_t *params);
+void intrinsiccv_filter_release(intrinsiccv_filter_params_t *params);
 
-void INTRINSICCV_C_API(gaussian_blur_3x3_u8)(
+void intrinsiccv_gaussian_blur_3x3_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
     const intrinsiccv_filter_params_t *params);
 
-void INTRINSICCV_C_API(gaussian_blur_5x5_u8)(
+void intrinsiccv_gaussian_blur_5x5_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
@@ -650,14 +641,13 @@ void INTRINSICCV_C_API(gaussian_blur_5x5_u8)(
 /// @param channels     Number of channels in the data.
 /// @param element_size Size of one element in bytes.
 ///
-void INTRINSICCV_C_API(split)(const void *src_data, size_t src_stride,
-                              void **dst_data, size_t *dst_strides,
-                              size_t width, size_t height, size_t channels,
-                              size_t element_size);
+void intrinsiccv_split(const void *src_data, size_t src_stride, void **dst_data,
+                       size_t *dst_strides, size_t width, size_t height,
+                       size_t channels, size_t element_size);
 
-void INTRINSICCV_C_API(transpose)(const void *src, size_t src_stride, void *dst,
-                                  size_t dst_stride, size_t src_width,
-                                  size_t src_height, size_t element_size);
+void intrinsiccv_transpose(const void *src, size_t src_stride, void *dst,
+                           size_t dst_stride, size_t src_width,
+                           size_t src_height, size_t element_size);
 
 /// Merges separate 1-channel source streams to one multi channel stream.
 ///
@@ -680,10 +670,9 @@ void INTRINSICCV_C_API(transpose)(const void *src, size_t src_stride, void *dst,
 /// @param channels     Number of channels in the destination data.
 /// @param element_size Size of one element in bytes.
 ///
-void INTRINSICCV_C_API(merge)(const void **srcs, const size_t *src_strides,
-                              void *dst, size_t dst_stride, size_t width,
-                              size_t height, size_t channels,
-                              size_t element_size);
+void intrinsiccv_merge(const void **srcs, const size_t *src_strides, void *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       size_t channels, size_t element_size);
 
 /// Calculates minimum and maximum element value across the source data.
 ///
@@ -698,25 +687,25 @@ void INTRINSICCV_C_API(merge)(const void **srcs, const size_t *src_strides,
 /// @param max_value    Pointer to save result maximum value to, or nullptr if
 ///                     maximum is not to be calculated.
 ///
-void INTRINSICCV_C_API(min_max_u8)(const uint8_t *src, size_t src_stride,
-                                   size_t width, size_t height,
-                                   uint8_t *min_value, uint8_t *max_value);
+void intrinsiccv_min_max_u8(const uint8_t *src, size_t src_stride, size_t width,
+                            size_t height, uint8_t *min_value,
+                            uint8_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-void INTRINSICCV_C_API(min_max_s8)(const int8_t *src, size_t src_stride,
-                                   size_t width, size_t height,
-                                   int8_t *min_value, int8_t *max_value);
+void intrinsiccv_min_max_s8(const int8_t *src, size_t src_stride, size_t width,
+                            size_t height, int8_t *min_value,
+                            int8_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-void INTRINSICCV_C_API(min_max_u16)(const uint16_t *src, size_t src_stride,
-                                    size_t width, size_t height,
-                                    uint16_t *min_value, uint16_t *max_value);
+void intrinsiccv_min_max_u16(const uint16_t *src, size_t src_stride,
+                             size_t width, size_t height, uint16_t *min_value,
+                             uint16_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-void INTRINSICCV_C_API(min_max_s16)(const int16_t *src, size_t src_stride,
-                                    size_t width, size_t height,
-                                    int16_t *min_value, int16_t *max_value);
+void intrinsiccv_min_max_s16(const int16_t *src, size_t src_stride,
+                             size_t width, size_t height, int16_t *min_value,
+                             int16_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-void INTRINSICCV_C_API(min_max_s32)(const int32_t *src, size_t src_stride,
-                                    size_t width, size_t height,
-                                    int32_t *min_value, int32_t *max_value);
+void intrinsiccv_min_max_s32(const int32_t *src, size_t src_stride,
+                             size_t width, size_t height, int32_t *min_value,
+                             int32_t *max_value);
 
 /// Finds minimum and maximum element value across the source data,
 /// and returns their location in the source data as offset in bytes
@@ -733,13 +722,13 @@ void INTRINSICCV_C_API(min_max_s32)(const int32_t *src, size_t src_stride,
 /// @param max_offset   Pointer to save result offset of maximum value to, or
 ///                     nullptr if maximum is not to be calculated.
 ///
-void INTRINSICCV_C_API(min_max_loc_u8)(const uint8_t *src, size_t src_stride,
-                                       size_t width, size_t height,
-                                       size_t *min_offset, size_t *max_offset);
+void intrinsiccv_min_max_loc_u8(const uint8_t *src, size_t src_stride,
+                                size_t width, size_t height, size_t *min_offset,
+                                size_t *max_offset);
 
-void INTRINSICCV_C_API(scale_u8)(const uint8_t *src, size_t src_stride,
-                                 uint8_t *dst, size_t dst_stride, size_t width,
-                                 size_t height, float scale, float shift);
+void intrinsiccv_scale_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                          size_t dst_stride, size_t width, size_t height,
+                          float scale, float shift);
 
 #ifdef __cplusplus
 }  // extern "C"

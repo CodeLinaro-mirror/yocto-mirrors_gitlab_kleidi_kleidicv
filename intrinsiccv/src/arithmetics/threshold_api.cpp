@@ -40,6 +40,6 @@ void threshold_binary(const T *src, size_t src_stride, T *dst,
                                  const type *, size_t, type *, size_t, size_t, \
                                  size_t, type, type)
 
-INTRINSICCV_DEFINE_C_API(threshold_binary_u8, uint8_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_threshold_binary_u8, uint8_t);
 
 }  // namespace intrinsiccv

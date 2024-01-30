@@ -19,20 +19,20 @@ namespace sve2 {}  // namespace sve2
 
 namespace sme2 {}  // namespace sme2
 
-#define INTRINSICCV_DEFINE_SCALE_API(suffix, type)                        \
-  static IFuncImpls scale_##suffix##_impls_builder(void) {                \
-    IFuncImpls impls;                                                     \
-    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::scale<type>);            \
-    return impls;                                                         \
-  }                                                                       \
-  INTRINSICCV_MULTIVERSION_C_API(                                         \
-      scale_##suffix, scale_##suffix##_impls_builder, void, const type *, \
-      size_t, type *, size_t, size_t, size_t, float, float)
+#define INTRINSICCV_DEFINE_SCALE_API(name, type)                               \
+  static IFuncImpls name##_impls_builder(void) {                               \
+    IFuncImpls impls;                                                          \
+    INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::scale<type>);                 \
+    return impls;                                                              \
+  }                                                                            \
+  INTRINSICCV_MULTIVERSION_C_API(name, name##_impls_builder, void,             \
+                                 const type *, size_t, type *, size_t, size_t, \
+                                 size_t, float, float)
 
-INTRINSICCV_DEFINE_SCALE_API(u8, uint8_t);
-// INTRINSICCV_DEFINE_SCALE_API(s8, int8_t);
-// INTRINSICCV_DEFINE_SCALE_API(u16, uint16_t);
-// INTRINSICCV_DEFINE_SCALE_API(s16, int16_t);
-// INTRINSICCV_DEFINE_SCALE_API(s32, int32_t);
+INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_u8, uint8_t);
+// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s8, int8_t);
+// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_u16, uint16_t);
+// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s16, int16_t);
+// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s32, int32_t);
 
 }  // namespace intrinsiccv

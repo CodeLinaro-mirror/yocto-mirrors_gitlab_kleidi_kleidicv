@@ -13,8 +13,8 @@ static IFuncImpls merge_impls_builder(void) {
   INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::merge);
   return impls;
 }
-INTRINSICCV_MULTIVERSION_C_API(merge, merge_impls_builder, void, const void **,
-                               const size_t *, void *, size_t, size_t, size_t,
-                               size_t, size_t);
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_merge, merge_impls_builder, void,
+                               const void **, const size_t *, void *, size_t,
+                               size_t, size_t, size_t, size_t);
 
 }  // namespace intrinsiccv

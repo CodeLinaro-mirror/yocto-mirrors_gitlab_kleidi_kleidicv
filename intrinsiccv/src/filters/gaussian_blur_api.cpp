@@ -11,7 +11,7 @@ namespace intrinsiccv {
 
 extern "C" {
 
-intrinsiccv_filter_params_t *INTRINSICCV_C_API(filter_create)(
+intrinsiccv_filter_params_t *intrinsiccv_filter_create(
     intrinsiccv_filter_params_t *params, intrinsiccv_rectangle_t image) {
   auto workspace = SeparableFilterWorkspace::create(
       Rectangle{image}, params->channels, params->type_size);
@@ -23,7 +23,7 @@ intrinsiccv_filter_params_t *INTRINSICCV_C_API(filter_create)(
   return params;
 }
 
-void INTRINSICCV_C_API(filter_release)(intrinsiccv_filter_params_t *params) {
+void intrinsiccv_filter_release(intrinsiccv_filter_params_t *params) {
   if (!params->workspace) {
     return;
   }
@@ -44,7 +44,7 @@ static IFuncImpls gaussian_blur_3x3_u8_impls_builder(void) {
   INTRINSICCV_ADD_NEON_IMPL(intrinsiccv::neon::gaussian_blur_3x3_u8);
   return impls;
 }
-INTRINSICCV_MULTIVERSION_C_API(gaussian_blur_3x3_u8,
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_3x3_u8,
                                gaussian_blur_3x3_u8_impls_builder, void,
                                const uint8_t *src, size_t src_stride,
                                uint8_t *dst, size_t dst_stride, size_t width,
@@ -60,7 +60,7 @@ static IFuncImpls gaussian_blur_5x5_u8_impls_builder(void) {
   return impls;
 }
 
-INTRINSICCV_MULTIVERSION_C_API(gaussian_blur_5x5_u8,
+INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_5x5_u8,
                                gaussian_blur_5x5_u8_impls_builder, void,
                                const uint8_t *src, size_t src_stride,
                                uint8_t *dst, size_t dst_stride, size_t width,

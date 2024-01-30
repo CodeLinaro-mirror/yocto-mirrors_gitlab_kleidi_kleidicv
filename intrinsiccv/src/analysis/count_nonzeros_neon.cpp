@@ -63,9 +63,8 @@ INTRINSICCV_TARGET_FN_ATTRS static size_t count_nonzeros(const T *src,
 extern "C" {
 
 INTRINSICCV_TARGET_FN_ATTRS
-size_t INTRINSICCV_C_API(count_nonzeros_u8)(const uint8_t *src,
-                                            size_t src_stride, size_t width,
-                                            size_t height) {
+size_t intrinsiccv_count_nonzeros_u8(const uint8_t *src, size_t src_stride,
+                                     size_t width, size_t height) {
   return count_nonzeros<uint8_t>(src, src_stride, width, height);
 }
 
