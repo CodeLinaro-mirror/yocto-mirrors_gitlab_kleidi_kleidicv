@@ -28,6 +28,13 @@ reuse lint
 # Generate documentation
 doxygen
 
+OPENCV_VER="4.9.0"
+wget "https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VER}.tar.gz" -O build/opencv.tar.gz
+tar xf build/opencv.tar.gz -C build
+rm build/opencv.tar.gz
+mv "build/opencv-${OPENCV_VER}/" build/opencv
+patch -d build/opencv -p1<adapters/opencv/opencv-5.x.patch
+
 # Build
 cmake -S . -B build -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy \

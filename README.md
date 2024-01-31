@@ -93,18 +93,18 @@ and `./scripts/test_android.sh`.
 
 ## Install
 
-This library is compatible with [OpenCV](https://opencv.org) version 5.x.
+This library is compatible with [OpenCV](https://opencv.org) version 4.9 & 5.x.
 
 Integration consists of the following steps:
 1. Download OpenCV sources:
 ```
-git clone https://github.com/opencv/opencv
-cd opencv
-git checkout 67a3d35b4ea1b11136042cdf5072a634d6789984
+wget https://github.com/opencv/opencv/archive/refs/tags/4.9.0.tar.gz
+tar xf 4.9.0
+cd opencv-4.9.0
 ```
 2. Patch OpenCV:
 ```
-git apply /path/to/intrinsiccv/adapters/opencv/opencv-5.x.patch
+patch -p1</path/to/intrinsiccv/adapters/opencv/opencv-4.9.patch
 ```
 
 ## Build Library
