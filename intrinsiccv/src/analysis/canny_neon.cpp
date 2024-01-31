@@ -465,7 +465,7 @@ static void perform_hysteresis(StrongEdgeStack &strong_edge_pixels,
   }
 }
 
-extern "C" INTRINSICCV_TARGET_FN_ATTRS void intrinsiccv_canny_u8(
+extern "C" INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t intrinsiccv_canny_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, double low_threshold, double high_threshold) {
   Rectangle dst_rect{width, height};
@@ -474,41 +474,45 @@ extern "C" INTRINSICCV_TARGET_FN_ATTRS void intrinsiccv_canny_u8(
   SobelBuffer<int16_t> horizontal_gradient{dst_rect};
   SobelBuffer<int16_t> vertical_gradient{dst_rect};
   if (!horizontal_gradient.data() || !vertical_gradient.data()) {
-    // FIXME: add error handling
-    return;
+    return INTRINSICCV_ERROR_ALLOCATION;
   }
 
   MagnitudeBuffer<int16_t> magnitudes{horizontal_gradient.rect()};
   if (!magnitudes.data()) {
-    // FIXME: add error handling
-    return;
+    return INTRINSICCV_ERROR_ALLOCATION;
   }
 
   HysteresisBuffer<uint8_t> hysteresis{horizontal_gradient.rect()};
   if (!hysteresis.data()) {
-    // FIXME: add error handling
-    return;
+    return INTRINSICCV_ERROR_ALLOCATION;
   }
 
   // Calculate horizontal dervatives using 3x3 Sobel operator.
-  intrinsiccv_sobel_3x3_horizontal_s16_u8(
-      src, src_stride, horizontal_gradient.data(),
-      horizontal_gradient.rows().stride(), width, height, 1);
+  if (auto err = intrinsiccv_sobel_3x3_horizontal_s16_u8(
+          src, src_stride, horizontal_gradient.data(),
+          horizontal_gradient.rows().stride(), width, height, 1)) {
+    return err;
+  }
 
   // Calculate vertical dervatives using 3x3 Sobel operator.
-  intrinsiccv_sobel_3x3_vertical_s16_u8(
-      src, src_stride, vertical_gradient.data(),
-      vertical_gradient.rows().stride(), width, height, 1);
+  if (auto err = intrinsiccv_sobel_3x3_vertical_s16_u8(
+          src, src_stride, vertical_gradient.data(),
+          vertical_gradient.rows().stride(), width, height, 1)) {
+    return err;
+  }
 
   // Calculate magnitude from the horizontal and vertical derivatives, and apply
   // lower threshold.
-  intrinsiccv_add_abs_with_threshold(
-      &horizontal_gradient.rows()[0], horizontal_gradient.rows().stride(),
-      &vertical_gradient.rows()[0], vertical_gradient.rows().stride(),
-      &magnitudes.rows_without_margin()[0],
-      magnitudes.rows_without_margin().stride(),
-      horizontal_gradient.rect().width(), horizontal_gradient.rect().height(),
-      static_cast<int16_t>(low_threshold));
+  if (auto err = intrinsiccv_add_abs_with_threshold(
+          &horizontal_gradient.rows()[0], horizontal_gradient.rows().stride(),
+          &vertical_gradient.rows()[0], vertical_gradient.rows().stride(),
+          &magnitudes.rows_without_margin()[0],
+          magnitudes.rows_without_margin().stride(),
+          horizontal_gradient.rect().width(),
+          horizontal_gradient.rect().height(),
+          static_cast<int16_t>(low_threshold))) {
+    return err;
+  }
 
   // Perform non-maxima supression and high thresholding.
   StrongEdgeStack strong_edge_pixels;
@@ -523,9 +527,10 @@ extern "C" INTRINSICCV_TARGET_FN_ATTRS void intrinsiccv_canny_u8(
                      hysteresis.rows_without_margin().stride());
 
   // Finalize results by supressing weak edges.
-  intrinsiccv_threshold_binary_u8(&hysteresis.rows_without_margin()[0],
-                                  hysteresis.rows_without_margin().stride(),
-                                  dst, dst_stride, width, height, 0x80, 0xFF);
+  return intrinsiccv_threshold_binary_u8(
+      &hysteresis.rows_without_margin()[0],
+      hysteresis.rows_without_margin().stride(), dst, dst_stride, width, height,
+      0x80, 0xFF);
 }
 
 }  // namespace intrinsiccv::neon

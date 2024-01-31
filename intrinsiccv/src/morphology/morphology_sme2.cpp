@@ -7,23 +7,23 @@
 namespace intrinsiccv::sme2 {
 
 template <typename T>
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS void dilate(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, const intrinsiccv_morphology_params_t *params) {
-  intrinsiccv::sve2::dilate_sc<T>(src, src_stride, dst, dst_stride, width,
-                                  height, params);
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+dilate(const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+       size_t height, const intrinsiccv_morphology_params_t *params) {
+  return intrinsiccv::sve2::dilate_sc<T>(src, src_stride, dst, dst_stride,
+                                         width, height, params);
 }
 
 template <typename T>
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS void erode(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, const intrinsiccv_morphology_params_t *params) {
-  intrinsiccv::sve2::erode_sc<T>(src, src_stride, dst, dst_stride, width,
-                                 height, params);
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+erode(const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+      size_t height, const intrinsiccv_morphology_params_t *params) {
+  return intrinsiccv::sve2::erode_sc<T>(src, src_stride, dst, dst_stride, width,
+                                        height, params);
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(name, type)                    \
-  template INTRINSICCV_TARGET_FN_ATTRS void name<type>(                 \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t name<type>(  \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
       size_t width, size_t height,                                      \
       const intrinsiccv_morphology_params_t *params)

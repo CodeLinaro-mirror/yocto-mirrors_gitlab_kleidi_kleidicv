@@ -14,8 +14,8 @@ class ThresholdBinaryTestBase : public UnaryOperationTest<ElementType> {
 
  protected:
   // Calls the API-under-test in the appropriate way.
-  void call_api() override {
-    intrinsiccv_threshold_binary_u8(
+  intrinsiccv_error_t call_api() override {
+    return intrinsiccv_threshold_binary_u8(
         this->inputs_[0].data(), this->inputs_[0].stride(),
         this->actual_[0].data(), this->actual_[0].stride(), this->width(),
         this->height(), this->threshold(), this->value());

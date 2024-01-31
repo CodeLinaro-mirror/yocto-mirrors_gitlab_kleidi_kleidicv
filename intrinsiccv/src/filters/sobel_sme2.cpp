@@ -6,19 +6,19 @@
 
 namespace intrinsiccv::sme2 {
 
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS void
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
 sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride, int16_t *dst,
                             size_t dst_stride, size_t width, size_t height,
                             size_t channels) {
-  intrinsiccv::sve2::sobel_3x3_horizontal_s16_u8_sc(
+  return intrinsiccv::sve2::sobel_3x3_horizontal_s16_u8_sc(
       src, src_stride, dst, dst_stride, width, height, channels);
 }
 
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS void
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
 sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride, int16_t *dst,
                           size_t dst_stride, size_t width, size_t height,
                           size_t channels) {
-  intrinsiccv::sve2::sobel_3x3_vertical_s16_u8_sc(
+  return intrinsiccv::sve2::sobel_3x3_vertical_s16_u8_sc(
       src, src_stride, dst, dst_stride, width, height, channels);
 }
 

@@ -73,9 +73,10 @@ class SplitTest final {
     for (size_t i = 0; i < Channels; ++i) {
       strides[i] = actual_outputs[i].stride();
     }
-    intrinsiccv_split(input.data(), input.stride(), actual_raw_pointers,
-                      strides, output_width, height, Channels,
-                      sizeof(ElementType));
+    ASSERT_EQ(INTRINSICCV_OK,
+              intrinsiccv_split(input.data(), input.stride(),
+                                actual_raw_pointers, strides, output_width,
+                                height, Channels, sizeof(ElementType)));
 
     // Compare the results
     for (size_t i = 0; i < Channels; ++i) {

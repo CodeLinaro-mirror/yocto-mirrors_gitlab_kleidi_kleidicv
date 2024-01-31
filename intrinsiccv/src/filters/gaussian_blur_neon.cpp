@@ -143,11 +143,11 @@ class DiscreteGaussianBlur<uint8_t, 5> {
 };  // end of class DiscreteGaussianBlur<uint8_t, 5>
 
 template <typename ScalarType, size_t KernelSize>
-void discrete_gaussian_blur(const ScalarType *src, size_t src_stride,
-                            ScalarType *dst, size_t dst_stride, size_t width,
-                            size_t height, size_t channels,
-                            intrinsiccv_border_type_t border_type,
-                            const intrinsiccv_filter_params_t *params) {
+intrinsiccv_error_t discrete_gaussian_blur(
+    const ScalarType *src, size_t src_stride, ScalarType *dst,
+    size_t dst_stride, size_t width, size_t height, size_t channels,
+    intrinsiccv_border_type_t border_type,
+    const intrinsiccv_filter_params_t *params) {
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
   Rectangle rect{width, height};
@@ -160,26 +160,29 @@ void discrete_gaussian_blur(const ScalarType *src, size_t src_stride,
   GaussianBlurFilterType blur;
   SeparableFilter<GaussianBlurFilterType, KernelSize> filter{blur};
   workspace->process(rect, src_rows, dst_rows, channels, border_type, filter);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void gaussian_blur_3x3_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                          size_t dst_stride, size_t width, size_t height,
-                          size_t channels,
-                          intrinsiccv_border_type_t border_type,
-                          const intrinsiccv_filter_params_t *params) {
+intrinsiccv_error_t gaussian_blur_3x3_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels,
+    intrinsiccv_border_type_t border_type,
+    const intrinsiccv_filter_params_t *params) {
   discrete_gaussian_blur<uint8_t, 3>(src, src_stride, dst, dst_stride, width,
                                      height, channels, border_type, params);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                          size_t dst_stride, size_t width, size_t height,
-                          size_t channels,
-                          intrinsiccv_border_type_t border_type,
-                          const intrinsiccv_filter_params_t *params) {
+intrinsiccv_error_t gaussian_blur_5x5_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels,
+    intrinsiccv_border_type_t border_type,
+    const intrinsiccv_filter_params_t *params) {
   discrete_gaussian_blur<uint8_t, 5>(src, src_stride, dst, dst_stride, width,
                                      height, channels, border_type, params);
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::neon

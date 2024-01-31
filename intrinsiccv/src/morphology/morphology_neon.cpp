@@ -487,9 +487,9 @@ class DilateOperation final {
 };  // end of class DilateOperation<ScalarType>
 
 template <typename T>
-void dilate(const T *src, size_t src_stride, T *dst, size_t dst_stride,
-            size_t width, size_t height,
-            const intrinsiccv_morphology_params_t *params) {
+intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
+                           size_t dst_stride, size_t width, size_t height,
+                           const intrinsiccv_morphology_params_t *params) {
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
   Rows<const T> src_rows{src, src_stride, params->channels};
@@ -508,6 +508,7 @@ void dilate(const T *src, size_t src_stride, T *dst, size_t dst_stride,
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
+  return INTRINSICCV_OK;
 }
 
 // Helper structure for erode.
@@ -537,9 +538,9 @@ class ErodeOperation final {
 };  // end of class ErodeOperation<ScalarType>
 
 template <typename T>
-void erode(const T *src, size_t src_stride, T *dst, size_t dst_stride,
-           size_t width, size_t height,
-           const intrinsiccv_morphology_params_t *params) {
+intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
+                          size_t dst_stride, size_t width, size_t height,
+                          const intrinsiccv_morphology_params_t *params) {
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
   Rows<const T> src_rows{src, src_stride, params->channels};
@@ -558,10 +559,11 @@ void erode(const T *src, size_t src_stride, T *dst, size_t dst_stride,
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
+  return INTRINSICCV_OK;
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(name, type)                    \
-  template INTRINSICCV_TARGET_FN_ATTRS void name<type>(                 \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t name<type>(  \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
       size_t width, size_t height,                                      \
       const intrinsiccv_morphology_params_t *params)

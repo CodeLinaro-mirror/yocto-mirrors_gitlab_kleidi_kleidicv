@@ -23,6 +23,7 @@ set -x
 #   be done without knowing who will do it.
 # * runtime/references - it's OK to pass non-const references if an argument
 #   is intended to be modified.
+# * whitespace/indent - handled by clang-format.
 # * whitespace/line_length - handled by clang-format.
 #
 # False positives should not be disabled but instead suppressed by adding a
@@ -31,5 +32,5 @@ cpplint \
     --recursive \
     --exclude=build \
     --counting=detailed \
-    --filter=-build/header_guard,-build/include_subdir,-readability/todo,-runtime/references,-whitespace/line_length \
+    --filter=-build/header_guard,-build/include_subdir,-readability/todo,-runtime/references,-whitespace/indent,-whitespace/line_length \
     .

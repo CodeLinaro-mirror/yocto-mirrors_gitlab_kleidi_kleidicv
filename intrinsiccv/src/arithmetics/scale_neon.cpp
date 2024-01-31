@@ -169,8 +169,9 @@ class ScaleFloat final : public ScaleBase<ScalarType> {
 };  // end of class ScaleFloat<T>
 
 template <typename T>
-void scale(const T *src, size_t src_stride, T *dst, size_t dst_stride,
-           size_t width, size_t height, float scale, float shift) {
+intrinsiccv_error_t scale(const T *src, size_t src_stride, T *dst,
+                          size_t dst_stride, size_t width, size_t height,
+                          float scale, float shift) {
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};
   Rows<T> dst_rows{dst, dst_stride};
@@ -184,10 +185,11 @@ void scale(const T *src, size_t src_stride, T *dst, size_t dst_stride,
     ScaleTbx<T> operation(scale, shift);
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }
+  return INTRINSICCV_OK;
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                          \
-  template INTRINSICCV_TARGET_FN_ATTRS void scale<type>(                \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t scale<type>( \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
       size_t width, size_t height, float scale, float shift)
 

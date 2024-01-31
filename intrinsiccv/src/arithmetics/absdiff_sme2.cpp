@@ -37,7 +37,7 @@ class SaturatingAbsDiff final : public UnrollTwice {
 };  // end of class SaturatingAbsDiff<ScalarType>
 
 template <typename T>
-INTRINSICCV_LOCALLY_STREAMING void saturating_absdiff(
+INTRINSICCV_LOCALLY_STREAMING intrinsiccv_error_t saturating_absdiff(
     const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
     T *dst, size_t dst_stride, size_t width, size_t height) {
   SaturatingAbsDiff<T> operation;
@@ -47,13 +47,14 @@ INTRINSICCV_LOCALLY_STREAMING void saturating_absdiff(
   Rows<T> dst_rows{dst, dst_stride};
   sve2::apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
                                 dst_rows);
+  return INTRINSICCV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
-  template INTRINSICCV_TARGET_FN_ATTRS void saturating_absdiff<type>(  \
-      const type *src_a, size_t src_a_stride, const type *src_b,       \
-      size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
-      size_t height)
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                                \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t                    \
+  saturating_absdiff<type>(const type *src_a, size_t src_a_stride,            \
+                           const type *src_b, size_t src_b_stride, type *dst, \
+                           size_t dst_stride, size_t width, size_t height)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
 INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t);

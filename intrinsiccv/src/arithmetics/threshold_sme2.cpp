@@ -7,17 +7,18 @@
 namespace intrinsiccv::sme2 {
 
 template <typename T>
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS void threshold_binary(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, T threshold, T value) {
-  intrinsiccv::sve2::threshold_binary_sc(src, src_stride, dst, dst_stride,
-                                         width, height, threshold, value);
+INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+threshold_binary(const T *src, size_t src_stride, T *dst, size_t dst_stride,
+                 size_t width, size_t height, T threshold, T value) {
+  return intrinsiccv::sve2::threshold_binary_sc(
+      src, src_stride, dst, dst_stride, width, height, threshold, value);
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                          \
-  template INTRINSICCV_TARGET_FN_ATTRS void threshold_binary<type>(     \
-      const type *src, size_t src_stride, type *dst, size_t dst_stride, \
-      size_t width, size_t height, type threshold, type value)
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                           \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t               \
+  threshold_binary<type>(const type *src, size_t src_stride, type *dst,  \
+                         size_t dst_stride, size_t width, size_t height, \
+                         type threshold, type value)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
 

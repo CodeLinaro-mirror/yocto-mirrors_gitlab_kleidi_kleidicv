@@ -8,11 +8,14 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "ctypes.h"
+
 namespace intrinsiccv {
 
 namespace neon {
-void transpose(const void *src, size_t src_stride, void *dst, size_t dst_stride,
-               size_t width, size_t height, size_t element_size);
+intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
+                              size_t dst_stride, size_t width, size_t height,
+                              size_t element_size);
 }  // namespace neon
 
 namespace sve2 {}  // namespace sve2

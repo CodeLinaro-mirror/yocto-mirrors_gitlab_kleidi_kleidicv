@@ -11,57 +11,75 @@ namespace intrinsiccv {
 
 namespace neon {
 
-void rgb_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                   size_t dst_stride, size_t width, size_t height);
-void rgba_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                     size_t dst_stride, size_t width, size_t height);
-void rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
-void rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
-void rgba_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
-void rgba_to_rgb_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height);
+intrinsiccv_error_t rgba_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                    uint8_t *dst, size_t dst_stride,
+                                    size_t width, size_t height);
+intrinsiccv_error_t rgb_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
+intrinsiccv_error_t rgb_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
+intrinsiccv_error_t rgba_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
+intrinsiccv_error_t rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
 
 }  // namespace neon
 
 namespace sve2 {
 
-void rgb_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                   size_t dst_stride, size_t width, size_t height);
-void rgba_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                     size_t dst_stride, size_t width, size_t height);
-void rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
-void rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
-void rgba_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
-void rgba_to_rgb_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height);
+intrinsiccv_error_t rgba_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                    uint8_t *dst, size_t dst_stride,
+                                    size_t width, size_t height);
+intrinsiccv_error_t rgb_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
+intrinsiccv_error_t rgb_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
+intrinsiccv_error_t rgba_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
+intrinsiccv_error_t rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
 
 }  // namespace sve2
 
 namespace sme2 {
 
-void rgb_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                   size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height);
 
-void rgba_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                     size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgba_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                    uint8_t *dst, size_t dst_stride,
+                                    size_t width, size_t height);
 
-void rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgb_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
 
-void rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgb_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
 
-void rgba_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgba_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
 
-void rgba_to_rgb_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height);
+intrinsiccv_error_t rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height);
 
 }  // namespace sme2
 

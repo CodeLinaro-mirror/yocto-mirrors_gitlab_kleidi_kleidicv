@@ -448,9 +448,9 @@ class DilateOperation final {
 };  // end of class DilateOperation<ScalarType>
 
 template <typename T>
-static inline void dilate_sc(const T *src, size_t src_stride, T *dst,
-                             size_t dst_stride, size_t width, size_t height,
-                             const intrinsiccv_morphology_params_t *params)
+static inline intrinsiccv_error_t dilate_sc(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, const intrinsiccv_morphology_params_t *params)
     INTRINSICCV_STREAMING_COMPATIBLE {
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
@@ -470,6 +470,7 @@ static inline void dilate_sc(const T *src, size_t src_stride, T *dst,
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
+  return INTRINSICCV_OK;
 }
 
 // Helper structure for erode.
@@ -502,9 +503,9 @@ class ErodeOperation final {
 };  // end of class ErodeOperation<ScalarType>
 
 template <typename T>
-static inline void erode_sc(const T *src, size_t src_stride, T *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            const intrinsiccv_morphology_params_t *params)
+static inline intrinsiccv_error_t erode_sc(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, const intrinsiccv_morphology_params_t *params)
     INTRINSICCV_STREAMING_COMPATIBLE {
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
@@ -524,6 +525,7 @@ static inline void erode_sc(const T *src, size_t src_stride, T *dst,
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::sve2

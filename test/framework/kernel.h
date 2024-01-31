@@ -132,17 +132,16 @@ class KernelTest {
     prepare_source(element_generator);
     prepare_expected(kernel, array_layout, border_type);
     prepare_actual();
-    this->call_api(&input_, &actual_, border_type);
-    check_results();
+    check_results(this->call_api(&input_, &actual_, border_type));
   }
 
  protected:
   // Calls the API-under-test in the appropriate way.
   //
   // The arguments are never nullptr.
-  virtual void call_api(const Array2D<InputType> *input,
-                        Array2D<OutputType> *output,
-                        intrinsiccv_border_type_t border_type) = 0;
+  virtual intrinsiccv_error_t call_api(
+      const Array2D<InputType> *input, Array2D<OutputType> *output,
+      intrinsiccv_border_type_t border_type) = 0;
 
   // Calculates the expected output.
   virtual void calculate_expected(const Kernel<IntermediateType> &kernel,
@@ -236,11 +235,13 @@ class KernelTest {
   void prepare_actual() { actual_.fill(42); }
 
   // Checks that the actual output matches the expectations.
-  void check_results() {
+  void check_results(intrinsiccv_error_t err) {
     if (debug_) {
       std::cout << "[actual]" << std::endl;
       dump(&actual_);
     }
+
+    EXPECT_EQ(INTRINSICCV_OK, err);
 
     // Check that the actual result matches the expectation.
     EXPECT_EQ_ARRAY2D(expected_, actual_);

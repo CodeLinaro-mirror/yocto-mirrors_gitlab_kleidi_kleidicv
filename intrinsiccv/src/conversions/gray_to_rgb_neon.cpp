@@ -105,23 +105,27 @@ class GrayToRGBA final : public UnrollTwice {
 };  // end of class GrayToRGBA<ScalarType>
 
 INTRINSICCV_TARGET_FN_ATTRS
-void gray_to_rgb_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height) {
+intrinsiccv_error_t gray_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
   GrayToRGB<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void gray_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                     size_t dst_stride, size_t width, size_t height) {
+intrinsiccv_error_t gray_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                    uint8_t *dst, size_t dst_stride,
+                                    size_t width, size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
   GrayToRGBA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::neon

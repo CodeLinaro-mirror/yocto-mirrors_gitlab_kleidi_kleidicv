@@ -47,14 +47,15 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
   using typename test::KernelTest<KernelTestParams>::IntermediateType;
   using typename test::KernelTest<KernelTestParams>::OutputType;
 
-  void call_api(const test::Array2D<InputType> *input,
-                test::Array2D<OutputType> *output,
-                intrinsiccv_border_type_t) override {
+  intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
+                               test::Array2D<OutputType> *output,
+                               intrinsiccv_border_type_t) override {
     auto api = KernelTestParams::kIsHorizontal
                    ? sobel_3x3_horizontal<InputType>()
                    : sobel_3x3_vertical<InputType>();
-    api(input->data(), input->stride(), output->data(), output->stride(),
-        input->width() / input->channels(), input->height(), input->channels());
+    return api(input->data(), input->stride(), output->data(), output->stride(),
+               input->width() / input->channels(), input->height(),
+               input->channels());
   }
 
  public:

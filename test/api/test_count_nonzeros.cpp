@@ -70,8 +70,9 @@ class CountNonZerosTest {
     }
 
     size_t expected = data_.calculateExpected(width, height);
-    size_t actual = count_nonzeros<ElementType>()(
-        source.data(), source.stride(), width, height);
+    size_t actual = SIZE_MAX;
+    count_nonzeros<ElementType>()(source.data(), source.stride(), width, height,
+                                  &actual);
     EXPECT_EQ(expected, actual);
   }
 };

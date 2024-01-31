@@ -368,8 +368,9 @@ class Merge4<uint64_t> final : public UnrollTwice {
 #endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
 
 template <typename ScalarType>
-void merge(const void **srcs, const size_t *src_strides, void *dst,
-           size_t dst_stride, size_t width, size_t height, size_t channels) {
+intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
+                          void *dst, size_t dst_stride, size_t width,
+                          size_t height, size_t channels) {
   Rectangle rect{width, height};
   Rows<const ScalarType> src_a_rows{srcs[0], src_strides[0]};
   Rows<const ScalarType> src_b_rows{srcs[1], src_strides[1]};
@@ -398,12 +399,13 @@ void merge(const void **srcs, const size_t *src_strides, void *dst,
                               src_c_rows, src_d_rows, dst_rows);
     } break;
   }
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void merge(const void **srcs, const size_t *src_strides, void *dst,
-           size_t dst_stride, size_t width, size_t height, size_t channels,
-           size_t element_size) {
+intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
+                          void *dst, size_t dst_stride, size_t width,
+                          size_t height, size_t channels, size_t element_size) {
   switch (element_size) {
     default:
     case sizeof(uint8_t):
@@ -426,6 +428,7 @@ void merge(const void **srcs, const size_t *src_strides, void *dst,
                       channels);
       break;
   }
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::neon

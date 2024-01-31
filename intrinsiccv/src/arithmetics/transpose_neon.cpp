@@ -98,8 +98,9 @@ static void scalar_path(Rows<const ScalarType> src_rows,
 }
 
 template <typename ScalarType>
-static void transpose(Rectangle rect, Rows<const ScalarType> src_rows,
-                      Rows<ScalarType> dst_rows) {
+static intrinsiccv_error_t transpose(Rectangle rect,
+                                     Rows<const ScalarType> src_rows,
+                                     Rows<ScalarType> dst_rows) {
   constexpr size_t num_of_lanes = VecTraits<ScalarType>::num_lanes();
 
   auto handle_lane_number_of_rows = [&](size_t vindex) {
@@ -127,10 +128,12 @@ static void transpose(Rectangle rect, Rows<const ScalarType> src_rows,
     scalar_path(src_rows.at(hindex), dst_rows.at(0, hindex),
                 final_hindex - hindex, rect.width());
   });
+  return INTRINSICCV_OK;
 }
 
 template <typename ScalarType>
-static void transpose(Rectangle rect, Rows<ScalarType> data_rows) {
+static intrinsiccv_error_t transpose(Rectangle rect,
+                                     Rows<ScalarType> data_rows) {
   constexpr size_t num_of_lanes = VecTraits<ScalarType>::num_lanes();
 
   // rect.width() needs to be equal to rect.height()
@@ -190,32 +193,34 @@ static void transpose(Rectangle rect, Rows<ScalarType> data_rows) {
       }
     }
   });
+  return INTRINSICCV_OK;
 }
 
 template <typename T>
-static void transpose(const void *src, size_t src_stride, void *dst,
-                      size_t dst_stride, size_t src_width, size_t src_height,
-                      bool inplace) {
+static intrinsiccv_error_t transpose(const void *src, size_t src_stride,
+                                     void *dst, size_t dst_stride,
+                                     size_t src_width, size_t src_height,
+                                     bool inplace) {
   Rectangle rect{src_width, src_height};
   Rows<T> dst_rows{dst, dst_stride};
 
   if (inplace) {
-    transpose(rect, dst_rows);
-  } else {
-    Rows<const T> src_rows{src, src_stride};
-    transpose(rect, src_rows, dst_rows);
+    return transpose(rect, dst_rows);
   }
+  Rows<const T> src_rows{src, src_stride};
+  return transpose(rect, src_rows, dst_rows);
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void transpose(const void *src, size_t src_stride, void *dst, size_t dst_stride,
-               size_t src_width, size_t src_height, size_t element_size) {
+intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
+                              size_t dst_stride, size_t src_width,
+                              size_t src_height, size_t element_size) {
   bool inplace = false;
 
   if (src == dst) {
     if (src_width != src_height) {
       // Inplace transpose only implemented if width and height are the same
-      return;
+      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
     }
     inplace = true;
   }
@@ -223,24 +228,17 @@ void transpose(const void *src, size_t src_stride, void *dst, size_t dst_stride,
   switch (element_size) {
     default:
     case sizeof(uint8_t):
-      transpose<uint8_t>(src, src_stride, dst, dst_stride, src_width,
-                         src_height, inplace);
-      break;
-
+      return transpose<uint8_t>(src, src_stride, dst, dst_stride, src_width,
+                                src_height, inplace);
     case sizeof(uint16_t):
-      transpose<uint16_t>(src, src_stride, dst, dst_stride, src_width,
-                          src_height, inplace);
-      break;
-
+      return transpose<uint16_t>(src, src_stride, dst, dst_stride, src_width,
+                                 src_height, inplace);
     case sizeof(uint32_t):
-      transpose<uint32_t>(src, src_stride, dst, dst_stride, src_width,
-                          src_height, inplace);
-      break;
-
+      return transpose<uint32_t>(src, src_stride, dst, dst_stride, src_width,
+                                 src_height, inplace);
     case sizeof(uint64_t):
-      transpose<uint64_t>(src, src_stride, dst, dst_stride, src_width,
-                          src_height, inplace);
-      break;
+      return transpose<uint64_t>(src, src_stride, dst, dst_stride, src_width,
+                                 src_height, inplace);
   }
 }
 

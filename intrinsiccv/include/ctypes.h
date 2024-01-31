@@ -13,6 +13,19 @@
 #include "stddef.h"
 #endif  // __cplusplus
 
+typedef enum {
+  /// Success.
+  INTRINSICCV_OK = 0,
+  /// Requested operation is not implemented.
+  INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  /// Null pointer was passed as an argument.
+  INTRINSICCV_ERROR_NULL_POINTER,
+  /// A value was encountered outside the representable range.
+  INTRINSICCV_ERROR_RANGE,
+  /// Could not allocate memory.
+  INTRINSICCV_ERROR_ALLOCATION,
+} intrinsiccv_error_t;
+
 typedef struct {
   size_t x;
   size_t y;

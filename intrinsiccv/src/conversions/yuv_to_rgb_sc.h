@@ -188,11 +188,11 @@ using YUVSpToBGR = YUVSpToRGBxOrBGRx<true, false>;
 using YUVSpToBGRA = YUVSpToRGBxOrBGRx<true, true>;
 
 template <typename OperationType, typename ScalarType>
-void yuv2rgbx_operation(OperationType &operation, const ScalarType *src_y,
-                        size_t src_y_stride, const ScalarType *src_uv,
-                        size_t src_uv_stride, ScalarType *dst,
-                        size_t dst_stride, size_t width,
-                        size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
+intrinsiccv_error_t yuv2rgbx_operation(
+    OperationType &operation, const ScalarType *src_y, size_t src_y_stride,
+    const ScalarType *src_uv, size_t src_uv_stride, ScalarType *dst,
+    size_t dst_stride, size_t width,
+    size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
   Rectangle rect{width, height};
   ParallelRows y_rows{src_y, src_y_stride};
   Rows uv_rows{src_uv, src_uv_stride};
@@ -205,48 +205,47 @@ void yuv2rgbx_operation(OperationType &operation, const ScalarType *src_y,
   ParallelRowsAdapter parallel_rows_adapter{context_adapter};
   RowBasedOperation row_based_operation{parallel_rows_adapter};
   zip_parallel_rows(row_based_operation, rect, y_rows, uv_rows, rgbx_rows);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-static void yuv_sp_to_rgb_u8_sc(const uint8_t *src_y, size_t src_y_stride,
-                                const uint8_t *src_uv, size_t src_uv_stride,
-                                uint8_t *dst, size_t dst_stride, size_t width,
-                                size_t height,
-                                bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE {
+static intrinsiccv_error_t yuv_sp_to_rgb_u8_sc(
+    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
+    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
+    size_t height, bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE {
   YUVSpToRGB operation{is_nv21};
-  yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv, src_uv_stride, dst,
-                     dst_stride, width, height);
+  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                            src_uv_stride, dst, dst_stride, width, height);
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-static void yuv_sp_to_rgba_u8_sc(
+static intrinsiccv_error_t yuv_sp_to_rgba_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE {
   YUVSpToRGBA operation{is_nv21};
-  yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv, src_uv_stride, dst,
-                     dst_stride, width, height);
+  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                            src_uv_stride, dst, dst_stride, width, height);
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-static void yuv_sp_to_bgr_u8_sc(const uint8_t *src_y, size_t src_y_stride,
-                                const uint8_t *src_uv, size_t src_uv_stride,
-                                uint8_t *dst, size_t dst_stride, size_t width,
-                                size_t height,
-                                bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE {
+static intrinsiccv_error_t yuv_sp_to_bgr_u8_sc(
+    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
+    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
+    size_t height, bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE {
   YUVSpToBGR operation{is_nv21};
-  yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv, src_uv_stride, dst,
-                     dst_stride, width, height);
+  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                            src_uv_stride, dst, dst_stride, width, height);
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-static void yuv_sp_to_bgra_u8_sc(
+static intrinsiccv_error_t yuv_sp_to_bgra_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE {
   YUVSpToBGRA operation{is_nv21};
-  yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv, src_uv_stride, dst,
-                     dst_stride, width, height);
+  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                            src_uv_stride, dst, dst_stride, width, height);
 }
 
 }  // namespace intrinsiccv::sve2

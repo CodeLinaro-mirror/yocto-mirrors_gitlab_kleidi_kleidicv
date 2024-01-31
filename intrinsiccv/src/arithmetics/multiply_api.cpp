@@ -11,25 +11,28 @@ namespace intrinsiccv {
 namespace neon {
 
 template <typename T>
-void saturating_multiply(const T *src_a, size_t src_a_stride, const T *src_b,
-                         size_t src_b_stride, T *dst, size_t dst_stride,
-                         size_t width, size_t height, double scale);
+intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
+                                        const T *src_b, size_t src_b_stride,
+                                        T *dst, size_t dst_stride, size_t width,
+                                        size_t height, double scale);
 
 }  // namespace neon
 
 namespace sve2 {
 
 template <typename T>
-void saturating_multiply(const T *src_a, size_t src_a_stride, const T *src_b,
-                         size_t src_b_stride, T *dst, size_t dst_stride,
-                         size_t width, size_t height, double scale);
+intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
+                                        const T *src_b, size_t src_b_stride,
+                                        T *dst, size_t dst_stride, size_t width,
+                                        size_t height, double scale);
 
 }  // namespace sve2
 
 // namespace sme2 {
 
 // template <typename T>
-// void saturating_multiply(const T *src_a, size_t src_a_stride, const T *src_b,
+// intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
+// const T *src_b,
 //               size_t src_b_stride, T *dst, size_t dst_stride,
 //               size_t width, size_t height, double scale);
 
@@ -39,8 +42,8 @@ void saturating_multiply(const T *src_a, size_t src_a_stride, const T *src_b,
   INTRINSICCV_MULTIVERSION_C_API(                                             \
       name, intrinsiccv::neon::saturating_multiply<type>,                     \
       INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_multiply<type>), \
-      nullptr, void, const type *, size_t, const type *, size_t, type *,      \
-      size_t, size_t, size_t, double)
+      nullptr, const type *, size_t, const type *, size_t, type *, size_t,    \
+      size_t, size_t, double)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_u8, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_s8, int8_t);

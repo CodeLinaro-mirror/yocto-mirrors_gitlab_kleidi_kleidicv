@@ -11,12 +11,13 @@ namespace intrinsiccv {
 namespace neon {
 
 template <typename T>
-void min_max(const T *src, size_t src_stride, size_t width, size_t height,
-             T *min_value, T *max_value);
+intrinsiccv_error_t min_max(const T *src, size_t src_stride, size_t width,
+                            size_t height, T *min_value, T *max_value);
 
 template <typename T>
-void min_max_loc(const T *src, size_t src_stride, size_t width, size_t height,
-                 size_t *min_offset, size_t *max_offset);
+intrinsiccv_error_t min_max_loc(const T *src, size_t src_stride, size_t width,
+                                size_t height, size_t *min_offset,
+                                size_t *max_offset);
 
 }  // namespace neon
 
@@ -24,9 +25,9 @@ namespace sve2 {}  // namespace sve2
 
 namespace sme2 {}  // namespace sme2
 
-#define INTRINSICCV_DEFINE_MINMAX_API(name, type)                              \
-  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max<type>,       \
-                                 nullptr, nullptr, void, const type *, size_t, \
+#define INTRINSICCV_DEFINE_MINMAX_API(name, type)                        \
+  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max<type>, \
+                                 nullptr, nullptr, const type *, size_t, \
                                  size_t, size_t, type *, type *)
 
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_u8, uint8_t);
@@ -35,9 +36,9 @@ INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_u16, uint16_t);
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s16, int16_t);
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s32, int32_t);
 
-#define INTRINSICCV_DEFINE_MINMAXLOC_API(name, type)                           \
-  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max_loc<type>,   \
-                                 nullptr, nullptr, void, const type *, size_t, \
+#define INTRINSICCV_DEFINE_MINMAXLOC_API(name, type)                         \
+  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max_loc<type>, \
+                                 nullptr, nullptr, const type *, size_t,     \
                                  size_t, size_t, size_t *, size_t *)
 
 INTRINSICCV_DEFINE_MINMAXLOC_API(intrinsiccv_min_max_loc_u8, uint8_t);

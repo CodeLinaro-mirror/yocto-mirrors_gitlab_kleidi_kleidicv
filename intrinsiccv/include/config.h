@@ -81,4 +81,11 @@
 
 #define INTRINSICCV_FORCE_LOOP_UNROLL _Pragma("clang loop unroll(full)")
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || \
+    (defined(__cplusplus) && __cplusplus >= 201703L)
+#define INTRINSICCV_NODISCARD [[nodiscard]]
+#else
+#define INTRINSICCV_NODISCARD
+#endif
+
 #endif  // INTRINSICCV_CONFIG_H

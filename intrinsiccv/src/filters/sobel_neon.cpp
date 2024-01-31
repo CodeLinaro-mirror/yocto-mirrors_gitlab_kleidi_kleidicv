@@ -123,9 +123,11 @@ class VerticalSobel3x3<uint8_t> {
 };  // end of class VerticalSobel3x3<uint8_t>
 
 INTRINSICCV_TARGET_FN_ATTRS
-void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
-                                 int16_t *dst, size_t dst_stride, size_t width,
-                                 size_t height, size_t channels) {
+intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
+                                                size_t src_stride, int16_t *dst,
+                                                size_t dst_stride, size_t width,
+                                                size_t height,
+                                                size_t channels) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<int16_t> dst_rows{dst, dst_stride, channels};
@@ -133,19 +135,21 @@ void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
   auto workspace =
       SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
   if (!workspace) {
-    return;
+    return INTRINSICCV_ERROR_ALLOCATION;
   }
 
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
   SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      INTRINSICCV_BORDER_TYPE_REPLICATE, filter);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
-                               int16_t *dst, size_t dst_stride, size_t width,
-                               size_t height, size_t channels) {
+intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
+                                              size_t src_stride, int16_t *dst,
+                                              size_t dst_stride, size_t width,
+                                              size_t height, size_t channels) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<int16_t> dst_rows{dst, dst_stride, channels};
@@ -153,13 +157,14 @@ void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
   auto workspace =
       SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
   if (!workspace) {
-    return;
+    return INTRINSICCV_ERROR_ALLOCATION;
   }
 
   VerticalSobel3x3<uint8_t> vertical_sobel;
   SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      INTRINSICCV_BORDER_TYPE_REPLICATE, filter);
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::neon

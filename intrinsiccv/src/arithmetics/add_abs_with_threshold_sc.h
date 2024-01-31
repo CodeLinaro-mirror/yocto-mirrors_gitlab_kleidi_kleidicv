@@ -35,10 +35,10 @@ class AddAbsWithThreshold final : public UnrollTwice {
 };  // end of class AddAbsWithThreshold<ScalarType>
 
 template <typename T>
-void add_abs_with_threshold_sc(const T *src_a, size_t src_a_stride,
-                               const T *src_b, size_t src_b_stride, T *dst,
-                               size_t dst_stride, size_t width, size_t height,
-                               T threshold) INTRINSICCV_STREAMING_COMPATIBLE {
+intrinsiccv_error_t add_abs_with_threshold_sc(
+    const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
+    T *dst, size_t dst_stride, size_t width, size_t height,
+    T threshold) INTRINSICCV_STREAMING_COMPATIBLE {
   AddAbsWithThreshold<T> operation{threshold};
   Rectangle rect{width, height};
   Rows<const T> src_a_rows{src_a, src_a_stride};
@@ -46,6 +46,7 @@ void add_abs_with_threshold_sc(const T *src_a, size_t src_a_stride,
   Rows<T> dst_rows{dst, dst_stride};
   sve2::apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
                                 dst_rows);
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::sve2

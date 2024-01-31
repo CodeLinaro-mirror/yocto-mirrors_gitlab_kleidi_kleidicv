@@ -10,30 +10,36 @@
 namespace intrinsiccv {
 
 namespace neon {
-void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
-                                 int16_t *dst, size_t dst_stride, size_t width,
-                                 size_t height, size_t channels);
-void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
-                               int16_t *dst, size_t dst_stride, size_t width,
-                               size_t height, size_t channels);
+intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
+                                                size_t src_stride, int16_t *dst,
+                                                size_t dst_stride, size_t width,
+                                                size_t height, size_t channels);
+intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
+                                              size_t src_stride, int16_t *dst,
+                                              size_t dst_stride, size_t width,
+                                              size_t height, size_t channels);
 }  // namespace neon
 
 namespace sve2 {
-void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
-                                 int16_t *dst, size_t dst_stride, size_t width,
-                                 size_t height, size_t channels);
-void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
-                               int16_t *dst, size_t dst_stride, size_t width,
-                               size_t height, size_t channels);
+intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
+                                                size_t src_stride, int16_t *dst,
+                                                size_t dst_stride, size_t width,
+                                                size_t height, size_t channels);
+intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
+                                              size_t src_stride, int16_t *dst,
+                                              size_t dst_stride, size_t width,
+                                              size_t height, size_t channels);
 }  // namespace sve2
 
 namespace sme2 {
-void sobel_3x3_horizontal_s16_u8(const uint8_t *src, size_t src_stride,
-                                 int16_t *dst, size_t dst_stride, size_t width,
-                                 size_t height, size_t channels);
-void sobel_3x3_vertical_s16_u8(const uint8_t *src, size_t src_stride,
-                               int16_t *dst, size_t dst_stride, size_t width,
-                               size_t height, size_t channels);
+intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
+                                                size_t src_stride, int16_t *dst,
+                                                size_t dst_stride, size_t width,
+                                                size_t height, size_t channels);
+intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
+                                              size_t src_stride, int16_t *dst,
+                                              size_t dst_stride, size_t width,
+                                              size_t height, size_t channels);
 }  // namespace sme2
 
 }  // namespace intrinsiccv

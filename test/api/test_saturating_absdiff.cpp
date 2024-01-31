@@ -30,8 +30,8 @@ class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
   using BinaryOperationTest<ElementType>::max;
 
   // Calls the API-under-test in the appropriate way.
-  void call_api() override {
-    saturating_absdiff<ElementType>()(
+  intrinsiccv_error_t call_api() override {
+    return saturating_absdiff<ElementType>()(
         this->inputs_[0].data(), this->inputs_[0].stride(),
         this->inputs_[1].data(), this->inputs_[1].stride(),
         this->actual_[0].data(), this->actual_[0].stride(), this->width(),

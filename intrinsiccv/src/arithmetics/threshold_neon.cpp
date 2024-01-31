@@ -38,20 +38,22 @@ class BinaryThreshold final : public UnrollTwice {
 };  // end of class BinaryThreshold<ScalarType>
 
 template <typename T>
-void threshold_binary(const T *src, size_t src_stride, T *dst,
-                      size_t dst_stride, size_t width, size_t height,
-                      T threshold, T value) {
+intrinsiccv_error_t threshold_binary(const T *src, size_t src_stride, T *dst,
+                                     size_t dst_stride, size_t width,
+                                     size_t height, T threshold, T value) {
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};
   Rows<T> dst_rows{dst, dst_stride};
   BinaryThreshold<T> operation{threshold, value};
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                          \
-  template INTRINSICCV_TARGET_FN_ATTRS void threshold_binary<type>(     \
-      const type *src, size_t src_stride, type *dst, size_t dst_stride, \
-      size_t width, size_t height, type threshold, type value)
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                           \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t               \
+  threshold_binary<type>(const type *src, size_t src_stride, type *dst,  \
+                         size_t dst_stride, size_t width, size_t height, \
+                         type threshold, type value)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
 

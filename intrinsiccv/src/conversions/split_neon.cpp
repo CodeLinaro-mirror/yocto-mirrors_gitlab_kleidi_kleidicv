@@ -253,9 +253,9 @@ class Split4<uint64_t> final : public UnrollTwice {
 #endif
 
 template <typename ScalarType>
-void split(const void *src_data, const size_t src_stride, void **dst_data,
-           const size_t *dst_strides, size_t width, size_t height,
-           size_t channels) {
+intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
+                          void **dst_data, const size_t *dst_strides,
+                          size_t width, size_t height, size_t channels) {
   Rectangle rect{width, height};
   ScalarType *dst0 = reinterpret_cast<ScalarType *>(dst_data[0]),
              *dst1 = reinterpret_cast<ScalarType *>(dst_data[1]);
@@ -288,12 +288,14 @@ void split(const void *src_data, const size_t src_stride, void **dst_data,
     default:
       __builtin_trap();
   }
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void split(const void *src_data, size_t src_stride, void **dst_data,
-           const size_t *dst_strides, size_t width, size_t height,
-           size_t channels, size_t element_size) {
+intrinsiccv_error_t split(const void *src_data, size_t src_stride,
+                          void **dst_data, const size_t *dst_strides,
+                          size_t width, size_t height, size_t channels,
+                          size_t element_size) {
   switch (element_size) {
     default:
     case sizeof(uint8_t):
@@ -316,5 +318,6 @@ void split(const void *src_data, size_t src_stride, void **dst_data,
                       height, channels);
       break;
   }
+  return INTRINSICCV_OK;
 }
 }  // namespace intrinsiccv::neon

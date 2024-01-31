@@ -26,11 +26,15 @@ namespace intrinsiccv::hal {
 #define INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED()
 #endif
 
-// Invokes a function through 'void*'.
-template <typename R = void, typename... Args>
-R invoke_any(void *impl, Args... args) {
-  using T = R (*)(Args...);
-  return reinterpret_cast<T>(impl)(args...);
+static int convert_error(intrinsiccv_error_t e) {
+  switch (e) {
+    case INTRINSICCV_OK:
+      return CV_HAL_ERROR_OK;
+    case INTRINSICCV_ERROR_NOT_IMPLEMENTED:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+    default:
+      return CV_HAL_ERROR_UNKNOWN;
+  }
 }
 
 // Returns the size in bytes of an OpenCV type.
@@ -60,16 +64,13 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 
   if (depth == CV_8U) {
     if (dcn == 3) {
-      intrinsiccv_gray_to_rgb_u8(
+      return convert_error(intrinsiccv_gray_to_rgb_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
-    } else {
-      intrinsiccv_gray_to_rgba_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
-
-    return CV_HAL_ERROR_OK;
+    return convert_error(intrinsiccv_gray_to_rgba_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -88,53 +89,47 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
   if (depth == CV_8U) {
     if (scn == 3 && dcn == 3) {
       if (swapBlue) {
-        intrinsiccv_rgb_to_bgr_u8(
+        return convert_error(intrinsiccv_rgb_to_bgr_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
-      } else {
-        intrinsiccv_rgb_to_rgb_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
       }
+      return convert_error(intrinsiccv_rgb_to_rgb_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
 
     if (scn == 4 && dcn == 4) {
       if (swapBlue) {
-        intrinsiccv_rgba_to_bgra_u8(
+        return convert_error(intrinsiccv_rgba_to_bgra_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
-      } else {
-        intrinsiccv_rgba_to_rgba_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
       }
+      return convert_error(intrinsiccv_rgba_to_rgba_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
 
     if (scn == 3 && dcn == 4) {
       if (swapBlue) {
-        intrinsiccv_rgb_to_bgra_u8(
+        return convert_error(intrinsiccv_rgb_to_bgra_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
-      } else {
-        intrinsiccv_rgb_to_rgba_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
       }
+      return convert_error(intrinsiccv_rgb_to_rgba_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
 
     if (scn == 4 && dcn == 3) {
       if (swapBlue) {
-        intrinsiccv_rgba_to_bgr_u8(
+        return convert_error(intrinsiccv_rgba_to_bgr_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
-      } else {
-        intrinsiccv_rgba_to_rgb_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height);
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
       }
+      return convert_error(intrinsiccv_rgba_to_rgb_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
-
-    return CV_HAL_ERROR_OK;
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -160,36 +155,32 @@ int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
 
   if (dcn == 3) {
     if (is_bgr) {
-      intrinsiccv_yuv_sp_to_bgr_u8(
+      return convert_error(intrinsiccv_yuv_sp_to_bgr_u8(
           reinterpret_cast<const uint8_t *>(y_data), y_step,
           reinterpret_cast<const uint8_t *>(uv_data), uv_step,
           reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
-          dst_height, is_nv21);
-    } else {
-      intrinsiccv_yuv_sp_to_rgb_u8(
-          reinterpret_cast<const uint8_t *>(y_data), y_step,
-          reinterpret_cast<const uint8_t *>(uv_data), uv_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
-          dst_height, is_nv21);
+          dst_height, is_nv21));
     }
-    return CV_HAL_ERROR_OK;
+    return convert_error(intrinsiccv_yuv_sp_to_rgb_u8(
+        reinterpret_cast<const uint8_t *>(y_data), y_step,
+        reinterpret_cast<const uint8_t *>(uv_data), uv_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
+        is_nv21));
   }
 
   if (dcn == 4) {
     if (is_bgr) {
-      intrinsiccv_yuv_sp_to_bgra_u8(
+      return convert_error(intrinsiccv_yuv_sp_to_bgra_u8(
           reinterpret_cast<const uint8_t *>(y_data), y_step,
           reinterpret_cast<const uint8_t *>(uv_data), uv_step,
           reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
-          dst_height, is_nv21);
-    } else {
-      intrinsiccv_yuv_sp_to_rgba_u8(
-          reinterpret_cast<const uint8_t *>(y_data), y_step,
-          reinterpret_cast<const uint8_t *>(uv_data), uv_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
-          dst_height, is_nv21);
+          dst_height, is_nv21));
     }
-    return CV_HAL_ERROR_OK;
+    return convert_error(intrinsiccv_yuv_sp_to_rgba_u8(
+        reinterpret_cast<const uint8_t *>(y_data), y_step,
+        reinterpret_cast<const uint8_t *>(uv_data), uv_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
+        is_nv21));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -203,11 +194,10 @@ int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
   (void)cn;
 
   if ((depth == CV_8U) && (thresholdType == 0 /* THRESH_BINARY */)) {
-    intrinsiccv_threshold_binary_u8(
+    return convert_error(intrinsiccv_threshold_binary_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-        static_cast<uint8_t>(thresh), static_cast<uint8_t>(maxValue));
-    return CV_HAL_ERROR_OK;
+        static_cast<uint8_t>(thresh), static_cast<uint8_t>(maxValue)));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -291,13 +281,13 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  void *impl{nullptr};
+  decltype(intrinsiccv_gaussian_blur_3x3_u8) *impl{nullptr};
   if ((ksize_width == 3) && (ksize_height == 3) && (width >= 3) &&
       (height >= 3)) {
-    impl = reinterpret_cast<void *>(intrinsiccv_gaussian_blur_3x3_u8);
+    impl = intrinsiccv_gaussian_blur_3x3_u8;
   } else if ((ksize_width == 5) && (ksize_height == 5) && (width >= 5) &&
              (height >= 5)) {
-    impl = reinterpret_cast<void *>(intrinsiccv_gaussian_blur_5x5_u8);
+    impl = intrinsiccv_gaussian_blur_5x5_u8;
   } else {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -309,17 +299,19 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
   intrinsiccv_rectangle_t image = {
       .width = static_cast<decltype(intrinsiccv_rectangle_t::width)>(width),
       .height = static_cast<decltype(intrinsiccv_rectangle_t::height)>(height)};
-  if (!intrinsiccv_filter_create(&params, image)) {
-    return CV_HAL_ERROR_UNKNOWN;
+  if (intrinsiccv_error_t create_err =
+          intrinsiccv_filter_create(&params, image)) {
+    return convert_error(create_err);
   }
 
-  invoke_any(impl, reinterpret_cast<const uint8_t *>(src_data), src_step,
-             reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
-             intrinsiccv_border_type, &params);
+  intrinsiccv_error_t blur_err =
+      impl(reinterpret_cast<const uint8_t *>(src_data), src_step,
+           reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
+           intrinsiccv_border_type, &params);
 
-  intrinsiccv_filter_release(&params);
+  intrinsiccv_error_t release_err = intrinsiccv_filter_release(&params);
 
-  return CV_HAL_ERROR_OK;
+  return convert_error(blur_err ? blur_err : release_err);
 }
 
 int morphology_init(cvhalFilter2D **context, int operation, int src_type,
@@ -356,13 +348,18 @@ int morphology_init(cvhalFilter2D **context, int operation, int src_type,
   size_t kernel_area = kernel_width_sz * kernel_height_sz;
 
   switch (CV_MAT_DEPTH(kernel_type)) {
-    case CV_8U:
-      if (intrinsiccv_count_nonzeros_u8(static_cast<uint8_t *>(kernel_data),
-                                        kernel_step, kernel_width_sz,
-                                        kernel_height_sz) != kernel_area) {
+    case CV_8U: {
+      size_t nonzero_count = 0;
+      if (intrinsiccv_error_t err = intrinsiccv_count_nonzeros_u8(
+              static_cast<uint8_t *>(kernel_data), kernel_step, kernel_width_sz,
+              kernel_height_sz, &nonzero_count)) {
+        return convert_error(err);
+      }
+      if (nonzero_count != kernel_area) {
         return CV_HAL_ERROR_NOT_IMPLEMENTED;
       }
       break;
+    }
     default:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -424,8 +421,9 @@ int morphology_init(cvhalFilter2D **context, int operation, int src_type,
       .width = static_cast<decltype(intrinsiccv_rectangle_t::width)>(max_width),
       .height =
           static_cast<decltype(intrinsiccv_rectangle_t::height)>(max_height)};
-  if (!intrinsiccv_morphology_create(params.get(), image)) {
-    return CV_HAL_ERROR_UNKNOWN;
+  if (intrinsiccv_error_t err =
+          intrinsiccv_morphology_create(params.get(), image)) {
+    return convert_error(err);
   }
 
   *context = reinterpret_cast<cvhalFilter2D *>(params.release());
@@ -451,10 +449,11 @@ int morphology_operation(cvhalFilter2D *context, uchar *src_data,
   (void)dst_roi_y;
 
   auto params = reinterpret_cast<intrinsiccv_morphology_params_t *>(context);
-  invoke_any(params->impl, reinterpret_cast<const uint8_t *>(src_data),
-             src_step, reinterpret_cast<uint8_t *>(dst_data), dst_step,
-             static_cast<size_t>(width), static_cast<size_t>(height), params);
-  return CV_HAL_ERROR_OK;
+  auto impl = reinterpret_cast<decltype(intrinsiccv_dilate_u8) *>(params->impl);
+  return convert_error(impl(reinterpret_cast<const uint8_t *>(src_data),
+                            src_step, reinterpret_cast<uint8_t *>(dst_data),
+                            dst_step, static_cast<size_t>(width),
+                            static_cast<size_t>(height), params));
 }
 
 int morphology_free(cvhalFilter2D *context) {
@@ -462,8 +461,7 @@ int morphology_free(cvhalFilter2D *context) {
 
   auto params = std::unique_ptr<intrinsiccv_morphology_params_t>(
       reinterpret_cast<intrinsiccv_morphology_params_t *>(context));
-  intrinsiccv_morphology_release(params.get());
-  return CV_HAL_ERROR_OK;
+  return convert_error(intrinsiccv_morphology_release(params.get()));
 }
 
 int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
@@ -510,17 +508,15 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
   }
 
   if (dx == 1 && dy == 0) {
-    intrinsiccv_sobel_3x3_horizontal_s16_u8(
+    return convert_error(intrinsiccv_sobel_3x3_horizontal_s16_u8(
         src_data, src_step, reinterpret_cast<int16_t *>(dst_data), dst_step,
-        width, height, cn);
-    return CV_HAL_ERROR_OK;
+        width, height, cn));
   }
 
   if (dx == 0 && dy == 1) {
-    intrinsiccv_sobel_3x3_vertical_s16_u8(src_data, src_step,
-                                          reinterpret_cast<int16_t *>(dst_data),
-                                          dst_step, width, height, cn);
-    return CV_HAL_ERROR_OK;
+    return convert_error(intrinsiccv_sobel_3x3_vertical_s16_u8(
+        src_data, src_step, reinterpret_cast<int16_t *>(dst_data), dst_step,
+        width, height, cn));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -547,11 +543,11 @@ int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  intrinsiccv_canny_u8(reinterpret_cast<const uint8_t *>(src_data), src_step,
-                       reinterpret_cast<uint8_t *>(dst_data), dst_step,
-                       static_cast<size_t>(width), static_cast<size_t>(height),
-                       lowThreshold, highThreshold);
-  return CV_HAL_ERROR_OK;
+  return convert_error(intrinsiccv_canny_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step,
+      static_cast<size_t>(width), static_cast<size_t>(height), lowThreshold,
+      highThreshold));
 }
 
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
@@ -568,44 +564,46 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  intrinsiccv_transpose(reinterpret_cast<const void *>(src_data), src_step,
-                        reinterpret_cast<void *>(dst_data), dst_step,
-                        static_cast<size_t>(src_width),
-                        static_cast<size_t>(src_height),
-                        static_cast<size_t>(element_size));
-  return CV_HAL_ERROR_OK;
+  return convert_error(intrinsiccv_transpose(
+      reinterpret_cast<const void *>(src_data), src_step,
+      reinterpret_cast<void *>(dst_data), dst_step,
+      static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+      static_cast<size_t>(element_size)));
 }
 
 template <typename T, typename FunctionType>
-void call_min_max(FunctionType min_max_func, const uchar *src_data,
-                  size_t src_stride, int width, int height, double *min_value,
-                  double *max_value) {
+INTRINSICCV_NODISCARD intrinsiccv_error_t call_min_max(
+    FunctionType min_max_func, const uchar *src_data, size_t src_stride,
+    int width, int height, double *min_value, double *max_value) {
   T tmp_min_value, tmp_max_value;
   T *p_min_value = min_value ? &tmp_min_value : nullptr;
   T *p_max_value = max_value ? &tmp_max_value : nullptr;
-  min_max_func(reinterpret_cast<const T *>(src_data), src_stride,
-               static_cast<size_t>(width), static_cast<size_t>(height),
-               p_min_value, p_max_value);
+  intrinsiccv_error_t err =
+      min_max_func(reinterpret_cast<const T *>(src_data), src_stride,
+                   static_cast<size_t>(width), static_cast<size_t>(height),
+                   p_min_value, p_max_value);
   if (min_value) {
     *min_value = static_cast<double>(tmp_min_value);
   }
   if (max_value) {
     *max_value = static_cast<double>(tmp_max_value);
   }
+  return err;
 }
 
 template <typename T, typename FunctionType>
-void call_min_max_loc(FunctionType min_max_loc_func, const uchar *src_data,
-                      size_t src_stride, int width, int height,
-                      double *min_value, double *max_value, int *min_index,
-                      int *max_index) {
+INTRINSICCV_NODISCARD intrinsiccv_error_t
+call_min_max_loc(FunctionType min_max_loc_func, const uchar *src_data,
+                 size_t src_stride, int width, int height, double *min_value,
+                 double *max_value, int *min_index, int *max_index) {
   size_t tmp_min_offset, tmp_max_offset;
   size_t *p_min_offset = (min_value || min_index) ? &tmp_min_offset : nullptr;
   size_t *p_max_offset = (max_value || max_index) ? &tmp_max_offset : nullptr;
 
-  min_max_loc_func(reinterpret_cast<const T *>(src_data), src_stride,
-                   static_cast<size_t>(width), static_cast<size_t>(height),
-                   p_min_offset, p_max_offset);
+  intrinsiccv_error_t err =
+      min_max_loc_func(reinterpret_cast<const T *>(src_data), src_stride,
+                       static_cast<size_t>(width), static_cast<size_t>(height),
+                       p_min_offset, p_max_offset);
   if (min_value) {
     *min_value = static_cast<double>(src_data[tmp_min_offset]);
   }
@@ -620,6 +618,7 @@ void call_min_max_loc(FunctionType min_max_loc_func, const uchar *src_data,
     /* row */ max_index[0] = tmp_max_offset / src_stride;
     /* col */ max_index[1] = (tmp_max_offset % src_stride) / sizeof(T);
   }
+  return err;
 }
 
 int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
@@ -633,39 +632,37 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
 
   if (minIdx || maxIdx) {
     if (depth == CV_8U) {
-      call_min_max_loc<uint8_t>(intrinsiccv_min_max_loc_u8, src_data, src_step,
-                                width, height, minVal, maxVal, minIdx, maxIdx);
-    } else {
-      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+      return convert_error(call_min_max_loc<uint8_t>(
+          intrinsiccv_min_max_loc_u8, src_data, src_step, width, height, minVal,
+          maxVal, minIdx, maxIdx));
     }
-  } else {
-    switch (depth) {
-      case CV_8S:
-        call_min_max<int8_t>(intrinsiccv_min_max_s8, src_data, src_step, width,
-                             height, minVal, maxVal);
-        break;
-      case CV_8U:
-        call_min_max<uint8_t>(intrinsiccv_min_max_u8, src_data, src_step, width,
-                              height, minVal, maxVal);
-        break;
-      case CV_16S:
-        call_min_max<int16_t>(intrinsiccv_min_max_s16, src_data, src_step,
-                              width, height, minVal, maxVal);
-        break;
-      case CV_16U:
-        call_min_max<uint16_t>(intrinsiccv_min_max_u16, src_data, src_step,
-                               width, height, minVal, maxVal);
-        break;
-      case CV_32S:
-        call_min_max<int32_t>(intrinsiccv_min_max_s32, src_data, src_step,
-                              width, height, minVal, maxVal);
-        break;
-      default:
-        return CV_HAL_ERROR_NOT_IMPLEMENTED;
-    }
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  return CV_HAL_ERROR_OK;
+  switch (depth) {
+    case CV_8S:
+      return convert_error(call_min_max<int8_t>(intrinsiccv_min_max_s8,
+                                                src_data, src_step, width,
+                                                height, minVal, maxVal));
+    case CV_8U:
+      return convert_error(call_min_max<uint8_t>(intrinsiccv_min_max_u8,
+                                                 src_data, src_step, width,
+                                                 height, minVal, maxVal));
+    case CV_16S:
+      return convert_error(call_min_max<int16_t>(intrinsiccv_min_max_s16,
+                                                 src_data, src_step, width,
+                                                 height, minVal, maxVal));
+    case CV_16U:
+      return convert_error(call_min_max<uint16_t>(intrinsiccv_min_max_u16,
+                                                  src_data, src_step, width,
+                                                  height, minVal, maxVal));
+    case CV_32S:
+      return convert_error(call_min_max<int32_t>(intrinsiccv_min_max_s32,
+                                                 src_data, src_step, width,
+                                                 height, minVal, maxVal));
+    default:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
 }
 
 int convertTo(const uchar *src_data, size_t src_step, int src_depth,
@@ -684,15 +681,12 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
   }
 
   if (src_depth == CV_8U) {
-    intrinsiccv_scale_u8(reinterpret_cast<const uint8_t *>(src_data), src_step,
-                         reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
-                         height, static_cast<float>(scale),
-                         static_cast<float>(shift));
-  } else {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+    return convert_error(intrinsiccv_scale_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+        static_cast<float>(scale), static_cast<float>(shift)));
   }
-
-  return CV_HAL_ERROR_OK;
+  return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
 }  // namespace intrinsiccv::hal

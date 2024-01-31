@@ -83,11 +83,11 @@ class DiscreteGaussianBlur<uint8_t, 5> {
 };  // end of class DiscreteGaussianBlur<uint8_t, 5>
 
 template <typename ScalarType, size_t KernelSize>
-void discrete_gaussian_blur(const ScalarType *src, size_t src_stride,
-                            ScalarType *dst, size_t dst_stride, size_t width,
-                            size_t height, size_t channels,
-                            intrinsiccv_border_type_t border_type,
-                            const intrinsiccv_filter_params_t *params)
+intrinsiccv_error_t discrete_gaussian_blur(
+    const ScalarType *src, size_t src_stride, ScalarType *dst,
+    size_t dst_stride, size_t width, size_t height, size_t channels,
+    intrinsiccv_border_type_t border_type,
+    const intrinsiccv_filter_params_t *params)
     INTRINSICCV_STREAMING_COMPATIBLE {
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
@@ -101,6 +101,7 @@ void discrete_gaussian_blur(const ScalarType *src, size_t src_stride,
   GaussianBlurFilterType blur;
   SeparableFilter<GaussianBlurFilterType, KernelSize> filter{blur};
   workspace->process(rect, src_rows, dst_rows, channels, border_type, filter);
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::sve2

@@ -92,9 +92,9 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   using IntermediateType = typename KernelTestParams::IntermediateType;
   using OutputType = typename KernelTestParams::OutputType;
 
-  void call_api(const test::Array2D<InputType> *input,
-                test::Array2D<OutputType> *output,
-                intrinsiccv_border_type_t border_type) override {
+  intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
+                               test::Array2D<OutputType> *output,
+                               intrinsiccv_border_type_t border_type) override {
     ++api_calls_;
 
     // Check the expected border type.
@@ -126,6 +126,8 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
 
     // Fake some result.
     output->fill(OutputType{0});
+
+    return INTRINSICCV_OK;
   }
 
  public:

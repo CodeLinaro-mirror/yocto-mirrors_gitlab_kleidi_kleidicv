@@ -188,63 +188,73 @@ class RGBAToRGB final : public UnrollTwice {
 };  // end of class RGBAToRGB<ScalarType>
 
 INTRINSICCV_TARGET_FN_ATTRS
-void rgb_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                   size_t dst_stride, size_t width, size_t height) {
+intrinsiccv_error_t rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
   RGBToBGR<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void rgba_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                     size_t dst_stride, size_t width, size_t height) {
+intrinsiccv_error_t rgba_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                    uint8_t *dst, size_t dst_stride,
+                                    size_t width, size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, 4 /* RGBA */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* BGRA */};
   RGBAToBGRA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
-void rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+               size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* BGRA */};
   RGBToBGRA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
-void rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height) {
+INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+               size_t dst_stride, size_t width, size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
   RGBToRGBA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void rgba_to_bgr_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height) {
+intrinsiccv_error_t rgba_to_bgr_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, 4 /* RGBA */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
   RGBAToBGR<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
-void rgba_to_rgb_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                    size_t dst_stride, size_t width, size_t height) {
+intrinsiccv_error_t rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                   uint8_t *dst, size_t dst_stride,
+                                   size_t width, size_t height) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, 4 /* RGBA */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
   RGBAToRGB<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::neon

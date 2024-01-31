@@ -74,9 +74,11 @@ class MergeTest final {
     for (size_t i = 0; i < Channels; ++i) {
       strides[i] = inputs[i].stride();
     }
-    intrinsiccv_merge(input_raw_pointers, strides, actual_output.data(),
-                      actual_output.stride(), input_width, height, Channels,
-                      sizeof(ElementType));
+    ASSERT_EQ(
+        INTRINSICCV_OK,
+        intrinsiccv_merge(input_raw_pointers, strides, actual_output.data(),
+                          actual_output.stride(), input_width, height, Channels,
+                          sizeof(ElementType)));
 
     // Compare the results
     for (size_t i = 0; i < Channels; ++i) {

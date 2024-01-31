@@ -9,8 +9,7 @@
 namespace intrinsiccv {
 
 INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_merge, intrinsiccv::neon::merge,
-                               nullptr, nullptr, void, const void **,
-                               const size_t *, void *, size_t, size_t, size_t,
-                               size_t, size_t);
+                               nullptr, nullptr, const void **, const size_t *,
+                               void *, size_t, size_t, size_t, size_t, size_t);
 
 }  // namespace intrinsiccv

@@ -61,22 +61,22 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 #endif
 
 // Creates a multiversioned C API with an ifunc resolver for it
-#define INTRINSICCV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, \
-                                       sme2_impl, return_type, ...)    \
-  typedef return_type (*api_name##_function_type)(__VA_ARGS__);        \
-                                                                       \
-  extern "C" INTRINSICCV_IFUNC_RESOLVER api_name##_function_type       \
-      api_name##_ifunc_resolver(HwCapTy, __ifunc_arg_t *arg);          \
-                                                                       \
-  extern "C" api_name##_function_type api_name##_ifunc_resolver(       \
-      HwCapTy hwcap, __ifunc_arg_t *arg) {                             \
-    [[maybe_unused]] HwCaps hwcaps = make_hwcaps(hwcap, arg);          \
-    INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl);                         \
-    INTRINSICCV_SVE2_RESOLVE_IFUNC(sve2_impl);                         \
-    return neon_impl;                                                  \
-  }                                                                    \
-                                                                       \
-  extern "C" return_type api_name(__VA_ARGS__)                         \
+#define INTRINSICCV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl,  \
+                                       sme2_impl, ...)                  \
+  typedef intrinsiccv_error_t (*api_name##_function_type)(__VA_ARGS__); \
+                                                                        \
+  extern "C" INTRINSICCV_IFUNC_RESOLVER api_name##_function_type        \
+      api_name##_ifunc_resolver(HwCapTy, __ifunc_arg_t *arg);           \
+                                                                        \
+  extern "C" api_name##_function_type api_name##_ifunc_resolver(        \
+      HwCapTy hwcap, __ifunc_arg_t *arg) {                              \
+    [[maybe_unused]] HwCaps hwcaps = make_hwcaps(hwcap, arg);           \
+    INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl);                          \
+    INTRINSICCV_SVE2_RESOLVE_IFUNC(sve2_impl);                          \
+    return neon_impl;                                                   \
+  }                                                                     \
+                                                                        \
+  extern "C" intrinsiccv_error_t api_name(__VA_ARGS__)                  \
       INTRINSICCV_ATTR_IFUNC(#api_name "_ifunc_resolver")
 
 }  // namespace intrinsiccv

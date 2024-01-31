@@ -6,19 +6,16 @@
 
 namespace intrinsiccv::sve2 {
 
-INTRINSICCV_TARGET_FN_ATTRS void gray_to_rgb_u8(const uint8_t *src,
-                                                size_t src_stride, uint8_t *dst,
-                                                size_t dst_stride, size_t width,
-                                                size_t height) {
-  gray_to_rgb_u8_sc(src, src_stride, dst, dst_stride, width, height);
+INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+gray_to_rgb_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+               size_t dst_stride, size_t width, size_t height) {
+  return gray_to_rgb_u8_sc(src, src_stride, dst, dst_stride, width, height);
 }
 
-INTRINSICCV_TARGET_FN_ATTRS void gray_to_rgba_u8(const uint8_t *src,
-                                                 size_t src_stride,
-                                                 uint8_t *dst,
-                                                 size_t dst_stride,
-                                                 size_t width, size_t height) {
-  gray_to_rgba_u8_sc(src, src_stride, dst, dst_stride, width, height);
+INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+gray_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                size_t dst_stride, size_t width, size_t height) {
+  return gray_to_rgba_u8_sc(src, src_stride, dst, dst_stride, width, height);
 }
 
 }  // namespace intrinsiccv::sve2

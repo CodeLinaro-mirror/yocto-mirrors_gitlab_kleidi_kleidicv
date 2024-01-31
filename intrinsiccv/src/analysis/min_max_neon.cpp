@@ -45,8 +45,9 @@ class MinMax final : public UnrollTwice {
 };  // end of class MinMax<T>
 
 template <typename ScalarType>
-void min_max(const ScalarType *src, size_t src_stride, size_t width,
-             size_t height, ScalarType *min_value, ScalarType *max_value) {
+intrinsiccv_error_t min_max(const ScalarType *src, size_t src_stride,
+                            size_t width, size_t height, ScalarType *min_value,
+                            ScalarType *max_value) {
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride};
   MinMax<ScalarType> operation;
@@ -57,11 +58,12 @@ void min_max(const ScalarType *src, size_t src_stride, size_t width,
   if (max_value) {
     *max_value = operation.get_max();
   }
+  return INTRINSICCV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
-  template INTRINSICCV_TARGET_FN_ATTRS void min_max<type>(             \
-      const type *src, size_t src_stride, size_t width, size_t height, \
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                            \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t min_max<type>( \
+      const type *src, size_t src_stride, size_t width, size_t height,    \
       type *min_value, type *max_value)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t);

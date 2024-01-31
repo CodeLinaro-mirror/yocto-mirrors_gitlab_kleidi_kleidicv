@@ -35,22 +35,24 @@ class SaturatingAdd final : public UnrollTwice {
 };  // end of class SaturatingAdd<ScalarType>
 
 template <typename T>
-void saturating_add(const T *src_a, size_t src_a_stride, const T *src_b,
-                    size_t src_b_stride, T *dst, size_t dst_stride,
-                    size_t width, size_t height) {
+intrinsiccv_error_t saturating_add(const T *src_a, size_t src_a_stride,
+                                   const T *src_b, size_t src_b_stride, T *dst,
+                                   size_t dst_stride, size_t width,
+                                   size_t height) {
   SaturatingAdd<T> operation;
   Rectangle rect{width, height};
   Rows<const T> src_a_rows{src_a, src_a_stride};
   Rows<const T> src_b_rows{src_b, src_b_stride};
   Rows<T> dst_rows{dst, dst_stride};
   apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows, dst_rows);
+  return INTRINSICCV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
-  template INTRINSICCV_TARGET_FN_ATTRS void saturating_add<type>(      \
-      const type *src_a, size_t src_a_stride, const type *src_b,       \
-      size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
-      size_t height)
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                            \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t                \
+  saturating_add<type>(const type *src_a, size_t src_a_stride,            \
+                       const type *src_b, size_t src_b_stride, type *dst, \
+                       size_t dst_stride, size_t width, size_t height)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t);
 INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
