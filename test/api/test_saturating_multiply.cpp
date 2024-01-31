@@ -21,7 +21,7 @@ INTRINSICCV_SATURATING_MULTIPLY(int32_t, s32);
 
 template <typename ElementType>
 class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
-  /// Expose constructor of base class.
+  // Expose constructor of base class.
   using BinaryOperationTest<ElementType>::BinaryOperationTest;
 
  protected:
@@ -29,7 +29,7 @@ class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
   using BinaryOperationTest<ElementType>::min;
   using BinaryOperationTest<ElementType>::max;
 
-  /// Calls the API-under-test in the appropriate way.
+  // Calls the API-under-test in the appropriate way.
   void call_api() override {
     saturating_multiply<ElementType>()(
         this->inputs_[0].data(), this->inputs_[0].stride(),
@@ -40,7 +40,7 @@ class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
   double scale() {
     return 1.0;  // This is the only parameter IntrinsicCV supports.
   }
-  /// Returns different test data for signed and unsigned element types.
+  // Returns different test data for signed and unsigned element types.
   const std::vector<Elements>& test_elements() override {
     if constexpr (std::is_unsigned_v<ElementType>) {
       static const std::vector<Elements> kTestElements = {
@@ -89,7 +89,7 @@ using ElementTypes =
     ::testing::Types<uint8_t, int8_t, uint16_t, int16_t, int32_t>;
 TYPED_TEST_SUITE(SaturatingMultiply, ElementTypes);
 
-/// Tests \ref intrinsiccv_saturating_multiply_<type> API.
+// Tests \ref intrinsiccv_saturating_multiply_<type> API.
 TYPED_TEST(SaturatingMultiply, API) {
   // Test without padding.
   SaturatingMultiplyTest<TypeParam>{}.test();

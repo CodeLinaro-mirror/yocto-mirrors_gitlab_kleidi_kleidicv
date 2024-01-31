@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -9,7 +9,7 @@
 
 #include "framework/generator.h"
 
-/// Tests test::PseudoRandomNumberGenerator::reset() works.
+// Tests test::PseudoRandomNumberGenerator::reset() works.
 TEST(PseudoRandomNumberGenerator, Reset) {
   using ElementType = uint8_t;
 
@@ -21,7 +21,7 @@ TEST(PseudoRandomNumberGenerator, Reset) {
   EXPECT_EQ(initial_value, value);
 }
 
-/// Tests test::SequenceGenerator::reset() works.
+// Tests test::SequenceGenerator::reset() works.
 TEST(SequenceGenerator, Reset) {
   using ElementType = uint8_t;
 

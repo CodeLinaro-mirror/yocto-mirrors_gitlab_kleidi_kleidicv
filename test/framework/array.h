@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,7 +23,7 @@
 
 namespace test {
 
-/// A simple two-dimensional array representation.
+// A simple two-dimensional array representation.
 template <typename ElementType>
 class Array2D : public TwoDimensional<ElementType> {
  public:
@@ -46,16 +46,16 @@ class Array2D : public TwoDimensional<ElementType> {
     fill_padding();
   }
 
-  /// Destructor checks that padding bytes are not overwritten.
+  // Destructor checks that padding bytes are not overwritten.
   ~Array2D() override { check_padding(); }
 
-  /// Copy constructor.
+  // Copy constructor.
   Array2D(const Array2D &other) { this->operator=(other); }
 
-  /// Move constructor.
+  // Move constructor.
   Array2D(Array2D &&other) noexcept { this->operator=(other); }
 
-  /// Copy assignment operator.
+  // Copy assignment operator.
   Array2D &operator=(const Array2D &other) {
     if (this == &other) {
       return *this;
@@ -75,7 +75,7 @@ class Array2D : public TwoDimensional<ElementType> {
     return *this;
   }
 
-  /// Move assignment operator.
+  // Move assignment operator.
   Array2D &operator=(Array2D &&other) noexcept {
     if (this == &other) {
       return *this;
@@ -89,8 +89,8 @@ class Array2D : public TwoDimensional<ElementType> {
     return *this;
   }
 
-  /// Fills the underlying memory range with a given value skipping padding
-  /// bytes.
+  // Fills the underlying memory range with a given value skipping padding
+  // bytes.
   void fill(ElementType value) {
     ASSERT_EQ(valid(), true);
 
@@ -104,8 +104,8 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  /// Fills the underlying memory range with a given generator skipping padding
-  /// bytes.
+  // Fills the underlying memory range with a given generator skipping padding
+  // bytes.
   void fill(Generator<ElementType> *generator) {
     ASSERT_NE(generator, nullptr);
     ASSERT_EQ(valid(), true);
@@ -124,7 +124,7 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  /// Sets values in a row starting at a given column.
+  // Sets values in a row starting at a given column.
   void set(size_t row, size_t column,
            std::initializer_list<ElementType> values) {
     ASSERT_EQ(valid(), true) << "Array is invalid.";
@@ -141,10 +141,10 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  /// Sets values starting in a given row starting at a given column.
-  ///
-  /// The layout of the input TwoDimensional object is not altered, meaning that
-  /// it must fit as-is at the given row and column position into the array.
+  // Sets values starting in a given row starting at a given column.
+  //
+  // The layout of the input TwoDimensional object is not altered, meaning that
+  // it must fit as-is at the given row and column position into the array.
   void set(size_t row, size_t column,
            const TwoDimensional<ElementType> *elements) {
     ASSERT_NE(elements, nullptr);
@@ -160,8 +160,8 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  /// Compares two instances for equality considering only element bytes.
-  /// Returns the location of the first mismatch, if any.
+  // Compares two instances for equality considering only element bytes.
+  // Returns the location of the first mismatch, if any.
   std::optional<std::tuple<size_t, size_t>> compare_to(
       const Array2D<ElementType> &other) const {
     for (size_t row = 0; row < height(); ++row) {
@@ -177,38 +177,38 @@ class Array2D : public TwoDimensional<ElementType> {
     return std::nullopt;
   }
 
-  /// Returns a pointer to the first element.
+  // Returns a pointer to the first element.
   ElementType *data() { return reinterpret_cast<ElementType *>(data_.get()); }
 
-  /// Returns a const pointer to the first element.
+  // Returns a const pointer to the first element.
   const ElementType *data() const {
     return reinterpret_cast<const ElementType *>(data_.get());
   }
 
-  /// Returns the width of this array.
+  // Returns the width of this array.
   size_t width() const override { return width_; }
 
-  /// Returns the height of this array.
+  // Returns the height of this array.
   size_t height() const override { return height_; }
 
-  /// Returns the number of channels.
+  // Returns the number of channels.
   size_t channels() const override { return channels_; };
 
-  /// Returns the stride of this array.
+  // Returns the stride of this array.
   size_t stride() const { return stride_; }
 
-  /// Returns true if this object holds actual memory, otherwise false.
+  // Returns true if this object holds actual memory, otherwise false.
   bool valid() const { return data() != nullptr; }
 
-  /// Returns a pointer to a data element at a given row and column position, or
-  /// nullptr if the requested position is invalid.
+  // Returns a pointer to a data element at a given row and column position, or
+  // nullptr if the requested position is invalid.
   ElementType *at(size_t row, size_t column) override {
     return const_cast<ElementType *>(
         const_cast<const Array2D<ElementType> *>(this)->at(row, column));
   }
 
-  /// Returns a const pointer to a data element at a given row and column
-  /// position, or nullptr if the requested position is invalid.
+  // Returns a const pointer to a data element at a given row and column
+  // position, or nullptr if the requested position is invalid.
   const ElementType *at(size_t row, size_t column) const override {
     if (!check_access(row, column)) {
       TEST_FAIL_WITH(nullptr,
@@ -220,18 +220,18 @@ class Array2D : public TwoDimensional<ElementType> {
   }
 
  private:
-  /// Returns the offset to the first padding byte within a row.
+  // Returns the offset to the first padding byte within a row.
   size_t padding_offset() const { return width() * sizeof(ElementType); }
 
-  /// Returns true if a row has padding, otherwise false.
+  // Returns true if a row has padding, otherwise false.
   size_t has_padding() const { return padding_offset() != stride(); }
 
-  /// Checks that an access is valid or not.
+  // Checks that an access is valid or not.
   bool check_access(size_t row, size_t column) const {
     return valid() && (row < height()) && (column < width());
   }
 
-  /// Fills padding bytes, if present.
+  // Fills padding bytes, if present.
   void fill_padding() {
     if (!valid() || !has_padding()) {
       return;
@@ -247,7 +247,7 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  /// Checks for clobbered padding bytes, if present.
+  // Checks for clobbered padding bytes, if present.
   void check_padding() const {
     if (!valid() || !has_padding()) {
       return;
@@ -266,27 +266,27 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  /// Adds stride to a pointer.
+  // Adds stride to a pointer.
   ElementType *add_stride(ElementType *ptr, size_t count) {
     char *address = reinterpret_cast<char *>(ptr);
     address += count * stride();
     return reinterpret_cast<ElementType *>(address);
   }
 
-  /// Adds stride to a pointer.
+  // Adds stride to a pointer.
   const ElementType *add_stride(const ElementType *ptr, size_t count) const {
     const char *address = reinterpret_cast<const char *>(ptr);
     address += count * stride();
     return reinterpret_cast<const ElementType *>(address);
   }
 
-  /// Resets the instance to the default instance.
+  // Resets the instance to the default instance.
   void reset() {
     width_ = height_ = channels_ = stride_ = 0;
     data_.reset();
   }
 
-  /// Tries to allocate backing memory.
+  // Tries to allocate backing memory.
   void try_allocate() {
     size_t allocation_size = height_ * stride_;
 
@@ -299,22 +299,22 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  /// Constant value of row padding bytes.
+  // Constant value of row padding bytes.
   static constexpr uint8_t kPaddingValue = std::numeric_limits<uint8_t>::max();
 
-  /// Smart pointer to the managed memory.
+  // Smart pointer to the managed memory.
   std::unique_ptr<uint8_t[]> data_;
-  /// Width a row in the array.
+  // Width a row in the array.
   size_t width_{0};
-  /// Number of rows in the array.
+  // Number of rows in the array.
   size_t height_{0};
-  /// Number of channels.
+  // Number of channels.
   size_t channels_{0};
-  /// Stride in bytes between the first elements of two consecutive rows.
+  // Stride in bytes between the first elements of two consecutive rows.
   size_t stride_{0};
 };  // end of class Array2D<ElementType>
 
-/// Compares two \ref Array2D objects for equality.
+// Compares two \ref Array2D objects for equality.
 #define EXPECT_EQ_ARRAY2D(lhs, rhs)                                          \
   do {                                                                       \
     ASSERT_EQ((lhs).width(), (rhs).width())                                  \
@@ -334,7 +334,7 @@ class Array2D : public TwoDimensional<ElementType> {
     }                                                                        \
   } while (0 != 0)
 
-/// Compares two \ref Array2D objects for inequality.
+// Compares two \ref Array2D objects for inequality.
 #define EXPECT_NE_ARRAY2D(lhs, rhs)                                \
   do {                                                             \
     ASSERT_EQ((lhs).width(), (rhs).width())                        \

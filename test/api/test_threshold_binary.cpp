@@ -13,7 +13,7 @@ class ThresholdBinaryTestBase : public UnaryOperationTest<ElementType> {
   using UnaryOperationTest<ElementType>::max;
 
  protected:
-  /// Calls the API-under-test in the appropriate way.
+  // Calls the API-under-test in the appropriate way.
   void call_api() override {
     intrinsiccv_threshold_binary_u8(
         this->inputs_[0].data(), this->inputs_[0].stride(),

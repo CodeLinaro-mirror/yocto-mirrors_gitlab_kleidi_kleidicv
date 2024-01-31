@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -10,8 +10,8 @@
 #include "framework/kernel.h"
 #include "framework/types.h"
 
-/// Tests that the constructor of test::Kernel<T> works for odd width and
-/// height.
+// Tests that the constructor of test::Kernel<T> works for odd width and
+// height.
 TEST(Kernel, ConstructOdd) {
   using ElementType = uint8_t;
 
@@ -42,8 +42,8 @@ TEST(Kernel, ConstructOdd) {
   EXPECT_EQ(kernel.at(2, 2)[0], 6);
 }
 
-/// Tests that the constructor of test::Kernel<T> works for even width and
-/// height.
+// Tests that the constructor of test::Kernel<T> works for even width and
+// height.
 TEST(Kernel, ConstructEven) {
   using ElementType = uint8_t;
 
@@ -61,8 +61,8 @@ TEST(Kernel, ConstructEven) {
   EXPECT_EQ(kernel.right(), 1);
 }
 
-/// Tests that the default constructor of test::Kernel<T> works with all
-/// zero arguments.
+// Tests that the default constructor of test::Kernel<T> works with all
+// zero arguments.
 TEST(Kernel, ConstructEmpty) {
   using ElementType = uint8_t;
 
@@ -163,7 +163,7 @@ const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 2>
 };
 // NOLINTEND(cert-err58-cpp)
 
-/// Tests that KernelTest::test() works.
+// Tests that KernelTest::test() works.
 TEST(KernelTest, Test) {
   test::SequenceGenerator tested_kernels{
       ExampleKernelTest<KernelTestParams>::kKernels};

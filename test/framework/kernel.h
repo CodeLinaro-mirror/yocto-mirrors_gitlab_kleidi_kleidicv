@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -19,7 +19,7 @@
 
 namespace test {
 
-/// Represents a kernel operator.
+// Represents a kernel operator.
 template <typename ElementType>
 class Kernel : protected Array2D<ElementType>, public Bordered {
  public:
@@ -33,37 +33,37 @@ class Kernel : protected Array2D<ElementType>, public Bordered {
       : Array2D<ElementType>(mask),
         anchor_{mask.width() / 2, mask.height() / 2} {}
 
-  /// Returns the anchor point of the kernel.
+  // Returns the anchor point of the kernel.
   Point anchor() const { return anchor_; }
 
-  /// Returns the number of elements to the left of the anchor point.
+  // Returns the number of elements to the left of the anchor point.
   size_t left() const override { return anchor().x; }
 
-  /// Returns the number of elements above the anchor point.
+  // Returns the number of elements above the anchor point.
   size_t top() const override { return anchor().y; }
 
-  /// Returns the number of elements to the right of the anchor point.
+  // Returns the number of elements to the right of the anchor point.
   size_t right() const override {
     return (width() > 0) ? width() - anchor().x - 1 : 0;
   }
 
-  /// Returns the number of elements above the anchor point.
+  // Returns the number of elements above the anchor point.
   size_t bottom() const override {
     return (height() > 0) ? height() - anchor().y - 1 : 0;
   }
 
  private:
-  /// The anchor point of the kernel.
+  // The anchor point of the kernel.
   Point anchor_;
 };  // end of class Kernel<ElementType>
 
-/// Abstract class to help implement a kernel operation.
-///
-/// Required:
-///   - KernelTestParams::InputType: Input type to the operation.
-///   - KernelTestParams::IntermediateType: Type which is used during element
-///   calculations.
-///   - KernelTestParams::OutputType: Output type of the operation.
+// Abstract class to help implement a kernel operation.
+//
+// Required:
+//   - KernelTestParams::InputType: Input type to the operation.
+//   - KernelTestParams::IntermediateType: Type which is used during element
+//   calculations.
+//   - KernelTestParams::OutputType: Output type of the operation.
 template <class KernelTestParams>
 class KernelTest {
  public:
@@ -73,7 +73,7 @@ class KernelTest {
 
   KernelTest() : debug_{false} {}
 
-  /// Enables debug mode.
+  // Enables debug mode.
   KernelTest<KernelTestParams> &with_debug() {
     debug_ = true;
     return *this;
@@ -137,14 +137,14 @@ class KernelTest {
   }
 
  protected:
-  /// Calls the API-under-test in the appropriate way.
-  ///
-  /// The arguments are never nullptr.
+  // Calls the API-under-test in the appropriate way.
+  //
+  // The arguments are never nullptr.
   virtual void call_api(const Array2D<InputType> *input,
                         Array2D<OutputType> *output,
                         intrinsiccv_border_type_t border_type) = 0;
 
-  /// Calculates the expected output.
+  // Calculates the expected output.
   virtual void calculate_expected(const Kernel<IntermediateType> &kernel,
                                   const TwoDimensional<InputType> &source) {
     for (size_t row = 0; row < expected_.height(); ++row) {
@@ -156,7 +156,7 @@ class KernelTest {
     }
   }
 
-  /// Calculates the expected element at a given position.
+  // Calculates the expected element at a given position.
   virtual IntermediateType calculate_expected_at(
       const Kernel<IntermediateType> &kernel,
       const TwoDimensional<InputType> &source, size_t row, size_t column) {
@@ -173,7 +173,7 @@ class KernelTest {
     return result;
   }
 
-  /// Creates arrays for a given layout.
+  // Creates arrays for a given layout.
   void create_arrays(const Kernel<IntermediateType> &kernel,
                      const ArrayLayout &array_layout) {
     input_ = Array2D<InputType>{array_layout};
@@ -193,7 +193,7 @@ class KernelTest {
     ASSERT_TRUE(input_with_borders_.valid());
   }
 
-  /// Prepares input to the kernel-based operation.
+  // Prepares input to the kernel-based operation.
   void prepare_source(Generator<InputType> *element_generator) {
     ASSERT_NE(element_generator, nullptr);
     element_generator->reset();
@@ -205,7 +205,7 @@ class KernelTest {
     }
   }
 
-  /// Computes expected output of the kernel-based operation.
+  // Computes expected output of the kernel-based operation.
   void prepare_expected(const Kernel<IntermediateType> &kernel,
                         const ArrayLayout &array_layout,
                         intrinsiccv_border_type_t border_type) {
@@ -232,10 +232,10 @@ class KernelTest {
     }
   }
 
-  /// Prepares the actual output of the kernel-based operation.
+  // Prepares the actual output of the kernel-based operation.
   void prepare_actual() { actual_.fill(42); }
 
-  /// Checks that the actual output matches the expectations.
+  // Checks that the actual output matches the expectations.
   void check_results() {
     if (debug_) {
       std::cout << "[actual]" << std::endl;
@@ -246,15 +246,15 @@ class KernelTest {
     EXPECT_EQ_ARRAY2D(expected_, actual_);
   }
 
-  /// Input operand for the operation.
+  // Input operand for the operation.
   Array2D<InputType> input_;
-  /// Input operand with borders, used to calculate expeected values.
+  // Input operand with borders, used to calculate expeected values.
   Array2D<InputType> input_with_borders_;
-  /// Expected result of the operation.
+  // Expected result of the operation.
   Array2D<OutputType> expected_;
-  /// Actual result of the operation.
+  // Actual result of the operation.
   Array2D<OutputType> actual_;
-  /// Enables debug mode.
+  // Enables debug mode.
   bool debug_;
 };  // end of class KernelTest<KernelTestParams>
 

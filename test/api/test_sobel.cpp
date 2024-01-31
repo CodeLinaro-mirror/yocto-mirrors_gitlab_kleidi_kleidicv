@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,7 +23,7 @@ INTRINSICCV_SOBEL_3X3_HORIZONTAL(uint8_t, s16_u8);
 
 INTRINSICCV_SOBEL_3X3_VERTICAL(uint8_t, s16_u8);
 
-/// Implements KernelTestParams for Sobel operators.
+// Implements KernelTestParams for Sobel operators.
 template <typename ElementType, bool IsHorizontal>
 struct SobelKernelTestParams;
 
@@ -40,7 +40,7 @@ static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
     INTRINSICCV_BORDER_TYPE_REPLICATE,
 };
 
-/// Default test fo horizontal Sobel 3x3 operator.
+// Default test fo horizontal Sobel 3x3 operator.
 template <class KernelTestParams>
 class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
   using typename test::KernelTest<KernelTestParams>::InputType;
@@ -78,7 +78,7 @@ class Sobel : public testing::Test {};
 using ElementTypes = ::testing::Types<uint8_t>;
 TYPED_TEST_SUITE(Sobel, ElementTypes);
 
-/// Tests sobel_3x3_horizontal_<output_type>_<input_type> API.
+// Tests sobel_3x3_horizontal_<output_type>_<input_type> API.
 TYPED_TEST(Sobel, Horizontal3x3) {
   using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
   // Horizontal 3x3 Sobel operator.
@@ -89,7 +89,7 @@ TYPED_TEST(Sobel, Horizontal3x3) {
   Sobel3x3Test<KernelTestParams>{}.test(mask);
 }
 
-/// Tests sobel_3x3_vertical_<output_type>_<input_type> API.
+// Tests sobel_3x3_vertical_<output_type>_<input_type> API.
 TYPED_TEST(Sobel, Vertical3x3) {
   using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
   // Horizontal 3x3 Sobel operator.

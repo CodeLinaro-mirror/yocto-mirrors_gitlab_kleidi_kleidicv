@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,21 +12,21 @@
 #include "framework/array.h"
 #include "framework/utils.h"
 
-/// Abstract base class for operations with InputsSize number of inputs and
-/// OutputsSize number of outputs.
+// Abstract base class for operations with InputsSize number of inputs and
+// OutputsSize number of outputs.
 template <typename ElementType, size_t InputsSize, size_t OutputsSize>
 class OperationTest {
  public:
-  /// Shorthand for internal data layout representation.
+  // Shorthand for internal data layout representation.
   using ArrayType = test::Array2D<ElementType>;
-  /// Shorthand for elements.
+  // Shorthand for elements.
   struct Elements {
     ElementType values[InputsSize + OutputsSize];
   };  // end of struct Elements
 
   virtual ~OperationTest() = default;
 
-  /// Sets the number of padding bytes at the end of rows.
+  // Sets the number of padding bytes at the end of rows.
   OperationTest<ElementType, InputsSize, OutputsSize>& with_padding(
       size_t padding) {
     padding_ = padding;
@@ -55,10 +55,10 @@ class OperationTest {
   }
 
  protected:
-  /// Returns test data.
+  // Returns test data.
   virtual const std::vector<Elements>& test_elements() = 0;
 
-  /// Prepares inputs and expected outputs for the operation.
+  // Prepares inputs and expected outputs for the operation.
   void setup() {
     auto elements_list = test_elements();
     // Check that the number of elements fit into the buffers.
@@ -84,45 +84,45 @@ class OperationTest {
     }
   }
 
-  /// Calls the API-under-test in the appropriate way.
+  // Calls the API-under-test in the appropriate way.
   virtual void call_api() = 0;
 
-  /// Checks that the result meets the expectations.
+  // Checks that the result meets the expectations.
   virtual void check() {
     for (size_t index = 0; index < expected_.size(); ++index) {
       EXPECT_EQ_ARRAY2D(expected_[index], actual_[index]);
     }
   }
 
-  /// Tested number of rows.
+  // Tested number of rows.
   virtual size_t height() { return test_elements().size(); }
 
-  /// Tested number of elements in a row.
+  // Tested number of elements in a row.
   size_t width() const {
     // Sufficient number of elements to exercise both vector and scalar paths.
     return 3 * test::Options::vector_lanes<ElementType>() - 1;
   }
 
-  /// Returns the number of padding bytes at the end of rows.
+  // Returns the number of padding bytes at the end of rows.
   size_t padding() const { return padding_; }
 
-  /// Returns the minimum value for ElementType.
+  // Returns the minimum value for ElementType.
   static constexpr ElementType min() {
     return std::numeric_limits<ElementType>::min();
   }
 
-  /// Returns the maximum value for ElementType.
+  // Returns the maximum value for ElementType.
   static constexpr ElementType max() {
     return std::numeric_limits<ElementType>::max();
   }
 
-  /// Input operand(s) for the operation.
+  // Input operand(s) for the operation.
   std::array<ArrayType, InputsSize> inputs_;
-  /// Expected result of the operation.
+  // Expected result of the operation.
   std::array<ArrayType, OutputsSize> expected_;
-  /// Actual result of the operation.
+  // Actual result of the operation.
   std::array<ArrayType, OutputsSize> actual_;
-  /// Number of padding bytes at the end of rows.
+  // Number of padding bytes at the end of rows.
   size_t padding_{0};
 };  // end of class OperationTest<ElementType, InputsSize, OutputsSize>
 

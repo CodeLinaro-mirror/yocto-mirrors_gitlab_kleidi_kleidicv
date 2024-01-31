@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,16 +12,16 @@
 
 namespace test {
 
-/// Generates pseudo-random numbers of a given type.
+// Generates pseudo-random numbers of a given type.
 template <typename ElementType>
 class PseudoRandomNumberGenerator : public Generator<ElementType> {
  public:
   PseudoRandomNumberGenerator() : seed_{Options::seed()}, rng_{seed_} {}
 
-  /// Resets the generator to the initial state.
+  // Resets the generator to the initial state.
   void reset() override { rng_.seed(seed_); }
 
-  /// Yields the next value or std::nullopt.
+  // Yields the next value or std::nullopt.
   std::optional<ElementType> next() override {
     return static_cast<ElementType>(rng_());
   }
@@ -31,7 +31,7 @@ class PseudoRandomNumberGenerator : public Generator<ElementType> {
   std::mt19937_64 rng_;
 };  // end of class PseudoRandomNumberGenerator<ElementType>
 
-/// Generator which yields values of an iterable container.
+// Generator which yields values of an iterable container.
 template <typename IterableType>
 class SequenceGenerator : public Generator<typename IterableType::value_type> {
  public:
@@ -40,10 +40,10 @@ class SequenceGenerator : public Generator<typename IterableType::value_type> {
         current_{container.begin()},
         end_{container.end()} {}
 
-  /// Resets the generator to its initial state.
+  // Resets the generator to its initial state.
   void reset() override { current_ = begin_; }
 
-  /// Yields the next value or std::nullopt.
+  // Yields the next value or std::nullopt.
   std::optional<typename IterableType::value_type> next() override {
     if (current_ == end_) {
       return std::nullopt;

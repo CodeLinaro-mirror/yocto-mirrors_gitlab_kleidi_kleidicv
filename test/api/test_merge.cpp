@@ -11,16 +11,16 @@
 template <typename ElementType, size_t Channels>
 class MergeTest final {
  public:
-  /// Shorthand for internal data layout representation.
+  // Shorthand for internal data layout representation.
   using ArrayType = test::Array2D<ElementType>;
 
-  /// Sets the number of padding bytes at the end of rows.
+  // Sets the number of padding bytes at the end of rows.
   MergeTest<ElementType, Channels>& with_padding(size_t padding) {
     padding_ = padding;
     return *this;
   }
 
-  /// Executes the test
+  // Executes the test
   void test() {
     // Width of input is set to execute 2 vector paths and 1 scalar path
     size_t vector_length = test::Options::vector_length();
@@ -85,7 +85,7 @@ class MergeTest final {
   }
 
  private:
-  /// Number of padding bytes at the end of rows.
+  // Number of padding bytes at the end of rows.
   size_t padding_{0};
 };
 

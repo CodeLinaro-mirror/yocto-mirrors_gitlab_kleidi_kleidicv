@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -9,14 +9,14 @@
 
 namespace test {
 
-/// Represents a point with two non-negative coordinates where 'x' is the
-/// horizontal and 'y' is the vertical component.
+// Represents a point with two non-negative coordinates where 'x' is the
+// horizontal and 'y' is the vertical component.
 struct Point {
   size_t x;
   size_t y;
 };  // end of struct Point
 
-/// Describes the layout of a two-dimensional array.
+// Describes the layout of a two-dimensional array.
 struct ArrayLayout {
   size_t width;
   size_t height;

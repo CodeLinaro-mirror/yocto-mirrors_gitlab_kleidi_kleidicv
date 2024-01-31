@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -27,23 +27,23 @@ class MinMaxTest {
   using ArrayType = test::Array2D<ElementType>;
 
  protected:
-  /// Returns the minimum value for ElementType.
+  // Returns the minimum value for ElementType.
   static constexpr ElementType min() {
     return std::numeric_limits<ElementType>::min();
   }
 
-  /// Returns the maximum value for ElementType.
+  // Returns the maximum value for ElementType.
   static constexpr ElementType max() {
     return std::numeric_limits<ElementType>::max();
   }
 
-  /// Returns the number of vector lanes.
+  // Returns the number of vector lanes.
   static size_t lanes() { return test::Options::vector_lanes<ElementType>(); }
 
   // We have 2 rows, source_row0 and source_row1
   static size_t height() { return 2; }
 
-  /// Tested number of elements in a row.
+  // Tested number of elements in a row.
   static size_t width() {
     // Sufficient number of elements to exercise both vector and scalar paths.
     return 3 * lanes() - 1;

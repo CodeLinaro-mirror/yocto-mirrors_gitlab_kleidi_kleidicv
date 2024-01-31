@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,7 +16,7 @@ namespace test {
 size_t Options::vector_length_{16};
 uint64_t Options::seed_{0};
 
-/// Parses command line arguments.
+// Parses command line arguments.
 static void parse_arguments(int argc, char **argv) {
   // clang-format off
   static struct option long_options[] = {

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -10,12 +10,12 @@
 
 namespace test {
 
-/// Creates replicated border elements.
-///
-/// Replicating means that the elements at the edges are copied to bordering
-/// element positions. For example:
-/// | left border | elements  | right border |
-/// |         A A | A B C D E | E E          |
+// Creates replicated border elements.
+//
+// Replicating means that the elements at the edges are copied to bordering
+// element positions. For example:
+// | left border | elements  | right border |
+// |         A A | A B C D E | E E          |
 template <typename ElementType>
 static void replicate(const Bordered *bordered,
                       TwoDimensional<ElementType> *elements) {

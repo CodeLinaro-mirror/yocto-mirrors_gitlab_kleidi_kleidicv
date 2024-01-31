@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,8 +12,8 @@
 #include "framework/generator.h"
 #include "framework/utils.h"
 
-/// Tests that the default constructor of test::Array2D<T> default constructor
-/// always creates an empty object.
+// Tests that the default constructor of test::Array2D<T> default constructor
+// always creates an empty object.
 TEST(Array2D, DefaultConstructor) {
   test::Array2D<uint32_t> array;
   EXPECT_EQ(array.width(), 0);
@@ -23,8 +23,8 @@ TEST(Array2D, DefaultConstructor) {
   EXPECT_FALSE(array.valid());
 }
 
-/// Tests that test::Array2D<T> constructor always creates an object with the
-/// same contents.
+// Tests that test::Array2D<T> constructor always creates an object with the
+// same contents.
 TEST(Array2D, Constructor) {
   size_t width = 5, height = 5;
   test::Array2D<uint32_t> array_1{width, height};
@@ -38,7 +38,7 @@ TEST(Array2D, Constructor) {
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
-/// Tests that test::Array2D<T> is constructible with test::ArrayLayout.
+// Tests that test::Array2D<T> is constructible with test::ArrayLayout.
 TEST(Array2D, ConstructFromArrayLayout) {
   using ElementType = uint32_t;
 
@@ -52,7 +52,7 @@ TEST(Array2D, ConstructFromArrayLayout) {
   EXPECT_TRUE(array.valid());
 }
 
-/// Tests that the copy assignment operator of test::Array2D<T> works.
+// Tests that the copy assignment operator of test::Array2D<T> works.
 TEST(Array2D, CopyAssignment) {
   size_t width = 5, height = 5;
   test::Array2D<uint32_t> array_1{width, height};
@@ -62,7 +62,7 @@ TEST(Array2D, CopyAssignment) {
   EXPECT_NE(array_1.data(), array_2.data());
 }
 
-/// Tests that the move assignment operator of test::Array2D<T> works.
+// Tests that the move assignment operator of test::Array2D<T> works.
 TEST(Array2D, MoveAssignment) {
   size_t width = 5, height = 5, channels = 3;
   test::Array2D<uint32_t> array_1{width, height, 0, channels};
@@ -88,7 +88,7 @@ TEST(Array2D, MoveAssignment) {
   // hicpp-invalid-access-moved)
 }
 
-/// Tests that test::Array2D<T>.at() works for set/get.
+// Tests that test::Array2D<T>.at() works for set/get.
 TEST(Array2D, At) {
   size_t width = 1, height = 1;
   test::Array2D<uint32_t> array{width, height};
@@ -103,7 +103,7 @@ TEST(Array2D, At) {
   EXPECT_EQ(const_array.at(0, 0)[0], 0);
 }
 
-/// Tests that test::Array2D<T>.set() works.
+// Tests that test::Array2D<T>.set() works.
 TEST(Array2D, Set) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
@@ -122,7 +122,7 @@ TEST(Array2D, Set) {
   EXPECT_EQ(array_1.at(1, 0)[0], 11);
 }
 
-/// Tests that test::Array2D<T>.set() works for TwoDimensional instances.
+// Tests that test::Array2D<T>.set() works for TwoDimensional instances.
 TEST(Array2D, SetWithTwoDimensional) {
   using ElementType = uint32_t;
 
@@ -183,7 +183,7 @@ TEST(Array2D, SetWithTwoDimensional) {
   EXPECT_EQ(array_2.at(4, 4)[0], 9);
 }
 
-/// Tests that test::Array2D<T>.fill() works.
+// Tests that test::Array2D<T>.fill() works.
 TEST(Array2D, Fill) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
@@ -204,7 +204,7 @@ TEST(Array2D, Fill) {
   }
 }
 
-/// Tests that test::Array2D<T>.fill(Generator<T> *) works.
+// Tests that test::Array2D<T>.fill(Generator<T> *) works.
 TEST(Array2D, FillWithGenerator) {
   using ElementType = uint32_t;
 
@@ -223,7 +223,7 @@ TEST(Array2D, FillWithGenerator) {
   EXPECT_EQ(array.at(1, 2)[0], 16);
 }
 
-/// Tests that EXPECT_EQ_ARRAY2D() macro works for fully-equal objects.
+// Tests that EXPECT_EQ_ARRAY2D() macro works for fully-equal objects.
 TEST(Array2D, ExpectEq_Equal) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
@@ -231,8 +231,8 @@ TEST(Array2D, ExpectEq_Equal) {
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
-/// Tests that EXPECT_EQ_ARRAY2D() macro works for equal objects where stride is
-/// different.
+// Tests that EXPECT_EQ_ARRAY2D() macro works for equal objects where stride is
+// different.
 TEST(Array2D, ExpectEq_Equal_StrideInvariant) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
@@ -240,8 +240,8 @@ TEST(Array2D, ExpectEq_Equal_StrideInvariant) {
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
-/// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where width
-/// is different.
+// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where width
+// is different.
 TEST(Array2D, ExpectEq_NotEqual_Width) {
   struct Test {
     static void test() {
@@ -255,8 +255,8 @@ TEST(Array2D, ExpectEq_NotEqual_Width) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in width.");
 }
 
-/// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where
-/// height is different.
+// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where
+// height is different.
 TEST(Array2D, ExpectEq_NotEqual_Height) {
   struct Test {
     static void test() {
@@ -270,8 +270,8 @@ TEST(Array2D, ExpectEq_NotEqual_Height) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in height.");
 }
 
-/// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where
-/// channels is different.
+// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where
+// channels is different.
 TEST(Array2D, ExpectEq_NotEqual_Channels) {
   struct Test {
     static void test() {
@@ -285,8 +285,8 @@ TEST(Array2D, ExpectEq_NotEqual_Channels) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in channels.");
 }
 
-/// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where data
-/// is different.
+// Tests that EXPECT_EQ_ARRAY2D() macro works for non-equal objects where data
+// is different.
 TEST(Array2D, ExpectEq_NotEqual_Data) {
   struct Test {
     static void test() {
@@ -301,7 +301,7 @@ TEST(Array2D, ExpectEq_NotEqual_Data) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch at (row=0, col=0): 0 vs 0x2a.");
 }
 
-/// Tests that EXPECT_NE_ARRAY2D() macro works for equal objects.
+// Tests that EXPECT_NE_ARRAY2D() macro works for equal objects.
 TEST(Array2D, ExpectNe_Equal) {
   struct Test {
     static void test() {
@@ -316,8 +316,8 @@ TEST(Array2D, ExpectNe_Equal) {
                        "Objects are equal, but expected to differ.");
 }
 
-/// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where width
-/// is different.
+// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where width
+// is different.
 TEST(Array2D, ExpectNe_NotEqual_Width) {
   struct Test {
     static void test() {
@@ -331,8 +331,8 @@ TEST(Array2D, ExpectNe_NotEqual_Width) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in width.");
 }
 
-/// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where
-/// height is different.
+// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where
+// height is different.
 TEST(Array2D, ExpectNe_NotEqual_Height) {
   struct Test {
     static void test() {
@@ -346,8 +346,8 @@ TEST(Array2D, ExpectNe_NotEqual_Height) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in height.");
 }
 
-/// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where
-/// channels is different.
+// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where
+// channels is different.
 TEST(Array2D, ExpectNe_NotEqual_Channels) {
   struct Test {
     static void test() {
@@ -361,8 +361,8 @@ TEST(Array2D, ExpectNe_NotEqual_Channels) {
   EXPECT_FATAL_FAILURE(Test::test(), "Mismatch in channels.");
 }
 
-/// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where there
-/// is a difference in data.
+// Tests that EXPECT_NE_ARRAY2D() macro works for non-equal objects where there
+// is a difference in data.
 TEST(Array2D, ExpectNe_NotEqual_Data) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
@@ -382,25 +382,25 @@ static void PaddingClobbered(size_t row, size_t offset) {
   ptr[row * stride + width * sizeof(ElementType) + offset] = 1;
 }
 
-/// Tests that clobbering the first padding byte in the first row is caught.
+// Tests that clobbering the first padding byte in the first row is caught.
 TEST(Array2D, PaddingClobbered_FirstRow_FirstByte) {
   EXPECT_FATAL_FAILURE(PaddingClobbered(0, 0),
                        "Padding byte was overwritten at (row=0, offset=20)");
 }
 
-/// Tests that clobbering the last padding byte in the first row is caught.
+// Tests that clobbering the last padding byte in the first row is caught.
 TEST(Array2D, PaddingClobbered_FirstRow_LastByte) {
   EXPECT_FATAL_FAILURE(PaddingClobbered(0, 9),
                        "Padding byte was overwritten at (row=0, offset=29)");
 }
 
-/// Tests that clobbering the first padding byte in the last row is caught.
+// Tests that clobbering the first padding byte in the last row is caught.
 TEST(Array2D, PaddingClobbered_LastRow_FirstByte) {
   EXPECT_FATAL_FAILURE(PaddingClobbered(1, 0),
                        "Padding byte was overwritten at (row=1, offset=20)");
 }
 
-/// Tests that clobbering the last padding byte in the last row is caught.
+// Tests that clobbering the last padding byte in the last row is caught.
 TEST(Array2D, PaddingClobbered_LastRow_LastByte) {
   EXPECT_FATAL_FAILURE(PaddingClobbered(1, 9),
                        "Padding byte was overwritten at (row=1, offset=29)");
@@ -421,7 +421,7 @@ static void Array2DCoverageAtInvalidArray() {
   array.at(0, 0);
 }
 
-/// Additional tests for coverage purposes.
+// Additional tests for coverage purposes.
 TEST(Array2D, Coverage) {
   EXPECT_FATAL_FAILURE(Array2DCoverageBadAlloc(),
                        "Failed to allocate memory of");

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -26,8 +26,8 @@ class ImplementsBorder : public test::Bordered {
   size_t bottom_;
 };  // end of class ImplementsBorder
 
-/// Tests that replicate border strategy works for one channel and one bordering
-/// element in every direction.
+// Tests that replicate border strategy works for one channel and one bordering
+// element in every direction.
 TEST(Border, Replicate_1Ch_1Element) {
   using ElementType = uint8_t;
 
@@ -53,8 +53,8 @@ TEST(Border, Replicate_1Ch_1Element) {
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
 
-/// Tests that replicate border strategy works for one channel and two bordering
-/// elements in every direction.
+// Tests that replicate border strategy works for one channel and two bordering
+// elements in every direction.
 TEST(Border, Replicate_1Ch_2Elements) {
   using ElementType = uint8_t;
 
@@ -82,8 +82,8 @@ TEST(Border, Replicate_1Ch_2Elements) {
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
 
-/// Tests that replicate border strategy works for two channels and one
-/// bordering element in every direction.
+// Tests that replicate border strategy works for two channels and one
+// bordering element in every direction.
 TEST(Border, Replicate_2Ch_1Element) {
   using ElementType = uint8_t;
 
@@ -109,8 +109,8 @@ TEST(Border, Replicate_2Ch_1Element) {
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
 
-/// Tests that replicate border strategy works for two channels and two
-/// bordering elements in every direction.
+// Tests that replicate border strategy works for two channels and two
+// bordering elements in every direction.
 TEST(Border, Replicate_2Ch_2Elements) {
   using ElementType = uint8_t;
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -21,7 +21,7 @@ INTRINSICCV_SATURATING_ABSDIFF(int32_t, s32);
 
 template <typename ElementType>
 class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
-  /// Expose constructor of base class.
+  // Expose constructor of base class.
   using BinaryOperationTest<ElementType>::BinaryOperationTest;
 
  protected:
@@ -29,7 +29,7 @@ class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
   using BinaryOperationTest<ElementType>::min;
   using BinaryOperationTest<ElementType>::max;
 
-  /// Calls the API-under-test in the appropriate way.
+  // Calls the API-under-test in the appropriate way.
   void call_api() override {
     saturating_absdiff<ElementType>()(
         this->inputs_[0].data(), this->inputs_[0].stride(),
@@ -38,7 +38,7 @@ class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
         this->height());
   }
 
-  /// Returns different test data for signed and unsigned element types.
+  // Returns different test data for signed and unsigned element types.
   const std::vector<Elements>& test_elements() override {
     if constexpr (std::is_unsigned_v<ElementType>) {
       static const std::vector<Elements> kTestElements = {
@@ -89,7 +89,7 @@ using ElementTypes =
     ::testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t>;
 TYPED_TEST_SUITE(SaturatingAbsDiff, ElementTypes);
 
-/// Tests \ref intrinsiccv_saturating_absdiff_<type> API.
+// Tests \ref intrinsiccv_saturating_absdiff_<type> API.
 TYPED_TEST(SaturatingAbsDiff, API) {
   // Test without padding.
   SaturatingAbsDiffTest<TypeParam>{}.test();
