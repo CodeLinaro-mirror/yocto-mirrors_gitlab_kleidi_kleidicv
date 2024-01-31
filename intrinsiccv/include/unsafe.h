@@ -2,16 +2,33 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// -----------------------------------------------------------------------------
+// Conform to SEI CERT* C Coding Standard MSC24-C: Do not use deprecated or
+// obsolescent functions
+// * CERT is registered in the U.S. Patent and Trademark Office by Carnegie
+// Mellon University.
+// -----------------------------------------------------------------------------
+
 #ifndef INTRINSICCV_INCLUDE_UNSAFE_H_
 #define INTRINSICCV_INCLUDE_UNSAFE_H_
 
-// Inclusion of standard library headers.
+// Inclusion of standard library headers where the banned functions are
+// declared.
 #ifdef __cplusplus
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <cwchar>
+
+// Standard library headers inlcude a lot of headers in the include chain.
+// Depending on the toolchain and the environment some of these included headers
+// migth use banned functions in inline functions. To not trigger false positive
+// checks some standard headers used in the library are included before banning.
+// The list is extended if another used header cause a false positive check in
+// one of the tested environments.
+#include <memory>
+
 #else  // __cplusplus
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,13 +36,6 @@
 #include <time.h>
 #include <wchar.h>
 #endif  // __cplusplus
-
-// -----------------------------------------------------------------------------
-// Conform to SEI CERT* C Coding Standard MSC24-C: Do not use deprecated or
-// obsolescent functions
-// * CERT is registered in the U.S. Patent and Trademark Office by Carnegie
-// Mellon University.
-// -----------------------------------------------------------------------------
 
 #ifdef __GNUC__
 
