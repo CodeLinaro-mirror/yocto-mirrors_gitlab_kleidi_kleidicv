@@ -612,19 +612,83 @@ intrinsiccv_error_t intrinsiccv_threshold_binary_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, uint8_t threshold, uint8_t value);
 
+/// Creates a morphology context according to the parameters.
+///
+/// Before a \ref intrinsiccv_dilate_u8 "dilate" or \ref intrinsiccv_erode_u8
+/// "erode" operation, this initialization is needed. After the operation is
+/// finished, the context needs to be released using \ref
+/// intrinsiccv_morphology_release.
+///
+/// @param context       Pointer where to return the created context's address.
+/// @param kernel        Width and height of the rectangle
+/// @param anchor        Location in the kernel which is aligned to the actual
+///                      point in the source data
+/// @param border_type   Way of handling the border.
+/// @param border_values Border values if the border_type is
+///                      ::INTRINSICCV_BORDER_TYPE_CONSTANT.
+/// @param channels      Number of elements for each pixel.
+/// @param iterations    Number of times to do the morphology operation.
+/// @param type_size     Element size in bytes.
+/// @param image         Image dimensions.
+///
 intrinsiccv_error_t intrinsiccv_morphology_create(
     intrinsiccv_morphology_context_t **context, intrinsiccv_rectangle_t kernel,
     intrinsiccv_point_t anchor, intrinsiccv_border_type_t border_type,
     intrinsiccv_border_values_t border_values, size_t channels,
     size_t iterations, size_t type_size, intrinsiccv_rectangle_t image);
 
+/// Releases a morphology context that was previously created using \ref
+/// intrinsiccv_morphology_create.
+///
+/// @param context      Pointer to morphology context. Must not be nullptr.
+///
 intrinsiccv_error_t intrinsiccv_morphology_release(
     intrinsiccv_morphology_context_t *context);
 
+/// Calculates maximum (dilate) or minimum (erode) element value of `src`
+/// values using a given kernel which has a rectangular shape, and puts the
+/// result into `dst`.
+///
+/// Width and height are the same for the source and the destination.
+/// The kernel has an anchor point, it is usually the center of the kernel.
+/// The algorithm takes a rectangle from the source data using the kernel and
+/// the anchor, and calculates the max/min value in that rectangle.
+///
+/// Example for dilate:
+/// ```
+///    [ 2, 8, 9, 3, 6 ]  kernel: (3, 3)        [ 8, 9, 9, 9, 6 ]
+///    [ 7, 2, 4, 1, 5 ]  anchor: (1, 1)     -> [ 7, 9, 9, 9, 8 ]
+///    [ 4, 3, 6, 8, 1 ]  border: replicate     [ 7, 7, 8, 8, 8 ]
+///    [ 1, 2, 5, 3, 7 ]                        [ 4, 6, 8, 8, 8 ]
+/// ```
+/// Usage:
+///
+/// Before using this function, a context must be created using
+/// \ref intrinsiccv_morphology_create, and after finished, it has to be
+/// released using intrinsiccv_morphology_release.
+///
+/// Note: from border types only these are supported: \n
+///                       - \ref INTRINSICCV_BORDER_TYPE_REPLICATE \n
+///                       - \ref INTRINSICCV_BORDER_TYPE_CONSTANT
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes between the row first elements for
+///                     the source data. Must not be less than
+///                     width * (element size in bytes).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data. Must
+///                     not be less than width * (element size in bytes).
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+/// @param context      Pointer to morphology context.
+///
 intrinsiccv_error_t intrinsiccv_dilate_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, intrinsiccv_morphology_context_t *context);
 
+/// @copydoc intrinsiccv_dilate_u8
+///
 intrinsiccv_error_t intrinsiccv_erode_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, intrinsiccv_morphology_context_t *context);

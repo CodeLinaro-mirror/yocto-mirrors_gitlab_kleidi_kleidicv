@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-/// @file
-/// @brief C-style enums and structs
-///
+/// @file ctypes.h
+/// Helper type definitions
 
 #ifndef INTRINSICCV_CTYPES_H
 #define INTRINSICCV_CTYPES_H
@@ -19,7 +18,7 @@
 
 #include "intrinsiccv/config.h"
 
-/// IntrinsicCV error types
+/// Error values reported by IntrinsicCV
 typedef enum INTRINSICCV_NODISCARD {
   /// Success.
   INTRINSICCV_OK = 0,
@@ -74,6 +73,7 @@ typedef enum {
   INTRINSICCV_BORDER_TYPE_NONE,
 } intrinsiccv_border_type_t;
 
+/// Internal structure where morphology operations store their state
 typedef struct intrinsiccv_morphology_context_t_
     intrinsiccv_morphology_context_t;
 
