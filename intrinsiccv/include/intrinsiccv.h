@@ -754,6 +754,31 @@ intrinsiccv_error_t intrinsiccv_split(const void *src_data, size_t src_stride,
                                       size_t height, size_t channels,
                                       size_t element_size);
 
+/// Matrix transpose operation.
+/// Inplace transpose ('src == dst') is only supported for
+/// square matrixes (`src_width == src_height`).
+///
+/// Example for `src[4,3]` to `dst[3,4]`:
+/// ```
+/// | 0 | 2 | 2 | 2 |    | 0 | 1 | 1 |
+/// | 1 | 0 | 2 | 2 | -> | 2 | 0 | 1 |
+/// | 1 | 1 | 0 | 0 |    | 2 | 2 | 0 |
+///                      | 2 | 2 | 2 |
+/// ```
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must not be less than width * element_size.
+/// @param dst          Pointer to the destination data. Must be non-null.
+///                     Can be the same as source data for inplace operation.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must not be less than height * element_size.
+/// @param src_width    Number of elements in a row.
+/// @param src_height   Number of rows in the data.
+/// @param element_size Size of one element in bytes.
+///
 intrinsiccv_error_t intrinsiccv_transpose(const void *src, size_t src_stride,
                                           void *dst, size_t dst_stride,
                                           size_t src_width, size_t src_height,
