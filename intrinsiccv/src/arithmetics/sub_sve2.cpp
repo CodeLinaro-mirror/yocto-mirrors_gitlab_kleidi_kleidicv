@@ -26,6 +26,8 @@ intrinsiccv_error_t saturating_sub(const T *src_a, size_t src_a_stride,
                                    const T *src_b, size_t src_b_stride, T *dst,
                                    size_t dst_stride, size_t width,
                                    size_t height) {
+  CHECK_POINTERS(src_a, src_b, dst);
+
   SaturatingSub<T> operation;
   Rectangle rect{width, height};
   Rows<const T> src_a_rows{src_a, src_a_stride};

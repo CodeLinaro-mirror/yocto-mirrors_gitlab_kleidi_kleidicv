@@ -108,6 +108,7 @@ INTRINSICCV_TARGET_FN_ATTRS
 intrinsiccv_error_t gray_to_rgb_u8(const uint8_t *src, size_t src_stride,
                                    uint8_t *dst, size_t dst_stride,
                                    size_t width, size_t height) {
+  CHECK_POINTERS(src, dst);
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
@@ -120,6 +121,7 @@ INTRINSICCV_TARGET_FN_ATTRS
 intrinsiccv_error_t gray_to_rgba_u8(const uint8_t *src, size_t src_stride,
                                     uint8_t *dst, size_t dst_stride,
                                     size_t width, size_t height) {
+  CHECK_POINTERS(src, dst);
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};

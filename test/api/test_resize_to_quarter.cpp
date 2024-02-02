@@ -211,3 +211,10 @@ TEST(ResizeToQuarter, OddDimsTruncated) {
   size_t dst_height = src_height / 2;
   resize_test.execute_test(src_width, src_height, dst_width, dst_height);
 }
+
+TEST(ResizeToQuarter, NullPointer) {
+  const uint8_t src[4] = {};
+  uint8_t dst[1];
+  test::test_null_args(intrinsiccv_resize_to_quarter_u8, src, 2, 2, 2, dst, 1,
+                       1, 1);
+}

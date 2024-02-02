@@ -54,6 +54,8 @@ extern "C" {
 
 intrinsiccv_error_t intrinsiccv_morphology_create(
     intrinsiccv_morphology_params_t *params, intrinsiccv_rectangle_t image) {
+  CHECK_POINTERS(params);
+
   auto workspace =
       MorphologyWorkspace::create(Rectangle{image}, Rectangle{params->kernel},
                                   Margin{params->kernel, params->anchor},
@@ -68,9 +70,8 @@ intrinsiccv_error_t intrinsiccv_morphology_create(
 
 intrinsiccv_error_t intrinsiccv_morphology_release(
     intrinsiccv_morphology_params_t *params) {
-  if (!params->data) {
-    return INTRINSICCV_ERROR_NULL_POINTER;
-  }
+  CHECK_POINTERS(params);
+  CHECK_POINTERS(params->data);
 
   // Deliberately create and immediately destroy a unique_ptr to delete the
   // workspace.

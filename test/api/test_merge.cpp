@@ -134,8 +134,8 @@ TYPED_TEST(Merge, FourChannels) {
   MergeTest<TypeParam, 4>().with_padding(test::Options::vector_length()).test();
 }
 
-TYPED_TEST(Merge, OneChannelNotImplemented) {
-  test_not_implemented<TypeParam, 1>();
+TYPED_TEST(Merge, OneChannelOutOfRange) {
+  test_not_implemented<TypeParam, 1>(INTRINSICCV_ERROR_RANGE);
 }
 
 TYPED_TEST(Merge, FiveChannelsNotImplemented) {
@@ -143,3 +143,27 @@ TYPED_TEST(Merge, FiveChannelsNotImplemented) {
 }
 
 TEST(Merge128, NotImplemented) { test_not_implemented<__uint128_t, 2>(); }
+
+TYPED_TEST(Merge, NullPointer) {
+  const size_t kChannels = 4;
+  TypeParam src_arrays[kChannels];
+  TypeParam dst[kChannels];
+  size_t src_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam),
+                                   sizeof(TypeParam), sizeof(TypeParam)};
+  const void* srcs[kChannels] = {src_arrays, src_arrays + 1, src_arrays + 2,
+                                 src_arrays + 3};
+  size_t dst_stride = kChannels * sizeof(TypeParam);
+  test::test_null_args(intrinsiccv_merge, srcs, src_strides, dst, dst_stride, 1,
+                       1, kChannels, sizeof(TypeParam));
+
+  for (int channels = 2; channels <= 4; ++channels) {
+    for (int null_src = 0; null_src < channels; ++null_src) {
+      for (int i = 0; i < channels; ++i) {
+        srcs[i] = (i == null_src) ? nullptr : src_arrays + i;
+      }
+      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+                intrinsiccv_merge(srcs, src_strides, dst, dst_stride, 1, 1,
+                                  channels, sizeof(TypeParam)));
+    }
+  }
+}

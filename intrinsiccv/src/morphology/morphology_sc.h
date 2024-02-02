@@ -448,10 +448,13 @@ class DilateOperation final {
 };  // end of class DilateOperation<ScalarType>
 
 template <typename T>
-static inline intrinsiccv_error_t dilate_sc(
+static intrinsiccv_error_t dilate_sc(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, const intrinsiccv_morphology_params_t *params)
     INTRINSICCV_STREAMING_COMPATIBLE {
+  CHECK_POINTERS(src, dst, params);
+  CHECK_POINTERS(params->impl, params->data);
+
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
   Rows<const T> src_rows{src, src_stride, params->channels};
@@ -503,10 +506,13 @@ class ErodeOperation final {
 };  // end of class ErodeOperation<ScalarType>
 
 template <typename T>
-static inline intrinsiccv_error_t erode_sc(
+static intrinsiccv_error_t erode_sc(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, const intrinsiccv_morphology_params_t *params)
     INTRINSICCV_STREAMING_COMPATIBLE {
+  CHECK_POINTERS(src, dst, params);
+  CHECK_POINTERS(params->impl, params->data);
+
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
   Rows<const T> src_rows{src, src_stride, params->channels};

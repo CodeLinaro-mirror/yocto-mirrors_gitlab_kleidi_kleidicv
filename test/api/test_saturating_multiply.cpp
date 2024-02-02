@@ -97,4 +97,8 @@ TYPED_TEST(SaturatingMultiply, API) {
   SaturatingMultiplyTest<TypeParam>{}
       .with_padding(test::Options::vector_length())
       .test();
+
+  TypeParam src[1], dst[1];
+  test::test_null_args(saturating_multiply<TypeParam>(), src, sizeof(TypeParam),
+                       src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1);
 }

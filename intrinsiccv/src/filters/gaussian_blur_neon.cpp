@@ -150,6 +150,9 @@ intrinsiccv_error_t discrete_gaussian_blur(
     const intrinsiccv_filter_params_t *params) {
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
+  CHECK_POINTERS(src, dst, params);
+  CHECK_POINTERS(params->workspace);
+
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};

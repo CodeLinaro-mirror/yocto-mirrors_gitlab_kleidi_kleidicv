@@ -197,8 +197,9 @@ class MinMaxTest {
     if (p_max) {
       *p_max = std::numeric_limits<ElementType>::min();
     }
-    min_max<ElementType>()(source.data(), source.stride(), width(), height(),
-                           p_min, p_max);
+    EXPECT_EQ(INTRINSICCV_OK,
+              min_max<ElementType>()(source.data(), source.stride(), width(),
+                                     height(), p_min, p_max));
     if (p_min) {
       EXPECT_EQ(*p_min, expected_min);
     }
@@ -215,7 +216,13 @@ class MinMaxTest {
 
       setup(source, testData);
 
-      ElementType actual_min, actual_max;
+      ElementType actual_min = 2, actual_max = 1;
+      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+                min_max<ElementType>()(nullptr, source.stride(), width(),
+                                       height(), &actual_min, &actual_max));
+      EXPECT_EQ(2, actual_min);
+      EXPECT_EQ(1, actual_max);
+
       one_test_call(source, nullptr, nullptr, 0, 0);
       one_test_call(source, &actual_min, nullptr, testData.expected_min, 0);
       one_test_call(source, nullptr, &actual_max, 0, testData.expected_max);
@@ -261,7 +268,14 @@ class MinMaxLocTest : public MinMaxTest<ElementType, Padding> {
 
       setup(source, testData);
 
-      size_t min_offset = 0, max_offset = 0;
+      size_t min_offset = 2, max_offset = 1;
+
+      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+                min_max_loc<ElementType>()(nullptr, source.stride(), width(),
+                                           height(), &min_offset, &max_offset));
+      EXPECT_EQ(2, min_offset);
+      EXPECT_EQ(1, max_offset);
+
       one_test_call(source, nullptr, nullptr, 0, 0);
       one_test_call(source, &min_offset, nullptr, testData.expected_min_offset,
                     0);

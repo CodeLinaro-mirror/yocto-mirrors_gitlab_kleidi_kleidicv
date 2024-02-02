@@ -91,4 +91,8 @@ TYPED_TEST(SaturatingSub, API) {
   SaturatingSubTest<TypeParam>{}
       .with_padding(test::Options::vector_length())
       .test();
+
+  TypeParam src[1], dst[1];
+  test::test_null_args(saturating_sub<TypeParam>(), src, sizeof(TypeParam), src,
+                       sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1);
 }

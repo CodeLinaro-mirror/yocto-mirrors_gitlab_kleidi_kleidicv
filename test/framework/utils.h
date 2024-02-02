@@ -10,8 +10,10 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <tuple>
 #include <type_traits>
 
+#include "ctypes.h"
 #include "framework/abstract.h"
 #include "framework/types.h"
 
@@ -83,6 +85,58 @@ void dump(const TwoDimensional<ElementType> *elements);
 // Returns an array of default tested layouts.
 std::array<test::ArrayLayout, 12> default_array_layouts(size_t min_width,
                                                         size_t min_height);
+
+namespace internal {
+template <typename Function, typename Tuple>
+class NullPointerTester {
+  // Set the given argument to null and test that the function diagnoses the
+  // error correctly.
+  template <typename ArgType, size_t ArgIndex>
+  static typename std::enable_if<std::is_pointer_v<ArgType>>::type
+  test_with_null_arg(Function f, Tuple t) {
+    std::get<ArgIndex>(t) = nullptr;
+    EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER, std::apply(f, t));
+  }
+
+  // Skip arguments that aren't pointers.
+  template <typename ArgType, size_t ArgIndex>
+  static typename std::enable_if<!std::is_pointer_v<ArgType>>::type
+  test_with_null_arg(Function, const Tuple &) {}
+
+ public:
+  template <int ArgIndex>
+  static void test(Function f, const Tuple &t) {
+    // Recurse to test earlier arguments first
+    test<ArgIndex - 1>(f, t);
+    using ArgType = typename std::tuple_element_t<ArgIndex, Tuple>;
+    test_with_null_arg<ArgType, ArgIndex>(f, t);
+  }
+
+  // Terminate recursion
+  template <>
+  static void test<-1>(Function, const Tuple &) {}
+};
+
+template <typename Func>
+class ParamsExtractor;
+template <typename Ret, typename... Params>
+class ParamsExtractor<Ret (*)(Params...)> {
+ public:
+  using Tuple = std::tuple<Params...>;
+};
+}  // namespace internal
+
+// Tests that the function returns INTRINSICCV_ERROR_NULL_POINTER if any of its
+// pointer arguments are null.
+template <typename Function, typename... Args>
+void test_null_args(Function f, Args... args) {
+  // Ensure that the function parameter types are used otherwise arguments may
+  // not be recognised as pointers.
+  using Tuple = typename internal::ParamsExtractor<Function>::Tuple;
+  constexpr int LastArgIndex = std::tuple_size_v<Tuple> - 1;
+  using Tester = internal::NullPointerTester<Function, Tuple>;
+  Tester::template test<LastArgIndex>(f, Tuple(args...));
+}
 
 }  // namespace test
 

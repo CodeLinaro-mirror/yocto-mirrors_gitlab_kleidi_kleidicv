@@ -13,6 +13,7 @@ extern "C" {
 
 intrinsiccv_error_t intrinsiccv_filter_create(
     intrinsiccv_filter_params_t *params, intrinsiccv_rectangle_t image) {
+  CHECK_POINTERS(params);
   auto workspace = SeparableFilterWorkspace::create(
       Rectangle{image}, params->channels, params->type_size);
   if (!workspace) {
@@ -25,9 +26,8 @@ intrinsiccv_error_t intrinsiccv_filter_create(
 
 intrinsiccv_error_t intrinsiccv_filter_release(
     intrinsiccv_filter_params_t *params) {
-  if (!params->workspace) {
-    return INTRINSICCV_ERROR_NULL_POINTER;
-  }
+  CHECK_POINTERS(params);
+  CHECK_POINTERS(params->workspace);
 
   // Deliberately create and immediately destroy a unique_ptr to delete the
   // workspace.

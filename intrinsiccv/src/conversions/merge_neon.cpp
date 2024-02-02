@@ -371,6 +371,12 @@ template <typename ScalarType>
 intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
                           void *dst, size_t dst_stride, size_t width,
                           size_t height, size_t channels) {
+  if (channels < 2) {
+    return INTRINSICCV_ERROR_RANGE;
+  }
+  CHECK_POINTERS(srcs, src_strides, dst);
+  CHECK_POINTERS(srcs[0], srcs[1]);
+
   Rectangle rect{width, height};
   Rows<const ScalarType> src_a_rows{srcs[0], src_strides[0]};
   Rows<const ScalarType> src_b_rows{srcs[1], src_strides[1]};
@@ -384,6 +390,7 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
     } break;
 
     case 3: {
+      CHECK_POINTERS(srcs[2]);
       Merge3<ScalarType> operation;
       Rows<const ScalarType> src_c_rows{srcs[2], src_strides[2]};
       apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
@@ -391,6 +398,7 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
     } break;
 
     case 4: {
+      CHECK_POINTERS(srcs[2], srcs[3]);
       Merge4<ScalarType> operation;
       Rows<const ScalarType> src_c_rows{srcs[2], src_strides[2]};
       Rows<const ScalarType> src_d_rows{srcs[3], src_strides[3]};

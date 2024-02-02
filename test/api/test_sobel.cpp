@@ -88,6 +88,11 @@ TYPED_TEST(Sobel, Horizontal3x3) {
   mask.set(1, 0, {-2, 0, 2});
   mask.set(2, 0, {-1, 0, 1});
   Sobel3x3Test<KernelTestParams>{}.test(mask);
+
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
+  test::test_null_args(sobel_3x3_horizontal<TypeParam>(), src, sizeof(src), dst,
+                       sizeof(dst), 1, 1, 1);
 }
 
 // Tests sobel_3x3_vertical_<output_type>_<input_type> API.
@@ -101,4 +106,9 @@ TYPED_TEST(Sobel, Vertical3x3) {
   mask.set(2, 0, { 1,  2,  1});
   // clang-format on
   Sobel3x3Test<KernelTestParams>{}.test(mask);
+
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
+  test::test_null_args(sobel_3x3_vertical<TypeParam>(), src, sizeof(src), dst,
+                       sizeof(dst), 1, 1, 1);
 }

@@ -256,6 +256,12 @@ template <typename ScalarType>
 intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
                           void **dst_data, const size_t *dst_strides,
                           size_t width, size_t height, size_t channels) {
+  if (channels < 2) {
+    return INTRINSICCV_ERROR_RANGE;
+  }
+  CHECK_POINTERS(src_data, dst_data, dst_strides);
+  CHECK_POINTERS(dst_data[0], dst_data[1]);
+
   Rectangle rect{width, height};
   ScalarType *dst0 = reinterpret_cast<ScalarType *>(dst_data[0]),
              *dst1 = reinterpret_cast<ScalarType *>(dst_data[1]);
@@ -270,6 +276,7 @@ intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
       apply_operation_by_rows(operation, rect, src_rows, dst_rows0, dst_rows1);
     } break;
     case 3: {
+      CHECK_POINTERS(dst_data[2]);
       ScalarType *dst2 = reinterpret_cast<ScalarType *>(dst_data[2]);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};
       Split3<ScalarType> operation;
@@ -277,6 +284,7 @@ intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
                               dst_rows2);
     } break;
     case 4: {
+      CHECK_POINTERS(dst_data[2], dst_data[3]);
       ScalarType *dst2 = reinterpret_cast<ScalarType *>(dst_data[2]),
                  *dst3 = reinterpret_cast<ScalarType *>(dst_data[3]);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};

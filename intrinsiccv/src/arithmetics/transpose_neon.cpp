@@ -215,6 +215,8 @@ INTRINSICCV_TARGET_FN_ATTRS
 intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
                               size_t dst_stride, size_t src_width,
                               size_t src_height, size_t element_size) {
+  CHECK_POINTERS(src, dst);
+
   bool inplace = false;
 
   if (src == dst) {

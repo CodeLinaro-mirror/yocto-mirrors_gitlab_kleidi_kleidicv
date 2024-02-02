@@ -91,6 +91,9 @@ intrinsiccv_error_t discrete_gaussian_blur(
     INTRINSICCV_STREAMING_COMPATIBLE {
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
+  CHECK_POINTERS(src, dst, params);
+  CHECK_POINTERS(params->workspace);
+
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};

@@ -133,8 +133,8 @@ TYPED_TEST(Split, FourChannels) {
   SplitTest<TypeParam, 4>().with_padding(test::Options::vector_length()).test();
 }
 
-TYPED_TEST(Split, OneChannelNotImplemented) {
-  test_not_implemented<TypeParam, 1>();
+TYPED_TEST(Split, OneChannelOutOfRange) {
+  test_not_implemented<TypeParam, 1>(INTRINSICCV_ERROR_RANGE);
 }
 
 TYPED_TEST(Split, FiveChannelsNotImplemented) {
@@ -142,3 +142,29 @@ TYPED_TEST(Split, FiveChannelsNotImplemented) {
 }
 
 TEST(Split128, NotImplemented) { test_not_implemented<__uint128_t, 2>(); }
+
+TYPED_TEST(Split, NullPointer) {
+  const size_t kChannels = 4;
+
+  TypeParam src_data[kChannels];
+  size_t src_stride = kChannels * sizeof(TypeParam);
+  TypeParam dst_arrays[kChannels];
+  void* dst_data[kChannels] = {dst_arrays, dst_arrays + 1, dst_arrays + 2,
+                               dst_arrays + 3};
+  size_t dst_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam),
+                                   sizeof(TypeParam), sizeof(TypeParam)};
+
+  test::test_null_args(intrinsiccv_split, src_data, src_stride, dst_data,
+                       dst_strides, 1, 1, kChannels, sizeof(TypeParam));
+
+  for (int channels = 2; channels <= 4; ++channels) {
+    for (int null_src = 0; null_src < channels; ++null_src) {
+      for (int i = 0; i < channels; ++i) {
+        dst_data[i] = (i == null_src) ? nullptr : dst_arrays + i;
+      }
+      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+                intrinsiccv_split(src_data, src_stride, dst_data, dst_strides,
+                                  1, 1, channels, sizeof(TypeParam)));
+    }
+  }
+}

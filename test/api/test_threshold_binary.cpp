@@ -119,3 +119,10 @@ TYPED_TEST(ThresholdBinary, TestZero) {
 TYPED_TEST(ThresholdBinary, TestMax) {
   ThresholdBinaryTestMax<TypeParam>{}.test();
 }
+
+TYPED_TEST(ThresholdBinary, NullPointer) {
+  const TypeParam src[1] = {};
+  TypeParam dst[1];
+  test::test_null_args(intrinsiccv_threshold_binary_u8, src, sizeof(TypeParam),
+                       dst, sizeof(TypeParam), 1, 1, 1, 1);
+}

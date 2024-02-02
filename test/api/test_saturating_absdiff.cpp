@@ -97,4 +97,8 @@ TYPED_TEST(SaturatingAbsDiff, API) {
   SaturatingAbsDiffTest<TypeParam>{}
       .with_padding(test::Options::vector_length())
       .test();
+
+  TypeParam src[1], dst[1];
+  test::test_null_args(saturating_absdiff<TypeParam>(), src, sizeof(TypeParam),
+                       src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1);
 }

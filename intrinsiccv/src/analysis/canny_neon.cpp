@@ -468,6 +468,8 @@ static void perform_hysteresis(StrongEdgeStack &strong_edge_pixels,
 extern "C" INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t intrinsiccv_canny_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, double low_threshold, double high_threshold) {
+  CHECK_POINTERS(src, dst);
+
   Rectangle dst_rect{width, height};
 
   // Allocate all temporary buffers in advance.

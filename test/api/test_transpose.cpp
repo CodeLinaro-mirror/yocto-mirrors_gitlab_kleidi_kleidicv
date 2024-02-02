@@ -122,3 +122,9 @@ TYPED_TEST(Transpose, VectorInplaceWithPadding) {
   TestTranspose<TypeParam, true> test(1);
   test.vector_test();
 }
+
+TYPED_TEST(Transpose, NullPointer) {
+  TypeParam src[1] = {}, dst[1];
+  test::test_null_args(intrinsiccv_transpose, src, sizeof(TypeParam), dst,
+                       sizeof(TypeParam), 1, 1, sizeof(TypeParam));
+}

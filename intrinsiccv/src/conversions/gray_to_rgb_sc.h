@@ -199,6 +199,7 @@ class GrayToRGBA final :
 INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
+  CHECK_POINTERS(src, dst);
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
@@ -215,6 +216,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
 INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
+  CHECK_POINTERS(src, dst);
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};

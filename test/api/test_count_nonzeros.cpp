@@ -110,3 +110,10 @@ TYPED_TEST(CountNonZeros, AllNonZerosPadded) {
   CountNonZerosTest<TypeParam, TestDataAllNonZeros>{}.test(
       test::Options::vector_length());
 }
+
+TYPED_TEST(CountNonZeros, NullPointer) {
+  TypeParam src[1];
+  size_t count = 0;
+  test::test_null_args(count_nonzeros<TypeParam>(), src, sizeof(TypeParam), 1,
+                       1, &count);
+}

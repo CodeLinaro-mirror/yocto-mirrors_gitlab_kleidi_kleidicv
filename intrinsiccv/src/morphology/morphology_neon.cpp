@@ -490,6 +490,9 @@ template <typename T>
 intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
                            size_t dst_stride, size_t width, size_t height,
                            const intrinsiccv_morphology_params_t *params) {
+  CHECK_POINTERS(src, dst, params);
+  CHECK_POINTERS(params->impl, params->data);
+
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
   Rows<const T> src_rows{src, src_stride, params->channels};
@@ -541,6 +544,9 @@ template <typename T>
 intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
                           const intrinsiccv_morphology_params_t *params) {
+  CHECK_POINTERS(src, dst, params);
+  CHECK_POINTERS(params->impl, params->data);
+
   Rectangle rect{width, height};
   Rectangle kernel{params->kernel};
   Rows<const T> src_rows{src, src_stride, params->channels};

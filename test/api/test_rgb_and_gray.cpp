@@ -33,6 +33,9 @@ class GrayTest final {
 
     ASSERT_EQ(INTRINSICCV_OK, err);
     EXPECT_EQ_ARRAY2D(actual, expected);
+
+    test::test_null_args(impl, source.data(), source.stride(), actual.data(),
+                         actual.stride(), logical_width, actual.height());
   }
 
  private:
@@ -85,6 +88,9 @@ class ColourTest final {
 
     ASSERT_EQ(INTRINSICCV_OK, err);
     EXPECT_EQ_ARRAY2D(actual, expected);
+
+    test::test_null_args(impl, source.data(), source.stride(), actual.data(),
+                         actual.stride(), logical_width, actual.height());
   }
 
  private:

@@ -62,6 +62,11 @@ class YuvTest final {
 
     ASSERT_EQ(INTRINSICCV_OK, err);
     EXPECT_EQ_ARRAY2D(expected, actual);
+
+    test::test_null_args(impl, input_y.data(), input_y.stride(),
+                         input_uv.data(), input_uv.stride(), actual.data(),
+                         actual.stride(), expected.width() / channel_number_,
+                         expected.height(), is_nv21);
   }
 
   void calculate_expected(test::Array2D<uint8_t> &y_arr,

@@ -351,6 +351,17 @@ class LoopUnroll2 final {
   bool try_avoid_tail_loop_;
 };  // end of class LoopUnroll2
 
+// Check whether any of the arguments are null pointers.
+template <typename... Pointers>
+bool any_null(Pointers... pointers) {
+  return (... || (pointers == nullptr));
+}
+
+#define CHECK_POINTERS(...)                \
+  if (any_null(__VA_ARGS__)) {             \
+    return INTRINSICCV_ERROR_NULL_POINTER; \
+  }
+
 }  // namespace intrinsiccv
 
 #endif  // INTRINSICCV_UTILS_H

@@ -67,9 +67,7 @@ intrinsiccv_error_t intrinsiccv_count_nonzeros_u8(const uint8_t *src,
                                                   size_t src_stride,
                                                   size_t width, size_t height,
                                                   size_t *count) {
-  if (count == nullptr) {
-    return INTRINSICCV_ERROR_NULL_POINTER;
-  }
+  CHECK_POINTERS(src, count);
   *count = count_nonzeros<uint8_t>(src, src_stride, width, height);
   return INTRINSICCV_OK;
 }
