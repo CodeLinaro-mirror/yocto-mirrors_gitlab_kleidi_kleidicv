@@ -656,8 +656,8 @@ class RowsOverUniquePtr {
       : rect_{get_rectangle(rect, margin)},
         data_{std::unique_ptr<T[]>(new(std::nothrow) T[rect_.area()])} {
     if (!data_) {
-      // FIXME: add error handling
-      __builtin_trap();
+      // Code that uses this class is required to check that data() is valid.
+      return;
     }
 
     rows_ = Rows<T>{&data_[0], rect_.width() * sizeof(T)};
