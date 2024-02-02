@@ -89,35 +89,56 @@ class SplitTest final {
   size_t padding_{0};
 };
 
+template <typename ElementType, int kChannels>
+static void test_not_implemented(
+    intrinsiccv_error_t expected = INTRINSICCV_ERROR_NOT_IMPLEMENTED) {
+  const size_t width = 1, height = 1;
+
+  ElementType src_data[kChannels * width * height] = {234};
+  size_t src_stride = kChannels * width * sizeof(ElementType);
+  ElementType dst_arrays[kChannels][width * height] = {{123}};
+  void* dst_data[kChannels];
+  size_t dst_strides[kChannels];
+  for (int i = 0; i < kChannels; ++i) {
+    dst_data[i] = dst_arrays[i];
+    dst_strides[i] = width * sizeof(ElementType);
+  }
+
+  ASSERT_EQ(expected,
+            intrinsiccv_split(src_data, src_stride, dst_data, dst_strides,
+                              width, height, kChannels, sizeof(ElementType)));
+
+  // Destination should not be modified.
+  EXPECT_EQ(123, dst_arrays[0][0]);
+}
+
 template <typename ElementType>
-class Split2 : public testing::Test {};
+class Split : public testing::Test {};
 
 using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
-TYPED_TEST_SUITE(Split2, ElementTypes);
+TYPED_TEST_SUITE(Split, ElementTypes);
 
-TYPED_TEST(Split2, API) {
+TYPED_TEST(Split, TwoChannels) {
   SplitTest<TypeParam, 2>().test();
   SplitTest<TypeParam, 2>().with_padding(test::Options::vector_length()).test();
 }
 
-template <typename ElementType>
-class Split3 : public testing::Test {};
-
-using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
-TYPED_TEST_SUITE(Split3, ElementTypes);
-
-TYPED_TEST(Split3, API) {
+TYPED_TEST(Split, ThreeChannels) {
   SplitTest<TypeParam, 3>().test();
   SplitTest<TypeParam, 3>().with_padding(test::Options::vector_length()).test();
 }
 
-template <typename ElementType>
-class Split4 : public testing::Test {};
-
-using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
-TYPED_TEST_SUITE(Split4, ElementTypes);
-
-TYPED_TEST(Split4, API) {
+TYPED_TEST(Split, FourChannels) {
   SplitTest<TypeParam, 4>().test();
   SplitTest<TypeParam, 4>().with_padding(test::Options::vector_length()).test();
 }
+
+TYPED_TEST(Split, OneChannelNotImplemented) {
+  test_not_implemented<TypeParam, 1>();
+}
+
+TYPED_TEST(Split, FiveChannelsNotImplemented) {
+  test_not_implemented<TypeParam, 5>();
+}
+
+TEST(Split128, NotImplemented) { test_not_implemented<__uint128_t, 2>(); }

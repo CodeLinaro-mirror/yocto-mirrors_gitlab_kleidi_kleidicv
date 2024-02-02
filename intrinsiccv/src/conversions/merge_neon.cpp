@@ -377,7 +377,6 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
 
   switch (channels) {
-    default:
     case 2: {
       Merge2<ScalarType> operation;
       apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
@@ -398,6 +397,9 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
       apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
                               src_c_rows, src_d_rows, dst_rows);
     } break;
+
+    default:
+      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
   }
   return INTRINSICCV_OK;
 }
@@ -407,7 +409,6 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
                           void *dst, size_t dst_stride, size_t width,
                           size_t height, size_t channels, size_t element_size) {
   switch (element_size) {
-    default:
     case sizeof(uint8_t):
       return merge<uint8_t>(srcs, src_strides, dst, dst_stride, width, height,
                             channels);
@@ -423,6 +424,9 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
     case sizeof(uint64_t):
       return merge<uint64_t>(srcs, src_strides, dst, dst_stride, width, height,
                              channels);
+
+    default:
+      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
   }
 }
 

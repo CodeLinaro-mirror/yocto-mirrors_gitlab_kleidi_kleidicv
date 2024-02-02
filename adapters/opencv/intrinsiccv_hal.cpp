@@ -49,7 +49,7 @@ static size_t get_type_size(int depth) {
     case CV_32S:
       return 4;
     default:
-      __builtin_trap();
+      return SIZE_MAX;
   }
 }
 
@@ -294,7 +294,11 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
 
   intrinsiccv_filter_params_t params;
   params.channels = cn;
-  params.type_size = get_type_size(depth) * 2UL /* widening */;
+  params.type_size = get_type_size(depth);
+  if (params.type_size == SIZE_MAX) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+  params.type_size *= 2; /* widening */
 
   intrinsiccv_rectangle_t image = {
       .width = static_cast<decltype(intrinsiccv_rectangle_t::width)>(width),
@@ -379,9 +383,12 @@ int morphology_init(cvhalFilter2D **context, int operation, int src_type,
   params->channels = (src_type >> CV_CN_SHIFT) + 1;
   params->iterations = static_cast<decltype(params->iterations)>(iterations);
   params->type_size = get_type_size(CV_MAT_DEPTH(src_type));
+  if (SIZE_MAX == params->type_size) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
 
   if (from_opencv(border_type, params->border_type)) {
-    return CV_HAL_ERROR_UNKNOWN;
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
   if (params->border_type ==

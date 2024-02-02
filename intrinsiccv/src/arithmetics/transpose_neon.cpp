@@ -226,7 +226,6 @@ intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
   }
 
   switch (element_size) {
-    default:
     case sizeof(uint8_t):
       return transpose<uint8_t>(src, src_stride, dst, dst_stride, src_width,
                                 src_height, inplace);
@@ -239,6 +238,8 @@ intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
     case sizeof(uint64_t):
       return transpose<uint64_t>(src, src_stride, dst, dst_stride, src_width,
                                  src_height, inplace);
+    default:
+      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
   }
 }
 

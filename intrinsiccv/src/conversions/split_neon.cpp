@@ -286,7 +286,7 @@ intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
                               dst_rows2, dst_rows3);
     } break;
     default:
-      __builtin_trap();
+      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
   }
   return INTRINSICCV_OK;
 }
@@ -297,7 +297,6 @@ intrinsiccv_error_t split(const void *src_data, size_t src_stride,
                           size_t width, size_t height, size_t channels,
                           size_t element_size) {
   switch (element_size) {
-    default:
     case sizeof(uint8_t):
       return split<uint8_t>(src_data, src_stride, dst_data, dst_strides, width,
                             height, channels);
@@ -313,6 +312,9 @@ intrinsiccv_error_t split(const void *src_data, size_t src_stride,
     case sizeof(uint64_t):
       return split<uint64_t>(src_data, src_stride, dst_data, dst_strides, width,
                              height, channels);
+
+    default:
+      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
   }
 }
 }  // namespace intrinsiccv::neon

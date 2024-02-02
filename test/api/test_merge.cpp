@@ -91,35 +91,55 @@ class MergeTest final {
   size_t padding_{0};
 };
 
+template <typename ElementType, int kChannels>
+static void test_not_implemented(
+    intrinsiccv_error_t expected = INTRINSICCV_ERROR_NOT_IMPLEMENTED) {
+  const size_t width = 1, height = 1;
+  ElementType src_arrays[kChannels][width * height] = {{234}};
+  ElementType dst[kChannels * width * height] = {123};
+  size_t src_strides[kChannels];
+  const void* srcs[kChannels];
+  for (int i = 0; i < kChannels; ++i) {
+    srcs[i] = src_arrays[i];
+    src_strides[i] = width * sizeof(ElementType);
+  }
+  size_t dst_stride = kChannels * width * sizeof(ElementType);
+
+  ASSERT_EQ(expected,
+            intrinsiccv_merge(srcs, src_strides, dst, dst_stride, width, height,
+                              kChannels, sizeof(ElementType)));
+
+  // Destination should not be modified.
+  EXPECT_EQ(123, dst[0]);
+}
+
 template <typename ElementType>
-class Merge2 : public testing::Test {};
+class Merge : public testing::Test {};
 
 using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
-TYPED_TEST_SUITE(Merge2, ElementTypes);
+TYPED_TEST_SUITE(Merge, ElementTypes);
 
-TYPED_TEST(Merge2, API) {
+TYPED_TEST(Merge, TwoChannels) {
   MergeTest<TypeParam, 2>().test();
   MergeTest<TypeParam, 2>().with_padding(test::Options::vector_length()).test();
 }
 
-template <typename ElementType>
-class Merge3 : public testing::Test {};
-
-using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
-TYPED_TEST_SUITE(Merge3, ElementTypes);
-
-TYPED_TEST(Merge3, API) {
+TYPED_TEST(Merge, ThreeChannels) {
   MergeTest<TypeParam, 3>().test();
   MergeTest<TypeParam, 3>().with_padding(test::Options::vector_length()).test();
 }
 
-template <typename ElementType>
-class Merge4 : public testing::Test {};
-
-using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
-TYPED_TEST_SUITE(Merge4, ElementTypes);
-
-TYPED_TEST(Merge4, API) {
+TYPED_TEST(Merge, FourChannels) {
   MergeTest<TypeParam, 4>().test();
   MergeTest<TypeParam, 4>().with_padding(test::Options::vector_length()).test();
 }
+
+TYPED_TEST(Merge, OneChannelNotImplemented) {
+  test_not_implemented<TypeParam, 1>();
+}
+
+TYPED_TEST(Merge, FiveChannelsNotImplemented) {
+  test_not_implemented<TypeParam, 5>();
+}
+
+TEST(Merge128, NotImplemented) { test_not_implemented<__uint128_t, 2>(); }
