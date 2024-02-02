@@ -28,9 +28,10 @@ class GrayTest final {
 
     calculate_expected(source, expected);
 
-    impl(source.data(), source.stride(), actual.data(), actual.stride(),
-         logical_width, actual.height());
+    auto err = impl(source.data(), source.stride(), actual.data(),
+                    actual.stride(), logical_width, actual.height());
 
+    ASSERT_EQ(INTRINSICCV_OK, err);
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
 
@@ -79,9 +80,10 @@ class ColourTest final {
 
     calculate_expected(source, expected);
 
-    impl(source.data(), source.stride(), actual.data(), actual.stride(),
-         logical_width, actual.height());
+    auto err = impl(source.data(), source.stride(), actual.data(),
+                    actual.stride(), logical_width, actual.height());
 
+    ASSERT_EQ(INTRINSICCV_OK, err);
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
 

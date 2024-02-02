@@ -13,7 +13,9 @@
 #include "stddef.h"
 #endif  // __cplusplus
 
-typedef enum {
+#include <config.h>
+
+typedef enum INTRINSICCV_NODISCARD {
   /// Success.
   INTRINSICCV_OK = 0,
   /// Requested operation is not implemented.

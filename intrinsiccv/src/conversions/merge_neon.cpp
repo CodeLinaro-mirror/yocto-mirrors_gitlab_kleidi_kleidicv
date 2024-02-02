@@ -409,26 +409,21 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
   switch (element_size) {
     default:
     case sizeof(uint8_t):
-      merge<uint8_t>(srcs, src_strides, dst, dst_stride, width, height,
-                     channels);
-      break;
+      return merge<uint8_t>(srcs, src_strides, dst, dst_stride, width, height,
+                            channels);
 
     case sizeof(uint16_t):
-      merge<uint16_t>(srcs, src_strides, dst, dst_stride, width, height,
-                      channels);
-      break;
+      return merge<uint16_t>(srcs, src_strides, dst, dst_stride, width, height,
+                             channels);
 
     case sizeof(uint32_t):
-      merge<uint32_t>(srcs, src_strides, dst, dst_stride, width, height,
-                      channels);
-      break;
+      return merge<uint32_t>(srcs, src_strides, dst, dst_stride, width, height,
+                             channels);
 
     case sizeof(uint64_t):
-      merge<uint64_t>(srcs, src_strides, dst, dst_stride, width, height,
-                      channels);
-      break;
+      return merge<uint64_t>(srcs, src_strides, dst, dst_stride, width, height,
+                             channels);
   }
-  return INTRINSICCV_OK;
 }
 
 }  // namespace intrinsiccv::neon

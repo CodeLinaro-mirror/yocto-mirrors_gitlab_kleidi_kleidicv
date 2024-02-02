@@ -169,9 +169,9 @@ intrinsiccv_error_t gaussian_blur_3x3_u8(
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
     const intrinsiccv_filter_params_t *params) {
-  discrete_gaussian_blur<uint8_t, 3>(src, src_stride, dst, dst_stride, width,
-                                     height, channels, border_type, params);
-  return INTRINSICCV_OK;
+  return discrete_gaussian_blur<uint8_t, 3>(src, src_stride, dst, dst_stride,
+                                            width, height, channels,
+                                            border_type, params);
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
@@ -180,9 +180,9 @@ intrinsiccv_error_t gaussian_blur_5x5_u8(
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
     const intrinsiccv_filter_params_t *params) {
-  discrete_gaussian_blur<uint8_t, 5>(src, src_stride, dst, dst_stride, width,
-                                     height, channels, border_type, params);
-  return INTRINSICCV_OK;
+  return discrete_gaussian_blur<uint8_t, 5>(src, src_stride, dst, dst_stride,
+                                            width, height, channels,
+                                            border_type, params);
 }
 
 }  // namespace intrinsiccv::neon

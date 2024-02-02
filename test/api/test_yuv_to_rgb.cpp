@@ -55,10 +55,12 @@ class YuvTest final {
     test::Array2D<uint8_t> actual{logical_width * channel_number_,
                                   input_y.height(), padding};
 
-    impl(input_y.data(), input_y.stride(), input_uv.data(), input_uv.stride(),
-         actual.data(), actual.stride(), expected.width() / channel_number_,
-         expected.height(), is_nv21);
+    auto err =
+        impl(input_y.data(), input_y.stride(), input_uv.data(),
+             input_uv.stride(), actual.data(), actual.stride(),
+             expected.width() / channel_number_, expected.height(), is_nv21);
 
+    ASSERT_EQ(INTRINSICCV_OK, err);
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
 

@@ -572,9 +572,10 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
 }
 
 template <typename T, typename FunctionType>
-INTRINSICCV_NODISCARD intrinsiccv_error_t call_min_max(
-    FunctionType min_max_func, const uchar *src_data, size_t src_stride,
-    int width, int height, double *min_value, double *max_value) {
+intrinsiccv_error_t call_min_max(FunctionType min_max_func,
+                                 const uchar *src_data, size_t src_stride,
+                                 int width, int height, double *min_value,
+                                 double *max_value) {
   T tmp_min_value, tmp_max_value;
   T *p_min_value = min_value ? &tmp_min_value : nullptr;
   T *p_max_value = max_value ? &tmp_max_value : nullptr;
@@ -592,10 +593,11 @@ INTRINSICCV_NODISCARD intrinsiccv_error_t call_min_max(
 }
 
 template <typename T, typename FunctionType>
-INTRINSICCV_NODISCARD intrinsiccv_error_t
-call_min_max_loc(FunctionType min_max_loc_func, const uchar *src_data,
-                 size_t src_stride, int width, int height, double *min_value,
-                 double *max_value, int *min_index, int *max_index) {
+intrinsiccv_error_t call_min_max_loc(FunctionType min_max_loc_func,
+                                     const uchar *src_data, size_t src_stride,
+                                     int width, int height, double *min_value,
+                                     double *max_value, int *min_index,
+                                     int *max_index) {
   size_t tmp_min_offset, tmp_max_offset;
   size_t *p_min_offset = (min_value || min_index) ? &tmp_min_offset : nullptr;
   size_t *p_max_offset = (max_value || max_index) ? &tmp_max_offset : nullptr;

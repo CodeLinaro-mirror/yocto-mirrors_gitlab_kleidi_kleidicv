@@ -299,25 +299,20 @@ intrinsiccv_error_t split(const void *src_data, size_t src_stride,
   switch (element_size) {
     default:
     case sizeof(uint8_t):
-      split<uint8_t>(src_data, src_stride, dst_data, dst_strides, width, height,
-                     channels);
-      break;
+      return split<uint8_t>(src_data, src_stride, dst_data, dst_strides, width,
+                            height, channels);
 
     case sizeof(uint16_t):
-      split<uint16_t>(src_data, src_stride, dst_data, dst_strides, width,
-                      height, channels);
-      break;
+      return split<uint16_t>(src_data, src_stride, dst_data, dst_strides, width,
+                             height, channels);
 
     case sizeof(uint32_t):
-      split<uint32_t>(src_data, src_stride, dst_data, dst_strides, width,
-                      height, channels);
-      break;
+      return split<uint32_t>(src_data, src_stride, dst_data, dst_strides, width,
+                             height, channels);
 
     case sizeof(uint64_t):
-      split<uint64_t>(src_data, src_stride, dst_data, dst_strides, width,
-                      height, channels);
-      break;
+      return split<uint64_t>(src_data, src_stride, dst_data, dst_strides, width,
+                             height, channels);
   }
-  return INTRINSICCV_OK;
 }
 }  // namespace intrinsiccv::neon
