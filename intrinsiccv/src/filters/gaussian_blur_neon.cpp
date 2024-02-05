@@ -147,18 +147,16 @@ intrinsiccv_error_t discrete_gaussian_blur(
     const ScalarType *src, size_t src_stride, ScalarType *dst,
     size_t dst_stride, size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
-    const intrinsiccv_filter_params_t *params) {
+    intrinsiccv_filter_context_t *context) {
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
-  CHECK_POINTERS(src, dst, params);
-  CHECK_POINTERS(params->workspace);
+  CHECK_POINTERS(src, dst, context);
 
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
 
-  auto *workspace =
-      reinterpret_cast<SeparableFilterWorkspace *>(params->workspace);
+  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
   GaussianBlurFilterType blur;
   SeparableFilter<GaussianBlurFilterType, KernelSize> filter{blur};
@@ -171,10 +169,10 @@ intrinsiccv_error_t gaussian_blur_3x3_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
-    const intrinsiccv_filter_params_t *params) {
+    intrinsiccv_filter_context_t *context) {
   return discrete_gaussian_blur<uint8_t, 3>(src, src_stride, dst, dst_stride,
                                             width, height, channels,
-                                            border_type, params);
+                                            border_type, context);
 }
 
 INTRINSICCV_TARGET_FN_ATTRS
@@ -182,10 +180,10 @@ intrinsiccv_error_t gaussian_blur_5x5_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
-    const intrinsiccv_filter_params_t *params) {
+    intrinsiccv_filter_context_t *context) {
   return discrete_gaussian_blur<uint8_t, 5>(src, src_stride, dst, dst_stride,
                                             width, height, channels,
-                                            border_type, params);
+                                            border_type, context);
 }
 
 }  // namespace intrinsiccv::neon

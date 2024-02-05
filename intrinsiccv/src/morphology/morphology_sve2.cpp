@@ -9,22 +9,21 @@ namespace intrinsiccv::sve2 {
 template <typename T>
 INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
 dilate(const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-       size_t height, const intrinsiccv_morphology_params_t *params) {
-  return dilate_sc(src, src_stride, dst, dst_stride, width, height, params);
+       size_t height, intrinsiccv_morphology_context_t *context) {
+  return dilate_sc(src, src_stride, dst, dst_stride, width, height, context);
 }
 
 template <typename T>
 INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
 erode(const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-      size_t height, const intrinsiccv_morphology_params_t *params) {
-  return erode_sc(src, src_stride, dst, dst_stride, width, height, params);
+      size_t height, intrinsiccv_morphology_context_t *context) {
+  return erode_sc(src, src_stride, dst, dst_stride, width, height, context);
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(name, type)                    \
   template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t name<type>(  \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
-      size_t width, size_t height,                                      \
-      const intrinsiccv_morphology_params_t *params)
+      size_t width, size_t height, intrinsiccv_morphology_context_t *context)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(dilate, uint8_t);
 INTRINSICCV_INSTANTIATE_TEMPLATE(erode, uint8_t);

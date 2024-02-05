@@ -72,22 +72,9 @@ typedef enum {
   INTRINSICCV_BORDER_TYPE_NONE,
 } intrinsiccv_border_type_t;
 
-typedef struct {
-  intrinsiccv_rectangle_t kernel;
-  intrinsiccv_point_t anchor;
-  intrinsiccv_border_type_t border_type;
-  intrinsiccv_border_values_t border_values;
-  size_t channels;
-  size_t iterations;
-  size_t type_size;
-  void *impl;
-  void *data;
-} intrinsiccv_morphology_params_t;
+typedef struct intrinsiccv_morphology_context_t_
+    intrinsiccv_morphology_context_t;
 
-typedef struct {
-  size_t channels;
-  size_t type_size;
-  void *workspace;
-} intrinsiccv_filter_params_t;
+typedef struct intrinsiccv_filter_context_t_ intrinsiccv_filter_context_t;
 
 #endif  // INTRINSICCV_CTYPES_H

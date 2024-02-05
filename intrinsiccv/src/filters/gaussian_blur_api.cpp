@@ -12,30 +12,31 @@ namespace intrinsiccv {
 extern "C" {
 
 intrinsiccv_error_t intrinsiccv_filter_create(
-    intrinsiccv_filter_params_t *params, intrinsiccv_rectangle_t image) {
-  CHECK_POINTERS(params);
-  auto workspace = SeparableFilterWorkspace::create(
-      Rectangle{image}, params->channels, params->type_size);
+    intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
+    intrinsiccv_rectangle_t image) {
+  CHECK_POINTERS(context);
+  auto workspace =
+      SeparableFilterWorkspace::create(Rectangle{image}, channels, type_size);
   if (!workspace) {
+    *context = nullptr;
     return INTRINSICCV_ERROR_ALLOCATION;
   }
 
-  params->workspace = reinterpret_cast<void *>(workspace.release());
+  *context =
+      reinterpret_cast<intrinsiccv_filter_context_t *>(workspace.release());
   return INTRINSICCV_OK;
 }
 
 intrinsiccv_error_t intrinsiccv_filter_release(
-    intrinsiccv_filter_params_t *params) {
-  CHECK_POINTERS(params);
-  CHECK_POINTERS(params->workspace);
+    intrinsiccv_filter_context_t *context) {
+  CHECK_POINTERS(context);
 
   // Deliberately create and immediately destroy a unique_ptr to delete the
   // workspace.
   // NOLINTBEGIN(bugprone-unused-raii)
   SeparableFilterWorkspace::Pointer{
-      reinterpret_cast<SeparableFilterWorkspace *>(params->workspace)};
+      reinterpret_cast<SeparableFilterWorkspace *>(context)};
   // NOLINTEND(bugprone-unused-raii)
-  params->workspace = nullptr;
   return INTRINSICCV_OK;
 }
 
@@ -47,7 +48,7 @@ INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_3x3_u8,
                                uint8_t *dst, size_t dst_stride, size_t width,
                                size_t height, size_t channels,
                                intrinsiccv_border_type_t border_type,
-                               const intrinsiccv_filter_params_t *params);
+                               intrinsiccv_filter_context_t *context);
 
 INTRINSICCV_MULTIVERSION_C_API(
     intrinsiccv_gaussian_blur_5x5_u8, intrinsiccv::neon::gaussian_blur_5x5_u8,
@@ -55,6 +56,6 @@ INTRINSICCV_MULTIVERSION_C_API(
     intrinsiccv::sme2::gaussian_blur_5x5_u8, const uint8_t *src,
     size_t src_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, size_t channels, intrinsiccv_border_type_t border_type,
-    const intrinsiccv_filter_params_t *params);
+    intrinsiccv_filter_context_t *context);
 
 }  // namespace intrinsiccv

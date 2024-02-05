@@ -570,18 +570,21 @@ intrinsiccv_error_t intrinsiccv_threshold_binary_u8(
     size_t width, size_t height, uint8_t threshold, uint8_t value);
 
 intrinsiccv_error_t intrinsiccv_morphology_create(
-    intrinsiccv_morphology_params_t *params, intrinsiccv_rectangle_t image);
+    intrinsiccv_morphology_context_t **context, intrinsiccv_rectangle_t kernel,
+    intrinsiccv_point_t anchor, intrinsiccv_border_type_t border_type,
+    intrinsiccv_border_values_t border_values, size_t channels,
+    size_t iterations, size_t type_size, intrinsiccv_rectangle_t image);
 
 intrinsiccv_error_t intrinsiccv_morphology_release(
-    intrinsiccv_morphology_params_t *params);
+    intrinsiccv_morphology_context_t *context);
 
 intrinsiccv_error_t intrinsiccv_dilate_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, const intrinsiccv_morphology_params_t *params);
+    size_t width, size_t height, intrinsiccv_morphology_context_t *context);
 
 intrinsiccv_error_t intrinsiccv_erode_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, const intrinsiccv_morphology_params_t *params);
+    size_t width, size_t height, intrinsiccv_morphology_context_t *context);
 
 /// Counts how many nonzero elements are in the source data.
 ///
@@ -709,22 +712,23 @@ intrinsiccv_error_t intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride,
                                          double high_threshold);
 
 intrinsiccv_error_t intrinsiccv_filter_create(
-    intrinsiccv_filter_params_t *params, intrinsiccv_rectangle_t image);
+    intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
+    intrinsiccv_rectangle_t image);
 
 intrinsiccv_error_t intrinsiccv_filter_release(
-    intrinsiccv_filter_params_t *params);
+    intrinsiccv_filter_context_t *context);
 
 intrinsiccv_error_t intrinsiccv_gaussian_blur_3x3_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
-    const intrinsiccv_filter_params_t *params);
+    intrinsiccv_filter_context_t *context);
 
 intrinsiccv_error_t intrinsiccv_gaussian_blur_5x5_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
-    const intrinsiccv_filter_params_t *params);
+    intrinsiccv_filter_context_t *context);
 
 /// Splits a multi channel source stream into separate 1-channel streams.
 ///

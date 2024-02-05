@@ -448,28 +448,28 @@ class DilateOperation final {
 };  // end of class DilateOperation<ScalarType>
 
 template <typename T>
-static intrinsiccv_error_t dilate_sc(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, const intrinsiccv_morphology_params_t *params)
+static intrinsiccv_error_t dilate_sc(const T *src, size_t src_stride, T *dst,
+                                     size_t dst_stride, size_t width,
+                                     size_t height,
+                                     intrinsiccv_morphology_context_t *context)
     INTRINSICCV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(src, dst, params);
-  CHECK_POINTERS(params->impl, params->data);
+  CHECK_POINTERS(src, dst, context);
+
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
   Rectangle rect{width, height};
-  Rectangle kernel{params->kernel};
-  Rows<const T> src_rows{src, src_stride, params->channels};
-  Rows<T> dst_rows{dst, dst_stride, params->channels};
-  Margin margin{params->kernel, params->anchor};
-  Border<T> border{params->border_values};
-
-  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  Rectangle kernel{workspace->kernel()};
+  Rows<const T> src_rows{src, src_stride, workspace->channels()};
+  Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
+  Margin margin{workspace->kernel(), workspace->anchor()};
+  Border<T> border{workspace->border_values()};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
-  for (size_t iteration = 0; iteration < params->iterations; ++iteration) {
+  for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
     DilateOperation<T> operation{kernel};
     workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
-                       params->border_type, operation);
+                       workspace->border_type(), operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
@@ -506,28 +506,28 @@ class ErodeOperation final {
 };  // end of class ErodeOperation<ScalarType>
 
 template <typename T>
-static intrinsiccv_error_t erode_sc(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, const intrinsiccv_morphology_params_t *params)
+static intrinsiccv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
+                                    size_t dst_stride, size_t width,
+                                    size_t height,
+                                    intrinsiccv_morphology_context_t *context)
     INTRINSICCV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(src, dst, params);
-  CHECK_POINTERS(params->impl, params->data);
+  CHECK_POINTERS(src, dst, context);
+
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
   Rectangle rect{width, height};
-  Rectangle kernel{params->kernel};
-  Rows<const T> src_rows{src, src_stride, params->channels};
-  Rows<T> dst_rows{dst, dst_stride, params->channels};
-  Margin margin{params->kernel, params->anchor};
-  Border<T> border{params->border_values};
-
-  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  Rectangle kernel{workspace->kernel()};
+  Rows<const T> src_rows{src, src_stride, workspace->channels()};
+  Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
+  Margin margin{workspace->kernel(), workspace->anchor()};
+  Border<T> border{workspace->border_values()};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
-  for (size_t iteration = 0; iteration < params->iterations; ++iteration) {
+  for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
     ErodeOperation<T> operation{kernel};
     workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
-                       params->border_type, operation);
+                       workspace->border_type(), operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }

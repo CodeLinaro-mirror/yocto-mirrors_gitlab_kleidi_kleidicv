@@ -292,38 +292,42 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  intrinsiccv_filter_params_t params;
-  params.channels = cn;
-  params.type_size = get_type_size(depth);
-  if (params.type_size == SIZE_MAX) {
+  intrinsiccv_filter_context_t *context;
+  size_t type_size = get_type_size(depth);
+  if (type_size == SIZE_MAX) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
-  params.type_size *= 2; /* widening */
+  type_size *= 2; /* widening */
 
   intrinsiccv_rectangle_t image = {
       .width = static_cast<decltype(intrinsiccv_rectangle_t::width)>(width),
       .height = static_cast<decltype(intrinsiccv_rectangle_t::height)>(height)};
   if (intrinsiccv_error_t create_err =
-          intrinsiccv_filter_create(&params, image)) {
+          intrinsiccv_filter_create(&context, cn, type_size, image)) {
     return convert_error(create_err);
   }
 
   intrinsiccv_error_t blur_err =
       impl(reinterpret_cast<const uint8_t *>(src_data), src_step,
            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
-           intrinsiccv_border_type, &params);
+           intrinsiccv_border_type, context);
 
-  intrinsiccv_error_t release_err = intrinsiccv_filter_release(&params);
+  intrinsiccv_error_t release_err = intrinsiccv_filter_release(context);
 
   return convert_error(blur_err ? blur_err : release_err);
 }
 
-int morphology_init(cvhalFilter2D **context, int operation, int src_type,
+struct MorphologyParams {
+  intrinsiccv_morphology_context_t *context;
+  decltype(intrinsiccv_dilate_u8) *impl;
+};
+
+int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
                     int dst_type, int max_width, int max_height,
                     int kernel_type, uchar *kernel_data, size_t kernel_step,
                     int kernel_width, int kernel_height, int anchor_x,
-                    int anchor_y, int border_type,
-                    const double border_values[4], int iterations,
+                    int anchor_y, int cvborder_type,
+                    const double cvborder_values[4], int iterations,
                     bool allow_submatrix, bool allow_in_place) {
   INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
 
@@ -339,6 +343,11 @@ int morphology_init(cvhalFilter2D **context, int operation, int src_type,
   }
 
   if (allow_submatrix) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  intrinsiccv_border_type_t border_type;
+  if (from_opencv(cvborder_type, border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -369,75 +378,68 @@ int morphology_init(cvhalFilter2D **context, int operation, int src_type,
   }
 
   // Use std::unique_ptr<T> to make error returns safer.
-  auto params = std::make_unique<intrinsiccv_morphology_params_t>();
+  auto params = std::make_unique<MorphologyParams>();
   if (!params) {
     return CV_HAL_ERROR_UNKNOWN;
   }
 
-  params->kernel.width =
-      static_cast<decltype(params->kernel.width)>(kernel_width);
-  params->kernel.height =
-      static_cast<decltype(params->kernel.height)>(kernel_height);
-  params->anchor.x = static_cast<decltype(params->anchor.x)>(anchor_x);
-  params->anchor.y = static_cast<decltype(params->anchor.y)>(anchor_y);
-  params->channels = (src_type >> CV_CN_SHIFT) + 1;
-  params->iterations = static_cast<decltype(params->iterations)>(iterations);
-  params->type_size = get_type_size(CV_MAT_DEPTH(src_type));
-  if (SIZE_MAX == params->type_size) {
+  size_t channels = (src_type >> CV_CN_SHIFT) + 1;
+  size_t type_size = get_type_size(CV_MAT_DEPTH(src_type));
+  if (SIZE_MAX == type_size) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (from_opencv(border_type, params->border_type)) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if (params->border_type ==
+  intrinsiccv_border_values_t border_values = {};
+  if (border_type ==
       intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT) {
-    params->border_values.top = border_values[0];
-    params->border_values.left = border_values[1];
-    params->border_values.bottom = border_values[2];
-    params->border_values.right = border_values[3];
+    border_values.top = cvborder_values[0];
+    border_values.left = cvborder_values[1];
+    border_values.bottom = cvborder_values[2];
+    border_values.right = cvborder_values[3];
 
     // In case of default border values for dilate() '0' should be used.
     auto border_max_value =
-        std::numeric_limits<decltype(params->border_values.top)>::max();
+        std::numeric_limits<decltype(border_values.top)>::max();
     if ((operation == CV_HAL_MORPH_DILATE) &&
-        (params->border_values.top == border_max_value) &&
-        (params->border_values.left == border_max_value) &&
-        (params->border_values.bottom == border_max_value) &&
-        (params->border_values.right == border_max_value)) {
-      params->border_values.top = 0;
-      params->border_values.left = 0;
-      params->border_values.bottom = 0;
-      params->border_values.right = 0;
+        (border_values.top == border_max_value) &&
+        (border_values.left == border_max_value) &&
+        (border_values.bottom == border_max_value) &&
+        (border_values.right == border_max_value)) {
+      border_values.top = 0;
+      border_values.left = 0;
+      border_values.bottom = 0;
+      border_values.right = 0;
     }
   }
 
   switch (operation) {
     case CV_HAL_MORPH_DILATE:
-      params->impl = reinterpret_cast<void *>(intrinsiccv_dilate_u8);
+      params->impl = intrinsiccv_dilate_u8;
       break;
     case CV_HAL_MORPH_ERODE:
-      params->impl = reinterpret_cast<void *>(intrinsiccv_erode_u8);
+      params->impl = intrinsiccv_erode_u8;
       break;
     default:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  intrinsiccv_rectangle_t image = {
-      .width = static_cast<decltype(intrinsiccv_rectangle_t::width)>(max_width),
-      .height =
-          static_cast<decltype(intrinsiccv_rectangle_t::height)>(max_height)};
-  if (intrinsiccv_error_t err =
-          intrinsiccv_morphology_create(params.get(), image)) {
+  if (intrinsiccv_error_t err = intrinsiccv_morphology_create(
+          &params->context,
+          intrinsiccv_rectangle_t{static_cast<size_t>(kernel_width),
+                                  static_cast<size_t>(kernel_height)},
+          intrinsiccv_point_t{static_cast<size_t>(anchor_x),
+                              static_cast<size_t>(anchor_y)},
+          border_type, border_values, channels, iterations, type_size,
+          intrinsiccv_rectangle_t{static_cast<size_t>(max_width),
+                                  static_cast<size_t>(max_height)})) {
     return convert_error(err);
   }
 
-  *context = reinterpret_cast<cvhalFilter2D *>(params.release());
+  *cvcontext = reinterpret_cast<cvhalFilter2D *>(params.release());
   return CV_HAL_ERROR_OK;
 }
 
-int morphology_operation(cvhalFilter2D *context, uchar *src_data,
+int morphology_operation(cvhalFilter2D *cvcontext, uchar *src_data,
                          size_t src_step, uchar *dst_data, size_t dst_step,
                          int width, int height, int src_full_width,
                          int src_full_height, int src_roi_x, int src_roi_y,
@@ -455,20 +457,20 @@ int morphology_operation(cvhalFilter2D *context, uchar *src_data,
   (void)dst_roi_x;
   (void)dst_roi_y;
 
-  auto params = reinterpret_cast<intrinsiccv_morphology_params_t *>(context);
-  auto impl = reinterpret_cast<decltype(intrinsiccv_dilate_u8) *>(params->impl);
-  return convert_error(impl(reinterpret_cast<const uint8_t *>(src_data),
-                            src_step, reinterpret_cast<uint8_t *>(dst_data),
-                            dst_step, static_cast<size_t>(width),
-                            static_cast<size_t>(height), params));
+  auto params = reinterpret_cast<MorphologyParams *>(cvcontext);
+  return convert_error(
+      params->impl(reinterpret_cast<const uint8_t *>(src_data), src_step,
+                   reinterpret_cast<uint8_t *>(dst_data), dst_step,
+                   static_cast<size_t>(width), static_cast<size_t>(height),
+                   params->context));
 }
 
-int morphology_free(cvhalFilter2D *context) {
+int morphology_free(cvhalFilter2D *cvcontext) {
   INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
 
-  auto params = std::unique_ptr<intrinsiccv_morphology_params_t>(
-      reinterpret_cast<intrinsiccv_morphology_params_t *>(context));
-  return convert_error(intrinsiccv_morphology_release(params.get()));
+  std::unique_ptr<MorphologyParams> params(
+      reinterpret_cast<MorphologyParams *>(cvcontext));
+  return convert_error(intrinsiccv_morphology_release(params->context));
 }
 
 int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,

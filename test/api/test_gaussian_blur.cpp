@@ -23,28 +23,16 @@ class GaussianBlurTest : public testing::Test {};
 TYPED_TEST_SUITE(GaussianBlurTest, ElementTypes);
 
 TYPED_TEST(GaussianBlurTest, NullPointer) {
-  intrinsiccv_filter_params_t params = {
-      .channels = 1,
-      .type_size = sizeof(TypeParam),
-      .workspace = nullptr,
-  };
+  intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&params, intrinsiccv_rectangle_t{1, 1}));
+            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(gaussian_blur_3x3<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), 1, 1, 1,
-                       INTRINSICCV_BORDER_TYPE_REFLECT, &params);
+                       INTRINSICCV_BORDER_TYPE_REFLECT, context);
   test::test_null_args(gaussian_blur_5x5<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), 1, 1, 1,
-                       INTRINSICCV_BORDER_TYPE_REFLECT, &params);
-  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(&params));
-  EXPECT_EQ(nullptr, params.workspace);
-  EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
-            gaussian_blur_3x3<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, &params));
-  EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
-            gaussian_blur_5x5<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, &params));
+                       INTRINSICCV_BORDER_TYPE_REFLECT, context);
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }

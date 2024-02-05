@@ -26,74 +26,31 @@ using ElementTypes = ::testing::Types<uint8_t>;
 TYPED_TEST_SUITE(DilateTest, ElementTypes);
 TYPED_TEST_SUITE(ErodeTest, ElementTypes);
 
-static intrinsiccv_morphology_params_t make_minimal_params(size_t type_size) {
-  intrinsiccv_morphology_params_t params = {
-      .kernel = {1, 1},
-      .anchor = {0, 0},
-      .border_type = INTRINSICCV_BORDER_TYPE_REPLICATE,
-      .border_values = {0, 0, 1, 1},
-      .channels = 1,
-      .iterations = 1,
-      .type_size = type_size,
-      .impl = nullptr,
-      .data = nullptr,
-  };
-  return params;
+static intrinsiccv_error_t make_minimal_context(
+    intrinsiccv_morphology_context_t **context, size_t type_size) {
+  return intrinsiccv_morphology_create(
+      context, intrinsiccv_rectangle_t{1, 1}, intrinsiccv_point_t{0, 0},
+      INTRINSICCV_BORDER_TYPE_REPLICATE,
+      intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1, type_size,
+      intrinsiccv_rectangle_t{1, 1});
 }
 
 TYPED_TEST(DilateTest, NullPointer) {
-  intrinsiccv_morphology_params_t params =
-      make_minimal_params(sizeof(TypeParam));
-  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_create(
-                                &params, intrinsiccv_rectangle_t{1, 1}));
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(dilate<TypeParam>(), src, sizeof(TypeParam), dst,
-                       sizeof(TypeParam), 1, 1, &params);
-
-  {
-    intrinsiccv_morphology_params_t invalid_params = params;
-    invalid_params.impl = nullptr;
-    EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
-              dilate<TypeParam>()(src, sizeof(TypeParam), dst,
-                                  sizeof(TypeParam), 1, 1, &invalid_params));
-  }
-
-  {
-    intrinsiccv_morphology_params_t invalid_params = params;
-    invalid_params.data = nullptr;
-    EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
-              dilate<TypeParam>()(src, sizeof(TypeParam), dst,
-                                  sizeof(TypeParam), 1, 1, &invalid_params));
-  }
-
-  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(&params));
+                       sizeof(TypeParam), 1, 1, context);
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
 }
 
 TYPED_TEST(ErodeTest, NullPointer) {
-  intrinsiccv_morphology_params_t params =
-      make_minimal_params(sizeof(TypeParam));
-  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_create(
-                                &params, intrinsiccv_rectangle_t{1, 1}));
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
 
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(erode<TypeParam>(), src, sizeof(TypeParam), dst,
-                       sizeof(TypeParam), 1, 1, &params);
+                       sizeof(TypeParam), 1, 1, context);
 
-  {
-    intrinsiccv_morphology_params_t invalid_params = params;
-    invalid_params.impl = nullptr;
-    EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
-              erode<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                                 1, 1, &invalid_params));
-  }
-
-  {
-    intrinsiccv_morphology_params_t invalid_params = params;
-    invalid_params.data = nullptr;
-    EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
-              erode<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                                 1, 1, &invalid_params));
-  }
-
-  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(&params));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
 }

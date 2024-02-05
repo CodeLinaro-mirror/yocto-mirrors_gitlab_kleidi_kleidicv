@@ -41,13 +41,19 @@ class MorphologyWorkspace final {
   MorphologyWorkspace() = delete;
 
   // Creates a workspace on the heap.
-  static Pointer create(Rectangle rect, Rectangle kernel, Margin margin,
-                        size_t channels, size_t buffer_type_size)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  static Pointer create(
+      intrinsiccv_rectangle_t kernel, intrinsiccv_point_t anchor,
+      intrinsiccv_border_type_t border_type,
+      intrinsiccv_border_values_t border_values, size_t channels,
+      size_t iterations, size_t type_size,
+      intrinsiccv_rectangle_t image) INTRINSICCV_STREAMING_COMPATIBLE {
     // These values are arbitrarily choosen.
-    const size_t rows_per_iteration = std::max(2 * kernel.height(), 32UL);
+    const size_t rows_per_iteration = std::max(2 * kernel.height, 32UL);
     // To avoid load/store penalties.
     const size_t kAlignment = 16;
+
+    Rectangle rect{image};
+    Margin margin{kernel, anchor};
 
     // A single wide row which can hold one row worth of data in addition
     // to left and right margins.
@@ -59,7 +65,7 @@ class MorphologyWorkspace final {
     wide_rows_size += kAlignment - 1;
 
     // Multiple buffer rows to hold rows without any borders.
-    size_t buffer_rows_width = buffer_type_size * rect.width();
+    size_t buffer_rows_width = type_size * rect.width();
     size_t buffer_rows_stride = buffer_rows_width * channels;
     buffer_rows_stride = __builtin_align_up(buffer_rows_stride, kAlignment);
     size_t buffer_rows_height = 2 * rows_per_iteration;
@@ -97,8 +103,24 @@ class MorphologyWorkspace final {
     workspace->wide_rows_offset_ = wide_rows_address - &workspace->data_[0];
     workspace->wide_rows_stride_ = wide_rows_stride;
 
+    workspace->kernel_ = kernel;
+    workspace->anchor_ = anchor;
+    workspace->border_type_ = border_type;
+    workspace->border_values_ = border_values;
+    workspace->channels_ = channels;
+    workspace->iterations_ = iterations;
+    workspace->type_size_ = type_size;
+
     return workspace;
   }
+
+  intrinsiccv_rectangle_t kernel() const { return kernel_; }
+  intrinsiccv_point_t anchor() const { return anchor_; }
+  intrinsiccv_border_type_t border_type() const { return border_type_; }
+  intrinsiccv_border_values_t border_values() const { return border_values_; }
+  size_t channels() const { return channels_; }
+  size_t iterations() const { return iterations_; }
+  size_t type_size() const { return type_size_; }
 
   // This function is too complex, but disable the warning for now.
   // NOLINTBEGIN(readability-function-cognitive-complexity)
@@ -342,6 +364,13 @@ class MorphologyWorkspace final {
   }
 
   static_assert(sizeof(Pointer) == sizeof(void *), "Unexpected type size");
+
+  intrinsiccv_rectangle_t kernel_;
+  intrinsiccv_point_t anchor_;
+  intrinsiccv_border_type_t border_type_;
+  intrinsiccv_border_values_t border_values_;
+  size_t iterations_;
+  size_t type_size_;
 
   // Number of wide rows in this workspace.
   size_t rows_per_iteration_;

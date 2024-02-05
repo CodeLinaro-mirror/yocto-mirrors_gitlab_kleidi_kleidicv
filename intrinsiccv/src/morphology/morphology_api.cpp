@@ -13,12 +13,12 @@ namespace neon {
 template <typename T>
 intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
                            size_t dst_stride, size_t width, size_t height,
-                           const intrinsiccv_morphology_params_t *params);
+                           intrinsiccv_morphology_context_t *context);
 
 template <typename T>
 intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          const intrinsiccv_morphology_params_t *params);
+                          intrinsiccv_morphology_context_t *context);
 
 }  // namespace neon
 
@@ -27,12 +27,12 @@ namespace sve2 {
 template <typename T>
 intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
                            size_t dst_stride, size_t width, size_t height,
-                           const intrinsiccv_morphology_params_t *params);
+                           intrinsiccv_morphology_context_t *context);
 
 template <typename T>
 intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          const intrinsiccv_morphology_params_t *params);
+                          intrinsiccv_morphology_context_t *context);
 
 }  // namespace sve2
 
@@ -41,45 +41,47 @@ namespace sme2 {
 template <typename T>
 intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
                            size_t dst_stride, size_t width, size_t height,
-                           const intrinsiccv_morphology_params_t *params);
+                           intrinsiccv_morphology_context_t *context);
 
 template <typename T>
 intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          const intrinsiccv_morphology_params_t *params);
+                          intrinsiccv_morphology_context_t *context);
 
 }  // namespace sme2
 
 extern "C" {
 
 intrinsiccv_error_t intrinsiccv_morphology_create(
-    intrinsiccv_morphology_params_t *params, intrinsiccv_rectangle_t image) {
-  CHECK_POINTERS(params);
+    intrinsiccv_morphology_context_t **context, intrinsiccv_rectangle_t kernel,
+    intrinsiccv_point_t anchor, intrinsiccv_border_type_t border_type,
+    intrinsiccv_border_values_t border_values, size_t channels,
+    size_t iterations, size_t type_size, intrinsiccv_rectangle_t image) {
+  CHECK_POINTERS(context);
 
   auto workspace =
-      MorphologyWorkspace::create(Rectangle{image}, Rectangle{params->kernel},
-                                  Margin{params->kernel, params->anchor},
-                                  params->channels, params->type_size);
+      MorphologyWorkspace::create(kernel, anchor, border_type, border_values,
+                                  channels, iterations, type_size, image);
   if (!workspace) {
+    *context = nullptr;
     return INTRINSICCV_ERROR_ALLOCATION;
   }
 
-  params->data = reinterpret_cast<void *>(workspace.release());
+  *context =
+      reinterpret_cast<intrinsiccv_morphology_context_t *>(workspace.release());
   return INTRINSICCV_OK;
 }
 
 intrinsiccv_error_t intrinsiccv_morphology_release(
-    intrinsiccv_morphology_params_t *params) {
-  CHECK_POINTERS(params);
-  CHECK_POINTERS(params->data);
+    intrinsiccv_morphology_context_t *context) {
+  CHECK_POINTERS(context);
 
   // Deliberately create and immediately destroy a unique_ptr to delete the
   // workspace.
   // NOLINTBEGIN(bugprone-unused-raii)
   MorphologyWorkspace::Pointer{
-      reinterpret_cast<MorphologyWorkspace *>(params->data)};
+      reinterpret_cast<MorphologyWorkspace *>(context)};
   // NOLINTEND(bugprone-unused-raii)
-  params->data = nullptr;
   return INTRINSICCV_OK;
 }
 
@@ -91,7 +93,7 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
       INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::tname<type>),           \
       intrinsiccv::sme2::tname<type>, const type *src, size_t src_stride, \
       type *dst, size_t dst_stride, size_t width, size_t height,          \
-      const intrinsiccv_morphology_params_t *)
+      intrinsiccv_morphology_context_t *)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_dilate_u8, dilate, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_erode_u8, erode, uint8_t);

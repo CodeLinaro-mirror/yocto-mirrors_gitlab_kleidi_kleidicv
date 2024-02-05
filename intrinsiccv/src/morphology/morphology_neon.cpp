@@ -489,25 +489,24 @@ class DilateOperation final {
 template <typename T>
 intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
                            size_t dst_stride, size_t width, size_t height,
-                           const intrinsiccv_morphology_params_t *params) {
-  CHECK_POINTERS(src, dst, params);
-  CHECK_POINTERS(params->impl, params->data);
+                           intrinsiccv_morphology_context_t *context) {
+  CHECK_POINTERS(src, dst, context);
+
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
   Rectangle rect{width, height};
-  Rectangle kernel{params->kernel};
-  Rows<const T> src_rows{src, src_stride, params->channels};
-  Rows<T> dst_rows{dst, dst_stride, params->channels};
-  Margin margin{params->kernel, params->anchor};
-  Border<T> border{params->border_values};
-
-  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  Rectangle kernel{workspace->kernel()};
+  Rows<const T> src_rows{src, src_stride, workspace->channels()};
+  Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
+  Margin margin{workspace->kernel(), workspace->anchor()};
+  Border<T> border{workspace->border_values()};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
-  for (size_t iteration = 0; iteration < params->iterations; ++iteration) {
+  for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
     DilateOperation<T> operation{kernel};
     workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
-                       params->border_type, operation);
+                       workspace->border_type(), operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
@@ -543,25 +542,24 @@ class ErodeOperation final {
 template <typename T>
 intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          const intrinsiccv_morphology_params_t *params) {
-  CHECK_POINTERS(src, dst, params);
-  CHECK_POINTERS(params->impl, params->data);
+                          intrinsiccv_morphology_context_t *context) {
+  CHECK_POINTERS(src, dst, context);
+
+  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
   Rectangle rect{width, height};
-  Rectangle kernel{params->kernel};
-  Rows<const T> src_rows{src, src_stride, params->channels};
-  Rows<T> dst_rows{dst, dst_stride, params->channels};
-  Margin margin{params->kernel, params->anchor};
-  Border<T> border{params->border_values};
-
-  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(params->data);
+  Rectangle kernel{workspace->kernel()};
+  Rows<const T> src_rows{src, src_stride, workspace->channels()};
+  Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
+  Margin margin{workspace->kernel(), workspace->anchor()};
+  Border<T> border{workspace->border_values()};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
-  for (size_t iteration = 0; iteration < params->iterations; ++iteration) {
+  for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
     ErodeOperation<T> operation{kernel};
     workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
-                       params->border_type, operation);
+                       workspace->border_type(), operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
@@ -571,8 +569,7 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(name, type)                    \
   template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t name<type>(  \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
-      size_t width, size_t height,                                      \
-      const intrinsiccv_morphology_params_t *params)
+      size_t width, size_t height, intrinsiccv_morphology_context_t *context)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(dilate, uint8_t);
 INTRINSICCV_INSTANTIATE_TEMPLATE(erode, uint8_t);
