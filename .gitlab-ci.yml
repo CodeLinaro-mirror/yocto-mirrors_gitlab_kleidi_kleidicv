@@ -4,6 +4,12 @@
 
 image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:4
 
+# Only run CI for main branch & merge requests
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
 .common:
   tags:
     - arm64
