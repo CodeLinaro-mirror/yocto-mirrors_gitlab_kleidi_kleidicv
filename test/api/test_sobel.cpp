@@ -71,7 +71,7 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
     this->test::KernelTest<KernelTestParams>::test(
         kernel, &tested_array_layouts, &tested_borders, &element_generator);
   }
-};  // end of class class Sobel3x3Test<KernelTestParams>
+};  // end of class Sobel3x3Test<KernelTestParams>
 
 template <typename TypeParam>
 class Sobel : public testing::Test {};
@@ -93,7 +93,7 @@ TYPED_TEST(Sobel, Horizontal3x3) {
 // Tests sobel_3x3_vertical_<output_type>_<input_type> API.
 TYPED_TEST(Sobel, Vertical3x3) {
   using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
-  // Horizontal 3x3 Sobel operator.
+  // Vertical 3x3 Sobel operator.
   test::Array2D<typename KernelTestParams::IntermediateType> mask{3, 3};
   // clang-format off
   mask.set(0, 0, {-1, -2, -1});
