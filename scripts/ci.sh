@@ -41,17 +41,21 @@ echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
 ninja -C build
 
 # Run tests
+LONG_VECTOR_TESTS="GRAY2.*:RGB*"
 TESTRESULT=0
 qemu-aarch64     build/test/framework/intrinsiccv-framework-test --gtest_output=xml:build/test-results/ || TESTRESULT=1
 qemu-aarch64 -cpu cortex-a35 build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/neon/ || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme=off \
-  build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sve2/ --vector-length=16 || TESTRESULT=1
+  build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sve128/ --vector-length=16 || TESTRESULT=1
+qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
+  build/test/api/intrinsiccv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --gtest_output=xml:build/test-results/sve2048/ --vector-length=256 || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme512=on \
   build/test/api/intrinsiccv-api-test --gtest_output=xml:build/test-results/sme/ --vector-length=64 || TESTRESULT=1
 
-scripts/prefix_testsuite_names.py build/test-results/neon/intrinsiccv-api-test.xml "NEON."
-scripts/prefix_testsuite_names.py build/test-results/sve2/intrinsiccv-api-test.xml "SVE2."
-scripts/prefix_testsuite_names.py build/test-results/sme/intrinsiccv-api-test.xml "SME."
+scripts/prefix_testsuite_names.py build/test-results/neon/intrinsiccv-api-test.xml "neon."
+scripts/prefix_testsuite_names.py build/test-results/sve128/intrinsiccv-api-test.xml "sve128."
+scripts/prefix_testsuite_names.py build/test-results/sve2048/intrinsiccv-api-test.xml "sve2048."
+scripts/prefix_testsuite_names.py build/test-results/sme/intrinsiccv-api-test.xml "sme."
 
 # Generate test coverage report
 LLVM_COV=llvm-cov scripts/generate_coverage_report.py
