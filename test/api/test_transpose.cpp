@@ -14,22 +14,21 @@ class TestTranspose final {
   explicit TestTranspose(size_t padding) : padding_(padding) {}
 
   void scalar_test() {
-    // Scalar path will be exercised only if width is smaller than number of
-    // lanes in a vector
-    size_t src_width = test::Options::vector_lanes<ElementType>() - 1;
-    // Set height to be different than width but still smaller than vector_lanes
-    size_t src_height =
-        inplace ? src_width : test::Options::vector_lanes<ElementType>() - 2;
-    test(src_width, src_height);
+    size_t first_dim = test::Options::vector_lanes<ElementType>() - 1;
+    size_t second_dim =
+        inplace ? first_dim : test::Options::vector_lanes<ElementType>() + 1;
+    // Exercise horizontal scalar path
+    test(first_dim, second_dim);
+    // Exercise vertical scalar path
+    test(second_dim, first_dim);
   }
 
   void vector_test() {
-    // Vector path will be exercised even for +1 because of
-    // try_avoid_tail_loop()
-    size_t src_width = test::Options::vector_lanes<ElementType>() + 1;
+    // Make at least two full vector passes
+    size_t src_width = 2 * test::Options::vector_lanes<ElementType>();
     // Set height to be different from width but still bigger than vector_lanes
     size_t src_height =
-        inplace ? src_width : test::Options::vector_lanes<ElementType>() + 2;
+        inplace ? src_width : test::Options::vector_lanes<ElementType>() + 1;
     test(src_width, src_height);
   }
 
@@ -75,6 +74,34 @@ class TestTranspose final {
   }
 
   size_t padding_;
+};
+
+class TestNotImplemented {
+ public:
+  template <typename ElementType>
+  static void wrong_dimensions() {
+    const size_t width = 1;
+    const size_t height = 2;
+    size_t stride = width * sizeof(ElementType);
+
+    ElementType source[width * height] = {0xFF};
+
+    ASSERT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+              intrinsiccv_transpose(source, stride, source, stride, width,
+                                    height, sizeof(ElementType)));
+  }
+
+  template <typename WrongType>
+  static void wrong_type() {
+    const size_t width = 1, height = 1;
+    size_t stride = width * sizeof(WrongType);
+
+    WrongType source[width * height] = {0xFF};
+
+    ASSERT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+              intrinsiccv_transpose(source, stride, source, stride, width,
+                                    height, sizeof(WrongType)));
+  }
 };
 
 template <typename ElementType>
@@ -127,4 +154,12 @@ TYPED_TEST(Transpose, NullPointer) {
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(intrinsiccv_transpose, src, sizeof(TypeParam), dst,
                        sizeof(TypeParam), 1, 1, sizeof(TypeParam));
+}
+
+TYPED_TEST(Transpose, NotImplementedDims) {
+  TestNotImplemented::wrong_dimensions<TypeParam>();
+}
+
+TEST(Transpose, NotImplementedType) {
+  TestNotImplemented::wrong_type<__uint128_t>();
 }
