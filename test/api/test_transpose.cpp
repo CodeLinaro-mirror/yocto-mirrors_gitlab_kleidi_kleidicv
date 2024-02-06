@@ -11,24 +11,41 @@
 template <typename ElementType, bool inplace>
 class TestTranspose final {
  public:
-  static void test(size_t padding) {
-    // Width is set to execute 2 vector paths and 1 scalar path
-    const size_t src_width = test::Options::vector_length() * 2 + 1;
-    // Only square data is supported inplace
-    // Otherwise execute 3 vector paths and 1 scalar path (not to match width)
-    const size_t src_height =
-        inplace ? src_width : test::Options::vector_length() * 3 + 1;
+  explicit TestTranspose(size_t padding) : padding_(padding) {}
+
+  void scalar_test() {
+    // Scalar path will be exercised only if width is smaller than number of
+    // lanes in a vector
+    size_t src_width = test::Options::vector_lanes<ElementType>() - 1;
+    // Set height to be different than width but still smaller than vector_lanes
+    size_t src_height =
+        inplace ? src_width : test::Options::vector_lanes<ElementType>() - 2;
+    test(src_width, src_height);
+  }
+
+  void vector_test() {
+    // Vector path will be exercised even for +1 because of
+    // try_avoid_tail_loop()
+    size_t src_width = test::Options::vector_lanes<ElementType>() + 1;
+    // Set height to be different from width but still bigger than vector_lanes
+    size_t src_height =
+        inplace ? src_width : test::Options::vector_lanes<ElementType>() + 2;
+    test(src_width, src_height);
+  }
+
+ protected:
+  void test(size_t src_width, size_t src_height) const {
     const size_t dst_width = src_height;
     const size_t dst_height = src_width;
 
-    test::Array2D<ElementType> source(src_width, src_height, padding, 1);
-    test::Array2D<ElementType> expected(dst_width, dst_height, padding, 1);
+    test::Array2D<ElementType> source(src_width, src_height, padding_, 1);
+    test::Array2D<ElementType> expected(dst_width, dst_height, padding_, 1);
     test::Array2D<ElementType> actual;
     test::Array2D<ElementType> *p_actual = &source;
 
     // Only allocate actual array if needed
     if constexpr (!inplace) {
-      actual = test::Array2D<ElementType>(dst_width, dst_height, padding, 1);
+      actual = test::Array2D<ElementType>(dst_width, dst_height, padding_, 1);
       p_actual = &actual;
     }
 
@@ -46,9 +63,8 @@ class TestTranspose final {
     EXPECT_EQ_ARRAY2D(expected, *p_actual);
   }
 
- protected:
-  static void calculate_expected(const test::Array2D<ElementType> &source,
-                                 test::Array2D<ElementType> &expected) {
+  void calculate_expected(const test::Array2D<ElementType> &source,
+                          test::Array2D<ElementType> &expected) const {
     for (size_t hindex = 0; hindex < source.height(); ++hindex) {
       for (size_t vindex = 0; vindex < source.width(); ++vindex) {
         // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign)
@@ -57,6 +73,8 @@ class TestTranspose final {
       }
     }
   }
+
+  size_t padding_;
 };
 
 template <typename ElementType>
@@ -65,18 +83,42 @@ class Transpose : public testing::Test {};
 using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
 TYPED_TEST_SUITE(Transpose, ElementTypes);
 
-TYPED_TEST(Transpose, ToNewBufferNoPadding) {
-  TestTranspose<TypeParam, false>::test(0);
+TYPED_TEST(Transpose, ScalarToNewBufferNoPadding) {
+  TestTranspose<TypeParam, false> test(0);
+  test.scalar_test();
 }
 
-TYPED_TEST(Transpose, ToNewBufferWithPadding) {
-  TestTranspose<TypeParam, false>::test(1);
+TYPED_TEST(Transpose, VectorToNewBufferNoPadding) {
+  TestTranspose<TypeParam, false> test(0);
+  test.vector_test();
 }
 
-TYPED_TEST(Transpose, InplaceNoPadding) {
-  TestTranspose<TypeParam, true>::test(0);
+TYPED_TEST(Transpose, ScalarToNewBufferWithPadding) {
+  TestTranspose<TypeParam, false> test(1);
+  test.scalar_test();
 }
 
-TYPED_TEST(Transpose, InplaceWithPadding) {
-  TestTranspose<TypeParam, true>::test(1);
+TYPED_TEST(Transpose, VectorToNewBufferWithPadding) {
+  TestTranspose<TypeParam, false> test(1);
+  test.vector_test();
+}
+
+TYPED_TEST(Transpose, ScalarInplaceNoPadding) {
+  TestTranspose<TypeParam, true> test(0);
+  test.scalar_test();
+}
+
+TYPED_TEST(Transpose, VectorInplaceNoPadding) {
+  TestTranspose<TypeParam, true> test(0);
+  test.vector_test();
+}
+
+TYPED_TEST(Transpose, ScalarInplaceWithPadding) {
+  TestTranspose<TypeParam, true> test(1);
+  test.scalar_test();
+}
+
+TYPED_TEST(Transpose, VectorInplaceWithPadding) {
+  TestTranspose<TypeParam, true> test(1);
+  test.vector_test();
 }
