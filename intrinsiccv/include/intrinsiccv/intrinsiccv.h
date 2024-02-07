@@ -196,8 +196,37 @@ INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s16, int16_t,
 INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t,
                             double);
 
-INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_add_abs_with_threshold, int16_t,
-                            int16_t);
+/// Adds the absolute values of the corresponding elements in `src_a` and
+/// `src_b`. Then, performs a comparison of each element's value in the result
+/// with respect to a caller defined threshold. The strictly larger elements
+/// remain unchanged and the rest are set to 0.
+///
+/// The addition is saturated, i.e. the result is the largest number of the
+/// type of the element if the addition result would overflow. Source data
+/// length (in bytes) is `stride` * `height`. Width and height are the same
+/// for the two sources.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_a_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the first source data.
+///                     Must not be less than width * sizeof(type).
+/// @param src_b_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the second source data.
+///                     Must not be less than width * sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must not be less than width * sizeof(type).
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+/// @param threshold    The value that the elements of the addition result
+///                     are compared to.
+///
+intrinsiccv_error_t intrinsiccv_saturating_add_abs_with_threshold(
+    const int16_t *src_a, size_t src_a_stride, const int16_t *src_b,
+    size_t src_b_stride, int16_t *dst, size_t dst_stride, size_t width,
+    size_t height, int16_t threshold);
 
 /// Converts a grayscale image to RGB. All channels are 8-bit wide.
 ///

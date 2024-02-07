@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_ADD_ABS_WITH_THRESHOLD_SC_H
-#define INTRINSICCV_ADD_ABS_WITH_THRESHOLD_SC_H
+#ifndef INTRINSICCV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H
+#define INTRINSICCV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H
 
 #include <limits>
 
@@ -13,29 +13,29 @@
 namespace intrinsiccv::sve2 {
 
 template <typename ScalarType>
-class AddAbsWithThreshold final : public UnrollTwice {
+class SaturatingAddAbsWithThreshold final : public UnrollTwice {
  public:
   using ContextType = sve2::Context;
   using VecTraits = sve2::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  explicit AddAbsWithThreshold(ScalarType threshold)
+  explicit SaturatingAddAbsWithThreshold(ScalarType threshold)
       INTRINSICCV_STREAMING_COMPATIBLE : threshold_(threshold) {}
 
   VectorType vector_path(ContextType ctx, VectorType src_a,
                          VectorType src_b) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
-    VectorType add_abs = svadd_x(pg, svabs_x(pg, src_a), svabs_x(pg, src_b));
+    VectorType add_abs = svqadd_x(pg, svqabs_x(pg, src_a), svqabs_x(pg, src_b));
     svbool_t predicate = svcmpgt(pg, add_abs, threshold_);
     return svsel(predicate, add_abs, VecTraits::svdup(0));
   }
 
  private:
   ScalarType threshold_;
-};  // end of class AddAbsWithThreshold<ScalarType>
+};  // end of class SaturatingAddAbsWithThreshold<ScalarType>
 
 template <typename T>
-intrinsiccv_error_t add_abs_with_threshold_sc(
+intrinsiccv_error_t saturating_add_abs_with_threshold_sc(
     const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
     T *dst, size_t dst_stride, size_t width, size_t height,
     T threshold) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -43,7 +43,7 @@ intrinsiccv_error_t add_abs_with_threshold_sc(
   CHECK_POINTER_AND_STRIDE(src_b, src_b_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
-  AddAbsWithThreshold<T> operation{threshold};
+  SaturatingAddAbsWithThreshold<T> operation{threshold};
   Rectangle rect{width, height};
   Rows<const T> src_a_rows{src_a, src_a_stride};
   Rows<const T> src_b_rows{src_b, src_b_stride};
@@ -55,4 +55,4 @@ intrinsiccv_error_t add_abs_with_threshold_sc(
 
 }  // namespace intrinsiccv::sve2
 
-#endif  // INTRINSICCV_ADD_ABS_WITH_THRESHOLD_SC_H
+#endif  // INTRINSICCV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H

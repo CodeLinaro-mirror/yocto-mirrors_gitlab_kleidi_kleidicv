@@ -8,15 +8,15 @@ SPDX-License-Identifier: Apache-2.0
 Note: functions listed here are not necessarily exposed to adapter API layer.
 
 ## Basic arithmetic operations
-|                    | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 |
-|--------------------|-----|-----|-----|-----|-----|-----|-----|-----|
-| Saturating Add     |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Saturating Sub     |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Saturating Absdiff |  x  |  x  |  x  |  x  |  x  |     |     |     |
-| Saturating Multiply|  x  |  x  |  x  |  x  |  x  |     |     |     |
-| Threshold binary   |     |  x  |     |     |     |     |     |     |
-| AddAbsWithThreshold|     |     |  x  |     |     |     |     |     |
-| Scale              |     |  x  |     |     |     |     |     |     |
+|                              | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 |
+|------------------------------|-----|-----|-----|-----|-----|-----|-----|-----|
+| Saturating Add               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
+| Saturating Sub               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
+| Saturating Absdiff           |  x  |  x  |  x  |  x  |  x  |     |     |     |
+| Saturating Multiply          |  x  |  x  |  x  |  x  |  x  |     |     |     |
+| Threshold binary             |     |  x  |     |     |     |     |     |     |
+| SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |
+| Scale                        |     |  x  |     |     |     |     |     |     |
 
 ## Colour conversions
 |  | gray-RGB | gray-RGBA | RGB-RGB | RGBA-RGBA | RGB-BGR | RGBA-BGRA | RGB-BGRA | RGB-RGBA | RGBA-BGR | RGBA-RGB |

@@ -507,7 +507,7 @@ extern "C" INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t intrinsiccv_canny_u8(
 
   // Calculate magnitude from the horizontal and vertical derivatives, and apply
   // lower threshold.
-  if (auto err = intrinsiccv_add_abs_with_threshold(
+  if (auto err = intrinsiccv_saturating_add_abs_with_threshold(
           &horizontal_gradient.rows()[0], horizontal_gradient.rows().stride(),
           &vertical_gradient.rows()[0], vertical_gradient.rows().stride(),
           &magnitudes.rows_without_margin()[0],

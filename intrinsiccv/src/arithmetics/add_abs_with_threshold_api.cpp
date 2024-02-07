@@ -11,41 +11,37 @@ namespace intrinsiccv {
 namespace neon {
 
 template <typename T>
-intrinsiccv_error_t add_abs_with_threshold(const T *src_a, size_t src_a_stride,
-                                           const T *src_b, size_t src_b_stride,
-                                           T *dst, size_t dst_stride,
-                                           size_t width, size_t height,
-                                           T threshold);
+intrinsiccv_error_t saturating_add_abs_with_threshold(
+    const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
+    T *dst, size_t dst_stride, size_t width, size_t height, T threshold);
 
 }  // namespace neon
 
 namespace sve2 {
 template <typename T>
-intrinsiccv_error_t add_abs_with_threshold(const T *src_a, size_t src_a_stride,
-                                           const T *src_b, size_t src_b_stride,
-                                           T *dst, size_t dst_stride,
-                                           size_t width, size_t height,
-                                           T threshold);
+intrinsiccv_error_t saturating_add_abs_with_threshold(
+    const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
+    T *dst, size_t dst_stride, size_t width, size_t height, T threshold);
 
 }  // namespace sve2
 namespace sme2 {
 template <typename T>
-intrinsiccv_error_t add_abs_with_threshold(const T *src_a, size_t src_a_stride,
-                                           const T *src_b, size_t src_b_stride,
-                                           T *dst, size_t dst_stride,
-                                           size_t width, size_t height,
-                                           T threshold);
+intrinsiccv_error_t saturating_add_abs_with_threshold(
+    const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
+    T *dst, size_t dst_stride, size_t width, size_t height, T threshold);
 
 }  // namespace sme2
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                                 \
-  INTRINSICCV_MULTIVERSION_C_API(                                            \
-      name, intrinsiccv::neon::add_abs_with_threshold<type>,                 \
-      INTRINSICCV_SVE2_IMPL_IF(                                              \
-          intrinsiccv::sve2::add_abs_with_threshold<type>),                  \
-      intrinsiccv::sme2::add_abs_with_threshold<type>, const type *, size_t, \
-      const type *, size_t, type *, size_t, size_t, size_t, type)
+#define INTRINSICCV_DEFINE_C_API(name, type)                              \
+  INTRINSICCV_MULTIVERSION_C_API(                                         \
+      name, intrinsiccv::neon::saturating_add_abs_with_threshold<type>,   \
+      INTRINSICCV_SVE2_IMPL_IF(                                           \
+          intrinsiccv::sve2::saturating_add_abs_with_threshold<type>),    \
+      intrinsiccv::sme2::saturating_add_abs_with_threshold<type>,         \
+      const type *, size_t, const type *, size_t, type *, size_t, size_t, \
+      size_t, type)
 
-INTRINSICCV_DEFINE_C_API(intrinsiccv_add_abs_with_threshold, int16_t);
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_add_abs_with_threshold,
+                         int16_t);
 
 }  // namespace intrinsiccv

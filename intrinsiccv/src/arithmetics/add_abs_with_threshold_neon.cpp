@@ -10,40 +10,52 @@
 namespace intrinsiccv::neon {
 
 template <typename ScalarType>
-class AddAbsWithThreshold final : public UnrollOnce, public UnrollTwice {
+class SaturatingAddAbsWithThreshold final : public UnrollOnce,
+                                            public UnrollTwice {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  explicit AddAbsWithThreshold(ScalarType threshold)
+  explicit SaturatingAddAbsWithThreshold(ScalarType threshold)
       : threshold_{threshold}, threshold_vec_{vdupq_n_s16(threshold)} {}
 
   VectorType vector_path(VectorType src_a, VectorType src_b) {
-    VectorType add_abs = vaddq_s16(vabsq_s16(src_a), vabsq_s16(src_b));
+    VectorType add_abs = vqaddq_s16(vqabsq_s16(src_a), vqabsq_s16(src_b));
     return vandq_s16(add_abs, vcgtq_s16(add_abs, threshold_vec_));
   }
 
   ScalarType scalar_path(ScalarType src_a, ScalarType src_b) {
-    ScalarType add_abs = std::abs(src_a) + std::abs(src_b);
+    ScalarType add_abs = 0;
+
+    if (__builtin_add_overflow(saturate_abs(src_a), saturate_abs(src_b),
+                               &add_abs)) {
+      add_abs = std::numeric_limits<ScalarType>::max();
+    }
     return add_abs > threshold_ ? add_abs : 0;
   }
 
  private:
+  ScalarType saturate_abs(ScalarType input) {
+    if (std::numeric_limits<ScalarType>::is_signed &&
+        input == std::numeric_limits<ScalarType>::min()) {
+      return std::numeric_limits<ScalarType>::max();
+    }
+    return std::abs(input);
+  }
+
   ScalarType threshold_;
   VectorType threshold_vec_;
-};  // end of class AddAbsWithThreshold<ScalarType>
+};  // end of class SaturatingAddAbsWithThreshold<ScalarType>
 
 template <typename T>
-intrinsiccv_error_t add_abs_with_threshold(const T *src_a, size_t src_a_stride,
-                                           const T *src_b, size_t src_b_stride,
-                                           T *dst, size_t dst_stride,
-                                           size_t width, size_t height,
-                                           T threshold) {
+intrinsiccv_error_t saturating_add_abs_with_threshold(
+    const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
+    T *dst, size_t dst_stride, size_t width, size_t height, T threshold) {
   CHECK_POINTER_AND_STRIDE(src_a, src_a_stride);
   CHECK_POINTER_AND_STRIDE(src_b, src_b_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
-  AddAbsWithThreshold<T> operation{threshold};
+  SaturatingAddAbsWithThreshold<T> operation{threshold};
   Rectangle rect{width, height};
   Rows<const T> src_a_rows{src_a, src_a_stride};
   Rows<const T> src_b_rows{src_b, src_b_stride};
@@ -52,12 +64,12 @@ intrinsiccv_error_t add_abs_with_threshold(const T *src_a, size_t src_a_stride,
   return INTRINSICCV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                             \
-  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t                 \
-  add_abs_with_threshold<type>(const type *src_a, size_t src_a_stride,     \
-                               const type *src_b, size_t src_b_stride,     \
-                               type *dst, size_t dst_stride, size_t width, \
-                               size_t height, type threshold)
+#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \
+  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t             \
+  saturating_add_abs_with_threshold<type>(                             \
+      const type *src_a, size_t src_a_stride, const type *src_b,       \
+      size_t src_b_stride, type *dst, size_t dst_stride, size_t width, \
+      size_t height, type threshold)
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(int16_t);
 
