@@ -370,7 +370,7 @@ static void non_maxima_suppression_and_high_thresholding(
     Rows<const int16_t> vertical_gradient_rows,
     Rows<const int16_t> magnitude_rows, Rows<uint8_t> dst_rows,
     double high_threshold, StrongEdgeStack &strong_edge_pixels) {
-  static constexpr size_t kNumLanes = VecTraits<int16_t>::num_lanes();
+  static constexpr ptrdiff_t kNumLanes = VecTraits<int16_t>::num_lanes();
   static const int16_t kPositionBits[8] = {
       0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
   };
@@ -379,7 +379,7 @@ static void non_maxima_suppression_and_high_thresholding(
   const int16x8_t high_threshold_vec =
       vdupq_n_s16(static_cast<int16_t>(high_threshold));
 
-  auto handle_row = [&](size_t index) {
+  auto handle_row = [&](ptrdiff_t index) {
     if (is_vect_len_memory_null(&magnitude_rows.at(1)[index + kNumLanes])) {
       memset(&dst_rows[index], 0, kNumLanes);
       return;
