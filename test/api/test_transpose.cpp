@@ -163,3 +163,27 @@ TYPED_TEST(Transpose, NotImplementedDims) {
 TEST(Transpose, NotImplementedType) {
   TestNotImplemented::wrong_type<__uint128_t>();
 }
+
+TYPED_TEST(Transpose, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+
+  const size_t kBufSize = sizeof(TypeParam) * 10;
+  char src[kBufSize] = {}, dst[kBufSize] = {};
+
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            intrinsiccv_transpose(src + 1, sizeof(TypeParam), dst,
+                                  sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            intrinsiccv_transpose(src, sizeof(TypeParam) + 1, dst,
+                                  sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            intrinsiccv_transpose(src, sizeof(TypeParam), dst + 1,
+                                  sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_ALIGNMENT,
+      intrinsiccv_transpose(src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1,
+                            1, 1, sizeof(TypeParam)));
+}

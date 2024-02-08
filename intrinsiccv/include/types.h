@@ -308,26 +308,6 @@ class Rows final : public RowBase<T> {
 
   explicit Rows(T *ptr) INTRINSICCV_STREAMING_COMPATIBLE : Rows(ptr, 0, 0) {}
 
-  explicit Rows(void *ptr, size_t stride,
-                size_t channels) INTRINSICCV_STREAMING_COMPATIBLE
-      : Rows(reinterpret_cast<T *>(ptr), stride, channels) {}
-
-  explicit Rows(const void *ptr, size_t stride,
-                size_t channels) INTRINSICCV_STREAMING_COMPATIBLE
-      : Rows(reinterpret_cast<T *>(ptr), stride, channels) {}
-
-  explicit Rows(void *ptr, size_t stride) INTRINSICCV_STREAMING_COMPATIBLE
-      : Rows(reinterpret_cast<T *>(ptr), stride, 1) {}
-
-  explicit Rows(const void *ptr, size_t stride) INTRINSICCV_STREAMING_COMPATIBLE
-      : Rows(reinterpret_cast<T *>(ptr), stride, 1) {}
-
-  explicit Rows(void *ptr) INTRINSICCV_STREAMING_COMPATIBLE
-      : Rows(reinterpret_cast<T *>(ptr), 0, 0) {}
-
-  explicit Rows(const void *ptr) INTRINSICCV_STREAMING_COMPATIBLE
-      : Rows(reinterpret_cast<T *>(ptr), 0, 0) {}
-
   // Subscript operator to return an arbitrary position within the current row.
   // To account for stride and channel count use at() method.
   T &operator[](ptrdiff_t index) INTRINSICCV_STREAMING_COMPATIBLE {

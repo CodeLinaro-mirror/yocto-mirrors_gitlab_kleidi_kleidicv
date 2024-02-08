@@ -32,6 +32,10 @@ static int convert_error(intrinsiccv_error_t e) {
       return CV_HAL_ERROR_OK;
     case INTRINSICCV_ERROR_NOT_IMPLEMENTED:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
+    // Even if IntrinsicCV returns this error it's possible that another
+    // implementation could handle the misalignment.
+    case INTRINSICCV_ERROR_ALIGNMENT:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
     default:
       return CV_HAL_ERROR_UNKNOWN;
   }

@@ -7,6 +7,11 @@
 
 #include "framework/operation.h"
 
+#define INTRINSICCV_THRESHOLD_BINARY(type, suffix) \
+  INTRINSICCV_API(threshold_binary, intrinsiccv_threshold_binary_##suffix, type)
+
+INTRINSICCV_THRESHOLD_BINARY(uint8_t, u8);
+
 template <typename ElementType>
 class ThresholdBinaryTestBase : public UnaryOperationTest<ElementType> {
   // Needed to initialize value()
@@ -123,6 +128,20 @@ TYPED_TEST(ThresholdBinary, TestMax) {
 TYPED_TEST(ThresholdBinary, NullPointer) {
   const TypeParam src[1] = {};
   TypeParam dst[1];
-  test::test_null_args(intrinsiccv_threshold_binary_u8, src, sizeof(TypeParam),
+  test::test_null_args(threshold_binary<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), 1, 1, 1, 1);
+}
+
+TYPED_TEST(ThresholdBinary, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            threshold_binary<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
+                                          sizeof(TypeParam), 1, 1, 1, 1));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            threshold_binary<TypeParam>()(src, sizeof(TypeParam), dst,
+                                          sizeof(TypeParam) + 1, 1, 1, 1, 1));
 }

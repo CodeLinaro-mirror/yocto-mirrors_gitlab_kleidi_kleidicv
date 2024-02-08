@@ -367,19 +367,26 @@ class Merge4<uint64_t> final : public UnrollTwice {
 
 #endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
 
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename ScalarType>
 intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
-                          void *dst, size_t dst_stride, size_t width,
+                          void *dst_void, size_t dst_stride, size_t width,
                           size_t height, size_t channels) {
   if (channels < 2) {
     return INTRINSICCV_ERROR_RANGE;
   }
-  CHECK_POINTERS(srcs, src_strides, dst);
-  CHECK_POINTERS(srcs[0], srcs[1]);
+  CHECK_POINTERS(srcs, src_strides);
+  MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src0, srcs[0]);
+  MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src1, srcs[1]);
+  MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst, dst_void);
+  CHECK_POINTER_AND_STRIDE(src0, src_strides[0]);
+  CHECK_POINTER_AND_STRIDE(src1, src_strides[1]);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   Rectangle rect{width, height};
-  Rows<const ScalarType> src_a_rows{srcs[0], src_strides[0]};
-  Rows<const ScalarType> src_b_rows{srcs[1], src_strides[1]};
+  Rows<const ScalarType> src_a_rows{src0, src_strides[0]};
+  Rows<const ScalarType> src_b_rows{src1, src_strides[1]};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
 
   switch (channels) {
@@ -390,18 +397,22 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
     } break;
 
     case 3: {
-      CHECK_POINTERS(srcs[2]);
+      MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src2, srcs[2]);
+      CHECK_POINTER_AND_STRIDE(src2, src_strides[2]);
       Merge3<ScalarType> operation;
-      Rows<const ScalarType> src_c_rows{srcs[2], src_strides[2]};
+      Rows<const ScalarType> src_c_rows{src2, src_strides[2]};
       apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
                               src_c_rows, dst_rows);
     } break;
 
     case 4: {
-      CHECK_POINTERS(srcs[2], srcs[3]);
+      MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src2, srcs[2]);
+      MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src3, srcs[3]);
+      CHECK_POINTER_AND_STRIDE(src2, src_strides[2]);
+      CHECK_POINTER_AND_STRIDE(src3, src_strides[3]);
       Merge4<ScalarType> operation;
-      Rows<const ScalarType> src_c_rows{srcs[2], src_strides[2]};
-      Rows<const ScalarType> src_d_rows{srcs[3], src_strides[3]};
+      Rows<const ScalarType> src_c_rows{src2, src_strides[2]};
+      Rows<const ScalarType> src_d_rows{src3, src_strides[3]};
       apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
                               src_c_rows, src_d_rows, dst_rows);
     } break;
@@ -411,6 +422,7 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
   }
   return INTRINSICCV_OK;
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 INTRINSICCV_TARGET_FN_ATTRS
 intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,

@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "config.h"
+#include "ctypes.h"
 
 namespace intrinsiccv {
 
@@ -353,14 +354,63 @@ class LoopUnroll2 final {
 
 // Check whether any of the arguments are null pointers.
 template <typename... Pointers>
-bool any_null(Pointers... pointers) {
+bool any_null(Pointers... pointers) INTRINSICCV_STREAMING_COMPATIBLE {
   return (... || (pointers == nullptr));
 }
 
-#define CHECK_POINTERS(...)                \
-  if (any_null(__VA_ARGS__)) {             \
-    return INTRINSICCV_ERROR_NULL_POINTER; \
+#define CHECK_POINTERS(...)                  \
+  do {                                       \
+    if (any_null(__VA_ARGS__)) {             \
+      return INTRINSICCV_ERROR_NULL_POINTER; \
+    }                                        \
+  } while (false)
+
+template <typename AlignType, typename Value>
+bool is_misaligned(Value v) INTRINSICCV_STREAMING_COMPATIBLE {
+  constexpr size_t kMask = alignof(AlignType) - 1;
+  static_assert(kMask == 0b0001 || kMask == 0b0011 || kMask == 0b0111 ||
+                kMask == 0b1111);
+  return (v & kMask) != 0;
+}
+
+// Specialisation for when stride misalignment is possible.
+template <typename T>
+std::enable_if_t<alignof(T) != 1, intrinsiccv_error_t> check_pointer_and_stride(
+    T *pointer, size_t stride) INTRINSICCV_STREAMING_COMPATIBLE {
+  if (pointer == nullptr) {
+    return INTRINSICCV_ERROR_NULL_POINTER;
   }
+  if (is_misaligned<T>(stride)) {
+    return INTRINSICCV_ERROR_ALIGNMENT;
+  }
+  return INTRINSICCV_OK;
+}
+
+// Specialisation for when stride misalignment is impossible.
+template <typename T>
+std::enable_if_t<alignof(T) == 1, intrinsiccv_error_t> check_pointer_and_stride(
+    T *pointer, size_t /*stride*/) INTRINSICCV_STREAMING_COMPATIBLE {
+  if (pointer == nullptr) {
+    return INTRINSICCV_ERROR_NULL_POINTER;
+  }
+  return INTRINSICCV_OK;
+}
+
+#define CHECK_POINTER_AND_STRIDE(pointer, stride)        \
+  do {                                                   \
+    if (intrinsiccv_error_t ptr_stride_err =             \
+            check_pointer_and_stride(pointer, stride)) { \
+      return ptr_stride_err;                             \
+    }                                                    \
+  } while (false)
+
+#define MAKE_POINTER_CHECK_ALIGNMENT(ElementType, name, from)            \
+  if constexpr (alignof(ElementType) > 1) {                              \
+    if (is_misaligned<ElementType>(reinterpret_cast<uintptr_t>(from))) { \
+      return INTRINSICCV_ERROR_ALIGNMENT;                                \
+    }                                                                    \
+  }                                                                      \
+  ElementType *name = reinterpret_cast<ElementType *>(from)
 
 }  // namespace intrinsiccv
 

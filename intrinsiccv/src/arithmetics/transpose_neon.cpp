@@ -197,14 +197,22 @@ static intrinsiccv_error_t transpose(Rectangle rect,
 }
 
 template <typename T>
-static intrinsiccv_error_t transpose(const void *src, size_t src_stride,
-                                     void *dst, size_t dst_stride,
-                                     size_t src_width, size_t src_height,
-                                     bool inplace) {
+static intrinsiccv_error_t transpose(const void *src_void, size_t src_stride,
+                                     void *dst_void, size_t dst_stride,
+                                     size_t src_width, size_t src_height) {
+  MAKE_POINTER_CHECK_ALIGNMENT(const T, src, src_void);
+  MAKE_POINTER_CHECK_ALIGNMENT(T, dst, dst_void);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+
   Rectangle rect{src_width, src_height};
   Rows<T> dst_rows{dst, dst_stride};
 
-  if (inplace) {
+  if (src == dst) {
+    if (src_width != src_height) {
+      // Inplace transpose only implemented if width and height are the same
+      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    }
     return transpose(rect, dst_rows);
   }
   Rows<const T> src_rows{src, src_stride};
@@ -215,31 +223,19 @@ INTRINSICCV_TARGET_FN_ATTRS
 intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
                               size_t dst_stride, size_t src_width,
                               size_t src_height, size_t element_size) {
-  CHECK_POINTERS(src, dst);
-
-  bool inplace = false;
-
-  if (src == dst) {
-    if (src_width != src_height) {
-      // Inplace transpose only implemented if width and height are the same
-      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
-    }
-    inplace = true;
-  }
-
   switch (element_size) {
     case sizeof(uint8_t):
       return transpose<uint8_t>(src, src_stride, dst, dst_stride, src_width,
-                                src_height, inplace);
+                                src_height);
     case sizeof(uint16_t):
       return transpose<uint16_t>(src, src_stride, dst, dst_stride, src_width,
-                                 src_height, inplace);
+                                 src_height);
     case sizeof(uint32_t):
       return transpose<uint32_t>(src, src_stride, dst, dst_stride, src_width,
-                                 src_height, inplace);
+                                 src_height);
     case sizeof(uint64_t):
       return transpose<uint64_t>(src, src_stride, dst, dst_stride, src_width,
-                                 src_height, inplace);
+                                 src_height);
     default:
       return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
   }

@@ -41,7 +41,7 @@ class Array2D : public TwoDimensional<ElementType> {
       : width_{width},
         height_{height},
         channels_{channels},
-        stride_{width * sizeof(ElementType) + padding} {
+        stride_{(width + padding) * sizeof(ElementType)} {
     try_allocate();
     fill_padding();
   }
@@ -69,7 +69,7 @@ class Array2D : public TwoDimensional<ElementType> {
 
     EXPECT_TRUE(valid());
     if (valid()) {
-      std::memcpy(data_.get(), other.data_.get(), height_ * stride_);
+      std::memcpy(data(), other.data(), height_ * stride_);
     }
 
     return *this;
@@ -80,7 +80,8 @@ class Array2D : public TwoDimensional<ElementType> {
     if (this == &other) {
       return *this;
     }
-    data_ = std::move(other.data_);
+    buffer_ = std::move(other.buffer_);
+    data_ = other.data_;
     width_ = other.width_;
     height_ = other.height_;
     channels_ = other.channels_;
@@ -178,12 +179,10 @@ class Array2D : public TwoDimensional<ElementType> {
   }
 
   // Returns a pointer to the first element.
-  ElementType *data() { return reinterpret_cast<ElementType *>(data_.get()); }
+  ElementType *data() { return data_; }
 
   // Returns a const pointer to the first element.
-  const ElementType *data() const {
-    return reinterpret_cast<const ElementType *>(data_.get());
-  }
+  const ElementType *data() const { return data_; }
 
   // Returns the width of this array.
   size_t width() const override { return width_; }
@@ -237,7 +236,7 @@ class Array2D : public TwoDimensional<ElementType> {
       return;
     }
 
-    uint8_t *ptr = data_.get();
+    uint8_t *ptr = reinterpret_cast<uint8_t *>(data());
     for (size_t row = 0; row < height(); ++row) {
       for (size_t column = padding_offset(); column < stride(); ++column) {
         ptr[column] = kPaddingValue;
@@ -253,7 +252,7 @@ class Array2D : public TwoDimensional<ElementType> {
       return;
     }
 
-    const uint8_t *ptr = data_.get();
+    const uint8_t *ptr = reinterpret_cast<const uint8_t *>(data());
     for (size_t row = 0; row < height(); ++row) {
       for (size_t offset = padding_offset(); offset < stride(); ++offset) {
         if (ptr[offset] != kPaddingValue) {
@@ -283,15 +282,24 @@ class Array2D : public TwoDimensional<ElementType> {
   // Resets the instance to the default instance.
   void reset() {
     width_ = height_ = channels_ = stride_ = 0;
-    data_.reset();
+    data_ = nullptr;
+    buffer_.reset();
   }
 
   // Tries to allocate backing memory.
   void try_allocate() {
-    size_t allocation_size = height_ * stride_;
+    size_t data_size = height_ * stride_;
+    // Allocate extra to allow weakening alignment.
+    size_t allocation_size = data_size + alignof(ElementType);
 
     try {
-      data_ = std::make_unique<uint8_t[]>(allocation_size);
+      buffer_ = std::make_unique<uint8_t[]>(allocation_size);
+      // Weaken alignment to flush out potential alignment issues.
+      // buffer_.get() will contain a pointer that is at least 16-byte aligned.
+      // By adding a small offset to that we get a pointer that is only aligned
+      // to alignof(ElementType).
+      data_ =
+          reinterpret_cast<ElementType *>(buffer_.get() + alignof(ElementType));
     } catch (...) {
       reset();
       GTEST_FAIL() << "Failed to allocate memory of " << allocation_size
@@ -303,7 +311,10 @@ class Array2D : public TwoDimensional<ElementType> {
   static constexpr uint8_t kPaddingValue = std::numeric_limits<uint8_t>::max();
 
   // Smart pointer to the managed memory.
-  std::unique_ptr<uint8_t[]> data_;
+  std::unique_ptr<uint8_t[]> buffer_;
+  // Pointer to the start of the data. This is offset from the start of buffer_
+  // to flush out potential alignment issues.
+  ElementType *data_{nullptr};
   // Width a row in the array.
   size_t width_{0};
   // Number of rows in the array.

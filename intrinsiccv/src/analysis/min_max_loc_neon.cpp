@@ -310,7 +310,7 @@ template <typename ScalarType>
 intrinsiccv_error_t min_max_loc(const ScalarType *src, size_t src_stride,
                                 size_t width, size_t height, size_t *min_offset,
                                 size_t *max_offset) {
-  CHECK_POINTERS(src);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
 
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride};

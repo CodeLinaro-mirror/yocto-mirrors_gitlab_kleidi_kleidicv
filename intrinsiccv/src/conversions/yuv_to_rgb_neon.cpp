@@ -292,7 +292,9 @@ intrinsiccv_error_t yuv2rgbx_operation(
     OperationType &operation, const ScalarType *src_y, size_t src_y_stride,
     const ScalarType *src_uv, size_t src_uv_stride, ScalarType *dst,
     size_t dst_stride, size_t width, size_t height) {
-  CHECK_POINTERS(src_y, src_uv, dst);
+  CHECK_POINTER_AND_STRIDE(src_y, src_y_stride);
+  CHECK_POINTER_AND_STRIDE(src_uv, src_uv_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   Rectangle rect{width, height};
   ParallelRows y_rows{src_y, src_y_stride};
   Rows uv_rows{src_uv, src_uv_stride};

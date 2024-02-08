@@ -24,3 +24,17 @@ TYPED_TEST(CannyTest, NullPointer) {
   test::test_null_args(canny<TypeParam>(), src, sizeof(TypeParam), dst,
                        sizeof(TypeParam), 1, 1, 0.0, 1.0);
 }
+
+TYPED_TEST(CannyTest, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            canny<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
+                               sizeof(TypeParam), 1, 1, 0.0, 1.0));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            canny<TypeParam>()(src, sizeof(TypeParam), dst,
+                               sizeof(TypeParam) + 1, 1, 1, 0.0, 1.0));
+}

@@ -168,3 +168,59 @@ TYPED_TEST(Split, NullPointer) {
     }
   }
 }
+
+TYPED_TEST(Split, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+
+  const size_t kChannels = 4;
+  // A size comfortably large enough to hold the data, taking into account the
+  // various offsets that this test will make.
+  const size_t kBufSize = kChannels * sizeof(TypeParam) * 2;
+  alignas(TypeParam) char src_data[kBufSize];
+  size_t src_stride = kChannels * sizeof(TypeParam);
+  alignas(TypeParam) char dst_arrays[kBufSize];
+  char* dst_data[kChannels] = {};
+  size_t dst_strides[kChannels] = {};
+
+  auto init = [&]() {
+    for (size_t i = 0; i < kChannels; ++i) {
+      dst_data[i] = dst_arrays + sizeof(TypeParam) * i;
+      dst_strides[i] = sizeof(TypeParam);
+    }
+  };
+
+  auto check_split = [&](int channels, void* src_maybe_misaligned,
+                         size_t src_stride_maybe_misaligned) {
+    EXPECT_EQ(
+        INTRINSICCV_ERROR_ALIGNMENT,
+        intrinsiccv_split(src_maybe_misaligned, src_stride_maybe_misaligned,
+                          reinterpret_cast<void**>(dst_data), dst_strides, 1, 1,
+                          channels, sizeof(TypeParam)));
+  };
+
+  for (size_t channels = 2; channels <= kChannels; ++channels) {
+    init();
+
+    // Misaligned source pointer
+    check_split(channels, src_data + 1, src_stride);
+
+    // Misaligned source stride
+    check_split(channels, src_data, src_stride + 1);
+
+    for (size_t misaligned_channel = 0; misaligned_channel < channels;
+         ++misaligned_channel) {
+      // Misaligned destination pointer
+      init();
+      ++dst_data[misaligned_channel];
+      check_split(channels, src_data, src_stride);
+
+      // Misaligned destination stride
+      init();
+      ++dst_strides[misaligned_channel];
+      check_split(channels, src_data, src_stride);
+    }
+  }
+}

@@ -48,7 +48,7 @@ template <typename ScalarType>
 intrinsiccv_error_t min_max(const ScalarType *src, size_t src_stride,
                             size_t width, size_t height, ScalarType *min_value,
                             ScalarType *max_value) {
-  CHECK_POINTERS(src);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride};
   MinMax<ScalarType> operation;

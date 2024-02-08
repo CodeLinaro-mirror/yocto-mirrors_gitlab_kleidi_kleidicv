@@ -117,3 +117,15 @@ TYPED_TEST(CountNonZeros, NullPointer) {
   test::test_null_args(count_nonzeros<TypeParam>(), src, sizeof(TypeParam), 1,
                        1, &count);
 }
+
+TYPED_TEST(CountNonZeros, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  TypeParam src[1];
+  size_t count = 0;
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_ALIGNMENT,
+      count_nonzeros<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &count));
+}

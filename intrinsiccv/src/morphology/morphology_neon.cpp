@@ -490,7 +490,9 @@ template <typename T>
 intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
                            size_t dst_stride, size_t width, size_t height,
                            intrinsiccv_morphology_context_t *context) {
-  CHECK_POINTERS(src, dst, context);
+  CHECK_POINTERS(context);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
@@ -543,7 +545,9 @@ template <typename T>
 intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
                           intrinsiccv_morphology_context_t *context) {
-  CHECK_POINTERS(src, dst, context);
+  CHECK_POINTERS(context);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 

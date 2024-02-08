@@ -122,7 +122,8 @@ static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height,
     size_t channels) INTRINSICCV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(src, dst);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
@@ -147,7 +148,8 @@ static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height,
     size_t channels) INTRINSICCV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(src, dst);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};

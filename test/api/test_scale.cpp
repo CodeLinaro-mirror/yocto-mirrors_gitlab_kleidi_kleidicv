@@ -25,3 +25,17 @@ TYPED_TEST(ScaleTest, NullPointer) {
   test::test_null_args(scale<TypeParam>(), src, sizeof(TypeParam), dst,
                        sizeof(TypeParam), 1, 1, 2, 0);
 }
+
+TYPED_TEST(ScaleTest, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            scale<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
+                               sizeof(TypeParam), 1, 1, 2, 0));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            scale<TypeParam>()(src, sizeof(TypeParam), dst,
+                               sizeof(TypeParam) + 1, 1, 1, 2, 0));
+}

@@ -67,7 +67,9 @@ intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
                                         const T *src_b, size_t src_b_stride,
                                         T *dst, size_t dst_stride, size_t width,
                                         size_t height, double scale) {
-  CHECK_POINTERS(src_a, src_b, dst);
+  CHECK_POINTER_AND_STRIDE(src_a, src_a_stride);
+  CHECK_POINTER_AND_STRIDE(src_b, src_b_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   (void)scale;  // TODO: figure out the way to process the scale.
   SaturatingMultiply<T> operation;

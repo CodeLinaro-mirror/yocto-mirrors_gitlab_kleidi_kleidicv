@@ -36,3 +36,32 @@ TYPED_TEST(GaussianBlurTest, NullPointer) {
                        INTRINSICCV_BORDER_TYPE_REFLECT, context);
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
+
+TYPED_TEST(GaussianBlurTest, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 1}));
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}

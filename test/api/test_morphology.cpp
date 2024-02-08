@@ -54,3 +54,37 @@ TYPED_TEST(ErodeTest, NullPointer) {
 
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
 }
+
+TYPED_TEST(DilateTest, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            dilate<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
+                                sizeof(TypeParam), 1, 1, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            dilate<TypeParam>()(src, sizeof(TypeParam), dst,
+                                sizeof(TypeParam) + 1, 1, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(ErodeTest, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            erode<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
+                               sizeof(TypeParam), 1, 1, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            erode<TypeParam>()(src, sizeof(TypeParam), dst,
+                               sizeof(TypeParam) + 1, 1, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}

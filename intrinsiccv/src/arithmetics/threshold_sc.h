@@ -37,7 +37,8 @@ template <typename T>
 intrinsiccv_error_t threshold_binary_sc(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, T threshold, T value) INTRINSICCV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(src, dst);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};

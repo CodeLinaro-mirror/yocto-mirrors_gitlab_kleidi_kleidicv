@@ -90,7 +90,9 @@ intrinsiccv_error_t discrete_gaussian_blur(
     intrinsiccv_filter_context_t *context) INTRINSICCV_STREAMING_COMPATIBLE {
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
-  CHECK_POINTERS(src, dst, context);
+  CHECK_POINTERS(context);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride, channels};

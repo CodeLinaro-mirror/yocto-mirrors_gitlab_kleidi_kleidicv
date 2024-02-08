@@ -56,6 +56,13 @@ scripts/prefix_testsuite_names.py build/test-results/sme/intrinsiccv-api-test.xm
 # Generate test coverage report
 LLVM_COV=llvm-cov scripts/generate_coverage_report.py
 
+# Clang address & undefined behaviour sanitizers
+cmake -S . -B build/sanitize -G Ninja \
+  -DINTRINSICCV_ENABLE_SME2=OFF \
+  -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
+ninja -C build/sanitize intrinsiccv-api-test
+build/sanitize/test/api/intrinsiccv-api-test
+
 # Check OpenCV-IntrinsicCV integration
 scripts/ci-opencv.sh
 

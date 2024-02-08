@@ -299,6 +299,17 @@ TYPED_TEST(MinMax, API) {
   MinMaxTest<TypeParam, 100>{}.test();
 }
 
+TYPED_TEST(MinMax, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  TypeParam src[1] = {}, min_value, max_value;
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            min_max<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &min_value,
+                                 &max_value));
+}
+
 template <typename ElementType>
 class MinMaxLoc : public testing::Test {};
 

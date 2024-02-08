@@ -102,3 +102,23 @@ TYPED_TEST(SaturatingAbsDiff, API) {
   test::test_null_args(saturating_absdiff<TypeParam>(), src, sizeof(TypeParam),
                        src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1);
 }
+
+TYPED_TEST(SaturatingAbsDiff, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            saturating_absdiff<TypeParam>()(src, sizeof(TypeParam) + 1, src,
+                                            sizeof(TypeParam), dst,
+                                            sizeof(TypeParam), 1, 1));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            saturating_absdiff<TypeParam>()(src, sizeof(TypeParam), src,
+                                            sizeof(TypeParam) + 1, dst,
+                                            sizeof(TypeParam), 1, 1));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+            saturating_absdiff<TypeParam>()(src, sizeof(TypeParam), src,
+                                            sizeof(TypeParam), dst,
+                                            sizeof(TypeParam) + 1, 1, 1));
+}

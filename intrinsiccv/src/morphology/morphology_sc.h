@@ -453,7 +453,9 @@ static intrinsiccv_error_t dilate_sc(const T *src, size_t src_stride, T *dst,
                                      size_t height,
                                      intrinsiccv_morphology_context_t *context)
     INTRINSICCV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(src, dst, context);
+  CHECK_POINTERS(context);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
@@ -511,7 +513,9 @@ static intrinsiccv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
                                     size_t height,
                                     intrinsiccv_morphology_context_t *context)
     INTRINSICCV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(src, dst, context);
+  CHECK_POINTERS(context);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 

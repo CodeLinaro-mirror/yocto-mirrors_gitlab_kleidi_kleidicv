@@ -31,6 +31,8 @@ typedef enum INTRINSICCV_NODISCARD {
   INTRINSICCV_ERROR_RANGE,
   /// Could not allocate memory.
   INTRINSICCV_ERROR_ALLOCATION,
+  /// A value did not meet alignment requirements.
+  INTRINSICCV_ERROR_ALIGNMENT,
 } intrinsiccv_error_t;
 
 typedef struct {

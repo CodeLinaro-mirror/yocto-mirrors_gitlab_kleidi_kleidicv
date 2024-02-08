@@ -51,13 +51,15 @@ static size_t count_nonzeros_impl(Rows<const T> src, Rectangle rect) {
 }  // namespace neon
 
 template <typename T>
-INTRINSICCV_TARGET_FN_ATTRS static size_t count_nonzeros(const T *src,
-                                                         size_t src_stride,
-                                                         size_t width,
-                                                         size_t height) {
+INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
+    const T *src, size_t src_stride, size_t width, size_t height,
+    size_t *count) {
+  CHECK_POINTERS(count);
+  CHECK_POINTER_AND_STRIDE(src, src_stride);
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};
-  return neon::count_nonzeros_impl(src_rows, rect);
+  *count = neon::count_nonzeros_impl(src_rows, rect);
+  return INTRINSICCV_OK;
 }
 
 extern "C" {
@@ -67,9 +69,7 @@ intrinsiccv_error_t intrinsiccv_count_nonzeros_u8(const uint8_t *src,
                                                   size_t src_stride,
                                                   size_t width, size_t height,
                                                   size_t *count) {
-  CHECK_POINTERS(src, count);
-  *count = count_nonzeros<uint8_t>(src, src_stride, width, height);
-  return INTRINSICCV_OK;
+  return count_nonzeros<uint8_t>(src, src_stride, width, height, count);
 }
 
 }  // extern "C"

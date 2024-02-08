@@ -47,13 +47,16 @@ extern "C" {
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -86,13 +89,16 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u64, uint64_t);
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -125,13 +131,16 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u64, uint64_t);
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -158,13 +167,16 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s32, int32_t);
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -555,10 +567,12 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_bgra_u8(
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data. Must
 ///                     not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
 /// @param dst          Pointer to the first destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data. Must
 ///                     not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param threshold    The value that the elements of the source data are
@@ -591,6 +605,7 @@ intrinsiccv_error_t intrinsiccv_erode_u8(
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
@@ -625,12 +640,14 @@ intrinsiccv_error_t intrinsiccv_count_nonzeros_u8(const uint8_t *src,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param src_width    Number of elements in the source row.
 /// @param src_height   Number of rows in the source data.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param dst_width    Number of elements in the destination row.
 ///                     Should be src_width / 2 for even src_width.
@@ -661,11 +678,13 @@ intrinsiccv_error_t intrinsiccv_resize_to_quarter_u8(
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(type) * channels.
+///                     less than width * sizeof(src type) * channels.
+///                     Must be a multiple of sizeof(src type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the destination data. Must not
-///                     be less than width * sizeof(type) * channels.
+///                     be less than width * sizeof(dst type) * channels.
+///                     Must be a multiple of sizeof(dst type).
 /// @param width        Number of pixels in the data. (One pixel consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
@@ -691,11 +710,13 @@ intrinsiccv_error_t intrinsiccv_sobel_3x3_vertical_s16_u8(
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(type) * channels.
+///                     less than width * sizeof(src type) * channels.
+///                     Must be a multiple of sizeof(src type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the destination data. Must not
-///                     be less than width * sizeof(type) * channels.
+///                     be less than width * sizeof(dst type) * channels.
+///                     Must be a multiple of sizeof(dst type).
 /// @param width        Number of pixels in the data. (One pixel consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
@@ -733,19 +754,22 @@ intrinsiccv_error_t intrinsiccv_gaussian_blur_5x5_u8(
 /// Splits a multi channel source stream into separate 1-channel streams.
 ///
 /// @param src_data     Pointer to the source data. Must be non-null.
+///                     Must be aligned to element_size.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(type) * channels.
+///                     less than width * element_size * channels.
+///                     Must be a multiple of element_size.
 /// @param dst_data     A C style array of pointers to the destination data.
 ///                     Number of pointers in the array must be the same as the
 ///                     channel number. All pointers must be non-null.
+///                     All pointers must be aligned to element_size.
 /// @param dst_strides  A C style array of stride values for the destination
 ///                     streams. A stride value represents the distance in
 ///                     bytes from the start of one row to the start of the
 ///                     next row in the given destination stream. Number of
 ///                     stride values in the array must be the same as the
-///                     channel number. All stride values must not be less than
-///                     width * sizeof(type).
+///                     channel number. All stride values must be a multiple of
+///                     element_size and not be less than width * element_size.
 /// @param width        Number of pixels in one row of the source data. (One
 ///                     pixel consists of 'channels' number of elements.)
 /// @param height       Number of rows in the source data.
@@ -771,13 +795,17 @@ intrinsiccv_error_t intrinsiccv_split(const void *src_data, size_t src_stride,
 /// ```
 ///
 /// @param src          Pointer to the source data. Must be non-null.
+///                     Must be aligned to element_size.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
+///                     Must be a multiple of element_size.
 ///                     Must not be less than width * element_size.
 /// @param dst          Pointer to the destination data. Must be non-null.
 ///                     Can be the same as source data for inplace operation.
+///                     Must be aligned to element_size.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
+///                     Must be a multiple of element_size.
 ///                     Must not be less than height * element_size.
 /// @param src_width    Number of elements in a row.
 /// @param src_height   Number of rows in the data.
@@ -793,17 +821,20 @@ intrinsiccv_error_t intrinsiccv_transpose(const void *src, size_t src_stride,
 /// @param srcs         A C style array of pointers to the source data.
 ///                     Number of pointers in the array must be the same as the
 ///                     channel number. All pointers must be non-null.
+///                     All pointers must be aligned to element_size.
 /// @param src_strides  A C style array of stride values for the source
 ///                     streams. A stride value represents the distance in
 ///                     bytes from the start of one row to the start of the
 ///                     next row in the given source stream. Number of
 ///                     stride values in the array must be the same as the
-///                     channel number. All stride values must not be less than
-///                     width * sizeof(type).
+///                     channel number. All stride values must be a multiple of
+///                     element_size and not be less than width * element_size.
 /// @param dst          Pointer to the destination data. Must be non-null.
+///                     Must be aligned to element_size.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the destination data. Must not
-///                     be less than width * sizeof(type) * channels.
+///                     be less than width * element_size * channels.
+///                     Must be a multiple of element_size.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the destination data.
@@ -821,6 +852,7 @@ intrinsiccv_error_t intrinsiccv_merge(const void **srcs,
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
 ///                     less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param min_value    Pointer to save result minimum value to, or nullptr if
@@ -861,6 +893,7 @@ intrinsiccv_error_t intrinsiccv_min_max_s32(const int32_t *src,
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row in the source data. Must not be
 ///                     less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param min_offset   Pointer to save result offset of minimum value to, or

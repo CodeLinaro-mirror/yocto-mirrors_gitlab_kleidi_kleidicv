@@ -48,7 +48,7 @@ TEST(Array2D, ConstructFromArrayLayout) {
   EXPECT_EQ(array.width(), width);
   EXPECT_EQ(array.height(), height);
   EXPECT_EQ(array.channels(), channels);
-  EXPECT_EQ(array.stride(), width * sizeof(ElementType) + padding);
+  EXPECT_EQ(array.stride(), (width + padding) * sizeof(ElementType));
   EXPECT_TRUE(array.valid());
 }
 
@@ -375,7 +375,7 @@ static void PaddingClobbered(size_t row, size_t offset) {
   using ElementType = uint32_t;
 
   size_t width = 5, height = 2, padding = 10;
-  size_t stride = width * sizeof(ElementType) + padding;
+  size_t stride = (width + padding) * sizeof(ElementType);
   test::Array2D<ElementType> array(width, height, padding);
 
   uint8_t* ptr = reinterpret_cast<uint8_t*>(array.data());
@@ -407,7 +407,10 @@ TEST(Array2D, PaddingClobbered_LastRow_LastByte) {
 }
 
 static void Array2DCoverageBadAlloc() {
-  test::Array2D<uint64_t> array{std::numeric_limits<size_t>::max(), 1};
+  size_t big = std::numeric_limits<size_t>::max() / sizeof(uint64_t);
+  // Allow a little extra room for Array2D internals, to avoid overflow.
+  big -= 0x1000;
+  test::Array2D<uint64_t> array{big, 1};
   EXPECT_FALSE(array.valid());
 }
 

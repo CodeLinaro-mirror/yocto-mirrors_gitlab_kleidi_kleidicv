@@ -252,22 +252,27 @@ class Split4<uint64_t> final : public UnrollTwice {
 };
 #endif
 
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename ScalarType>
-intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
+intrinsiccv_error_t split(const void *src_void, const size_t src_stride,
                           void **dst_data, const size_t *dst_strides,
                           size_t width, size_t height, size_t channels) {
   if (channels < 2) {
     return INTRINSICCV_ERROR_RANGE;
   }
-  CHECK_POINTERS(src_data, dst_data, dst_strides);
-  CHECK_POINTERS(dst_data[0], dst_data[1]);
+
+  CHECK_POINTERS(dst_data, dst_strides);
+  MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src_data, src_void);
+  MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst0, dst_data[0]);
+  MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst1, dst_data[1]);
+  CHECK_POINTER_AND_STRIDE(src_data, src_stride);
+  CHECK_POINTER_AND_STRIDE(dst0, dst_strides[0]);
+  CHECK_POINTER_AND_STRIDE(dst1, dst_strides[1]);
 
   Rectangle rect{width, height};
-  ScalarType *dst0 = reinterpret_cast<ScalarType *>(dst_data[0]),
-             *dst1 = reinterpret_cast<ScalarType *>(dst_data[1]);
-  Rows<ScalarType> src_rows{
-      const_cast<ScalarType *>(reinterpret_cast<const ScalarType *>(src_data)),
-      src_stride, channels};
+  Rows<ScalarType> src_rows{const_cast<ScalarType *>(src_data), src_stride,
+                            channels};
   Rows<ScalarType> dst_rows0{dst0, dst_strides[0]};
   Rows<ScalarType> dst_rows1{dst1, dst_strides[1]};
   switch (channels) {
@@ -276,17 +281,18 @@ intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
       apply_operation_by_rows(operation, rect, src_rows, dst_rows0, dst_rows1);
     } break;
     case 3: {
-      CHECK_POINTERS(dst_data[2]);
-      ScalarType *dst2 = reinterpret_cast<ScalarType *>(dst_data[2]);
+      MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst2, dst_data[2]);
+      CHECK_POINTER_AND_STRIDE(dst2, dst_strides[2]);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};
       Split3<ScalarType> operation;
       apply_operation_by_rows(operation, rect, src_rows, dst_rows0, dst_rows1,
                               dst_rows2);
     } break;
     case 4: {
-      CHECK_POINTERS(dst_data[2], dst_data[3]);
-      ScalarType *dst2 = reinterpret_cast<ScalarType *>(dst_data[2]),
-                 *dst3 = reinterpret_cast<ScalarType *>(dst_data[3]);
+      MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst2, dst_data[2]);
+      MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst3, dst_data[3]);
+      CHECK_POINTER_AND_STRIDE(dst2, dst_strides[2]);
+      CHECK_POINTER_AND_STRIDE(dst3, dst_strides[3]);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};
       Rows<ScalarType> dst_rows3{dst3, dst_strides[3]};
       Split4<ScalarType> operation;
@@ -298,6 +304,7 @@ intrinsiccv_error_t split(const void *src_data, const size_t src_stride,
   }
   return INTRINSICCV_OK;
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 INTRINSICCV_TARGET_FN_ATTRS
 intrinsiccv_error_t split(const void *src_data, size_t src_stride,
