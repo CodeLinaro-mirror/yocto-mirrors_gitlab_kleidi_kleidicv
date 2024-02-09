@@ -825,19 +825,82 @@ intrinsiccv_error_t intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride,
                                          double low_threshold,
                                          double high_threshold);
 
+/// Creates a filter context according to the parameters.
+///
+/// Before a gaussian_blur operation, this initialization is needed.
+/// After the operation is finished, the context needs to be released
+/// using \ref intrinsiccv_filter_release.
+///
+/// @param context       Pointer where to return the created context's address.
+/// @param channels      Number of elements for each pixel.
+/// @param type_size     Element size in bytes.
+/// @param image         Image dimensions.
+///
 intrinsiccv_error_t intrinsiccv_filter_create(
     intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
     intrinsiccv_rectangle_t image);
 
+/// Releases a filter context that was previously created using \ref
+/// intrinsiccv_filter_create.
+///
+/// @param context      Pointer to filter context. Must not be nullptr.
+///
 intrinsiccv_error_t intrinsiccv_filter_release(
     intrinsiccv_filter_context_t *context);
 
+/// Convolves the source image with the specified Gaussian kernel.
+/// In-place filtering is not supported.
+///
+/// 3x3 Gaussian Blur filter for uint8_t types:
+/// ```
+///        [ 1, 2, 1 ]
+/// 1/16 * [ 2, 4, 2 ]
+///        [ 1, 2, 1 ]
+/// ```
+/// 5x5 Gaussian Blur filter for uint8_t types:
+/// ```
+///         [ 1,  4,  6,  4, 1 ]
+///         [ 4, 16, 24, 16, 4 ]
+/// 1/256 * [ 6, 24, 36, 24, 6 ]
+///         [ 4, 16, 24, 16, 4 ]
+///         [ 1,  4,  6,  4, 1 ]
+/// ```
+/// Usage:
+///
+/// Before using this function, a context must be created using
+/// intrinsiccv_filter_create, and after finished, it has to be released
+/// using intrinsiccv_filter_release. Note, from the border types only
+/// these are supported: \n
+///                       - \ref INTRINSICCV_BORDER_TYPE_REPLICATE \n
+///                       - \ref INTRINSICCV_BORDER_TYPE_REFLECT \n
+///                       - \ref INTRINSICCV_BORDER_TYPE_WRAP \n
+///                       - \ref INTRINSICCV_BORDER_TYPE_REVERSE
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must not be
+///                     less than width * sizeof(type) * channels.
+///                     Must be a multiple of sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the destination data. Must not
+///                     be less than width * sizeof(type) * channels.
+///                     Must be a multiple of sizeof(type).
+/// @param width        Number of columns in the data. (One column consists of
+///                     'channels' number of elements.)
+/// @param height       Number of rows in the data.
+/// @param channels     Number of channels in the data.
+/// @param border_type  Way of handling the border.
+/// @param context      Pointer to filter context.
+///
 intrinsiccv_error_t intrinsiccv_gaussian_blur_3x3_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
     intrinsiccv_filter_context_t *context);
 
+/// @copydoc intrinsiccv_gaussian_blur_3x3_u8
+///
 intrinsiccv_error_t intrinsiccv_gaussian_blur_5x5_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
