@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -128,4 +128,17 @@ TYPED_TEST(CountNonZeros, Misalignment) {
   EXPECT_EQ(
       INTRINSICCV_ERROR_ALIGNMENT,
       count_nonzeros<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &count));
+}
+
+TYPED_TEST(CountNonZeros, ImageSize) {
+  TypeParam src[1];
+  size_t count = 0;
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_RANGE,
+      count_nonzeros<TypeParam>()(src, sizeof(TypeParam),
+                                  INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, &count));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            count_nonzeros<TypeParam>()(src, sizeof(TypeParam),
+                                        INTRINSICCV_MAX_IMAGE_PIXELS,
+                                        INTRINSICCV_MAX_IMAGE_PIXELS, &count));
 }

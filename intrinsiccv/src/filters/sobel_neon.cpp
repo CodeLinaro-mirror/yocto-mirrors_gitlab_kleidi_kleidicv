@@ -134,6 +134,7 @@ intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
                                                 size_t channels) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
@@ -159,6 +160,7 @@ intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
                                               size_t height, size_t channels) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};

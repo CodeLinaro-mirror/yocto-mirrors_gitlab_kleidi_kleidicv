@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -124,6 +124,7 @@ static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
     size_t channels) INTRINSICCV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
@@ -150,6 +151,7 @@ static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
     size_t channels) INTRINSICCV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};

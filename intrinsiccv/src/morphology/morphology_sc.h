@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -456,6 +456,7 @@ static intrinsiccv_error_t dilate_sc(const T *src, size_t src_stride, T *dst,
   CHECK_POINTERS(context);
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
@@ -516,6 +517,7 @@ static intrinsiccv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
   CHECK_POINTERS(context);
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 

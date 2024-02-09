@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -196,6 +196,8 @@ intrinsiccv_error_t yuv2rgbx_operation(
   CHECK_POINTER_AND_STRIDE(src_y, src_y_stride);
   CHECK_POINTER_AND_STRIDE(src_uv, src_uv_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
+
   Rectangle rect{width, height};
   ParallelRows y_rows{src_y, src_y_stride};
   Rows uv_rows{src_uv, src_uv_stride};

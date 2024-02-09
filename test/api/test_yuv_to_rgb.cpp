@@ -67,6 +67,16 @@ class YuvTest final {
                          input_uv.data(), input_uv.stride(), actual.data(),
                          actual.stride(), expected.width() / channel_number_,
                          expected.height(), is_nv21);
+
+    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+              impl(input_y.data(), input_y.stride(), input_uv.data(),
+                   input_uv.stride(), actual.data(), actual.stride(),
+                   INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, is_nv21));
+    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+              impl(input_y.data(), input_y.stride(), input_uv.data(),
+                   input_uv.stride(), actual.data(), actual.stride(),
+                   INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS,
+                   is_nv21));
   }
 
   void calculate_expected(test::Array2D<uint8_t> &y_arr,

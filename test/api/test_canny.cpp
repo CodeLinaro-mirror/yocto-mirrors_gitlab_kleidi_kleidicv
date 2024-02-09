@@ -38,3 +38,14 @@ TYPED_TEST(CannyTest, Misalignment) {
             canny<TypeParam>()(src, sizeof(TypeParam), dst,
                                sizeof(TypeParam) + 1, 1, 1, 0.0, 1.0));
 }
+
+TYPED_TEST(CannyTest, ImageSize) {
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            canny<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 0.0, 1.0));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            canny<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               INTRINSICCV_MAX_IMAGE_PIXELS,
+                               INTRINSICCV_MAX_IMAGE_PIXELS, 0.0, 1.0));
+}

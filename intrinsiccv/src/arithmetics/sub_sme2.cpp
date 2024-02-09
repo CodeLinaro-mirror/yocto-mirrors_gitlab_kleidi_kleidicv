@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -29,6 +29,7 @@ INTRINSICCV_LOCALLY_STREAMING intrinsiccv_error_t saturating_sub(
   CHECK_POINTER_AND_STRIDE(src_a, src_a_stride);
   CHECK_POINTER_AND_STRIDE(src_b, src_b_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   SaturatingSub<T> operation;
   Rectangle rect{width, height};

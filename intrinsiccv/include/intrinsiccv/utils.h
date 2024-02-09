@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -411,6 +411,22 @@ std::enable_if_t<alignof(T) == 1, intrinsiccv_error_t> check_pointer_and_stride(
     }                                                                    \
   }                                                                      \
   ElementType *name = reinterpret_cast<ElementType *>(from)
+
+// Check whether the image size is acceptable by limiting it.
+#define CHECK_IMAGE_SIZE(width, height)                       \
+  do {                                                        \
+    size_t image_size = 0;                                    \
+    if (__builtin_mul_overflow(width, height, &image_size)) { \
+      return INTRINSICCV_ERROR_RANGE;                         \
+    }                                                         \
+                                                              \
+    if (image_size > INTRINSICCV_MAX_IMAGE_PIXELS) {          \
+      return INTRINSICCV_ERROR_RANGE;                         \
+    }                                                         \
+  } while (false)
+
+// Check whether the rectangle size is acceptable by limiting it.
+#define CHECK_RECTANGLE_SIZE(rect) CHECK_IMAGE_SIZE(rect.width, rect.height)
 
 }  // namespace intrinsiccv
 

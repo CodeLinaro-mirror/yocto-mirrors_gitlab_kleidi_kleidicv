@@ -144,3 +144,33 @@ TYPED_TEST(Sobel, MisalignmentVertical) {
                                               sizeof(dst) + 1, 1, 1, 1));
   }
 }
+
+TYPED_TEST(Sobel, ImageSizeHorizontal) {
+  using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            sobel_3x3_horizontal<TypeParam>()(
+                src, sizeof(src), dst, sizeof(dst),
+                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            sobel_3x3_horizontal<TypeParam>()(
+                src, sizeof(src), dst, sizeof(dst),
+                INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS, 1));
+}
+
+TYPED_TEST(Sobel, ImageSizeVertical) {
+  using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
+
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_RANGE,
+      sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
+                                      INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
+                                            INTRINSICCV_MAX_IMAGE_PIXELS,
+                                            INTRINSICCV_MAX_IMAGE_PIXELS, 1));
+}

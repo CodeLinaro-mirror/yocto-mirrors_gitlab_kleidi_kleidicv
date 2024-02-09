@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -56,6 +56,8 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
     size_t *count) {
   CHECK_POINTERS(count);
   CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_IMAGE_SIZE(width, height);
+
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};
   *count = neon::count_nonzeros_impl(src_rows, rect);

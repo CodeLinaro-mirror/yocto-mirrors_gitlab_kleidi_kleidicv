@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -174,6 +174,7 @@ intrinsiccv_error_t scale(const T *src, size_t src_stride, T *dst,
                           float scale, float shift) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};

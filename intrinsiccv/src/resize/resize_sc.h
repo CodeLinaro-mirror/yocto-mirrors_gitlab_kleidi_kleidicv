@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -139,12 +139,39 @@ static inline void process_single_row(
   }
 }
 
+INTRINSICCV_TARGET_FN_ATTRS
+static intrinsiccv_error_t check_dimensions(size_t src_dim, size_t dst_dim)
+    INTRINSICCV_STREAMING_COMPATIBLE {
+  size_t half_src_dim = src_dim / 2;
+
+  if ((src_dim % 2) == 0) {
+    if (dst_dim == half_src_dim) {
+      return INTRINSICCV_OK;
+    }
+  } else {
+    if (dst_dim == half_src_dim || dst_dim == (half_src_dim + 1)) {
+      return INTRINSICCV_OK;
+    }
+  }
+
+  return INTRINSICCV_ERROR_RANGE;
+}
+
 INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_to_quarter_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width,
     size_t dst_height) INTRINSICCV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+
+  if (intrinsiccv_error_t ret = check_dimensions(src_width, dst_width)) {
+    return ret;
+  }
+
+  if (intrinsiccv_error_t ret = check_dimensions(src_height, dst_height)) {
+    return ret;
+  }
 
   Rows<const uint8_t> src_rows{src, src_stride, /* channels*/ 1};
   Rows<uint8_t> dst_rows{dst, dst_stride, /* channels*/ 1};

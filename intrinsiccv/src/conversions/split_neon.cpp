@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -269,6 +269,7 @@ intrinsiccv_error_t split(const void *src_void, const size_t src_stride,
   CHECK_POINTER_AND_STRIDE(src_data, src_stride);
   CHECK_POINTER_AND_STRIDE(dst0, dst_strides[0]);
   CHECK_POINTER_AND_STRIDE(dst1, dst_strides[1]);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
   Rows<ScalarType> src_rows{const_cast<ScalarType *>(src_data), src_stride,

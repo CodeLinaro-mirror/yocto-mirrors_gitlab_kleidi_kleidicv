@@ -26,6 +26,18 @@
 #include "intrinsiccv/config.h"
 #include "intrinsiccv/ctypes.h"
 
+#ifndef __aarch64__
+#error "IntrinsicCV is only supported for aarch64"
+#endif
+
+#ifdef __aarch64__
+/// Maximum image size in pixels the library accepts.
+///
+/// In case of AArch64 it is limited to (almost) 256 terapixels. This way 16 bit
+/// is left for any arithmetic operations around image size or width or height.
+#define INTRINSICCV_MAX_IMAGE_PIXELS ((1ULL << 48) - 1)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -47,7 +59,8 @@ extern "C" {
 /// The addition is saturated, i.e. the result is the largest number of the
 /// type of the element if the addition result would overflow. Source data
 /// length (in bytes) is `stride` * `height`. Width and height are the same
-/// for the two sources.
+/// for the two sources and for the destination. Number of elements is limited
+/// to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -89,7 +102,8 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u64, uint64_t);
 /// The subtraction is saturated, i.e. the result is 0 (unsigned) or the
 /// smallest possible value of the type of the element if the subtraction result
 /// would underflow. Source data length (in bytes) is `stride` * `height`.
-/// Width and height are the same for the two sources.
+/// Width and height are the same for the two sources and for the destination.
+/// Number of elements is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -131,7 +145,8 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u64, uint64_t);
 /// The subtraction is saturated, i.e. the result is the largest number of the
 /// type of the element if the result would overflow (it is only possible with
 /// signed types). Source data length (in bytes) is `stride` * `height`. Width
-/// and height are the same for the two sources.
+/// and height are the same for the two sources and for the destination. Number
+/// of elements is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -167,7 +182,8 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s32, int32_t);
 /// The multiplication is saturated, i.e. the result is the largest number of
 /// the type of the element if the multiplication result would overflow. Source
 /// data length (in bytes) is `stride` * `height`. Width and height are the
-/// same for the two sources.
+/// same for the two sources and for the destination. Number of elements is
+/// limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -210,20 +226,24 @@ INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t,
 /// The addition is saturated, i.e. the result is the largest number of the
 /// type of the element if the addition result would overflow. Source data
 /// length (in bytes) is `stride` * `height`. Width and height are the same
-/// for the two sources.
+/// for the two sources and for the destination. Number of elements is limited
+/// to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
 ///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
 ///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
 ///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param threshold    The value that the elements of the addition result
@@ -241,6 +261,9 @@ intrinsiccv_error_t intrinsiccv_saturating_add_abs_with_threshold_s16(
 /// where each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -249,7 +272,7 @@ intrinsiccv_error_t intrinsiccv_saturating_add_abs_with_threshold_s16(
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_gray_to_rgb_u8(const uint8_t *src,
@@ -264,6 +287,9 @@ intrinsiccv_error_t intrinsiccv_gray_to_rgb_u8(const uint8_t *src,
 /// where each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -272,7 +298,7 @@ intrinsiccv_error_t intrinsiccv_gray_to_rgb_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_gray_to_rgba_u8(const uint8_t *src,
@@ -287,6 +313,9 @@ intrinsiccv_error_t intrinsiccv_gray_to_rgba_u8(const uint8_t *src,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -295,7 +324,7 @@ intrinsiccv_error_t intrinsiccv_gray_to_rgba_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgb_to_bgr_u8(const uint8_t *src,
@@ -306,6 +335,9 @@ intrinsiccv_error_t intrinsiccv_rgb_to_bgr_u8(const uint8_t *src,
 /// Copies a source RBG image to destination buffer.
 /// All channels are 8-bit wide.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -314,7 +346,7 @@ intrinsiccv_error_t intrinsiccv_rgb_to_bgr_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8(const uint8_t *src,
@@ -329,6 +361,9 @@ intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8(const uint8_t *src,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -337,7 +372,7 @@ intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgba_to_bgra_u8(const uint8_t *src,
@@ -348,6 +383,9 @@ intrinsiccv_error_t intrinsiccv_rgba_to_bgra_u8(const uint8_t *src,
 /// Copies a source RBGA image to destination buffer.
 /// All channels are 8-bit wide.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -356,7 +394,7 @@ intrinsiccv_error_t intrinsiccv_rgba_to_bgra_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8(const uint8_t *src,
@@ -372,6 +410,9 @@ intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8(const uint8_t *src,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -380,7 +421,7 @@ intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgb_to_bgra_u8(const uint8_t *src,
@@ -396,6 +437,9 @@ intrinsiccv_error_t intrinsiccv_rgb_to_bgra_u8(const uint8_t *src,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -404,7 +448,7 @@ intrinsiccv_error_t intrinsiccv_rgb_to_bgra_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgb_to_rgba_u8(const uint8_t *src,
@@ -420,6 +464,9 @@ intrinsiccv_error_t intrinsiccv_rgb_to_rgba_u8(const uint8_t *src,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -428,7 +475,7 @@ intrinsiccv_error_t intrinsiccv_rgb_to_rgba_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgba_to_bgr_u8(const uint8_t *src,
@@ -444,6 +491,9 @@ intrinsiccv_error_t intrinsiccv_rgba_to_bgr_u8(const uint8_t *src,
 /// Each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -452,7 +502,7 @@ intrinsiccv_error_t intrinsiccv_rgba_to_bgr_u8(const uint8_t *src,
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
 ///                    Must not be less than width * sizeof(uint8).
-/// @param width       Number of elements in a row.
+/// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
 intrinsiccv_error_t intrinsiccv_rgba_to_rgb_u8(const uint8_t *src,
@@ -469,6 +519,9 @@ intrinsiccv_error_t intrinsiccv_rgba_to_rgb_u8(const uint8_t *src,
 /// If 4-byte alignment is required then intrinsiccv_yuv_sp_to_rgba_u8 can be
 /// used.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
@@ -484,7 +537,7 @@ intrinsiccv_error_t intrinsiccv_rgba_to_rgb_u8(const uint8_t *src,
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
 ///                      not be less than width * sizeof(type).
-/// @param width         Number of elements in a row.
+/// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
@@ -503,6 +556,9 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_rgb_u8(
 /// If 4-byte alignment is required then intrinsiccv_yuv_sp_to_bgra_u8 can be
 /// used.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
@@ -518,7 +574,7 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_rgb_u8(
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
 ///                      not be less than width * sizeof(type).
-/// @param width         Number of elements in a row.
+/// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
@@ -536,6 +592,9 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_bgr_u8(
 /// Where each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
@@ -551,7 +610,7 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_bgr_u8(
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
 ///                      not be less than width * sizeof(type).
-/// @param width         Number of elements in a row.
+/// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
@@ -569,6 +628,9 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_rgba_u8(
 /// Where each letter represents one byte of data, and one pixel is represented
 /// by 4 bytes. There is no padding between the pixels.
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
@@ -584,7 +646,7 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_rgba_u8(
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
 ///                      not be less than width * sizeof(type).
-/// @param width         Number of elements in a row.
+/// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
@@ -597,6 +659,9 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_bgra_u8(
 /// Performs a comparison of each element's value in `src` with respect to a
 /// caller defined threshold. The strictly larger elements are set to
 /// `value` and the rest to 0.
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of elements is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -626,7 +691,8 @@ intrinsiccv_error_t intrinsiccv_threshold_binary_u8(
 /// intrinsiccv_morphology_release.
 ///
 /// @param context       Pointer where to return the created context's address.
-/// @param kernel        Width and height of the rectangle
+/// @param kernel        Width and height of the kernel. Its size must not be
+///                      more than \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 /// @param anchor        Location in the kernel which is aligned to the actual
 ///                      point in the source data
 /// @param border_type   Way of handling the border.
@@ -635,7 +701,8 @@ intrinsiccv_error_t intrinsiccv_threshold_binary_u8(
 /// @param channels      Number of elements for each pixel.
 /// @param iterations    Number of times to do the morphology operation.
 /// @param type_size     Element size in bytes.
-/// @param image         Image dimensions.
+/// @param image         Image dimensions. Its size must not be more than
+///                      \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 intrinsiccv_error_t intrinsiccv_morphology_create(
     intrinsiccv_morphology_context_t **context, intrinsiccv_rectangle_t kernel,
@@ -655,7 +722,9 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 /// values using a given kernel which has a rectangular shape, and puts the
 /// result into `dst`.
 ///
-/// Width and height are the same for the source and the destination.
+/// Width and height are the same for the source and the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// The kernel has an anchor point, it is usually the center of the kernel.
 /// The algorithm takes a rectangle from the source data using the kernel and
 /// the anchor, and calculates the max/min value in that rectangle.
@@ -678,14 +747,14 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 ///                       - \ref INTRINSICCV_BORDER_TYPE_CONSTANT
 ///
 /// @param src          Pointer to the source data. Must be non-null.
-/// @param src_stride   Distance in bytes between the row first elements for
-///                     the source data. Must not be less than
-///                     width * (element size in bytes).
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must not be less than width * channels * sizeof(uint8).
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data. Must
-///                     not be less than width * (element size in bytes).
-/// @param width        Number of elements in a row.
+///                     not be less than width * channels * sizeof(uint8).
+/// @param width        Number of pixels in a row.
 /// @param height       Number of rows in the data.
 /// @param context      Pointer to morphology context.
 ///
@@ -699,7 +768,8 @@ intrinsiccv_error_t intrinsiccv_erode_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, intrinsiccv_morphology_context_t *context);
 
-/// Counts how many nonzero elements are in the source data.
+/// Counts how many nonzero elements are in the source data. Number of elements
+/// is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -722,7 +792,8 @@ intrinsiccv_error_t intrinsiccv_count_nonzeros_u8(const uint8_t *src,
 /// In case of odd source dimensions `(2*N+1, 2*M+1)` destination
 /// dimensions could be either `(N+1, M+1)` or `(N, M)` or combination of both.
 /// For later cases last respective row or column of source data will not be
-/// processed. Currently only supports single-channel data.
+/// processed. Currently only supports single-channel data. Number of pixels in
+/// the source is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// Even dimension example of 2x2 to 1x1 conversion:
 /// ```
@@ -749,13 +820,13 @@ intrinsiccv_error_t intrinsiccv_count_nonzeros_u8(const uint8_t *src,
 ///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
 /// @param dst_width    Number of elements in the destination row.
-///                     Should be src_width / 2 for even src_width.
-///                     For odd src_width could be either src_width / 2
-///                     or (src_width / 2) + 1
+///                     Must be src_width / 2 for even src_width.
+///                     For odd src_width it must be either src_width / 2
+///                     or (src_width / 2) + 1.
 /// @param dst_height   Number of rows in the destination data.
-///                     Should be src_height / 2 for even src_height.
-///                     For odd src_height could be either src_height / 2
-///                     or (src_height / 2) + 1
+///                     Must be src_height / 2 for even src_height.
+///                     For odd src_height it must be either src_height / 2
+///                     or (src_height / 2) + 1.
 ///
 intrinsiccv_error_t intrinsiccv_resize_to_quarter_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -772,7 +843,10 @@ intrinsiccv_error_t intrinsiccv_resize_to_quarter_u8(
 /// Note, that the kernel is mirrored both vertically and horizontally during
 /// the convolution.
 ///
-/// The only supported border type is ::INTRINSICCV_BORDER_TYPE_REPLICATE
+/// The only supported border type is \ref INTRINSICCV_BORDER_TYPE_REPLICATE
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -804,7 +878,10 @@ intrinsiccv_error_t intrinsiccv_sobel_3x3_vertical_s16_u8(
 /// Note, that the kernel is mirrored both vertically and horizontally during
 /// the convolution.
 ///
-/// The only supported border type is ::INTRINSICCV_BORDER_TYPE_REPLICATE
+/// The only supported border type is \ref INTRINSICCV_BORDER_TYPE_REPLICATE
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -826,7 +903,8 @@ intrinsiccv_error_t intrinsiccv_sobel_3x3_horizontal_s16_u8(
     size_t width, size_t height, size_t channel);
 
 /// Canny edge detector for uint8_t grayscale input. Output is also a uint8_t
-/// grayscale image. Width and height are the same for input and output.
+/// grayscale image. Width and height are the same for input and output. Number
+/// of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// The steps:
 ///  - Execute horizontal and vertical Sobel filtering with 3*3 kernels to
@@ -866,7 +944,8 @@ intrinsiccv_error_t intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride,
 /// @param context       Pointer where to return the created context's address.
 /// @param channels      Number of elements for each pixel.
 /// @param type_size     Element size in bytes.
-/// @param image         Image dimensions.
+/// @param image         Image dimensions. Its size must not be more than
+///                      \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 intrinsiccv_error_t intrinsiccv_filter_create(
     intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
@@ -897,8 +976,11 @@ intrinsiccv_error_t intrinsiccv_filter_release(
 ///         [ 4, 16, 24, 16, 4 ]
 ///         [ 1,  4,  6,  4, 1 ]
 /// ```
-/// Usage:
 ///
+/// Width and height are the same for the source and for the destination. Number
+/// of elements is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
+/// Usage: \n
 /// Before using this function, a context must be created using
 /// intrinsiccv_filter_create, and after finished, it has to be released
 /// using intrinsiccv_filter_release. Note, from the border types only
@@ -939,7 +1021,9 @@ intrinsiccv_error_t intrinsiccv_gaussian_blur_5x5_u8(
     intrinsiccv_border_type_t border_type,
     intrinsiccv_filter_context_t *context);
 
-/// Splits a multi channel source stream into separate 1-channel streams.
+/// Splits a multi channel source stream into separate 1-channel streams. Width
+/// and height are the same for the source stream and for all the destination
+/// streams. Number of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_data     Pointer to the source data. Must be non-null.
 ///                     Must be aligned to element_size.
@@ -982,6 +1066,8 @@ intrinsiccv_error_t intrinsiccv_split(const void *src_data, size_t src_stride,
 ///                      | 2 | 2 | 2 |
 /// ```
 ///
+/// Number of elements is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
 /// @param src          Pointer to the source data. Must be non-null.
 ///                     Must be aligned to element_size.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1004,7 +1090,9 @@ intrinsiccv_error_t intrinsiccv_transpose(const void *src, size_t src_stride,
                                           size_t src_width, size_t src_height,
                                           size_t element_size);
 
-/// Merges separate 1-channel source streams to one multi channel stream.
+/// Merges separate 1-channel source streams to one multi channel stream. Width
+/// and height are the same for all the source streams and for the destination.
+/// Number of pixels is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param srcs         A C style array of pointers to the source data.
 ///                     Number of pointers in the array must be the same as the
@@ -1023,7 +1111,8 @@ intrinsiccv_error_t intrinsiccv_transpose(const void *src, size_t src_stride,
 ///                     start of the next row in the destination data. Must not
 ///                     be less than width * element_size * channels.
 ///                     Must be a multiple of element_size.
-/// @param width        Number of elements in a row.
+/// @param width        Number of elements in a row for the source streams,
+///                     number of pixels in a row for the destination data.
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the destination data.
 /// @param element_size Size of one element in bytes.
@@ -1034,7 +1123,8 @@ intrinsiccv_error_t intrinsiccv_merge(const void **srcs,
                                       size_t height, size_t channels,
                                       size_t element_size);
 
-/// Calculates minimum and maximum element value across the source data.
+/// Calculates minimum and maximum element value across the source data. Number
+/// of elements is limited to \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1075,7 +1165,8 @@ intrinsiccv_error_t intrinsiccv_min_max_s32(const int32_t *src,
 
 /// Finds minimum and maximum element value across the source data,
 /// and returns their location in the source data as offset in bytes
-/// from the source beginning.
+/// from the source beginning. Number of elements is limited to
+/// \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1101,7 +1192,8 @@ intrinsiccv_error_t intrinsiccv_min_max_loc_u8(const uint8_t *src,
 /// The result is saturated, i.e. it is the smallest/largest number of the
 /// type of the element if the result would underflow/overflow. Source data
 /// length (in bytes) is `stride` * `height`. Width and height are the same
-/// for the source and destination.
+/// for the source and destination. Number of elements is limited to
+/// \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the

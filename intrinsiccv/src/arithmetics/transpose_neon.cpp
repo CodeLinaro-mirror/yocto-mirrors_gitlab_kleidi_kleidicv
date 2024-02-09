@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -204,6 +204,7 @@ static intrinsiccv_error_t transpose(const void *src_void, size_t src_stride,
   MAKE_POINTER_CHECK_ALIGNMENT(T, dst, dst_void);
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(src_width, src_height);
 
   Rectangle rect{src_width, src_height};
   Rows<T> dst_rows{dst, dst_stride};

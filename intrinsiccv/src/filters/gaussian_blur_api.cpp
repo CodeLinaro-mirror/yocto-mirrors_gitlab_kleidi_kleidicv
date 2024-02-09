@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -15,6 +15,8 @@ intrinsiccv_error_t intrinsiccv_filter_create(
     intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
     intrinsiccv_rectangle_t image) {
   CHECK_POINTERS(context);
+  CHECK_RECTANGLE_SIZE(image);
+
   auto workspace =
       SeparableFilterWorkspace::create(Rectangle{image}, channels, type_size);
   if (!workspace) {

@@ -223,3 +223,21 @@ TYPED_TEST(Merge, Misalignment) {
     }
   }
 }
+
+TYPED_TEST(Merge, ImageSize) {
+  const size_t kChannels = 2;
+  TypeParam src1[1], src2[1], dst[1];
+  const void* srcs[kChannels] = {src1, src2};
+  size_t src_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam)};
+  const size_t dst_stride = kChannels * sizeof(TypeParam);
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_merge(srcs, src_strides, dst, dst_stride,
+                              INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, kChannels,
+                              sizeof(TypeParam)));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_merge(srcs, src_strides, dst, dst_stride,
+                              INTRINSICCV_MAX_IMAGE_PIXELS,
+                              INTRINSICCV_MAX_IMAGE_PIXELS, kChannels,
+                              sizeof(TypeParam)));
+}

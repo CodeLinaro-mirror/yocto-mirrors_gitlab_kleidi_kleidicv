@@ -36,6 +36,14 @@ class GrayTest final {
 
     test::test_null_args(impl, source.data(), source.stride(), actual.data(),
                          actual.stride(), logical_width, actual.height());
+
+    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+              impl(source.data(), source.stride(), actual.data(),
+                   actual.stride(), INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1));
+    EXPECT_EQ(
+        INTRINSICCV_ERROR_RANGE,
+        impl(source.data(), source.stride(), actual.data(), actual.stride(),
+             INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS));
   }
 
  private:
@@ -91,6 +99,14 @@ class ColourTest final {
 
     test::test_null_args(impl, source.data(), source.stride(), actual.data(),
                          actual.stride(), logical_width, actual.height());
+
+    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+              impl(source.data(), source.stride(), actual.data(),
+                   actual.stride(), INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1));
+    EXPECT_EQ(
+        INTRINSICCV_ERROR_RANGE,
+        impl(source.data(), source.stride(), actual.data(), actual.stride(),
+             INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS));
   }
 
  private:

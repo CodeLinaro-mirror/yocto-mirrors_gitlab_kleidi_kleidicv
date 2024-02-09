@@ -218,3 +218,29 @@ TEST(ResizeToQuarter, NullPointer) {
   test::test_null_args(intrinsiccv_resize_to_quarter_u8, src, 2, 2, 2, dst, 1,
                        1, 1);
 }
+
+TEST(ResizeToQuarter, ImageSize) {
+  const uint8_t src[1] = {};
+  uint8_t dst[1];
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_resize_to_quarter_u8(
+                src, 1, INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, dst, 1, 1, 1));
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_resize_to_quarter_u8(
+                src, 1, INTRINSICCV_MAX_IMAGE_PIXELS,
+                INTRINSICCV_MAX_IMAGE_PIXELS, dst, 1, 1, 1));
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_resize_to_quarter_u8(src, 1, 8, 8, dst, 1, 4, 3));
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_resize_to_quarter_u8(src, 1, 8, 8, dst, 1, 3, 4));
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_resize_to_quarter_u8(src, 1, 9, 9, dst, 1, 4, 1));
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_resize_to_quarter_u8(src, 1, 9, 9, dst, 1, 7, 5));
+}

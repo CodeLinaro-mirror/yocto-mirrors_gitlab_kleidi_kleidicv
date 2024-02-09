@@ -88,3 +88,46 @@ TYPED_TEST(GaussianBlurTest, Misalignment) {
                 INTRINSICCV_BORDER_TYPE_REFLECT, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
+
+TYPED_TEST(GaussianBlurTest, ImageSize) {
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 1}));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TEST(FilterCreate, ImageSize) {
+  intrinsiccv_filter_context_t *context = nullptr;
+
+  for (intrinsiccv_rectangle_t rect : {
+           intrinsiccv_rectangle_t{INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1},
+           intrinsiccv_rectangle_t{INTRINSICCV_MAX_IMAGE_PIXELS,
+                                   INTRINSICCV_MAX_IMAGE_PIXELS},
+       }) {
+    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+              intrinsiccv_filter_create(&context, 1, 1, rect));
+    ASSERT_EQ(nullptr, context);
+  }
+}

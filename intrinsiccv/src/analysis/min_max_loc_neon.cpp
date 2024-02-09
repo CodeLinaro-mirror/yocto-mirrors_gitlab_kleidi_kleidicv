@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -311,6 +311,7 @@ intrinsiccv_error_t min_max_loc(const ScalarType *src, size_t src_stride,
                                 size_t width, size_t height, size_t *min_offset,
                                 size_t *max_offset) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride};

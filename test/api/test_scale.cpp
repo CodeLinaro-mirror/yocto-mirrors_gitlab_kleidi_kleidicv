@@ -387,3 +387,14 @@ TYPED_TEST(ScaleTest, Misalignment) {
             scale<TypeParam>()(src, sizeof(TypeParam), dst,
                                sizeof(TypeParam) + 1, 1, 1, 2, 0));
 }
+
+TYPED_TEST(ScaleTest, ImageSize) {
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            scale<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 2, 0));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            scale<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               INTRINSICCV_MAX_IMAGE_PIXELS,
+                               INTRINSICCV_MAX_IMAGE_PIXELS, 2, 0));
+}

@@ -310,6 +310,18 @@ TYPED_TEST(MinMax, Misalignment) {
                                  &max_value));
 }
 
+TYPED_TEST(MinMax, ImageSize) {
+  TypeParam src[1], min_value, max_value;
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max<TypeParam>()(src, sizeof(TypeParam),
+                                 INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1,
+                                 &min_value, &max_value));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max<TypeParam>()(
+                src, sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS,
+                INTRINSICCV_MAX_IMAGE_PIXELS, &min_value, &max_value));
+}
+
 template <typename ElementType>
 class MinMaxLoc : public testing::Test {};
 
@@ -319,4 +331,18 @@ TYPED_TEST_SUITE(MinMaxLoc, MinMaxLocElementTypes);
 TYPED_TEST(MinMaxLoc, API) {
   MinMaxLocTest<TypeParam, 0>{}.test();
   MinMaxLocTest<TypeParam, 100>{}.test();
+}
+
+TYPED_TEST(MinMaxLoc, ImageSize) {
+  TypeParam src[1];
+  size_t min_offset = 0, max_offset = 8;
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max_loc<TypeParam>()(src, sizeof(TypeParam),
+                                     INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1,
+                                     &min_offset, &max_offset));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max_loc<TypeParam>()(
+                src, sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS,
+                INTRINSICCV_MAX_IMAGE_PIXELS, &min_offset, &max_offset));
 }

@@ -471,6 +471,7 @@ extern "C" INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t intrinsiccv_canny_u8(
     size_t width, size_t height, double low_threshold, double high_threshold) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
 
   Rectangle dst_rect{width, height};
 

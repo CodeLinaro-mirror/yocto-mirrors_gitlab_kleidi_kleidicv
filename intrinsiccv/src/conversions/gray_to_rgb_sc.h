@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -201,6 +201,8 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
     size_t width, size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
+
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
@@ -219,6 +221,8 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
     size_t width, size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_IMAGE_SIZE(width, height);
+
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};

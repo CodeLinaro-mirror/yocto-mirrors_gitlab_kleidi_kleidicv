@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -58,6 +58,8 @@ intrinsiccv_error_t intrinsiccv_morphology_create(
     intrinsiccv_border_values_t border_values, size_t channels,
     size_t iterations, size_t type_size, intrinsiccv_rectangle_t image) {
   CHECK_POINTERS(context);
+  CHECK_RECTANGLE_SIZE(kernel);
+  CHECK_RECTANGLE_SIZE(image);
 
   auto morphology_border_type =
       MorphologyWorkspace::get_border_type(border_type);
@@ -70,7 +72,6 @@ intrinsiccv_error_t intrinsiccv_morphology_create(
       kernel, anchor, *morphology_border_type, border_values, channels,
       iterations, type_size, image);
   if (!workspace) {
-    *context = nullptr;
     return INTRINSICCV_ERROR_ALLOCATION;
   }
 

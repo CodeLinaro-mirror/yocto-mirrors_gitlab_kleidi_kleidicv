@@ -49,6 +49,32 @@ TYPED_TEST(MorphologyTest, UnsupportedBorderType) {
   }
 }
 
+TYPED_TEST(MorphologyTest, UnsupportedSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+
+  for (intrinsiccv_rectangle_t rect : {
+           intrinsiccv_rectangle_t{INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1},
+           intrinsiccv_rectangle_t{INTRINSICCV_MAX_IMAGE_PIXELS,
+                                   INTRINSICCV_MAX_IMAGE_PIXELS},
+       }) {
+    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+              intrinsiccv_morphology_create(
+                  &context, rect, intrinsiccv_point_t{0, 0},
+                  INTRINSICCV_BORDER_TYPE_REPLICATE,
+                  intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+                  sizeof(TypeParam), intrinsiccv_rectangle_t{1, 1}));
+    ASSERT_EQ(nullptr, context);
+
+    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+              intrinsiccv_morphology_create(
+                  &context, intrinsiccv_rectangle_t{1, 1},
+                  intrinsiccv_point_t{0, 0}, INTRINSICCV_BORDER_TYPE_REPLICATE,
+                  intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+                  sizeof(TypeParam), rect));
+    ASSERT_EQ(nullptr, context);
+  }
+}
+
 static intrinsiccv_error_t make_minimal_context(
     intrinsiccv_morphology_context_t **context, size_t type_size) {
   return intrinsiccv_morphology_create(
@@ -109,5 +135,75 @@ TYPED_TEST(ErodeTest, Misalignment) {
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             erode<TypeParam>()(src, sizeof(TypeParam), dst,
                                sizeof(TypeParam) + 1, 1, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(DilateTest, ImageSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            dilate<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            dilate<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                                INTRINSICCV_MAX_IMAGE_PIXELS,
+                                INTRINSICCV_MAX_IMAGE_PIXELS, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(ErodeTest, ImageSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            erode<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            erode<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               INTRINSICCV_MAX_IMAGE_PIXELS,
+                               INTRINSICCV_MAX_IMAGE_PIXELS, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(DilateTest, InvalidContextSizeType) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            make_minimal_context(&context, sizeof(TypeParam) + 1));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            dilate<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                                1, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(ErodeTest, InvalidContextSizeType) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            make_minimal_context(&context, sizeof(TypeParam) + 1));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            erode<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               1, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(DilateTest, InvalidContextImageSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            dilate<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                                2, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(ErodeTest, InvalidContextImageSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            erode<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               2, 1, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
 }
