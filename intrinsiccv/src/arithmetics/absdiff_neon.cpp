@@ -4,8 +4,8 @@
 
 #include <type_traits>
 
-#include "intrinsiccv.h"
-#include "neon.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/neon.h"
 
 namespace intrinsiccv::neon {
 

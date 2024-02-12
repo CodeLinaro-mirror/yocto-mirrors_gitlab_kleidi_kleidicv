@@ -7,10 +7,10 @@
 
 #include <utility>
 
-#include "neon_intrinsics.h"
-#include "operations.h"
-#include "utils.h"
-#include "workspace/separable.h"
+#include "intrinsiccv/neon_intrinsics.h"
+#include "intrinsiccv/operations.h"
+#include "intrinsiccv/utils.h"
+#include "intrinsiccv/workspace/separable.h"
 
 namespace intrinsiccv {
 

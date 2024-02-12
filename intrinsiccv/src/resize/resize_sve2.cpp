@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "resize/resize.h"
+#include "intrinsiccv/resize/resize.h"
 #include "resize_sc.h"
 
 namespace intrinsiccv::sve2 {

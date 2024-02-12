@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "filters/gaussian_blur.h"
 #include "gaussian_blur_sc.h"
+#include "intrinsiccv/filters/gaussian_blur.h"
 
 namespace intrinsiccv::sme2 {
 

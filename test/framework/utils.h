@@ -13,9 +13,9 @@
 #include <tuple>
 #include <type_traits>
 
-#include "ctypes.h"
 #include "framework/abstract.h"
 #include "framework/types.h"
+#include "intrinsiccv/ctypes.h"
 
 #define INTRINSICCV_API(name, impl, type)                                     \
   template <typename ElementType,                                             \

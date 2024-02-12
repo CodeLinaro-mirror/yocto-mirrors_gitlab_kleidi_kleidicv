@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include "framework/array.h"
 #include "framework/generator.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 template <typename ElementType, bool inplace>
 class TestTranspose final {

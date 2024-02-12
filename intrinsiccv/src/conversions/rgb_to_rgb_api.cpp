@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "conversions/rgb_to_rgb.h"
-#include "dispatch.h"
-#include "intrinsiccv.h"
-#include "types.h"
+#include "intrinsiccv/conversions/rgb_to_rgb.h"
+#include "intrinsiccv/dispatch.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/types.h"
 
 namespace intrinsiccv {
 

@@ -9,9 +9,9 @@
 #include <cstddef>
 #include <memory>
 
-#include "config.h"
-#include "traits.h"
-#include "utils.h"
+#include "intrinsiccv/config.h"
+#include "intrinsiccv/traits.h"
+#include "intrinsiccv/utils.h"
 
 namespace intrinsiccv {
 

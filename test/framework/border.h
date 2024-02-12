@@ -5,9 +5,8 @@
 #ifndef INTRINSICCV_TEST_FRAMEWORK_BORDER_H_
 #define INTRINSICCV_TEST_FRAMEWORK_BORDER_H_
 
-#include <intrinsiccv.h>
-
 #include "framework/abstract.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace test {
 

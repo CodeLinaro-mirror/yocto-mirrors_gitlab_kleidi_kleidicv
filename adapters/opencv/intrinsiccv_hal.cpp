@@ -9,7 +9,7 @@
 #include <limits>
 #include <memory>
 
-#include "intrinsiccv.h"
+#include "intrinsiccv/intrinsiccv.h"
 #include "opencv2/imgproc/hal/interface.h"
 
 namespace intrinsiccv::hal {

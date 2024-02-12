@@ -7,7 +7,7 @@
 
 #include <type_traits>
 
-#include "config.h"
+#include "intrinsiccv/config.h"
 
 namespace intrinsiccv {
 

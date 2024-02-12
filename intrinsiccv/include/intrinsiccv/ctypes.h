@@ -17,7 +17,7 @@
 #include "stddef.h"
 #endif  // __cplusplus
 
-#include <config.h>
+#include "intrinsiccv/config.h"
 
 /// IntrinsicCV error types
 typedef enum INTRINSICCV_NODISCARD {

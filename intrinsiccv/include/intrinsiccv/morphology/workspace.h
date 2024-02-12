@@ -9,11 +9,11 @@
 #include <cstdlib>
 #include <memory>
 
-#include "intrinsiccv.h"
-#include "types.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/types.h"
 
 #if INTRINSICCV_TARGET_SME2
-#include "sve2.h"
+#include "intrinsiccv/sve2.h"
 #endif
 
 namespace intrinsiccv {

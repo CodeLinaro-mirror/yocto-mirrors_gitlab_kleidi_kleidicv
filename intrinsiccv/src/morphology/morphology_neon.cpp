@@ -5,10 +5,10 @@
 #include <algorithm>
 #include <limits>
 
-#include "intrinsiccv.h"
-#include "morphology/workspace.h"
-#include "neon.h"
-#include "types.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/morphology/workspace.h"
+#include "intrinsiccv/neon.h"
+#include "intrinsiccv/types.h"
 
 namespace intrinsiccv::neon {
 

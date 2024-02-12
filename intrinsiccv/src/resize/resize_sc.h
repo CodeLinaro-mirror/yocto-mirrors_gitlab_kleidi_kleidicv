@@ -5,8 +5,8 @@
 #ifndef INTRINSICCV_RESIZE_SC_H
 #define INTRINSICCV_RESIZE_SC_H
 
-#include "intrinsiccv.h"
-#include "sve2.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/sve2.h"
 
 namespace intrinsiccv::sve2 {
 

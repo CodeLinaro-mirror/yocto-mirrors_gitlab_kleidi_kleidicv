@@ -9,9 +9,9 @@
 #include <memory>
 #include <utility>
 
-#include "config.h"
-#include "ctypes.h"
-#include "utils.h"
+#include "intrinsiccv/config.h"
+#include "intrinsiccv/ctypes.h"
+#include "intrinsiccv/utils.h"
 
 namespace intrinsiccv {
 

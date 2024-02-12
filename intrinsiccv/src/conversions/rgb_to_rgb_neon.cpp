@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "conversions/rgb_to_rgb.h"
-#include "intrinsiccv.h"
-#include "neon.h"
+#include "intrinsiccv/conversions/rgb_to_rgb.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/neon.h"
 
 namespace intrinsiccv::neon {
 

@@ -8,8 +8,8 @@
 #include <algorithm>
 #include <utility>
 
-#include "traits.h"
-#include "types.h"
+#include "intrinsiccv/traits.h"
+#include "intrinsiccv/types.h"
 
 namespace intrinsiccv {
 

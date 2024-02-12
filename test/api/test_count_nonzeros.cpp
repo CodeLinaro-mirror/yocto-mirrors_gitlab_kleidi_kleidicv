@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include <limits>
 
 #include "framework/array.h"
 #include "framework/utils.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 #define INTRINSICCV_COUNT_NONZEROS(type, suffix) \
   INTRINSICCV_API(count_nonzeros, intrinsiccv_count_nonzeros_##suffix, type)

@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "dispatch.h"
-#include "filters/gaussian_blur.h"
-#include "intrinsiccv.h"
-#include "workspace/separable.h"
+#include "intrinsiccv/dispatch.h"
+#include "intrinsiccv/filters/gaussian_blur.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/workspace/separable.h"
 
 namespace intrinsiccv {
 

@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include "framework/operation.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 #define INTRINSICCV_THRESHOLD_BINARY(type, suffix) \
   INTRINSICCV_API(threshold_binary, intrinsiccv_threshold_binary_##suffix, type)

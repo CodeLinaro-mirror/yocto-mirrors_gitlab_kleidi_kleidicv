@@ -5,9 +5,9 @@
 #ifndef INTRINSICCV_RGB_TO_RGB_SC_H
 #define INTRINSICCV_RGB_TO_RGB_SC_H
 
-#include "conversions/rgb_to_rgb.h"
-#include "intrinsiccv.h"
-#include "sve2.h"
+#include "intrinsiccv/conversions/rgb_to_rgb.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/sve2.h"
 
 namespace intrinsiccv::sve2 {
 

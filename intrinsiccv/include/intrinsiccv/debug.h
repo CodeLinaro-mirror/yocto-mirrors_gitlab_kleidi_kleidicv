@@ -5,11 +5,11 @@
 #ifndef INTRINSICCV_DEBUG_H
 #define INTRINSICCV_DEBUG_H
 
-#include "config.h"
+#include "intrinsiccv/config.h"
 #if INTRINSICCV_TARGET_NEON
-#include "neon.h"
+#include "intrinsiccv/neon.h"
 #elif INTRINSICCV_TARGET_SVE2
-#include "sve2.h"
+#include "intrinsiccv/sve2.h"
 #endif
 #include <iostream>
 

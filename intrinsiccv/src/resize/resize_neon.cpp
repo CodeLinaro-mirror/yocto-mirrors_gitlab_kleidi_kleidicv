@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "intrinsiccv.h"
-#include "neon.h"
-#include "resize/resize.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/neon.h"
+#include "intrinsiccv/resize/resize.h"
 
 namespace intrinsiccv::neon {
 

@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include "framework/utils.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 #define INTRINSICCV_GAUSSIAN_BLUR(type, kernel_suffix, type_suffix)          \
   INTRINSICCV_API(gaussian_blur_##kernel_suffix,                             \

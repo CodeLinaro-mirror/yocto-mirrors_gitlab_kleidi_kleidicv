@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "conversions/yuv_to_rgb.h"
-#include "dispatch.h"
-#include "intrinsiccv.h"
+#include "intrinsiccv/conversions/yuv_to_rgb.h"
+#include "intrinsiccv/dispatch.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
 

@@ -7,7 +7,7 @@
 
 #include <cinttypes>
 
-#include "config.h"
+#include "intrinsiccv/config.h"
 #include "sys/ifunc.h"
 
 namespace intrinsiccv {

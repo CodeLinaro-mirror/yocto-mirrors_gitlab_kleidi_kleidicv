@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "filters/sobel.h"
-#include "intrinsiccv.h"
-#include "morphology/workspace.h"
-#include "neon.h"
+#include "intrinsiccv/filters/sobel.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/morphology/workspace.h"
+#include "intrinsiccv/neon.h"
 
 namespace intrinsiccv::neon {
 

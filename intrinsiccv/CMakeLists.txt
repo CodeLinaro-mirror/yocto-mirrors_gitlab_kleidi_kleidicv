@@ -78,7 +78,7 @@ set(INTRINSICCV_WARNING_FLAGS
 
 set(INTRINSICCV_SDL_FLAGS
   "-include"
-  "unsafe.h"
+  "intrinsiccv/unsafe.h"
 )
 
 set(INTRINSICCV_CLANG_FLAGS

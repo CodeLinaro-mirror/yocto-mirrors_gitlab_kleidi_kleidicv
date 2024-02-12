@@ -5,8 +5,8 @@
 #ifndef INTRINSICCV_FILTERS_GAUSSIAN_BLUR_H
 #define INTRINSICCV_FILTERS_GAUSSIAN_BLUR_H
 
-#include "config.h"
-#include "types.h"
+#include "intrinsiccv/config.h"
+#include "intrinsiccv/types.h"
 
 namespace intrinsiccv {
 

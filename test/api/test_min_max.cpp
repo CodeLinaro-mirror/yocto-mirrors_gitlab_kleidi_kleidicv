@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include "framework/array.h"
 #include "framework/utils.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 #define INTRINSICCV_MIN_MAX(type, suffix) \
   INTRINSICCV_API(min_max, intrinsiccv_min_max_##suffix, type)

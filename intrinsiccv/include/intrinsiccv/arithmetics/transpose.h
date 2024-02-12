@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "ctypes.h"
+#include "intrinsiccv/ctypes.h"
 
 namespace intrinsiccv {
 

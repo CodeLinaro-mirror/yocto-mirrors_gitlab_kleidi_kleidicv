@@ -9,8 +9,8 @@
 #include <memory>
 
 #include "borders.h"
-#include "intrinsiccv.h"
-#include "types.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/types.h"
 
 namespace intrinsiccv {
 

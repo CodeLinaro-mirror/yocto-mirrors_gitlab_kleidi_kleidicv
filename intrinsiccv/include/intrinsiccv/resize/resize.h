@@ -5,7 +5,7 @@
 #ifndef INTRINSICCV_RESIZE_RESIZE_H
 #define INTRINSICCV_RESIZE_RESIZE_H
 
-#include "intrinsiccv.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
 

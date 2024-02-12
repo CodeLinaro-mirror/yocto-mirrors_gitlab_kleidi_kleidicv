@@ -5,7 +5,7 @@
 #ifndef INTRINSICCV_CONVERSIONS_MERGE_H
 #define INTRINSICCV_CONVERSIONS_MERGE_H
 
-#include "intrinsiccv.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
 

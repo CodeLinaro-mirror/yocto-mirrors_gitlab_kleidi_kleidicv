@@ -5,7 +5,7 @@
 #ifndef INTRINSICCV_FILTERS_SOBEL_H
 #define INTRINSICCV_FILTERS_SOBEL_H
 
-#include "intrinsiccv.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
 

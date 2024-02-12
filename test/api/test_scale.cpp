@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include <type_traits>
 
 #include "framework/operation.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 #define INTRINSICCV_SCALE(type, suffix) \
   INTRINSICCV_API(scale, intrinsiccv_scale_##suffix, type)

@@ -5,7 +5,7 @@
 #ifndef INTRINSICCV_CONVERSIONS_RGB_TO_RGB_H
 #define INTRINSICCV_CONVERSIONS_RGB_TO_RGB_H
 
-#include "intrinsiccv.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
 

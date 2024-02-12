@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "dispatch.h"
-#include "intrinsiccv.h"
-#include "morphology/workspace.h"
+#include "intrinsiccv/dispatch.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/morphology/workspace.h"
 
 namespace intrinsiccv {
 

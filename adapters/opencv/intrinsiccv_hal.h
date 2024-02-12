@@ -8,7 +8,7 @@
 #include <cmath>
 #include <type_traits>
 
-#include "intrinsiccv.h"
+#include "intrinsiccv/intrinsiccv.h"
 #include "opencv2/core/hal/interface.h"
 
 // Forward declarations of OpenCV internals.

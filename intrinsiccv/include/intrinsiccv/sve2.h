@@ -9,9 +9,9 @@
 
 #include <utility>
 
-#include "operations.h"
-#include "utils.h"
-#include "workspace/separable.h"
+#include "intrinsiccv/operations.h"
+#include "intrinsiccv/utils.h"
+#include "intrinsiccv/workspace/separable.h"
 
 namespace intrinsiccv::sve2 {
 

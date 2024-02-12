@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "dispatch.h"
-#include "filters/sobel.h"
-#include "intrinsiccv.h"
+#include "intrinsiccv/dispatch.h"
+#include "intrinsiccv/filters/sobel.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
 

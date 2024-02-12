@@ -4,9 +4,9 @@
 
 #include <limits>
 
-#include "intrinsiccv.h"
-#include "neon.h"
-#include "types.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/neon.h"
+#include "intrinsiccv/types.h"
 
 namespace intrinsiccv::neon {
 

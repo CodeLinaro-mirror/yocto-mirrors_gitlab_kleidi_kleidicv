@@ -5,9 +5,9 @@
 #ifndef INTRINSICCV_SOBEL_SC_H
 #define INTRINSICCV_SOBEL_SC_H
 
-#include "filters/sobel.h"
-#include "intrinsiccv.h"
-#include "sve2.h"
+#include "intrinsiccv/filters/sobel.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/sve2.h"
 
 namespace intrinsiccv::sve2 {
 

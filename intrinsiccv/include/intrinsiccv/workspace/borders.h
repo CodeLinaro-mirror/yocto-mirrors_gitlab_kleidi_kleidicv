@@ -5,7 +5,7 @@
 #ifndef INTRINSICCV_WORKSPACE_BORDERS_H
 #define INTRINSICCV_WORKSPACE_BORDERS_H
 
-#include "intrinsiccv.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
 

@@ -6,7 +6,6 @@
 #define INTRINSICCV_TEST_FRAMEWORK_KERNEL_H_
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include <algorithm>
 #include <optional>
@@ -16,6 +15,7 @@
 #include "framework/border.h"
 #include "framework/generator.h"
 #include "framework/types.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 namespace test {
 

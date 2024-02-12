@@ -5,8 +5,8 @@
 #include <climits>
 #include <limits>
 
-#include "intrinsiccv.h"
-#include "neon.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/neon.h"
 
 // This algorithm calculates the index of element in src array of the global
 // minimum and maximum values.

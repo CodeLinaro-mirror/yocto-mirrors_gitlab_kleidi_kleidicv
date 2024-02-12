@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
-#include <intrinsiccv.h>
 
 #include <array>
 
 #include "framework/kernel.h"
 #include "framework/types.h"
+#include "intrinsiccv/intrinsiccv.h"
 
 // Tests that the constructor of test::Kernel<T> works for odd width and
 // height.

@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <limits>
 
-#include "intrinsiccv.h"
-#include "morphology/workspace.h"
-#include "sve2.h"
-#include "types.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/morphology/workspace.h"
+#include "intrinsiccv/sve2.h"
+#include "intrinsiccv/types.h"
 
 namespace intrinsiccv::sve2 {
 

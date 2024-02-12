@@ -17,8 +17,8 @@
 #ifndef INTRINSICCV_H
 #define INTRINSICCV_H
 
-#include "config.h"
-#include "ctypes.h"
+#include "intrinsiccv/config.h"
+#include "intrinsiccv/ctypes.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -7,9 +7,9 @@
 
 #include <utility>
 
-#include "conversions/yuv_to_rgb.h"
-#include "intrinsiccv.h"
-#include "sve2.h"
+#include "intrinsiccv/conversions/yuv_to_rgb.h"
+#include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/sve2.h"
 
 namespace intrinsiccv::sve2 {
 
