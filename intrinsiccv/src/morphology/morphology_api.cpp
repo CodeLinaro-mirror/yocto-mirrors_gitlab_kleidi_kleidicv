@@ -59,9 +59,16 @@ intrinsiccv_error_t intrinsiccv_morphology_create(
     size_t iterations, size_t type_size, intrinsiccv_rectangle_t image) {
   CHECK_POINTERS(context);
 
-  auto workspace =
-      MorphologyWorkspace::create(kernel, anchor, border_type, border_values,
-                                  channels, iterations, type_size, image);
+  auto morphology_border_type =
+      MorphologyWorkspace::get_border_type(border_type);
+
+  if (!morphology_border_type) {
+    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto workspace = MorphologyWorkspace::create(
+      kernel, anchor, *morphology_border_type, border_values, channels,
+      iterations, type_size, image);
   if (!workspace) {
     *context = nullptr;
     return INTRINSICCV_ERROR_ALLOCATION;

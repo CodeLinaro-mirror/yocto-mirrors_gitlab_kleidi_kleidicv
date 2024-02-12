@@ -274,17 +274,6 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  switch (intrinsiccv_border_type) {
-    case INTRINSICCV_BORDER_TYPE_REPLICATE:
-    case INTRINSICCV_BORDER_TYPE_REFLECT:
-    case INTRINSICCV_BORDER_TYPE_WRAP:
-    case INTRINSICCV_BORDER_TYPE_REVERSE:
-      break;
-
-    default:
-      return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
   decltype(intrinsiccv_gaussian_blur_3x3_u8) *impl{nullptr};
   if ((ksize_width == 3) && (ksize_height == 3) && (width >= 3) &&
       (height >= 3)) {

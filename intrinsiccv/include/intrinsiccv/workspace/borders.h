@@ -5,9 +5,34 @@
 #ifndef INTRINSICCV_WORKSPACE_BORDERS_H
 #define INTRINSICCV_WORKSPACE_BORDERS_H
 
+#include <optional>
+
 #include "intrinsiccv/intrinsiccv.h"
 
 namespace intrinsiccv {
+
+enum class FixedBorderType {
+  REPLICATE,
+  REFLECT,
+  WRAP,
+  REVERSE,
+};
+
+inline std::optional<FixedBorderType> get_fixed_border_type(
+    intrinsiccv_border_type_t border_type) INTRINSICCV_STREAMING_COMPATIBLE {
+  switch (border_type) {
+    case INTRINSICCV_BORDER_TYPE_REPLICATE:
+      return FixedBorderType::REPLICATE;
+    case INTRINSICCV_BORDER_TYPE_REFLECT:
+      return FixedBorderType::REFLECT;
+    case INTRINSICCV_BORDER_TYPE_WRAP:
+      return FixedBorderType::WRAP;
+    case INTRINSICCV_BORDER_TYPE_REVERSE:
+      return FixedBorderType::REVERSE;
+    default:
+      return std::optional<FixedBorderType>();
+  }
+}
 
 // Border offsets for fixed-size filters.
 template <typename T, const size_t S>
@@ -32,7 +57,7 @@ class FixedBorderInfo<T, 3UL> final {
     size_t offsets_[3];
   };
 
-  FixedBorderInfo(size_t height, intrinsiccv_border_type_t border_type)
+  FixedBorderInfo(size_t height, FixedBorderType border_type)
       : height_(height), border_type_(border_type) {}
 
   // Retuns offsets without the influence of any border.
@@ -42,22 +67,18 @@ class FixedBorderInfo<T, 3UL> final {
   Offsets offsets_with_left_border(size_t /* column_index */) const
       INTRINSICCV_STREAMING_COMPATIBLE {
     switch (border_type_) {
-      case INTRINSICCV_BORDER_TYPE_REPLICATE:
-      case INTRINSICCV_BORDER_TYPE_REFLECT:
+      case FixedBorderType::REPLICATE:
+      case FixedBorderType::REFLECT:
         return get(0, 0, 1);
         break;
 
-      case INTRINSICCV_BORDER_TYPE_WRAP:
+      case FixedBorderType::WRAP:
         return get(height_ - 1, 0, 1);
         break;
 
-      case INTRINSICCV_BORDER_TYPE_REVERSE:
+      case FixedBorderType::REVERSE:
         return get(1, 0, 1);
         break;
-
-      default:
-        // There is no good value to return here.
-        return Offsets{};
     }
   }
 
@@ -65,16 +86,16 @@ class FixedBorderInfo<T, 3UL> final {
   Offsets offsets_with_right_border(size_t /* column_index */) const
       INTRINSICCV_STREAMING_COMPATIBLE {
     switch (border_type_) {
-      case INTRINSICCV_BORDER_TYPE_REPLICATE:
-      case INTRINSICCV_BORDER_TYPE_REFLECT:
+      case FixedBorderType::REPLICATE:
+      case FixedBorderType::REFLECT:
         return get(-1, 0, 0);
         break;
 
-      case INTRINSICCV_BORDER_TYPE_WRAP:
+      case FixedBorderType::WRAP:
         return get(-1, 0, 1 - height_);
         break;
 
-      case INTRINSICCV_BORDER_TYPE_REVERSE:
+      case FixedBorderType::REVERSE:
         return get(-1, 0, -1);
         break;
 
@@ -105,7 +126,7 @@ class FixedBorderInfo<T, 3UL> final {
   }
 
   size_t height_;
-  intrinsiccv_border_type_t border_type_;
+  FixedBorderType border_type_;
 };  // end of class FixedBorderInfo<T, 3UL>
 
 // Border offsets for 5x5 filters.
@@ -132,7 +153,7 @@ class FixedBorderInfo<T, 5UL> final {
     size_t offsets_[5];
   };
 
-  FixedBorderInfo(size_t height, intrinsiccv_border_type_t border_type)
+  FixedBorderInfo(size_t height, FixedBorderType border_type)
       : height_(height), border_type_(border_type) {}
 
   // Retuns offsets without the influence of any border.
@@ -144,7 +165,7 @@ class FixedBorderInfo<T, 5UL> final {
   Offsets offsets_with_left_border(size_t column_index) const
       INTRINSICCV_STREAMING_COMPATIBLE {
     switch (border_type_) {
-      case INTRINSICCV_BORDER_TYPE_REPLICATE:
+      case FixedBorderType::REPLICATE:
         if (column_index == 0) {
           return get(0, 0, 0, 1, 2);
         } else {
@@ -152,7 +173,7 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
 
-      case INTRINSICCV_BORDER_TYPE_REFLECT:
+      case FixedBorderType::REFLECT:
         if (column_index == 0) {
           return get(1, 0, 0, 1, 2);
         } else {
@@ -160,7 +181,7 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
 
-      case INTRINSICCV_BORDER_TYPE_WRAP:
+      case FixedBorderType::WRAP:
         if (column_index == 0) {
           return get(height_ - 2, height_ - 1, 0, 1, 2);
         } else {
@@ -168,7 +189,7 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
 
-      case INTRINSICCV_BORDER_TYPE_REVERSE:
+      case FixedBorderType::REVERSE:
         if (column_index == 0) {
           return get(2, 1, 0, 1, 2);
         } else {
@@ -186,7 +207,7 @@ class FixedBorderInfo<T, 5UL> final {
   Offsets offsets_with_right_border(size_t column_index) const
       INTRINSICCV_STREAMING_COMPATIBLE {
     switch (border_type_) {
-      case INTRINSICCV_BORDER_TYPE_REPLICATE:
+      case FixedBorderType::REPLICATE:
         if (column_index == (height_ - 2)) {
           return get(-2, -1, 0, 1, 1);
         } else {
@@ -194,7 +215,7 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
 
-      case INTRINSICCV_BORDER_TYPE_REFLECT:
+      case FixedBorderType::REFLECT:
         if (column_index == (height_ - 2)) {
           return get(-2, -1, 0, 1, 1);
         } else {
@@ -202,7 +223,7 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
 
-      case INTRINSICCV_BORDER_TYPE_WRAP:
+      case FixedBorderType::WRAP:
         if (column_index == (height_ - 2)) {
           return get(-2, -1, 0, 1, 2 - height_);
         } else {
@@ -210,7 +231,7 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
 
-      case INTRINSICCV_BORDER_TYPE_REVERSE:
+      case FixedBorderType::REVERSE:
         if (column_index == (height_ - 2)) {
           return get(-2, -1, 0, 1, 0);
         } else {
@@ -246,7 +267,7 @@ class FixedBorderInfo<T, 5UL> final {
   }
 
   size_t height_;
-  intrinsiccv_border_type_t border_type_;
+  FixedBorderType border_type_;
 };  // end of class FixedBorderInfo<T, 5UL>
 
 // Shorthand for 3x3 filter border type.

@@ -102,7 +102,15 @@ intrinsiccv_error_t discrete_gaussian_blur(
 
   GaussianBlurFilterType blur;
   SeparableFilter<GaussianBlurFilterType, KernelSize> filter{blur};
-  workspace->process(rect, src_rows, dst_rows, channels, border_type, filter);
+
+  auto fixed_border_type = get_fixed_border_type(border_type);
+
+  if (!fixed_border_type) {
+    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  workspace->process(rect, src_rows, dst_rows, channels, *fixed_border_type,
+                     filter);
   return INTRINSICCV_OK;
 }
 

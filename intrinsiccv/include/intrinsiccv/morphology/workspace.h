@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <memory>
+#include <optional>
 
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
@@ -37,15 +38,31 @@ class MorphologyWorkspace final {
   using Pointer =
       std::unique_ptr<MorphologyWorkspace, MorphologyWorkspaceDeleter>;
 
+  enum class BorderType {
+    CONSTANT,
+    REPLICATE,
+  };
+
+  static std::optional<BorderType> get_border_type(
+      intrinsiccv_border_type_t border_type) INTRINSICCV_STREAMING_COMPATIBLE {
+    switch (border_type) {
+      case INTRINSICCV_BORDER_TYPE_REPLICATE:
+        return BorderType::REPLICATE;
+      case INTRINSICCV_BORDER_TYPE_CONSTANT:
+        return BorderType::CONSTANT;
+      default:
+        return std::optional<BorderType>();
+    }
+  }
+
   // MorphologyWorkspace is only constructible with create().
   MorphologyWorkspace() = delete;
 
   // Creates a workspace on the heap.
   static Pointer create(
       intrinsiccv_rectangle_t kernel, intrinsiccv_point_t anchor,
-      intrinsiccv_border_type_t border_type,
-      intrinsiccv_border_values_t border_values, size_t channels,
-      size_t iterations, size_t type_size,
+      BorderType border_type, intrinsiccv_border_values_t border_values,
+      size_t channels, size_t iterations, size_t type_size,
       intrinsiccv_rectangle_t image) INTRINSICCV_STREAMING_COMPATIBLE {
     // These values are arbitrarily choosen.
     const size_t rows_per_iteration = std::max(2 * kernel.height, 32UL);
@@ -116,7 +133,7 @@ class MorphologyWorkspace final {
 
   intrinsiccv_rectangle_t kernel() const { return kernel_; }
   intrinsiccv_point_t anchor() const { return anchor_; }
-  intrinsiccv_border_type_t border_type() const { return border_type_; }
+  BorderType border_type() const { return border_type_; }
   intrinsiccv_border_values_t border_values() const { return border_values_; }
   size_t channels() const { return channels_; }
   size_t iterations() const { return iterations_; }
@@ -127,8 +144,7 @@ class MorphologyWorkspace final {
   template <typename O>
   void process(Rectangle rect, Rows<const typename O::SourceType> src_rows,
                Rows<typename O::DestinationType> dst_rows, Margin margin,
-               Border<typename O::SourceType> border,
-               intrinsiccv_border_type_t border_type,
+               Border<typename O::SourceType> border, BorderType border_type,
                O operation) INTRINSICCV_STREAMING_COMPATIBLE {
     using S = typename O::SourceType;
     using B = typename O::BufferType;
@@ -161,7 +177,7 @@ class MorphologyWorkspace final {
     if (size_t horizontal_height = get_next_horizontal_height()) {
       for (size_t index = 0; index < horizontal_height; ++index) {
         switch (border_type) {
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT: {
+          case BorderType::CONSTANT: {
             make_constant_border(wide_rows, 0, margin.left(),
                                  left_border_value);
 
@@ -186,7 +202,7 @@ class MorphologyWorkspace final {
             ++row_index_;
           } break;
 
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REPLICATE: {
+          case BorderType::REPLICATE: {
             Rows<const S> current_src_row;
 
             if (row_index_ < margin.top()) {
@@ -209,14 +225,6 @@ class MorphologyWorkspace final {
             // Advance counters.
             ++row_index_;
           } break;
-
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REFLECT:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REVERSE:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_WRAP:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_TRANSPARENT:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_NONE:
-          default:
-            break;
         }  // switch (border_type)
 
         // [Step 2] Process the preloaded data.
@@ -232,7 +240,7 @@ class MorphologyWorkspace final {
       size_t horizontal_height = get_next_horizontal_height();
       for (size_t index = 0; index < horizontal_height; ++index) {
         switch (border_type) {
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT: {
+          case BorderType::CONSTANT: {
             if (row_index_ < (margin.top() + rect.height())) {
               // Constant left and right borders with source data.
               copy_data(src_rows, wide_rows.at(0, margin.left()),
@@ -248,7 +256,7 @@ class MorphologyWorkspace final {
             ++row_index_;
           } break;
 
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REPLICATE: {
+          case BorderType::REPLICATE: {
             Rows<const S> current_src_row;
 
             if (row_index_ < (margin.top() + rect.height())) {
@@ -269,14 +277,6 @@ class MorphologyWorkspace final {
             // Advance counters.
             ++row_index_;
           } break;
-
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REFLECT:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REVERSE:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_WRAP:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_TRANSPARENT:
-          case intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_NONE:
-          default:
-            break;
         }  // switch (border_type)
 
         operation.process_horizontal(Rectangle{rect.width(), 1UL}, wide_rows,
@@ -367,7 +367,7 @@ class MorphologyWorkspace final {
 
   intrinsiccv_rectangle_t kernel_;
   intrinsiccv_point_t anchor_;
-  intrinsiccv_border_type_t border_type_;
+  BorderType border_type_;
   intrinsiccv_border_values_t border_values_;
   size_t iterations_;
   size_t type_size_;

@@ -139,7 +139,7 @@ static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
   sve2::SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{
       horizontal_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
-                     INTRINSICCV_BORDER_TYPE_REPLICATE, filter);
+                     FixedBorderType::REPLICATE, filter);
   return INTRINSICCV_OK;
 }
 
@@ -164,7 +164,7 @@ static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
   VerticalSobel3x3<uint8_t> vertical_sobel;
   sve2::SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
-                     INTRINSICCV_BORDER_TYPE_REPLICATE, filter);
+                     FixedBorderType::REPLICATE, filter);
   return INTRINSICCV_OK;
 }
 

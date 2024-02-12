@@ -22,6 +22,29 @@ class GaussianBlurTest : public testing::Test {};
 
 TYPED_TEST_SUITE(GaussianBlurTest, ElementTypes);
 
+TYPED_TEST(GaussianBlurTest, UnsupportedBorderType) {
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 1}));
+  TypeParam src[1] = {}, dst[1];
+  for (intrinsiccv_border_type_t border : {
+           INTRINSICCV_BORDER_TYPE_CONSTANT,
+           INTRINSICCV_BORDER_TYPE_TRANSPARENT,
+           INTRINSICCV_BORDER_TYPE_NONE,
+       }) {
+    EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+              gaussian_blur_3x3<TypeParam>()(src, sizeof(TypeParam), dst,
+                                             sizeof(TypeParam), 1, 1, 1, border,
+                                             context));
+    EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+              gaussian_blur_5x5<TypeParam>()(src, sizeof(TypeParam), dst,
+                                             sizeof(TypeParam), 1, 1, 1, border,
+                                             context));
+  }
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
 TYPED_TEST(GaussianBlurTest, NullPointer) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,

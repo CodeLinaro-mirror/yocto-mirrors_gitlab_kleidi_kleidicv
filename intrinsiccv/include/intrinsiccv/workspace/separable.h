@@ -118,7 +118,7 @@ class SeparableFilterWorkspace final {
   void process(Rectangle rect,
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
-               size_t channels, intrinsiccv_border_type_t border_type,
+               size_t channels, typename FilterType::BorderType border_type,
                FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE {
     // Border helper which calculates border offsets.
     typename FilterType::BorderInfoType vertical_border{rect.height(),

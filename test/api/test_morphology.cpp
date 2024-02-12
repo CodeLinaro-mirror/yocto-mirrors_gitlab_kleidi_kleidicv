@@ -17,14 +17,37 @@ INTRINSICCV_DILATE(uint8_t, u8);
 INTRINSICCV_ERODE(uint8_t, u8);
 
 template <typename ElementType>
+class MorphologyTest : public testing::Test {};
+
+template <typename ElementType>
 class DilateTest : public testing::Test {};
 
 template <typename ElementType>
 class ErodeTest : public testing::Test {};
 
 using ElementTypes = ::testing::Types<uint8_t>;
+TYPED_TEST_SUITE(MorphologyTest, ElementTypes);
 TYPED_TEST_SUITE(DilateTest, ElementTypes);
 TYPED_TEST_SUITE(ErodeTest, ElementTypes);
+
+TYPED_TEST(MorphologyTest, UnsupportedBorderType) {
+  for (intrinsiccv_border_type_t border : {
+           INTRINSICCV_BORDER_TYPE_REFLECT,
+           INTRINSICCV_BORDER_TYPE_WRAP,
+           INTRINSICCV_BORDER_TYPE_REVERSE,
+           INTRINSICCV_BORDER_TYPE_TRANSPARENT,
+           INTRINSICCV_BORDER_TYPE_NONE,
+       }) {
+    intrinsiccv_morphology_context_t *context = nullptr;
+    EXPECT_EQ(
+        INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+        intrinsiccv_morphology_create(
+            &context, intrinsiccv_rectangle_t{1, 1}, intrinsiccv_point_t{0, 0},
+            border, intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+            sizeof(TypeParam), intrinsiccv_rectangle_t{1, 1}));
+    ASSERT_EQ(nullptr, context);
+  }
+}
 
 static intrinsiccv_error_t make_minimal_context(
     intrinsiccv_morphology_context_t **context, size_t type_size) {
