@@ -58,7 +58,7 @@ class OperationTest {
   virtual const std::vector<Elements>& test_elements() = 0;
 
   // Prepares inputs and expected outputs for the operation.
-  void setup() {
+  virtual void setup() {
     auto elements_list = test_elements();
     // Check that the number of elements fit into the buffers.
     ASSERT_LE(elements_list.size(), height());

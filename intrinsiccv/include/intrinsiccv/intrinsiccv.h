@@ -1089,6 +1089,27 @@ intrinsiccv_error_t intrinsiccv_min_max_loc_u8(const uint8_t *src,
                                                size_t *min_offset,
                                                size_t *max_offset);
 
+/// Multiplies the elements in `src` by `scale`, then adds `shift` to the
+/// result and stores it in `dst`.
+///
+/// The result is saturated, i.e. it is the smallest/largest number of the
+/// type of the element if the result would underflow/overflow. Source data
+/// length (in bytes) is `stride` * `height`. Width and height are the same
+/// for the source and destination.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must not be less than width * sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must not be less than width * sizeof(type).
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+/// @param scale        Value to multiply the input by.
+/// @param shift        Value to add to the result.
+///
 intrinsiccv_error_t intrinsiccv_scale_u8(const uint8_t *src, size_t src_stride,
                                          uint8_t *dst, size_t dst_stride,
                                          size_t width, size_t height,
