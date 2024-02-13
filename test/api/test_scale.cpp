@@ -56,13 +56,15 @@ class ScaleTestLinearBase {
   virtual float shift() = 0;
 
  public:
-  void test_scalar() {
+  // minimum_size set by caller to trigger the 'big' scale path.
+  void test_scalar(size_t minimum_size = 1) {
     size_t width = test::Options::vector_length() - 1;
-    test_linear(width);
+    test_linear(width, minimum_size);
   }
-  void test_vector() {
+
+  void test_vector(size_t minimum_size = 1) {
     size_t width = test::Options::vector_length() * 2;
-    test_linear(width);
+    test_linear(width, minimum_size);
   }
 
  private:
@@ -77,17 +79,16 @@ class ScaleTestLinearBase {
     ElementType counter_;
   };  // end of class GenerateLinearSeries
 
-  void test_linear(size_t width) {
-    size_t height = ((std::numeric_limits<ElementType>::max() -
-                      std::numeric_limits<ElementType>::min()) /
-                     width) +
-                    1;
+  void test_linear(size_t width, size_t minimum_size) {
+    size_t image_size =
+        std::max(minimum_size, static_cast<size_t>(max() - min()));
+    size_t height = image_size / width + 1;
     test::Array2D<ElementType> source(width, height, 1, 1);
     test::Array2D<ElementType> expected(width, height, 1, 1);
     test::Array2D<ElementType> actual =
         test::Array2D<ElementType>(width, height, 1, 1);
 
-    GenerateLinearSeries generator(std::numeric_limits<ElementType>::min());
+    GenerateLinearSeries generator(min());
 
     source.fill(&generator);
 
@@ -328,6 +329,13 @@ TYPED_TEST(ScaleTest, TestVector1) {
   ScaleTestLinear1<TypeParam>{}.test_vector();
 }
 
+TYPED_TEST(ScaleTest, TestScalar1Tbx) {
+  ScaleTestLinear1<TypeParam>{}.test_scalar(2500);
+}
+TYPED_TEST(ScaleTest, TestVector1Tbx) {
+  ScaleTestLinear1<TypeParam>{}.test_vector(2500);
+}
+
 TYPED_TEST(ScaleTest, TestScalar2) {
   ScaleTestLinear2<TypeParam>{}.test_scalar();
 }
@@ -335,11 +343,25 @@ TYPED_TEST(ScaleTest, TestVector2) {
   ScaleTestLinear2<TypeParam>{}.test_vector();
 }
 
+TYPED_TEST(ScaleTest, TestScalar2Tbx) {
+  ScaleTestLinear2<TypeParam>{}.test_scalar(2500);
+}
+TYPED_TEST(ScaleTest, TestVector2Tbx) {
+  ScaleTestLinear2<TypeParam>{}.test_vector(2500);
+}
+
 TYPED_TEST(ScaleTest, TestScalar3) {
   ScaleTestLinear3<TypeParam>{}.test_scalar();
 }
 TYPED_TEST(ScaleTest, TestVector3) {
   ScaleTestLinear3<TypeParam>{}.test_vector();
+}
+
+TYPED_TEST(ScaleTest, TestScalar3Tbx) {
+  ScaleTestLinear3<TypeParam>{}.test_scalar(2500);
+}
+TYPED_TEST(ScaleTest, TestVector3Tbx) {
+  ScaleTestLinear3<TypeParam>{}.test_vector(2500);
 }
 
 TYPED_TEST(ScaleTest, TestAdd) { ScaleTestAdd<TypeParam>{}.test(); }
