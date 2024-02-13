@@ -819,6 +819,32 @@ intrinsiccv_error_t intrinsiccv_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channel);
 
+/// Canny edge detector for uint8_t grayscale input. Output is also a uint8_t
+/// grayscale image. Width and height are the same for input and output.
+///
+/// The steps:
+///  - Execute horizontal and vertical Sobel filtering with 3*3 kernels to
+///    calculate the gradient approximation in both directions.
+///  - Calculate magnitude approximation (by summing horizontal and vertical
+///    gradient approximations) and apply lower threshold.
+///  - Perform non-maxima suppression and high thresholding.
+///  - Perform hysteresis: promote weak edges, which are connected to strong
+///    edges, to strong edges.
+///  - Suppress remaining weak edges.
+///
+/// @param src            Pointer to the source data. Must be non-null.
+/// @param src_stride     Distance in bytes from the start of one row to the
+///                       start of the next row in the source data. Must not be
+///                       less than width.
+/// @param dst            Pointer to the destination data. Must be non-null.
+/// @param dst_stride     Distance in bytes from the start of one row to the
+///                       start of the next row in the destination data. Must
+///                       not be less than width.
+/// @param width          Number of elements in a row.
+/// @param height         Number of rows in the data.
+/// @param low_threshold  Low threshold for the edge detector algorithm.
+/// @param high_threshold High threshold for the edge detector algorithm.
+///
 intrinsiccv_error_t intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride,
                                          uint8_t *dst, size_t dst_stride,
                                          size_t width, size_t height,
