@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,18 +13,6 @@
 #include "opencv2/imgproc/hal/interface.h"
 
 namespace intrinsiccv::hal {
-
-#ifdef INTRINSICCV_TEST_FALLBACK_TO_OPENCV
-#define INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED()      \
-  {                                                            \
-    char *env_var = getenv("TURN_OFF_INTRINSICCV_OPENCV_HAL"); \
-    if (env_var != nullptr && strcmp(env_var, "YES") == 0) {   \
-      return CV_HAL_ERROR_NOT_IMPLEMENTED;                     \
-    }                                                          \
-  }
-#else
-#define INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED()
-#endif
 
 static int convert_error(intrinsiccv_error_t e) {
   switch (e) {
@@ -60,8 +48,6 @@ static size_t get_type_size(int depth) {
 // Note: 'dcn' is already accounted for in 'dst_step'.
 int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                 size_t dst_step, int width, int height, int depth, int dcn) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if (INTRINSICCV_UNLIKELY((dcn != 3) && (dcn != 4))) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -83,8 +69,6 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int scn,
                int dcn, bool swapBlue) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if (INTRINSICCV_UNLIKELY(((scn != 3) && (scn != 4)) ||
                            ((dcn != 3) && (dcn != 4)))) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -152,8 +136,6 @@ int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
                   size_t uv_step, uchar *dst_data, size_t dst_step,
                   int dst_width, int dst_height, int dcn, bool swapBlue,
                   int uIdx) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   const bool is_bgr = !swapBlue;
   const bool is_nv21 = (uIdx != 0);
 
@@ -193,8 +175,6 @@ int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
 int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int width, int height, int depth, int cn,
               double thresh, double maxValue, int thresholdType) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   (void)cn;
 
   if ((depth == CV_8U) && (thresholdType == 0 /* THRESH_BINARY */)) {
@@ -246,8 +226,6 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
                   size_t margin_left, size_t margin_top, size_t margin_right,
                   size_t margin_bottom, size_t ksize_width, size_t ksize_height,
                   double sigmaX, double sigmaY, int border_type) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if (src_data == dst_data) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -322,8 +300,6 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
                     int anchor_y, int cvborder_type,
                     const double cvborder_values[4], int iterations,
                     bool allow_submatrix, bool allow_in_place) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   // Some parameters are unused.
   (void)allow_in_place;
 
@@ -438,8 +414,6 @@ int morphology_operation(cvhalFilter2D *cvcontext, uchar *src_data,
                          int src_full_height, int src_roi_x, int src_roi_y,
                          int dst_full_width, int dst_full_height, int dst_roi_x,
                          int dst_roi_y) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   // Some parameters are unused.
   (void)src_full_width;
   (void)src_full_height;
@@ -459,8 +433,6 @@ int morphology_operation(cvhalFilter2D *cvcontext, uchar *src_data,
 }
 
 int morphology_free(cvhalFilter2D *cvcontext) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   std::unique_ptr<MorphologyParams> params(
       reinterpret_cast<MorphologyParams *>(cvcontext));
   return convert_error(intrinsiccv_morphology_release(params->context));
@@ -471,8 +443,6 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
           int cn, int margin_left, int margin_top, int margin_right,
           int margin_bottom, int dx, int dy, int ksize, double scale,
           double delta, int border_type) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if (src_data == dst_data) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -527,8 +497,6 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
 int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int cn, double lowThreshold,
           double highThreshold, int ksize, bool L2gradient) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if (ksize != 3) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -555,8 +523,6 @@ int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height,
               int element_size) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if ((element_size != 1) && (element_size != 2)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -628,8 +594,6 @@ intrinsiccv_error_t call_min_max_loc(FunctionType min_max_loc_func,
 int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
                 int depth, double *minVal, double *maxVal, int *minIdx,
                 int *maxIdx, uchar *mask) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if (mask) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -672,8 +636,6 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
 int convertTo(const uchar *src_data, size_t src_step, int src_depth,
               uchar *dst_data, size_t dst_step, int dst_depth, int width,
               int height, double scale, double shift) {
-  INTRINSICCV_EXIT_WITH_NOT_IMPLEMENTED_IF_NEEDED();
-
   if (src_depth != dst_depth) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }

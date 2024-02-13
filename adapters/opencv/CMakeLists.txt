@@ -1,14 +1,10 @@
-# SPDX-FileCopyrightText: 2023-2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 include("${CMAKE_CURRENT_LIST_DIR}/../../intrinsiccv/CMakeLists.txt")
 
 project("IntrinsicCV OpenCV HAL")
-
-option(INTRINSICCV_TEST_FALLBACK_TO_OPENCV
-  "Return to OpenCV implementation based on the value of
-  the TURN_OFF_INTRINSICCV_OPENCV_HAL environment variable" OFF)
 
 set(INTRINSICCV_HAL_VERSION "0.0.0" CACHE INTERNAL "")
 set(INTRINSICCV_HAL_LIBRARIES "intrinsiccv_hal" CACHE INTERNAL "")
@@ -25,10 +21,6 @@ target_include_directories(intrinsiccv_hal PRIVATE
 )
 target_compile_options(intrinsiccv_hal PRIVATE $<TARGET_PROPERTY:intrinsiccv,COMPILE_OPTIONS>)
 set_target_properties(intrinsiccv_hal PROPERTIES CXX_STANDARD 17)
-
-if(INTRINSICCV_TEST_FALLBACK_TO_OPENCV)
-  target_compile_definitions(intrinsiccv_hal PRIVATE INTRINSICCV_TEST_FALLBACK_TO_OPENCV)
-endif()
 
 if(NOT BUILD_SHARED_LIBS)
   ocv_install_target(intrinsiccv_neon
