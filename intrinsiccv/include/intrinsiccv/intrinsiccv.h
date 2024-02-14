@@ -8,6 +8,12 @@
 ///
 /// Project page: https://gitlab.arm.com/intrinsiccv/intrinsiccv
 ///
+/// IntrinsicCV shall use <a href="https://semver.org/spec/v2.0.0.html">Semantic
+/// Versioning 2.0.0</a>. The public API is defined according to what is
+/// included in the Doxygen-generated documentation as well as the content of
+/// the project's Markdown files. Features without such documentation are not
+/// part of the public API and should not be relied upon.
+///
 /// @see <a href="coverage/coverage_report.html">Code Coverage Report</a>
 
 /// @file
