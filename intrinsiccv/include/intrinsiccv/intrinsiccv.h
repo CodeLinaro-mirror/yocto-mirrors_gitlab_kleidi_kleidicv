@@ -229,7 +229,7 @@ INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t,
 /// @param threshold    The value that the elements of the addition result
 ///                     are compared to.
 ///
-intrinsiccv_error_t intrinsiccv_saturating_add_abs_with_threshold(
+intrinsiccv_error_t intrinsiccv_saturating_add_abs_with_threshold_s16(
     const int16_t *src_a, size_t src_a_stride, const int16_t *src_b,
     size_t src_b_stride, int16_t *dst, size_t dst_stride, size_t width,
     size_t height, int16_t threshold);

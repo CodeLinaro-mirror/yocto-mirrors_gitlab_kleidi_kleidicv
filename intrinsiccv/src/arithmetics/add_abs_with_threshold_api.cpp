@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -41,7 +41,7 @@ intrinsiccv_error_t saturating_add_abs_with_threshold(
       const type *, size_t, const type *, size_t, type *, size_t, size_t, \
       size_t, type)
 
-INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_add_abs_with_threshold,
+INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_add_abs_with_threshold_s16,
                          int16_t);
 
 }  // namespace intrinsiccv

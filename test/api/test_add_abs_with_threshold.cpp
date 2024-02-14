@@ -13,7 +13,7 @@ class SaturatingAddAbsWithThresholdTestBase
  protected:
   // Calls the API-under-test in the appropriate way.
   intrinsiccv_error_t call_api() override {
-    return intrinsiccv_saturating_add_abs_with_threshold(
+    return intrinsiccv_saturating_add_abs_with_threshold_s16(
         this->inputs_[0].data(), this->inputs_[0].stride(),
         this->inputs_[1].data(), this->inputs_[1].stride(),
         this->actual_[0].data(), this->actual_[0].stride(), this->width(),
@@ -152,7 +152,7 @@ TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestMax) {
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, NullPointer) {
   TypeParam src[1], dst[1];
-  test::test_null_args(intrinsiccv_saturating_add_abs_with_threshold, src,
+  test::test_null_args(intrinsiccv_saturating_add_abs_with_threshold_s16, src,
                        sizeof(TypeParam), src, sizeof(TypeParam), dst,
                        sizeof(TypeParam), 1, 1, 1);
 }
@@ -164,15 +164,15 @@ TYPED_TEST(SaturatingAddAbsWithThresholdTest, Misalignment) {
   }
   TypeParam src[1] = {}, dst[1] = {};
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
-            intrinsiccv_saturating_add_abs_with_threshold(
+            intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam) + 1, src, sizeof(TypeParam), dst,
                 sizeof(TypeParam), 1, 1, 1));
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
-            intrinsiccv_saturating_add_abs_with_threshold(
+            intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam) + 1, dst,
                 sizeof(TypeParam), 1, 1, 1));
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
-            intrinsiccv_saturating_add_abs_with_threshold(
+            intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,
                 sizeof(TypeParam) + 1, 1, 1, 1));
 }
