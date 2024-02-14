@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// @file ctypes.h
-/// Helper type definitions
+/// @brief Helper type definitions
 
 #ifndef INTRINSICCV_CTYPES_H
 #define INTRINSICCV_CTYPES_H
@@ -34,20 +34,31 @@ typedef enum INTRINSICCV_NODISCARD {
   INTRINSICCV_ERROR_ALIGNMENT,
 } intrinsiccv_error_t;
 
+/// Struct to represent a point
 typedef struct {
+  /// x coordinate
   size_t x;
+  /// y coordinate
   size_t y;
 } intrinsiccv_point_t;
 
+/// Struct to represent a rectangle
 typedef struct {
+  /// Width of the rectangle
   size_t width;
+  /// Height of the rectangle
   size_t height;
 } intrinsiccv_rectangle_t;
 
+/// Struct to store border values
 typedef struct {
+  /// Top border value
   double top;
+  /// Left border value
   double left;
+  /// Bottom border value
   double bottom;
+  /// Right border value
   double right;
 } intrinsiccv_border_values_t;
 
@@ -77,6 +88,7 @@ typedef enum {
 typedef struct intrinsiccv_morphology_context_t_
     intrinsiccv_morphology_context_t;
 
+/// Internal structure where filter operations store their state
 typedef struct intrinsiccv_filter_context_t_ intrinsiccv_filter_context_t;
 
 #endif  // INTRINSICCV_CTYPES_H
