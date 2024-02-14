@@ -54,6 +54,14 @@ class Rectangle final {
     height_ = 1;
   }
 
+  bool operator==(const Rectangle &rhs) const INTRINSICCV_STREAMING_COMPATIBLE {
+    return width() == rhs.width() && height() == rhs.height();
+  }
+
+  bool operator!=(const Rectangle &rhs) const INTRINSICCV_STREAMING_COMPATIBLE {
+    return !operator==(rhs);
+  }
+
  private:
   size_t width_;
   size_t height_;

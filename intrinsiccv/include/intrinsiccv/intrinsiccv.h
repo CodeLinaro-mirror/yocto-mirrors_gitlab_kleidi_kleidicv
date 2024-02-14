@@ -38,6 +38,12 @@
 #define INTRINSICCV_MAX_IMAGE_PIXELS ((1ULL << 48) - 1)
 #endif
 
+/// Size in bytes of the largest possible element type
+#define INTRINSICCV_MAXIMUM_TYPE_SIZE (8)
+
+/// Maximum number of channels
+#define INTRINSICCV_MAXIMUM_CHANNEL_COUNT (8)
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -694,13 +700,19 @@ intrinsiccv_error_t intrinsiccv_threshold_binary_u8(
 /// @param kernel        Width and height of the kernel. Its size must not be
 ///                      more than \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 /// @param anchor        Location in the kernel which is aligned to the actual
-///                      point in the source data
-/// @param border_type   Way of handling the border.
+///                      point in the source data. Must not point out of the
+///                      kernel.
+/// @param border_type   Way of handling the border. The supported border types
+///                      are: \n
+///                         - \ref INTRINSICCV_BORDER_TYPE_CONSTANT \n
+///                         - \ref INTRINSICCV_BORDER_TYPE_REPLICATE
 /// @param border_values Border values if the border_type is
-///                      ::INTRINSICCV_BORDER_TYPE_CONSTANT.
-/// @param channels      Number of elements for each pixel.
+///                      \ref INTRINSICCV_BORDER_TYPE_CONSTANT.
+/// @param channels      Number of channels in the data. Must be not more than
+///                      \ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
 /// @param iterations    Number of times to do the morphology operation.
-/// @param type_size     Element size in bytes.
+/// @param type_size     Element size in bytes. Must not be more than
+///                      \ref INTRINSICCV_MAXIMUM_TYPE_SIZE.
 /// @param image         Image dimensions. Its size must not be more than
 ///                      \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
@@ -740,11 +752,10 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 ///
 /// Before using this function, a context must be created using
 /// \ref intrinsiccv_morphology_create, and after finished, it has to be
-/// released using intrinsiccv_morphology_release.
-///
-/// Note: from border types only these are supported: \n
-///                       - \ref INTRINSICCV_BORDER_TYPE_REPLICATE \n
-///                       - \ref INTRINSICCV_BORDER_TYPE_CONSTANT
+/// released using \ref intrinsiccv_morphology_release.
+/// The context must be created with the same image dimensions as width and
+/// height parameters, with sizeof(uint8) as size_type, and with the channel
+/// number of the data as channels.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the

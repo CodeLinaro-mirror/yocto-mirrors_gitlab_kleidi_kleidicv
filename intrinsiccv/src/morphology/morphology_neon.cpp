@@ -497,7 +497,15 @@ intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
+  if (workspace->type_size() != sizeof(T)) {
+    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+  }
+
   Rectangle rect{width, height};
+  if (workspace->image_size() != rect) {
+    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+  }
+
   Rectangle kernel{workspace->kernel()};
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
@@ -552,8 +560,15 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
   CHECK_IMAGE_SIZE(width, height);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
+  if (workspace->type_size() != sizeof(T)) {
+    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+  }
 
   Rectangle rect{width, height};
+  if (workspace->image_size() != rect) {
+    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+  }
+
   Rectangle kernel{workspace->kernel()};
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};

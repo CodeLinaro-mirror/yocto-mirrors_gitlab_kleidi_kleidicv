@@ -26,12 +26,15 @@ typedef enum INTRINSICCV_NODISCARD {
   INTRINSICCV_ERROR_NOT_IMPLEMENTED,
   /// Null pointer was passed as an argument.
   INTRINSICCV_ERROR_NULL_POINTER,
-  /// A value was encountered outside the representable range.
+  /// A value was encountered outside the representable or valid range.
   INTRINSICCV_ERROR_RANGE,
   /// Could not allocate memory.
   INTRINSICCV_ERROR_ALLOCATION,
   /// A value did not meet alignment requirements.
   INTRINSICCV_ERROR_ALIGNMENT,
+  /// The provided context (like \ref intrinsiccv_morphology_context_t) is not
+  /// compatible with the operation.
+  INTRINSICCV_ERROR_CONTEXT_MISMATCH,
 } intrinsiccv_error_t;
 
 /// Struct to represent a point

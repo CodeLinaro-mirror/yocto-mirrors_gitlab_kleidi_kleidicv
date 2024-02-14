@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -59,22 +59,28 @@ class MorphologyWorkspace final {
   MorphologyWorkspace() = delete;
 
   // Creates a workspace on the heap.
-  static Pointer create(
-      intrinsiccv_rectangle_t kernel, intrinsiccv_point_t anchor,
-      BorderType border_type, intrinsiccv_border_values_t border_values,
-      size_t channels, size_t iterations, size_t type_size,
+  static intrinsiccv_error_t create(
+      Pointer &workspace, intrinsiccv_rectangle_t kernel,
+      intrinsiccv_point_t anchor, BorderType border_type,
+      intrinsiccv_border_values_t border_values, size_t channels,
+      size_t iterations, size_t type_size,
       intrinsiccv_rectangle_t image) INTRINSICCV_STREAMING_COMPATIBLE {
     // These values are arbitrarily choosen.
     const size_t rows_per_iteration = std::max(2 * kernel.height, 32UL);
     // To avoid load/store penalties.
     const size_t kAlignment = 16;
 
-    Rectangle rect{image};
+    if (anchor.x >= kernel.width || anchor.y >= kernel.height) {
+      return INTRINSICCV_ERROR_RANGE;
+    }
+
+    Rectangle image_size{image};
     Margin margin{kernel, anchor};
 
     // A single wide row which can hold one row worth of data in addition
     // to left and right margins.
-    size_t wide_rows_width = margin.left() + rect.width() + margin.right();
+    size_t wide_rows_width =
+        margin.left() + image_size.width() + margin.right();
     size_t wide_rows_stride = wide_rows_width * channels;
     wide_rows_stride = __builtin_align_up(wide_rows_stride, kAlignment);
     size_t wide_rows_height = 1UL;  // There is only one wide row.
@@ -82,7 +88,7 @@ class MorphologyWorkspace final {
     wide_rows_size += kAlignment - 1;
 
     // Multiple buffer rows to hold rows without any borders.
-    size_t buffer_rows_width = type_size * rect.width();
+    size_t buffer_rows_width = type_size * image_size.width();
     size_t buffer_rows_stride = buffer_rows_width * channels;
     buffer_rows_stride = __builtin_align_up(buffer_rows_stride, kAlignment);
     size_t buffer_rows_height = 2 * rows_per_iteration;
@@ -97,14 +103,14 @@ class MorphologyWorkspace final {
                              indirect_row_storage_size + buffer_rows_size +
                              wide_rows_size;
     void *allocation = std::malloc(allocation_size);
-    auto workspace = MorphologyWorkspace::Pointer{
+    workspace = MorphologyWorkspace::Pointer{
         reinterpret_cast<MorphologyWorkspace *>(allocation)};
     if (!workspace) {
-      return workspace;
+      return INTRINSICCV_ERROR_ALLOCATION;
     }
 
     workspace->rows_per_iteration_ = rows_per_iteration;
-    workspace->wide_rows_src_width_ = rect.width();
+    workspace->wide_rows_src_width_ = image_size.width();
     workspace->channels_ = channels;
 
     auto *buffer_rows_address = &workspace->data_[indirect_row_storage_size];
@@ -127,8 +133,9 @@ class MorphologyWorkspace final {
     workspace->channels_ = channels;
     workspace->iterations_ = iterations;
     workspace->type_size_ = type_size;
+    workspace->image_size_ = image_size;
 
-    return workspace;
+    return INTRINSICCV_OK;
   }
 
   intrinsiccv_rectangle_t kernel() const { return kernel_; }
@@ -138,6 +145,7 @@ class MorphologyWorkspace final {
   size_t channels() const { return channels_; }
   size_t iterations() const { return iterations_; }
   size_t type_size() const { return type_size_; }
+  Rectangle image_size() const { return image_size_; }
 
   // This function is too complex, but disable the warning for now.
   // NOLINTBEGIN(readability-function-cognitive-complexity)
@@ -371,6 +379,7 @@ class MorphologyWorkspace final {
   intrinsiccv_border_values_t border_values_;
   size_t iterations_;
   size_t type_size_;
+  Rectangle image_size_;
 
   // Number of wide rows in this workspace.
   size_t rows_per_iteration_;

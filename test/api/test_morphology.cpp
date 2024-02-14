@@ -75,6 +75,44 @@ TYPED_TEST(MorphologyTest, UnsupportedSize) {
   }
 }
 
+TYPED_TEST(MorphologyTest, InvalidAnchor) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_morphology_create(
+                &context, intrinsiccv_rectangle_t{1, 1},
+                intrinsiccv_point_t{1, 0}, INTRINSICCV_BORDER_TYPE_REPLICATE,
+                intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+                sizeof(TypeParam), intrinsiccv_rectangle_t{1, 1}));
+  ASSERT_EQ(nullptr, context);
+}
+
+TYPED_TEST(MorphologyTest, InvalidTypeSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_RANGE,
+      intrinsiccv_morphology_create(
+          &context, intrinsiccv_rectangle_t{1, 1}, intrinsiccv_point_t{0, 0},
+          INTRINSICCV_BORDER_TYPE_REPLICATE,
+          intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+          INTRINSICCV_MAXIMUM_TYPE_SIZE + 1, intrinsiccv_rectangle_t{1, 1}));
+  ASSERT_EQ(nullptr, context);
+}
+
+TYPED_TEST(MorphologyTest, InvalidChannelNumber) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_morphology_create(
+                &context, intrinsiccv_rectangle_t{1, 1},
+                intrinsiccv_point_t{0, 0}, INTRINSICCV_BORDER_TYPE_REPLICATE,
+                intrinsiccv_border_values_t{0, 0, 1, 1},
+                INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1, 1, 1,
+                intrinsiccv_rectangle_t{1, 1}));
+  ASSERT_EQ(nullptr, context);
+}
+
 static intrinsiccv_error_t make_minimal_context(
     intrinsiccv_morphology_context_t **context, size_t type_size) {
   return intrinsiccv_morphology_create(
