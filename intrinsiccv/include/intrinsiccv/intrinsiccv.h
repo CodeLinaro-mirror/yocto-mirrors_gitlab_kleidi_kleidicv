@@ -872,11 +872,12 @@ intrinsiccv_error_t intrinsiccv_resize_to_quarter_u8(
 /// @param width        Number of pixels in the data. (One pixel consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
-/// @param channel      Number of channels in the data.
+/// @param channels     Number of channels in the data. Must be not more than
+///                     \ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
 ///
 intrinsiccv_error_t intrinsiccv_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channel);
+    size_t width, size_t height, size_t channels);
 
 /// Calculates horizontal derivative approximation with Sobel filter.
 ///
@@ -907,11 +908,12 @@ intrinsiccv_error_t intrinsiccv_sobel_3x3_vertical_s16_u8(
 /// @param width        Number of pixels in the data. (One pixel consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
-/// @param channel      Number of channels in the data.
+/// @param channels     Number of channels in the data. Must be not more than
+///                     \ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
 ///
 intrinsiccv_error_t intrinsiccv_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channel);
+    size_t width, size_t height, size_t channels);
 
 /// Canny edge detector for uint8_t grayscale input. Output is also a uint8_t
 /// grayscale image. Width and height are the same for input and output. Number
