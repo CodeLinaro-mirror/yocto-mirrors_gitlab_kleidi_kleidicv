@@ -1056,8 +1056,9 @@ intrinsiccv_error_t intrinsiccv_gaussian_blur_5x5_u8(
 /// @param width        Number of pixels in one row of the source data. (One
 ///                     pixel consists of 'channels' number of elements.)
 /// @param height       Number of rows in the source data.
-/// @param channels     Number of channels in the source data.
-/// @param element_size Size of one element in bytes.
+/// @param channels     Number of channels in the source data. Must be 2, 3 or
+///                     4.
+/// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
 intrinsiccv_error_t intrinsiccv_split(const void *src_data, size_t src_stride,
                                       void **dst_data,
@@ -1094,7 +1095,7 @@ intrinsiccv_error_t intrinsiccv_split(const void *src_data, size_t src_stride,
 ///                     Must not be less than height * element_size.
 /// @param src_width    Number of elements in a row.
 /// @param src_height   Number of rows in the data.
-/// @param element_size Size of one element in bytes.
+/// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
 intrinsiccv_error_t intrinsiccv_transpose(const void *src, size_t src_stride,
                                           void *dst, size_t dst_stride,
@@ -1125,8 +1126,9 @@ intrinsiccv_error_t intrinsiccv_transpose(const void *src, size_t src_stride,
 /// @param width        Number of elements in a row for the source streams,
 ///                     number of pixels in a row for the destination data.
 /// @param height       Number of rows in the data.
-/// @param channels     Number of channels in the destination data.
-/// @param element_size Size of one element in bytes.
+/// @param channels     Number of channels in the destination data. Must be 2,
+///                     3 or 4.
+/// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
 intrinsiccv_error_t intrinsiccv_merge(const void **srcs,
                                       const size_t *src_strides, void *dst,
