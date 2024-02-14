@@ -321,7 +321,9 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
   }
 
   if (border_type !=
-      intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT) {
+          intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT &&
+      border_type !=
+          intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REPLICATE) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
