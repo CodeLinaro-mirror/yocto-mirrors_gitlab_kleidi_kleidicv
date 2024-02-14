@@ -17,6 +17,14 @@ intrinsiccv_error_t intrinsiccv_filter_create(
   CHECK_POINTERS(context);
   CHECK_RECTANGLE_SIZE(image);
 
+  if (type_size > INTRINSICCV_MAXIMUM_TYPE_SIZE) {
+    return INTRINSICCV_ERROR_RANGE;
+  }
+
+  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
+    return INTRINSICCV_ERROR_RANGE;
+  }
+
   auto workspace =
       SeparableFilterWorkspace::create(Rectangle{image}, channels, type_size);
   if (!workspace) {

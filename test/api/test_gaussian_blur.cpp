@@ -118,6 +118,76 @@ TYPED_TEST(GaussianBlurTest, ImageSize) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
+TYPED_TEST(GaussianBlurTest, ChannelNumber) {
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 1}));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1,
+                INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1,
+                INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlurTest, InvalidContextSizeType) {
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam) + 1,
+                                      intrinsiccv_rectangle_t{1, 1}));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlurTest, InvalidContextChannelNumber) {
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 2, sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 1}));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlurTest, InvalidContextImageSize) {
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 1}));
+  TypeParam src[1], dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 2, 2, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 2, 2, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
 TEST(FilterCreate, ImageSize) {
   intrinsiccv_filter_context_t *context = nullptr;
 
@@ -130,4 +200,24 @@ TEST(FilterCreate, ImageSize) {
               intrinsiccv_filter_create(&context, 1, 1, rect));
     ASSERT_EQ(nullptr, context);
   }
+}
+
+TEST(FilterCreate, TypeSize) {
+  intrinsiccv_filter_context_t *context = nullptr;
+
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_RANGE,
+      intrinsiccv_filter_create(&context, 1, INTRINSICCV_MAXIMUM_TYPE_SIZE + 1,
+                                intrinsiccv_rectangle_t{1, 1}));
+  ASSERT_EQ(nullptr, context);
+}
+
+TEST(FilterCreate, ChannelNumber) {
+  intrinsiccv_filter_context_t *context = nullptr;
+
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_RANGE,
+      intrinsiccv_filter_create(&context, INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
+                                1, intrinsiccv_rectangle_t{1, 1}));
+  ASSERT_EQ(nullptr, context);
 }

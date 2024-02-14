@@ -955,8 +955,10 @@ intrinsiccv_error_t intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride,
 /// using \ref intrinsiccv_filter_release.
 ///
 /// @param context       Pointer where to return the created context's address.
-/// @param channels      Number of elements for each pixel.
-/// @param type_size     Element size in bytes.
+/// @param channels      Number of channels in the data. Must be not more than
+///                      \ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
+/// @param type_size     Element size in bytes. Must not be more than
+///                      \ref INTRINSICCV_MAXIMUM_TYPE_SIZE.
 /// @param image         Image dimensions. Its size must not be more than
 ///                      \ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///
@@ -996,8 +998,10 @@ intrinsiccv_error_t intrinsiccv_filter_release(
 /// Usage: \n
 /// Before using this function, a context must be created using
 /// intrinsiccv_filter_create, and after finished, it has to be released
-/// using intrinsiccv_filter_release. Note, from the border types only
-/// these are supported: \n
+/// using intrinsiccv_filter_release. The context must be created with the same
+/// image dimensions as width and height parameters, with sizeof(uint8) as
+/// size_type, and with the channel number of the data as channels. \n
+/// Note, from the border types only these are supported: \n
 ///                       - \ref INTRINSICCV_BORDER_TYPE_REPLICATE \n
 ///                       - \ref INTRINSICCV_BORDER_TYPE_REFLECT \n
 ///                       - \ref INTRINSICCV_BORDER_TYPE_WRAP \n
@@ -1016,7 +1020,8 @@ intrinsiccv_error_t intrinsiccv_filter_release(
 /// @param width        Number of columns in the data. (One column consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
-/// @param channels     Number of channels in the data.
+/// @param channels     Number of channels in the data. Must be not more than
+///                     \ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
 /// @param border_type  Way of handling the border.
 /// @param context      Pointer to filter context.
 ///

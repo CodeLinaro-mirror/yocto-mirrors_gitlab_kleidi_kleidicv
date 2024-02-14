@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -109,9 +109,16 @@ class SeparableFilterWorkspace final {
     buffer_rows_address = __builtin_align_up(buffer_rows_address, kAlignment);
     workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
     workspace->buffer_rows_stride_ = buffer_rows_stride;
+    workspace->image_size_ = rect;
+    workspace->channels_ = channels;
+    workspace->buffer_type_size_ = buffer_type_size;
 
     return workspace;
   }
+
+  size_t channels() const { return channels_; }
+  Rectangle image_size() const { return image_size_; }
+  size_t buffer_type_size() const { return buffer_type_size_; }
 
   // Processes rows vertically first along the full width
   template <typename FilterType>
@@ -191,6 +198,11 @@ class SeparableFilterWorkspace final {
   size_t buffer_rows_offset_;
   // Stride of the buffer rows.
   size_t buffer_rows_stride_;
+
+  Rectangle image_size_;
+  size_t channels_;
+  size_t buffer_type_size_;
+
   // Workspace area begins here.
   uint8_t data_[0] INTRINSICCV_ATTR_ALIGNED(kAlignment);
 };  // end of class SeparableFilterWorkspace

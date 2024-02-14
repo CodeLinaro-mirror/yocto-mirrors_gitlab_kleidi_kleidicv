@@ -155,11 +155,27 @@ intrinsiccv_error_t discrete_gaussian_blur(
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
 
+  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
+    return INTRINSICCV_ERROR_RANGE;
+  }
+
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
 
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
+
+  if (workspace->buffer_type_size() != sizeof(ScalarType)) {
+    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+  }
+
+  if (workspace->channels() != channels) {
+    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+  }
+
+  if (workspace->image_size() != rect) {
+    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+  }
 
   auto fixed_border_type = get_fixed_border_type(border_type);
 
