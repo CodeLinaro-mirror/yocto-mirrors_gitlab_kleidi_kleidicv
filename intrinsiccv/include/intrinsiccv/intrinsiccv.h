@@ -277,7 +277,7 @@ intrinsiccv_error_t intrinsiccv_saturating_add_abs_with_threshold_s16(
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -303,7 +303,7 @@ intrinsiccv_error_t intrinsiccv_gray_to_rgb_u8(const uint8_t *src,
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -325,11 +325,11 @@ intrinsiccv_error_t intrinsiccv_gray_to_rgba_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -347,11 +347,11 @@ intrinsiccv_error_t intrinsiccv_rgb_to_bgr_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -373,11 +373,11 @@ intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -395,11 +395,11 @@ intrinsiccv_error_t intrinsiccv_rgba_to_bgra_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -422,11 +422,11 @@ intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -449,11 +449,11 @@ intrinsiccv_error_t intrinsiccv_rgb_to_bgra_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -476,11 +476,11 @@ intrinsiccv_error_t intrinsiccv_rgb_to_rgba_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -503,11 +503,11 @@ intrinsiccv_error_t intrinsiccv_rgba_to_bgr_u8(const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 4 * sizeof(uint8).
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width * 3 * sizeof(uint8).
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -542,7 +542,7 @@ intrinsiccv_error_t intrinsiccv_rgba_to_rgb_u8(const uint8_t *src,
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * sizeof(type).
+///                      not be less than width * 3 * sizeof(type).
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
@@ -579,7 +579,7 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_rgb_u8(
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * sizeof(type).
+///                      not be less than width * 3 * sizeof(type).
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
@@ -615,7 +615,7 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_bgr_u8(
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * sizeof(type).
+///                      not be less than width * 4 * sizeof(type).
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
@@ -651,7 +651,7 @@ intrinsiccv_error_t intrinsiccv_yuv_sp_to_rgba_u8(
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * sizeof(type).
+///                      not be less than width * 4 * sizeof(type).
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
