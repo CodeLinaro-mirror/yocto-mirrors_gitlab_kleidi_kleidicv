@@ -101,17 +101,11 @@ class GrayToRGB final :
 };      // end of class GrayToRGB<ScalarType>
 
 template <typename ScalarType>
-class GrayToRGBA final :
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-    public UsesTailPath,
-#endif
-    public UnrollTwice {
+class GrayToRGBAWithInterleaving final : public UnrollTwice {
  public:
   using ContextType = sve2::Context;
   using VecTraits = sve2::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
-
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
   void vector_path(ContextType ctx, VectorType src_vect,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
@@ -120,9 +114,18 @@ class GrayToRGBA final :
 
     svst4(pg, dst, dst_vect);
   }
-#else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-  explicit GrayToRGBA(svuint8x4_t &indices) INTRINSICCV_STREAMING_COMPATIBLE
-      : indices_{indices} {
+};  // end of class GrayToRGBAWithInterleaving<ScalarType>
+
+#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+template <typename ScalarType>
+class GrayToRGBAWithLookUpTable final : public UnrollTwice,
+                                        public UsesTailPath {
+ public:
+  using ContextType = sve2::Context;
+  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+  explicit GrayToRGBAWithLookUpTable(svuint8x4_t &indices)
+      INTRINSICCV_STREAMING_COMPATIBLE : indices_{indices} {
     initialize_indices();
   }
 
@@ -193,8 +196,8 @@ class GrayToRGBA final :
   }
 
   svuint8x4_t &indices_;
-#endif  // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-};      // end of class GrayToRGBA<ScalarType>
+};      // end of class GrayToRGBAWithLookUpTable<ScalarType>
+#endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
 
 INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
@@ -226,13 +229,20 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
+
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-  GrayToRGBA<uint8_t> operation;
-#else
-  svuint8x4_t table_indices;
-  GrayToRGBA<uint8_t> operation{table_indices};
-#endif
+  GrayToRGBAWithInterleaving<int8_t> operation{};
   sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+#else
+  if (svcntb() > 128) {
+    GrayToRGBAWithInterleaving<uint8_t> operation{};
+    sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  } else {
+    svuint8x4_t table_indices;
+    GrayToRGBAWithLookUpTable<uint8_t> operation{table_indices};
+    sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  }
+#endif
   return INTRINSICCV_OK;
 }
 
