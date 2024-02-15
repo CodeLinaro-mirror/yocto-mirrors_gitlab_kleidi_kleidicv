@@ -325,7 +325,7 @@ class Array2D : public TwoDimensional<ElementType> {
   size_t stride_{0};
 };  // end of class Array2D<ElementType>
 
-// Compares two \ref Array2D objects for equality.
+// Compares two Array2D objects for equality.
 #define EXPECT_EQ_ARRAY2D(lhs, rhs)                                          \
   do {                                                                       \
     ASSERT_EQ((lhs).width(), (rhs).width())                                  \
@@ -345,7 +345,7 @@ class Array2D : public TwoDimensional<ElementType> {
     }                                                                        \
   } while (0 != 0)
 
-// Compares two \ref Array2D objects for inequality.
+// Compares two Array2D objects for inequality.
 #define EXPECT_NE_ARRAY2D(lhs, rhs)                                \
   do {                                                             \
     ASSERT_EQ((lhs).width(), (rhs).width())                        \

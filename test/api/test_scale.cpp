@@ -318,7 +318,7 @@ class ScaleTest : public testing::Test {};
 
 using ElementTypes = ::testing::Types<uint8_t>;
 
-// Tests \ref intrinsiccv_scale_u8 API.
+// Tests intrinsiccv_scale_u8 API.
 TYPED_TEST_SUITE(ScaleTest, ElementTypes);
 
 TYPED_TEST(ScaleTest, TestScalar1) {

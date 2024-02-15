@@ -89,7 +89,7 @@ using ElementTypes =
     ::testing::Types<uint8_t, int8_t, uint16_t, int16_t, int32_t>;
 TYPED_TEST_SUITE(SaturatingMultiply, ElementTypes);
 
-// Tests \ref intrinsiccv_saturating_multiply_<type> API.
+// Tests intrinsiccv_saturating_multiply_<type> API.
 TYPED_TEST(SaturatingMultiply, API) {
   // Test without padding.
   SaturatingMultiplyTest<TypeParam>{}.test();

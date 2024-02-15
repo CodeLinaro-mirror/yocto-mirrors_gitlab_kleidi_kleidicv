@@ -89,7 +89,7 @@ using ElementTypes =
     ::testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t>;
 TYPED_TEST_SUITE(SaturatingAbsDiff, ElementTypes);
 
-// Tests \ref intrinsiccv_saturating_absdiff_<type> API.
+// Tests intrinsiccv_saturating_absdiff_<type> API.
 TYPED_TEST(SaturatingAbsDiff, API) {
   // Test without padding.
   SaturatingAbsDiffTest<TypeParam>{}.test();

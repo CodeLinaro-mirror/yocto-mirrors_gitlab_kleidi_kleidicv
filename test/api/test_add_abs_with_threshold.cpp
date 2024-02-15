@@ -127,7 +127,7 @@ class SaturatingAddAbsWithThresholdTest : public testing::Test {};
 
 using ElementTypes = ::testing::Types<int16_t>;
 
-// Tests \ref saturating_add_abs_with_threshold<type> API.
+// Tests saturating_add_abs_with_threshold<type> API.
 TYPED_TEST_SUITE(SaturatingAddAbsWithThresholdTest, ElementTypes);
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestPositive) {

@@ -32,7 +32,7 @@ typedef enum INTRINSICCV_NODISCARD {
   INTRINSICCV_ERROR_ALLOCATION,
   /// A value did not meet alignment requirements.
   INTRINSICCV_ERROR_ALIGNMENT,
-  /// The provided context (like \ref intrinsiccv_morphology_context_t) is not
+  /// The provided context (like @ref intrinsiccv_morphology_context_t) is not
   /// compatible with the operation.
   INTRINSICCV_ERROR_CONTEXT_MISMATCH,
 } intrinsiccv_error_t;

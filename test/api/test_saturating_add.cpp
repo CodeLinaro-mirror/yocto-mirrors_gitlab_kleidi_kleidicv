@@ -81,7 +81,7 @@ using ElementTypes = ::testing::Types<int8_t, uint8_t, int16_t, uint16_t,
                                       int32_t, uint32_t, int64_t, uint64_t>;
 TYPED_TEST_SUITE(SaturatingAdd, ElementTypes);
 
-// Tests \ref intrinsiccv_saturating_add_<type> API.
+// Tests intrinsiccv_saturating_add_<type> API.
 TYPED_TEST(SaturatingAdd, API) {
   // Test without padding.
   SaturatingAddTest<TypeParam>{}.test();
