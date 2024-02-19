@@ -92,7 +92,11 @@ class MorphologyWorkspace final {
     size_t buffer_rows_stride = buffer_rows_width * channels;
     buffer_rows_stride = __builtin_align_up(buffer_rows_stride, kAlignment);
     size_t buffer_rows_height = 2 * rows_per_iteration;
-    size_t buffer_rows_size = buffer_rows_stride * buffer_rows_height;
+    size_t buffer_rows_size = 0UL;
+    if (__builtin_mul_overflow(buffer_rows_stride, buffer_rows_height,
+                               &buffer_rows_size)) {
+      return INTRINSICCV_ERROR_RANGE;
+    }
     buffer_rows_size += kAlignment - 1;
 
     // Storage for indirect row access.
