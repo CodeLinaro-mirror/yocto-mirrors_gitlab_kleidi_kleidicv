@@ -5,8 +5,6 @@
 #ifndef INTRINSICCV_YUV_TO_RGB_SC_H
 #define INTRINSICCV_YUV_TO_RGB_SC_H
 
-#include <utility>
-
 #include "intrinsiccv/conversions/yuv_to_rgb.h"
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
@@ -81,7 +79,7 @@ class YUVSpToRGBxOrBGRx final {
 
     if (is_nv21_) {
       // Swap U and V channels for NV21 (order is V, U).
-      swap(u, v);
+      swap_scalable(u, v);
     }
 
     svint32_t u_b = svmovlb(u);

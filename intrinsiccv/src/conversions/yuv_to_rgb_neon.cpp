@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <utility>
+
 #include "intrinsiccv/conversions/yuv_to_rgb.h"
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/neon.h"
@@ -80,8 +82,8 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce {
 
     // Swap U and V channels for NV21 (order is V, U).
     if (is_nv21_) {
-      swap(u_l, v_l);
-      swap(u_h, v_h);
+      std::swap(u_l, v_l);
+      std::swap(u_h, v_h);
     }
 
     // R - Y = Rbase + Weight(RV) * V =
@@ -172,8 +174,8 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce {
       rgba1.val[3] = vdupq_n_u8(0xFF);
 
       if constexpr (BGR) {
-        swap(rgba0.val[0], rgba0.val[2]);
-        swap(rgba1.val[0], rgba1.val[2]);
+        std::swap(rgba0.val[0], rgba0.val[2]);
+        std::swap(rgba1.val[0], rgba1.val[2]);
       }
 
       // Store RGB pixels to memory.
@@ -192,8 +194,8 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce {
       rgb1.val[2] = vcombine_u8(b1.val[0], b1.val[1]);
 
       if constexpr (BGR) {
-        swap(rgb0.val[0], rgb0.val[2]);
-        swap(rgb1.val[0], rgb1.val[2]);
+        std::swap(rgb0.val[0], rgb0.val[2]);
+        std::swap(rgb1.val[0], rgb1.val[2]);
       }
 
       // Store RGB pixels to memory.
@@ -222,7 +224,7 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce {
         v_m128 = uv_row[1] - 128;
         uv_row += 2;
         if (is_nv21_) {
-          swap(u_m128, v_m128);
+          std::swap(u_m128, v_m128);
         }
       }
 
@@ -238,7 +240,7 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce {
         b = rounding_shift_right(b, kWeightScale);
 
         if constexpr (BGR) {
-          swap(r, b);
+          std::swap(r, b);
         }
 
         rgbx_rows[selector][0] = saturating_cast<int32_t, uint8_t>(r);

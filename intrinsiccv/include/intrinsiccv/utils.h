@@ -61,15 +61,6 @@ static T rounding_shift_right(T value,
   return (value + (1UL << (shift - 1))) >> shift;
 }
 
-// Swap two variables, since non-Android toolchains do not allow using std::swap
-// for SVE vectors.
-template <typename T>
-static inline void swap(T &a, T &b) INTRINSICCV_STREAMING_COMPATIBLE {
-  T tmp = a;
-  a = b;
-  b = tmp;
-}
-
 // When placed in a loop, it effectively disables loop vectorization.
 static inline void disable_loop_vectorization()
     INTRINSICCV_STREAMING_COMPATIBLE {

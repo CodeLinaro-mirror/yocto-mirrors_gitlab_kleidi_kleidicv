@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -767,6 +767,15 @@ using SeparableFilter3x3 = SeparableFilter<FilterType, 3UL>;
 // Shorthand for 5x5 separable filters driver type.
 template <class FilterType>
 using SeparableFilter5x5 = SeparableFilter<FilterType, 5UL>;
+
+// Swap two variables, since some C++ Standard Library implementations do not
+// allow using std::swap for SVE vectors.
+template <typename T>
+static inline void swap_scalable(T &a, T &b) INTRINSICCV_STREAMING_COMPATIBLE {
+  T tmp = a;
+  a = b;
+  b = tmp;
+}
 
 }  // namespace intrinsiccv::sve2
 
