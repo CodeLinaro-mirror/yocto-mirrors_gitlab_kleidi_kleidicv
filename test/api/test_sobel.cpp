@@ -167,6 +167,11 @@ TYPED_TEST(Sobel, ImageSizeHorizontal) {
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst),
                 INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS, 1));
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_ALLOCATION,
+      sobel_3x3_horizontal<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
+                                        INTRINSICCV_MAX_IMAGE_PIXELS, 1,
+                                        INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
 }
 
 TYPED_TEST(Sobel, ImageSizeVertical) {
@@ -182,6 +187,10 @@ TYPED_TEST(Sobel, ImageSizeVertical) {
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             INTRINSICCV_MAX_IMAGE_PIXELS,
                                             INTRINSICCV_MAX_IMAGE_PIXELS, 1));
+  EXPECT_EQ(INTRINSICCV_ERROR_ALLOCATION,
+            sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
+                                            INTRINSICCV_MAX_IMAGE_PIXELS, 1,
+                                            INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
 }
 
 TYPED_TEST(Sobel, ChannelNumberHorizontal) {
