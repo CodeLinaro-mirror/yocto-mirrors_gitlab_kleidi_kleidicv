@@ -18,3 +18,4 @@ GENERATE_LATEX         = NO
 MACRO_EXPANSION        = YES
 DIRECTORY_GRAPH        = NO
 PREDEFINED             = __aarch64__=
+TYPEDEF_HIDES_STRUCT   = YES
