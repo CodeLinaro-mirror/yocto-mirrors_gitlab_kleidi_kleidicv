@@ -19,8 +19,10 @@ class TestTranspose final {
         inplace ? first_dim : test::Options::vector_lanes<ElementType>() + 1;
     // Exercise horizontal scalar path
     test(first_dim, second_dim);
-    // Exercise vertical scalar path
-    test(second_dim, first_dim);
+    if (!inplace) {
+      // Exercise vertical scalar path
+      test(second_dim, first_dim);
+    }
   }
 
   void vector_test() {
@@ -30,6 +32,19 @@ class TestTranspose final {
     size_t src_height =
         inplace ? src_width : test::Options::vector_lanes<ElementType>() + 1;
     test(src_width, src_height);
+  }
+
+  // For the 'remaining' part of the outer vector loop of inplace transpose
+  void vector_plus_scalar_test() {
+    // Two full vector passes, plus some scalar
+    size_t first_dim = 3 * test::Options::vector_lanes<ElementType>() - 1;
+    size_t second_dim =
+        inplace ? first_dim
+                : 3 * test::Options::vector_lanes<ElementType>() + 1;
+    test(first_dim, second_dim);
+    if (!inplace) {
+      test(second_dim, first_dim);
+    }
   }
 
  protected:
@@ -148,6 +163,26 @@ TYPED_TEST(Transpose, ScalarInplaceWithPadding) {
 TYPED_TEST(Transpose, VectorInplaceWithPadding) {
   TestTranspose<TypeParam, true> test(1);
   test.vector_test();
+}
+
+TYPED_TEST(Transpose, VectorPlusScalarNoPadding) {
+  TestTranspose<TypeParam, false> test(0);
+  test.vector_plus_scalar_test();
+}
+
+TYPED_TEST(Transpose, VectorPlusScalarWithPadding) {
+  TestTranspose<TypeParam, false> test(1);
+  test.vector_plus_scalar_test();
+}
+
+TYPED_TEST(Transpose, VectorPlusScalarInplaceNoPadding) {
+  TestTranspose<TypeParam, true> test(0);
+  test.vector_plus_scalar_test();
+}
+
+TYPED_TEST(Transpose, VectorPlusScalarInplaceWithPadding) {
+  TestTranspose<TypeParam, true> test(1);
+  test.vector_plus_scalar_test();
 }
 
 TYPED_TEST(Transpose, NullPointer) {
