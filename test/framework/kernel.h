@@ -228,8 +228,8 @@ class KernelTest {
                                 const ArrayLayout& array_layout,
                                 intrinsiccv_border_type_t border_type,
                                 intrinsiccv_border_values_t border_values) {
-    input_with_borders_.set(kernel.anchor().x,
-                            kernel.anchor().y * array_layout.channels, &input_);
+    input_with_borders_.set(kernel.anchor().y,
+                            kernel.anchor().x * array_layout.channels, &input_);
 
     if (debug_) {
       std::cout << "[input_with_borders without borders]" << std::endl;
