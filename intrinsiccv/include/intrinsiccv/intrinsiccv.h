@@ -744,7 +744,7 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 /// Example for dilate:
 /// ```
 ///    [ 2, 8, 9, 3, 6 ]  kernel: (3, 3)        [ 8, 9, 9, 9, 6 ]
-///    [ 7, 2, 4, 1, 5 ]  anchor: (1, 1)     -> [ 7, 9, 9, 9, 8 ]
+///    [ 7, 2, 4, 1, 5 ]  anchor: (1, 1)     -> [ 8, 9, 9, 9, 8 ]
 ///    [ 4, 3, 6, 8, 1 ]  border: replicate     [ 7, 7, 8, 8, 8 ]
 ///    [ 1, 2, 5, 3, 7 ]                        [ 4, 6, 8, 8, 8 ]
 /// ```
