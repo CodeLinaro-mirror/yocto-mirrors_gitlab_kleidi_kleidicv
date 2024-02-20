@@ -90,7 +90,7 @@ class ScaleTestLinearBase {
 
     GenerateLinearSeries generator(min());
 
-    source.fill(&generator);
+    source.fill(generator);
 
     calculate_expected(source, expected);
 

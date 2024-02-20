@@ -92,17 +92,19 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   using IntermediateType = typename KernelTestParams::IntermediateType;
   using OutputType = typename KernelTestParams::OutputType;
 
-  intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
-                               test::Array2D<OutputType> *output,
-                               intrinsiccv_border_type_t border_type) override {
-    ++api_calls_;
-
+  intrinsiccv_error_t call_api(
+      const test::Array2D<InputType> *input, test::Array2D<OutputType> *output,
+      intrinsiccv_border_type_t border_type,
+      intrinsiccv_border_values_t border_values) override {
     // Check the expected border type.
     EXPECT_EQ(border_type, kBorders[border_count_ % kBorders.size()]);
-    ++border_count_;
-    if (border_count_ == kBorders.size()) {
-      border_count_ = 0;
-    }
+    // Check the expected border value.
+    auto act = border_values;
+    auto exp = kBorderValues[border_value_count_ % kBorderValues.size()];
+    EXPECT_EQ(act.top, exp.top);
+    EXPECT_EQ(act.right, exp.right);
+    EXPECT_EQ(act.bottom, exp.bottom);
+    EXPECT_EQ(act.left, exp.left);
 
     // Check the expected layout.
     const test::ArrayLayout &expected_array_layout =
@@ -120,8 +122,15 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
     // EXPECT_EQ(input->stride(), output->stride());
     EXPECT_EQ(input->channels(), output->channels());
 
-    if (border_count_ == 0) {
-      ++array_layouts_;
+    ++api_calls_;
+    ++border_value_count_;
+    if (border_value_count_ == kBorderValues.size()) {
+      border_value_count_ = 0;
+      ++border_count_;
+      if (border_count_ == kBorders.size()) {
+        border_count_ = 0;
+        ++array_layouts_;
+      }
     }
 
     // Fake some result.
@@ -131,7 +140,7 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   }
 
  public:
-  static const std::array<test::Kernel<IntermediateType>, 2> kKernels;
+  static const std::array<test::Kernel<IntermediateType>, 3> kKernels;
 
   static constexpr std::array<test::ArrayLayout, 3> kArrayLayouts = {{
       {3, 2, 10, 1},
@@ -139,29 +148,30 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
       {9, 7, 11, 3},
   }};
 
-  static constexpr std::array<intrinsiccv_border_type_t, 4> kBorders = {
-      // NOTE: At the time of writing this test only replicate was implemented.
-      INTRINSICCV_BORDER_TYPE_REPLICATE,
-      INTRINSICCV_BORDER_TYPE_REPLICATE,
-      INTRINSICCV_BORDER_TYPE_REPLICATE,
-      INTRINSICCV_BORDER_TYPE_REPLICATE,
-  };
+  static constexpr std::array<intrinsiccv_border_type_t, 2> kBorders = {
+      INTRINSICCV_BORDER_TYPE_REPLICATE, INTRINSICCV_BORDER_TYPE_CONSTANT};
+
+  static constexpr std::array<intrinsiccv_border_values_t, 2> kBorderValues = {
+      {{0, 0, 0, 0}, {1, 2, 3, 4}}};
 
   size_t api_calls_{0};
   size_t array_layouts_{0};
   size_t border_count_{0};
+  size_t border_value_count_{0};
 };  // end of class class ExampleKernelTest<KernelTestParams>
 
 // Disable check for possible exceptions thrown outside main.
 // The check isn't important in a test program.
 // NOLINTBEGIN(cert-err58-cpp)
 template <class KernelTestParams>
-const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 2>
+const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 3>
     ExampleKernelTest<KernelTestParams>::kKernels = {
         test::Kernel{
             test::Array2D<typename KernelTestParams::IntermediateType>{3, 3}},
         test::Kernel{
             test::Array2D<typename KernelTestParams::IntermediateType>{4, 4}},
+        test::Kernel{
+            test::Array2D<typename KernelTestParams::IntermediateType>{8, 4}},
 };
 // NOLINTEND(cert-err58-cpp)
 
@@ -169,21 +179,24 @@ const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 2>
 TEST(KernelTest, Test) {
   test::SequenceGenerator tested_kernels{
       ExampleKernelTest<KernelTestParams>::kKernels};
-  test::SequenceGenerator tested_borders{
-      ExampleKernelTest<KernelTestParams>::kBorders};
   test::SequenceGenerator tested_array_layouts{
       ExampleKernelTest<KernelTestParams>::kArrayLayouts};
+  test::SequenceGenerator tested_borders{
+      ExampleKernelTest<KernelTestParams>::kBorders};
+  test::SequenceGenerator tested_border_values{
+      ExampleKernelTest<KernelTestParams>::kBorderValues};
   test::PseudoRandomNumberGenerator<typename KernelTestParams::InputType>
       element_generator;
 
   ExampleKernelTest<KernelTestParams> kernel_test;
-  kernel_test.test(&tested_kernels, &tested_array_layouts, &tested_borders,
-                   &element_generator);
+  kernel_test.test(tested_kernels, tested_array_layouts, tested_borders,
+                   tested_border_values, element_generator);
 
   EXPECT_EQ(kernel_test.api_calls_,
             ExampleKernelTest<KernelTestParams>::kKernels.size() *
                 ExampleKernelTest<KernelTestParams>::kArrayLayouts.size() *
-                ExampleKernelTest<KernelTestParams>::kBorders.size());
+                ExampleKernelTest<KernelTestParams>::kBorders.size() *
+                ExampleKernelTest<KernelTestParams>::kBorderValues.size());
   EXPECT_EQ(kernel_test.array_layouts_,
             ExampleKernelTest<KernelTestParams>::kKernels.size() *
                 ExampleKernelTest<KernelTestParams>::kArrayLayouts.size());

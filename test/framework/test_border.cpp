@@ -49,7 +49,7 @@ TEST(Border, Replicate_1Ch_1Element) {
 
   ImplementsBorder bordered{1, 1, 1, 1};
   test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
-                                     &bordered, &actual);
+                                     {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
 
@@ -78,7 +78,7 @@ TEST(Border, Replicate_1Ch_2Elements) {
 
   ImplementsBorder bordered{2, 2, 2, 2};
   test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
-                                     &bordered, &actual);
+                                     {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
 
@@ -105,7 +105,7 @@ TEST(Border, Replicate_2Ch_1Element) {
 
   ImplementsBorder bordered{1, 1, 1, 1};
   test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
-                                     &bordered, &actual);
+                                     {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
 
@@ -134,6 +134,6 @@ TEST(Border, Replicate_2Ch_2Elements) {
 
   ImplementsBorder bordered{2, 2, 2, 2};
   test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
-                                     &bordered, &actual);
+                                     {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }

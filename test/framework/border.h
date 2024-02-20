@@ -13,6 +13,7 @@ namespace test {
 // Prepares bordering elements given a border type and bordering requirements.
 template <typename ElementType>
 void prepare_borders(intrinsiccv_border_type_t border_type,
+                     intrinsiccv_border_values_t border_values,
                      const Bordered *bordered,
                      TwoDimensional<ElementType> *elements);
 

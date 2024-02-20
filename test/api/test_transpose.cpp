@@ -50,7 +50,7 @@ class TestTranspose final {
 
     // No specific values to test
     test::PseudoRandomNumberGenerator<ElementType> generator;
-    source.fill(&generator);
+    source.fill(generator);
 
     calculate_expected(source, expected);
 

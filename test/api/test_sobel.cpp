@@ -40,6 +40,12 @@ static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
     INTRINSICCV_BORDER_TYPE_REPLICATE,
 };
 
+// Dummy border values because BORDER_TYPE_CONSTANT is not used
+static constexpr std::array<intrinsiccv_border_values_t, 1>
+    kSupportedBorderValues = {{
+        {0, 0, 0, 0},  // default
+    }};
+
 // Test for Sobel 3x3 operator.
 template <class KernelTestParams>
 class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
@@ -49,7 +55,8 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
 
   intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
                                test::Array2D<OutputType> *output,
-                               intrinsiccv_border_type_t) override {
+                               intrinsiccv_border_type_t,
+                               intrinsiccv_border_values_t) override {
     auto api = KernelTestParams::kIsHorizontal
                    ? sobel_3x3_horizontal<InputType>()
                    : sobel_3x3_vertical<InputType>();
@@ -65,11 +72,13 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
     auto array_layouts =
         test::default_array_layouts(mask.width(), mask.height());
     // Create generators and execute test.
-    test::SequenceGenerator tested_borders{kSupportedBorders};
     test::SequenceGenerator tested_array_layouts{array_layouts};
+    test::SequenceGenerator tested_borders{kSupportedBorders};
+    test::SequenceGenerator tested_border_values{kSupportedBorderValues};
     test::PseudoRandomNumberGenerator<InputType> element_generator;
     this->test::KernelTest<KernelTestParams>::test(
-        kernel, &tested_array_layouts, &tested_borders, &element_generator);
+        kernel, tested_array_layouts, tested_borders, tested_border_values,
+        element_generator);
   }
 };  // end of class Sobel3x3Test<KernelTestParams>
 

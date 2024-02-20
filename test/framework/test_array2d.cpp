@@ -214,7 +214,7 @@ TEST(Array2D, FillWithGenerator) {
   const size_t num_elements = width * height;
   std::array<ElementType, num_elements> elements = {11, 12, 13, 14, 15, 16};
   test::SequenceGenerator generator{elements};
-  array.fill(&generator);
+  array.fill(generator);
   EXPECT_EQ(array.at(0, 0)[0], 11);
   EXPECT_EQ(array.at(0, 1)[0], 12);
   EXPECT_EQ(array.at(0, 2)[0], 13);

@@ -107,14 +107,13 @@ class Array2D : public TwoDimensional<ElementType> {
 
   // Fills the underlying memory range with a given generator skipping padding
   // bytes.
-  void fill(Generator<ElementType> *generator) {
-    ASSERT_NE(generator, nullptr);
+  void fill(Generator<ElementType> &generator) {
     ASSERT_EQ(valid(), true);
 
     ElementType *ptr = data();
     for (size_t row = 0; row < height(); ++row) {
       for (size_t column = 0; column < width(); ++column) {
-        std::optional<ElementType> optional_value = generator->next();
+        std::optional<ElementType> optional_value = generator.next();
         ASSERT_NE(optional_value, std::nullopt);
         if (optional_value.has_value()) {
           ptr[column] = optional_value.value();
