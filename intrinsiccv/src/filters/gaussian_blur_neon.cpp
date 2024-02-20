@@ -165,7 +165,7 @@ intrinsiccv_error_t discrete_gaussian_blur(
 
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
-  if (workspace->buffer_type_size() != sizeof(ScalarType)) {
+  if (workspace->buffer_type_size() != 2 * sizeof(ScalarType)) {
     return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
   }
 

@@ -170,7 +170,8 @@ class KernelTest {
       for (size_t column = 0; column < expected_.width(); ++column) {
         IntermediateType result;
         result = calculate_expected_at(kernel, source, row, column);
-        expected_.at(row, column)[0] = static_cast<OutputType>(result);
+        expected_.at(row, column)[0] =
+            static_cast<OutputType>(scale_result(kernel, result));
       }
     }
   }
@@ -189,6 +190,11 @@ class KernelTest {
       }
     }
 
+    return result;
+  }
+
+  virtual IntermediateType scale_result(const Kernel<IntermediateType>&,
+                                        IntermediateType result) {
     return result;
   }
 

@@ -959,8 +959,8 @@ intrinsiccv_error_t intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride,
 /// @param context       Pointer where to return the created context's address.
 /// @param channels      Number of channels in the data. Must be not more than
 ///                      @ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
-/// @param type_size     Element size in bytes. Must not be more than
-///                      @ref INTRINSICCV_MAXIMUM_TYPE_SIZE.
+/// @param type_size     Size of buffer element in bytes. It must be double the
+///                      size of the type the filter operation is executed on.
 /// @param image         Image dimensions. Its size must not be more than
 ///                      @ref INTRINSICCV_MAX_IMAGE_PIXELS.
 ///

@@ -40,12 +40,6 @@ static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
     INTRINSICCV_BORDER_TYPE_REPLICATE,
 };
 
-// Dummy border values because BORDER_TYPE_CONSTANT is not used
-static constexpr std::array<intrinsiccv_border_values_t, 1>
-    kSupportedBorderValues = {{
-        {0, 0, 0, 0},  // default
-    }};
-
 // Test for Sobel 3x3 operator.
 template <class KernelTestParams>
 class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
@@ -71,6 +65,8 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
     // Use the default array layouts for testing.
     auto array_layouts =
         test::default_array_layouts(mask.width(), mask.height());
+    // Use the default border values for testing.
+    auto kSupportedBorderValues = test::default_border_values();
     // Create generators and execute test.
     test::SequenceGenerator tested_array_layouts{array_layouts};
     test::SequenceGenerator tested_borders{kSupportedBorders};

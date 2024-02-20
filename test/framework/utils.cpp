@@ -48,6 +48,12 @@ template void dump<uint32_t>(const TwoDimensional<uint32_t> *);
 template void dump<int64_t>(const TwoDimensional<int64_t> *);
 template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
 
+std::array<intrinsiccv_border_values_t, 1> default_border_values() {
+  return {{
+      {0, 0, 0, 0},  // default
+  }};
+}
+
 std::array<test::ArrayLayout, 6> small_array_layouts(size_t min_width,
                                                      size_t min_height) {
   size_t vl = test::Options::vector_length();

@@ -4,7 +4,9 @@
 
 #include <gtest/gtest.h>
 
-#include "framework/utils.h"
+#include "framework/array.h"
+#include "framework/generator.h"
+#include "framework/kernel.h"
 #include "intrinsiccv/intrinsiccv.h"
 
 #define INTRINSICCV_GAUSSIAN_BLUR(type, kernel_suffix, type_suffix)          \
@@ -15,17 +17,125 @@
 INTRINSICCV_GAUSSIAN_BLUR(uint8_t, 3x3, u8);
 INTRINSICCV_GAUSSIAN_BLUR(uint8_t, 5x5, u8);
 
+// Implements KernelTestParams for Gaussian Blur operators.
+template <typename ElementType, size_t KernelSize>
+struct GaussianBlurKernelTestParams;
+
+template <size_t KernelSize>
+struct GaussianBlurKernelTestParams<uint8_t, KernelSize> {
+  using InputType = uint8_t;
+  using IntermediateType = uint16_t;
+  using OutputType = uint8_t;
+
+  static constexpr size_t kKernelSize = KernelSize;
+};  // end of struct GaussianBlurKernelTestParams<uint8_t, KernelSize>
+
+static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
+    INTRINSICCV_BORDER_TYPE_REPLICATE,
+    // INTRINSICCV_BORDER_TYPE_REFLECT,
+    // INTRINSICCV_BORDER_TYPE_WRAP,
+    // INTRINSICCV_BORDER_TYPE_REVERSE,
+};
+
+// Test for GaussianBlur operator.
+template <class KernelTestParams>
+class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
+  using typename test::KernelTest<KernelTestParams>::InputType;
+  using typename test::KernelTest<KernelTestParams>::IntermediateType;
+  using typename test::KernelTest<KernelTestParams>::OutputType;
+
+  intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
+                               test::Array2D<OutputType> *output,
+                               intrinsiccv_border_type_t border_type,
+                               intrinsiccv_border_values_t) override {
+    auto api = KernelTestParams::kKernelSize == 3
+                   ? gaussian_blur_3x3<InputType>()
+                   : gaussian_blur_5x5<InputType>();
+
+    intrinsiccv_filter_context_t *context = nullptr;
+    auto ret = intrinsiccv_filter_create(
+        &context, input->channels(), sizeof(IntermediateType),
+        intrinsiccv_rectangle_t{input->width() / input->channels(),
+                                input->height()});
+    if (ret != INTRINSICCV_OK) {
+      return ret;
+    }
+
+    ret = api(input->data(), input->stride(), output->data(), output->stride(),
+              input->width() / input->channels(), input->height(),
+              input->channels(), border_type, context);
+    auto releaseRet = intrinsiccv_filter_release(context);
+    if (releaseRet != INTRINSICCV_OK) {
+      return releaseRet;
+    }
+
+    return ret;
+  }
+
+  // Apply rounding to nearest integer division.
+  IntermediateType scale_result(const test::Kernel<IntermediateType> &kernel,
+                                IntermediateType result) override {
+    return kernel.width() == 3 ? ((result + 8) / 16) : ((result + 128) / 256);
+  }
+
+ public:
+  void test(test::Array2D<IntermediateType> mask) {
+    test::Kernel kernel{mask};
+    // Use the default array layouts for testing.
+    auto array_layouts =
+        test::default_array_layouts(mask.width(), mask.height());
+    // Use the default border values for testing.
+    auto kSupportedBorderValues = test::default_border_values();
+    // Create generators and execute test.
+    test::SequenceGenerator tested_array_layouts{array_layouts};
+    test::SequenceGenerator tested_borders{kSupportedBorders};
+    test::SequenceGenerator tested_border_values{kSupportedBorderValues};
+    test::PseudoRandomNumberGenerator<InputType> element_generator;
+    this->test::KernelTest<KernelTestParams>::test(
+        kernel, tested_array_layouts, tested_borders, tested_border_values,
+        element_generator);
+  }
+};  // end of class class GaussianBlur3x3Test<KernelTestParams>
+
 using ElementTypes = ::testing::Types<uint8_t>;
 
 template <typename ElementType>
-class GaussianBlurTest : public testing::Test {};
+class GaussianBlur : public testing::Test {};
 
-TYPED_TEST_SUITE(GaussianBlurTest, ElementTypes);
+TYPED_TEST_SUITE(GaussianBlur, ElementTypes);
 
-TYPED_TEST(GaussianBlurTest, UnsupportedBorderType) {
+// Tests gaussian_blur_3x3_<input_type> API.
+TYPED_TEST(GaussianBlur, 3x3) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
+  // 3x3 GaussianBlur operator.
+  test::Array2D<typename KernelTestParams::IntermediateType> mask{3, 3};
+  // clang-format off
+  mask.set(0, 0, { 1, 2, 1});
+  mask.set(1, 0, { 2, 4, 2});
+  mask.set(2, 0, { 1, 2, 1});
+  // clang-format on
+  GaussianBlurTest<KernelTestParams>{}.test(mask);
+}
+
+// Tests gaussian_blur_5x5_<input_type> API.
+TYPED_TEST(GaussianBlur, 5x5) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
+  // 5x5 GaussianBlur operator.
+  test::Array2D<typename KernelTestParams::IntermediateType> mask{5, 5};
+  // clang-format off
+  mask.set(0, 0, { 1,  4,  6,  4, 1});
+  mask.set(1, 0, { 4, 16, 24, 16, 4});
+  mask.set(2, 0, { 6, 24, 36, 24, 6});
+  mask.set(3, 0, { 4, 16, 24, 16, 4});
+  mask.set(4, 0, { 1,  4,  6,  4, 1});
+  // clang-format on
+  GaussianBlurTest<KernelTestParams>{}.test(mask);
+}
+
+TYPED_TEST(GaussianBlur, UnsupportedBorderType) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1] = {}, dst[1];
   for (intrinsiccv_border_type_t border : {
@@ -45,54 +155,54 @@ TYPED_TEST(GaussianBlurTest, UnsupportedBorderType) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlurTest, NullPointer) {
+TYPED_TEST(GaussianBlur, NullPointer) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(gaussian_blur_3x3<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), 1, 1, 1,
-                       INTRINSICCV_BORDER_TYPE_REFLECT, context);
+                       INTRINSICCV_BORDER_TYPE_REPLICATE, context);
   test::test_null_args(gaussian_blur_5x5<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), 1, 1, 1,
-                       INTRINSICCV_BORDER_TYPE_REFLECT, context);
+                       INTRINSICCV_BORDER_TYPE_REPLICATE, context);
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlurTest, Misalignment) {
+TYPED_TEST(GaussianBlur, Misalignment) {
   if (sizeof(TypeParam) == 1) {
     // misalignment impossible
     return;
   }
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlurTest, ImageSize) {
+TYPED_TEST(GaussianBlur, ImageSize) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
@@ -118,10 +228,10 @@ TYPED_TEST(GaussianBlurTest, ImageSize) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlurTest, ChannelNumber) {
+TYPED_TEST(GaussianBlur, ChannelNumber) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
@@ -137,10 +247,10 @@ TYPED_TEST(GaussianBlurTest, ChannelNumber) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlurTest, InvalidContextSizeType) {
+TYPED_TEST(GaussianBlur, InvalidContextSizeType) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam) + 1,
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam) + 1,
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
@@ -154,10 +264,10 @@ TYPED_TEST(GaussianBlurTest, InvalidContextSizeType) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlurTest, InvalidContextChannelNumber) {
+TYPED_TEST(GaussianBlur, InvalidContextChannelNumber) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 2, sizeof(TypeParam),
+            intrinsiccv_filter_create(&context, 2, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
@@ -171,10 +281,10 @@ TYPED_TEST(GaussianBlurTest, InvalidContextChannelNumber) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlurTest, InvalidContextImageSize) {
+TYPED_TEST(GaussianBlur, InvalidContextImageSize) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, sizeof(TypeParam),
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 1}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
