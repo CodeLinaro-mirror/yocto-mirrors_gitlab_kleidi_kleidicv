@@ -175,13 +175,12 @@ int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
 int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int width, int height, int depth, int cn,
               double thresh, double maxValue, int thresholdType) {
-  (void)cn;
-
   if ((depth == CV_8U) && (thresholdType == 0 /* THRESH_BINARY */)) {
+    size_t width_in_elements = width * cn;
     return convert_error(intrinsiccv_threshold_binary_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-        static_cast<uint8_t>(thresh), static_cast<uint8_t>(maxValue)));
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, width_in_elements,
+        height, static_cast<uint8_t>(thresh), static_cast<uint8_t>(maxValue)));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
