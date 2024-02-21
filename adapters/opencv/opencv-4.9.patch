@@ -75,19 +75,26 @@ index 6f0a83d359..4c294962ca 100644
  #define CV_MAKETYPE(depth,cn) (CV_MAT_DEPTH(depth) + (((cn)-1) << CV_CN_SHIFT))
  #define CV_MAKE_TYPE CV_MAKETYPE
 diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
-index 345b4624cb..1ace8f1d5c 100644
+index 345b4624cb..8698cc64bf 100644
 --- a/modules/core/src/convert.dispatch.cpp
 +++ b/modules/core/src/convert.dispatch.cpp
-@@ -202,6 +202,9 @@ void Mat::convertTo(OutputArray _dst, int _type, double alpha, double beta) cons
+@@ -201,10 +201,15 @@ void Mat::convertTo(OutputArray _dst, int _type, double alpha, double beta) cons
+     else
          _dst.create( dims, size, _type );
      Mat dst = _dst.getMat();
- 
-+    if( dims <= 2 )
-+        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dst.data, dst.step, dst.depth(), src.cols, src.rows, alpha, beta);
++    int cn = channels();
 +
++    if( dims <= 2 ) {
++        int width_in_elements = src.cols * cn;
++        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dst.data, dst.step, dst.depth(), width_in_elements, src.rows, alpha, beta);
++    }
+ 
      BinaryFunc func = noScale ? getConvertFunc(sdepth, ddepth) : getConvertScaleFunc(sdepth, ddepth);
      double scale[] = {alpha, beta};
-     int cn = channels();
+-    int cn = channels();
+     CV_Assert( func != 0 );
+ 
+     if( dims <= 2 )
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
 index 1f2b259920..b0e5db024d 100644
 --- a/modules/core/src/hal_replacement.hpp
