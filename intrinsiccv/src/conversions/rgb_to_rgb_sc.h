@@ -13,7 +13,8 @@ namespace intrinsiccv::sve2 {
 
 template <typename ScalarType>
 class RGBToBGR final :
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE && INTRINSICCV_SVE2_128
+#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE && \
+    INTRINSICCV_ASSUME_128BIT_SVE2
     public UsesTailPath,
 #endif
     public UnrollTwice {
@@ -22,7 +23,8 @@ class RGBToBGR final :
   using VecTraits = sve2::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || !INTRINSICCV_SVE2_128
+#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || \
+    !INTRINSICCV_ASSUME_128BIT_SVE2
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
@@ -32,7 +34,8 @@ class RGBToBGR final :
 
     svst3(pg, dst, dst_vect);
   }
-#else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || !INTRINSICCV_SVE2_128
+#else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE ||
+        // !INTRINSICCV_ASSUME_128BIT_SVE2
   explicit RGBToBGR(svuint8x4_t &indices) INTRINSICCV_STREAMING_COMPATIBLE
       : indices_{indices} {
     initialize_indices();
@@ -93,7 +96,8 @@ class RGBToBGR final :
 
   // Hold a reference because a sizeless types cannot be members.
   svuint8x4_t &indices_;
-#endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || !INTRINSICCV_SVE2_128
+#endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE ||
+        // !INTRINSICCV_ASSUME_128BIT_SVE2
 };      // end of class RGBToBGR<ScalarType>
 
 template <typename ScalarType>
@@ -191,7 +195,8 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t rgb_to_bgr_u8_sc(
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || !INTRINSICCV_SVE2_128
+#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || \
+    !INTRINSICCV_ASSUME_128BIT_SVE2
   RGBToBGR<uint8_t> operation;
 #else
   svuint8x4_t table_indices;

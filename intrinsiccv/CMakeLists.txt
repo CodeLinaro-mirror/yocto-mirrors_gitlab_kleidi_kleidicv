@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -104,7 +104,7 @@ if(INTRINSICCV_ENABLE_SVE2)
 endif()
 
 if (INTRINSICCV_ASSUME_128BIT_SVE2)
-  list(APPEND INTRINSICCV_CXX_FLAGS "-DINTRINSICCV_SVE2_128=1")
+  list(APPEND INTRINSICCV_CXX_FLAGS "-DINTRINSICCV_ASSUME_128BIT_SVE2=1")
 endif()
 
 if (CMAKE_BUILD_TYPE EQUAL "DEBUG")

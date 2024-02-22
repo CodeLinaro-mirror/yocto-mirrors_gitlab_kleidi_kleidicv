@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,8 +14,8 @@
 #endif
 
 // Set to '1' if 128-bit SVE2 VL is assumed, otherwise it is set to '0'.
-#ifndef INTRINSICCV_SVE2_128
-#define INTRINSICCV_SVE2_128 0
+#ifndef INTRINSICCV_ASSUME_128BIT_SVE2
+#define INTRINSICCV_ASSUME_128BIT_SVE2 0
 #endif
 
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
@@ -57,8 +57,8 @@
 #endif
 
 #if INTRINSICCV_TARGET_SME2
-#undef INTRINSICCV_SVE2_128
-#define INTRINSICCV_SVE2_128 0
+#undef INTRINSICCV_ASSUME_128BIT_SVE2
+#define INTRINSICCV_ASSUME_128BIT_SVE2 0
 #define INTRINSICCV_TARGET_FN_ATTRS INTRINSICCV_ATTR_SECTION(".text.sme2")
 #define INTRINSICCV_LOCALLY_STREAMING __arm_locally_streaming
 #define INTRINSICCV_STREAMING_COMPATIBLE __arm_streaming_compatible
