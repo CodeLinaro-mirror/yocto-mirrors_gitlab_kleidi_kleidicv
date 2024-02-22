@@ -495,6 +495,7 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
+#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int cn, double lowThreshold,
           double highThreshold, int ksize, bool L2gradient) {
@@ -520,6 +521,7 @@ int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
       static_cast<size_t>(width), static_cast<size_t>(height), lowThreshold,
       highThreshold));
 }
+#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height,

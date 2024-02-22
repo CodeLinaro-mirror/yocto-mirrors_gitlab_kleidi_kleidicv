@@ -915,6 +915,7 @@ intrinsiccv_error_t intrinsiccv_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels);
 
+#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 /// Canny edge detector for uint8_t grayscale input. Output is also a uint8_t
 /// grayscale image. Width and height are the same for input and output. Number
 /// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
@@ -947,6 +948,7 @@ intrinsiccv_error_t intrinsiccv_canny_u8(const uint8_t *src, size_t src_stride,
                                          size_t width, size_t height,
                                          double low_threshold,
                                          double high_threshold);
+#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 
 /// Creates a filter context according to the parameters.
 ///

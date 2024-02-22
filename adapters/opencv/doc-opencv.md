@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -107,7 +107,7 @@ Notes on parameters:
 * margins are not supported.
 * `dx`,`dy` - either vertical `{dx,dy} == {0,1}` or horizontal `{dx,dy == 1,0` operation is supported.
 
-### `canny`
+### `canny` (Experimental)
 Apply Canny edge detection filter to a given image.
 
 Notes on parameters:
