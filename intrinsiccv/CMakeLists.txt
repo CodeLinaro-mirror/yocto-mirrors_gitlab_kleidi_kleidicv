@@ -11,6 +11,7 @@ include(CheckCXXCompilerFlag)
 option(INTRINSICCV_ENABLE_SVE2 "Explicitly enables or disables SVE2 code paths for all supported algorithms" OFF)
 option(INTRINSICCV_ENABLE_SVE2_SELECTIVELY "Explicitly enables or disables SVE2 code paths for selected algorithms" ON)
 option(INTRINSICCV_ENABLE_SME2 "Explicitly enables or disables SME2 code paths for all supported algorithms" ON)
+option(INTRINSICCV_CHECK_BANNED_FUNCTIONS "Check source for deprecated or obsolescent functions" OFF)
 option(INTRINSICCV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector length is assumed" OFF)
 option(INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
 option(INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
@@ -86,11 +87,6 @@ set(INTRINSICCV_WARNING_FLAGS
   "-Wold-style-cast"
 )
 
-set(INTRINSICCV_SDL_FLAGS
-  "-include"
-  "intrinsiccv/unsafe.h"
-)
-
 set(INTRINSICCV_CLANG_FLAGS
   "-mllvm"
   "-inline-threshold=10000"
@@ -106,8 +102,14 @@ set(INTRINSICCV_CXX_FLAGS
   "-fno-rtti"
   ${INTRINSICCV_CLANG_FLAGS}
   ${INTRINSICCV_WARNING_FLAGS}
-  ${INTRINSICCV_SDL_FLAGS}
 )
+
+if (INTRINSICCV_CHECK_BANNED_FUNCTIONS)
+  # The `SHELL:` prefix is used to turn off de-duplication of compiler flags,
+  # it is necessary if other headers are need to be force included.
+  # https://cmake.org/cmake/help/latest/command/target_compile_options.html#option-de-duplication
+  list(APPEND INTRINSICCV_CXX_FLAGS "SHELL:-include intrinsiccv/unsafe.h")
+endif()
 
 if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
   list(APPEND INTRINSICCV_CXX_FLAGS "-O0" "-g")

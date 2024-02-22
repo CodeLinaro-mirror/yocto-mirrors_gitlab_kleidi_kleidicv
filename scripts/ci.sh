@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+
 # SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -33,7 +33,8 @@ cmake -S . -B build -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
   -DCMAKE_CXX_FLAGS="--coverage -g -O0" \
   -DINTRINSICCV_ENABLE_SVE2=ON \
-  -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF
+  -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF \
+  -DINTRINSICCV_CHECK_BANNED_FUNCTIONS=ON
 
 # Workaround to avoid applying clang-tidy to files in build directory
 echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
