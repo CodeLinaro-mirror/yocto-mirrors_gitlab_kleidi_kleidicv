@@ -1,10 +1,13 @@
-# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.16)
 
-set(INTRINSICCV_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../intrinsiccv/include)
+set(INTRINSICCV_INCLUDE_DIR
+  ${CMAKE_CURRENT_SOURCE_DIR}/../intrinsiccv/include
+  ${CMAKE_CURRENT_BINARY_DIR}/../intrinsiccv/include
+)
 set(INTRINSICCV_TEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(INTRINSICCV_WARNING_FLAGS

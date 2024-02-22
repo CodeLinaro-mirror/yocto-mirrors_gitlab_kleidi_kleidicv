@@ -7,16 +7,13 @@
 
 // Main configuration switches.
 
-// Set to '1' if interleaving loads and stores are preferred, otherwise it is
-// set to '0'.
-#ifndef INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-#define INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE 0
-#endif
+#cmakedefine01 INTRINSICCV_ALWAYS_ENABLE_SVE2
 
-// Set to '1' if 128-bit SVE2 VL is assumed, otherwise it is set to '0'.
-#ifndef INTRINSICCV_ASSUME_128BIT_SVE2
-#define INTRINSICCV_ASSUME_128BIT_SVE2 0
-#endif
+#cmakedefine01 INTRINSICCV_ASSUME_128BIT_SVE2
+
+#cmakedefine01 INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+
+#cmakedefine01 INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV
 
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
 #ifndef INTRINSICCV_TARGET_NEON
@@ -32,14 +29,6 @@
 #ifndef INTRINSICCV_TARGET_SME2
 #define INTRINSICCV_TARGET_SME2 0
 #endif
-
-// Set to '1' to always enable SVE2 code paths, otherwise enable them
-// selectively.
-#ifndef INTRINSICCV_ALWAYS_ENABLE_SVE2
-#define INTRINSICCV_ALWAYS_ENABLE_SVE2 0
-#endif
-
-#define INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV 1
 
 // Derived configuration switches and macros below.
 

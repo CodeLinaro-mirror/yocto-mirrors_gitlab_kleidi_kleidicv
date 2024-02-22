@@ -12,6 +12,8 @@ option(INTRINSICCV_ENABLE_SVE2 "Explicitly enables or disables SVE2 code paths f
 option(INTRINSICCV_ENABLE_SVE2_SELECTIVELY "Explicitly enables or disables SVE2 code paths for selected algorithms" ON)
 option(INTRINSICCV_ENABLE_SME2 "Explicitly enables or disables SME2 code paths for all supported algorithms" ON)
 option(INTRINSICCV_ASSUME_128BIT_SVE2 "If turned ON 128-bit SVE2 vector length is assumed" OFF)
+option(INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE "If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
+option(INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV "If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
 
 if (INTRINSICCV_ENABLE_SVE2 AND INTRINSICCV_ENABLE_SVE2_SELECTIVELY)
   message(FATAL_ERROR "[IntrinsicCV] INTRINSICCV_ENABLE_SVE2 and INTRINSICCV_ENABLE_SVE2_SELECTIVELY cannot be set at the same time")
@@ -45,6 +47,12 @@ if (INTRINSICCV_ENABLE_SME2)
   endif()
 endif()
 
+if(INTRINSICCV_BUILD_SVE2 AND INTRINSICCV_ENABLE_SVE2)
+  set(INTRINSICCV_ALWAYS_ENABLE_SVE2 ON)
+endif()
+
+configure_file("${CMAKE_CURRENT_LIST_DIR}/include/intrinsiccv/config.h.in" "include/intrinsiccv/config.h")
+
 file(GLOB INTRINSICCV_API_SOURCES
   "${CMAKE_CURRENT_LIST_DIR}/src/*_api.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/src/**/*_api.cpp"
@@ -67,6 +75,7 @@ file(GLOB INTRINSICCV_SME2_SOURCES
 
 set(INTRINSICCV_INCLUDE_DIRS
   "${CMAKE_CURRENT_LIST_DIR}/include"
+  "${CMAKE_CURRENT_BINARY_DIR}/include"
 )
 
 set(INTRINSICCV_WARNING_FLAGS
@@ -98,14 +107,6 @@ set(INTRINSICCV_CXX_FLAGS
   ${INTRINSICCV_WARNING_FLAGS}
   ${INTRINSICCV_SDL_FLAGS}
 )
-
-if(INTRINSICCV_ENABLE_SVE2)
-  list(APPEND INTRINSICCV_CXX_FLAGS "-DINTRINSICCV_ALWAYS_ENABLE_SVE2=1")
-endif()
-
-if (INTRINSICCV_ASSUME_128BIT_SVE2)
-  list(APPEND INTRINSICCV_CXX_FLAGS "-DINTRINSICCV_ASSUME_128BIT_SVE2=1")
-endif()
 
 if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
   list(APPEND INTRINSICCV_CXX_FLAGS "-O0" "-g")
