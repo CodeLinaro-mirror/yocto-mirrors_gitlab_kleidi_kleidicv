@@ -7,6 +7,7 @@
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "framework/kernel.h"
+#include "framework/utils.h"
 #include "intrinsiccv/intrinsiccv.h"
 
 #define INTRINSICCV_GAUSSIAN_BLUR(type, kernel_suffix, type_suffix)          \
@@ -30,10 +31,11 @@ struct GaussianBlurKernelTestParams<uint8_t, KernelSize> {
   static constexpr size_t kKernelSize = KernelSize;
 };  // end of struct GaussianBlurKernelTestParams<uint8_t, KernelSize>
 
-static constexpr std::array<intrinsiccv_border_type_t, 3> kSupportedBorders = {
-    INTRINSICCV_BORDER_TYPE_REPLICATE, INTRINSICCV_BORDER_TYPE_REFLECT,
+static constexpr std::array<intrinsiccv_border_type_t, 4> kSupportedBorders = {
+    INTRINSICCV_BORDER_TYPE_REPLICATE,
+    INTRINSICCV_BORDER_TYPE_REFLECT,
     INTRINSICCV_BORDER_TYPE_WRAP,
-    // INTRINSICCV_BORDER_TYPE_REVERSE,
+    INTRINSICCV_BORDER_TYPE_REVERSE,
 };
 
 // Test for GaussianBlur operator.
@@ -83,6 +85,7 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
     // Use the default array layouts for testing.
     auto array_layouts =
         test::default_array_layouts(mask.width(), mask.height());
+    test::KernelTest<KernelTestParams>::with_debug();
     // Use the default border values for testing.
     auto kSupportedBorderValues = test::default_border_values();
     // Create generators and execute test.

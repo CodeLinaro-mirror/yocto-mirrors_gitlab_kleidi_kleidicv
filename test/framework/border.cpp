@@ -74,14 +74,16 @@ static void constant(const Bordered *bordered,
             elements->width());
   ASSERT_LE(bordered->top() + bordered->bottom(), elements->height());
 
-  // Left and right border columns.
+  // Constant left and right border columns.
   for (size_t row = 0; row < elements->height(); ++row) {
     for (size_t channel = 0; channel < elements->channels(); ++channel) {
+      // Prepare left border columns.
       for (size_t column = 0; column < bordered->left(); ++column) {
         size_t dst_column = column * elements->channels() + channel;
         elements->at(row, dst_column)[0] = border_values.left;
       }
 
+      // Prepare right border columns.
       for (size_t column = 0; column < bordered->right(); ++column) {
         size_t dst_column =
             elements->width() +
@@ -91,13 +93,14 @@ static void constant(const Bordered *bordered,
     }
   }
 
-  // Top and bottom border rows.
+  // Constant top border rows.
   for (size_t row = 0; row < bordered->top(); ++row) {
     for (size_t column = 0; column < elements->width(); ++column) {
       elements->at(row, column)[0] = border_values.top;
     }
   }
 
+  // Constant bottom border rows.
   for (size_t row = elements->height() - bordered->bottom();
        row < elements->height(); ++row) {
     for (size_t column = 0; column < elements->width(); ++column) {
@@ -119,7 +122,7 @@ static void reflect(const Bordered *bordered,
             elements->width());
   ASSERT_LE(bordered->top() + bordered->bottom(), elements->height());
 
-  // Left and right border columns.
+  // Reflect left and right border columns.
   for (size_t row = 0; row < elements->height(); ++row) {
     for (size_t channel = 0; channel < elements->channels(); ++channel) {
       // Prepare left border columns.
@@ -174,7 +177,7 @@ static void wrap(const Bordered *bordered,
             elements->width());
   ASSERT_LE(bordered->top() + bordered->bottom(), elements->height());
 
-  // Left and right border columns.
+  // Wrap left and right border columns.
   for (size_t row = 0; row < elements->height(); ++row) {
     for (size_t channel = 0; channel < elements->channels(); ++channel) {
       // Prepare left border columns.
@@ -216,6 +219,66 @@ static void wrap(const Bordered *bordered,
   }
 }
 
+// Creates reversed border elements.
+
+// Reversing means that the border mirrors the elements of the array,
+// skipping the elements on the edge.
+// For example:
+// | left border | elements  | right border |
+// |       D C B | A B C D E | D C B        |
+template <typename ElementType>
+static void reverse(const Bordered *bordered,
+                    TwoDimensional<ElementType> *elements) {
+  ASSERT_LE((bordered->left() + bordered->right()) * elements->channels(),
+            elements->width());
+  ASSERT_LE((bordered->left() + 1) * elements->channels(), elements->width());
+  ASSERT_LE((bordered->right() + 1) * elements->channels(), elements->width());
+  ASSERT_LE(bordered->top() + bordered->bottom(), elements->height());
+  ASSERT_LE(bordered->top() + 1, elements->height());
+  ASSERT_LE(bordered->bottom() + 1, elements->height());
+
+  // Reverse left and right border columns.
+  for (size_t row = 0; row < elements->height(); ++row) {
+    for (size_t channel = 0; channel < elements->channels(); ++channel) {
+      // Prepare left border columns.
+      for (size_t column = 0; column < bordered->left(); ++column) {
+        size_t src_column =
+            (bordered->left() + column + 1) * elements->channels() + channel;
+        size_t dst_column =
+            (bordered->left() - 1 - column) * elements->channels() + channel;
+        elements->at(row, dst_column)[0] = elements->at(row, src_column)[0];
+      }
+
+      // Prepare right border columns.
+      for (size_t column = 0; column < bordered->right(); ++column) {
+        size_t src_column =
+            elements->width() -
+            (bordered->right() + 2 + column) * elements->channels() + channel;
+        size_t dst_column =
+            elements->width() -
+            (bordered->right() - column) * elements->channels() + channel;
+        elements->at(row, dst_column)[0] = elements->at(row, src_column)[0];
+      }
+    }
+  }
+
+  // Reverse top border rows.
+  size_t reversed_top_row = bordered->top() + 1;
+  for (size_t row = 0; row < bordered->top(); ++row) {
+    auto row_ptr = elements->at(reversed_top_row + row, 0);
+    std::copy(row_ptr, row_ptr + elements->width(),
+              elements->at(bordered->top() - 1 - row, 0));
+  }
+
+  // Reverse bottom border rows.
+  size_t reversed_bottom_row = elements->height() - bordered->bottom() - 2;
+  for (size_t row = 0; row < bordered->bottom(); ++row) {
+    auto row_ptr = elements->at(reversed_bottom_row - row, 0);
+    std::copy(row_ptr, row_ptr + elements->width(),
+              elements->at(reversed_bottom_row + row + 2, 0));
+  }
+}
+
 template <typename ElementType>
 void prepare_borders(intrinsiccv_border_type_t border_type,
                      intrinsiccv_border_values_t border_values,
@@ -239,6 +302,9 @@ void prepare_borders(intrinsiccv_border_type_t border_type,
 
     case INTRINSICCV_BORDER_TYPE_WRAP:
       return wrap(bordered, elements);
+
+    case INTRINSICCV_BORDER_TYPE_REVERSE:
+      return reverse(bordered, elements);
   }
 }
 
