@@ -30,10 +30,9 @@ struct GaussianBlurKernelTestParams<uint8_t, KernelSize> {
   static constexpr size_t kKernelSize = KernelSize;
 };  // end of struct GaussianBlurKernelTestParams<uint8_t, KernelSize>
 
-static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
-    INTRINSICCV_BORDER_TYPE_REPLICATE,
-    // INTRINSICCV_BORDER_TYPE_REFLECT,
-    // INTRINSICCV_BORDER_TYPE_WRAP,
+static constexpr std::array<intrinsiccv_border_type_t, 3> kSupportedBorders = {
+    INTRINSICCV_BORDER_TYPE_REPLICATE, INTRINSICCV_BORDER_TYPE_REFLECT,
+    INTRINSICCV_BORDER_TYPE_WRAP,
     // INTRINSICCV_BORDER_TYPE_REVERSE,
 };
 
