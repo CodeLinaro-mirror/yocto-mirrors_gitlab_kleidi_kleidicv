@@ -236,9 +236,14 @@ T *remove_constant_pool_usage(T *ptr) {
 // bottom-left} and {left, right} neighbouring values as governed by the
 // associated directions.
 //
-// If INTRINSICCV_DIRECTIONAL_MASKING_CONFORM_OPENCV is set to 1, the diagonal
-// directions are swapped, and lanes in 'next_row_by_directions', where the
-// direction is diagonal, are incremented by 1 saturating.
+// If INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV is set to 1:
+//  - diagonal directions are swapped
+//  - diagonal non-maxima-suppressions are calculated as:
+//      curr > prev && curr > next
+//    This is different from other directions where it is calculated as:
+//      curr > prev && curr >= next
+//    (To achieve this lanes in 'next_row_by_directions', where the direction is
+//    diagonal, are incremented by 1 saturating.)
 static void directional_masking(const int16_t *prev_rows,
                                 const int16_t *curr_rows,
                                 const int16_t *next_rows, int16x8_t directions,
@@ -252,7 +257,7 @@ static void directional_masking(const int16_t *prev_rows,
   static constexpr int8_t kIndices[4 * kNumLanesS8] = {
       /* Lane offsets holding 'lane number + VL' */
       16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-#if INTRINSICCV_DIRECTIONAL_MASKING_CONFORM_OPENCV
+#if INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV
       /* Table lookup indices for previous row */
       32, 32, -2, 2, 0, 0, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       /* Table lookup indices for next row */
@@ -312,7 +317,7 @@ static void directional_masking(const int16_t *prev_rows,
 
   // 2.1
   tmp_indices_0 = vqtbl1q_s8(next_row_table, dir);
-#if INTRINSICCV_DIRECTIONAL_MASKING_CONFORM_OPENCV
+#if INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV
   int8x16_t opencv_tmp_indices_0 = tmp_indices_0;
 #endif
   // 2.2
@@ -348,7 +353,7 @@ static void directional_masking(const int16_t *prev_rows,
   curr_row_by_directions = vreinterpretq_s16_s8(curr_row.val[1]);
   next_row_by_directions = vreinterpretq_s16_s8(next_row_by_dir);
 
-#if INTRINSICCV_DIRECTIONAL_MASKING_CONFORM_OPENCV
+#if INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV
   // Reuse temporary indexing values from step 2.1 to saturating add one to
   // diagonal values in the next row. This works only because of the domain of
   // input values is restricted.

@@ -39,12 +39,7 @@
 #define INTRINSICCV_ALWAYS_ENABLE_SVE2 0
 #endif
 
-// OpenCV requires that diagonal non-maxima-suppressions are calculated as
-//    curr > prev && curr > next
-// This is different from other directions where
-//    curr > prev && curr >= next
-// is used. Furthermore, the elements in the diagonal directions are reversed.
-#define INTRINSICCV_DIRECTIONAL_MASKING_CONFORM_OPENCV 1
+#define INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV 1
 
 // Derived configuration switches and macros below.
 
