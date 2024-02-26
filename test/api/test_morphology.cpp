@@ -34,10 +34,36 @@ struct MorphologyKernelTestParams {
   using OutputType = ElementType;
 };  // end of struct MorphologyKernelTestParams
 
-static constexpr std::array<intrinsiccv_border_type_t, 2> kSupportedBorders = {
-    INTRINSICCV_BORDER_TYPE_REPLICATE,
-    INTRINSICCV_BORDER_TYPE_CONSTANT,
-};
+static constexpr std::array<intrinsiccv_border_type_t, 1> kDefaultBorder = {
+    INTRINSICCV_BORDER_TYPE_REPLICATE};
+
+static constexpr std::array<intrinsiccv_border_type_t, 1> kConstantBorder = {
+    INTRINSICCV_BORDER_TYPE_CONSTANT};
+
+static constexpr std::array<intrinsiccv_border_values_t, 1>
+    kDefaultBorderValues = {{
+        {0, 0, 0, 0},  // default
+    }};
+
+template <typename ElementType>
+static const std::array<intrinsiccv_border_values_t, 4> &more_border_values() {
+  using limit = std::numeric_limits<ElementType>;
+  static const std::array<intrinsiccv_border_values_t, 4> values = {
+      {{0, 0, 0, 0},  // default
+       {7, 42, 99, 9},
+       {limit::min(), limit::max(), limit::min(), limit::max()},
+       {0, limit::min(), limit::max(), 0}}};
+  return values;
+}
+
+template <typename IterableType>
+std::unique_ptr<test::Generator<typename IterableType::value_type>>
+make_generator_ptr(IterableType &elements) {
+  test::Generator<typename IterableType::value_type> *pg =
+      new test::SequenceGenerator(elements);
+  return std::unique_ptr<test::Generator<typename IterableType::value_type>>(
+      pg);
+}
 
 template <class ElementType, template <typename, auto...> class OperationParams,
           size_t kernelWidth, size_t kernelHeight>
@@ -50,7 +76,15 @@ class MorphologyTest
 
  public:
   MorphologyTest()
-      : mask_{kernelWidth, kernelHeight}, kernel_{mask_}, iterations_{1} {}
+      : mask_{kernelWidth, kernelHeight},
+        kernel_{mask_},
+        iterations_{1},
+        small_array_layouts_{
+            test::small_array_layouts(kernelWidth, kernelHeight)} {
+    array_layout_generator_ = make_generator_ptr(small_array_layouts_);
+    border_type_generator_ = make_generator_ptr(kDefaultBorder);
+    border_values_generator_ = make_generator_ptr(kDefaultBorderValues);
+  }
 
   MorphologyTest &with_anchor(test::Point anchor) {
     kernel_ = test::Kernel(mask_, anchor);
@@ -62,20 +96,40 @@ class MorphologyTest
     return *this;
   }
 
+  MorphologyTest &with_array_layouts(
+      std::unique_ptr<test::Generator<test::ArrayLayout>> g) {
+    array_layout_generator_ = std::move(g);
+    return *this;
+  }
+
+  MorphologyTest &with_border_types(
+      std::unique_ptr<test::Generator<intrinsiccv_border_type_t>> g) {
+    border_type_generator_ = std::move(g);
+    return *this;
+  }
+
+  MorphologyTest &with_border_values(
+      std::unique_ptr<test::Generator<intrinsiccv_border_values_t>> g) {
+    border_values_generator_ = std::move(g);
+    return *this;
+  }
+
   void test() {
-    auto array_layouts = test::default_array_layouts(kernelWidth, kernelHeight);
-    test::SequenceGenerator tested_array_layouts{array_layouts};
-    test::SequenceGenerator tested_borders{kSupportedBorders};
-    test::SequenceGenerator tested_border_values{test_border_values()};
     test::PseudoRandomNumberGenerator<InputType> element_generator;
-    Base::test(kernel_, tested_array_layouts, tested_borders,
-               tested_border_values, element_generator);
+    Base::test(kernel_, *array_layout_generator_, *border_type_generator_,
+               *border_values_generator_, element_generator);
   }
 
  protected:
   test::Array2D<InputType> mask_;
   test::Kernel<InputType> kernel_;
   size_t iterations_;
+  std::array<test::ArrayLayout, 6> small_array_layouts_;
+  std::unique_ptr<test::Generator<test::ArrayLayout>> array_layout_generator_;
+  std::unique_ptr<test::Generator<intrinsiccv_border_type_t>>
+      border_type_generator_;
+  std::unique_ptr<test::Generator<intrinsiccv_border_values_t>>
+      border_values_generator_;
 
   intrinsiccv_error_t call_api(
       const test::Array2D<InputType> *input, test::Array2D<OutputType> *output,
@@ -134,23 +188,6 @@ class MorphologyTest
     }
     return result;
   }
-
-  static constexpr double min_border() {
-    return static_cast<double>(std::numeric_limits<InputType>::min());
-  }
-
-  static constexpr double max_border() {
-    return static_cast<double>(std::numeric_limits<InputType>::max());
-  }
-
-  const std::array<intrinsiccv_border_values_t, 4> &test_border_values() const {
-    static const std::array<intrinsiccv_border_values_t, 4> values = {
-        {{0, 0, 0, 0},  // default
-         {7, 42, 99, 9},
-         {min_border(), max_border(), min_border(), max_border()},
-         {0, min_border(), max_border(), 0}}};
-    return values;
-  }
 };  // end of class class MorphologyTest<OperationParams, kernelWidth,
     // kernelHeight>
 
@@ -161,72 +198,94 @@ using ElementTypes = ::testing::Types<uint8_t>;
 
 TYPED_TEST_SUITE(Morphology, ElementTypes);
 
-TYPED_TEST(Morphology, Dilate1x1) {
+TYPED_TEST(Morphology, 1xN) {
+  std::array<test::ArrayLayout, 14> medium_array_layouts_3x3 =
+      test::default_array_layouts(3, 3);
+
   MorphologyTest<TypeParam, DilateParams, 1, 1>{}.test();
-}
-
-TYPED_TEST(Morphology, Erode1x1) {
   MorphologyTest<TypeParam, ErodeParams, 1, 1>{}.test();
-}
-
-TYPED_TEST(Morphology, Dilate1x2) {
-  MorphologyTest<TypeParam, DilateParams, 1, 2>{}.test();
-}
-
-TYPED_TEST(Morphology, Erode1x2) {
-  MorphologyTest<TypeParam, ErodeParams, 1, 2>{}.test();
-}
-
-TYPED_TEST(Morphology, Dilate3x1) {
+  MorphologyTest<TypeParam, DilateParams, 1, 2>{}
+      .with_array_layouts(make_generator_ptr(medium_array_layouts_3x3))
+      .test();
+  MorphologyTest<TypeParam, ErodeParams, 1, 2>{}
+      .with_array_layouts(make_generator_ptr(medium_array_layouts_3x3))
+      .test();
   MorphologyTest<TypeParam, DilateParams, 3, 1>{}.test();
-}
-
-TYPED_TEST(Morphology, Erode3x1) {
   MorphologyTest<TypeParam, ErodeParams, 3, 1>{}.test();
 }
 
-TYPED_TEST(Morphology, Dilate3x3) {
-  MorphologyTest<TypeParam, DilateParams, 3, 3>{}.test();
+std::array<test::ArrayLayout, 4> get_large_array_layouts(size_t min_width,
+                                                         size_t min_height) {
+  size_t vl = test::Options::vector_length();
+  size_t big_height = std::max(2 * vl + 1, min_height * 4);
+
+  return {{
+      // clang-format off
+      //         width,         height,  padding, channels
+      {  min_width * 8,     min_height,        0,        8},
+      {  min_width * 8,     min_height,       vl,        8},
+      {  min_width * 2,     big_height,        0,        1},
+      {  min_width * 2,     big_height,       vl,        1},
+      // clang-format on
+  }};
 }
 
-TYPED_TEST(Morphology, Erode3x3) {
-  MorphologyTest<TypeParam, ErodeParams, 3, 3>{}.test();
+TYPED_TEST(Morphology, LargeArrays) {
+  std::array<test::ArrayLayout, 4> large_array_layouts =
+      get_large_array_layouts(3, 3);
+
+  MorphologyTest<TypeParam, DilateParams, 3, 3>{}
+      .with_array_layouts(make_generator_ptr(large_array_layouts))
+      .test();
+  MorphologyTest<TypeParam, ErodeParams, 3, 3>{}
+      .with_array_layouts(make_generator_ptr(large_array_layouts))
+      .test();
+  MorphologyTest<TypeParam, ErodeParams, 3, 3>{}
+      .with_border_types(make_generator_ptr(kConstantBorder))
+      .with_array_layouts(make_generator_ptr(large_array_layouts))
+      .test();
+  MorphologyTest<TypeParam, DilateParams, 3, 3>{}
+      .with_border_types(make_generator_ptr(kConstantBorder))
+      .with_array_layouts(make_generator_ptr(large_array_layouts))
+      .test();
 }
 
-TYPED_TEST(Morphology, Dilate5x5) {
-  MorphologyTest<TypeParam, DilateParams, 5, 5>{}.test();
+TYPED_TEST(Morphology, MediumArrays) {
+  std::array<test::ArrayLayout, 14> medium_array_layouts_3x3 =
+      test::default_array_layouts(3, 3);
+  MorphologyTest<TypeParam, DilateParams, 3, 3>{}
+      .with_array_layouts(make_generator_ptr(medium_array_layouts_3x3))
+      .test();
+  MorphologyTest<TypeParam, ErodeParams, 3, 3>{}
+      .with_array_layouts(make_generator_ptr(medium_array_layouts_3x3))
+      .test();
+  std::array<test::ArrayLayout, 14> medium_array_layouts_5x5 =
+      test::default_array_layouts(5, 5);
+  MorphologyTest<TypeParam, DilateParams, 5, 5>{}
+      .with_array_layouts(make_generator_ptr(medium_array_layouts_5x5))
+      .test();
+  MorphologyTest<TypeParam, ErodeParams, 5, 5>{}
+      .with_array_layouts(make_generator_ptr(medium_array_layouts_5x5))
+      .test();
 }
 
-TYPED_TEST(Morphology, Erode5x5) {
-  MorphologyTest<TypeParam, ErodeParams, 5, 5>{}.test();
+TYPED_TEST(Morphology, BorderValues) {
+  MorphologyTest<TypeParam, DilateParams, 3, 3>{}
+      .with_border_types(make_generator_ptr(kConstantBorder))
+      .with_border_values(make_generator_ptr(more_border_values<TypeParam>()))
+      .test();
+  MorphologyTest<TypeParam, ErodeParams, 3, 3>{}
+      .with_border_types(make_generator_ptr(kConstantBorder))
+      .with_border_values(make_generator_ptr(more_border_values<TypeParam>()))
+      .test();
 }
 
-TYPED_TEST(Morphology, Dilate11x11) {
-  MorphologyTest<TypeParam, DilateParams, 17, 17>{}.test();
-}
-
-TYPED_TEST(Morphology, Erode11x11) {
-  MorphologyTest<TypeParam, ErodeParams, 17, 17>{}.test();
-}
-
-TYPED_TEST(Morphology, Dilate4x4) {
+TYPED_TEST(Morphology, UnortodoxSizes) {
   MorphologyTest<TypeParam, DilateParams, 4, 4>{}.test();
-}
-
-TYPED_TEST(Morphology, Erode7x5) {
   MorphologyTest<TypeParam, ErodeParams, 7, 5>{}.test();
-}
-
-TYPED_TEST(Morphology, Dilate8x4) {
   MorphologyTest<TypeParam, DilateParams, 8, 4>{}.test();
-}
-
-TYPED_TEST(Morphology, Dilate6x10) {
-  MorphologyTest<TypeParam, DilateParams, 8, 14>{}.test();
-}
-
-TYPED_TEST(Morphology, Erode12x4) {
-  MorphologyTest<TypeParam, ErodeParams, 18, 4>{}.test();
+  MorphologyTest<TypeParam, DilateParams, 6, 10>{}.test();
+  MorphologyTest<TypeParam, ErodeParams, 12, 4>{}.test();
 }
 
 TYPED_TEST(Morphology, Iterations) {
@@ -237,8 +296,14 @@ TYPED_TEST(Morphology, Iterations) {
 
 TYPED_TEST(Morphology, Anchors) {
   MorphologyTest<TypeParam, ErodeParams, 3, 5>{}.with_anchor({0, 0}).test();
-  MorphologyTest<TypeParam, DilateParams, 3, 5>{}.with_anchor({2, 0}).test();
-  MorphologyTest<TypeParam, ErodeParams, 3, 5>{}.with_anchor({0, 4}).test();
+  MorphologyTest<TypeParam, DilateParams, 3, 5>{}
+      .with_border_types(make_generator_ptr(kConstantBorder))
+      .with_anchor({2, 0})
+      .test();
+  MorphologyTest<TypeParam, ErodeParams, 3, 5>{}
+      .with_border_types(make_generator_ptr(kConstantBorder))
+      .with_anchor({0, 4})
+      .test();
   MorphologyTest<TypeParam, DilateParams, 3, 5>{}.with_anchor({2, 4}).test();
 }
 

@@ -82,8 +82,11 @@ class Options {
 template <typename ElementType>
 void dump(const TwoDimensional<ElementType> *elements);
 
+// Returns an array of just a few small layouts.
+std::array<test::ArrayLayout, 6> small_array_layouts(size_t min_width,
+                                                     size_t min_height);
 // Returns an array of default tested layouts.
-std::array<test::ArrayLayout, 20> default_array_layouts(size_t min_width,
+std::array<test::ArrayLayout, 14> default_array_layouts(size_t min_width,
                                                         size_t min_height);
 
 namespace internal {

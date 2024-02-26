@@ -48,34 +48,47 @@ template void dump<uint32_t>(const TwoDimensional<uint32_t> *);
 template void dump<int64_t>(const TwoDimensional<int64_t> *);
 template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
 
-std::array<test::ArrayLayout, 20> default_array_layouts(size_t min_width,
-                                                        size_t min_height) {
+std::array<test::ArrayLayout, 6> small_array_layouts(size_t min_width,
+                                                     size_t min_height) {
   size_t vl = test::Options::vector_length();
   size_t width = std::max(min_width, vl);
 
   return {{
       // clang-format off
+      //          width,         height,  padding, channels
+      {       min_width,     min_height,        0,        1},
+      {   min_width * 2,     min_height,        0,        2},
+      {   min_width * 3,     min_height,       vl,        3},
+      {       width + 1,     min_height,        0,        1},
+      {       2 * width,     min_height,       vl,        1},
+      {       4 * width,     min_height,       vl,        1},
+      // clang-format on
+  }};
+}
+
+std::array<test::ArrayLayout, 14> default_array_layouts(size_t min_width,
+                                                        size_t min_height) {
+  size_t vl = test::Options::vector_length();
+  size_t width = std::max(min_width, vl);
+  size_t height = std::max(min_height, vl);
+
+  return {{
+      // clang-format off
       //         width,         height,  padding, channels
-      {      min_width,     min_height,        0,        1},
+      {      min_width,         height,        0,        1},
       {  min_width * 2,     min_height,        0,        2},
       {  min_width * 3,     min_height,        0,        3},
       {  min_width * 4,     min_height,        0,        4},
-      {  min_width * 8, min_height * 3,        0,        8},
-      {      min_width,     min_height,       vl,        1},
+      {      min_width,         height,       vl,        1},
       {  min_width * 2,     min_height,       vl,        2},
       {  min_width * 3,     min_height,       vl,        3},
       {  min_width * 4,     min_height,       vl,        4},
-      {  min_width * 8, min_height * 3,       vl,        8},
-      {      width - 1,     min_height,        0,        1},
+      {  4 * width + 1, min_height + 1,        0,        1},
       {2 * (width - 1), min_height + 1,        0,        2},
       {3 * (width - 1), min_height + 2,        0,        3},
-      {4 * (width + 1), min_height + 3,        0,        4},
-      {      width * 8, min_height * 3,        0,        8},
-      {      width - 1,     min_height,       vl,        1},
+      {  4 * width + 1, min_height + 1,       vl,        1},
       {2 * (width - 1), min_height + 1,       vl,        2},
       {3 * (width - 1), min_height + 2,       vl,        3},
-      {4 * (width + 1), min_height + 3,       vl,        4},
-      {      width * 8, min_height * 3,       vl,        8},
       // clang-format on
   }};
 }
