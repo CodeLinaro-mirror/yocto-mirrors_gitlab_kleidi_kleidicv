@@ -98,10 +98,6 @@ class FixedBorderInfo<T, 3UL> final {
       case FixedBorderType::REVERSE:
         return get(-1, 0, -1);
         break;
-
-      default:
-        // There is no good value to return here.
-        return Offsets{};
     }
   }
 
@@ -196,10 +192,6 @@ class FixedBorderInfo<T, 5UL> final {
           return get(0, -1, 0, 1, 2);
         }
         break;
-
-      default:
-        // There is no good value to return here.
-        return Offsets{};
     }
   }
 
@@ -238,10 +230,6 @@ class FixedBorderInfo<T, 5UL> final {
           return get(-2, -1, 0, -1, -2);
         }
         break;
-
-      default:
-        // There is no good value to return here.
-        return Offsets{};
     }
   }
 
