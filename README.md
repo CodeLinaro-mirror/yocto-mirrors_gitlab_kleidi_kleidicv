@@ -93,7 +93,7 @@ and `./scripts/test_android.sh`.
 
 ## Install
 
-This library is compatible with [OpenCV](https://opencv.org) version 4.9 & 5.x.
+This library is compatible with [OpenCV](https://opencv.org) version 4.9. (OpenCV 5.x support is experimental.)
 
 Integration consists of the following steps:
 1. Download OpenCV sources:
