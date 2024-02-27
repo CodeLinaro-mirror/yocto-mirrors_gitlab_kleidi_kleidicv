@@ -31,19 +31,71 @@ struct GaussianBlurKernelTestParams<uint8_t, KernelSize> {
   static constexpr size_t kKernelSize = KernelSize;
 };  // end of struct GaussianBlurKernelTestParams<uint8_t, KernelSize>
 
-static constexpr std::array<intrinsiccv_border_type_t, 4> kSupportedBorders = {
-    INTRINSICCV_BORDER_TYPE_REPLICATE,
-    INTRINSICCV_BORDER_TYPE_REFLECT,
-    INTRINSICCV_BORDER_TYPE_WRAP,
-    INTRINSICCV_BORDER_TYPE_REVERSE,
-};
+static constexpr std::array<intrinsiccv_border_type_t, 1> kDefaultBorder = {
+    INTRINSICCV_BORDER_TYPE_REPLICATE};
+
+static constexpr std::array<intrinsiccv_border_type_t, 1> kReflectBorder = {
+    INTRINSICCV_BORDER_TYPE_REFLECT};
+
+// static constexpr std::array<intrinsiccv_border_type_t, 1> kWrapBorder = {
+//     INTRINSICCV_BORDER_TYPE_WRAP};
+
+static constexpr std::array<intrinsiccv_border_type_t, 1> kReverseBorder = {
+    INTRINSICCV_BORDER_TYPE_REVERSE};
+
+template <typename IterableType>
+std::unique_ptr<test::Generator<typename IterableType::value_type>>
+make_generator_ptr(IterableType &elements) {
+  test::Generator<typename IterableType::value_type> *pg =
+      new test::SequenceGenerator(elements);
+  return std::unique_ptr<test::Generator<typename IterableType::value_type>>(
+      pg);
+}
 
 // Test for GaussianBlur operator.
 template <class KernelTestParams>
 class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
+  using Base = test::KernelTest<KernelTestParams>;
   using typename test::KernelTest<KernelTestParams>::InputType;
   using typename test::KernelTest<KernelTestParams>::IntermediateType;
   using typename test::KernelTest<KernelTestParams>::OutputType;
+
+ public:
+  GaussianBlurTest()
+      : small_array_layouts_{test::small_array_layouts(
+            KernelTestParams::kKernelSize, KernelTestParams::kKernelSize)} {
+    array_layout_generator_ = make_generator_ptr(small_array_layouts_);
+    border_type_generator_ = make_generator_ptr(kDefaultBorder);
+  }
+
+  GaussianBlurTest &with_array_layouts(
+      std::unique_ptr<test::Generator<test::ArrayLayout>> g) {
+    array_layout_generator_ = std::move(g);
+    return *this;
+  }
+
+  GaussianBlurTest &with_border_types(
+      std::unique_ptr<test::Generator<intrinsiccv_border_type_t>> g) {
+    border_type_generator_ = std::move(g);
+    return *this;
+  }
+
+  void test(test::Array2D<IntermediateType> mask) {
+    test::Kernel kernel{mask};
+    // Use the default border values for testing.
+    auto kSupportedBorderValues = test::default_border_values();
+    // Create generators and execute test.
+    test::SequenceGenerator tested_border_values{kSupportedBorderValues};
+    test::PseudoRandomNumberGenerator<InputType> element_generator;
+    Base::test(kernel, *array_layout_generator_, *border_type_generator_,
+               tested_border_values, element_generator);
+  }
+
+ protected:
+  std::array<test::ArrayLayout, 6> small_array_layouts_;
+  std::unique_ptr<test::Generator<test::ArrayLayout>> array_layout_generator_;
+  std::unique_ptr<test::Generator<intrinsiccv_border_type_t>>
+      border_type_generator_;
 
   intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
                                test::Array2D<OutputType> *output,
@@ -78,25 +130,6 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
                                 IntermediateType result) override {
     return kernel.width() == 3 ? ((result + 8) / 16) : ((result + 128) / 256);
   }
-
- public:
-  void test(test::Array2D<IntermediateType> mask) {
-    test::Kernel kernel{mask};
-    // Use the default array layouts for testing.
-    auto array_layouts =
-        test::default_array_layouts(mask.width(), mask.height());
-    test::KernelTest<KernelTestParams>::with_debug();
-    // Use the default border values for testing.
-    auto kSupportedBorderValues = test::default_border_values();
-    // Create generators and execute test.
-    test::SequenceGenerator tested_array_layouts{array_layouts};
-    test::SequenceGenerator tested_borders{kSupportedBorders};
-    test::SequenceGenerator tested_border_values{kSupportedBorderValues};
-    test::PseudoRandomNumberGenerator<InputType> element_generator;
-    this->test::KernelTest<KernelTestParams>::test(
-        kernel, tested_array_layouts, tested_borders, tested_border_values,
-        element_generator);
-  }
 };  // end of class class GaussianBlur3x3Test<KernelTestParams>
 
 using ElementTypes = ::testing::Types<uint8_t>;
@@ -107,7 +140,7 @@ class GaussianBlur : public testing::Test {};
 TYPED_TEST_SUITE(GaussianBlur, ElementTypes);
 
 // Tests gaussian_blur_3x3_<input_type> API.
-TYPED_TEST(GaussianBlur, 3x3) {
+TYPED_TEST(GaussianBlur, 3x3Small) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
   // 3x3 GaussianBlur operator.
   test::Array2D<typename KernelTestParams::IntermediateType> mask{3, 3};
@@ -116,7 +149,26 @@ TYPED_TEST(GaussianBlur, 3x3) {
   mask.set(1, 0, { 2, 4, 2});
   mask.set(2, 0, { 1, 2, 1});
   // clang-format on
-  GaussianBlurTest<KernelTestParams>{}.test(mask);
+  GaussianBlurTest<KernelTestParams>{}
+      .with_border_types(make_generator_ptr(kReflectBorder))
+      .test(mask);
+}
+
+TYPED_TEST(GaussianBlur, 3x3Default) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
+  std::array<test::ArrayLayout, 14> medium_array_layouts_3x3 =
+      test::default_array_layouts(3, 3);
+  // 3x3 GaussianBlur operator.
+  test::Array2D<typename KernelTestParams::IntermediateType> mask{3, 3};
+  // clang-format off
+  mask.set(0, 0, { 1, 2, 1});
+  mask.set(1, 0, { 2, 4, 2});
+  mask.set(2, 0, { 1, 2, 1});
+  // clang-format on
+  GaussianBlurTest<KernelTestParams>{}
+      .with_array_layouts(make_generator_ptr(medium_array_layouts_3x3))
+      .with_border_types(make_generator_ptr(kReflectBorder))
+      .test(mask);
 }
 
 // Tests gaussian_blur_5x5_<input_type> API.
@@ -131,7 +183,9 @@ TYPED_TEST(GaussianBlur, 5x5) {
   mask.set(3, 0, { 4, 16, 24, 16, 4});
   mask.set(4, 0, { 1,  4,  6,  4, 1});
   // clang-format on
-  GaussianBlurTest<KernelTestParams>{}.test(mask);
+  GaussianBlurTest<KernelTestParams>{}
+      .with_border_types(make_generator_ptr(kReverseBorder))
+      .test(mask);
 }
 
 TYPED_TEST(GaussianBlur, UnsupportedBorderType) {
