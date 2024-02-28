@@ -16,6 +16,7 @@ TEST(Kernel, ConstructOdd) {
   using ElementType = uint8_t;
 
   test::Array2D<ElementType> mask{3, 3};
+  mask.fill(0);
   mask.set(0, 0, {1, 2, 3});
   mask.set(2, 0, {4, 5, 6});
 
@@ -164,14 +165,21 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
 // The check isn't important in a test program.
 // NOLINTBEGIN(cert-err58-cpp)
 template <class KernelTestParams>
+test::Array2D<typename KernelTestParams::IntermediateType> fill_kernel(
+    size_t width, size_t height,
+    typename KernelTestParams::IntermediateType value) {
+  test::Array2D<typename KernelTestParams::IntermediateType> array{width,
+                                                                   height};
+  array.fill(value);
+  return array;
+}
+
+template <class KernelTestParams>
 const std::array<test::Kernel<typename KernelTestParams::IntermediateType>, 3>
     ExampleKernelTest<KernelTestParams>::kKernels = {
-        test::Kernel{
-            test::Array2D<typename KernelTestParams::IntermediateType>{3, 3}},
-        test::Kernel{
-            test::Array2D<typename KernelTestParams::IntermediateType>{4, 4}},
-        test::Kernel{
-            test::Array2D<typename KernelTestParams::IntermediateType>{8, 4}},
+        test::Kernel{fill_kernel<KernelTestParams>(3, 3, 0)},
+        test::Kernel{fill_kernel<KernelTestParams>(4, 4, 0)},
+        test::Kernel{fill_kernel<KernelTestParams>(8, 4, 0)},
 };
 // NOLINTEND(cert-err58-cpp)
 

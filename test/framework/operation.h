@@ -36,16 +36,19 @@ class OperationTest {
   void test() {
     for (auto& input : inputs_) {
       input = ArrayType{width(), height(), padding()};
+      input.fill(0);
       ASSERT_TRUE(input.valid());
     }
 
     for (auto& expected : expected_) {
       expected = ArrayType{width(), height()};
+      expected.fill(0);
       ASSERT_TRUE(expected.valid());
     }
 
     for (auto& actual : actual_) {
       actual = ArrayType{width(), height(), padding()};
+      actual.fill(42);  // fill with any value different than `expected`
       ASSERT_TRUE(actual.valid());
     }
 

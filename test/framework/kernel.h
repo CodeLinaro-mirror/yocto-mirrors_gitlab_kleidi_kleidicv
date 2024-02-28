@@ -276,7 +276,7 @@ class KernelTest {
 
   // Input operand for the operation.
   Array2D<InputType> input_;
-  // Input operand with borders, used to calculate expeected values.
+  // Input operand with borders, used to calculate expected values.
   Array2D<InputType> input_with_borders_;
   // Expected result of the operation.
   Array2D<OutputType> expected_;

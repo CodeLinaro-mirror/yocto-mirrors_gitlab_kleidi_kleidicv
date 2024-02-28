@@ -149,7 +149,6 @@ class ScaleTestLinear3 final : public ScaleTestLinearBase<ElementType> {
 
 template <typename ElementType>
 class ScaleTestAdd final : public ScaleTestBase<ElementType> {
-  using ArrayType = test::Array2D<ElementType>;
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
 
   float scale() override { return 6; }

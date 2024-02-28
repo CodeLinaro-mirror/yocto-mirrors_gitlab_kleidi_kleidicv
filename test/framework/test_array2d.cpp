@@ -228,6 +228,8 @@ TEST(Array2D, ExpectEq_Equal) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
   test::Array2D<uint32_t> array_2{width, height};
+  array_1.fill(0);
+  array_2.fill(0);
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
@@ -237,6 +239,8 @@ TEST(Array2D, ExpectEq_Equal_StrideInvariant) {
   size_t width = 5, height = 2;
   test::Array2D<uint32_t> array_1{width, height};
   test::Array2D<uint32_t> array_2{width, height, 1};
+  array_1.fill(0);
+  array_2.fill(0);
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
@@ -293,6 +297,8 @@ TEST(Array2D, ExpectEq_NotEqual_Data) {
       size_t width = 5, height = 2;
       test::Array2D<uint32_t> array_1{width, height};
       test::Array2D<uint32_t> array_2{width, height};
+      array_1.fill(0);
+      array_2.fill(0);
       array_2.at(0, 0)[0] = 42;
       EXPECT_EQ_ARRAY2D(array_1, array_2);
     }
@@ -308,6 +314,8 @@ TEST(Array2D, ExpectNe_Equal) {
       size_t width = 5, height = 2;
       test::Array2D<uint32_t> array_1{width, height};
       test::Array2D<uint32_t> array_2{width, height};
+      array_1.fill(0);
+      array_2.fill(0);
       EXPECT_NE_ARRAY2D(array_1, array_2);
     }
   };

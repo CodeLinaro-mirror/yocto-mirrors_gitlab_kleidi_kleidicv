@@ -23,6 +23,7 @@ class ResizeToQuarterTest final {
                                   channels_};
     test::Array2D<uint8_t> actual{out_logical_width, dst_height, padding_,
                                   channels_};
+    actual.fill(42);
     test::Array2D<uint8_t> expected{out_logical_width, dst_height, padding_,
                                     channels_};
 

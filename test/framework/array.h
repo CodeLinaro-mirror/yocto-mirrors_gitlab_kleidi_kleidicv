@@ -218,6 +218,10 @@ class Array2D : public TwoDimensional<ElementType> {
   }
 
  private:
+  // Returns the number of elements between the end of one row and the start of
+  // the next row.
+  size_t padding() { return stride() / sizeof(ElementType) - width(); }
+
   // Returns the offset to the first padding byte within a row.
   size_t padding_offset() const { return width() * sizeof(ElementType); }
 
@@ -287,21 +291,21 @@ class Array2D : public TwoDimensional<ElementType> {
 
   // Tries to allocate backing memory.
   void try_allocate() {
-    size_t data_size = height_ * stride_;
+    size_t element_count = height_ * (width_ + padding());
     // Allocate extra to allow weakening alignment.
-    size_t allocation_size = data_size + alignof(ElementType);
+    size_t allocation_count = element_count + 1;
 
     try {
-      buffer_ = std::make_unique<uint8_t[]>(allocation_size);
+      buffer_ =
+          std::unique_ptr<ElementType[]>(new ElementType[allocation_count]);
       // Weaken alignment to flush out potential alignment issues.
       // buffer_.get() will contain a pointer that is at least 16-byte aligned.
       // By adding a small offset to that we get a pointer that is only aligned
-      // to alignof(ElementType).
-      data_ =
-          reinterpret_cast<ElementType *>(buffer_.get() + alignof(ElementType));
+      // to sizeof(ElementType).
+      data_ = buffer_.get() + 1;
     } catch (...) {
       reset();
-      GTEST_FAIL() << "Failed to allocate memory of " << allocation_size
+      GTEST_FAIL() << "Failed to allocate memory of " << allocation_count
                    << " bytes";
     }
   }
@@ -310,7 +314,7 @@ class Array2D : public TwoDimensional<ElementType> {
   static constexpr uint8_t kPaddingValue = std::numeric_limits<uint8_t>::max();
 
   // Smart pointer to the managed memory.
-  std::unique_ptr<uint8_t[]> buffer_;
+  std::unique_ptr<ElementType[]> buffer_;
   // Pointer to the start of the data. This is offset from the start of buffer_
   // to flush out potential alignment issues.
   ElementType *data_{nullptr};

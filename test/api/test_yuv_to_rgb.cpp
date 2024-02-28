@@ -38,6 +38,7 @@ class YuvTest final {
   void execute_test(F impl, size_t logical_width, bool is_nv21,
                     size_t padding) {
     test::Array2D<uint8_t> input_y{logical_width, 5, padding};
+    input_y.fill(0);
     input_y.set(0, 0, {10, 20, 255, 199});
     input_y.set(1, 0, {1, 120, 0, 17});
     input_y.set(2, 0, {2, 3, 240, 228});
@@ -46,6 +47,7 @@ class YuvTest final {
     // the width of the UV input must be even
     test::Array2D<uint8_t> input_uv{
         INTRINSICCV_TARGET_NAMESPACE::align_up(logical_width, 2), 3, padding};
+    input_uv.fill(0);
     input_uv.set(0, 0, {100, 130, 255, 255});
     input_uv.set(1, 0, {0, 1, 3, 4});
     input_uv.set(2, 0, {7, 8, 9, 10});
@@ -56,7 +58,7 @@ class YuvTest final {
 
     test::Array2D<uint8_t> actual{logical_width * channel_number_,
                                   input_y.height(), padding};
-
+    actual.fill(42);
     auto err =
         impl(input_y.data(), input_y.stride(), input_uv.data(),
              input_uv.stride(), actual.data(), actual.stride(),

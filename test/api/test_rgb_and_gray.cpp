@@ -26,7 +26,7 @@ class GrayTest final {
     source.set(0, 0, {1});
     source.set(1, 0, {0xFF});
     source.set(2, 0, {10, 15, 1});
-
+    actual.fill(42);
     calculate_expected(source, expected);
 
     auto err = impl(source.data(), source.stride(), actual.data(),
