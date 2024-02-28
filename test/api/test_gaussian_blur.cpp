@@ -37,11 +37,12 @@ static constexpr std::array<intrinsiccv_border_type_t, 1> kDefaultBorder = {
 static constexpr std::array<intrinsiccv_border_type_t, 1> kReflectBorder = {
     INTRINSICCV_BORDER_TYPE_REFLECT};
 
-// static constexpr std::array<intrinsiccv_border_type_t, 1> kWrapBorder = {
-//     INTRINSICCV_BORDER_TYPE_WRAP};
-
-static constexpr std::array<intrinsiccv_border_type_t, 1> kReverseBorder = {
-    INTRINSICCV_BORDER_TYPE_REVERSE};
+static constexpr std::array<intrinsiccv_border_type_t, 4> kAllBorders = {
+    INTRINSICCV_BORDER_TYPE_REPLICATE,
+    INTRINSICCV_BORDER_TYPE_REFLECT,
+    INTRINSICCV_BORDER_TYPE_WRAP,
+    INTRINSICCV_BORDER_TYPE_REVERSE,
+};
 
 template <typename IterableType>
 std::unique_ptr<test::Generator<typename IterableType::value_type>>
@@ -142,6 +143,7 @@ TYPED_TEST_SUITE(GaussianBlur, ElementTypes);
 // Tests gaussian_blur_3x3_<input_type> API.
 TYPED_TEST(GaussianBlur, 3x3Small) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
+
   // 3x3 GaussianBlur operator.
   test::Array2D<typename KernelTestParams::IntermediateType> mask{3, 3};
   // clang-format off
@@ -150,7 +152,7 @@ TYPED_TEST(GaussianBlur, 3x3Small) {
   mask.set(2, 0, { 1, 2, 1});
   // clang-format on
   GaussianBlurTest<KernelTestParams>{}
-      .with_border_types(make_generator_ptr(kReflectBorder))
+      .with_border_types(make_generator_ptr(kAllBorders))
       .test(mask);
 }
 
@@ -184,7 +186,7 @@ TYPED_TEST(GaussianBlur, 5x5) {
   mask.set(4, 0, { 1,  4,  6,  4, 1});
   // clang-format on
   GaussianBlurTest<KernelTestParams>{}
-      .with_border_types(make_generator_ptr(kReverseBorder))
+      .with_border_types(make_generator_ptr(kAllBorders))
       .test(mask);
 }
 
