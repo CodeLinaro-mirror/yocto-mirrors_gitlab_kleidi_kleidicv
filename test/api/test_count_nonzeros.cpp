@@ -71,8 +71,9 @@ class CountNonZerosTest {
 
     size_t expected = data_.calculateExpected(width, height);
     size_t actual = SIZE_MAX;
-    count_nonzeros<ElementType>()(source.data(), source.stride(), width, height,
-                                  &actual);
+    EXPECT_EQ(INTRINSICCV_OK,
+              count_nonzeros<ElementType>()(source.data(), source.stride(),
+                                            width, height, &actual));
     EXPECT_EQ(expected, actual);
   }
 };
@@ -131,7 +132,7 @@ TYPED_TEST(CountNonZeros, Misalignment) {
 }
 
 TYPED_TEST(CountNonZeros, ImageSize) {
-  TypeParam src[1];
+  TypeParam src[1] = {};
   size_t count = 0;
   EXPECT_EQ(
       INTRINSICCV_ERROR_RANGE,

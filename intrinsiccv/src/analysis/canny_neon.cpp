@@ -24,8 +24,7 @@ class SobelBuffer final : public RowsOverUniquePtr<ScalarType> {
  private:
   // Align the width up to an integral number of lanes in a vector.
   static Margin get_margin(Rectangle rect) {
-    size_t width =
-        __builtin_align_up(rect.width(), VecTraits<ScalarType>::num_lanes());
+    size_t width = align_up(rect.width(), VecTraits<ScalarType>::num_lanes());
     return Margin{0, 0, width - rect.width(), 0};
   }
 };  // end of class SobelBuffer<ScalarType>

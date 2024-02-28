@@ -106,7 +106,7 @@ class SeparableFilterWorkspace final {
     }
 
     auto *buffer_rows_address = &workspace->data_[0];
-    buffer_rows_address = __builtin_align_up(buffer_rows_address, kAlignment);
+    buffer_rows_address = align_up(buffer_rows_address, kAlignment);
     workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
     workspace->buffer_rows_stride_ = buffer_rows_stride;
     workspace->image_size_ = rect;
@@ -164,7 +164,9 @@ class SeparableFilterWorkspace final {
                           typename FilterType::BorderInfoType horizontal_border)
       INTRINSICCV_STREAMING_COMPATIBLE {
     // Process data affected by left border.
+#ifdef __clang__  // GCC is unable to unroll the loop
     INTRINSICCV_FORCE_LOOP_UNROLL
+#endif
     for (size_t horizontal_index = 0; horizontal_index < margin.left();
          ++horizontal_index) {
       auto offsets =
@@ -184,7 +186,9 @@ class SeparableFilterWorkspace final {
     }
 
     // Process data affected by right border.
+#ifdef __clang__  // GCC is unable to unroll the loop
     INTRINSICCV_FORCE_LOOP_UNROLL
+#endif
     for (size_t horizontal_index = 0; horizontal_index < margin.right();
          ++horizontal_index) {
       size_t index = width - margin.right() + horizontal_index;

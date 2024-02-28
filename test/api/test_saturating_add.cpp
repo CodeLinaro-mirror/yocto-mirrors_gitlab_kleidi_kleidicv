@@ -116,7 +116,7 @@ TYPED_TEST(SaturatingAdd, Misalignment) {
 }
 
 TYPED_TEST(SaturatingAdd, ImageSize) {
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             saturating_add<TypeParam>()(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,

@@ -250,8 +250,9 @@ class MinMaxLocTest : public MinMaxTest<ElementType, Padding> {
     if (p_max_offset) {
       *p_max_offset = std::numeric_limits<size_t>::max();
     }
-    min_max_loc<ElementType>()(source.data(), source.stride(), width(),
-                               height(), p_min_offset, p_max_offset);
+    EXPECT_EQ(INTRINSICCV_OK, min_max_loc<ElementType>()(
+                                  source.data(), source.stride(), width(),
+                                  height(), p_min_offset, p_max_offset));
     if (p_min_offset) {
       EXPECT_EQ(*p_min_offset, expected_min_offset);
     }
@@ -311,7 +312,7 @@ TYPED_TEST(MinMax, Misalignment) {
 }
 
 TYPED_TEST(MinMax, ImageSize) {
-  TypeParam src[1], min_value, max_value;
+  TypeParam src[1] = {}, min_value, max_value;
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             min_max<TypeParam>()(src, sizeof(TypeParam),
                                  INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1,
@@ -334,7 +335,7 @@ TYPED_TEST(MinMaxLoc, API) {
 }
 
 TYPED_TEST(MinMaxLoc, ImageSize) {
-  TypeParam src[1];
+  TypeParam src[1] = {};
   size_t min_offset = 0, max_offset = 8;
 
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,

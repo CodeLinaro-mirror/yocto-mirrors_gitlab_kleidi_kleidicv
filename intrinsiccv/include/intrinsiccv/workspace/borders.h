@@ -80,6 +80,9 @@ class FixedBorderInfo<T, 3UL> final {
         return get(1, 0, 1);
         break;
     }
+    // Unreachable. Compiler should emit a warning-as-error if any cases are
+    // uncovered above.
+    return Offsets{};  // GCOVR_EXCL_LINE
   }
 
   // Retuns offsets for columns affected by right border.
@@ -99,6 +102,9 @@ class FixedBorderInfo<T, 3UL> final {
         return get(-1, 0, -1);
         break;
     }
+    // Unreachable. Compiler should emit a warning-as-error if any cases are
+    // uncovered above.
+    return Offsets{};  // GCOVR_EXCL_LINE
   }
 
   // Retuns offsets for rows or columns affected by any border.
@@ -193,6 +199,9 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
     }
+    // Unreachable. Compiler should emit a warning-as-error if any cases are
+    // uncovered above.
+    return Offsets{};  // GCOVR_EXCL_LINE
   }
 
   // Retuns offsets for columns affected by right border.
@@ -231,6 +240,9 @@ class FixedBorderInfo<T, 5UL> final {
         }
         break;
     }
+    // Unreachable. Compiler should emit a warning-as-error if any cases are
+    // uncovered above.
+    return Offsets{};  // GCOVR_EXCL_LINE
   }
 
   // Retuns offsets for rows or columns affected by any border.

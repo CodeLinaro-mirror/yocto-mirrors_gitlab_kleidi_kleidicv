@@ -110,8 +110,8 @@ static inline int16x4_t  vget_high(int16x8_t  vec) { return vget_high_s16(vec); 
 static inline uint16x4_t vget_high(uint16x8_t vec) { return vget_high_u16(vec); }
 static inline int32x2_t  vget_high(int32x4_t  vec) { return vget_high_s32(vec); }
 static inline uint32x2_t vget_high(uint32x4_t vec) { return vget_high_u32(vec); }
-static inline int64x1_t  vget_high(int64x2_t  vec) { return vget_high_s32(vec); }
-static inline uint64x1_t vget_high(uint64x2_t vec) { return vget_high_u32(vec); }
+static inline int64x1_t  vget_high(int64x2_t  vec) { return vget_high_s64(vec); }
+static inline uint64x1_t vget_high(uint64x2_t vec) { return vget_high_u64(vec); }
 
 // -----------------------------------------------------------------------------
 // vget_low*
@@ -123,8 +123,8 @@ static inline int16x4_t  vget_low(int16x8_t  vec) { return vget_low_s16(vec); }
 static inline uint16x4_t vget_low(uint16x8_t vec) { return vget_low_u16(vec); }
 static inline int32x2_t  vget_low(int32x4_t  vec) { return vget_low_s32(vec); }
 static inline uint32x2_t vget_low(uint32x4_t vec) { return vget_low_u32(vec); }
-static inline int64x1_t  vget_low(int64x2_t  vec) { return vget_low_s32(vec); }
-static inline uint64x1_t vget_low(uint64x2_t vec) { return vget_low_u32(vec); }
+static inline int64x1_t  vget_low(int64x2_t  vec) { return vget_low_s64(vec); }
+static inline uint64x1_t vget_low(uint64x2_t vec) { return vget_low_u64(vec); }
 
 // -----------------------------------------------------------------------------
 // vminq*

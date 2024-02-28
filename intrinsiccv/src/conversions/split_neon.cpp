@@ -58,7 +58,7 @@ class Split3 final : public UnrollTwice {
 
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
   // NOLINTBEGIN(hicpp-member-init)
-  Split3() { Split3Init<ScalarType>(); }
+  Split3() { Split3Init(ScalarType()); }
 // NOLINTEND(hicpp-member-init)
 #endif
 
@@ -94,11 +94,8 @@ class Split3 final : public UnrollTwice {
  private:
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
   uint8x16_t index1_, index2_, index3_;
-  template <typename T>
-  void Split3Init() {}
 
-  template <>
-  void Split3Init<uint8_t>() {
+  void Split3Init(uint8_t) {
     // clang-format off
     const uint8_t kIndices[3][16] = {
     {0, 3, 6, 9,  12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45},
@@ -111,8 +108,7 @@ class Split3 final : public UnrollTwice {
     index3_ = vld1q_u8(kIndices[2]);
   }
 
-  template <>
-  void Split3Init<uint16_t>() {
+  void Split3Init(uint16_t) {
     // clang-format off
     const uint8_t kIndices[3][16] = {
     {0, 1, 6,  7,  12, 13, 18, 19, 24, 25, 30, 31, 36, 37, 42, 43},
@@ -125,8 +121,7 @@ class Split3 final : public UnrollTwice {
     index3_ = vld1q_u8(kIndices[2]);
   }
 
-  template <>
-  void Split3Init<uint32_t>() {
+  void Split3Init(uint32_t) {
     // clang-format off
     const uint8_t kIndices[3][16] = {
     {0, 1, 2,  3,  12, 13, 14, 15, 24, 25, 26, 27, 36, 37, 38, 39},
@@ -139,8 +134,7 @@ class Split3 final : public UnrollTwice {
     index3_ = vld1q_u8(kIndices[2]);
   }
 
-  template <>
-  void Split3Init<uint64_t>() {
+  void Split3Init(uint64_t) {
     // clang-format off
     const uint8_t kIndices[3][16] = {
     {0,  1,  2,  3,  4,  5,  6,  7,  24, 25, 26, 27, 28, 29, 30, 31},

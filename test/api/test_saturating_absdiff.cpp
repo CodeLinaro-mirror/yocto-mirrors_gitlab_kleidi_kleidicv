@@ -108,7 +108,7 @@ TYPED_TEST(SaturatingAbsDiff, Misalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             saturating_absdiff<TypeParam>()(src, sizeof(TypeParam) + 1, src,
                                             sizeof(TypeParam), dst,
@@ -124,7 +124,7 @@ TYPED_TEST(SaturatingAbsDiff, Misalignment) {
 }
 
 TYPED_TEST(SaturatingAbsDiff, ImageSize) {
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             saturating_absdiff<TypeParam>()(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,

@@ -87,12 +87,6 @@ set(INTRINSICCV_WARNING_FLAGS
   "-Wold-style-cast"
 )
 
-set(INTRINSICCV_CLANG_FLAGS
-  "-mllvm"
-  "-inline-threshold=10000"
-  "-fno-unroll-loops"
-)
-
 set(INTRINSICCV_CXX_FLAGS
   "-O2"
   "-g0"
@@ -100,9 +94,21 @@ set(INTRINSICCV_CXX_FLAGS
   "-fno-stack-protector"
   "-fno-exceptions"
   "-fno-rtti"
-  ${INTRINSICCV_CLANG_FLAGS}
+  "-fno-unroll-loops"
   ${INTRINSICCV_WARNING_FLAGS}
 )
+
+if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+  list(APPEND INTRINSICCV_CXX_FLAGS
+    "-mllvm"
+    "-inline-threshold=10000"
+  )
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  list(APPEND INTRINSICCV_CXX_FLAGS
+    "-flax-vector-conversions"
+    "-Wno-unused-label"
+  )
+endif()
 
 if (INTRINSICCV_CHECK_BANNED_FUNCTIONS)
   # The `SHELL:` prefix is used to turn off de-duplication of compiler flags,

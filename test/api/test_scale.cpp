@@ -16,6 +16,7 @@ INTRINSICCV_SCALE(uint8_t, u8);
 
 template <typename ElementType>
 class ScaleTestBase : public UnaryOperationTest<ElementType> {
+ protected:
   using UnaryOperationTest<ElementType>::min;
   using UnaryOperationTest<ElementType>::max;
 
@@ -46,6 +47,7 @@ class ScaleTestBase : public UnaryOperationTest<ElementType> {
 
 template <typename ElementType>
 class ScaleTestLinearBase {
+ protected:
   static constexpr ElementType min() {
     return std::numeric_limits<ElementType>::min();
   }
@@ -411,7 +413,7 @@ TYPED_TEST(ScaleTest, Misalignment) {
 }
 
 TYPED_TEST(ScaleTest, ImageSize) {
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             scale<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
                                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 2, 0));

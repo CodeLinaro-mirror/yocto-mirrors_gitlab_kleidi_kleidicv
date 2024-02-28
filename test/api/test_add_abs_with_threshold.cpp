@@ -156,7 +156,7 @@ TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestMax) {
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, NullPointer) {
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   test::test_null_args(intrinsiccv_saturating_add_abs_with_threshold_s16, src,
                        sizeof(TypeParam), src, sizeof(TypeParam), dst,
                        sizeof(TypeParam), 1, 1, 1);
@@ -183,7 +183,7 @@ TYPED_TEST(SaturatingAddAbsWithThresholdTest, Misalignment) {
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, ImageSize) {
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,

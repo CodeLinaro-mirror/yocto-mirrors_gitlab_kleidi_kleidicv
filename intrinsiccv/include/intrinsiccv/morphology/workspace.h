@@ -82,7 +82,7 @@ class MorphologyWorkspace final {
     size_t wide_rows_width =
         margin.left() + image_size.width() + margin.right();
     size_t wide_rows_stride = wide_rows_width * channels;
-    wide_rows_stride = __builtin_align_up(wide_rows_stride, kAlignment);
+    wide_rows_stride = align_up(wide_rows_stride, kAlignment);
     size_t wide_rows_height = 1UL;  // There is only one wide row.
     size_t wide_rows_size = wide_rows_stride * wide_rows_height;
     wide_rows_size += kAlignment - 1;
@@ -90,7 +90,7 @@ class MorphologyWorkspace final {
     // Multiple buffer rows to hold rows without any borders.
     size_t buffer_rows_width = type_size * image_size.width();
     size_t buffer_rows_stride = buffer_rows_width * channels;
-    buffer_rows_stride = __builtin_align_up(buffer_rows_stride, kAlignment);
+    buffer_rows_stride = align_up(buffer_rows_stride, kAlignment);
     size_t buffer_rows_height = 2 * rows_per_iteration;
     size_t buffer_rows_size = 0UL;
     if (__builtin_mul_overflow(buffer_rows_stride, buffer_rows_height,
@@ -118,14 +118,14 @@ class MorphologyWorkspace final {
     workspace->channels_ = channels;
 
     auto *buffer_rows_address = &workspace->data_[indirect_row_storage_size];
-    buffer_rows_address = __builtin_align_up(buffer_rows_address, kAlignment);
+    buffer_rows_address = align_up(buffer_rows_address, kAlignment);
     workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
     workspace->buffer_rows_stride_ = buffer_rows_stride;
 
     auto *wide_rows_address =
         &workspace->data_[indirect_row_storage_size + buffer_rows_size];
     wide_rows_address += margin.left() * channels;
-    wide_rows_address = __builtin_align_up(wide_rows_address, kAlignment);
+    wide_rows_address = align_up(wide_rows_address, kAlignment);
     wide_rows_address -= margin.left() * channels;
     workspace->wide_rows_offset_ = wide_rows_address - &workspace->data_[0];
     workspace->wide_rows_stride_ = wide_rows_stride;

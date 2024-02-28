@@ -77,9 +77,11 @@ class GrayToRGB final :
     indices_0 = svindex_u8(0, 1);
 
     if (INTRINSICCV_UNLIKELY(svcntb() == 256)) {
-      indices_1 =
-          svext(svdup_u8(0), svqadd(svindex_u8(svcntb() % 3, 1), 2), 254);
-      indices_2 = svext(svdup_u8(0), svqadd(svindex_u8(0, 1), 3), 255);
+      indices_1 = svext(
+          svdup_u8(0),
+          svqadd(svindex_u8(svcntb() % 3, 1), static_cast<uint8_t>(2)), 254);
+      indices_2 = svext(svdup_u8(0),
+                        svqadd(svindex_u8(0, 1), static_cast<uint8_t>(3)), 255);
     } else {
       indices_1 = svindex_u8(svcntb() % 3, 1);
       indices_2 = svindex_u8((svcntb() * 2) % 3, 1);
@@ -88,10 +90,10 @@ class GrayToRGB final :
     indices_0 = svlsr_x(pg_all, svmulh_x(pg_all, indices_0, const_171), 1);
     indices_1 = svqadd_x(
         pg_all, svlsr_x(pg_all, svmulh_x(pg_all, indices_1, const_171), 1),
-        svcntb() / 3);
+        static_cast<ScalarType>(svcntb() / 3));
     indices_2 = svqadd_x(
         pg_all, svlsr_x(pg_all, svmulh_x(pg_all, indices_2, const_171), 1),
-        (svcntb() * 2) / 3);
+        static_cast<ScalarType>((svcntb() * 2) / 3));
 
     indices_ = svcreate3(indices_0, indices_1, indices_2);
   }

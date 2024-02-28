@@ -65,7 +65,12 @@
 #define INTRINSICCV_IFUNC_RESOLVER \
   INTRINSICCV_ATTR_SECTION(".text.ifunc_resolvers")
 
+#ifdef __clang__
 #define INTRINSICCV_FORCE_LOOP_UNROLL _Pragma("clang loop unroll(full)")
+#else
+// GCC doesn't have clang's unroll(full). 16 is typically plenty.
+#define INTRINSICCV_FORCE_LOOP_UNROLL _Pragma("GCC unroll 16")
+#endif
 
 #if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L) || \
     (defined(__cplusplus) && __cplusplus >= 201703L)

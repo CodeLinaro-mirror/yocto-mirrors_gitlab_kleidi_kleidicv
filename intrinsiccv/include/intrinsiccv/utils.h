@@ -364,6 +364,21 @@ bool is_misaligned(Value v) INTRINSICCV_STREAMING_COMPATIBLE {
   return (v & kMask) != 0;
 }
 
+// Return value aligned up to the next multiple of alignment
+// Assumes alignment is a power of two.
+template <typename T>
+T align_up(T value, size_t alignment) INTRINSICCV_STREAMING_COMPATIBLE {
+  return (value + alignment - 1) & ~(alignment - 1);
+}
+
+template <typename T>
+T *align_up(T *value, size_t alignment) INTRINSICCV_STREAMING_COMPATIBLE {
+  // NOLINTBEGIN(performance-no-int-to-ptr)
+  return reinterpret_cast<T *>(
+      align_up(reinterpret_cast<uintptr_t>(value), alignment));
+  // NOLINTEND(performance-no-int-to-ptr)
+}
+
 // Specialisation for when stride misalignment is possible.
 template <typename T>
 std::enable_if_t<alignof(T) != 1, intrinsiccv_error_t> check_pointer_and_stride(

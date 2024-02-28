@@ -7,6 +7,7 @@
 #include "framework/array.h"
 #include "framework/utils.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "intrinsiccv/utils.h"
 
 class YuvTest final {
  public:
@@ -42,7 +43,7 @@ class YuvTest final {
     input_y.set(4, 0, {7, 11, 128, 129});
 
     // the width of the UV input must be even
-    test::Array2D<uint8_t> input_uv{__builtin_align_up(logical_width, 2), 3,
+    test::Array2D<uint8_t> input_uv{intrinsiccv::align_up(logical_width, 2), 3,
                                     padding};
     input_uv.set(0, 0, {100, 130, 255, 255});
     input_uv.set(1, 0, {0, 1, 3, 4});

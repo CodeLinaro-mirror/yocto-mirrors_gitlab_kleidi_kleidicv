@@ -43,9 +43,10 @@ static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
 // Test for Sobel 3x3 operator.
 template <class KernelTestParams>
 class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
-  using typename test::KernelTest<KernelTestParams>::InputType;
-  using typename test::KernelTest<KernelTestParams>::IntermediateType;
-  using typename test::KernelTest<KernelTestParams>::OutputType;
+  using Base = test::KernelTest<KernelTestParams>;
+  using typename Base::InputType;
+  using typename Base::IntermediateType;
+  using typename Base::OutputType;
 
   intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
                                test::Array2D<OutputType> *output,
@@ -72,9 +73,8 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
     test::SequenceGenerator tested_borders{kSupportedBorders};
     test::SequenceGenerator tested_border_values{kSupportedBorderValues};
     test::PseudoRandomNumberGenerator<InputType> element_generator;
-    this->test::KernelTest<KernelTestParams>::test(
-        kernel, tested_array_layouts, tested_borders, tested_border_values,
-        element_generator);
+    Base::test(kernel, tested_array_layouts, tested_borders,
+               tested_border_values, element_generator);
   }
 };  // end of class Sobel3x3Test<KernelTestParams>
 

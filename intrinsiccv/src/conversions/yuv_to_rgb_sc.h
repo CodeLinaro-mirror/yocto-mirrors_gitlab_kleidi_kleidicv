@@ -46,7 +46,7 @@ class YUVSpToRGBxOrBGRx final {
     svuint8_t uv = svld1(pg, uv_row);
 
     // Y' = saturating(Ya - 16) and widen to signed 32-bits.
-    svuint8_t y0_m16 = svqsub(y0, 16);
+    svuint8_t y0_m16 = svqsub(y0, static_cast<uint8_t>(16));
     svuint16_t y0_m16_b = svmovlb(y0_m16);  // 'b' means bottom
     svuint16_t y0_m16_t = svmovlt(y0_m16);  // 't' means top
     svint32_t y0_m16_bb = svreinterpret_s32(svmovlb(y0_m16_b));
@@ -54,7 +54,7 @@ class YUVSpToRGBxOrBGRx final {
     svint32_t y0_m16_tb = svreinterpret_s32(svmovlb(y0_m16_t));
     svint32_t y0_m16_tt = svreinterpret_s32(svmovlt(y0_m16_t));
 
-    svuint8_t y1_m16 = svqsub(y1, 16);
+    svuint8_t y1_m16 = svqsub(y1, static_cast<uint8_t>(16));
     svuint16_t y1_m16_b = svmovlb(y1_m16);
     svuint16_t y1_m16_t = svmovlt(y1_m16);
     svint32_t y1_m16_bb = svreinterpret_s32(svmovlb(y1_m16_b));

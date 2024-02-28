@@ -68,7 +68,7 @@ class Merge3 final : public UnrollTwice {
   using Vector3Type = typename VecTraits::Vector3Type;
 
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-  Merge3() : table_indices_{vld1q_u8_x3(lookup_table<ScalarType>())} {}
+  Merge3() : table_indices_{vld1q_u8_x3(lookup_table(ScalarType()))} {}
 #endif
 
   void vector_path(VectorType src_a, VectorType src_b, VectorType src_c,
@@ -100,12 +100,7 @@ class Merge3 final : public UnrollTwice {
 
  private:
 #if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-  template <typename T>
-  static const uint8_t *lookup_table();
-
-  // Lookup table for 8-bit inputs.
-  template <>
-  static const uint8_t *lookup_table<uint8_t>() {
+  static const uint8_t *lookup_table(uint8_t) {
     // clang-format off
     static constexpr uint8_t kIndices[48] = {
        0, 16, 32,  1, 17, 33,  2, 18, 34,  3, 19, 35,  4, 20, 36,  5,
@@ -117,8 +112,7 @@ class Merge3 final : public UnrollTwice {
   }
 
   // Lookup table for 16-bit inputs.
-  template <>
-  static const uint8_t *lookup_table<uint16_t>() {
+  static const uint8_t *lookup_table(uint16_t) {
     // clang-format off
     static constexpr uint8_t kIndices[48] = {
        0,  1, 16, 17, 32, 33,  2,  3, 18, 19, 34, 35,  4,  5, 20, 21,

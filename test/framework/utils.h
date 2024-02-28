@@ -113,14 +113,12 @@ class NullPointerTester {
   template <int ArgIndex>
   static void test(Function f, const Tuple &t) {
     // Recurse to test earlier arguments first
-    test<ArgIndex - 1>(f, t);
+    if constexpr (ArgIndex > 0) {
+      test<ArgIndex - 1>(f, t);
+    }
     using ArgType = typename std::tuple_element_t<ArgIndex, Tuple>;
     test_with_null_arg<ArgType, ArgIndex>(f, t);
   }
-
-  // Terminate recursion
-  template <>
-  static void test<-1>(Function, const Tuple &) {}
 };
 
 template <typename Func>

@@ -14,10 +14,10 @@ INTRINSICCV_THRESHOLD_BINARY(uint8_t, u8);
 
 template <typename ElementType>
 class ThresholdBinaryTestBase : public UnaryOperationTest<ElementType> {
+ protected:
   // Needed to initialize value()
   using UnaryOperationTest<ElementType>::max;
 
- protected:
   // Calls the API-under-test in the appropriate way.
   intrinsiccv_error_t call_api() override {
     return intrinsiccv_threshold_binary_u8(
@@ -147,7 +147,7 @@ TYPED_TEST(ThresholdBinary, Misalignment) {
 }
 
 TYPED_TEST(ThresholdBinary, ImageSize) {
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             threshold_binary<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),

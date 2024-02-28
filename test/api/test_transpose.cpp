@@ -224,7 +224,7 @@ TYPED_TEST(Transpose, Misalignment) {
 }
 
 TYPED_TEST(Transpose, ImageSize) {
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             intrinsiccv_transpose(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
