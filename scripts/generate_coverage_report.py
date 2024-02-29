@@ -59,7 +59,6 @@ the toolchain with which the binaries were built."""
         "--html-title=IntrinsicCV Coverage Report",
         "--html-syntax-highlighting",
         "--html-tab-size=2",
-        "--decisions",
         "--exclude-noncode-lines",
         f"--exclude={build_dir}",
         "--exclude=test",
