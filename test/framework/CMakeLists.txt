@@ -8,7 +8,7 @@ list(APPEND intrinsiccv_framework_test_sources ${INTRINSICCV_TEST_FRAMEWORK_SOUR
 
 set_source_files_properties(
   ${intrinsiccv_framework_test_sources}
-  PROPERTIES COMPILE_OPTIONS "-O2;${INTRINSICCV_WARNING_FLAGS}"
+  PROPERTIES COMPILE_OPTIONS "${INTRINSICCV_TEST_CXX_FLAGS}"
 )
 
 add_executable(
