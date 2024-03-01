@@ -60,6 +60,7 @@ the toolchain with which the binaries were built."""
         "--html-syntax-highlighting",
         "--html-tab-size=2",
         "--exclude-noncode-lines",
+        "--exclude-unreachable-branches",
         f"--exclude={build_dir}",
         "--exclude=test",
         "--print-summary",
