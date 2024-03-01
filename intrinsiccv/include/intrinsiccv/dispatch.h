@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,6 +6,7 @@
 #define INTRINSICCV_DISPATCH_H
 
 #include <cinttypes>
+#include <type_traits>
 
 #include "intrinsiccv/config.h"
 #include "sys/ifunc.h"
@@ -42,9 +43,10 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 #endif
 
 #ifdef INTRINSICCV_HAVE_SVE2
-#define INTRINSICCV_SVE2_RESOLVE_IFUNC(sve2_impl) \
-  if (sve2_impl && hwcaps_has_sve2(hwcaps)) {     \
-    return sve2_impl;                             \
+#define INTRINSICCV_SVE2_RESOLVE_IFUNC(sve2_impl)     \
+  if (!std::is_null_pointer_v<decltype(sve2_impl)> && \
+      hwcaps_has_sve2(hwcaps)) {                      \
+    return sve2_impl;                                 \
   }
 
 #else
@@ -52,9 +54,10 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 #endif
 
 #ifdef INTRINSICCV_HAVE_SME2
-#define INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl) \
-  if (sme2_impl && hwcaps_has_sme2(hwcaps)) {     \
-    return sme2_impl;                             \
+#define INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl)     \
+  if (!std::is_null_pointer_v<decltype(sme2_impl)> && \
+      hwcaps_has_sme2(hwcaps)) {                      \
+    return sme2_impl;                                 \
   }
 #else
 #define INTRINSICCV_SME2_RESOLVE_IFUNC(sme2_impl)
