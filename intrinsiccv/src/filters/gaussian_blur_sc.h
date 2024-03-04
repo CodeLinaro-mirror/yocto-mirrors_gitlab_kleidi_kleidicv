@@ -95,6 +95,10 @@ intrinsiccv_error_t discrete_gaussian_blur(
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
 
+  if (width < KernelSize - 1 || height < KernelSize - 1) {
+    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
     return INTRINSICCV_ERROR_RANGE;
   }

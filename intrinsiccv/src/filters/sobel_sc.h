@@ -126,6 +126,12 @@ static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
 
+  const size_t KernelSize = 3;
+
+  if (width < KernelSize - 1 || height < KernelSize - 1) {
+    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
     return INTRINSICCV_ERROR_RANGE;
   }
@@ -156,6 +162,12 @@ static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
+
+  const size_t KernelSize = 3;
+
+  if (width < KernelSize - 1 || height < KernelSize - 1) {
+    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  }
 
   if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
     return INTRINSICCV_ERROR_RANGE;

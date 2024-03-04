@@ -506,7 +506,13 @@ intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
     return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
   }
 
+  // Currently valid, will need to be changed if morphology supports more border
+  // types, like INTRINSICCV_BORDER_TYPE_REVERSE.
   Rectangle kernel{workspace->kernel()};
+  if (width < kernel.width() - 1 || height < kernel.height() - 1) {
+    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  }
+
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
   Margin margin{workspace->kernel(), workspace->anchor()};
@@ -569,7 +575,13 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
     return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
   }
 
+  // Currently valid, will need to be changed if morphology supports more border
+  // types, like INTRINSICCV_BORDER_TYPE_REVERSE.
   Rectangle kernel{workspace->kernel()};
+  if (width < kernel.width() - 1 || height < kernel.height() - 1) {
+    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  }
+
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
   Margin margin{workspace->kernel(), workspace->anchor()};

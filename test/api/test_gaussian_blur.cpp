@@ -190,11 +190,13 @@ TYPED_TEST(GaussianBlur, 5x5) {
       .test(mask);
 }
 
-TYPED_TEST(GaussianBlur, UnsupportedBorderType) {
+TYPED_TEST(GaussianBlur, UnsupportedBorderType3x3) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
   intrinsiccv_filter_context_t *context = nullptr;
-  ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 1}));
+  size_t validSize = KernelTestParams::kKernelSize - 1;
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
   TypeParam src[1] = {}, dst[1];
   for (intrinsiccv_border_type_t border : {
            INTRINSICCV_BORDER_TYPE_CONSTANT,
@@ -203,27 +205,48 @@ TYPED_TEST(GaussianBlur, UnsupportedBorderType) {
        }) {
     EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
               gaussian_blur_3x3<TypeParam>()(src, sizeof(TypeParam), dst,
-                                             sizeof(TypeParam), 1, 1, 1, border,
-                                             context));
+                                             sizeof(TypeParam), validSize,
+                                             validSize, 1, border, context));
+  }
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlur, UnsupportedBorderType5x5) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
+  intrinsiccv_filter_context_t *context = nullptr;
+  size_t validSize = KernelTestParams::kKernelSize - 1;
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
+  TypeParam src[1] = {}, dst[1];
+  for (intrinsiccv_border_type_t border : {
+           INTRINSICCV_BORDER_TYPE_CONSTANT,
+           INTRINSICCV_BORDER_TYPE_TRANSPARENT,
+           INTRINSICCV_BORDER_TYPE_NONE,
+       }) {
     EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
               gaussian_blur_5x5<TypeParam>()(src, sizeof(TypeParam), dst,
-                                             sizeof(TypeParam), 1, 1, 1, border,
-                                             context));
+                                             sizeof(TypeParam), validSize,
+                                             validSize, 1, border, context));
   }
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, NullPointer) {
+  using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
+  using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
   intrinsiccv_filter_context_t *context = nullptr;
-  ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 1}));
+  size_t validSize = KernelTestParams3x3::kKernelSize - 1;
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(gaussian_blur_3x3<TypeParam>(), src, sizeof(TypeParam),
-                       dst, sizeof(TypeParam), 1, 1, 1,
+                       dst, sizeof(TypeParam), validSize, validSize, 1,
                        INTRINSICCV_BORDER_TYPE_REPLICATE, context);
+  validSize = KernelTestParams5x5::kKernelSize - 1;
   test::test_null_args(gaussian_blur_5x5<TypeParam>(), src, sizeof(TypeParam),
-                       dst, sizeof(TypeParam), 1, 1, 1,
+                       dst, sizeof(TypeParam), validSize, validSize, 1,
                        INTRINSICCV_BORDER_TYPE_REPLICATE, context);
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
@@ -233,37 +256,41 @@ TYPED_TEST(GaussianBlur, Misalignment) {
     // misalignment impossible
     return;
   }
+  using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
+  using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
   intrinsiccv_filter_context_t *context = nullptr;
-  ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 1}));
+  size_t validSize = KernelTestParams3x3::kKernelSize - 1;
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_3x3<TypeParam>()(
-                src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+                src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_3x3<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+  validSize = KernelTestParams5x5::kKernelSize - 1;
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_5x5<TypeParam>()(
-                src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+                src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
             gaussian_blur_5x5<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlur, ZeroImageSize) {
+TYPED_TEST(GaussianBlur, ZeroImageSize3x3) {
   TypeParam src[1] = {}, dst[1];
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
             intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{0, 1}));
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 0, 1, 1,
                 INTRINSICCV_BORDER_TYPE_REFLECT, context));
@@ -272,10 +299,145 @@ TYPED_TEST(GaussianBlur, ZeroImageSize) {
   ASSERT_EQ(INTRINSICCV_OK,
             intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
                                       intrinsiccv_rectangle_t{1, 0}));
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 0, 1,
                 INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlur, ZeroImageSize5x5) {
+  TypeParam src[1] = {}, dst[1];
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{0, 1}));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 0, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 0}));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 0, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlur, ValidImageSize3x3) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
+  intrinsiccv_filter_context_t *context = nullptr;
+  size_t validSize = KernelTestParams::kKernelSize - 1;
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
+  test::Array2D<TypeParam> src{validSize, validSize,
+                               test::Options::vector_length()};
+  src.set(0, 0, {1, 2});
+  src.set(1, 0, {1, 2});
+
+  test::Array2D<TypeParam> dst{validSize, validSize,
+                               test::Options::vector_length()};
+  EXPECT_EQ(INTRINSICCV_OK,
+            gaussian_blur_3x3<TypeParam>()(
+                src.data(), src.stride(), dst.data(), dst.stride(), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REVERSE, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlur, ValidImageSize5x5) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
+  intrinsiccv_filter_context_t *context = nullptr;
+  size_t validSize = KernelTestParams::kKernelSize - 1;
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
+  test::Array2D<TypeParam> src{validSize, validSize,
+                               test::Options::vector_length()};
+  src.set(0, 0, {1, 2, 3, 4});
+  src.set(1, 0, {1, 2, 3, 4});
+  src.set(2, 0, {1, 2, 3, 4});
+  src.set(3, 0, {1, 2, 3, 4});
+
+  test::Array2D<TypeParam> dst{validSize, validSize,
+                               test::Options::vector_length()};
+  EXPECT_EQ(INTRINSICCV_OK,
+            gaussian_blur_5x5<TypeParam>()(
+                src.data(), src.stride(), dst.data(), dst.stride(), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REVERSE, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlur, UndersizeImage3x3) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
+  intrinsiccv_filter_context_t *context = nullptr;
+  size_t underSize = KernelTestParams::kKernelSize - 2;
+  size_t validWidth = KernelTestParams::kKernelSize + 10;
+  size_t validHeight = KernelTestParams::kKernelSize + 5;
+  TypeParam src[1], dst[1];
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{underSize, underSize}));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
+                underSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(
+                &context, 1, 2 * sizeof(TypeParam),
+                intrinsiccv_rectangle_t{underSize, validHeight}));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
+                validHeight, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(
+                &context, 1, 2 * sizeof(TypeParam),
+                intrinsiccv_rectangle_t{validWidth, underSize}));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validWidth,
+                underSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlur, UndersizeImage5x5) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
+  intrinsiccv_filter_context_t *context = nullptr;
+  size_t underSize = KernelTestParams::kKernelSize - 2;
+  size_t width = KernelTestParams::kKernelSize + 8;
+  size_t height = KernelTestParams::kKernelSize + 3;
+
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{underSize, underSize}));
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
+                underSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{underSize, height}));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
+                height, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{width, underSize}));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur_5x5<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), width,
+                underSize, 1, INTRINSICCV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
@@ -309,72 +471,95 @@ TYPED_TEST(GaussianBlur, OversizeImage) {
 }
 
 TYPED_TEST(GaussianBlur, ChannelNumber) {
+  using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
+  using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
   intrinsiccv_filter_context_t *context = nullptr;
-  ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 1}));
+  size_t validSize = KernelTestParams3x3::kKernelSize - 1;
+
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             gaussian_blur_3x3<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1,
-                INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                validSize, INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
                 INTRINSICCV_BORDER_TYPE_REFLECT, context));
+
+  validSize = KernelTestParams5x5::kKernelSize - 1;
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             gaussian_blur_5x5<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1,
-                INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                validSize, INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
                 INTRINSICCV_BORDER_TYPE_REFLECT, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, InvalidContextSizeType) {
+  using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
+  using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
   intrinsiccv_filter_context_t *context = nullptr;
-  ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam) + 1,
-                                      intrinsiccv_rectangle_t{1, 1}));
+  size_t validSize = KernelTestParams3x3::kKernelSize - 1;
+
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam) + 1,
+                                intrinsiccv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_3x3<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  validSize = KernelTestParams5x5::kKernelSize - 1;
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_5x5<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REFLECT, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, InvalidContextChannelNumber) {
+  using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
+  using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
   intrinsiccv_filter_context_t *context = nullptr;
-  ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 2, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 1}));
+  size_t validSize = KernelTestParams3x3::kKernelSize - 1;
+
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 2, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_3x3<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REFLECT, context));
+
+  validSize = KernelTestParams5x5::kKernelSize - 1;
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_5x5<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                validSize, 1, INTRINSICCV_BORDER_TYPE_REFLECT, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, InvalidContextImageSize) {
+  using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
+  using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
   intrinsiccv_filter_context_t *context = nullptr;
-  ASSERT_EQ(INTRINSICCV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 1}));
+  size_t validSize = KernelTestParams3x3::kKernelSize - 1;
+
+  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_filter_create(
+                                &context, 1, 2 * sizeof(TypeParam),
+                                intrinsiccv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_3x3<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 2, 2, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize + 1,
+                validSize + 1, 1, INTRINSICCV_BORDER_TYPE_REFLECT, context));
+
+  validSize = KernelTestParams5x5::kKernelSize - 1;
   EXPECT_EQ(INTRINSICCV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_5x5<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), 2, 2, 1,
-                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize + 1,
+                validSize + 1, 1, INTRINSICCV_BORDER_TYPE_REFLECT, context));
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
@@ -419,4 +604,14 @@ TEST(FilterCreate, ChannelNumber) {
       intrinsiccv_filter_create(&context, INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1,
                                 1, intrinsiccv_rectangle_t{1, 1}));
   ASSERT_EQ(nullptr, context);
+}
+
+TEST(FilterCreate, NullPointer) {
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_NULL_POINTER,
+      intrinsiccv_filter_create(nullptr, 1, 1, intrinsiccv_rectangle_t{1, 1}));
+}
+TEST(FilterRelease, NullPointer) {
+  EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+            intrinsiccv_filter_release(nullptr));
 }
