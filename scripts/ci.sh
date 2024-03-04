@@ -68,8 +68,6 @@ scripts/prefix_testsuite_names.py build/test-results/gcc-neon/intrinsiccv-api-te
 LLVM_COV=llvm-cov scripts/generate_coverage_report.py
 
 # Clang address & undefined behaviour sanitizers
-# Allow malloc to return NULL
-export ASAN_OPTIONS="allocator_may_return_null=1"
 cmake -S . -B build/sanitize -G Ninja \
   -DINTRINSICCV_ENABLE_SME2=OFF \
   -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"

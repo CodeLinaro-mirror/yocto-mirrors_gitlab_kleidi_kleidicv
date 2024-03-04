@@ -23,10 +23,13 @@ else()
   list(APPEND INTRINSICCV_TEST_CXX_FLAGS "-O2" "-g0")
 endif()
 
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,--wrap,malloc")
+
 set(INTRINSICCV_TEST_FRAMEWORK_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/border.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/test_main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/framework/wrap_malloc.cpp
 )
 
 include(FetchContent)

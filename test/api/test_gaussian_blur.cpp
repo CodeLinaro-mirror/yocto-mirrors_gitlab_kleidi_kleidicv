@@ -357,10 +357,12 @@ TYPED_TEST(GaussianBlur, InvalidContextImageSize) {
 }
 
 TEST(FilterCreate, TooBigImage) {
+  MockMallocToFail::enable();
   intrinsiccv_filter_context_t *context = nullptr;
   intrinsiccv_rectangle_t rect{INTRINSICCV_MAX_IMAGE_PIXELS, 1};
   EXPECT_EQ(INTRINSICCV_ERROR_ALLOCATION,
             intrinsiccv_filter_create(&context, 1, 1, rect));
+  MockMallocToFail::disable();
 }
 
 TEST(FilterCreate, ImageSize) {

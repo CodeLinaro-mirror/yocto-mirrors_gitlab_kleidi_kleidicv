@@ -358,8 +358,9 @@ TYPED_TEST(Morphology, UnsupportedSize) {
 }
 
 TYPED_TEST(Morphology, TooBigImage) {
+  MockMallocToFail::enable();
   intrinsiccv_morphology_context_t *context = nullptr;
-  intrinsiccv_rectangle_t kernel{3, 10000}, image{1UL << 34, 10000};
+  intrinsiccv_rectangle_t kernel{3, 3}, image{3072, 2048};
   intrinsiccv_border_type_t border = INTRINSICCV_BORDER_TYPE_REPLICATE;
   intrinsiccv_border_values_t border_values{0, 0, 1, 1};
   intrinsiccv_point_t anchor{1, 1};
@@ -374,6 +375,7 @@ TYPED_TEST(Morphology, TooBigImage) {
             intrinsiccv_morphology_create(&context, kernel2, anchor, border,
                                           border_values, 1, 1,
                                           sizeof(TypeParam), image2));
+  MockMallocToFail::disable();
 }
 
 TYPED_TEST(Morphology, InvalidAnchors) {

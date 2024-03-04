@@ -39,6 +39,16 @@
     return;                            \
   }
 
+class MockMallocToFail {
+ public:
+  static void enable() { enabled = true; }
+  static void disable() { enabled = false; }
+  static bool is_enabled() { return enabled; }
+
+ private:
+  static bool enabled;
+};
+
 namespace test {
 
 class Options {
