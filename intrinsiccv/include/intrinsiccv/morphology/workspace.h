@@ -341,11 +341,13 @@ class MorphologyWorkspace final {
   void copy_data(Rows<const T> src_rows, Rows<T> dst_rows,
                  size_t length) INTRINSICCV_STREAMING_COMPATIBLE {
 #if INTRINSICCV_TARGET_SME2
-    // 'sve2::apply_operation_by_rows' handles it as being 1-channel
+    // 'sve2::apply_operation_by_rows' can only handle one channel well
     // so width must be multiplied in order to copy all the data
-    Rectangle rect{length * src_rows.channels(), std::size_t{1}};
+    Rectangle rect{length * dst_rows.channels(), std::size_t{1}};
+    Rows<const T> src_1ch{&src_rows[0], src_rows.stride(), 1};
+    Rows<T> dst_1ch{&dst_rows[0], dst_rows.stride(), 1};
     CopyOperation<T> operation;
-    sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+    sve2::apply_operation_by_rows(operation, rect, src_1ch, dst_1ch);
 #else
     std::memcpy(static_cast<void *>(&dst_rows[0]),
                 static_cast<const void *>(&src_rows[0]),
