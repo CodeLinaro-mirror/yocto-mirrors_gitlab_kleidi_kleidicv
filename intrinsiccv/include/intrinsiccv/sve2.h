@@ -31,7 +31,7 @@ class Context {
   svbool_t &pg_;
 };  // end of class Context
 
-// Primary template to describe logically grouped peroperties of vectors.
+// Primary template to describe logically grouped properties of vectors.
 template <typename ScalarType>
 class VectorTypes;
 
