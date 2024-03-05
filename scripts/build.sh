@@ -99,7 +99,9 @@ if [[ -n "${CMAKE_TOOLCHAIN_FILE}" ]]; then
     )
 fi
 
-cmake_config_args+=("${EXTRA_CMAKE_ARGS_ARRAY[@]}")
+if [[ -n "${EXTRA_CMAKE_ARGS_ARRAY-}" ]]; then
+    cmake_config_args+=("${EXTRA_CMAKE_ARGS_ARRAY[@]}")
+fi
 
 "${CMAKE}" "${cmake_config_args[@]}"
 
