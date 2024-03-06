@@ -31,7 +31,7 @@ doxygen
 # Build
 cmake -S . -B build -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
-  -DCMAKE_CXX_FLAGS="--coverage -g -O0" \
+  -DCMAKE_CXX_FLAGS="--coverage" \
   -DINTRINSICCV_ENABLE_SVE2=ON \
   -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF \
   -DINTRINSICCV_CHECK_BANNED_FUNCTIONS=ON
