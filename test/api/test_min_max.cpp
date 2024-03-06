@@ -311,7 +311,17 @@ TYPED_TEST(MinMax, Misalignment) {
                                  &max_value));
 }
 
-TYPED_TEST(MinMax, ImageSize) {
+TYPED_TEST(MinMax, ZeroImageSize) {
+  TypeParam src[1] = {}, min_value, max_value;
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max<TypeParam>()(src, sizeof(TypeParam), 0, 1, &min_value,
+                                 &max_value));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max<TypeParam>()(src, sizeof(TypeParam), 1, 0, &min_value,
+                                 &max_value));
+}
+
+TYPED_TEST(MinMax, OversizeImage) {
   TypeParam src[1] = {}, min_value, max_value;
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             min_max<TypeParam>()(src, sizeof(TypeParam),
@@ -334,7 +344,19 @@ TYPED_TEST(MinMaxLoc, API) {
   MinMaxLocTest<TypeParam, 100>{}.test();
 }
 
-TYPED_TEST(MinMaxLoc, ImageSize) {
+TYPED_TEST(MinMaxLoc, ZeroImageSize) {
+  TypeParam src[1] = {};
+  size_t min_offset = 0, max_offset = 0;
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max_loc<TypeParam>()(src, sizeof(TypeParam), 0, 1, &min_offset,
+                                     &max_offset));
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            min_max_loc<TypeParam>()(src, sizeof(TypeParam), 1, 0, &min_offset,
+                                     &max_offset));
+}
+
+TYPED_TEST(MinMaxLoc, OversizeImage) {
   TypeParam src[1] = {};
   size_t min_offset = 0, max_offset = 8;
 

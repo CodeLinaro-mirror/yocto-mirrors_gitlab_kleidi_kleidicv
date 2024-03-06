@@ -100,6 +100,11 @@ class ColourTest final {
     test::test_null_args(impl, source.data(), source.stride(), actual.data(),
                          actual.stride(), logical_width, actual.height());
 
+    EXPECT_EQ(INTRINSICCV_OK, impl(source.data(), source.stride(),
+                                   actual.data(), actual.stride(), 0, 1));
+    EXPECT_EQ(INTRINSICCV_OK, impl(source.data(), source.stride(),
+                                   actual.data(), actual.stride(), 1, 0));
+
     EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
               impl(source.data(), source.stride(), actual.data(),
                    actual.stride(), INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1));

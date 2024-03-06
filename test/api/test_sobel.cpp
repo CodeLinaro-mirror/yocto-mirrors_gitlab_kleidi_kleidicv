@@ -150,7 +150,18 @@ TYPED_TEST(Sobel, MisalignmentVertical) {
   }
 }
 
-TYPED_TEST(Sobel, ImageSizeHorizontal) {
+TYPED_TEST(Sobel, ZeroImageSizeHorizontal) {
+  using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
+
+  EXPECT_EQ(INTRINSICCV_OK, sobel_3x3_horizontal<TypeParam>()(
+                                src, sizeof(src), dst, sizeof(dst), 0, 1, 1));
+  EXPECT_EQ(INTRINSICCV_OK, sobel_3x3_horizontal<TypeParam>()(
+                                src, sizeof(src), dst, sizeof(dst), 1, 0, 1));
+}
+
+TYPED_TEST(Sobel, OversizeImageHorizontal) {
   MockMallocToFail::enable();
   using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
   typename KernelTestParams::InputType src[1] = {};
@@ -172,7 +183,18 @@ TYPED_TEST(Sobel, ImageSizeHorizontal) {
   MockMallocToFail::disable();
 }
 
-TYPED_TEST(Sobel, ImageSizeVertical) {
+TYPED_TEST(Sobel, ZeroImageSizeVertical) {
+  using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
+
+  EXPECT_EQ(INTRINSICCV_OK, sobel_3x3_vertical<TypeParam>()(
+                                src, sizeof(src), dst, sizeof(dst), 0, 1, 1));
+  EXPECT_EQ(INTRINSICCV_OK, sobel_3x3_vertical<TypeParam>()(
+                                src, sizeof(src), dst, sizeof(dst), 1, 0, 1));
+}
+
+TYPED_TEST(Sobel, OversizeImageVertical) {
   MockMallocToFail::enable();
   using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
   typename KernelTestParams::InputType src[1] = {};

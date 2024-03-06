@@ -146,7 +146,17 @@ TYPED_TEST(ThresholdBinary, Misalignment) {
                                           sizeof(TypeParam) + 1, 1, 1, 1, 1));
 }
 
-TYPED_TEST(ThresholdBinary, ImageSize) {
+TYPED_TEST(ThresholdBinary, ZeroImageSize) {
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_OK,
+            threshold_binary<TypeParam>()(src, sizeof(TypeParam), dst,
+                                          sizeof(TypeParam), 0, 1, 1, 1));
+  EXPECT_EQ(INTRINSICCV_OK,
+            threshold_binary<TypeParam>()(src, sizeof(TypeParam), dst,
+                                          sizeof(TypeParam), 1, 0, 1, 1));
+}
+
+TYPED_TEST(ThresholdBinary, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             threshold_binary<TypeParam>()(

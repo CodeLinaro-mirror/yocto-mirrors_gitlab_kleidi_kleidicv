@@ -41,7 +41,17 @@ TYPED_TEST(CannyTest, Misalignment) {
                                sizeof(TypeParam) + 1, 1, 1, 0.0, 1.0));
 }
 
-TYPED_TEST(CannyTest, ImageSize) {
+TYPED_TEST(CannyTest, ZeroImageSize) {
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_OK,
+            canny<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               0, 1, 0.0, 1.0));
+  EXPECT_EQ(INTRINSICCV_OK,
+            canny<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                               1, 0, 0.0, 1.0));
+}
+
+TYPED_TEST(CannyTest, OversizeImage) {
   TypeParam src[1], dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             canny<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),

@@ -161,6 +161,10 @@ class MorphologyWorkspace final {
     using S = typename O::SourceType;
     using B = typename O::BufferType;
 
+    if (INTRINSICCV_UNLIKELY(rect.width() == 0 || rect.height() == 0)) {
+      return;
+    }
+
     // Wide rows which can hold data with left and right margins.
     auto wide_rows = Rows{reinterpret_cast<S *>(&data_[wide_rows_offset_]),
                           wide_rows_stride_, channels_};

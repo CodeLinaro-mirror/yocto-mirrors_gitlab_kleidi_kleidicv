@@ -123,7 +123,17 @@ TYPED_TEST(SaturatingMultiply, Misalignment) {
                                              sizeof(TypeParam) + 1, 1, 1, 1));
 }
 
-TYPED_TEST(SaturatingMultiply, ImageSize) {
+TYPED_TEST(SaturatingMultiply, ZeroImageSize) {
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_OK, saturating_multiply<TypeParam>()(
+                                src, sizeof(TypeParam), src, sizeof(TypeParam),
+                                dst, sizeof(TypeParam), 0, 1, 1));
+  EXPECT_EQ(INTRINSICCV_OK, saturating_multiply<TypeParam>()(
+                                src, sizeof(TypeParam), src, sizeof(TypeParam),
+                                dst, sizeof(TypeParam), 1, 0, 1));
+}
+
+TYPED_TEST(SaturatingMultiply, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             saturating_multiply<TypeParam>()(

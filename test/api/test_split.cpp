@@ -225,7 +225,22 @@ TYPED_TEST(Split, Misalignment) {
   }
 }
 
-TYPED_TEST(Split, ImageSize) {
+TYPED_TEST(Split, ZeroImageSize) {
+  const size_t kChannels = 2;
+  TypeParam src[1] = {}, dst1[1], dst2[1];
+  const size_t src_stride = kChannels * sizeof(TypeParam);
+  void* dsts[kChannels] = {dst1, dst2};
+  size_t dst_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam)};
+
+  EXPECT_EQ(INTRINSICCV_OK,
+            intrinsiccv_split(src, src_stride, dsts, dst_strides, 0, 1,
+                              kChannels, sizeof(TypeParam)));
+  EXPECT_EQ(INTRINSICCV_OK,
+            intrinsiccv_split(src, src_stride, dsts, dst_strides, 1, 0,
+                              kChannels, sizeof(TypeParam)));
+}
+
+TYPED_TEST(Split, OversizeImage) {
   const size_t kChannels = 2;
   TypeParam src[1] = {}, dst1[1], dst2[1];
   const size_t src_stride = kChannels * sizeof(TypeParam);

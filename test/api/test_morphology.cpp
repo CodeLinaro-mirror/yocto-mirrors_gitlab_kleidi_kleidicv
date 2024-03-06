@@ -507,7 +507,33 @@ TYPED_TEST(Morphology, ErodeMisalignment) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
 }
 
-TYPED_TEST(Morphology, DilateImageSize) {
+TYPED_TEST(Morphology, DilateZeroImageSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  TypeParam src[1], dst[1];
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_morphology_create(
+                &context, intrinsiccv_rectangle_t{1, 1},
+                intrinsiccv_point_t{0, 0}, INTRINSICCV_BORDER_TYPE_REPLICATE,
+                intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+                sizeof(TypeParam), intrinsiccv_rectangle_t{0, 1}));
+  EXPECT_EQ(INTRINSICCV_OK,
+            DilateParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
+                                           sizeof(TypeParam), 0, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_morphology_create(
+                &context, intrinsiccv_rectangle_t{1, 1},
+                intrinsiccv_point_t{0, 0}, INTRINSICCV_BORDER_TYPE_REPLICATE,
+                intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+                sizeof(TypeParam), intrinsiccv_rectangle_t{1, 0}));
+  EXPECT_EQ(INTRINSICCV_OK,
+            DilateParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
+                                           sizeof(TypeParam), 1, 0, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(Morphology, DilateOversizeImage) {
   intrinsiccv_morphology_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
   TypeParam src[1], dst[1];
@@ -523,7 +549,33 @@ TYPED_TEST(Morphology, DilateImageSize) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
 }
 
-TYPED_TEST(Morphology, ErodeImageSize) {
+TYPED_TEST(Morphology, ErodeZeroImageSize) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  TypeParam src[1], dst[1];
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_morphology_create(
+                &context, intrinsiccv_rectangle_t{1, 1},
+                intrinsiccv_point_t{0, 0}, INTRINSICCV_BORDER_TYPE_REPLICATE,
+                intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+                sizeof(TypeParam), intrinsiccv_rectangle_t{0, 1}));
+  EXPECT_EQ(INTRINSICCV_OK,
+            ErodeParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
+                                          sizeof(TypeParam), 0, 1, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_morphology_create(
+                &context, intrinsiccv_rectangle_t{1, 1},
+                intrinsiccv_point_t{0, 0}, INTRINSICCV_BORDER_TYPE_REPLICATE,
+                intrinsiccv_border_values_t{0, 0, 1, 1}, 1, 1,
+                sizeof(TypeParam), intrinsiccv_rectangle_t{1, 0}));
+  EXPECT_EQ(INTRINSICCV_OK,
+            ErodeParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
+                                          sizeof(TypeParam), 1, 0, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_morphology_release(context));
+}
+
+TYPED_TEST(Morphology, ErodeOversizeImage) {
   intrinsiccv_morphology_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK, make_minimal_context(&context, sizeof(TypeParam)));
   TypeParam src[1], dst[1];

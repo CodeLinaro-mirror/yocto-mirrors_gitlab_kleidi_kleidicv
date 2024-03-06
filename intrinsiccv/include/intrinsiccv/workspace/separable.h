@@ -127,6 +127,10 @@ class SeparableFilterWorkspace final {
                Rows<typename FilterType::DestinationType> dst_rows,
                size_t channels, typename FilterType::BorderType border_type,
                FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE {
+    if (INTRINSICCV_UNLIKELY(rect.width() == 0 || rect.height() == 0)) {
+      return;
+    }
+
     // Border helper which calculates border offsets.
     typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                         border_type};

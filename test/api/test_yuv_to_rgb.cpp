@@ -69,6 +69,15 @@ class YuvTest final {
                          actual.stride(), expected.width() / channel_number_,
                          expected.height(), is_nv21);
 
+    EXPECT_EQ(
+        INTRINSICCV_OK,
+        impl(input_y.data(), input_y.stride(), input_uv.data(),
+             input_uv.stride(), actual.data(), actual.stride(), 0, 1, is_nv21));
+    EXPECT_EQ(
+        INTRINSICCV_OK,
+        impl(input_y.data(), input_y.stride(), input_uv.data(),
+             input_uv.stride(), actual.data(), actual.stride(), 1, 0, is_nv21));
+
     EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
               impl(input_y.data(), input_y.stride(), input_uv.data(),
                    input_uv.stride(), actual.data(), actual.stride(),

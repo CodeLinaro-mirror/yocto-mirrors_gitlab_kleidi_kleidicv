@@ -51,6 +51,10 @@ intrinsiccv_error_t min_max(const ScalarType *src, size_t src_stride,
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_IMAGE_SIZE(width, height);
 
+  if (INTRINSICCV_UNLIKELY(width == 0 || height == 0)) {
+    return INTRINSICCV_ERROR_RANGE;
+  }
+
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride};
   MinMax<ScalarType> operation;

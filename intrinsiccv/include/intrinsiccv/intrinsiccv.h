@@ -1153,8 +1153,8 @@ intrinsiccv_error_t intrinsiccv_merge(const void **srcs,
 ///                     start of the next row in the source data. Must not be
 ///                     less than width * sizeof(type).
 ///                     Must be a multiple of sizeof(type).
-/// @param width        Number of elements in a row.
-/// @param height       Number of rows in the data.
+/// @param width        Number of elements in a row. Must be greater than 0.
+/// @param height       Number of rows in the data. Must be greater than 0.
 /// @param min_value    Pointer to save result minimum value to, or nullptr if
 ///                     minimum is not to be calculated.
 /// @param max_value    Pointer to save result maximum value to, or nullptr if
@@ -1195,8 +1195,8 @@ intrinsiccv_error_t intrinsiccv_min_max_s32(const int32_t *src,
 ///                     start of the next row in the source data. Must not be
 ///                     less than width * sizeof(type).
 ///                     Must be a multiple of sizeof(type).
-/// @param width        Number of elements in a row.
-/// @param height       Number of rows in the data.
+/// @param width        Number of elements in a row. Must be greater than 0.
+/// @param height       Number of rows in the data. Must be greater than 0.
 /// @param min_offset   Pointer to save result offset of minimum value to, or
 ///                     nullptr if minimum is not to be calculated.
 /// @param max_offset   Pointer to save result offset of maximum value to, or

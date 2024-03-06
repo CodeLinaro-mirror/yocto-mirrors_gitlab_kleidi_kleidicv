@@ -219,7 +219,17 @@ TEST(ResizeToQuarter, NullPointer) {
                        1, 1);
 }
 
-TEST(ResizeToQuarter, ImageSize) {
+TEST(ResizeToQuarter, ZeroImageSize) {
+  const uint8_t src[1] = {};
+  uint8_t dst[1];
+
+  EXPECT_EQ(INTRINSICCV_OK,
+            intrinsiccv_resize_to_quarter_u8(src, 1, 0, 1, dst, 1, 0, 1));
+  EXPECT_EQ(INTRINSICCV_OK,
+            intrinsiccv_resize_to_quarter_u8(src, 1, 1, 0, dst, 1, 1, 0));
+}
+
+TEST(ResizeToQuarter, InvalidImageSize) {
   const uint8_t src[1] = {};
   uint8_t dst[1];
 

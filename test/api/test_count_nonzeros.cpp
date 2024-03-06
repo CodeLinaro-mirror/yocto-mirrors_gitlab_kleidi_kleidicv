@@ -131,7 +131,17 @@ TYPED_TEST(CountNonZeros, Misalignment) {
       count_nonzeros<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &count));
 }
 
-TYPED_TEST(CountNonZeros, ImageSize) {
+TYPED_TEST(CountNonZeros, ZeroImageSize) {
+  TypeParam src[1] = {};
+  size_t count = 123;
+  EXPECT_EQ(INTRINSICCV_OK,
+            count_nonzeros<TypeParam>()(src, sizeof(TypeParam), 0, 1, &count));
+  EXPECT_EQ(INTRINSICCV_OK,
+            count_nonzeros<TypeParam>()(src, sizeof(TypeParam), 1, 0, &count));
+  EXPECT_EQ(0, count);
+}
+
+TYPED_TEST(CountNonZeros, OversizeImage) {
   TypeParam src[1] = {};
   size_t count = 0;
   EXPECT_EQ(

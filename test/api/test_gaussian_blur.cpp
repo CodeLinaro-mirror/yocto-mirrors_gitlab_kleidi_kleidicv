@@ -257,7 +257,29 @@ TYPED_TEST(GaussianBlur, Misalignment) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TYPED_TEST(GaussianBlur, ImageSize) {
+TYPED_TEST(GaussianBlur, ZeroImageSize) {
+  TypeParam src[1] = {}, dst[1];
+  intrinsiccv_filter_context_t *context = nullptr;
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{0, 1}));
+  EXPECT_EQ(INTRINSICCV_OK,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 0, 1, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+
+  ASSERT_EQ(INTRINSICCV_OK,
+            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                      intrinsiccv_rectangle_t{1, 0}));
+  EXPECT_EQ(INTRINSICCV_OK,
+            gaussian_blur_3x3<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 0, 1,
+                INTRINSICCV_BORDER_TYPE_REFLECT, context));
+  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
+}
+
+TYPED_TEST(GaussianBlur, OversizeImage) {
   intrinsiccv_filter_context_t *context = nullptr;
   ASSERT_EQ(INTRINSICCV_OK,
             intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
@@ -356,7 +378,7 @@ TYPED_TEST(GaussianBlur, InvalidContextImageSize) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
-TEST(FilterCreate, TooBigImage) {
+TEST(FilterCreate, CannotAllocateFilter) {
   MockMallocToFail::enable();
   intrinsiccv_filter_context_t *context = nullptr;
   intrinsiccv_rectangle_t rect{INTRINSICCV_MAX_IMAGE_PIXELS, 1};
@@ -365,7 +387,7 @@ TEST(FilterCreate, TooBigImage) {
   MockMallocToFail::disable();
 }
 
-TEST(FilterCreate, ImageSize) {
+TEST(FilterCreate, OversizeImage) {
   intrinsiccv_filter_context_t *context = nullptr;
 
   for (intrinsiccv_rectangle_t rect : {

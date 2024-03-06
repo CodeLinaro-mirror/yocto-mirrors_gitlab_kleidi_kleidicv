@@ -123,7 +123,17 @@ TYPED_TEST(SaturatingAbsDiff, Misalignment) {
                                             sizeof(TypeParam) + 1, 1, 1));
 }
 
-TYPED_TEST(SaturatingAbsDiff, ImageSize) {
+TYPED_TEST(SaturatingAbsDiff, ZeroImageSize) {
+  TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(INTRINSICCV_OK, saturating_absdiff<TypeParam>()(
+                                src, sizeof(TypeParam), src, sizeof(TypeParam),
+                                dst, sizeof(TypeParam), 0, 1));
+  EXPECT_EQ(INTRINSICCV_OK, saturating_absdiff<TypeParam>()(
+                                src, sizeof(TypeParam), src, sizeof(TypeParam),
+                                dst, sizeof(TypeParam), 1, 0));
+}
+
+TYPED_TEST(SaturatingAbsDiff, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             saturating_absdiff<TypeParam>()(
