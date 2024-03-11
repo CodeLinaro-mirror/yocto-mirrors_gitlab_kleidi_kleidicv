@@ -70,11 +70,9 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
           int margin_bottom, int dx, int dy, int ksize, double scale,
           double delta, int border_type);
 
-#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int cn, double lowThreshold,
           double highThreshold, int ksize, bool L2gradient);
-#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height, int element_size);
@@ -226,7 +224,6 @@ static inline int intrinsiccv_sobel_with_fallback(
 #undef cv_hal_sobel
 #define cv_hal_sobel intrinsiccv_sobel_with_fallback
 
-#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 // canny
 static inline int intrinsiccv_canny_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
@@ -238,7 +235,6 @@ static inline int intrinsiccv_canny_with_fallback(
 }
 #undef cv_hal_canny
 #define cv_hal_canny intrinsiccv_canny_with_fallback
-#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 
 #endif  // OPENCV_IMGPROC_HAL_REPLACEMENT_HPP
 

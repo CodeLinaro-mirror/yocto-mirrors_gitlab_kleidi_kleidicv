@@ -14,7 +14,6 @@ option(INTRINSICCV_ENABLE_SME2 "Explicitly enables or disables SME2 code paths f
 option(INTRINSICCV_CHECK_BANNED_FUNCTIONS "Check source for deprecated or obsolescent functions" OFF)
 option(INTRINSICCV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector length is assumed" OFF)
 option(INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
-option(INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
 
 if (INTRINSICCV_ENABLE_SVE2 AND INTRINSICCV_ENABLE_SVE2_SELECTIVELY)

@@ -6,8 +6,6 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/neon.h"
 
-#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
-
 namespace intrinsiccv::neon {
 
 // Container to hold strong edges.
@@ -545,5 +543,3 @@ extern "C" INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t intrinsiccv_canny_u8(
 }
 
 }  // namespace intrinsiccv::neon
-
-#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY

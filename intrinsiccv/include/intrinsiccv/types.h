@@ -371,7 +371,7 @@ class Rows final : public RowBase<T> {
   }
 
   // Pointer to the first row.
-  T *ptr_;
+  T *ptr_ = nullptr;
 };  // end of class Rows<T>
 
 // Similar to Rows<T>, but in this case rows are indirectly addressed.

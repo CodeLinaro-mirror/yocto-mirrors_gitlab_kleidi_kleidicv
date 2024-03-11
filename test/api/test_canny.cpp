@@ -239,8 +239,6 @@ class CannyTestSuite {
   int16_t low_threshold_, high_threshold_;
 };  // end of class CannyTestSuite<TestParams>
 
-#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
-
 #define INTRINSICCV_CANNY(type, suffix) \
   INTRINSICCV_API(canny, intrinsiccv_canny_##suffix, type)
 
@@ -308,4 +306,3 @@ TYPED_TEST(CannyTest, CannotAllocateBuffers) {
                                5, 5, 0.0, 1.0));
   MockMallocToFail::disable();
 }
-#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
