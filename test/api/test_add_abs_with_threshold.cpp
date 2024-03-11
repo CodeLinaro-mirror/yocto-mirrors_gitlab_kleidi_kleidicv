@@ -6,6 +6,7 @@
 
 #include "framework/operation.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 template <typename ElementType>
 class SaturatingAddAbsWithThresholdTestBase

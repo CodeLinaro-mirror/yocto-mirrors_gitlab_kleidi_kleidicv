@@ -10,6 +10,7 @@
 #include "framework/generator.h"
 #include "framework/kernel.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #define INTRINSICCV_SOBEL_3X3_HORIZONTAL(type, suffix) \
   INTRINSICCV_API(sobel_3x3_horizontal,                \
@@ -223,12 +224,27 @@ TYPED_TEST(Sobel, UndersizeImage) {
                                             validWidth, underSize, 1));
 }
 
-TYPED_TEST(Sobel, OversizeImageHorizontal) {
+#ifdef INTRINSICCV_ALLOCATION_TESTS
+TYPED_TEST(Sobel, CannotAllocateImageHorizontal) {
   MockMallocToFail::enable();
   using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
   size_t validSize = 2;
+
+  EXPECT_EQ(
+      INTRINSICCV_ERROR_ALLOCATION,
+      sobel_3x3_horizontal<TypeParam>()(
+          src, sizeof(src), dst, sizeof(dst), INTRINSICCV_MAX_IMAGE_PIXELS / 2,
+          validSize, INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
+  MockMallocToFail::disable();
+}
+#endif
+
+TYPED_TEST(Sobel, OversizeImageHorizontal) {
+  using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
 
   EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
             sobel_3x3_horizontal<TypeParam>()(
@@ -238,20 +254,12 @@ TYPED_TEST(Sobel, OversizeImageHorizontal) {
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst),
                 INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS, 1));
-  EXPECT_EQ(
-      INTRINSICCV_ERROR_ALLOCATION,
-      sobel_3x3_horizontal<TypeParam>()(
-          src, sizeof(src), dst, sizeof(dst), INTRINSICCV_MAX_IMAGE_PIXELS / 2,
-          validSize, INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
-  MockMallocToFail::disable();
 }
 
 TYPED_TEST(Sobel, OversizeImageVertical) {
-  MockMallocToFail::enable();
   using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
-  size_t validSize = 2;
 
   EXPECT_EQ(
       INTRINSICCV_ERROR_RANGE,
@@ -261,12 +269,6 @@ TYPED_TEST(Sobel, OversizeImageVertical) {
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             INTRINSICCV_MAX_IMAGE_PIXELS,
                                             INTRINSICCV_MAX_IMAGE_PIXELS, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALLOCATION,
-            sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
-                                            INTRINSICCV_MAX_IMAGE_PIXELS / 2,
-                                            validSize,
-                                            INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
-  MockMallocToFail::disable();
 }
 
 TYPED_TEST(Sobel, ChannelNumber) {

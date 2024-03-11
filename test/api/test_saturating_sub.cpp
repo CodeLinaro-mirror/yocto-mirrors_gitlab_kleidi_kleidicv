@@ -8,6 +8,7 @@
 
 #include "framework/operation.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #define INTRINSICCV_SATURATING_SUB(type, suffix) \
   INTRINSICCV_API(saturating_sub, intrinsiccv_saturating_sub_##suffix, type)

@@ -7,6 +7,7 @@
 #include "framework/array.h"
 #include "framework/utils.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 class ResizeToQuarterTest final {
  public:

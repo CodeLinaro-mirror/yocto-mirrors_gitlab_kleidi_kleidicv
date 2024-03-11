@@ -8,6 +8,7 @@
 #include "framework/generator.h"
 #include "framework/operation.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #define INTRINSICCV_SCALE(type, suffix) \
   INTRINSICCV_API(scale, intrinsiccv_scale_##suffix, type)

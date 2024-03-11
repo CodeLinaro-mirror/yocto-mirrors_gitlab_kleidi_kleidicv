@@ -12,6 +12,7 @@
 #include "framework/kernel.h"
 #include "framework/operation.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #define INTRINSICCV_PARAMS(name, impl, type, op)                              \
   template <typename ElementType,                                             \
@@ -444,7 +445,8 @@ TYPED_TEST(Morphology, UnsupportedSize) {
   }
 }
 
-TYPED_TEST(Morphology, TooBigImage) {
+#ifdef INTRINSICCV_ALLOCATION_TESTS
+TYPED_TEST(Morphology, CannotAllocateImage) {
   MockMallocToFail::enable();
   intrinsiccv_morphology_context_t *context = nullptr;
   intrinsiccv_rectangle_t kernel{3, 3}, image{3072, 2048};
@@ -456,13 +458,21 @@ TYPED_TEST(Morphology, TooBigImage) {
             intrinsiccv_morphology_create(&context, kernel, anchor, border,
                                           border_values, 1, 1,
                                           sizeof(TypeParam), image));
-
-  intrinsiccv_rectangle_t kernel2{3, 1UL << 33}, image2{1UL << 33, 100};
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
-            intrinsiccv_morphology_create(&context, kernel2, anchor, border,
-                                          border_values, 1, 1,
-                                          sizeof(TypeParam), image2));
   MockMallocToFail::disable();
+}
+#endif
+
+TYPED_TEST(Morphology, OversizeImage) {
+  intrinsiccv_morphology_context_t *context = nullptr;
+  intrinsiccv_rectangle_t kernel{3, 1UL << 33}, image{1UL << 33, 100};
+  intrinsiccv_border_type_t border = INTRINSICCV_BORDER_TYPE_REPLICATE;
+  intrinsiccv_border_values_t border_values{0, 0, 1, 1};
+  intrinsiccv_point_t anchor{1, 1};
+
+  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+            intrinsiccv_morphology_create(&context, kernel, anchor, border,
+                                          border_values, 1, 1,
+                                          sizeof(TypeParam), image));
 }
 
 TYPED_TEST(Morphology, InvalidAnchors) {

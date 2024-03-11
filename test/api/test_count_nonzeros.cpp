@@ -9,6 +9,7 @@
 #include "framework/array.h"
 #include "framework/utils.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #define INTRINSICCV_COUNT_NONZEROS(type, suffix) \
   INTRINSICCV_API(count_nonzeros, intrinsiccv_count_nonzeros_##suffix, type)

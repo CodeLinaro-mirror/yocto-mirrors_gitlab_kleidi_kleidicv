@@ -8,7 +8,10 @@ set(INTRINSICCV_INCLUDE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/../intrinsiccv/include
   ${CMAKE_CURRENT_BINARY_DIR}/../intrinsiccv/include
 )
-set(INTRINSICCV_TEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(INTRINSICCV_TEST_INCLUDE_DIR
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 set(INTRINSICCV_TEST_CXX_FLAGS
   "-Werror"
@@ -23,14 +26,25 @@ else()
   list(APPEND INTRINSICCV_TEST_CXX_FLAGS "-O2" "-g0")
 endif()
 
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,--wrap,malloc")
+# Only perform allocation tests on Linux and Android
+if (CMAKE_SYSTEM_NAME MATCHES "^(Linux|Android)$")
+  set(INTRINSICCV_ALLOCATION_TESTS TRUE)
+endif()
 
 set(INTRINSICCV_TEST_FRAMEWORK_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/border.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/test_main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/framework/wrap_malloc.cpp
 )
+
+if (INTRINSICCV_ALLOCATION_TESTS)
+  set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,--wrap,malloc")
+  list(APPEND INTRINSICCV_TEST_FRAMEWORK_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/framework/wrap_malloc.cpp
+  )
+endif()
+
+configure_file("${CMAKE_CURRENT_LIST_DIR}/test_config.h.in" "test_config.h")
 
 include(FetchContent)
 # Please update SECURITY.md if adding, removing or changing the version of third party content.

@@ -6,6 +6,7 @@
 
 #include "framework/utils.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
 

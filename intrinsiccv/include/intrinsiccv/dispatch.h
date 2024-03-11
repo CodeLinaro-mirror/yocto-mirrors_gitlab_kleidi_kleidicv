@@ -5,7 +5,9 @@
 #ifndef INTRINSICCV_DISPATCH_H
 #define INTRINSICCV_DISPATCH_H
 
+#ifdef __linux__
 #include <sys/auxv.h>
+#endif
 
 #include <cinttypes>
 #include <type_traits>
@@ -21,9 +23,14 @@ struct HwCaps final {
   HwCapTy hwcap2;
 };
 
+#ifdef __linux__
 static inline HwCaps get_hwcaps() {
   return HwCaps{getauxval(AT_HWCAP), getauxval(AT_HWCAP2)};
 }
+#define GET_HWCAPS_OR_FAIL(x) [[maybe_unused]] HwCaps hwcaps = get_hwcaps()
+#else
+#define GET_HWCAPS_OR_FAIL(fallback_impl) return fallback_impl
+#endif
 
 static inline bool hwcaps_has_sve2(HwCaps hwcaps) {
   return hwcaps.hwcap2 & (1 << 1);
@@ -67,7 +74,7 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 #define INTRINSICCV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, \
                                        sme2_impl, ...)                 \
   decltype(neon_impl) *api_name##_resolver() {                         \
-    [[maybe_unused]] HwCaps hwcaps = get_hwcaps();                     \
+    GET_HWCAPS_OR_FAIL(neon_impl);                                     \
     INTRINSICCV_SME2_RESOLVE(sme2_impl);                               \
     INTRINSICCV_SVE2_RESOLVE(sve2_impl);                               \
     return neon_impl;                                                  \

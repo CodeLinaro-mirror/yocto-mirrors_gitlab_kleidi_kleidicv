@@ -53,8 +53,13 @@
 #define INTRINSICCV_STREAMING_COMPATIBLE
 #endif
 
+#ifdef __linux__
 #define INTRINSICCV_ATTR_SECTION(section_to_use) \
   __attribute__((section(section_to_use)))
+#else
+#define INTRINSICCV_ATTR_SECTION(x)
+#endif
+
 #define INTRINSICCV_ATTR_NOINLINE __attribute__((noinline))
 #define INTRINSICCV_ATTR_ALIGNED(alignment) __attribute__((aligned(alignment)))
 

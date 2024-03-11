@@ -8,6 +8,7 @@
 
 #include "framework/operation.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #define INTRINSICCV_SATURATING_ABSDIFF(type, suffix)                           \
   INTRINSICCV_API(saturating_absdiff, intrinsiccv_saturating_absdiff_##suffix, \

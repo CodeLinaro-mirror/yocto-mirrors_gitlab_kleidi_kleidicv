@@ -8,6 +8,7 @@
 #include "framework/utils.h"
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/utils.h"
+#include "test_config.h"
 
 class YuvTest final {
  public:

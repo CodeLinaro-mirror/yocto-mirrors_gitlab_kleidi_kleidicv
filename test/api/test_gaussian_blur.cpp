@@ -9,6 +9,7 @@
 #include "framework/kernel.h"
 #include "framework/utils.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 #define INTRINSICCV_GAUSSIAN_BLUR(type, kernel_suffix, type_suffix)          \
   INTRINSICCV_API(gaussian_blur_##kernel_suffix,                             \
@@ -563,6 +564,7 @@ TYPED_TEST(GaussianBlur, InvalidContextImageSize) {
   EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_filter_release(context));
 }
 
+#ifdef INTRINSICCV_ALLOCATION_TESTS
 TEST(FilterCreate, CannotAllocateFilter) {
   MockMallocToFail::enable();
   intrinsiccv_filter_context_t *context = nullptr;
@@ -571,6 +573,7 @@ TEST(FilterCreate, CannotAllocateFilter) {
             intrinsiccv_filter_create(&context, 1, 1, rect));
   MockMallocToFail::disable();
 }
+#endif
 
 TEST(FilterCreate, OversizeImage) {
   intrinsiccv_filter_context_t *context = nullptr;

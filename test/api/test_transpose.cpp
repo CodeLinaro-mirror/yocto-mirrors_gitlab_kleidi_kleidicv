@@ -7,6 +7,7 @@
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "intrinsiccv/intrinsiccv.h"
+#include "test_config.h"
 
 template <typename ElementType, bool inplace>
 class TestTranspose final {
