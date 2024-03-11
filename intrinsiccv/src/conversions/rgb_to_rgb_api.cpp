@@ -25,10 +25,9 @@ INTRINSICCV_DEFINE_C_API(intrinsiccv_rgba_to_rgb_u8, rgba_to_rgb_u8);
 
 extern "C" {
 
-intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8(const uint8_t *src,
-                                              size_t src_stride, uint8_t *dst,
-                                              size_t dst_stride, size_t width,
-                                              size_t height) {
+intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8_impl(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
@@ -40,10 +39,12 @@ intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8(const uint8_t *src,
   return INTRINSICCV_OK;
 }
 
-intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8(const uint8_t *src,
-                                                size_t src_stride, uint8_t *dst,
-                                                size_t dst_stride, size_t width,
-                                                size_t height) {
+decltype(intrinsiccv_rgb_to_rgb_u8_impl) *intrinsiccv_rgb_to_rgb_u8 =
+    intrinsiccv_rgb_to_rgb_u8_impl;
+
+intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8_impl(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
@@ -54,6 +55,9 @@ intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8(const uint8_t *src,
   CopyRows<uint8_t>::copy_rows(rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
+
+decltype(intrinsiccv_rgba_to_rgba_u8_impl) *intrinsiccv_rgba_to_rgba_u8 =
+    intrinsiccv_rgba_to_rgba_u8_impl;
 
 }  // extern "C"
 

@@ -53,7 +53,6 @@
 #define INTRINSICCV_STREAMING_COMPATIBLE
 #endif
 
-#define INTRINSICCV_ATTR_IFUNC(resolver) __attribute__((ifunc(resolver)))
 #define INTRINSICCV_ATTR_SECTION(section_to_use) \
   __attribute__((section(section_to_use)))
 #define INTRINSICCV_ATTR_NOINLINE __attribute__((noinline))
@@ -61,9 +60,6 @@
 
 #define INTRINSICCV_LIKELY(cond) __builtin_expect((cond), 1)
 #define INTRINSICCV_UNLIKELY(cond) __builtin_expect((cond), 0)
-
-#define INTRINSICCV_IFUNC_RESOLVER \
-  INTRINSICCV_ATTR_SECTION(".text.ifunc_resolvers")
 
 #ifdef __clang__
 #define INTRINSICCV_FORCE_LOOP_UNROLL _Pragma("clang loop unroll(full)")

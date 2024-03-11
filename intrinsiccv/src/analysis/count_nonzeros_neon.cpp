@@ -42,15 +42,6 @@ class CountNonZeros final : public UnrollTwice {
 };  // end of class CountNonZeros<ScalarType>
 
 template <typename T>
-static size_t count_nonzeros_impl(Rows<const T> src, Rectangle rect) {
-  CountNonZeros<T> operation;
-  apply_block_operation_by_rows(operation, rect, src);
-  return operation.result();
-}
-
-}  // namespace neon
-
-template <typename T>
 INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
     const T *src, size_t src_stride, size_t width, size_t height,
     size_t *count) {
@@ -60,19 +51,20 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
 
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride};
-  *count = neon::count_nonzeros_impl(src_rows, rect);
+
+  CountNonZeros<T> operation;
+  apply_block_operation_by_rows(operation, rect, src_rows);
+  *count = operation.result();
+
   return INTRINSICCV_OK;
 }
 
+}  // namespace neon
+
 extern "C" {
 
-INTRINSICCV_TARGET_FN_ATTRS
-intrinsiccv_error_t intrinsiccv_count_nonzeros_u8(const uint8_t *src,
-                                                  size_t src_stride,
-                                                  size_t width, size_t height,
-                                                  size_t *count) {
-  return count_nonzeros<uint8_t>(src, src_stride, width, height, count);
-}
+decltype(neon::count_nonzeros<uint8_t>) *intrinsiccv_count_nonzeros_u8 =
+    neon::count_nonzeros<uint8_t>;
 
 }  // extern "C"
 

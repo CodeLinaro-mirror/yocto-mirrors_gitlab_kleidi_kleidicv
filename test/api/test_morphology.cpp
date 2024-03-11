@@ -18,7 +18,7 @@
             std::enable_if_t<std::is_same_v<ElementType, type>, bool> = true> \
   class name {                                                                \
    public:                                                                    \
-    static decltype(auto) api() { return &impl; }                             \
+    static decltype(auto) api() { return impl; }                              \
     static decltype(auto) operation() {                                       \
       return [](type a, type b) { return op<type>(a, b); };                   \
     }                                                                         \
