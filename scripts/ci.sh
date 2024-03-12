@@ -31,7 +31,7 @@ doxygen
 # Build
 cmake -S . -B build -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
-  -DCMAKE_CXX_FLAGS="--coverage" \
+  -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
   -DINTRINSICCV_ENABLE_SVE2=ON \
   -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF \
   -DINTRINSICCV_CHECK_BANNED_FUNCTIONS=ON
@@ -42,7 +42,7 @@ echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
 ninja -C build
 
 # Build with GCC
-CC=gcc CXX=g++ cmake -S . -B build/gcc -G Ninja
+CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ cmake -S . -B build/gcc -G Ninja
 ninja -C build/gcc
 
 # Run tests
@@ -67,14 +67,20 @@ scripts/prefix_testsuite_names.py build/test-results/gcc-neon/intrinsiccv-api-te
 # Generate test coverage report
 LLVM_COV=llvm-cov scripts/generate_coverage_report.py
 
-# Clang address & undefined behaviour sanitizers
-cmake -S . -B build/sanitize -G Ninja \
-  -DINTRINSICCV_ENABLE_SME2=OFF \
-  -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
-ninja -C build/sanitize intrinsiccv-api-test
-build/sanitize/test/api/intrinsiccv-api-test
+# Sanitizers don't work when run through qemu so must be run natively.
+if [[ $(dpkg --print-architecture) = arm64 ]]; then
+  # Clang address & undefined behaviour sanitizers
+  cmake -S . -B build/sanitize -G Ninja \
+    -DINTRINSICCV_ENABLE_SME2=OFF \
+    -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
+  ninja -C build/sanitize intrinsiccv-api-test
+  build/sanitize/test/api/intrinsiccv-api-test
+fi
 
-# Check OpenCV-IntrinsicCV integration
-scripts/ci-opencv.sh
+# TODO: Cross-build OpenCV
+if [[ $(dpkg --print-architecture) = arm64 ]]; then
+  # Check OpenCV-IntrinsicCV integration
+  scripts/ci-opencv.sh
+fi
 
 exit $TESTRESULT

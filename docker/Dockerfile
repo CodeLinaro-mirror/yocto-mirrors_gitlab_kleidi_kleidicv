@@ -42,6 +42,31 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
         libclang-rt-${LLVM_VERSION}-dev \
         llvm-${LLVM_VERSION}
 
+# Install libclang-rt-dev on an x86 host.
+# Hacks are needed to make this work:
+# 1. Once we add the arm64 architecture then apt update will fail so
+#    ignore the error.
+# 2. libclang-rt-dev declares a dependency on libc & libc++ which isn't
+#    needed to build, so edit the package to remove all dependencies.
+RUN if [ $(dpkg --print-architecture) = amd64 ]; then \
+    dpkg --add-architecture arm64 \
+    && (apt-get -y update || true) \
+    && cd /tmp \
+    && apt-get -y download libclang-rt-${LLVM_VERSION}-dev:arm64 \
+    && dpkg-deb -x libclang-rt*.deb libclang-rt \
+    && dpkg-deb --control libclang-rt*.deb libclang-rt/DEBIAN \
+    && sed -i '/Depends:/d' libclang-rt/DEBIAN/control \
+    && dpkg -b libclang-rt libclang-rt.deb \
+    && apt-get -y install ./libclang-rt.deb \
+    && rm -rf libclang-rt* \
+    ; fi
+
+# Hacks required to run tests on an x86 host.
+RUN if [ $(dpkg --print-architecture) = amd64 ]; then \
+    ln -sf /usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 /lib \
+    ; fi
+ENV LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib
+
 RUN pipx install cpplint==1.6.1
 RUN pipx install gcovr==6.0
 RUN pipx install reuse==3.0.0
