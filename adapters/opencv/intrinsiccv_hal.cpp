@@ -251,7 +251,7 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  decltype(intrinsiccv_gaussian_blur_3x3_u8) *impl{nullptr};
+  decltype(intrinsiccv_gaussian_blur_3x3_u8) impl{nullptr};
   if ((ksize_width == 3) && (ksize_height == 3) && (width >= 3) &&
       (height >= 3)) {
     impl = intrinsiccv_gaussian_blur_3x3_u8;
@@ -289,7 +289,7 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
 
 struct MorphologyParams {
   intrinsiccv_morphology_context_t *context;
-  decltype(intrinsiccv_dilate_u8) *impl;
+  decltype(intrinsiccv_dilate_u8) impl;
 };
 
 int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,

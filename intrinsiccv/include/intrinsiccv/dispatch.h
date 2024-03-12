@@ -73,7 +73,7 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 // Creates a multiversioned C API with a resolver for it
 #define INTRINSICCV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, \
                                        sme2_impl, ...)                 \
-  decltype(neon_impl) *api_name##_resolver() {                         \
+  static decltype(neon_impl) *api_name##_resolver() {                  \
     GET_HWCAPS_OR_FAIL(neon_impl);                                     \
     INTRINSICCV_SME2_RESOLVE(sme2_impl);                               \
     INTRINSICCV_SVE2_RESOLVE(sve2_impl);                               \
