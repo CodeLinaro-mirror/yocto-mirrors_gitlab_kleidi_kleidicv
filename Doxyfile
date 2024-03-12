@@ -17,5 +17,6 @@ HTML_TIMESTAMP         = YES
 GENERATE_LATEX         = NO
 MACRO_EXPANSION        = YES
 DIRECTORY_GRAPH        = NO
-PREDEFINED             = __aarch64__=
+PREDEFINED             = __aarch64__= \
+                         DOXYGEN
 TYPEDEF_HIDES_STRUCT   = YES

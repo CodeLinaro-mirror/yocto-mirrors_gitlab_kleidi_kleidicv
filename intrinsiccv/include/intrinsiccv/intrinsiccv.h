@@ -48,8 +48,13 @@
 extern "C" {
 #endif  // __cplusplus
 
+#ifdef DOXYGEN
+#define INTRINSICCV_API_DECLARATION(name, ...) \
+  intrinsiccv_error_t name(__VA_ARGS__)
+#else
 #define INTRINSICCV_API_DECLARATION(name, ...) \
   extern intrinsiccv_error_t (*name)(__VA_ARGS__)
+#endif
 
 #define INTRINSICCV_BINARY_OP(name, type)                                   \
   INTRINSICCV_API_DECLARATION(name, const type *src_a, size_t src_a_stride, \
