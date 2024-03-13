@@ -40,6 +40,7 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
         clang-tidy-${LLVM_VERSION} \
         clang-tools-${LLVM_VERSION} \
         libclang-rt-${LLVM_VERSION}-dev \
+        lld-${LLVM_VERSION} \
         llvm-${LLVM_VERSION}
 
 # Install libclang-rt-dev on an x86 host.
