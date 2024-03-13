@@ -115,6 +115,26 @@ class VectorTypes<uint64_t> {
   using Vector4Type = svuint64x4_t;
 };  // end of class VectorTypes<uint64_t>
 
+template <>
+class VectorTypes<float> {
+ public:
+  using ScalarType = float;
+  using VectorType = svfloat32_t;
+  using Vector2Type = svfloat32x2_t;
+  using Vector3Type = svfloat32x3_t;
+  using Vector4Type = svfloat32x4_t;
+};  // end of class VectorTypes<float>
+
+template <>
+class VectorTypes<double> {
+ public:
+  using ScalarType = double;
+  using VectorType = svfloat64_t;
+  using Vector2Type = svfloat64x2_t;
+  using Vector3Type = svfloat64x3_t;
+  using Vector4Type = svfloat64x4_t;
+};  // end of class VectorTypes<double>
+
 // Base class for all SVE vector traits.
 template <typename ScalarType>
 class VecTraitsBase : public VectorTypes<ScalarType> {
@@ -367,6 +387,22 @@ class VecTraits<uint64_t> : public VecTraitsBase<uint64_t> {
     return svdup_u64(v);
   }
 };  // end of class VecTraits<uint64_t>
+
+template <>
+class VecTraits<float> : public VecTraitsBase<float> {
+ public:
+  static inline svfloat32_t svdup(float v) INTRINSICCV_STREAMING_COMPATIBLE {
+    return svdup_f32(v);
+  }
+};  // end of class VecTraits<float>
+
+template <>
+class VecTraits<double> : public VecTraitsBase<double> {
+ public:
+  static inline svfloat64_t svdup(double v) INTRINSICCV_STREAMING_COMPATIBLE {
+    return svdup_f64(v);
+  }
+};  // end of class VecTraits<double>
 
 // Adapter which adds context and forwards arguments.
 template <typename OperationType>
