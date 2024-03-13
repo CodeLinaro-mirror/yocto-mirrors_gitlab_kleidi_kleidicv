@@ -16,3 +16,4 @@ Scripts within this project may download and patch third party sources.
 It is the responsibility of the users of such scripts to track such third party sources for security issues.
 The third party sources that may be downloaded are:
 * Google Test 1.12.1.
+* Google Benchmark 1.8.3.

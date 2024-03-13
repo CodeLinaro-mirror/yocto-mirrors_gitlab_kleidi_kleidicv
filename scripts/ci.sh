@@ -78,6 +78,19 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
   build/sanitize/test/api/intrinsiccv-api-test
 fi
 
+# Build benchmarks, just to prevent bitrot.
+cmake -S . -B build/build-benchmark -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 \
+  -DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu \
+  -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
+  -DCMAKE_SYSTEM_NAME=Linux \
+  -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+  -DINTRINSICCV_BENCHMARK=ON \
+  -DINTRINSICCV_ENABLE_SVE2=ON \
+  -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF
+ninja -C build/build-benchmark intrinsiccv-benchmark
+
 # TODO: Cross-build OpenCV
 if [[ $(dpkg --print-architecture) = arm64 ]]; then
   # Check OpenCV-IntrinsicCV integration

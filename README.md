@@ -132,6 +132,14 @@ To target Android devices the following CMake flags are required here as well:
 -DANDROID_ABI=arm64-v8a
 ```
 
+# Benchmarking
+
+Benchmarks can be enabled with the `cmake` argument `-DINTRINSICCV_BENCHMARK=ON`.
+The benchmarks are based on [Google Benchmark](https://github.com/google/benchmark).
+All the standard Google Benchmark command line arguments can be used. In addition,
+the image size on which the tests will be run can be set with the command line
+options `--image_width=123` and `--image_height=123`.
+
 # Build Prerequisites
 While the core functionality of the library does not rely on any third-party libraries, there are
 build prerequisites that are essential for compiling the source code and generating the executable.

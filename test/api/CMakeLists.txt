@@ -27,6 +27,14 @@ target_include_directories(
   PRIVATE ${INTRINSICCV_TEST_INCLUDE_DIR}
 )
 
+if (INTRINSICCV_ALLOCATION_TESTS)
+  target_link_options(
+    intrinsiccv-api-test
+    PRIVATE -Wl,--wrap,malloc
+  )
+endif()
+
+
 target_link_libraries(
   intrinsiccv-api-test
   intrinsiccv

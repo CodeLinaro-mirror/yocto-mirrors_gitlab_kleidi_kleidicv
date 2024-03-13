@@ -8,3 +8,4 @@ project("IntrinsicCV" CXX)
 
 add_subdirectory(intrinsiccv)
 add_subdirectory(test)
+add_subdirectory(benchmark)

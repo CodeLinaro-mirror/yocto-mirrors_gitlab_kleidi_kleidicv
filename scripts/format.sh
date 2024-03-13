@@ -30,6 +30,7 @@ INTRINSICCV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 
 SOURCES="$(find \
     "${INTRINSICCV_ROOT_PATH}"/adapters \
+    "${INTRINSICCV_ROOT_PATH}"/benchmark \
     "${INTRINSICCV_ROOT_PATH}"/intrinsiccv \
     "${INTRINSICCV_ROOT_PATH}"/test \
     \( -name \*.cpp -o -name \*.h \) \
