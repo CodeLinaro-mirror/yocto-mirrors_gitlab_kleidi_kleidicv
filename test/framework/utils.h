@@ -59,9 +59,9 @@ class Options {
   // Returns seed to use.
   static uint64_t seed() { return seed_; }
 
-  // Returns the number of lanes in a vector for a given integral type.
+  // Returns the number of lanes in a vector for a given arithmetic type.
   template <typename ElementType,
-            std::enable_if_t<std::is_integral_v<ElementType>, bool> = true>
+            std::enable_if_t<std::is_arithmetic_v<ElementType>, bool> = true>
   static size_t vector_lanes() {
     return vector_length_ / sizeof(ElementType);
   }
