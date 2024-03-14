@@ -9,8 +9,6 @@
 namespace intrinsiccv {
 
 INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_transpose,
-                               intrinsiccv::neon::transpose, nullptr, nullptr,
-                               const void *, size_t, void *, size_t, size_t,
-                               size_t, size_t);
+                               intrinsiccv::neon::transpose, nullptr, nullptr);
 
 }  // namespace intrinsiccv

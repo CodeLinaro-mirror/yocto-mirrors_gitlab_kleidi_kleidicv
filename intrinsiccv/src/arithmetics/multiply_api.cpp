@@ -42,8 +42,7 @@ intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
   INTRINSICCV_MULTIVERSION_C_API(                                             \
       name, intrinsiccv::neon::saturating_multiply<type>,                     \
       INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_multiply<type>), \
-      nullptr, const type *, size_t, const type *, size_t, type *, size_t,    \
-      size_t, size_t, double)
+      nullptr)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_u8, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_s8, int8_t);

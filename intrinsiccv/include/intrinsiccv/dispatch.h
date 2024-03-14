@@ -80,7 +80,7 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 #endif
 
 #define INTRINSICCV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl,    \
-                                       sme2_impl, ...)                    \
+                                       sme2_impl)                         \
   INTRINSICCV_DECLARE_RESOLVER(api_name, neon_impl, sve2_impl, sme2_impl) \
                                                                           \
   extern "C" {                                                            \

@@ -41,8 +41,7 @@ intrinsiccv_error_t saturating_add(const T *src_a, size_t src_a_stride,
   INTRINSICCV_MULTIVERSION_C_API(                                        \
       name, intrinsiccv::neon::saturating_add<type>,                     \
       INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_add<type>), \
-      intrinsiccv::sme2::saturating_add<type>, const type *, size_t,     \
-      const type *, size_t, type *, size_t, size_t, size_t)
+      intrinsiccv::sme2::saturating_add<type>)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_add_s8, int8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_add_u8, uint8_t);

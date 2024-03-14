@@ -54,18 +54,11 @@ intrinsiccv_error_t intrinsiccv_filter_release(
 
 INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_3x3_u8,
                                intrinsiccv::neon::gaussian_blur_3x3_u8, nullptr,
-                               nullptr, const uint8_t *src, size_t src_stride,
-                               uint8_t *dst, size_t dst_stride, size_t width,
-                               size_t height, size_t channels,
-                               intrinsiccv_border_type_t border_type,
-                               intrinsiccv_filter_context_t *context);
+                               nullptr);
 
 INTRINSICCV_MULTIVERSION_C_API(
     intrinsiccv_gaussian_blur_5x5_u8, intrinsiccv::neon::gaussian_blur_5x5_u8,
     INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::gaussian_blur_5x5_u8),
-    intrinsiccv::sme2::gaussian_blur_5x5_u8, const uint8_t *src,
-    size_t src_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, size_t channels, intrinsiccv_border_type_t border_type,
-    intrinsiccv_filter_context_t *context);
+    intrinsiccv::sme2::gaussian_blur_5x5_u8);
 
 }  // namespace intrinsiccv

@@ -20,10 +20,9 @@ namespace sve2 {}  // namespace sve2
 
 namespace sme2 {}  // namespace sme2
 
-#define INTRINSICCV_DEFINE_SCALE_API(name, type)                         \
-  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::scale<type>,   \
-                                 nullptr, nullptr, const type *, size_t, \
-                                 type *, size_t, size_t, size_t, float, float)
+#define INTRINSICCV_DEFINE_SCALE_API(name, type)                       \
+  INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::scale<type>, \
+                                 nullptr, nullptr)
 
 INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_u8, uint8_t);
 // INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s8, int8_t);

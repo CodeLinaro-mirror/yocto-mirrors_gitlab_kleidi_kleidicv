@@ -27,8 +27,7 @@ namespace sme2 {}  // namespace sme2
 
 #define INTRINSICCV_DEFINE_MINMAX_API(name, type)                        \
   INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max<type>, \
-                                 nullptr, nullptr, const type *, size_t, \
-                                 size_t, size_t, type *, type *)
+                                 nullptr, nullptr)
 
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_u8, uint8_t);
 INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s8, int8_t);
@@ -38,8 +37,7 @@ INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s32, int32_t);
 
 #define INTRINSICCV_DEFINE_MINMAXLOC_API(name, type)                         \
   INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max_loc<type>, \
-                                 nullptr, nullptr, const type *, size_t,     \
-                                 size_t, size_t, size_t *, size_t *)
+                                 nullptr, nullptr)
 
 INTRINSICCV_DEFINE_MINMAXLOC_API(intrinsiccv_min_max_loc_u8, uint8_t);
 
