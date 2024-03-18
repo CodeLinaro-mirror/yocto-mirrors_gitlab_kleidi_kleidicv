@@ -22,7 +22,7 @@ tar xf build/opencv.tar.gz -C build
 rm build/opencv.tar.gz
 mv build/opencv-${OPENCV_VER} build/opencv
 patch -d build/opencv -p1<adapters/opencv/opencv-${OPENCV_PATCH_VER}.patch
-cmake \
+LDFLAGS="--rtlib=compiler-rt -fuse-ld=lld" cmake \
   -S build/opencv \
   -B build/build-opencv \
   -G Ninja \

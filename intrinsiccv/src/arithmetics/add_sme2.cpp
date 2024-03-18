@@ -9,6 +9,10 @@
 
 namespace intrinsiccv::sme2 {
 
+using sve2::Rectangle;
+using sve2::Rows;
+using sve2::UnrollTwice;
+
 template <typename ScalarType>
 class SaturatingAdd final : public UnrollTwice {
  public:

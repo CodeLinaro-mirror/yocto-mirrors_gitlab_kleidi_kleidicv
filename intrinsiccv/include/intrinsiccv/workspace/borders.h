@@ -9,7 +9,7 @@
 
 #include "intrinsiccv/intrinsiccv.h"
 
-namespace intrinsiccv {
+namespace INTRINSICCV_SC_NAMESPACE {
 
 enum class FixedBorderType {
   REPLICATE,
@@ -278,6 +278,6 @@ using FixedBorderInfo3x3 = FixedBorderInfo<T, 3UL>;
 template <typename T>
 using FixedBorderInfo5x5 = FixedBorderInfo<T, 5UL>;
 
-}  // namespace intrinsiccv
+}  // namespace INTRINSICCV_SC_NAMESPACE
 
 #endif  // INTRINSICCV_WORKSPACE_BORDERS_H

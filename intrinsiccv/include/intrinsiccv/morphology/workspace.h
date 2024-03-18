@@ -13,11 +13,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
 
-#if INTRINSICCV_TARGET_SME2
-#include "intrinsiccv/sve2.h"
-#endif
-
-namespace intrinsiccv {
+namespace INTRINSICCV_SC_NAMESPACE {
 
 // Forward declarations.
 class MorphologyWorkspace;
@@ -54,6 +50,18 @@ class MorphologyWorkspace final {
         return std::optional<BorderType>();
     }
   }
+
+  template <typename T>
+  class CopyDataMemcpy {
+   public:
+    constexpr void operator()(Rows<const T> src_rows, Rows<T> dst_rows,
+                              size_t length) const
+        INTRINSICCV_STREAMING_COMPATIBLE {
+      std::memcpy(static_cast<void *>(&dst_rows[0]),
+                  static_cast<const void *>(&src_rows[0]),
+                  length * sizeof(T) * dst_rows.channels());
+    }
+  };
 
   // MorphologyWorkspace is only constructible with create().
   MorphologyWorkspace() = delete;
@@ -160,6 +168,7 @@ class MorphologyWorkspace final {
                O operation) INTRINSICCV_STREAMING_COMPATIBLE {
     using S = typename O::SourceType;
     using B = typename O::BufferType;
+    typename O::CopyData copy_data{};
 
     if (INTRINSICCV_UNLIKELY(rect.width() == 0 || rect.height() == 0)) {
       return;
@@ -326,39 +335,6 @@ class MorphologyWorkspace final {
     return height;
   }
 
-#if INTRINSICCV_TARGET_SME2
-  template <typename ScalarType>
-  class CopyOperation final : public UnrollTwice {
-   public:
-    using ContextType = sve2::Context;
-    using VecTraits = sve2::VecTraits<ScalarType>;
-    using VectorType = typename VecTraits::VectorType;
-
-    VectorType vector_path(ContextType,
-                           VectorType src) INTRINSICCV_STREAMING_COMPATIBLE {
-      return src;
-    }
-  };  // end of class CopyOperation<ScalarType>
-#endif
-
-  template <typename T>
-  void copy_data(Rows<const T> src_rows, Rows<T> dst_rows,
-                 size_t length) INTRINSICCV_STREAMING_COMPATIBLE {
-#if INTRINSICCV_TARGET_SME2
-    // 'sve2::apply_operation_by_rows' can only handle one channel well
-    // so width must be multiplied in order to copy all the data
-    Rectangle rect{length * dst_rows.channels(), std::size_t{1}};
-    Rows<const T> src_1ch{&src_rows[0], src_rows.stride(), 1};
-    Rows<T> dst_1ch{&dst_rows[0], dst_rows.stride(), 1};
-    CopyOperation<T> operation;
-    sve2::apply_operation_by_rows(operation, rect, src_1ch, dst_1ch);
-#else
-    std::memcpy(static_cast<void *>(&dst_rows[0]),
-                static_cast<const void *>(&src_rows[0]),
-                length * sizeof(T) * dst_rows.channels());
-#endif
-  }
-
   template <typename T, typename BorderType>
   void make_constant_border(Rows<T> dst_rows, size_t dst_index, size_t count,
                             BorderType value) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -417,6 +393,6 @@ class MorphologyWorkspace final {
   uint8_t data_[0] INTRINSICCV_ATTR_ALIGNED(sizeof(void *));
 };  // end of class MorphologyWorkspace
 
-}  // namespace intrinsiccv
+}  // namespace INTRINSICCV_SC_NAMESPACE
 
 #endif  // INTRINSICCV_MORPHOLOGY_WORKSPACE_H

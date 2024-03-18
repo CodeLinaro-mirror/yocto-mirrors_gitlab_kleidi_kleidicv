@@ -7,6 +7,10 @@
 
 namespace intrinsiccv::sme2 {
 
+using sve2::Rectangle;
+using sve2::Rows;
+using sve2::UnrollTwice;
+
 template <typename ScalarType, typename VectorType,
           std::enable_if_t<std::is_signed<ScalarType>::value, bool> = true>
 VectorType vector_path_impl(svbool_t pg, VectorType src_a,

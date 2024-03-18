@@ -467,6 +467,7 @@ class DilateOperation final {
   using SourceType = ScalarType;
   using BufferType = ScalarType;
   using DestinationType = ScalarType;
+  using CopyData = MorphologyWorkspace::CopyDataMemcpy<ScalarType>;
 
   explicit DilateOperation(Rectangle kernel) : kernel_{kernel} {}
 
@@ -537,6 +538,7 @@ class ErodeOperation final {
   using SourceType = ScalarType;
   using BufferType = ScalarType;
   using DestinationType = ScalarType;
+  using CopyData = MorphologyWorkspace::CopyDataMemcpy<ScalarType>;
 
   explicit ErodeOperation(Rectangle kernel) : kernel_{kernel} {}
 
@@ -566,6 +568,7 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
   CHECK_IMAGE_SIZE(width, height);
 
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
+
   if (workspace->type_size() != sizeof(T)) {
     return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
   }

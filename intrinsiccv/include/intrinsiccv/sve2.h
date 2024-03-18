@@ -517,7 +517,8 @@ class SeparableFilter<FilterType, 3UL> {
   using SourceVectorType = typename SourceVecTraits::VectorType;
   using BufferVecTraits = typename sve2::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
-  using BorderInfoType = typename intrinsiccv::FixedBorderInfo3x3<SourceType>;
+  using BorderInfoType =
+      typename ::INTRINSICCV_SC_NAMESPACE::FixedBorderInfo3x3<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -653,7 +654,8 @@ class SeparableFilter<FilterType, 5UL> {
   using SourceVectorType = typename SourceVecTraits::VectorType;
   using BufferVecTraits = typename sve2::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
-  using BorderInfoType = typename intrinsiccv::FixedBorderInfo5x5<SourceType>;
+  using BorderInfoType =
+      typename ::INTRINSICCV_SC_NAMESPACE::FixedBorderInfo5x5<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 

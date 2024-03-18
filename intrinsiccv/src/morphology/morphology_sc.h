@@ -15,6 +15,33 @@
 
 namespace intrinsiccv::sve2 {
 
+template <typename T>
+class CopyDataSVE2 {
+  class CopyOperation final : public UnrollTwice {
+   public:
+    using ContextType = sve2::Context;
+    using VecTraits = sve2::VecTraits<T>;
+    using VectorType = typename VecTraits::VectorType;
+
+    VectorType vector_path(ContextType,
+                           VectorType src) INTRINSICCV_STREAMING_COMPATIBLE {
+      return src;
+    }
+  };  // end of class CopyOperation
+
+ public:
+  void operator()(Rows<const T> src_rows, Rows<T> dst_rows,
+                  size_t length) const INTRINSICCV_STREAMING_COMPATIBLE {
+    // 'apply_operation_by_rows' can only handle one channel well
+    // so width must be multiplied in order to copy all the data
+    Rectangle rect{length * dst_rows.channels(), std::size_t{1}};
+    Rows<const T> src_1ch{&src_rows[0], src_rows.stride(), 1};
+    Rows<T> dst_1ch{&dst_rows[0], dst_rows.stride(), 1};
+    CopyOperation op{};
+    apply_operation_by_rows(op, rect, src_1ch, dst_1ch);
+  }
+};
+
 template <typename ScalarType, typename O>
 class VerticalOp final {
  public:
@@ -419,12 +446,13 @@ using HorizontalMin = HorizontalOp<T, Min<T>>;
 template <typename T>
 using HorizontalMax = HorizontalOp<T, Max<T>>;
 
-template <typename ScalarType>
+template <typename ScalarType, typename CopyDataOperation>
 class DilateOperation final {
  public:
   using SourceType = ScalarType;
   using BufferType = ScalarType;
   using DestinationType = ScalarType;
+  using CopyData = CopyDataOperation;
 
   explicit DilateOperation(Rectangle kernel) INTRINSICCV_STREAMING_COMPATIBLE
       : kernel_{kernel} {}
@@ -432,22 +460,20 @@ class DilateOperation final {
   void process_horizontal(Rectangle rect, Rows<const SourceType> src_rows,
                           Rows<BufferType> dst_rows)
       INTRINSICCV_STREAMING_COMPATIBLE {
-    sve2::HorizontalMax<ScalarType>{rect, kernel_}.process_rows(src_rows,
-                                                                dst_rows);
+    HorizontalMax<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
   void process_vertical(Rectangle rect, IndirectRows<BufferType> src_rows,
                         Rows<DestinationType> dst_rows)
       INTRINSICCV_STREAMING_COMPATIBLE {
-    sve2::VerticalMax<ScalarType>{rect, kernel_}.process_rows(src_rows,
-                                                              dst_rows);
+    VerticalMax<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
  private:
   Rectangle kernel_;
 };  // end of class DilateOperation<ScalarType>
 
-template <typename T>
+template <typename T, typename CopyOperation>
 static intrinsiccv_error_t dilate_sc(const T *src, size_t src_stride, T *dst,
                                      size_t dst_stride, size_t width,
                                      size_t height,
@@ -484,7 +510,7 @@ static intrinsiccv_error_t dilate_sc(const T *src, size_t src_stride, T *dst,
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
   for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
-    DilateOperation<T> operation{kernel};
+    DilateOperation<T, CopyOperation> operation{kernel};
     workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
                        workspace->border_type(), operation);
     // Update source for the next iteration.
@@ -494,12 +520,13 @@ static intrinsiccv_error_t dilate_sc(const T *src, size_t src_stride, T *dst,
 }
 
 // Helper structure for erode.
-template <typename ScalarType>
+template <typename ScalarType, typename CopyDataOperation>
 class ErodeOperation final {
  public:
   using SourceType = ScalarType;
   using BufferType = ScalarType;
   using DestinationType = ScalarType;
+  using CopyData = CopyDataOperation;
 
   explicit ErodeOperation(Rectangle kernel) INTRINSICCV_STREAMING_COMPATIBLE
       : kernel_{kernel} {}
@@ -507,22 +534,20 @@ class ErodeOperation final {
   void process_horizontal(Rectangle rect, Rows<const SourceType> src_rows,
                           Rows<BufferType> dst_rows)
       INTRINSICCV_STREAMING_COMPATIBLE {
-    sve2::HorizontalMin<ScalarType>{rect, kernel_}.process_rows(src_rows,
-                                                                dst_rows);
+    HorizontalMin<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
   void process_vertical(Rectangle rect, IndirectRows<BufferType> src_rows,
                         Rows<DestinationType> dst_rows)
       INTRINSICCV_STREAMING_COMPATIBLE {
-    sve2::VerticalMin<ScalarType>{rect, kernel_}.process_rows(src_rows,
-                                                              dst_rows);
+    VerticalMin<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
  private:
   Rectangle kernel_;
 };  // end of class ErodeOperation<ScalarType>
 
-template <typename T>
+template <typename T, typename CopyOperation>
 static intrinsiccv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
                                     size_t dst_stride, size_t width,
                                     size_t height,
@@ -559,7 +584,7 @@ static intrinsiccv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
   for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
-    ErodeOperation<T> operation{kernel};
+    ErodeOperation<T, CopyOperation> operation{kernel};
     workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
                        workspace->border_type(), operation);
     // Update source for the next iteration.

@@ -13,7 +13,7 @@
 #include "intrinsiccv/ctypes.h"
 #include "intrinsiccv/utils.h"
 
-namespace intrinsiccv {
+namespace INTRINSICCV_SC_NAMESPACE {
 
 // Represents a point on a 2D plane.
 class Point final {
@@ -668,6 +668,6 @@ class RowsOverUniquePtr {
   std::unique_ptr<T[]> data_;
 };
 
-}  // namespace intrinsiccv
+}  // namespace INTRINSICCV_SC_NAMESPACE
 
 #endif  // INTRINSICCV_TYPES_H
