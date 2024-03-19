@@ -72,6 +72,7 @@ LLVM_COV=llvm-cov scripts/generate_coverage_report.py
 if [[ $(dpkg --print-architecture) = arm64 ]]; then
   # Clang address & undefined behaviour sanitizers
   cmake -S . -B build/sanitize -G Ninja \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DINTRINSICCV_ENABLE_SME2=OFF \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
   ninja -C build/sanitize intrinsiccv-api-test
