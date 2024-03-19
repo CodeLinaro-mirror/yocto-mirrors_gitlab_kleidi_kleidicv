@@ -91,6 +91,7 @@ set(INTRINSICCV_WARNING_FLAGS
   "-Wall"
   "-Wextra"
   "-Wold-style-cast"
+  "-Wno-shadow" # GCC's shadow declaration check is too sensitive for the library
 )
 
 set(INTRINSICCV_CXX_FLAGS
