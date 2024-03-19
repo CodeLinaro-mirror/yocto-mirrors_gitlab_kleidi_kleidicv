@@ -851,6 +851,36 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_resize_to_quarter_u8,
                             size_t dst_stride, size_t dst_width,
                             size_t dst_height);
 
+/// Resize image using linear interpolation.
+///
+/// At present only 2*2 upsizing is supported.
+/// For other ratios INTRINSICCV_ERROR_NOT_IMPLEMENTED
+/// will be returned.
+/// The total number of pixels in the destination is limited to
+/// @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param src_width    Number of elements in the source row.
+/// @param src_height   Number of rows in the source data.
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param dst_width    Number of elements in the destination row.
+///                     Must be src_width * 2.
+/// @param dst_height   Number of rows in the destination data.
+///                     Must be src_height * 2.
+///
+INTRINSICCV_API_DECLARATION(intrinsiccv_resize_linear_u8, const uint8_t *src,
+                            size_t src_stride, size_t src_width,
+                            size_t src_height, uint8_t *dst, size_t dst_stride,
+                            size_t dst_width, size_t dst_height);
+
 /// Calculates vertical derivative approximation with Sobel filter.
 ///
 /// The used convolution kernel is:

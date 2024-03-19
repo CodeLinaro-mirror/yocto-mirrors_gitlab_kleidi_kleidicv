@@ -59,3 +59,25 @@ static void min_max_loc_u8(benchmark::State& state) {
   }
 }
 BENCHMARK(min_max_loc_u8);
+
+static void resize_linear_u8(benchmark::State& state) {
+  // Setup
+  size_t src_width = image_width / 2;
+  size_t src_height = image_height / 2;
+  size_t dst_width = src_width * 2;
+  size_t dst_height = src_height * 2;
+  std::vector<uint8_t> src, dst;
+  src.resize(src_width * src_height);
+  dst.resize(dst_width * dst_height);
+  std::mt19937 generator;
+  std::generate(src.begin(), src.end(), generator);
+
+  for (auto _ : state) {
+    // This code gets benchmarked
+    auto unused = intrinsiccv_resize_linear_u8(
+        src.data(), src_width, src_width, src_height, dst.data(), dst_width,
+        dst_width, dst_height);
+    (void)unused;
+  }
+}
+BENCHMARK(resize_linear_u8);

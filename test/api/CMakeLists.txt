@@ -39,4 +39,5 @@ target_link_libraries(
   intrinsiccv-api-test
   intrinsiccv
   gtest_main
+  gmock
 )
