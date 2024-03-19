@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -1206,7 +1206,7 @@ class OperationAdapter : public OperationBase<OperationType> {
     operation().scalar_path(ctx, &src[0], &dst_a[0], &dst_b[0], &dst_c[0],
                             &dst_d[0]);
   }
-};  // namespace intrinsiccv
+};  // end of class OperationAdapter<OperationType>
 
 // Removes context before forwarding calls.
 template <typename OperationType>

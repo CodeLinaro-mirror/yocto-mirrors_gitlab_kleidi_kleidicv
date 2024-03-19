@@ -14,7 +14,7 @@
 
 #include "intrinsiccv/config.h"
 
-namespace intrinsiccv {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 using HwCapTy = uint64_t;
 
@@ -39,27 +39,31 @@ static inline bool hwcaps_has_sve2(HwCaps hwcaps) {
   return hwcaps.hwcap2 & (1 << 1);
 }
 
-#define INTRINSICCV_SVE2_RESOLVE(sve2_impl)           \
-  if (!std::is_null_pointer_v<decltype(sve2_impl)> && \
-      hwcaps_has_sve2(hwcaps)) {                      \
-    return sve2_impl;                                 \
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
+
+#define INTRINSICCV_SVE2_RESOLVE(sve2_impl)                    \
+  if (!std::is_null_pointer_v<decltype(sve2_impl)> &&          \
+      INTRINSICCV_TARGET_NAMESPACE::hwcaps_has_sve2(hwcaps)) { \
+    return sve2_impl;                                          \
   }
 #else
 #define INTRINSICCV_SVE2_RESOLVE(x)
 #endif
 
 #ifdef INTRINSICCV_HAVE_SME2
+namespace INTRINSICCV_TARGET_NAMESPACE {
 static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
   // Actually checks for SME, not SME2, but this will be changed to check for
   // SME2 in future.
   const int kSMEBit = 23;
   return hwcaps.hwcap2 & (1UL << kSMEBit);
 }
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
-#define INTRINSICCV_SME2_RESOLVE(sme2_impl)           \
-  if (!std::is_null_pointer_v<decltype(sme2_impl)> && \
-      hwcaps_has_sme2(hwcaps)) {                      \
-    return sme2_impl;                                 \
+#define INTRINSICCV_SME2_RESOLVE(sme2_impl)                    \
+  if (!std::is_null_pointer_v<decltype(sme2_impl)> &&          \
+      INTRINSICCV_TARGET_NAMESPACE::hwcaps_has_sme2(hwcaps)) { \
+    return sme2_impl;                                          \
   }
 #else
 #define INTRINSICCV_SME2_RESOLVE(x)
@@ -68,7 +72,8 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 #define INTRINSICCV_DECLARE_RESOLVER(api_name, neon_impl, sve2_impl, \
                                      sme2_impl)                      \
   static decltype(neon_impl) *api_name##_resolver() {                \
-    [[maybe_unused]] HwCaps hwcaps = get_hwcaps();                   \
+    [[maybe_unused]] INTRINSICCV_TARGET_NAMESPACE::HwCaps hwcaps =   \
+        INTRINSICCV_TARGET_NAMESPACE::get_hwcaps();                  \
     INTRINSICCV_SME2_RESOLVE(sme2_impl);                             \
     INTRINSICCV_SVE2_RESOLVE(sve2_impl);                             \
     return neon_impl;                                                \
@@ -86,7 +91,5 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
   extern "C" {                                                            \
   decltype(neon_impl) *api_name = api_name##_resolver();                  \
   }
-
-}  // namespace intrinsiccv
 
 #endif  // INTRINSICCV_DISPATCH_H

@@ -7,8 +7,6 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
 
-namespace intrinsiccv {
-
 #define INTRINSICCV_DEFINE_C_API(name, partialname)             \
   INTRINSICCV_MULTIVERSION_C_API(                               \
       name, intrinsiccv::neon::partialname,                     \
@@ -63,5 +61,3 @@ decltype(intrinsiccv_rgba_to_rgba_u8_impl) *intrinsiccv_rgba_to_rgba_u8 =
     intrinsiccv_rgba_to_rgba_u8_impl;
 
 }  // extern "C"
-
-}  // namespace intrinsiccv

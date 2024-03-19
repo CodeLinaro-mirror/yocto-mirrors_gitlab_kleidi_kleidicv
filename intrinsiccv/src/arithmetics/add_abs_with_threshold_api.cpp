@@ -32,6 +32,8 @@ intrinsiccv_error_t saturating_add_abs_with_threshold(
 
 }  // namespace sme2
 
+}  // namespace intrinsiccv
+
 #define INTRINSICCV_DEFINE_C_API(name, type)                            \
   INTRINSICCV_MULTIVERSION_C_API(                                       \
       name, intrinsiccv::neon::saturating_add_abs_with_threshold<type>, \
@@ -41,5 +43,3 @@ intrinsiccv_error_t saturating_add_abs_with_threshold(
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_add_abs_with_threshold_s16,
                          int16_t);
-
-}  // namespace intrinsiccv

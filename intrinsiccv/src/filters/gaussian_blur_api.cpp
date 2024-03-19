@@ -7,9 +7,10 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/workspace/separable.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
-
 extern "C" {
+
+using INTRINSICCV_TARGET_NAMESPACE::Rectangle;
+using INTRINSICCV_TARGET_NAMESPACE::SeparableFilterWorkspace;
 
 intrinsiccv_error_t intrinsiccv_filter_create(
     intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
@@ -60,5 +61,3 @@ INTRINSICCV_MULTIVERSION_C_API(
     intrinsiccv_gaussian_blur_5x5_u8, intrinsiccv::neon::gaussian_blur_5x5_u8,
     INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::gaussian_blur_5x5_u8),
     intrinsiccv::sme2::gaussian_blur_5x5_u8);
-
-}  // namespace INTRINSICCV_TARGET_NAMESPACE

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -28,6 +28,8 @@ intrinsiccv_error_t threshold_binary(const T *src, size_t src_stride, T *dst,
                                      size_t height, T threshold, T value);
 }  // namespace sme2
 
+}  // namespace intrinsiccv
+
 #define INTRINSICCV_DEFINE_C_API(name, type)                               \
   INTRINSICCV_MULTIVERSION_C_API(                                          \
       name, intrinsiccv::neon::threshold_binary<type>,                     \
@@ -35,5 +37,3 @@ intrinsiccv_error_t threshold_binary(const T *src, size_t src_stride, T *dst,
       intrinsiccv::sme2::threshold_binary<type>)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_threshold_binary_u8, uint8_t);
-
-}  // namespace intrinsiccv

@@ -472,7 +472,7 @@ static void perform_hysteresis(StrongEdgeStack &strong_edge_pixels,
   }
 }
 
-extern "C" INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t intrinsiccv_canny_u8(
+INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t canny_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, double low_threshold, double high_threshold) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
@@ -545,5 +545,12 @@ extern "C" INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t intrinsiccv_canny_u8(
 }
 
 }  // namespace intrinsiccv::neon
+
+extern "C" {
+
+decltype(intrinsiccv::neon::canny_u8) *intrinsiccv_canny_u8 =
+    intrinsiccv::neon::canny_u8;
+
+}  // extern "C"
 
 #endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY

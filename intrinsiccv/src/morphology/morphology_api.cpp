@@ -50,6 +50,8 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
 
 }  // namespace sme2
 
+}  // namespace intrinsiccv
+
 extern "C" {
 
 using INTRINSICCV_TARGET_NAMESPACE::MorphologyWorkspace;
@@ -114,5 +116,3 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_dilate_u8, dilate, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_erode_u8, erode, uint8_t);
-
-}  // namespace intrinsiccv

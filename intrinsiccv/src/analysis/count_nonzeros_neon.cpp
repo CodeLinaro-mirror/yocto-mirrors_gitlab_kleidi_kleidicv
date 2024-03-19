@@ -8,8 +8,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/neon.h"
 
-namespace intrinsiccv {
-namespace neon {
+namespace intrinsiccv::neon {
 
 template <typename ScalarType>
 class CountNonZeros final : public UnrollTwice {
@@ -59,13 +58,11 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
   return INTRINSICCV_OK;
 }
 
-}  // namespace neon
+}  // namespace intrinsiccv::neon
 
 extern "C" {
 
-decltype(neon::count_nonzeros<uint8_t>) *intrinsiccv_count_nonzeros_u8 =
-    neon::count_nonzeros<uint8_t>;
+decltype(intrinsiccv::neon::count_nonzeros<uint8_t>)
+    *intrinsiccv_count_nonzeros_u8 = intrinsiccv::neon::count_nonzeros<uint8_t>;
 
 }  // extern "C"
-
-}  // namespace intrinsiccv

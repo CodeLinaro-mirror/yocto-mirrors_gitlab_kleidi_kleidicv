@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -38,6 +38,8 @@ intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
 
 // } // namespace sme2
 
+}  // namespace intrinsiccv
+
 #define INTRINSICCV_DEFINE_C_API(name, type)                                  \
   INTRINSICCV_MULTIVERSION_C_API(                                             \
       name, intrinsiccv::neon::saturating_multiply<type>,                     \
@@ -49,5 +51,3 @@ INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_s8, int8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_u16, uint16_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_s16, int16_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_s32, int32_t);
-
-}  // namespace intrinsiccv

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -25,6 +25,8 @@ namespace sve2 {}  // namespace sve2
 
 namespace sme2 {}  // namespace sme2
 
+}  // namespace intrinsiccv
+
 #define INTRINSICCV_DEFINE_MINMAX_API(name, type)                        \
   INTRINSICCV_MULTIVERSION_C_API(name, intrinsiccv::neon::min_max<type>, \
                                  nullptr, nullptr)
@@ -40,5 +42,3 @@ INTRINSICCV_DEFINE_MINMAX_API(intrinsiccv_min_max_s32, int32_t);
                                  nullptr, nullptr)
 
 INTRINSICCV_DEFINE_MINMAXLOC_API(intrinsiccv_min_max_loc_u8, uint8_t);
-
-}  // namespace intrinsiccv
