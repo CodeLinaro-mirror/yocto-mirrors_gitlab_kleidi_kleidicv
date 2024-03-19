@@ -13,7 +13,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
 
-namespace INTRINSICCV_SC_NAMESPACE {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // Forward declarations.
 class MorphologyWorkspace;
@@ -393,6 +393,6 @@ class MorphologyWorkspace final {
   uint8_t data_[0] INTRINSICCV_ATTR_ALIGNED(sizeof(void *));
 };  // end of class MorphologyWorkspace
 
-}  // namespace INTRINSICCV_SC_NAMESPACE
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_MORPHOLOGY_WORKSPACE_H

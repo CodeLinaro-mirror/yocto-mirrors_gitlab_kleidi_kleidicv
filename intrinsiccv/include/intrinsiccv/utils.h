@@ -13,7 +13,7 @@
 #include "intrinsiccv/config.h"
 #include "intrinsiccv/ctypes.h"
 
-namespace INTRINSICCV_SC_NAMESPACE {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // Saturating cast from signed to unsigned type.
 template <typename S, typename U,
@@ -349,11 +349,11 @@ bool any_null(Pointers... pointers) INTRINSICCV_STREAMING_COMPATIBLE {
   return (... || (pointers == nullptr));
 }
 
-#define CHECK_POINTERS(...)                  \
-  do {                                       \
-    if (any_null(__VA_ARGS__)) {             \
-      return INTRINSICCV_ERROR_NULL_POINTER; \
-    }                                        \
+#define CHECK_POINTERS(...)                                    \
+  do {                                                         \
+    if (INTRINSICCV_TARGET_NAMESPACE::any_null(__VA_ARGS__)) { \
+      return INTRINSICCV_ERROR_NULL_POINTER;                   \
+    }                                                          \
   } while (false)
 
 template <typename AlignType, typename Value>
@@ -402,22 +402,22 @@ std::enable_if_t<alignof(T) == 1, intrinsiccv_error_t> check_pointer_and_stride(
   return INTRINSICCV_OK;
 }
 
-#define CHECK_POINTER_AND_STRIDE(pointer, stride)                           \
-  do {                                                                      \
-    if (intrinsiccv_error_t ptr_stride_err =                                \
-            ::INTRINSICCV_SC_NAMESPACE::check_pointer_and_stride(pointer,   \
-                                                                 stride)) { \
-      return ptr_stride_err;                                                \
-    }                                                                       \
+#define CHECK_POINTER_AND_STRIDE(pointer, stride)                             \
+  do {                                                                        \
+    if (intrinsiccv_error_t ptr_stride_err =                                  \
+            INTRINSICCV_TARGET_NAMESPACE::check_pointer_and_stride(pointer,   \
+                                                                   stride)) { \
+      return ptr_stride_err;                                                  \
+    }                                                                         \
   } while (false)
 
-#define MAKE_POINTER_CHECK_ALIGNMENT(ElementType, name, from)   \
-  if constexpr (alignof(ElementType) > 1) {                     \
-    if (::INTRINSICCV_SC_NAMESPACE::is_misaligned<ElementType>( \
-            reinterpret_cast<uintptr_t>(from))) {               \
-      return INTRINSICCV_ERROR_ALIGNMENT;                       \
-    }                                                           \
-  }                                                             \
+#define MAKE_POINTER_CHECK_ALIGNMENT(ElementType, name, from)     \
+  if constexpr (alignof(ElementType) > 1) {                       \
+    if (INTRINSICCV_TARGET_NAMESPACE::is_misaligned<ElementType>( \
+            reinterpret_cast<uintptr_t>(from))) {                 \
+      return INTRINSICCV_ERROR_ALIGNMENT;                         \
+    }                                                             \
+  }                                                               \
   ElementType *name = reinterpret_cast<ElementType *>(from)
 
 // Check whether the image size is acceptable by limiting it.
@@ -436,6 +436,6 @@ std::enable_if_t<alignof(T) == 1, intrinsiccv_error_t> check_pointer_and_stride(
 // Check whether the rectangle size is acceptable by limiting it.
 #define CHECK_RECTANGLE_SIZE(rect) CHECK_IMAGE_SIZE(rect.width, rect.height)
 
-}  // namespace INTRINSICCV_SC_NAMESPACE
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_UTILS_H

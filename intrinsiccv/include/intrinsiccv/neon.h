@@ -12,7 +12,7 @@
 #include "intrinsiccv/utils.h"
 #include "intrinsiccv/workspace/separable.h"
 
-namespace intrinsiccv {
+namespace intrinsiccv::neon {
 
 template <>
 class half_element_width<uint16x8_t> {
@@ -49,8 +49,6 @@ class double_element_width<uint32x4_t> {
  public:
   using type = uint64x2_t;
 };
-
-namespace neon {
 
 // Primary template to describe logically grouped peroperties of vectors.
 template <typename ScalarType>
@@ -332,7 +330,8 @@ class SeparableFilter<FilterType, 3UL> {
   using SourceVectorType = typename SourceVecTraits::VectorType;
   using BufferVecTraits = typename neon::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
-  using BorderInfoType = typename intrinsiccv::FixedBorderInfo3x3<SourceType>;
+  using BorderInfoType =
+      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo3x3<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -463,7 +462,8 @@ class SeparableFilter<FilterType, 5UL> {
   using SourceVectorType = typename SourceVecTraits::VectorType;
   using BufferVecTraits = typename neon::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
-  using BorderInfoType = typename intrinsiccv::FixedBorderInfo5x5<SourceType>;
+  using BorderInfoType =
+      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo5x5<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -579,7 +579,6 @@ using SeparableFilter3x3 = SeparableFilter<FilterType, 3UL>;
 template <class FilterType>
 using SeparableFilter5x5 = SeparableFilter<FilterType, 5UL>;
 
-}  // namespace neon
-}  // namespace intrinsiccv
+}  // namespace intrinsiccv::neon
 
 #endif  // INTRINSICCV_NEON_H

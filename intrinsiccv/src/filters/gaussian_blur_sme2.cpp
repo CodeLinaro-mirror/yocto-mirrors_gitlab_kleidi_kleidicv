@@ -12,9 +12,9 @@ gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                      size_t dst_stride, size_t width, size_t height,
                      size_t channels, intrinsiccv_border_type_t border_type,
                      intrinsiccv_filter_context_t *context) {
-  return sve2::discrete_gaussian_blur<uint8_t, 5>(
-      src, src_stride, dst, dst_stride, width, height, channels, border_type,
-      context);
+  return discrete_gaussian_blur<uint8_t, 5>(src, src_stride, dst, dst_stride,
+                                            width, height, channels,
+                                            border_type, context);
 }
 
 }  // namespace intrinsiccv::sme2

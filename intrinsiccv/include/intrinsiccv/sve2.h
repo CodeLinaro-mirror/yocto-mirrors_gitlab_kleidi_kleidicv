@@ -13,7 +13,8 @@
 #include "intrinsiccv/utils.h"
 #include "intrinsiccv/workspace/separable.h"
 
-namespace intrinsiccv::sve2 {
+// It is used by SVE2 and SME2, the actual namespace will reflect it.
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // Context associated with SVE operations.
 class Context {
@@ -513,12 +514,14 @@ class SeparableFilter<FilterType, 3UL> {
   using SourceType = typename FilterType::SourceType;
   using BufferType = typename FilterType::BufferType;
   using DestinationType = typename FilterType::DestinationType;
-  using SourceVecTraits = typename sve2::VecTraits<SourceType>;
+  using SourceVecTraits =
+      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<SourceType>;
   using SourceVectorType = typename SourceVecTraits::VectorType;
-  using BufferVecTraits = typename sve2::VecTraits<BufferType>;
+  using BufferVecTraits =
+      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::INTRINSICCV_SC_NAMESPACE::FixedBorderInfo3x3<SourceType>;
+      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo3x3<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -650,12 +653,14 @@ class SeparableFilter<FilterType, 5UL> {
   using SourceType = typename FilterType::SourceType;
   using BufferType = typename FilterType::BufferType;
   using DestinationType = typename FilterType::DestinationType;
-  using SourceVecTraits = typename sve2::VecTraits<SourceType>;
+  using SourceVecTraits =
+      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<SourceType>;
   using SourceVectorType = typename SourceVecTraits::VectorType;
-  using BufferVecTraits = typename sve2::VecTraits<BufferType>;
+  using BufferVecTraits =
+      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::INTRINSICCV_SC_NAMESPACE::FixedBorderInfo5x5<SourceType>;
+      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo5x5<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -815,6 +820,6 @@ static inline void swap_scalable(T &a, T &b) INTRINSICCV_STREAMING_COMPATIBLE {
   b = tmp;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_SVE2_H

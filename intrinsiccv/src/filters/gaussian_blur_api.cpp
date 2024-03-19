@@ -7,7 +7,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/workspace/separable.h"
 
-namespace intrinsiccv {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 extern "C" {
 
@@ -61,4 +61,4 @@ INTRINSICCV_MULTIVERSION_C_API(
     INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::gaussian_blur_5x5_u8),
     intrinsiccv::sme2::gaussian_blur_5x5_u8);
 
-}  // namespace intrinsiccv
+}  // namespace INTRINSICCV_TARGET_NAMESPACE

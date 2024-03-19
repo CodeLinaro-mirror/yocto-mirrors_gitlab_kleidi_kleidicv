@@ -12,9 +12,9 @@ saturating_add_abs_with_threshold(const T *src_a, size_t src_a_stride,
                                   const T *src_b, size_t src_b_stride, T *dst,
                                   size_t dst_stride, size_t width,
                                   size_t height, T threshold) {
-  return sve2::saturating_add_abs_with_threshold_sc(
-      src_a, src_a_stride, src_b, src_b_stride, dst, dst_stride, width, height,
-      threshold);
+  return saturating_add_abs_with_threshold_sc(src_a, src_a_stride, src_b,
+                                              src_b_stride, dst, dst_stride,
+                                              width, height, threshold);
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                         \

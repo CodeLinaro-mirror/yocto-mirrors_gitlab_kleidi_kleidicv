@@ -9,7 +9,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // Template for 3x3 Sobel filters which calculate horizontal derivative
 // approximations, often denoted as Gx.
@@ -147,8 +147,7 @@ static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
   }
 
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
-  sve2::SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{
-      horizontal_sobel};
+  SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return INTRINSICCV_OK;
@@ -184,12 +183,12 @@ static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
   }
 
   VerticalSobel3x3<uint8_t> vertical_sobel;
-  sve2::SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
+  SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_SOBEL_SC_H

@@ -9,13 +9,13 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 template <bool BGR, bool ALPHA>
 class YUVSpToRGBxOrBGRx final {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<uint8_t>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<uint8_t>;
 
   explicit YUVSpToRGBxOrBGRx(bool is_nv21) INTRINSICCV_STREAMING_COMPATIBLE
       : is_nv21_(is_nv21) {}
@@ -203,8 +203,8 @@ intrinsiccv_error_t yuv2rgbx_operation(
 
   ForwardingOperation forwarding_operation{operation};
   OperationAdapter operation_adapter{forwarding_operation};
-  sve2::RemainingPathAdapter remaining_path_adapter{operation_adapter};
-  sve2::OperationContextAdapter context_adapter{remaining_path_adapter};
+  RemainingPathAdapter remaining_path_adapter{operation_adapter};
+  OperationContextAdapter context_adapter{remaining_path_adapter};
   ParallelRowsAdapter parallel_rows_adapter{context_adapter};
   RowBasedOperation row_based_operation{parallel_rows_adapter};
   zip_parallel_rows(row_based_operation, rect, y_rows, uv_rows, rgbx_rows);
@@ -251,6 +251,6 @@ static intrinsiccv_error_t yuv_sp_to_bgra_u8_sc(
                             src_uv_stride, dst, dst_stride, width, height);
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_YUV_TO_RGB_SC_H

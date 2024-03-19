@@ -8,7 +8,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 static inline svuint8_t resize_parallel_vectors(svbool_t pg, svuint8_t top_row,
                                                 svuint8_t bottom_row)
@@ -47,7 +47,7 @@ static inline void process_parallel_rows(
     Rows<const ScalarType> src_rows, size_t src_width,
     Rows<ScalarType> dst_rows,
     size_t dst_width) INTRINSICCV_STREAMING_COMPATIBLE {
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   const size_t size_mask = ~static_cast<size_t>(1U);
 
   // Process rows up to the last even pixel index.
@@ -109,7 +109,7 @@ static inline void process_single_row(
     Rows<const ScalarType> src_rows, size_t src_width,
     Rows<ScalarType> dst_rows,
     size_t dst_width) INTRINSICCV_STREAMING_COMPATIBLE {
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   const size_t size_mask = ~static_cast<size_t>(1U);
 
   // Process rows up to the last even pixel index.
@@ -195,6 +195,6 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_to_quarter_u8_sc(
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_RESIZE_SC_H

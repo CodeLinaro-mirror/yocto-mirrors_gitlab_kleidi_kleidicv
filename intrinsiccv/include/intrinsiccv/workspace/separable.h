@@ -12,7 +12,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
 
-namespace INTRINSICCV_SC_NAMESPACE {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // Forward declarations.
 class SeparableFilterWorkspace;
@@ -215,6 +215,6 @@ class SeparableFilterWorkspace final {
   uint8_t data_[0] INTRINSICCV_ATTR_ALIGNED(kAlignment);
 };  // end of class SeparableFilterWorkspace
 
-}  // namespace INTRINSICCV_SC_NAMESPACE
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_WORKSPACE_SEPARABLE_H

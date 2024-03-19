@@ -8,13 +8,13 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 template <typename ScalarType>
 class BinaryThreshold final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
   BinaryThreshold(ScalarType threshold,
@@ -45,10 +45,10 @@ intrinsiccv_error_t threshold_binary_sc(
   Rows<const T> src_rows{src, src_stride};
   Rows<T> dst_rows{dst, dst_stride};
   BinaryThreshold<T> operation{threshold, value};
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_THRESHOLD_SC_H

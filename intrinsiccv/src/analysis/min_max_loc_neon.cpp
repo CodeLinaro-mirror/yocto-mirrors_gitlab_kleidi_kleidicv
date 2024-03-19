@@ -338,4 +338,4 @@ intrinsiccv_error_t min_max_loc(const ScalarType *src, size_t src_stride,
 
 INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
 
-}  //  namespace intrinsiccv::neon
+}  // namespace intrinsiccv::neon

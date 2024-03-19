@@ -10,13 +10,13 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 template <typename ScalarType>
 class SaturatingAddAbsWithThreshold final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
   explicit SaturatingAddAbsWithThreshold(ScalarType threshold)
@@ -49,11 +49,10 @@ intrinsiccv_error_t saturating_add_abs_with_threshold_sc(
   Rows<const T> src_a_rows{src_a, src_a_stride};
   Rows<const T> src_b_rows{src_b, src_b_stride};
   Rows<T> dst_rows{dst, dst_stride};
-  sve2::apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
-                                dst_rows);
+  apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H

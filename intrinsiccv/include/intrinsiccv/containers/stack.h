@@ -13,7 +13,7 @@
 #include "intrinsiccv/traits.h"
 #include "intrinsiccv/utils.h"
 
-namespace INTRINSICCV_SC_NAMESPACE {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // A simple last-in first-out container.
 template <typename T>
@@ -171,6 +171,6 @@ class Stack final : public NonCopyable {
   Block *first_block_;
 };  // end of class Stack<T>
 
-}  // namespace INTRINSICCV_SC_NAMESPACE
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_CONTAINERS_STACK_H

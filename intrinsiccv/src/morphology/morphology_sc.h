@@ -13,14 +13,14 @@
 #include "intrinsiccv/sve2.h"
 #include "intrinsiccv/types.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 template <typename T>
 class CopyDataSVE2 {
   class CopyOperation final : public UnrollTwice {
    public:
-    using ContextType = sve2::Context;
-    using VecTraits = sve2::VecTraits<T>;
+    using ContextType = Context;
+    using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<T>;
     using VectorType = typename VecTraits::VectorType;
 
     VectorType vector_path(ContextType,
@@ -45,7 +45,7 @@ class CopyDataSVE2 {
 template <typename ScalarType, typename O>
 class VerticalOp final {
  public:
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   VerticalOp(Rectangle rect, Rectangle kernel) INTRINSICCV_STREAMING_COMPATIBLE
       : rect_(rect),
@@ -311,7 +311,7 @@ class VerticalOp final {
 template <typename ScalarType, typename O>
 class HorizontalOp final {
  public:
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   HorizontalOp(Rectangle rect,
                Rectangle kernel) INTRINSICCV_STREAMING_COMPATIBLE
@@ -415,7 +415,7 @@ class HorizontalOp final {
 template <typename ScalarType>
 class Min final {
  public:
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
   static VectorType operation(svbool_t pg, VectorType lhs,
@@ -427,7 +427,7 @@ class Min final {
 template <typename ScalarType>
 class Max final {
  public:
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
   static VectorType operation(svbool_t pg, VectorType lhs,
@@ -593,6 +593,6 @@ static intrinsiccv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_MORPHOLOGY_SC_H

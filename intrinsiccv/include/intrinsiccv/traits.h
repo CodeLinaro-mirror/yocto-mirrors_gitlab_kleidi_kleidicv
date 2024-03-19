@@ -9,7 +9,7 @@
 
 #include "intrinsiccv/config.h"
 
-namespace INTRINSICCV_SC_NAMESPACE {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // An empty class.
 class Monostate {};
@@ -17,8 +17,7 @@ class Monostate {};
 template <typename FnType>
 class remove_streaming_compatible;
 
-#if ((INTRINSICCV_TARGET_SVE2 || INTRINSICCV_TARGET_SME2) && \
-     INTRINSICCV_COMPILER_SUPPORTS_SME2)
+#if INTRINSICCV_TARGET_SME2
 template <typename Ret, typename Impl, typename... Args>
 class remove_streaming_compatible<Ret (Impl::*)(Args...)
                                       INTRINSICCV_STREAMING_COMPATIBLE> {
@@ -192,6 +191,6 @@ class NonCopyable {
   NonCopyable &operator=(const NonCopyable &) = delete;
 };  // end of class NonCopyable
 
-}  // namespace INTRINSICCV_SC_NAMESPACE
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_TYPE_TRAITS_H

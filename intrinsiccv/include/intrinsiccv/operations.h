@@ -11,7 +11,7 @@
 #include "intrinsiccv/traits.h"
 #include "intrinsiccv/types.h"
 
-namespace INTRINSICCV_SC_NAMESPACE {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // Base for classes that change the behaviour or extend the interface of an
 // operation.
@@ -110,19 +110,19 @@ class OperationBase {
 
   // Returns true if the innermost operation is unrolled twice, otherwise false.
   static constexpr bool is_unrolled_twice() INTRINSICCV_STREAMING_COMPATIBLE {
-    return ::INTRINSICCV_SC_NAMESPACE::is_unrolled_twice<
+    return ::INTRINSICCV_TARGET_NAMESPACE::is_unrolled_twice<
         concrete_operation_type_t<OperationType>>;
   }
 
   // Returns true if the innermost operation is unrolled once, otherwise false.
   static constexpr bool is_unrolled_once() INTRINSICCV_STREAMING_COMPATIBLE {
-    return ::INTRINSICCV_SC_NAMESPACE::is_unrolled_once<
+    return ::INTRINSICCV_TARGET_NAMESPACE::is_unrolled_once<
         concrete_operation_type_t<OperationType>>;
   }
 
   // Returns true if the innermost operation uses tail path, otherwise false.
   static constexpr bool uses_tail_path() INTRINSICCV_STREAMING_COMPATIBLE {
-    return ::INTRINSICCV_SC_NAMESPACE::uses_tail_path<
+    return ::INTRINSICCV_TARGET_NAMESPACE::uses_tail_path<
         concrete_operation_type_t<OperationType>>;
   }
 
@@ -1270,6 +1270,6 @@ class RemoveContextAdapter : public OperationBase<OperationType> {
   }
 };  // end of class RemoveContextAdapter<OperationType>
 
-}  // namespace INTRINSICCV_SC_NAMESPACE
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_OPERATIONS_H

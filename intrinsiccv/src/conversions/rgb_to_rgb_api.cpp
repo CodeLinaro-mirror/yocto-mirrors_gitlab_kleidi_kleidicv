@@ -24,6 +24,10 @@ INTRINSICCV_DEFINE_C_API(intrinsiccv_rgba_to_rgb_u8, rgba_to_rgb_u8);
 
 extern "C" {
 
+using INTRINSICCV_TARGET_NAMESPACE::CopyRows;
+using INTRINSICCV_TARGET_NAMESPACE::Rectangle;
+using INTRINSICCV_TARGET_NAMESPACE::Rows;
+
 static intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8_impl(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) {

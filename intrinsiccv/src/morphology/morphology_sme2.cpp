@@ -10,16 +10,16 @@ template <typename T>
 INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
 dilate(const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
        size_t height, intrinsiccv_morphology_context_t *context) {
-  return intrinsiccv::sve2::dilate_sc<T, sve2::CopyDataSVE2<T> >(
-      src, src_stride, dst, dst_stride, width, height, context);
+  return dilate_sc<T, CopyDataSVE2<T> >(src, src_stride, dst, dst_stride, width,
+                                        height, context);
 }
 
 template <typename T>
 INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
 erode(const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
       size_t height, intrinsiccv_morphology_context_t *context) {
-  return intrinsiccv::sve2::erode_sc<T, sve2::CopyDataSVE2<T> >(
-      src, src_stride, dst, dst_stride, width, height, context);
+  return erode_sc<T, CopyDataSVE2<T> >(src, src_stride, dst, dst_stride, width,
+                                       height, context);
 }
 
 #define INTRINSICCV_INSTANTIATE_TEMPLATE(name, type)                    \

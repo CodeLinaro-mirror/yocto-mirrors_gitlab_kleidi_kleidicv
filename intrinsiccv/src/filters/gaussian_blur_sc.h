@@ -10,7 +10,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 // Primary template for Gaussian Blur approximation filters.
 template <typename ScalarType, size_t KernelSize>
@@ -135,6 +135,6 @@ intrinsiccv_error_t discrete_gaussian_blur(
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_GAUSSIAN_BLUR_SC_H

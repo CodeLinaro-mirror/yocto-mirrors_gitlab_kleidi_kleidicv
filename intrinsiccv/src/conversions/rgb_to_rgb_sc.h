@@ -9,7 +9,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 template <typename ScalarType>
 class RGBToBGR final :
@@ -19,8 +19,8 @@ class RGBToBGR final :
 #endif
     public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE || \
@@ -103,8 +103,8 @@ class RGBToBGR final :
 template <typename ScalarType>
 class RGBAToBGRA final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -120,8 +120,8 @@ class RGBAToBGRA final : public UnrollTwice {
 template <typename ScalarType>
 class RGBToBGRA final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -137,8 +137,8 @@ class RGBToBGRA final : public UnrollTwice {
 template <typename ScalarType>
 class RGBToRGBA final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -154,8 +154,8 @@ class RGBToRGBA final : public UnrollTwice {
 template <typename ScalarType>
 class RGBAToBGR final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -171,8 +171,8 @@ class RGBAToBGR final : public UnrollTwice {
 template <typename ScalarType>
 class RGBAToRGB final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -202,7 +202,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t rgb_to_bgr_u8_sc(
   svuint8x4_t table_indices;
   RGBToBGR<uint8_t> operation{table_indices};
 #endif
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
@@ -218,7 +218,7 @@ static intrinsiccv_error_t rgba_to_bgra_u8_sc(
   Rows<const uint8_t> src_rows{src, src_stride, 4 /* RGBA */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* BGRA */};
   RGBAToBGRA<uint8_t> operation;
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
@@ -234,7 +234,7 @@ static intrinsiccv_error_t rgb_to_bgra_u8_sc(
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* BGRA */};
   RGBToBGRA<uint8_t> operation;
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
@@ -250,7 +250,7 @@ static intrinsiccv_error_t rgb_to_rgba_u8_sc(
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
   RGBToRGBA<uint8_t> operation;
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
@@ -266,7 +266,7 @@ static intrinsiccv_error_t rgba_to_bgr_u8_sc(
   Rows<const uint8_t> src_rows{src, src_stride, 4 /* RGBA */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
   RGBAToBGR<uint8_t> operation;
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
@@ -282,10 +282,10 @@ static intrinsiccv_error_t rgba_to_rgb_u8_sc(
   Rows<const uint8_t> src_rows{src, src_stride, 4 /* RGBA */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
   RGBAToRGB<uint8_t> operation;
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_RGB_TO_RGB_SC_H

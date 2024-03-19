@@ -10,8 +10,8 @@ namespace intrinsiccv::sve2 {
 template <typename ScalarType>
 class SaturatingMultiply final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
   explicit SaturatingMultiply(double scale = 1.0) : scale_{scale} {};
@@ -56,8 +56,7 @@ intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
   Rows<const T> src_a_rows{src_a, src_a_stride};
   Rows<const T> src_b_rows{src_b, src_b_stride};
   Rows<T> dst_rows{dst, dst_stride};
-  sve2::apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
-                                dst_rows);
+  apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 

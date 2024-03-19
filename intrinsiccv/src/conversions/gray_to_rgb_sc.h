@@ -9,7 +9,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace intrinsiccv::sve2 {
+namespace INTRINSICCV_TARGET_NAMESPACE {
 
 template <typename ScalarType>
 class GrayToRGB final :
@@ -18,8 +18,8 @@ class GrayToRGB final :
 #endif
     public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
@@ -105,8 +105,8 @@ class GrayToRGB final :
 template <typename ScalarType>
 class GrayToRGBAWithInterleaving final : public UnrollTwice {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
   void vector_path(ContextType ctx, VectorType src_vect,
                    ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
@@ -123,8 +123,8 @@ template <typename ScalarType>
 class GrayToRGBAWithLookUpTable final : public UnrollTwice,
                                         public UsesTailPath {
  public:
-  using ContextType = sve2::Context;
-  using VecTraits = sve2::VecTraits<ScalarType>;
+  using ContextType = Context;
+  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
   explicit GrayToRGBAWithLookUpTable(svuint8x4_t &indices)
       INTRINSICCV_STREAMING_COMPATIBLE : indices_{indices} {
@@ -217,7 +217,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
   svuint8x3_t table_indices;
   GrayToRGB<uint8_t> operation{table_indices};
 #endif
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return INTRINSICCV_OK;
 }
 
@@ -234,20 +234,20 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
 
 #if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
   GrayToRGBAWithInterleaving<int8_t> operation{};
-  sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 #else
   if (svcntb() > 128) {
     GrayToRGBAWithInterleaving<uint8_t> operation{};
-    sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+    apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   } else {
     svuint8x4_t table_indices;
     GrayToRGBAWithLookUpTable<uint8_t> operation{table_indices};
-    sve2::apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+    apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }
 #endif
   return INTRINSICCV_OK;
 }
 
-}  // namespace intrinsiccv::sve2
+}  // namespace INTRINSICCV_TARGET_NAMESPACE
 
 #endif  // INTRINSICCV_GRAY_TO_RGB_SC_H

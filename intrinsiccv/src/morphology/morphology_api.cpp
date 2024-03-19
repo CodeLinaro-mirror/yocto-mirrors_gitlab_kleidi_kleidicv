@@ -52,6 +52,8 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
 
 extern "C" {
 
+using INTRINSICCV_TARGET_NAMESPACE::MorphologyWorkspace;
+
 intrinsiccv_error_t intrinsiccv_morphology_create(
     intrinsiccv_morphology_context_t **context, intrinsiccv_rectangle_t kernel,
     intrinsiccv_point_t anchor, intrinsiccv_border_type_t border_type,
