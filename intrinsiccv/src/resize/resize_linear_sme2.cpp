@@ -10,9 +10,8 @@ INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
 resize_linear_u8(const uint8_t *src, size_t src_stride, size_t src_width,
                  size_t src_height, uint8_t *dst, size_t dst_stride,
                  size_t dst_width, size_t dst_height) {
-  return intrinsiccv::sve2::resize_linear_u8_sc(src, src_stride, src_width,
-                                                src_height, dst, dst_stride,
-                                                dst_width, dst_height);
+  return resize_linear_u8_sc(src, src_stride, src_width, src_height, dst,
+                             dst_stride, dst_width, dst_height);
 }
 
 }  // namespace intrinsiccv::sme2
