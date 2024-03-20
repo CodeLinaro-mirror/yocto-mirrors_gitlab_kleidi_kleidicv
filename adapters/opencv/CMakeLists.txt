@@ -16,8 +16,8 @@ target_link_libraries(intrinsiccv_hal PUBLIC intrinsiccv)
 target_include_directories(intrinsiccv_hal PRIVATE
   $<TARGET_PROPERTY:intrinsiccv,INCLUDE_DIRECTORIES>
   ${CMAKE_CURRENT_LIST_DIR}
-  ${CMAKE_SOURCE_DIR}/modules/core/include
-  ${CMAKE_SOURCE_DIR}/modules/imgproc/include
+  ${OPENCV_SOURCE_DIR}/modules/core/include
+  ${OPENCV_SOURCE_DIR}/modules/imgproc/include
 )
 target_compile_options(intrinsiccv_hal PRIVATE $<TARGET_PROPERTY:intrinsiccv,COMPILE_OPTIONS>)
 set_target_properties(intrinsiccv_hal PROPERTIES CXX_STANDARD 17)

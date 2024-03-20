@@ -12,10 +12,19 @@ index 0000000000..c0ffb73ad7
 +
 +include("${INTRINSICCV_SOURCE_PATH}/adapters/opencv/CMakeLists.txt")
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5da9c2a695..0ec03b84b7 100644
+index 5da9c2a695..3f1a2c7e38 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -254,6 +254,8 @@ OCV_OPTION(WITH_CAP_IOS "Enable iOS video capture" ON
+@@ -13,6 +13,8 @@ FATAL: In-source builds are not allowed.
+ ")
+ endif()
+ 
++# Useful for HALs if built as a CMake submodule
++set(OPENCV_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+ 
+ include(cmake/OpenCVMinDepVersions.cmake)
+ 
+@@ -254,6 +256,8 @@ OCV_OPTION(WITH_CAP_IOS "Enable iOS video capture" ON
    VERIFY HAVE_CAP_IOS)
  OCV_OPTION(WITH_CAROTENE "Use NVidia carotene acceleration library for ARM platform" (NOT CV_DISABLE_OPTIMIZATION)
    VISIBLE_IF (ARM OR AARCH64) AND NOT IOS AND NOT XROS)
@@ -24,7 +33,7 @@ index 5da9c2a695..0ec03b84b7 100644
  OCV_OPTION(WITH_CPUFEATURES "Use cpufeatures Android library" ON
    VISIBLE_IF ANDROID
    VERIFY HAVE_CPUFEATURES)
-@@ -955,6 +957,13 @@ if(HAVE_OPENVX)
+@@ -955,6 +959,13 @@ if(HAVE_OPENVX)
    endif()
  endif()
  
@@ -38,7 +47,7 @@ index 5da9c2a695..0ec03b84b7 100644
  if(WITH_CAROTENE)
    ocv_debug_message(STATUS "Enable carotene acceleration")
    if(NOT ";${OpenCV_HAL};" MATCHES ";carotene;")
-@@ -979,6 +988,10 @@ foreach(hal ${OpenCV_HAL})
+@@ -979,6 +990,10 @@ foreach(hal ${OpenCV_HAL})
      else()
        message(STATUS "Carotene: NEON is not available, disabling carotene...")
      endif()
