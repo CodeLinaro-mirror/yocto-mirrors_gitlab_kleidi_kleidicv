@@ -491,7 +491,7 @@ class RemainingPathAdapter : public OperationBase<OperationType> {
   }
 };  // end of class RemainingPathAdapter<OperationType>
 
-// Shorthand for applying a generic unrolled NEON operation.
+// Shorthand for applying a generic unrolled SVE2 operation.
 template <typename OperationType, typename... ArgTypes>
 void apply_operation_by_rows(OperationType &operation, ArgTypes &&...args)
     INTRINSICCV_STREAMING_COMPATIBLE {
