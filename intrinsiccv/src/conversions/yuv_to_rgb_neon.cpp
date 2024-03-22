@@ -11,7 +11,7 @@
 namespace intrinsiccv::neon {
 
 template <bool BGR, bool ALPHA>
-class YUVSpToRGBxOrBGRx final : public UnrollOnce {
+class YUVSpToRGBxOrBGRx final : public UnrollOnce, public TryToAvoidTailLoop {
  public:
   using VecTraits = neon::VecTraits<uint8_t>;
   using ScalarType = VecTraits::ScalarType;
@@ -307,7 +307,6 @@ intrinsiccv_error_t yuv2rgbx_operation(
   OperationContextAdapter context_adapter{remaining_path_adapter};
   ParallelRowsAdapter parallel_rows_adapter{context_adapter};
   RowBasedOperation row_based_operation{parallel_rows_adapter};
-  row_based_operation.try_avoid_tail_loop();
   zip_parallel_rows(row_based_operation, rect, y_rows, uv_rows, rgbx_rows);
   return INTRINSICCV_OK;
 }

@@ -33,6 +33,13 @@ class OperationTest {
     return *this;
   }
 
+  // Sets the number of padding bytes at the end of rows.
+  OperationTest<ElementType, InputsSize, OutputsSize>& with_width(
+      size_t width) {
+    width_ = width;
+    return *this;
+  }
+
   void test() {
     for (auto& input : inputs_) {
       input = ArrayType{width(), height(), padding()};
@@ -101,10 +108,7 @@ class OperationTest {
   virtual size_t height() { return test_elements().size(); }
 
   // Tested number of elements in a row.
-  size_t width() const {
-    // Sufficient number of elements to exercise both vector and scalar paths.
-    return 3 * test::Options::vector_lanes<ElementType>() - 1;
-  }
+  virtual size_t width() const { return width_; }
 
   // Returns the number of padding bytes at the end of rows.
   size_t padding() const { return padding_; }
@@ -127,6 +131,9 @@ class OperationTest {
   std::array<ArrayType, OutputsSize> actual_;
   // Number of padding bytes at the end of rows.
   size_t padding_{0};
+  // Tested number of elements in a row.
+  // Sufficient number of elements to exercise both vector and scalar paths.
+  size_t width_{3 * test::Options::vector_lanes<ElementType>() - 1};
 };  // end of class OperationTest<ElementType, InputsSize, OutputsSize>
 
 template <typename ElementType>

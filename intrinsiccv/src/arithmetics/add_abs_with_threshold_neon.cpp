@@ -11,7 +11,8 @@ namespace intrinsiccv::neon {
 
 template <typename ScalarType>
 class SaturatingAddAbsWithThreshold final : public UnrollOnce,
-                                            public UnrollTwice {
+                                            public UnrollTwice,
+                                            public TryToAvoidTailLoop {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;

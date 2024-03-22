@@ -126,6 +126,14 @@ class OperationBase {
         concrete_operation_type_t<OperationType>>;
   }
 
+  // Returns true if the innermost operation tries to avoid tail loop, otherwise
+  // false.
+  static constexpr bool try_to_avoid_tail_loop()
+      INTRINSICCV_STREAMING_COMPATIBLE {
+    return ::INTRINSICCV_TARGET_NAMESPACE::try_to_avoid_tail_loop<
+        concrete_operation_type_t<OperationType>>;
+  }
+
  protected:
   // Constructor is protected so that only derived classes can instantiate.
   explicit OperationBase(OperationType &operation)
@@ -159,11 +167,7 @@ class RowBasedOperation : public OperationBase<OperationType> {
  public:
   explicit RowBasedOperation(OperationType &operation)
       INTRINSICCV_STREAMING_COMPATIBLE
-      : OperationBase<OperationType>(operation),
-        try_avoid_tail_loop_{false} {}
-
-  // Instructs the loop logic to try to avoid the tail loop.
-  void try_avoid_tail_loop() { try_avoid_tail_loop_ = true; }
+      : OperationBase<OperationType>(operation) {}
 
   // NOLINTBEGIN(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
   template <typename... ColumnTypes>
@@ -189,15 +193,12 @@ class RowBasedOperation : public OperationBase<OperationType> {
 
     // Process leftover bytes on the unrolled-once vector path, if requested and
     // possible.
-    if constexpr (OperationType::is_unrolled_once()) {
-      if (try_avoid_tail_loop_ &&
-          loop.try_avoid_tail_loop(
+    if constexpr (OperationType::is_unrolled_once() && OperationType::try_to_avoid_tail_loop()) {
+        if (loop.try_avoid_tail_loop(
             [&](size_t backward_step) INTRINSICCV_STREAMING_COMPATIBLE {
               // Adjust pointers backwards to include
               // the leftover bytes.
               ((columns -= backward_step), ...);
-              // Accept the step-back decision.
-              return true;
             })) {
         goto avoid_tail_loop;
       }
@@ -211,10 +212,6 @@ class RowBasedOperation : public OperationBase<OperationType> {
     // clang-format on
   }
   // NOLINTEND(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
-
- private:
-  // True if tail loop should be avoided at all costs.
-  bool try_avoid_tail_loop_;
 };  // end of class RowBasedOperation<OperationType>
 
 // Facade to offer a simplified row-based operation interface.

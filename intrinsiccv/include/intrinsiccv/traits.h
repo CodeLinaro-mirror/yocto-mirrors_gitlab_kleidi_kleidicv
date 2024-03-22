@@ -36,26 +36,35 @@ template <typename FnType>
 using remove_streaming_compatible_t =
     typename remove_streaming_compatible<FnType>::type;
 
-// Tags an operation which would process data of one vector per iteration.
+// Tags an operation to process data of one vector per iteration.
 class UnrollOnce {};
 
 // Returns true if an instance derives from UnrollOnce, otherwise false.
 template <typename T>
 constexpr bool is_unrolled_once = std::is_base_of_v<UnrollOnce, T>;
 
-// Tags an operation which would process data of two vectors per iteration.
+// Tags an operation to process data of two vectors per iteration.
 class UnrollTwice {};
 
 // Returns true if an instance derives from UnrollTwice, otherwise false.
 template <typename T>
 constexpr bool is_unrolled_twice = std::is_base_of_v<UnrollTwice, T>;
 
-// Tags an operation which uses a different vector path to process the tail.
+// Tags an operation to use a different vector path to process the tail.
 class UsesTailPath {};
 
 // Returns true if an instance derives from UsesTailPath, otherwise false.
 template <typename T>
 constexpr bool uses_tail_path = std::is_base_of_v<UsesTailPath, T>;
+
+// Tags an operation to avoid the tail loop if possible, by rewinding and doing
+// a vector path.
+class TryToAvoidTailLoop {};
+
+// Returns true if an instance derives from TryToAvoidTailLoop, otherwise false.
+template <typename T>
+constexpr bool try_to_avoid_tail_loop =
+    std::is_base_of_v<TryToAvoidTailLoop, T>;
 
 // Primary template to handle types without T::vector_path() method.
 template <typename, typename, typename = void>

@@ -194,12 +194,9 @@ class LoopUnroll final {
       return false;
     }
 
-    if (INTRINSICCV_LIKELY(callback(step() - remaining_length()))) {
-      length_ = step();
-      return true;
-    }
-
-    return false;
+    callback(step() - remaining_length());
+    length_ = step();
+    return true;
   }
 
  private:

@@ -134,26 +134,46 @@ TYPED_TEST_SUITE(SaturatingAddAbsWithThresholdTest, ElementTypes);
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestPositive) {
   SaturatingAddAbsWithThresholdTestPositive<TypeParam>{}.test();
   SaturatingAddAbsWithThresholdTestPositive<TypeParam>{}.with_padding(1).test();
+  SaturatingAddAbsWithThresholdTestPositive<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestNegative) {
   SaturatingAddAbsWithThresholdTestNegative<TypeParam>{}.test();
   SaturatingAddAbsWithThresholdTestNegative<TypeParam>{}.with_padding(1).test();
+  SaturatingAddAbsWithThresholdTestNegative<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestMin) {
   SaturatingAddAbsWithThresholdTestMin<TypeParam>{}.test();
   SaturatingAddAbsWithThresholdTestMin<TypeParam>{}.with_padding(1).test();
+  SaturatingAddAbsWithThresholdTestMin<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestZero) {
   SaturatingAddAbsWithThresholdTestZero<TypeParam>{}.test();
   SaturatingAddAbsWithThresholdTestZero<TypeParam>{}.with_padding(1).test();
+  SaturatingAddAbsWithThresholdTestZero<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, TestMax) {
   SaturatingAddAbsWithThresholdTestMax<TypeParam>{}.test();
   SaturatingAddAbsWithThresholdTestMax<TypeParam>{}.with_padding(1).test();
+  SaturatingAddAbsWithThresholdTestMax<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, NullPointer) {
