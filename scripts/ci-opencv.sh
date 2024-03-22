@@ -30,7 +30,7 @@ LDFLAGS="--rtlib=compiler-rt -fuse-ld=lld" cmake \
   -DINTRINSICCV_SOURCE_PATH="$(pwd)" \
   -DBUILD_TESTS=ON \
   -DBUILD_LIST=core,imgproc,ts
-ninja -C build/build-opencv
+ninja -C build/build-opencv opencv_test_imgproc opencv_test_core
 
 # Run a subset of the OpenCV test suite, requres opencv_extra for the test images
 wget --no-verbose \
