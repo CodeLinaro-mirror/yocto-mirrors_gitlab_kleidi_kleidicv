@@ -439,6 +439,36 @@ int morphology_free(cvhalFilter2D *cvcontext) {
   return convert_error(intrinsiccv_morphology_release(params->context));
 }
 
+int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
+           int src_height, uchar *dst_data, size_t dst_step, int dst_width,
+           int dst_height, double inv_scale_x, double inv_scale_y,
+           int interpolation) {
+  if (src_data == dst_data) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  size_t channels = (src_type >> CV_CN_SHIFT) + 1;
+  if (channels != 1) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (CV_MAT_DEPTH(src_type) != CV_8U) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  switch (interpolation) {
+    case CV_HAL_INTER_LINEAR:
+      if ((inv_scale_x == 0 || inv_scale_x == 2) &&
+          (inv_scale_y == 0 || inv_scale_y == 2)) {
+        return convert_error(intrinsiccv_resize_linear_u8(
+            src_data, src_step, src_width, src_height, dst_data, dst_step,
+            dst_width, dst_height));
+      }
+      break;
+  }
+  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+}
+
 int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int src_depth, int dst_depth,
           int cn, int margin_left, int margin_top, int margin_right,

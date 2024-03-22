@@ -64,6 +64,11 @@ int morphology_operation(cvhalFilter2D *context, uchar *src_data,
 
 int morphology_free(cvhalFilter2D *context);
 
+int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
+           int src_height, uchar *dst_data, size_t dst_step, int dst_width,
+           int dst_height, double inv_scale_x, double inv_scale_y,
+           int interpolation);
+
 int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int src_depth, int dst_depth,
           int cn, int margin_left, int margin_top, int margin_right,
@@ -211,6 +216,19 @@ static inline int intrinsiccv_morphology_free_with_fallback(
 }
 #undef cv_hal_morphFree
 #define cv_hal_morphFree intrinsiccv_morphology_free_with_fallback
+
+// resize
+static inline int intrinsiccv_resize_with_fallback(
+    int src_type, const uchar *src_data, size_t src_step, int src_width,
+    int src_height, uchar *dst_data, size_t dst_step, int dst_width,
+    int dst_height, double inv_scale_x, double inv_scale_y, int interpolation) {
+  return INTRINSICCV_HAL_FALLBACK_FORWARD(
+      resize, cv_hal_resize, src_type, src_data, src_step, src_width,
+      src_height, dst_data, dst_step, dst_width, dst_height, inv_scale_x,
+      inv_scale_y, interpolation);
+}
+#undef cv_hal_resize
+#define cv_hal_resize intrinsiccv_resize_with_fallback
 
 // sobel
 static inline int intrinsiccv_sobel_with_fallback(

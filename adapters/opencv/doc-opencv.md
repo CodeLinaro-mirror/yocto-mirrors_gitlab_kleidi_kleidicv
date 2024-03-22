@@ -92,6 +92,15 @@ The rest of parameters for `morphology_operation` function are currently not sup
 ### `morphology_free`
 Release context set up by [`morphology_init`](#morphology_init).
 
+### `resize`
+Notes on parameters:
+* In-place operation not supported.
+* `src_type` - only supports single-channel `CV_8U`.
+* `dst_width` - must be `src_width * 2`.
+* `dst_height` - must be `src_height * 2`.
+* `inv_scale_x`,`inv_scale_y` - must be 0 or 2.
+* `border_type` - Must be `INTER_LINEAR`.
+
 ### `sobel`
 Applies Sobel gradient filter to a given image.
 
