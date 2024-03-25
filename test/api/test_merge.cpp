@@ -16,8 +16,13 @@ class MergeTest final {
   using ArrayType = test::Array2D<ElementType>;
 
   // Sets the number of padding bytes at the end of rows.
-  MergeTest<ElementType, Channels>& with_padding(size_t padding) {
-    padding_ = padding;
+  MergeTest& with_paddings(std::initializer_list<size_t> inputs_padding,
+                           size_t output_padding) {
+    output_padding_ = output_padding;
+    size_t i = 0;
+    for (size_t p : inputs_padding) {
+      inputs_padding_[i++] = p;
+    }
     return *this;
   }
 
@@ -32,13 +37,13 @@ class MergeTest final {
     // Create input and output arrays
     std::array<ArrayType, Channels> inputs;
     for (size_t i = 0; i < Channels; ++i) {
-      inputs[i] = ArrayType{input_width, height, padding_};
+      inputs[i] = ArrayType{input_width, height, inputs_padding_[i]};
       inputs[i].fill(ElementType{0});
     }
 
-    ArrayType expected_output{output_width, height, padding_};
+    ArrayType expected_output{output_width, height, output_padding_};
     expected_output.fill(ElementType{0});
-    ArrayType actual_output{output_width, height, padding_};
+    ArrayType actual_output{output_width, height, output_padding_};
     // Prefill actual_outputs with a different value than expected
     actual_output.fill(ElementType{1});
 
@@ -89,7 +94,8 @@ class MergeTest final {
 
  private:
   // Number of padding bytes at the end of rows.
-  size_t padding_{0};
+  std::array<size_t, Channels> inputs_padding_;
+  size_t output_padding_;
 };
 
 template <typename ElementType, int kChannels>
@@ -122,17 +128,67 @@ TYPED_TEST_SUITE(Merge, ElementTypes);
 
 TYPED_TEST(Merge, TwoChannels) {
   MergeTest<TypeParam, 2>().test();
-  MergeTest<TypeParam, 2>().with_padding(test::Options::vector_length()).test();
+  MergeTest<TypeParam, 2>().with_paddings({0, 0}, 1).test();
+  MergeTest<TypeParam, 2>().with_paddings({0, 1}, 0).test();
+  MergeTest<TypeParam, 2>().with_paddings({0, 1}, 1).test();
+  MergeTest<TypeParam, 2>().with_paddings({1, 0}, 0).test();
+  MergeTest<TypeParam, 2>().with_paddings({1, 0}, 1).test();
+  MergeTest<TypeParam, 2>().with_paddings({1, 1}, 0).test();
+  MergeTest<TypeParam, 2>().with_paddings({1, 1}, 1).test();
 }
 
 TYPED_TEST(Merge, ThreeChannels) {
   MergeTest<TypeParam, 3>().test();
-  MergeTest<TypeParam, 3>().with_padding(test::Options::vector_length()).test();
+  MergeTest<TypeParam, 3>().with_paddings({0, 0, 0}, 1).test();
+  MergeTest<TypeParam, 3>().with_paddings({0, 0, 1}, 0).test();
+  MergeTest<TypeParam, 3>().with_paddings({0, 0, 1}, 1).test();
+  MergeTest<TypeParam, 3>().with_paddings({0, 1, 0}, 0).test();
+  MergeTest<TypeParam, 3>().with_paddings({0, 1, 0}, 1).test();
+  MergeTest<TypeParam, 3>().with_paddings({0, 1, 1}, 0).test();
+  MergeTest<TypeParam, 3>().with_paddings({0, 1, 1}, 1).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 0, 0}, 0).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 0, 0}, 1).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 0, 1}, 0).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 0, 1}, 1).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 1, 0}, 0).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 1, 0}, 1).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 1, 1}, 0).test();
+  MergeTest<TypeParam, 3>().with_paddings({1, 1, 1}, 1).test();
 }
 
 TYPED_TEST(Merge, FourChannels) {
   MergeTest<TypeParam, 4>().test();
-  MergeTest<TypeParam, 4>().with_padding(test::Options::vector_length()).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 0, 0, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 0, 0, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 0, 0, 1}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 0, 1, 0}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 0, 1, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 0, 1, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 0, 1, 1}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 0, 0}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 0, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 0, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 0, 1}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 1, 0}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 1, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 1, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({0, 1, 1, 1}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 0, 0}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 0, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 0, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 0, 1}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 1, 0}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 1, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 1, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 0, 1, 1}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 0, 0}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 0, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 0, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 0, 1}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 1, 0}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 1, 0}, 1).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 1, 1}, 0).test();
+  MergeTest<TypeParam, 4>().with_paddings({1, 1, 1, 1}, 1).test();
 }
 
 TYPED_TEST(Merge, OneChannelOutOfRange) {

@@ -14,14 +14,20 @@ class GrayTest final {
   explicit GrayTest(bool hasAlpha)
       : hasAlpha_(hasAlpha), outChannels_{hasAlpha ? 4U : 3U} {}
 
+  // Sets the number of padding bytes at the end of rows.
+  GrayTest &with_padding(size_t padding) {
+    padding_ = padding;
+    return *this;
+  }
+
   template <typename F>
   void execute_test(F impl) {
     // Set width to be more than vector length, but not quite a multiple of
     // vector length to force both vector and scalar paths
     size_t logical_width = 3 * test::Options::vector_lanes<uint8_t>() - 1;
-    test::Array2D<uint8_t> source{logical_width, 3};
-    test::Array2D<uint8_t> actual{logical_width * outChannels_, 3};
-    test::Array2D<uint8_t> expected{logical_width * outChannels_, 3};
+    test::Array2D<uint8_t> source{logical_width, 3, padding_};
+    test::Array2D<uint8_t> actual{logical_width * outChannels_, 3, padding_};
+    test::Array2D<uint8_t> expected{logical_width * outChannels_, 3, padding_};
 
     source.set(0, 0, {1});
     source.set(1, 0, {0xFF});
@@ -66,6 +72,7 @@ class GrayTest final {
     }
   }
 
+  size_t padding_{0};
   bool hasAlpha_;
   size_t outChannels_;
 };
@@ -154,13 +161,13 @@ class ColourTest final {
 };
 
 TEST(GRAY2, RGB) {
-  GrayTest gray_test(false);
-  gray_test.execute_test(intrinsiccv_gray_to_rgb_u8);
+  GrayTest{false}.execute_test(intrinsiccv_gray_to_rgb_u8);
+  GrayTest{false}.with_padding(1).execute_test(intrinsiccv_gray_to_rgb_u8);
 }
 
 TEST(GRAY2, RGBA) {
-  GrayTest gray_test(true);
-  gray_test.execute_test(intrinsiccv_gray_to_rgba_u8);
+  GrayTest{true}.execute_test(intrinsiccv_gray_to_rgba_u8);
+  GrayTest{true}.with_padding(1).execute_test(intrinsiccv_gray_to_rgba_u8);
 }
 
 TEST(RGB2, RGB) {

@@ -98,6 +98,18 @@ TYPED_TEST(SaturatingSub, API) {
                        sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1);
 }
 
+// Tests various padding combinations.
+TYPED_TEST(SaturatingSub, Padding) {
+  SaturatingSubTest<TypeParam>{}.with_paddings({0, 0}, {0}).test();
+  SaturatingSubTest<TypeParam>{}.with_paddings({0, 0}, {1}).test();
+  SaturatingSubTest<TypeParam>{}.with_paddings({0, 1}, {0}).test();
+  SaturatingSubTest<TypeParam>{}.with_paddings({0, 1}, {1}).test();
+  SaturatingSubTest<TypeParam>{}.with_paddings({1, 0}, {0}).test();
+  SaturatingSubTest<TypeParam>{}.with_paddings({1, 0}, {1}).test();
+  SaturatingSubTest<TypeParam>{}.with_paddings({1, 1}, {0}).test();
+  SaturatingSubTest<TypeParam>{}.with_paddings({1, 1}, {1}).test();
+}
+
 TYPED_TEST(SaturatingSub, Misalignment) {
   if (sizeof(TypeParam) == 1) {
     // misalignment impossible

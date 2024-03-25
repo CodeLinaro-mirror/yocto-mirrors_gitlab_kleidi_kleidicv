@@ -114,6 +114,14 @@ TYPED_TEST_SUITE(ThresholdBinary, ElementTypes);
 
 TYPED_TEST(ThresholdBinary, Test) { ThresholdBinaryTest<TypeParam>{}.test(); }
 
+// Tests various padding combinations.
+TYPED_TEST(ThresholdBinary, Padding) {
+  ThresholdBinaryTest<TypeParam>{}.with_paddings({0}, {0}).test();
+  ThresholdBinaryTest<TypeParam>{}.with_paddings({0}, {1}).test();
+  ThresholdBinaryTest<TypeParam>{}.with_paddings({1}, {0}).test();
+  ThresholdBinaryTest<TypeParam>{}.with_paddings({1}, {1}).test();
+}
+
 TYPED_TEST(ThresholdBinary, TestMin) {
   ThresholdBinaryTestMin<TypeParam>{}.test();
 }

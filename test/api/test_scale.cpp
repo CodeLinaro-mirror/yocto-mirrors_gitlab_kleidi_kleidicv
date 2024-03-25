@@ -48,17 +48,13 @@ class ScaleTestBase : public UnaryOperationTest<ElementType> {
 
 template <typename ElementType>
 class ScaleTestLinearBase {
- protected:
-  static constexpr ElementType min() {
-    return std::numeric_limits<ElementType>::min();
-  }
-  static constexpr ElementType max() {
-    return std::numeric_limits<ElementType>::max();
-  }
-  virtual float scale() = 0;
-  virtual float shift() = 0;
-
  public:
+  // Sets the number of padding bytes at the end of rows.
+  ScaleTestLinearBase<ElementType>& with_padding(size_t padding) {
+    padding_ = padding;
+    return *this;
+  }
+
   // minimum_size set by caller to trigger the 'big' scale path.
   void test_scalar(size_t minimum_size = 1) {
     size_t width = test::Options::vector_length() - 1;
@@ -69,6 +65,16 @@ class ScaleTestLinearBase {
     size_t width = test::Options::vector_length() * 2;
     test_linear(width, minimum_size);
   }
+
+ protected:
+  static constexpr ElementType min() {
+    return std::numeric_limits<ElementType>::min();
+  }
+  static constexpr ElementType max() {
+    return std::numeric_limits<ElementType>::max();
+  }
+  virtual float scale() = 0;
+  virtual float shift() = 0;
 
  private:
   class GenerateLinearSeries : public test::Generator<ElementType> {
@@ -82,14 +88,17 @@ class ScaleTestLinearBase {
     ElementType counter_;
   };  // end of class GenerateLinearSeries
 
+  // Number of padding bytes at the end of rows.
+  size_t padding_{0};
+
   void test_linear(size_t width, size_t minimum_size) {
     size_t image_size =
         std::max(minimum_size, static_cast<size_t>(max() - min()));
     size_t height = image_size / width + 1;
-    test::Array2D<ElementType> source(width, height, 1, 1);
-    test::Array2D<ElementType> expected(width, height, 1, 1);
+    test::Array2D<ElementType> source(width, height, padding_, 1);
+    test::Array2D<ElementType> expected(width, height, padding_, 1);
     test::Array2D<ElementType> actual =
-        test::Array2D<ElementType>(width, height, 1, 1);
+        test::Array2D<ElementType>(width, height, padding_, 1);
 
     GenerateLinearSeries generator(min());
 
@@ -326,16 +335,20 @@ TYPED_TEST_SUITE(ScaleTest, ElementTypes);
 
 TYPED_TEST(ScaleTest, TestScalar1) {
   ScaleTestLinear1<TypeParam>{}.test_scalar();
+  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_scalar();
 }
 TYPED_TEST(ScaleTest, TestVector1) {
   ScaleTestLinear1<TypeParam>{}.test_vector();
+  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_vector();
 }
 
 TYPED_TEST(ScaleTest, TestScalar1Tbx) {
   ScaleTestLinear1<TypeParam>{}.test_scalar(2500);
+  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_scalar(2500);
 }
 TYPED_TEST(ScaleTest, TestVector1Tbx) {
   ScaleTestLinear1<TypeParam>{}.test_vector(2500);
+  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_vector(2500);
 }
 
 TYPED_TEST(ScaleTest, TestScalar2) {

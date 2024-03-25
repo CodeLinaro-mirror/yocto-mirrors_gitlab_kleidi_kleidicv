@@ -24,12 +24,39 @@ class OperationTest {
     ElementType values[InputsSize + OutputsSize];
   };  // end of struct Elements
 
+  OperationTest() {
+    inputs_padding_.fill(0);
+    outputs_padding_.fill(0);
+  }
+
   virtual ~OperationTest() = default;
 
-  // Sets the number of padding bytes at the end of rows.
+  // Sets the number of padding bytes at the end of rows, same for all arrays
   OperationTest<ElementType, InputsSize, OutputsSize>& with_padding(
       size_t padding) {
-    padding_ = padding;
+    for (auto& in_padding : inputs_padding_) {
+      in_padding = padding;
+    }
+
+    for (auto& out_padding : outputs_padding_) {
+      out_padding = padding;
+    }
+
+    return *this;
+  }
+
+  // Sets the number of padding bytes at the end of rows.
+  OperationTest<ElementType, InputsSize, OutputsSize>& with_paddings(
+      std::initializer_list<size_t> inputs_padding,
+      std::initializer_list<size_t> outputs_padding) {
+    size_t i = 0;
+    for (size_t p : inputs_padding) {
+      inputs_padding_[i++] = p;
+    }
+    size_t j = 0;
+    for (size_t q : outputs_padding) {
+      outputs_padding_[j++] = q;
+    }
     return *this;
   }
 
@@ -41,10 +68,10 @@ class OperationTest {
   }
 
   void test() {
-    for (auto& input : inputs_) {
-      input = ArrayType{width(), height(), padding()};
-      input.fill(0);
-      ASSERT_TRUE(input.valid());
+    for (size_t i = 0; i < inputs_.size(); ++i) {
+      inputs_[i] = ArrayType{width(), height(), inputs_padding_[i]};
+      inputs_[i].fill(0);
+      ASSERT_TRUE(inputs_[i].valid());
     }
 
     for (auto& expected : expected_) {
@@ -53,10 +80,10 @@ class OperationTest {
       ASSERT_TRUE(expected.valid());
     }
 
-    for (auto& actual : actual_) {
-      actual = ArrayType{width(), height(), padding()};
-      actual.fill(42);  // fill with any value different than `expected`
-      ASSERT_TRUE(actual.valid());
+    for (size_t i = 0; i < actual_.size(); ++i) {
+      actual_[i] = ArrayType{width(), height(), outputs_padding_[i]};
+      actual_[i].fill(42);  // fill with any value different than `expected`
+      ASSERT_TRUE(actual_[i].valid());
     }
 
     setup();
@@ -110,9 +137,6 @@ class OperationTest {
   // Tested number of elements in a row.
   virtual size_t width() const { return width_; }
 
-  // Returns the number of padding bytes at the end of rows.
-  size_t padding() const { return padding_; }
-
   // Returns the minimum value for ElementType.
   static constexpr ElementType min() {
     return std::numeric_limits<ElementType>::min();
@@ -130,7 +154,8 @@ class OperationTest {
   // Actual result of the operation.
   std::array<ArrayType, OutputsSize> actual_;
   // Number of padding bytes at the end of rows.
-  size_t padding_{0};
+  std::array<size_t, InputsSize> inputs_padding_;
+  std::array<size_t, OutputsSize> outputs_padding_;
   // Tested number of elements in a row.
   // Sufficient number of elements to exercise both vector and scalar paths.
   size_t width_{3 * test::Options::vector_lanes<ElementType>() - 1};

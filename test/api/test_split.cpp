@@ -16,8 +16,13 @@ class SplitTest final {
   using ArrayType = test::Array2D<ElementType>;
 
   // Sets the number of padding bytes at the end of rows.
-  SplitTest<ElementType, Channels>& with_padding(size_t padding) {
-    padding_ = padding;
+  SplitTest& with_paddings(size_t input_padding,
+                           std::initializer_list<size_t> outputs_padding) {
+    input_padding_ = input_padding;
+    size_t i = 0;
+    for (size_t p : outputs_padding) {
+      outputs_padding_[i++] = p;
+    }
     return *this;
   }
 
@@ -30,15 +35,16 @@ class SplitTest final {
     size_t height = 2;
 
     // Create input and output arrays
-    ArrayType input{input_width, height, padding_};
+    ArrayType input{input_width, height, input_padding_};
     input.fill(ElementType{0});
 
     std::array<ArrayType, Channels> expected_outputs;
     std::array<ArrayType, Channels> actual_outputs;
     for (size_t i = 0; i < Channels; ++i) {
-      expected_outputs[i] = ArrayType{output_width, height, padding_};
+      expected_outputs[i] =
+          ArrayType{output_width, height, outputs_padding_[i]};
       expected_outputs[i].fill(ElementType{0});
-      actual_outputs[i] = ArrayType{output_width, height, padding_};
+      actual_outputs[i] = ArrayType{output_width, height, outputs_padding_[i]};
       // Prefill actual_outputs with a different value than expected
       actual_outputs[i].fill(ElementType{1});
     }
@@ -87,7 +93,8 @@ class SplitTest final {
 
  private:
   // Number of padding bytes at the end of rows.
-  size_t padding_{0};
+  size_t input_padding_;
+  std::array<size_t, Channels> outputs_padding_;
 };
 
 template <typename ElementType, int kChannels>
@@ -121,17 +128,51 @@ TYPED_TEST_SUITE(Split, ElementTypes);
 
 TYPED_TEST(Split, TwoChannels) {
   SplitTest<TypeParam, 2>().test();
-  SplitTest<TypeParam, 2>().with_padding(test::Options::vector_length()).test();
+  SplitTest<TypeParam, 2>().with_paddings(0, {0, 1}).test();
+  SplitTest<TypeParam, 2>().with_paddings(0, {1, 0}).test();
+  SplitTest<TypeParam, 2>().with_paddings(0, {1, 1}).test();
+  SplitTest<TypeParam, 2>().with_paddings(1, {0, 0}).test();
+  SplitTest<TypeParam, 2>().with_paddings(1, {0, 1}).test();
+  SplitTest<TypeParam, 2>().with_paddings(1, {1, 0}).test();
+  SplitTest<TypeParam, 2>().with_paddings(1, {1, 1}).test();
 }
 
 TYPED_TEST(Split, ThreeChannels) {
   SplitTest<TypeParam, 3>().test();
-  SplitTest<TypeParam, 3>().with_padding(test::Options::vector_length()).test();
+  SplitTest<TypeParam, 3>().with_paddings(0, {0, 0, 1}).test();
+  SplitTest<TypeParam, 3>().with_paddings(0, {0, 1, 0}).test();
+  SplitTest<TypeParam, 3>().with_paddings(0, {0, 1, 1}).test();
+  SplitTest<TypeParam, 3>().with_paddings(0, {1, 0, 0}).test();
+  SplitTest<TypeParam, 3>().with_paddings(0, {1, 0, 1}).test();
+  SplitTest<TypeParam, 3>().with_paddings(0, {1, 1, 0}).test();
+  SplitTest<TypeParam, 3>().with_paddings(0, {1, 1, 1}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {0, 0, 0}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {0, 0, 1}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {0, 1, 0}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {0, 1, 1}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {1, 0, 0}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {1, 0, 1}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {1, 1, 0}).test();
+  SplitTest<TypeParam, 3>().with_paddings(1, {1, 1, 1}).test();
 }
 
 TYPED_TEST(Split, FourChannels) {
   SplitTest<TypeParam, 4>().test();
-  SplitTest<TypeParam, 4>().with_padding(test::Options::vector_length()).test();
+  SplitTest<TypeParam, 4>().with_paddings(0, {0, 0, 0, 1}).test();
+  SplitTest<TypeParam, 4>().with_paddings(0, {0, 0, 1, 0}).test();
+  SplitTest<TypeParam, 4>().with_paddings(0, {0, 0, 1, 1}).test();
+  SplitTest<TypeParam, 4>().with_paddings(0, {0, 1, 0, 0}).test();
+  SplitTest<TypeParam, 4>().with_paddings(0, {0, 1, 0, 1}).test();
+  SplitTest<TypeParam, 4>().with_paddings(0, {0, 1, 1, 0}).test();
+  SplitTest<TypeParam, 4>().with_paddings(0, {0, 1, 1, 1}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 0, 0, 0}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 0, 0, 1}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 0, 1, 0}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 0, 1, 1}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 1, 0, 0}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 1, 0, 1}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 1, 1, 0}).test();
+  SplitTest<TypeParam, 4>().with_paddings(1, {1, 1, 1, 1}).test();
 }
 
 TYPED_TEST(Split, OneChannelOutOfRange) {
