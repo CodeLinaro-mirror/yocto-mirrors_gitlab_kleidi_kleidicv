@@ -20,14 +20,19 @@ class GrayTest final {
     return *this;
   }
 
+  // Sets the number of elementsin a row.
+  GrayTest &with_width(size_t width) {
+    width_ = width;
+    return *this;
+  }
+
   template <typename F>
   void execute_test(F impl) {
     // Set width to be more than vector length, but not quite a multiple of
     // vector length to force both vector and scalar paths
-    size_t logical_width = 3 * test::Options::vector_lanes<uint8_t>() - 1;
-    test::Array2D<uint8_t> source{logical_width, 3, padding_};
-    test::Array2D<uint8_t> actual{logical_width * outChannels_, 3, padding_};
-    test::Array2D<uint8_t> expected{logical_width * outChannels_, 3, padding_};
+    test::Array2D<uint8_t> source{width_, 3, padding_};
+    test::Array2D<uint8_t> actual{width_ * outChannels_, 3, padding_};
+    test::Array2D<uint8_t> expected{width_ * outChannels_, 3, padding_};
 
     source.set(0, 0, {1});
     source.set(1, 0, {0xFF});
@@ -36,13 +41,13 @@ class GrayTest final {
     calculate_expected(source, expected);
 
     auto err = impl(source.data(), source.stride(), actual.data(),
-                    actual.stride(), logical_width, actual.height());
+                    actual.stride(), width_, actual.height());
 
     ASSERT_EQ(INTRINSICCV_OK, err);
     EXPECT_EQ_ARRAY2D(actual, expected);
 
     test::test_null_args(impl, source.data(), source.stride(), actual.data(),
-                         actual.stride(), logical_width, actual.height());
+                         actual.stride(), width_, actual.height());
 
     EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
               impl(source.data(), source.stride(), actual.data(),
@@ -72,6 +77,7 @@ class GrayTest final {
     }
   }
 
+  size_t width_{3 * test::Options::vector_lanes<uint8_t>() - 1};
   size_t padding_{0};
   bool hasAlpha_;
   size_t outChannels_;
@@ -163,11 +169,17 @@ class ColourTest final {
 TEST(GRAY2, RGB) {
   GrayTest{false}.execute_test(intrinsiccv_gray_to_rgb_u8);
   GrayTest{false}.with_padding(1).execute_test(intrinsiccv_gray_to_rgb_u8);
+  GrayTest{false}
+      .with_width(2 * test::Options::vector_lanes<uint8_t>())
+      .execute_test(intrinsiccv_gray_to_rgb_u8);
 }
 
 TEST(GRAY2, RGBA) {
   GrayTest{true}.execute_test(intrinsiccv_gray_to_rgba_u8);
   GrayTest{true}.with_padding(1).execute_test(intrinsiccv_gray_to_rgba_u8);
+  GrayTest{true}
+      .with_width(2 * test::Options::vector_lanes<uint8_t>())
+      .execute_test(intrinsiccv_gray_to_rgba_u8);
 }
 
 TEST(RGB2, RGB) {

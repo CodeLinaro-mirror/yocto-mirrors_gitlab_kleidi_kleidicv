@@ -15,6 +15,8 @@ class MergeTest final {
   // Shorthand for internal data layout representation.
   using ArrayType = test::Array2D<ElementType>;
 
+  MergeTest() : output_padding_{0} { inputs_padding_.fill(0); }
+
   // Sets the number of padding bytes at the end of rows.
   MergeTest& with_paddings(std::initializer_list<size_t> inputs_padding,
                            size_t output_padding) {
@@ -26,11 +28,16 @@ class MergeTest final {
     return *this;
   }
 
+  // Sets the number of elements in a row.
+  MergeTest& with_width(size_t width) {
+    width_ = width;
+    return *this;
+  }
+
   // Executes the test
   void test() {
-    // Width of input is set to execute 2 vector paths and 1 scalar path
-    size_t vector_length = test::Options::vector_length();
-    size_t input_width = (vector_length * 2) + 1;
+    size_t vector_lanes = test::Options::vector_lanes<ElementType>();
+    size_t input_width = width_;
     size_t output_width = input_width * Channels;
     size_t height = 2;
 
@@ -56,8 +63,8 @@ class MergeTest final {
       expected_output.set(0, i, {running_test_value});
       running_test_value++;
 
-      inputs[i].set(0, vector_length * 2, {running_test_value});
-      expected_output.set(0, (vector_length * 2 * Channels) + i,
+      inputs[i].set(0, vector_lanes * 2, {running_test_value});
+      expected_output.set(0, (vector_lanes * 2 * Channels) + i,
                           {running_test_value});
       running_test_value++;
 
@@ -65,8 +72,8 @@ class MergeTest final {
       expected_output.set(1, i, {running_test_value});
       running_test_value++;
 
-      inputs[i].set(1, vector_length * 2, {running_test_value});
-      expected_output.set(1, (vector_length * 2 * Channels) + i,
+      inputs[i].set(1, vector_lanes * 2, {running_test_value});
+      expected_output.set(1, (vector_lanes * 2 * Channels) + i,
                           {running_test_value});
       running_test_value++;
     }
@@ -96,6 +103,9 @@ class MergeTest final {
   // Number of padding bytes at the end of rows.
   std::array<size_t, Channels> inputs_padding_;
   size_t output_padding_;
+  // Tested number of elements in a row.
+  // Sufficient number of elements to exercise both vector and scalar paths.
+  size_t width_{2 * test::Options::vector_lanes<ElementType>() + 1};
 };
 
 template <typename ElementType, int kChannels>
@@ -135,6 +145,9 @@ TYPED_TEST(Merge, TwoChannels) {
   MergeTest<TypeParam, 2>().with_paddings({1, 0}, 1).test();
   MergeTest<TypeParam, 2>().with_paddings({1, 1}, 0).test();
   MergeTest<TypeParam, 2>().with_paddings({1, 1}, 1).test();
+  MergeTest<TypeParam, 2>()
+      .with_width(4 * test::Options::vector_lanes<TypeParam>())
+      .test();
 }
 
 TYPED_TEST(Merge, ThreeChannels) {
@@ -154,6 +167,9 @@ TYPED_TEST(Merge, ThreeChannels) {
   MergeTest<TypeParam, 3>().with_paddings({1, 1, 0}, 1).test();
   MergeTest<TypeParam, 3>().with_paddings({1, 1, 1}, 0).test();
   MergeTest<TypeParam, 3>().with_paddings({1, 1, 1}, 1).test();
+  MergeTest<TypeParam, 3>()
+      .with_width(4 * test::Options::vector_lanes<TypeParam>())
+      .test();
 }
 
 TYPED_TEST(Merge, FourChannels) {
@@ -189,6 +205,9 @@ TYPED_TEST(Merge, FourChannels) {
   MergeTest<TypeParam, 4>().with_paddings({1, 1, 1, 0}, 1).test();
   MergeTest<TypeParam, 4>().with_paddings({1, 1, 1, 1}, 0).test();
   MergeTest<TypeParam, 4>().with_paddings({1, 1, 1, 1}, 1).test();
+  MergeTest<TypeParam, 4>()
+      .with_width(4 * test::Options::vector_lanes<TypeParam>())
+      .test();
 }
 
 TYPED_TEST(Merge, OneChannelOutOfRange) {

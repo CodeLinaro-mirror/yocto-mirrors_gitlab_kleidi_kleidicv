@@ -60,7 +60,7 @@ class OperationTest {
     return *this;
   }
 
-  // Sets the number of padding bytes at the end of rows.
+  // Sets the number of elements in a row.
   OperationTest<ElementType, InputsSize, OutputsSize>& with_width(
       size_t width) {
     width_ = width;

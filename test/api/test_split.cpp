@@ -15,6 +15,8 @@ class SplitTest final {
   // Shorthand for internal data layout representation.
   using ArrayType = test::Array2D<ElementType>;
 
+  SplitTest() : input_padding_{0} { outputs_padding_.fill(0); }
+
   // Sets the number of padding bytes at the end of rows.
   SplitTest& with_paddings(size_t input_padding,
                            std::initializer_list<size_t> outputs_padding) {
@@ -26,11 +28,17 @@ class SplitTest final {
     return *this;
   }
 
+  // Sets the number of elements in a row.
+  SplitTest& with_width(size_t width) {
+    width_ = width;
+    return *this;
+  }
+
   // Executes the test
   void test() {
     // Width of input is set to execute 2 vector paths and 1 scalar path
-    size_t vector_length = test::Options::vector_length();
-    size_t output_width = (vector_length * 2) + 1;
+    size_t vector_lanes = test::Options::vector_lanes<ElementType>();
+    size_t output_width = width_;
     size_t input_width = output_width * Channels;
     size_t height = 2;
 
@@ -58,16 +66,16 @@ class SplitTest final {
       expected_outputs[i].set(0, 0, {running_test_value});
       running_test_value++;
 
-      input.set(0, (vector_length * 2 * Channels) + i, {running_test_value});
-      expected_outputs[i].set(0, vector_length * 2, {running_test_value});
+      input.set(0, (vector_lanes * 2 * Channels) + i, {running_test_value});
+      expected_outputs[i].set(0, vector_lanes * 2, {running_test_value});
       running_test_value++;
 
       input.set(1, i, {running_test_value});
       expected_outputs[i].set(1, 0, {running_test_value});
       running_test_value++;
 
-      input.set(1, (vector_length * 2 * Channels) + i, {running_test_value});
-      expected_outputs[i].set(1, vector_length * 2, {running_test_value});
+      input.set(1, (vector_lanes * 2 * Channels) + i, {running_test_value});
+      expected_outputs[i].set(1, vector_lanes * 2, {running_test_value});
       running_test_value++;
     }
 
@@ -95,6 +103,9 @@ class SplitTest final {
   // Number of padding bytes at the end of rows.
   size_t input_padding_;
   std::array<size_t, Channels> outputs_padding_;
+  // Tested number of elements in a row.
+  // Sufficient number of elements to exercise both vector and scalar paths.
+  size_t width_{2 * test::Options::vector_lanes<ElementType>() + 1};
 };
 
 template <typename ElementType, int kChannels>
@@ -135,6 +146,9 @@ TYPED_TEST(Split, TwoChannels) {
   SplitTest<TypeParam, 2>().with_paddings(1, {0, 1}).test();
   SplitTest<TypeParam, 2>().with_paddings(1, {1, 0}).test();
   SplitTest<TypeParam, 2>().with_paddings(1, {1, 1}).test();
+  SplitTest<TypeParam, 2>()
+      .with_width(4 * test::Options::vector_lanes<TypeParam>())
+      .test();
 }
 
 TYPED_TEST(Split, ThreeChannels) {
@@ -154,6 +168,9 @@ TYPED_TEST(Split, ThreeChannels) {
   SplitTest<TypeParam, 3>().with_paddings(1, {1, 0, 1}).test();
   SplitTest<TypeParam, 3>().with_paddings(1, {1, 1, 0}).test();
   SplitTest<TypeParam, 3>().with_paddings(1, {1, 1, 1}).test();
+  SplitTest<TypeParam, 3>()
+      .with_width(4 * test::Options::vector_lanes<TypeParam>())
+      .test();
 }
 
 TYPED_TEST(Split, FourChannels) {
@@ -173,6 +190,9 @@ TYPED_TEST(Split, FourChannels) {
   SplitTest<TypeParam, 4>().with_paddings(1, {1, 1, 0, 1}).test();
   SplitTest<TypeParam, 4>().with_paddings(1, {1, 1, 1, 0}).test();
   SplitTest<TypeParam, 4>().with_paddings(1, {1, 1, 1, 1}).test();
+  SplitTest<TypeParam, 4>()
+      .with_width(4 * test::Options::vector_lanes<TypeParam>())
+      .test();
 }
 
 TYPED_TEST(Split, OneChannelOutOfRange) {

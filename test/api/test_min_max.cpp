@@ -54,7 +54,7 @@ class MinMaxTest {
   static size_t scalar_offset() { return 2 * test::Options::vector_length(); }
 
   // Total number of bytes per row, padding included
-  static size_t stride() { return width() * sizeof(ElementType) + Padding; }
+  static size_t stride() { return (width() + Padding) * sizeof(ElementType); }
 
   struct Elements {
     std::initializer_list<ElementType> source_row0_vector;
@@ -185,8 +185,10 @@ class MinMaxTest {
     source.fill(testData.filler_value);
     source.set(0, 0, testData.source_row0_vector);
     source.set(1, 0, testData.source_row1_vector);
-    source.set(0, (width() / lanes()) * lanes(), testData.source_row0_scalar);
-    source.set(1, (width() / lanes()) * lanes(), testData.source_row1_scalar);
+    source.set(0, scalar_offset() / sizeof(ElementType),
+               testData.source_row0_scalar);
+    source.set(1, scalar_offset() / sizeof(ElementType),
+               testData.source_row1_scalar);
   }
 
   void one_test_call(const ArrayType& source, ElementType* p_min,
