@@ -54,6 +54,7 @@ class YuvTest final {
 
     test::Array2D<uint8_t> expected{logical_width * channel_number_,
                                     input_y.height(), padding};
+    expected.fill(0);
     calculate_expected(input_y, input_uv, expected, is_nv21);
 
     test::Array2D<uint8_t> actual{logical_width * channel_number_,

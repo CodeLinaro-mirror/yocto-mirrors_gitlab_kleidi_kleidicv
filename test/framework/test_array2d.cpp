@@ -28,6 +28,7 @@ TEST(Array2D, DefaultConstructor) {
 TEST(Array2D, Constructor) {
   size_t width = 5, height = 5;
   test::Array2D<uint32_t> array_1{width, height};
+  array_1.fill(0);
   EXPECT_EQ(array_1.width(), width);
   EXPECT_EQ(array_1.height(), height);
   EXPECT_EQ(array_1.channels(), 1);
@@ -35,6 +36,7 @@ TEST(Array2D, Constructor) {
   EXPECT_TRUE(array_1.valid());
 
   test::Array2D<uint32_t> array_2{width, height};
+  array_2.fill(0);
   EXPECT_EQ_ARRAY2D(array_1, array_2);
 }
 
