@@ -60,12 +60,13 @@ static void min_max_loc_u8(benchmark::State& state) {
 }
 BENCHMARK(min_max_loc_u8);
 
-static void resize_linear_u8(benchmark::State& state) {
+static void resize_linear_u8(size_t scale_x, size_t scale_y,
+                             benchmark::State& state) {
   // Setup
-  size_t src_width = image_width / 2;
-  size_t src_height = image_height / 2;
-  size_t dst_width = src_width * 2;
-  size_t dst_height = src_height * 2;
+  size_t src_width = image_width / scale_x;
+  size_t src_height = image_height / scale_y;
+  size_t dst_width = src_width * scale_x;
+  size_t dst_height = src_height * scale_y;
   std::vector<uint8_t> src, dst;
   src.resize(src_width * src_height);
   dst.resize(dst_width * dst_height);
@@ -80,4 +81,13 @@ static void resize_linear_u8(benchmark::State& state) {
     (void)unused;
   }
 }
-BENCHMARK(resize_linear_u8);
+
+static void resize_linear_2x2_u8(benchmark::State& state) {
+  resize_linear_u8(2, 2, state);
+}
+BENCHMARK(resize_linear_2x2_u8);
+
+static void resize_linear_4x4_u8(benchmark::State& state) {
+  resize_linear_u8(4, 4, state);
+}
+BENCHMARK(resize_linear_4x4_u8);
