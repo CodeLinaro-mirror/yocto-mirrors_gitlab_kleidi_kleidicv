@@ -29,10 +29,11 @@ INTRINSICCV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 # ------------------------------------------------------------------------------
 
 SOURCES="$(find \
-    "${INTRINSICCV_ROOT_PATH}"/adapters \
-    "${INTRINSICCV_ROOT_PATH}"/benchmark \
-    "${INTRINSICCV_ROOT_PATH}"/intrinsiccv \
-    "${INTRINSICCV_ROOT_PATH}"/test \
+    "${INTRINSICCV_ROOT_PATH}/adapters" \
+    "${INTRINSICCV_ROOT_PATH}/benchmark" \
+    "${INTRINSICCV_ROOT_PATH}/intrinsiccv" \
+    "${INTRINSICCV_ROOT_PATH}/test" \
+    "${INTRINSICCV_ROOT_PATH}/conformity/opencv" \
     \( -name \*.cpp -o -name \*.h \) \
     -print)"
 

@@ -27,8 +27,9 @@ An adapter layer API is currently provided for:
 
 The directory `intrinsiccv` contains generic implementation of the library.
 Integration with other projects are stored in `adapters` folder. `test` contains
-API and unit tests for the library. All supporting scripts are located in
-`scripts`.
+API and unit tests for the library. `benchmark` contains benchmark source.
+`conformity` contains checks to compare the library output with different
+implementations. All supporting scripts are located in `scripts`.
 
 # Standalone build using CMake
 

@@ -9,36 +9,16 @@ set -exu
 # Ensure we're at the root of the repo.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-# Ensure we're doing a clean build
-rm -rf build/*opencv*
+# Run OpenCV conformity checks
+export OPENCV_VERSION="4.9.0"
+CLEAN="ON" OPENCV_URL="/opt/opencv-${OPENCV_VERSION}.tar.gz" LDFLAGS="--rtlib=compiler-rt -fuse-ld=lld" ./scripts/run_opencv_conformity_checks.sh
 
-# Check building OpenCV with IntrinsicCV
-OPENCV_PATCH_VER="4.9"
-OPENCV_VER="${OPENCV_PATCH_VER}.0"
-wget --no-verbose \
-  https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VER}.tar.gz \
-  -O build/opencv.tar.gz
-tar xf build/opencv.tar.gz -C build
-rm build/opencv.tar.gz
-mv build/opencv-${OPENCV_VER} build/opencv
-patch -d build/opencv -p1<adapters/opencv/opencv-${OPENCV_PATCH_VER}.patch
-LDFLAGS="--rtlib=compiler-rt -fuse-ld=lld" cmake \
-  -S build/opencv \
-  -B build/build-opencv \
-  -G Ninja \
-  -DWITH_INTRINSICCV=ON \
-  -DINTRINSICCV_SOURCE_PATH="$(pwd)" \
-  -DBUILD_TESTS=ON \
-  -DBUILD_LIST=core,imgproc,ts
-ninja -C build/build-opencv opencv_test_imgproc opencv_test_core
+# Build OpenCV test executables from already configured conformity check project
+ninja -C build/conformity/opencv_intrinsiccv opencv_test_imgproc opencv_test_core
 
 # Run a subset of the OpenCV test suite, requres opencv_extra for the test images
-wget --no-verbose \
-  https://github.com/opencv/opencv_extra/archive/refs/tags/${OPENCV_VER}.tar.gz \
-  -O build/opencv_extra.tar.gz
-tar xf build/opencv_extra.tar.gz -C build
-rm build/opencv_extra.tar.gz
-mv build/opencv_extra-${OPENCV_VER} build/opencv_extra
+tar xf /opt/opencv-extra-${OPENCV_VERSION}.tar.gz -C build
+mv build/opencv_extra-${OPENCV_VERSION} build/opencv_extra
 
 pushd build/opencv_extra/testdata/cv
 
@@ -62,7 +42,7 @@ IMGPROC_TEST_PATTERNS=(
     '*Imgproc_Canny*'
 )
 IMGPROC_TEST_PATTERNS_STR="$(join_strings_with_colon "${IMGPROC_TEST_PATTERNS[*]}")"
-../../../build-opencv/bin/opencv_test_imgproc --gtest_filter="${IMGPROC_TEST_PATTERNS_STR}"
+../../../conformity/opencv_intrinsiccv/bin/opencv_test_imgproc --gtest_filter="${IMGPROC_TEST_PATTERNS_STR}"
 
 CORE_TEST_PATTERNS=(
     '*Core_Transpose*'
@@ -70,6 +50,6 @@ CORE_TEST_PATTERNS=(
     '*Core_ConvertScale*'
 )
 CORE_TEST_PATTERNS_STR="$(join_strings_with_colon "${CORE_TEST_PATTERNS[*]}")"
-../../../build-opencv/bin/opencv_test_core --gtest_filter="${CORE_TEST_PATTERNS_STR}"
+../../../conformity/opencv_intrinsiccv/bin/opencv_test_core --gtest_filter="${CORE_TEST_PATTERNS_STR}"
 
 popd
