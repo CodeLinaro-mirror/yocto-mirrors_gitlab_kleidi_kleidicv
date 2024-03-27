@@ -104,8 +104,7 @@ static intrinsiccv_error_t transpose(Rectangle rect,
   constexpr size_t num_of_lanes = VecTraits<ScalarType>::num_lanes();
 
   auto handle_lane_number_of_rows = [&](size_t vindex) {
-    LoopUnroll2 horizontal_loop(rect.width(), num_of_lanes);
-    horizontal_loop.try_avoid_tail_loop();
+    LoopUnroll2<TryToAvoidTailLoop> horizontal_loop(rect.width(), num_of_lanes);
 
     horizontal_loop.unroll_once([&](size_t hindex) {
       // if the input is big enough handle it tile by tile
@@ -119,8 +118,7 @@ static intrinsiccv_error_t transpose(Rectangle rect,
     });
   };
 
-  LoopUnroll2 vertical_loop(rect.height(), num_of_lanes);
-  vertical_loop.try_avoid_tail_loop();
+  LoopUnroll2<TryToAvoidTailLoop> vertical_loop(rect.height(), num_of_lanes);
 
   vertical_loop.unroll_once(handle_lane_number_of_rows);
 

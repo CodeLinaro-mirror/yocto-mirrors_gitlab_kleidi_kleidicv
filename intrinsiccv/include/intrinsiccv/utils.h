@@ -12,6 +12,7 @@
 
 #include "intrinsiccv/config.h"
 #include "intrinsiccv/ctypes.h"
+#include "intrinsiccv/traits.h"
 
 namespace INTRINSICCV_TARGET_NAMESPACE {
 
@@ -207,21 +208,20 @@ class LoopUnroll final {
 };  // end of class LoopUnroll
 
 // This is the same as LoopUnroll, except that it passes indices to callbacks.
+template <class Tail = UsesTailPath>
 class LoopUnroll2 final {
  public:
   explicit LoopUnroll2(size_t length,
                        size_t step) INTRINSICCV_STREAMING_COMPATIBLE
       : length_(length),
         step_(step),
-        index_(0),
-        try_avoid_tail_loop_(false) {}
+        index_(0) {}
 
   explicit LoopUnroll2(size_t start_index, size_t length,
                        size_t step) INTRINSICCV_STREAMING_COMPATIBLE
       : length_(length),
         step_(step),
-        index_(std::min(start_index, length)),
-        try_avoid_tail_loop_(false) {}
+        index_(std::min(start_index, length)) {}
 
   // Loop unrolled four times.
   template <typename CallbackType>
@@ -289,12 +289,6 @@ class LoopUnroll2 final {
     return *this;
   }
 
-  // Instructs the loop logic to try to avoid the tail loop.
-  LoopUnroll2 &try_avoid_tail_loop() INTRINSICCV_STREAMING_COMPATIBLE {
-    try_avoid_tail_loop_ = true;
-    return *this;
-  }
-
   // Returns true if there is nothing left to process.
   bool empty() const INTRINSICCV_STREAMING_COMPATIBLE {
     return length_ == index_;
@@ -321,11 +315,14 @@ class LoopUnroll2 final {
         index_ += n_step;
       }
 
-      // Try to avoid the tail loop.
-      if ((UnrollFactor == 1) && remaining_length() && try_avoid_tail_loop_ &&
-          (length_ >= n_step)) {
-        index_ = length_ - n_step;
-        max_index = length_;
+      // Try to avoid the tail loop if Tail is TryToAvoidTailLoop
+      if constexpr (try_to_avoid_tail_loop<Tail> && (UnrollFactor == 1)) {
+        if (remaining_length() && (length_ >= n_step)) {
+          index_ = length_ - n_step;
+          max_index = length_;
+        } else {
+          break;
+        }
       } else {
         break;
       }
@@ -337,7 +334,6 @@ class LoopUnroll2 final {
   size_t length_;
   size_t step_;
   size_t index_;
-  bool try_avoid_tail_loop_;
 };  // end of class LoopUnroll2
 
 // Check whether any of the arguments are null pointers.

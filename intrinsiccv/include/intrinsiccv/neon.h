@@ -342,9 +342,8 @@ class SeparableFilter<FilterType, 3UL> {
   void process_vertical(size_t width, Rows<const SourceType> src_rows,
                         Rows<BufferType> dst_rows,
                         BorderOffsets border_offsets) const {
-    LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
-
-    loop.try_avoid_tail_loop();
+    LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
+                                         SourceVecTraits::num_lanes()};
 
     loop.unroll_twice([&](size_t index) {
       auto src_0 = &src_rows.at(border_offsets.c0())[index];
@@ -388,9 +387,8 @@ class SeparableFilter<FilterType, 3UL> {
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
                           BorderOffsets border_offsets) const {
-    LoopUnroll2 loop{width * src_rows.channels(), BufferVecTraits::num_lanes()};
-
-    loop.try_avoid_tail_loop();
+    LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
+                                         BufferVecTraits::num_lanes()};
 
     loop.unroll_twice([&](size_t index) {
       auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
@@ -474,9 +472,8 @@ class SeparableFilter<FilterType, 5UL> {
   void process_vertical(size_t width, Rows<const SourceType> src_rows,
                         Rows<BufferType> dst_rows,
                         BorderOffsets border_offsets) const {
-    LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
-
-    loop.try_avoid_tail_loop();
+    LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
+                                         SourceVecTraits::num_lanes()};
 
     loop.unroll_once([&](size_t index) {
       SourceVectorType src[5];
@@ -502,9 +499,8 @@ class SeparableFilter<FilterType, 5UL> {
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
                           BorderOffsets border_offsets) const {
-    LoopUnroll2 loop{width * src_rows.channels(), BufferVecTraits::num_lanes()};
-
-    loop.try_avoid_tail_loop();
+    LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
+                                         BufferVecTraits::num_lanes()};
 
     loop.unroll_twice([&](size_t index) {
       auto src_0 = &src_rows.at(0, border_offsets.c0())[index];

@@ -30,10 +30,10 @@ class VerticalOp final {
     // handle two rows at once.
     for (size_t height = 0; height < rect_.height(); height += 2) {
       // Iterate across the columns from left to right.
-      LoopUnroll2 loop{rect_.width() * src_rows.channels(),
-                       VecTraits::num_lanes()};
+      LoopUnroll2<TryToAvoidTailLoop> loop{rect_.width() * src_rows.channels(),
+                                           VecTraits::num_lanes()};
       // clang-format off
-      loop.try_avoid_tail_loop()
+      loop
           .unroll_four_times([&](size_t index) {
             vector_path_4x(src_rows, dst_rows, index, height);
           })
@@ -322,10 +322,10 @@ class HorizontalOp final {
     // Iterate across the rows from top to bottom.
     for (size_t height = 0; height < rect_.height(); ++height) {
       // Iterate across the columns from left to right.
-      LoopUnroll2 loop{rect_.width() * src_rows.channels(),
-                       VecTraits::num_lanes()};
+      LoopUnroll2<TryToAvoidTailLoop> loop{rect_.width() * src_rows.channels(),
+                                           VecTraits::num_lanes()};
       // clang-format off
-      loop.try_avoid_tail_loop()
+      loop
           .unroll_four_times([&](size_t index) {
             vector_path_4x(src_rows, dst_rows, index);
           })
