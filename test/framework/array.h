@@ -141,6 +141,22 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
+  // Sets values in a row starting at a given column from a const vector.
+  void set(size_t row, size_t column, const std::vector<ElementType> &values) {
+    ASSERT_EQ(valid(), true) << "Array is invalid.";
+    ASSERT_GE(width() - column, values.size());
+
+    ElementType *ptr = at(row, column);
+    if (!ptr) {
+      return;
+    }
+
+    size_t index = 0;
+    for (ElementType value : values) {
+      ptr[index++] = value;
+    }
+  }
+
   // Sets values starting in a given row starting at a given column.
   //
   // The layout of the input TwoDimensional object is not altered, meaning that
