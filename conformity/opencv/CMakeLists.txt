@@ -31,6 +31,7 @@ add_executable(
   tests.cpp
   test_sobel.cpp
   test_gaussian_blur.cpp
+  test_float_to_int.cpp
 )
 
 target_link_libraries(
@@ -67,6 +68,7 @@ add_executable(
   tests.cpp
   test_sobel.cpp
   test_gaussian_blur.cpp
+  test_float_to_int.cpp
 )
 
 target_link_libraries(
