@@ -199,66 +199,63 @@ class MorphologyWorkspace final {
     auto first_src_rows = src_rows;
     auto last_src_rows = src_rows.at(rect.height() - 1);
 
-    if (size_t horizontal_height = get_next_horizontal_height()) {
-      for (size_t index = 0; index < horizontal_height; ++index) {
-        switch (border_type) {
-          case BorderType::CONSTANT: {
-            make_constant_border(wide_rows, 0, margin.left(),
-                                 left_border_value);
+    size_t horizontal_height = get_next_horizontal_height();
+    for (size_t index = 0; index < horizontal_height; ++index) {
+      switch (border_type) {
+        case BorderType::CONSTANT: {
+          make_constant_border(wide_rows, 0, margin.left(), left_border_value);
 
-            if (row_index_ < margin.top()) {
-              make_constant_border(wide_rows, margin.left(),
-                                   wide_rows_src_width_, top_border_value);
-            } else if (row_index_ < (margin.top() + rect.height())) {
-              copy_data(src_rows, wide_rows.at(0, margin.left()),
-                        wide_rows_src_width_);
-              // Advance source rows.
-              ++src_rows;
-            } else if (row_index_ >= (margin.top() + rect.height())) {
-              make_constant_border(wide_rows, margin.left(),
-                                   wide_rows_src_width_, bottom_border_value);
-            }
-
-            make_constant_border(wide_rows,
-                                 margin.left() + wide_rows_src_width_,
-                                 margin.right(), right_border_value);
-
-            // Advance counters.
-            ++row_index_;
-          } break;
-
-          case BorderType::REPLICATE: {
-            Rows<const S> current_src_row;
-
-            if (row_index_ < margin.top()) {
-              current_src_row = first_src_rows;
-            } else if (row_index_ < (margin.top() + rect.height())) {
-              current_src_row = src_rows;
-              // Advance source rows.
-              ++src_rows;
-            } else {
-              current_src_row = last_src_rows;
-            }
-
-            replicate_border(current_src_row, wide_rows, 0, 0, margin.left());
-            copy_data(current_src_row, wide_rows.at(0, margin.left()),
+          if (row_index_ < margin.top()) {
+            make_constant_border(wide_rows, margin.left(), wide_rows_src_width_,
+                                 top_border_value);
+          } else if (row_index_ < (margin.top() + rect.height())) {
+            copy_data(src_rows, wide_rows.at(0, margin.left()),
                       wide_rows_src_width_);
-            replicate_border(
-                current_src_row, wide_rows, wide_rows_src_width_ - 1,
-                margin.left() + wide_rows_src_width_, margin.right());
+            // Advance source rows.
+            ++src_rows;
+          } else {
+            make_constant_border(wide_rows, margin.left(), wide_rows_src_width_,
+                                 bottom_border_value);
+          }
 
-            // Advance counters.
-            ++row_index_;
-          } break;
-        }  // switch (border_type)
+          make_constant_border(wide_rows, margin.left() + wide_rows_src_width_,
+                               margin.right(), right_border_value);
 
-        // [Step 2] Process the preloaded data.
-        operation.process_horizontal(Rectangle{rect.width(), 1UL}, wide_rows,
-                                     db_indirect_rows.write_at().at(index));
-      }  // for (...; index < horizontal_height; ...)
+          // Advance counters.
+          ++row_index_;
+        } break;
 
-      db_indirect_rows.swap();
-    }
+        case BorderType::REPLICATE: {
+          Rows<const S> current_src_row;
+
+          if (row_index_ < margin.top()) {
+            current_src_row = first_src_rows;
+          } else if (row_index_ < (margin.top() + rect.height())) {
+            current_src_row = src_rows;
+            // Advance source rows.
+            ++src_rows;
+          } else {
+            current_src_row = last_src_rows;
+          }
+
+          replicate_border(current_src_row, wide_rows, 0, 0, margin.left());
+          copy_data(current_src_row, wide_rows.at(0, margin.left()),
+                    wide_rows_src_width_);
+          replicate_border(current_src_row, wide_rows, wide_rows_src_width_ - 1,
+                           margin.left() + wide_rows_src_width_,
+                           margin.right());
+
+          // Advance counters.
+          ++row_index_;
+        } break;
+      }  // switch (border_type)
+
+      // [Step 2] Process the preloaded data.
+      operation.process_horizontal(Rectangle{rect.width(), 1UL}, wide_rows,
+                                   db_indirect_rows.write_at().at(index));
+    }  // for (...; index < horizontal_height; ...)
+
+    db_indirect_rows.swap();
 
     // [Step 3] Process any remaining data.
     while (vertical_height_) {
@@ -272,7 +269,7 @@ class MorphologyWorkspace final {
                         wide_rows_src_width_);
               // Advance source rows.
               ++src_rows;
-            } else if (row_index_ >= (margin.top() + rect.height())) {
+            } else {
               make_constant_border(wide_rows, margin.left(),
                                    wide_rows_src_width_, bottom_border_value);
             }
