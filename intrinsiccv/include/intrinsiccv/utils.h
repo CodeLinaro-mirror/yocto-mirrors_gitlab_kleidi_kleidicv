@@ -309,24 +309,24 @@ class LoopUnroll2 final {
     const size_t n_step = UnrollFactor * step();
     size_t max_index = index_ + (remaining_length() / n_step) * n_step;
 
-    while (remaining_length()) {
+    if constexpr (try_to_avoid_tail_loop<Tail> && (UnrollFactor == 1)) {
+      while (index_ < max_index) {
+        while (index_ < max_index) {
+          callback(index_);
+          index_ += n_step;
+        }
+
+        if (remaining_length()) {
+          index_ = length_ - n_step;
+          max_index = length_;
+        }
+      }
+    } else {
       while (index_ < max_index) {
         callback(index_);
         index_ += n_step;
       }
-
-      // Try to avoid the tail loop if Tail is TryToAvoidTailLoop
-      if constexpr (try_to_avoid_tail_loop<Tail> && (UnrollFactor == 1)) {
-        if (remaining_length() && (length_ >= n_step)) {
-          index_ = length_ - n_step;
-          max_index = length_;
-        } else {
-          break;
-        }
-      } else {
-        break;
-      }
-    }  // while (remaining_length())
+    }
 
     return *this;
   }
