@@ -34,7 +34,7 @@ SOURCES="$(find \
     "${INTRINSICCV_ROOT_PATH}/intrinsiccv" \
     "${INTRINSICCV_ROOT_PATH}/test" \
     "${INTRINSICCV_ROOT_PATH}/conformity/opencv" \
-    \( -name \*.cpp -o -name \*.h \) \
+    \( -name \*.cpp -o -name \*.h -o -name \*.h.in \) \
     -print)"
 
 if [[ "${CHECK_ONLY}" == "ON" ]]; then
