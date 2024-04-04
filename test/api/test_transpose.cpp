@@ -31,7 +31,7 @@ class TestTranspose final {
     size_t src_width = 2 * test::Options::vector_lanes<ElementType>();
     // Set height to be different from width but still bigger than vector_lanes
     size_t src_height =
-        inplace ? src_width : test::Options::vector_lanes<ElementType>() + 1;
+        inplace ? src_width : 3 * test::Options::vector_lanes<ElementType>();
     test(src_width, src_height);
   }
 
