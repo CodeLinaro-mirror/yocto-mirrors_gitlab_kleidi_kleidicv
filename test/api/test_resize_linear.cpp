@@ -20,6 +20,10 @@ TEST(ResizeLinear, NotImplemented) {
             intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 2, 2, 1));
   EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
             intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 1, 1, 2));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 4, 4, 2));
+  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+            intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 2, 2, 4));
 }
 
 TEST(ResizeLinear, NullPointer) {
