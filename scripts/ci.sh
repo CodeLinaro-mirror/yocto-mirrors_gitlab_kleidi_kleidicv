@@ -43,7 +43,8 @@ echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
 ninja -C build
 
 # Build with GCC
-CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ cmake -S . -B build/gcc -G Ninja
+CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ cmake -S . -B build/gcc -G Ninja \
+  -DCMAKE_EXE_LINKER_FLAGS="-static"
 ninja -C build/gcc
 
 # Run tests

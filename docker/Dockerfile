@@ -62,12 +62,6 @@ RUN if [ $(dpkg --print-architecture) = amd64 ]; then \
     && rm -rf libclang-rt* \
     ; fi
 
-# Hacks required to run tests on an x86 host.
-RUN if [ $(dpkg --print-architecture) = amd64 ]; then \
-    ln -sf /usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 /lib \
-    ; fi
-ENV LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib
-
 RUN pipx install cpplint==1.6.1
 RUN pipx install gcovr==6.0
 RUN pipx install reuse==3.0.0

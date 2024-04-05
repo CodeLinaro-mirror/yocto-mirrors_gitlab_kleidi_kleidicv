@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:8
+image: registry.gitlab.arm.com/intrinsiccv/intrinsiccv:9
 
 # Only run CI for main branch & merge requests
 workflow:
