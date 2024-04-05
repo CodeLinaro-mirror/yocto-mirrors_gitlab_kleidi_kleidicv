@@ -25,10 +25,14 @@ static intrinsiccv_error_t check_dimensions(size_t src_dim, size_t dst_dim) {
   return INTRINSICCV_ERROR_RANGE;
 }
 
+// Disable the warning, as the complexity is just above the threshold, it's
+// better to leave it in one piece.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 INTRINSICCV_TARGET_FN_ATTRS
-static intrinsiccv_error_t check_resize_args(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height) {
+intrinsiccv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
+                                         size_t src_width, size_t src_height,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t dst_width, size_t dst_height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(src_width, src_height);
@@ -38,20 +42,6 @@ static intrinsiccv_error_t check_resize_args(
   }
 
   if (intrinsiccv_error_t ret = check_dimensions(src_height, dst_height)) {
-    return ret;
-  }
-
-  return INTRINSICCV_OK;
-}
-
-INTRINSICCV_TARGET_FN_ATTRS
-intrinsiccv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
-                                         size_t src_width, size_t src_height,
-                                         uint8_t *dst, size_t dst_stride,
-                                         size_t dst_width, size_t dst_height) {
-  if (intrinsiccv_error_t ret =
-          check_resize_args(src, src_stride, src_width, src_height, dst,
-                            dst_stride, dst_width, dst_height)) {
     return ret;
   }
 
@@ -129,5 +119,6 @@ intrinsiccv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
   }
   return INTRINSICCV_OK;
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 }  // namespace intrinsiccv::neon
