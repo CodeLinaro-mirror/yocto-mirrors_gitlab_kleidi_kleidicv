@@ -237,6 +237,12 @@ TYPED_TEST(Sobel, CannotAllocateImageHorizontal) {
       sobel_3x3_horizontal<TypeParam>()(
           src, sizeof(src), dst, sizeof(dst), INTRINSICCV_MAX_IMAGE_PIXELS / 2,
           validSize, INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
+
+  EXPECT_EQ(INTRINSICCV_ERROR_ALLOCATION,
+            sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
+                                            INTRINSICCV_MAX_IMAGE_PIXELS / 2,
+                                            validSize,
+                                            INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
   MockMallocToFail::disable();
 }
 #endif
