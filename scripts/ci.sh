@@ -12,7 +12,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # Ensure we're doing a clean build
 rm -rf build
 
-apt-get -y --no-install-recommends install qemu-user
+if ! command -v qemu-aarch64; then
+  apt-get -y --no-install-recommends install qemu-user
+fi
 
 # Check format of C++ files
 CHECK_ONLY=ON VERBOSE=ON scripts/format.sh

@@ -1,0 +1,35 @@
+{
+  "build" : {
+    "dockerfile": "../docker/Dockerfile",
+    "args": {
+      "USER": "vscode-user"
+    },
+    "options" : [
+      "--network=host"
+    ]
+  },
+  "onCreateCommand" : ".devcontainer/install_deps.sh",
+  "postStartCommand" : ".devcontainer/setup_ccache.sh ${containerWorkspaceFolder}/.devcontainer/ccache_storage",
+  "containerEnv": {
+    "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
+  },
+  "portsAttributes": {
+    "2345": {
+      "label": "Qemu GDB port",
+      "onAutoForward": "ignore"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
+      ]
+    }
+  },
+  "runArgs" : [
+    "--network=host"
+  ],
+  "remoteUser": "vscode-user"
+}

@@ -43,23 +43,16 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
         lld-${LLVM_VERSION} \
         llvm-${LLVM_VERSION}
 
-# Install libclang-rt-dev on an x86 host.
-# Hacks are needed to make this work:
-# 1. Once we add the arm64 architecture then apt update will fail so
-#    ignore the error.
-# 2. libclang-rt-dev declares a dependency on libc & libc++ which isn't
-#    needed to build, so edit the package to remove all dependencies.
+# Populate the contents of libclang-rt-dev:arm64 on an x86 host.
+# Package installation fails, so instead the package is downloaded and extracted into the root filesystem.
 RUN if [ $(dpkg --print-architecture) = amd64 ]; then \
     dpkg --add-architecture arm64 \
     && (apt-get -y update || true) \
     && cd /tmp \
     && apt-get -y download libclang-rt-${LLVM_VERSION}-dev:arm64 \
-    && dpkg-deb -x libclang-rt*.deb libclang-rt \
-    && dpkg-deb --control libclang-rt*.deb libclang-rt/DEBIAN \
-    && sed -i '/Depends:/d' libclang-rt/DEBIAN/control \
-    && dpkg -b libclang-rt libclang-rt.deb \
-    && apt-get -y install ./libclang-rt.deb \
+    && dpkg-deb -x libclang-rt*.deb / \
     && rm -rf libclang-rt* \
+    && dpkg --remove-architecture arm64 \
     ; fi
 
 RUN pipx install cpplint==1.6.1
@@ -77,3 +70,10 @@ RUN wget \
 RUN wget \
   https://github.com/opencv/opencv_extra/archive/refs/tags/${OPENCV_VERSION}.tar.gz \
   -O /opt/opencv-extra-${OPENCV_VERSION}.tar.gz
+
+# Add a normal user with sudo rights, can be useful for developement purposes
+ARG USER=user
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install sudo
+RUN useradd -s /usr/bin/bash -m ${USER} \
+    && echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER}
