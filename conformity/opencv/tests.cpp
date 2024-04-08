@@ -214,15 +214,16 @@ std::vector<test> tests = {
 #if MANAGER
 int run_tests(RecreatedMessageQueue& request_queue,
               RecreatedMessageQueue& reply_queue) {
+  int ret_val = 0;
   for (int i = 0; i < static_cast<int>(tests.size()); ++i) {
     std::cout << "Testing " + tests[i].first << std::endl;
     if (tests[i].second(i, request_queue, reply_queue)) {
-      return 1;
+      ret_val = 1;
     }
   }
   request_queue.request_exit();
 
-  return 0;
+  return ret_val;
 }
 #else   // MANAGER
 void wait_for_requests(OpenedMessageQueue& request_queue,
