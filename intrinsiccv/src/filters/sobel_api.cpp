@@ -6,11 +6,11 @@
 #include "intrinsiccv/filters/sobel.h"
 #include "intrinsiccv/intrinsiccv.h"
 
-#define INTRINSICCV_DEFINE_C_API(name, partialname)             \
-  INTRINSICCV_MULTIVERSION_C_API(                               \
-      name, intrinsiccv::neon::partialname,                     \
-      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::partialname), \
-      intrinsiccv::sme2::partialname)
+#define INTRINSICCV_DEFINE_C_API(name, partialname)              \
+  INTRINSICCV_MULTIVERSION_C_API(                                \
+      name, &intrinsiccv::neon::partialname,                     \
+      INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::partialname), \
+      &intrinsiccv::sme2::partialname)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_sobel_3x3_horizontal_s16_u8,
                          sobel_3x3_horizontal_s16_u8);

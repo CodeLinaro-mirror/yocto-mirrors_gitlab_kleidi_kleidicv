@@ -24,6 +24,14 @@
     return impl;                                                              \
   }
 
+#define INTRINSICCV_DIFF_IO_API(name, impl, itype, otype)                     \
+  template <typename InputType, typename OutputType,                          \
+            std::enable_if_t<std::is_same_v<InputType, itype>, bool> = true,  \
+            std::enable_if_t<std::is_same_v<OutputType, otype>, bool> = true> \
+  static decltype(auto) name() {                                              \
+    return impl;                                                              \
+  }
+
 // Generates a fatal failure with a generic message, and returns with a given
 // value.
 #define TEST_FAIL_WITH(return_value, message)                          \

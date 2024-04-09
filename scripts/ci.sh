@@ -51,7 +51,7 @@ ninja -C build/gcc
 
 # Run tests
 LONG_VECTOR_TESTS="GRAY2.*:RGB*"
-EXCLUDE_FLOAT_CONVERSION_TESTS="-FloatToIntTest*"
+EXCLUDE_FLOAT_CONVERSION_TESTS="-FloatConversion*"
 TESTRESULT=0
 qemu-aarch64     build/test/framework/intrinsiccv-framework-test --gtest_output=xml:build/test-results/ || TESTRESULT=1
 qemu-aarch64 -cpu cortex-a35 build/test/api/intrinsiccv-api-test --gtest_filter="${EXCLUDE_FLOAT_CONVERSION_TESTS}" --gtest_output=xml:build/test-results/clang-neon/ || TESTRESULT=1

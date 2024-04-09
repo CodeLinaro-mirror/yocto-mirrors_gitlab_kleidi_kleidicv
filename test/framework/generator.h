@@ -12,6 +12,18 @@
 
 namespace test {
 
+template <typename ElementType>
+class GenerateLinearSeries : public Generator<ElementType> {
+ public:
+  explicit GenerateLinearSeries(ElementType start_from)
+      : counter_{start_from} {}
+
+  std::optional<ElementType> next() override { return counter_++; }
+
+ private:
+  ElementType counter_;
+};  // end of class GenerateLinearSeries
+
 // Generates pseudo-random numbers of a given type.
 template <typename ElementType>
 class PseudoRandomNumberGenerator : public Generator<ElementType> {

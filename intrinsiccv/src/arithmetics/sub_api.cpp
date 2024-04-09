@@ -38,11 +38,11 @@ intrinsiccv_error_t saturating_sub(const T *src_a, size_t src_a_stride,
 
 }  // namespace intrinsiccv
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                             \
-  INTRINSICCV_MULTIVERSION_C_API(                                        \
-      name, intrinsiccv::neon::saturating_sub<type>,                     \
-      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_sub<type>), \
-      intrinsiccv::sme2::saturating_sub<type>)
+#define INTRINSICCV_DEFINE_C_API(name, type)                              \
+  INTRINSICCV_MULTIVERSION_C_API(                                         \
+      name, &intrinsiccv::neon::saturating_sub<type>,                     \
+      INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::saturating_sub<type>), \
+      &intrinsiccv::sme2::saturating_sub<type>)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_s8, int8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_sub_u8, uint8_t);

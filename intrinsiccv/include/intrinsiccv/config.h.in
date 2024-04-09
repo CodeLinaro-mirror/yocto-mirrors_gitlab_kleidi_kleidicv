@@ -90,15 +90,4 @@
 #define INTRINSICCV_NODISCARD
 #endif
 
-// GCC and clang
-#ifdef __GNUC__
-#define INTRINSICCV_NO_STRICT_ALIASING_BEGIN \
-  _Pragma("GCC diagnostic push")             \
-      _Pragma("GCC diagnostic ignored \"-Wstrict-aliasing\"")
-#define INTRINSICCV_NO_STRICT_ALIASING_END _Pragma("GCC diagnostic pop")
-#else
-#define INTRINSICCV_NO_STRICT_ALIASING_BEGIN
-#define INTRINSICCV_NO_STRICT_ALIASING_END
-#endif
-
 #endif  // INTRINSICCV_CONFIG_H

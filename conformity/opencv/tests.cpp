@@ -10,7 +10,7 @@
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
-#include "test_float_to_int.h"
+#include "test_float_conv.h"
 #include "test_gaussian_blur.h"
 #include "test_sobel.h"
 
@@ -44,10 +44,10 @@ cv::Mat get_expected_from_subordinate(int index,
 
 template <typename T>
 static std::vector<T> merge_tests(
-    std::initializer_list<std::vector<test>& (*)()> test_groups) {
+    std::initializer_list<std::vector<T>& (*)()> test_groups) {
   std::vector<T> all_tests;
   for (auto singleton : test_groups) {
-    std::vector<test>& group = singleton();
+    std::vector<T>& group = singleton();
     all_tests.insert(all_tests.cend(), group.cbegin(), group.cend());
   }
   return all_tests;
@@ -56,7 +56,7 @@ static std::vector<T> merge_tests(
 std::vector<test> all_tests = merge_tests<test>({
     sobel_tests_singleton,
     gaussian_blur_tests_singleton,
-    float_to_int_tests_singleton,
+    float_conversion_tests_singleton,
 });
 
 #if MANAGER

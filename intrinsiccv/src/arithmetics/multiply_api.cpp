@@ -40,10 +40,10 @@ intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
 
 }  // namespace intrinsiccv
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                                  \
-  INTRINSICCV_MULTIVERSION_C_API(                                             \
-      name, intrinsiccv::neon::saturating_multiply<type>,                     \
-      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::saturating_multiply<type>), \
+#define INTRINSICCV_DEFINE_C_API(name, type)                                   \
+  INTRINSICCV_MULTIVERSION_C_API(                                              \
+      name, &intrinsiccv::neon::saturating_multiply<type>,                     \
+      INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::saturating_multiply<type>), \
       nullptr)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_multiply_u8, uint8_t);

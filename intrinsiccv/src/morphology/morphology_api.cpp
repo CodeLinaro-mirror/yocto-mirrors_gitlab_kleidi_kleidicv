@@ -108,11 +108,11 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 
 }  // extern "C"
 
-#define INTRINSICCV_DEFINE_C_API(name, tname, type)             \
-  INTRINSICCV_MULTIVERSION_C_API(                               \
-      name, intrinsiccv::neon::tname<type>,                     \
-      INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::tname<type>), \
-      intrinsiccv::sme2::tname<type>)
+#define INTRINSICCV_DEFINE_C_API(name, tname, type)              \
+  INTRINSICCV_MULTIVERSION_C_API(                                \
+      name, &intrinsiccv::neon::tname<type>,                     \
+      INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::tname<type>), \
+      &intrinsiccv::sme2::tname<type>)
 
 INTRINSICCV_DEFINE_C_API(intrinsiccv_dilate_u8, dilate, uint8_t);
 INTRINSICCV_DEFINE_C_API(intrinsiccv_erode_u8, erode, uint8_t);
