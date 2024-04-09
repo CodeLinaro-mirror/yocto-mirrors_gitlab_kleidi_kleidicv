@@ -4,220 +4,66 @@
 
 #include "tests.h"
 
+#include <initializer_list>
 #include <iostream>
-#include <string>
-#include <utility>
 #include <vector>
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
+#include "test_gaussian_blur.h"
+#include "test_sobel.h"
 
 #if MANAGER
+void fail_print_matrices(size_t height, size_t width, cv::Mat& input,
+                         cv::Mat& manager_result, cv::Mat& subord_result) {
+  std::cout << "[FAIL]" << std::endl;
+  std::cout << "height=" << height << std::endl;
+  std::cout << "width=" << width << std::endl;
+  std::cout << "=== Input Matrix:" << std::endl;
+  std::cout << input << std::endl << std::endl;
+  std::cout << "=== Manager result (actual):" << std::endl;
+  std::cout << manager_result << std::endl << std::endl;
+  std::cout << "=== Subordinate result (expected):" << std::endl;
+  std::cout << subord_result << std::endl << std::endl;
+}
+
+cv::Mat get_expected_from_subordinate(int index,
+                                      RecreatedMessageQueue& request_queue,
+                                      RecreatedMessageQueue& reply_queue,
+                                      cv::Mat& input) {
+  request_queue.request_operation(index, input);
+  reply_queue.wait();
+  if (reply_queue.last_cmd() != index) {
+    throw std::runtime_error("Invalid reply from subordinate");
+  }
+
+  return reply_queue.cv_mat_from_last_msg();
+}
+#endif
 
 template <typename T>
-static auto abs_diff(T a, T b) {
-  return a > b ? a - b : b - a;
-}
-
-template <typename T>
-static bool are_matrices_different(T threshold, cv::Mat& A, cv::Mat& B) {
-  if (A.rows != B.rows || A.cols != B.cols || A.type() != B.type()) {
-    std::cout << "Matrix size/type mismatch" << std::endl;
-    return true;
+static std::vector<T> merge_tests(
+    std::initializer_list<std::vector<test>& (*)()> test_groups) {
+  std::vector<T> all_tests;
+  for (auto singleton : test_groups) {
+    std::vector<test>& group = singleton();
+    all_tests.insert(all_tests.cend(), group.cbegin(), group.cend());
   }
-
-  for (int i = 0; i < A.rows; ++i) {
-    for (int j = 0; j < (A.cols * CV_MAT_CN(A.type())); ++j) {
-      if (abs_diff<T>(A.at<T>(i, j), B.at<T>(i, j)) > threshold) {
-        std::cout << "=== Mismatch at: " << i << " " << j << std::endl
-                  << std::endl;
-        return true;
-      }
-    }
-  }
-
-  return false;
+  return all_tests;
 }
 
-template <bool Vertical, size_t Channels>
-bool test_sobel(int index, RecreatedMessageQueue& request_queue,
-                RecreatedMessageQueue& reply_queue) {
-  cv::RNG rng(0);
-
-  for (size_t x = 5; x <= 16; ++x) {
-    for (size_t y = 5; y <= 16; ++y) {
-      cv::Mat src(x, y, CV_8UC(Channels));
-      rng.fill(src, cv::RNG::UNIFORM, 0, 255);
-
-      cv::Mat manager_result;
-      if constexpr (Vertical) {
-        cv::Sobel(src, manager_result, CV_16S, 0, 1, 3, 1.0, 0.0,
-                  cv::BORDER_REPLICATE);
-      } else {
-        cv::Sobel(src, manager_result, CV_16S, 1, 0, 3, 1.0, 0.0,
-                  cv::BORDER_REPLICATE);
-      }
-
-      request_queue.request_operation(index, src);
-      reply_queue.wait();
-      if (reply_queue.last_cmd() != index) {
-        throw std::runtime_error("Invalid reply from subordinate");
-      }
-
-      cv::Mat subord_result = reply_queue.cv_mat_from_last_msg();
-
-      if (are_matrices_different<uint8_t>(0, manager_result, subord_result)) {
-        std::cout << "[FAIL]" << std::endl;
-        std::cout << "height=" << x << std::endl;
-        std::cout << "width=" << y << std::endl;
-        std::cout << "=== Src Matrix:" << std::endl;
-        std::cout << src << std::endl << std::endl;
-        std::cout << "=== Manager result:" << std::endl;
-        std::cout << manager_result << std::endl << std::endl;
-        std::cout << "=== Subordinate result:" << std::endl;
-        std::cout << subord_result << std::endl << std::endl;
-
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-template <size_t KernelSize, size_t BorderType, size_t Channels>
-bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
-                        RecreatedMessageQueue& reply_queue) {
-  cv::RNG rng(0);
-  cv::Size kernel(KernelSize, KernelSize);
-
-  for (size_t x = 5; x <= 16; ++x) {
-    for (size_t y = 5; y <= 16; ++y) {
-      cv::Mat src(x, y, CV_8UC(Channels));
-      rng.fill(src, cv::RNG::UNIFORM, 0, 255);
-
-      cv::Mat manager_result;
-      cv::GaussianBlur(src, manager_result, kernel, 0, 0, BorderType);
-
-      request_queue.request_operation(index, src);
-      reply_queue.wait();
-      if (reply_queue.last_cmd() != index) {
-        throw std::runtime_error("Invalid reply from subordinate");
-      }
-
-      cv::Mat subord_result = reply_queue.cv_mat_from_last_msg();
-
-      if (are_matrices_different<uint8_t>(0, manager_result, subord_result)) {
-        std::cout << "[FAIL]" << std::endl;
-        std::cout << "height=" << x << std::endl;
-        std::cout << "width=" << y << std::endl;
-        std::cout << "=== Src Matrix:" << std::endl;
-        std::cout << src << std::endl << std::endl;
-        std::cout << "=== Manager result:" << std::endl;
-        std::cout << manager_result << std::endl << std::endl;
-        std::cout << "=== Subordinate result:" << std::endl;
-        std::cout << subord_result << std::endl << std::endl;
-
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-using test = std::pair<std::string, decltype(test_sobel<true, 1>)*>;
-#define TEST(name, manager_func, subordinate_func) \
-  { name, manager_func }
-
-#else  // MANAGER
-
-template <bool Vertical>
-cv::Mat exec_sobel(cv::Mat& input) {
-  cv::Mat result;
-  if constexpr (Vertical) {
-    cv::Sobel(input, result, CV_16S, 0, 1, 3, 1.0, 0.0, cv::BORDER_REPLICATE);
-  } else {
-    cv::Sobel(input, result, CV_16S, 1, 0, 3, 1.0, 0.0, cv::BORDER_REPLICATE);
-  }
-  return result;
-}
-
-template <size_t KernelSize, size_t BorderType>
-cv::Mat exec_gaussian_blur(cv::Mat& inp) {
-  cv::Size kernel(KernelSize, KernelSize);
-  cv::Mat out;
-  cv::GaussianBlur(inp, out, kernel, 0, 0, BorderType);
-  return out;
-}
-
-using test = std::pair<std::string, decltype(exec_sobel<true>)*>;
-#define TEST(name, manager_func, subordinate_func) \
-  { name, subordinate_func }
-
-#endif  // MANAGER
-
-// clang-format off
-std::vector<test> tests = {
-  TEST("Sobel Vertical, 1 channel", (test_sobel<true, 1>), exec_sobel<true>),
-  TEST("Sobel Vertical, 2 channel", (test_sobel<true, 2>), exec_sobel<true>),
-  TEST("Sobel Vertical, 3 channel", (test_sobel<true, 3>), exec_sobel<true>),
-  TEST("Sobel Vertical, 4 channel", (test_sobel<true, 4>), exec_sobel<true>),
-
-  TEST("Sobel Horizontal, 1 channel", (test_sobel<false, 1>), exec_sobel<false>),
-  TEST("Sobel Horizontal, 2 channel", (test_sobel<false, 2>), exec_sobel<false>),
-  TEST("Sobel Horizontal, 3 channel", (test_sobel<false, 3>), exec_sobel<false>),
-  TEST("Sobel Horizontal, 4 channel", (test_sobel<false, 4>), exec_sobel<false>),
-
-  TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 1 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 1>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),
-  TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 2 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 2>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),
-  TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 3 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 3>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),
-  TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 4 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 4>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),
-
-  TEST("Gaussian blur 3x3, BORDER_REFLECT, 1 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT, 1>), (exec_gaussian_blur<3, cv::BORDER_REFLECT>)),
-  TEST("Gaussian blur 3x3, BORDER_REFLECT, 2 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT, 2>), (exec_gaussian_blur<3, cv::BORDER_REFLECT>)),
-  TEST("Gaussian blur 3x3, BORDER_REFLECT, 3 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT, 3>), (exec_gaussian_blur<3, cv::BORDER_REFLECT>)),
-  TEST("Gaussian blur 3x3, BORDER_REFLECT, 4 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT, 4>), (exec_gaussian_blur<3, cv::BORDER_REFLECT>)),
-
-  TEST("Gaussian blur 3x3, BORDER_WRAP, 1 channel", (test_gaussian_blur<3, cv::BORDER_WRAP, 1>), (exec_gaussian_blur<3, cv::BORDER_WRAP>)),
-  TEST("Gaussian blur 3x3, BORDER_WRAP, 2 channel", (test_gaussian_blur<3, cv::BORDER_WRAP, 2>), (exec_gaussian_blur<3, cv::BORDER_WRAP>)),
-  TEST("Gaussian blur 3x3, BORDER_WRAP, 3 channel", (test_gaussian_blur<3, cv::BORDER_WRAP, 3>), (exec_gaussian_blur<3, cv::BORDER_WRAP>)),
-  TEST("Gaussian blur 3x3, BORDER_WRAP, 4 channel", (test_gaussian_blur<3, cv::BORDER_WRAP, 4>), (exec_gaussian_blur<3, cv::BORDER_WRAP>)),
-
-  TEST("Gaussian blur 3x3, BORDER_REPLICATE, 1 channel", (test_gaussian_blur<3, cv::BORDER_REPLICATE, 1>), (exec_gaussian_blur<3, cv::BORDER_REPLICATE>)),
-  TEST("Gaussian blur 3x3, BORDER_REPLICATE, 2 channel", (test_gaussian_blur<3, cv::BORDER_REPLICATE, 2>), (exec_gaussian_blur<3, cv::BORDER_REPLICATE>)),
-  TEST("Gaussian blur 3x3, BORDER_REPLICATE, 3 channel", (test_gaussian_blur<3, cv::BORDER_REPLICATE, 3>), (exec_gaussian_blur<3, cv::BORDER_REPLICATE>)),
-  TEST("Gaussian blur 3x3, BORDER_REPLICATE, 4 channel", (test_gaussian_blur<3, cv::BORDER_REPLICATE, 4>), (exec_gaussian_blur<3, cv::BORDER_REPLICATE>)),
-
-  TEST("Gaussian blur 5x5, BORDER_REFLECT_101, 1 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT_101, 1>), (exec_gaussian_blur<5, cv::BORDER_REFLECT_101>)),
-  TEST("Gaussian blur 5x5, BORDER_REFLECT_101, 2 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT_101, 2>), (exec_gaussian_blur<5, cv::BORDER_REFLECT_101>)),
-  TEST("Gaussian blur 5x5, BORDER_REFLECT_101, 3 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT_101, 3>), (exec_gaussian_blur<5, cv::BORDER_REFLECT_101>)),
-  TEST("Gaussian blur 5x5, BORDER_REFLECT_101, 4 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT_101, 4>), (exec_gaussian_blur<5, cv::BORDER_REFLECT_101>)),
-
-  TEST("Gaussian blur 5x5, BORDER_REFLECT, 1 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT, 1>), (exec_gaussian_blur<5, cv::BORDER_REFLECT>)),
-  TEST("Gaussian blur 5x5, BORDER_REFLECT, 2 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT, 2>), (exec_gaussian_blur<5, cv::BORDER_REFLECT>)),
-  TEST("Gaussian blur 5x5, BORDER_REFLECT, 3 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT, 3>), (exec_gaussian_blur<5, cv::BORDER_REFLECT>)),
-  TEST("Gaussian blur 5x5, BORDER_REFLECT, 4 channel", (test_gaussian_blur<5, cv::BORDER_REFLECT, 4>), (exec_gaussian_blur<5, cv::BORDER_REFLECT>)),
-
-  TEST("Gaussian blur 5x5, BORDER_WRAP, 1 channel", (test_gaussian_blur<5, cv::BORDER_WRAP, 1>), (exec_gaussian_blur<5, cv::BORDER_WRAP>)),
-  TEST("Gaussian blur 5x5, BORDER_WRAP, 2 channel", (test_gaussian_blur<5, cv::BORDER_WRAP, 2>), (exec_gaussian_blur<5, cv::BORDER_WRAP>)),
-  TEST("Gaussian blur 5x5, BORDER_WRAP, 3 channel", (test_gaussian_blur<5, cv::BORDER_WRAP, 3>), (exec_gaussian_blur<5, cv::BORDER_WRAP>)),
-  TEST("Gaussian blur 5x5, BORDER_WRAP, 4 channel", (test_gaussian_blur<5, cv::BORDER_WRAP, 4>), (exec_gaussian_blur<5, cv::BORDER_WRAP>)),
-
-  TEST("Gaussian blur 5x5, BORDER_REPLICATE, 1 channel", (test_gaussian_blur<5, cv::BORDER_REPLICATE, 1>), (exec_gaussian_blur<5, cv::BORDER_REPLICATE>)),
-  TEST("Gaussian blur 5x5, BORDER_REPLICATE, 2 channel", (test_gaussian_blur<5, cv::BORDER_REPLICATE, 2>), (exec_gaussian_blur<5, cv::BORDER_REPLICATE>)),
-  TEST("Gaussian blur 5x5, BORDER_REPLICATE, 3 channel", (test_gaussian_blur<5, cv::BORDER_REPLICATE, 3>), (exec_gaussian_blur<5, cv::BORDER_REPLICATE>)),
-  TEST("Gaussian blur 5x5, BORDER_REPLICATE, 4 channel", (test_gaussian_blur<5, cv::BORDER_REPLICATE, 4>), (exec_gaussian_blur<5, cv::BORDER_REPLICATE>)),
-};
-// clang-format on
+std::vector<test> all_tests = merge_tests<test>({
+    sobel_tests_singleton,
+    gaussian_blur_tests_singleton,
+});
 
 #if MANAGER
 int run_tests(RecreatedMessageQueue& request_queue,
               RecreatedMessageQueue& reply_queue) {
   int ret_val = 0;
-  for (int i = 0; i < static_cast<int>(tests.size()); ++i) {
-    std::cout << "Testing " + tests[i].first << std::endl;
-    if (tests[i].second(i, request_queue, reply_queue)) {
+  for (int i = 0; i < static_cast<int>(all_tests.size()); ++i) {
+    std::cout << "Testing " + all_tests[i].first << std::endl;
+    if (all_tests[i].second(i, request_queue, reply_queue)) {
       ret_val = 1;
     }
   }
@@ -225,7 +71,7 @@ int run_tests(RecreatedMessageQueue& request_queue,
 
   return ret_val;
 }
-#else   // MANAGER
+#else
 void wait_for_requests(OpenedMessageQueue& request_queue,
                        OpenedMessageQueue& reply_queue) {
   while (true) {
@@ -237,13 +83,13 @@ void wait_for_requests(OpenedMessageQueue& request_queue,
       break;
     }
 
-    if (cmd > static_cast<int>(tests.size())) {
-      throw std::runtime_error("Invalid operation requestd in subordinate");
+    if (cmd > static_cast<int>(all_tests.size())) {
+      throw std::runtime_error("Invalid operation requested in subordinate");
     }
 
     cv::Mat input = request_queue.cv_mat_from_last_msg();
-    cv::Mat result = tests[cmd].second(input);
+    cv::Mat result = all_tests[cmd].second(input);
     reply_queue.reply_operation(cmd, result);
   }
 }
-#endif  // MANAGER
+#endif

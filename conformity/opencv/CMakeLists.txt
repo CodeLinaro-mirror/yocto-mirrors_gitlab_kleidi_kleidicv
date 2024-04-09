@@ -29,6 +29,8 @@ add_executable(
   manager
   manager.cpp
   tests.cpp
+  test_sobel.cpp
+  test_gaussian_blur.cpp
 )
 
 target_link_libraries(
@@ -63,6 +65,8 @@ add_executable(
   subordinate
   subordinate.cpp
   tests.cpp
+  test_sobel.cpp
+  test_gaussian_blur.cpp
 )
 
 target_link_libraries(

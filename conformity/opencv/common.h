@@ -21,11 +21,14 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 
-#define SHM_ID "/opencv_intrinisiccv_conformity_check_shm"
-#define SHM_SIZE (1024 * 1024)
+#define INTRINSICCV_CONFORMITY_SHM_ID \
+  "/opencv_intrinisiccv_conformity_check_shm"
+#define INTRINSICCV_CONFORMITY_SHM_SIZE (1024 * 1024)
 
-#define REQUEST_MQ_ID "/opencv_intrinisiccv_conformity_request_queue"
-#define REPLY_MQ_ID "/opencv_intrinisiccv_conformity_reply_queue"
+#define INTRINSICCV_CONFORMITY_REQUEST_MQ_ID \
+  "/opencv_intrinisiccv_conformity_request_queue"
+#define INTRINSICCV_CONFORMITY_REPLY_MQ_ID \
+  "/opencv_intrinisiccv_conformity_reply_queue"
 
 class ExceptionWithErrno : public std::exception {
  public:
