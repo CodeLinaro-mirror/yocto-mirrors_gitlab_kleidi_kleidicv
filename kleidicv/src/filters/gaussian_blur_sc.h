@@ -16,6 +16,61 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 template <typename ScalarType, size_t KernelSize>
 class DiscreteGaussianBlur;
 
+// Template for 3x3 Gaussian Blur approximation filters.
+//
+//             [ 1, 2, 1 ]          [ 1 ]
+//  F = 1/16 * [ 2, 4, 2 ] = 1/16 * [ 2 ] * [ 1, 2, 1 ]
+//             [ 1, 2, 1 ]          [ 1 ]
+template <>
+class DiscreteGaussianBlur<uint8_t, 3> {
+ public:
+  using SourceType = uint8_t;
+  using BufferType = uint16_t;
+  using DestinationType = uint8_t;
+
+  // Applies vertical filtering vector using SIMD operations.
+  //
+  // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
+  void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
+                            svuint8_t src_2, BufferType *dst) const
+      KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_0_2_b = svaddlb_u16(src_0, src_2);
+    svuint16_t acc_0_2_t = svaddlt_u16(src_0, src_2);
+
+    svuint16_t acc_1_b = svshllb_n_u16(src_1, 1);
+    svuint16_t acc_1_t = svshllt_n_u16(src_1, 1);
+
+    svuint16_t acc_u16_b = svadd_u16_x(pg, acc_0_2_b, acc_1_b);
+    svuint16_t acc_u16_t = svadd_u16_x(pg, acc_0_2_t, acc_1_t);
+
+    svuint16x2_t interleaved = svcreate2(acc_u16_b, acc_u16_t);
+    svst2(pg, &dst[0], interleaved);
+  }
+
+  // Applies horizontal filtering vector using SIMD operations.
+  //
+  // DST = 1/16 * [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
+  void horizontal_vector_path(svbool_t pg, svuint16_t src_0, svuint16_t src_1,
+                              svuint16_t src_2, DestinationType *dst) const
+      KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_0_2 = svhadd_u16_x(pg, src_0, src_2);
+
+    svuint16_t acc = svadd_u16_x(pg, acc_0_2, src_1);
+    acc = svrshr_x(pg, acc, 3);
+
+    svst1b(pg, &dst[0], acc);
+  }
+
+  // Applies horizontal filtering vector using scalar operations.
+  //
+  // DST = 1/16 * [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
+  void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
+      const KLEIDICV_STREAMING_COMPATIBLE {
+    auto acc = src[0] + 2 * src[1] + src[2];
+    dst[0] = rounding_shift_right(acc, 4);
+  }
+};  // end of class DiscreteGaussianBlur<uint8_t, 3>
+
 // Template for 5x5 Gaussian Blur approximation filters.
 //
 //              [ 1,  4,  6,  4, 1 ]           [ 1 ]

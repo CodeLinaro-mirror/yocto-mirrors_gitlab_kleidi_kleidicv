@@ -51,9 +51,10 @@ kleidicv_error_t kleidicv_filter_release(kleidicv_filter_context_t *context) {
 
 }  // extern "C"
 
-KLEIDICV_MULTIVERSION_C_API(kleidicv_gaussian_blur_3x3_u8,
-                            &kleidicv::neon::gaussian_blur_3x3_u8, nullptr,
-                            nullptr);
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_gaussian_blur_3x3_u8, &kleidicv::neon::gaussian_blur_3x3_u8,
+    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_3x3_u8),
+    &kleidicv::sme2::gaussian_blur_3x3_u8);
 
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_gaussian_blur_5x5_u8, &kleidicv::neon::gaussian_blur_5x5_u8,
