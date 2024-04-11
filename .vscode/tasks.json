@@ -159,6 +159,19 @@
       "type": "shell",
       "command": "${workspaceFolder}/scripts/ci.sh",
       "problemMatcher": []
+    },
+    {
+      "label": "Run OpenCV conformity checks",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/run_opencv_conformity_checks.sh",
+      "problemMatcher": "$gcc",
+      "options": {
+        "env": {
+          "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/.devcontainer/clang_toolchain.cmake",
+          "OPENCV_VERSION": "4.9.0",
+          "OPENCV_URL": "/opt/opencv-4.9.0.tar.gz"
+        }
+      }
     }
   ],
   "options": {

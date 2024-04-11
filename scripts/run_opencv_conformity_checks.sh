@@ -26,6 +26,7 @@ common_cmake_args=(
     -Wno-dev
     -S "${SOURCE_PATH}"
     -G Ninja
+    "-DBUILD_SHARED_LIBS=OFF"
 )
 
 if [[ -n "${OPENCV_VERSION}" ]]; then
@@ -53,6 +54,9 @@ cmake "${common_cmake_args[@]}" \
       -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF
 ninja -C "${OPENCV_INTRINSICCV_PATH}" manager
 
-qemu-aarch64 -cpu cortex-a35 "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate"
-qemu-aarch64 -cpu max,sve128=on,sme=off "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate"
-qemu-aarch64 -cpu max,sve128=on,sme512=on "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate"
+TESTRESULT=0
+qemu-aarch64 -cpu cortex-a35 "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu max,sve128=on,sme=off "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu max,sve128=on,sme512=on "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+
+exit $TESTRESULT
