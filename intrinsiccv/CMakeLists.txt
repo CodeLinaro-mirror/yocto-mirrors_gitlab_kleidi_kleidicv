@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project("IntrinsicCV")
+project("KleidiCV")
 
 include(CheckCXXCompilerFlag)
 
@@ -24,7 +24,7 @@ option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
 
 if (KLEIDICV_ENABLE_SVE2 AND KLEIDICV_ENABLE_SVE2_SELECTIVELY)
-  message(FATAL_ERROR "[IntrinsicCV] KLEIDICV_ENABLE_SVE2 and KLEIDICV_ENABLE_SVE2_SELECTIVELY cannot be set at the same time")
+  message(FATAL_ERROR "[KleidiCV] KLEIDICV_ENABLE_SVE2 and KLEIDICV_ENABLE_SVE2_SELECTIVELY cannot be set at the same time")
 endif()
 
 # Compiler feature check for SVE2.
@@ -34,7 +34,7 @@ if (KLEIDICV_ENABLE_SVE2 OR KLEIDICV_ENABLE_SVE2_SELECTIVELY)
   if (KLEIDICV_COMPILER_SUPPORTS_SVE2)
     set(KLEIDICV_BUILD_SVE2 ON)
   else()
-    message(STATUS "[IntrinsicCV] Compiler does not support SVE2")
+    message(STATUS "[KleidiCV] Compiler does not support SVE2")
   endif()
 endif()
 
@@ -51,7 +51,7 @@ if (KLEIDICV_ENABLE_SME2)
   if (KLEIDICV_COMPILER_SUPPORTS_SME2)
     set(KLEIDICV_BUILD_SME2 ON)
   else()
-    message(STATUS "[IntrinsicCV] Compiler does not support SME2")
+    message(STATUS "[KleidiCV] Compiler does not support SME2")
   endif()
 endif()
 

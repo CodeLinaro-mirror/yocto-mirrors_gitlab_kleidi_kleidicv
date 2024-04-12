@@ -4,7 +4,7 @@
 
 include("${CMAKE_CURRENT_LIST_DIR}/../../intrinsiccv/CMakeLists.txt")
 
-project("IntrinsicCV OpenCV HAL")
+project("KleidiCV OpenCV HAL")
 
 set(KLEIDICV_HAL_VERSION "0.0.0" CACHE INTERNAL "")
 set(KLEIDICV_HAL_LIBRARIES "intrinsiccv_hal" CACHE INTERNAL "")

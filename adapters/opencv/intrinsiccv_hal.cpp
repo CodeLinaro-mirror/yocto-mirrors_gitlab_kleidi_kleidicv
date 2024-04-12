@@ -20,7 +20,7 @@ static int convert_error(intrinsiccv_error_t e) {
       return CV_HAL_ERROR_OK;
     case KLEIDICV_ERROR_NOT_IMPLEMENTED:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
-    // Even if IntrinsicCV returns this error it's possible that another
+    // Even if KleidiCV returns this error it's possible that another
     // implementation could handle the misalignment.
     case KLEIDICV_ERROR_ALIGNMENT:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -186,7 +186,7 @@ int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
-// Converts an OpenCV border type to an IntrinsicCV border type.
+// Converts an OpenCV border type to an KleidiCV border type.
 static int from_opencv(int opencv_border_type,
                        intrinsiccv_border_type_t &border_type) {
   switch (opencv_border_type) {

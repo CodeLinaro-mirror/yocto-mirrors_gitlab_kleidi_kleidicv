@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.16)
 # rest of the project so disable benchmarks by default.
 # Another reason to disable it by default is that the configure time
 # for Google Benchmark is quite noticeable.
-option(KLEIDICV_BENCHMARK "Enable IntrinsicCV benchmarks" OFF)
+option(KLEIDICV_BENCHMARK "Enable KleidiCV benchmarks" OFF)
 
 if(KLEIDICV_BENCHMARK)
 

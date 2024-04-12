@@ -56,7 +56,7 @@ the toolchain with which the binaries were built."""
         f"--gcov-executable={llvm_cov} gcov",
         f"--cobertura={cobertura}",
         f"--html-details={html}",
-        "--html-title=IntrinsicCV Coverage Report",
+        "--html-title=KleidiCV Coverage Report",
         "--html-syntax-highlighting",
         "--html-tab-size=2",
         "--exclude-noncode-lines",

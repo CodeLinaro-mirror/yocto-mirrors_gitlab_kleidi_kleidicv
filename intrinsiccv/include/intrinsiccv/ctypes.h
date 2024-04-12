@@ -18,7 +18,7 @@
 
 #include "intrinsiccv/config.h"
 
-/// Error values reported by IntrinsicCV
+/// Error values reported by KleidiCV
 typedef enum KLEIDICV_NODISCARD {
   /// Success.
   KLEIDICV_OK = 0,
@@ -65,7 +65,7 @@ typedef struct {
   double right;
 } intrinsiccv_border_values_t;
 
-/// IntrinsicCV border types
+/// KleidiCV border types
 typedef enum {
   /// The border is a constant value.
   KLEIDICV_BORDER_TYPE_CONSTANT,

@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project("IntrinsicCV" CXX)
+project("KleidiCV" CXX)
 
 add_subdirectory(intrinsiccv)
 add_subdirectory(test)

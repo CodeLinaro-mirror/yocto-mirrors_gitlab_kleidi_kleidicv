@@ -4,11 +4,11 @@
 
 /// @mainpage
 ///
-/// For documentation of the IntrinsicCV C API see @ref intrinsiccv.h
+/// For documentation of the KleidiCV C API see @ref intrinsiccv.h
 ///
 /// Project page: https://gitlab.arm.com/intrinsiccv/intrinsiccv
 ///
-/// IntrinsicCV shall use <a href="https://semver.org/spec/v2.0.0.html">Semantic
+/// KleidiCV shall use <a href="https://semver.org/spec/v2.0.0.html">Semantic
 /// Versioning 2.0.0</a>. The public API is defined according to what is
 /// included in the Doxygen-generated documentation as well as the content of
 /// the project's Markdown files. Features without such documentation are not
@@ -27,7 +27,7 @@
 #include "intrinsiccv/ctypes.h"
 
 #ifndef __aarch64__
-#error "IntrinsicCV is only supported for aarch64"
+#error "KleidiCV is only supported for aarch64"
 #endif
 
 #ifdef __aarch64__

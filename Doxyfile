@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-PROJECT_NAME           = "IntrinsicCV"
+PROJECT_NAME           = "KleidiCV"
 OUTPUT_DIRECTORY       = build
 HIDE_UNDOC_MEMBERS     = YES
 HIDE_UNDOC_CLASSES     = YES

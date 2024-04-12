@@ -39,7 +39,7 @@ class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
         this->height(), this->scale());
   }
   double scale() {
-    return 1.0;  // This is the only parameter IntrinsicCV supports.
+    return 1.0;  // This is the only parameter KleidiCV supports.
   }
   // Returns different test data for signed and unsigned element types.
   const std::vector<Elements>& test_elements() override {

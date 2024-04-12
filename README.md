@@ -8,12 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 **NOT SUITABLE FOR DEPLOYMENT OR PRODUCTION USE**
 ---
 
-# IntrinsicCV
+# KleidiCV
 
 This project is in the early stages of development and is not ready for use
 except as a preview.
 
-IntrinsicCV is a library aiming to give high-performing image
+KleidiCV is a library aiming to give high-performing image
 processing functions on Arm. It is designed to be simple to import into a wide
 variety of projects.
 

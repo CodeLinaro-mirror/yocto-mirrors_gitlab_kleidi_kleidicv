@@ -99,7 +99,7 @@ ninja -C build/build-benchmark intrinsiccv-benchmark
 
 # TODO: Cross-build OpenCV
 if [[ $(dpkg --print-architecture) = arm64 ]]; then
-  # Check OpenCV-IntrinsicCV integration
+  # Check OpenCV-KleidiCV integration
   scripts/ci-opencv.sh
 fi
 

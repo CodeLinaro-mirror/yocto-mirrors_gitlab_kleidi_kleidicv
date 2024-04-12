@@ -8,7 +8,7 @@ index 0000000000..c0ffb73ad7
 --- /dev/null
 +++ b/3rdparty/intrinsiccv/CMakeLists.txt
 @@ -0,0 +1,3 @@
-+set(KLEIDICV_SOURCE_PATH "${CMAKE_SOURCE_DIR}/intrinsiccv" CACHE PATH "Directory containing IntrinsicCV sources")
++set(KLEIDICV_SOURCE_PATH "${CMAKE_SOURCE_DIR}/intrinsiccv" CACHE PATH "Directory containing KleidiCV sources")
 +
 +include("${KLEIDICV_SOURCE_PATH}/adapters/opencv/CMakeLists.txt")
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -28,7 +28,7 @@ index 5da9c2a695..3f1a2c7e38 100644
    VERIFY HAVE_CAP_IOS)
  OCV_OPTION(WITH_CAROTENE "Use NVidia carotene acceleration library for ARM platform" (NOT CV_DISABLE_OPTIMIZATION)
    VISIBLE_IF (ARM OR AARCH64) AND NOT IOS AND NOT XROS)
-+OCV_OPTION(WITH_KLEIDICV "Use IntrinsicCV library for ARM platforms" OFF
++OCV_OPTION(WITH_KLEIDICV "Use KleidiCV library for ARM platforms" OFF
 +  VISIBLE_IF (AARCH64))
  OCV_OPTION(WITH_CPUFEATURES "Use cpufeatures Android library" ON
    VISIBLE_IF ANDROID
@@ -38,7 +38,7 @@ index 5da9c2a695..3f1a2c7e38 100644
  endif()
 
 +if(WITH_KLEIDICV)
-+  ocv_debug_message(STATUS "Enable IntrinsicCV acceleration")
++  ocv_debug_message(STATUS "Enable KleidiCV acceleration")
 +  if(NOT ";${OpenCV_HAL};" MATCHES ";intrinsiccv;")
 +    set(OpenCV_HAL "intrinsiccv;${OpenCV_HAL}")
 +  endif()
@@ -54,7 +54,7 @@ index 5da9c2a695..3f1a2c7e38 100644
 +  elseif(hal STREQUAL "intrinsiccv")
 +    add_subdirectory(3rdparty/intrinsiccv)
 +    ocv_hal_register(KLEIDICV_HAL_LIBRARIES KLEIDICV_HAL_HEADERS KLEIDICV_HAL_INCLUDE_DIRS)
-+    list(APPEND OpenCV_USED_HAL "IntrinsicCV (ver ${KLEIDICV_HAL_VERSION})")
++    list(APPEND OpenCV_USED_HAL "KleidiCV (ver ${KLEIDICV_HAL_VERSION})")
    elseif(hal STREQUAL "openvx")
      add_subdirectory(3rdparty/openvx)
      ocv_hal_register(OPENVX_HAL_LIBRARIES OPENVX_HAL_HEADERS OPENVX_HAL_INCLUDE_DIRS)

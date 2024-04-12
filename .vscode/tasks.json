@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build IntrinsicCV",
+      "label": "Build KleidiCV",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
       "problemMatcher" :"$gcc",
@@ -22,7 +22,7 @@
       }
     },
     {
-      "label": "Build IntrinsicCV for debug",
+      "label": "Build KleidiCV for debug",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
       "problemMatcher" :"$gcc",
@@ -62,7 +62,7 @@
         "${workspaceFolder}/build/intrinsiccv/test/framework/intrinsiccv-framework-test"
       ],
       "dependsOn": [
-        "Build IntrinsicCV"
+        "Build KleidiCV"
       ],
       "group": {
         "kind": "test"
@@ -79,7 +79,7 @@
         "--vector-length=16"
       ],
       "dependsOn": [
-        "Build IntrinsicCV"
+        "Build KleidiCV"
       ],
       "group": {
         "kind": "test"
@@ -96,7 +96,7 @@
         "--vector-length=16"
       ],
       "dependsOn": [
-        "Build IntrinsicCV"
+        "Build KleidiCV"
       ],
       "group": {
         "kind": "test"
@@ -113,7 +113,7 @@
         "--vector-length=256"
       ],
       "dependsOn": [
-        "Build IntrinsicCV"
+        "Build KleidiCV"
       ],
       "group": {
         "kind": "test"
@@ -130,7 +130,7 @@
         "--vector-length=64"
       ],
       "dependsOn": [
-        "Build IntrinsicCV"
+        "Build KleidiCV"
       ],
       "group": {
         "kind": "test"

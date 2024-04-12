@@ -24,7 +24,7 @@
 #   CMAKE_VERBOSE_MAKEFILE:        Enables verbose logs during builds. Defaults to 'OFF'.
 #   COVERAGE:                      Enables collection of coverage metrics if set to 'ON'. Defaults to 'OFF'.
 #   EXTRA_CMAKE_ARGS:              Any additional args to pass to CMake.
-#   SOURCE_PATH:                   Path of IntrinsicCV source directory. Defaults to parent directory of this script.
+#   SOURCE_PATH:                   Path of KleidiCV source directory. Defaults to parent directory of this script.
 # ------------------------------------------------------------------------------
 
 set -exu

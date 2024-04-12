@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
   if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
 
-  std::cout << "IntrinsicCV: Running benchmarks with:\n";
+  std::cout << "KleidiCV: Running benchmarks with:\n";
   std::cout << "  image_width: " << image_width << "\n";
   std::cout << "  image_height: " << image_height << std::endl;
 
