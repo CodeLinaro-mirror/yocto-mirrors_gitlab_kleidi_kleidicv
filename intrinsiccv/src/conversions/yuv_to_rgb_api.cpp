@@ -6,12 +6,12 @@
 #include "intrinsiccv/dispatch.h"
 #include "intrinsiccv/intrinsiccv.h"
 
-#define INTRINSICCV_DEFINE_C_API(name, partialname)                     \
-  INTRINSICCV_MULTIVERSION_C_API(name, &intrinsiccv::neon::partialname, \
-                                 &intrinsiccv::sve2::partialname,       \
-                                 &intrinsiccv::sme2::partialname)
+#define KLEIDICV_DEFINE_C_API(name, partialname)                     \
+  KLEIDICV_MULTIVERSION_C_API(name, &intrinsiccv::neon::partialname, \
+                              &intrinsiccv::sve2::partialname,       \
+                              &intrinsiccv::sme2::partialname)
 
-INTRINSICCV_DEFINE_C_API(intrinsiccv_yuv_sp_to_rgb_u8, yuv_sp_to_rgb_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_yuv_sp_to_bgr_u8, yuv_sp_to_bgr_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_yuv_sp_to_rgba_u8, yuv_sp_to_rgba_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_yuv_sp_to_bgra_u8, yuv_sp_to_bgra_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_yuv_sp_to_rgb_u8, yuv_sp_to_rgb_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_yuv_sp_to_bgr_u8, yuv_sp_to_bgr_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_yuv_sp_to_rgba_u8, yuv_sp_to_rgba_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_yuv_sp_to_bgra_u8, yuv_sp_to_bgra_u8);

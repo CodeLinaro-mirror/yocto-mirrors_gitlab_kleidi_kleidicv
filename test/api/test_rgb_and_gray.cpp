@@ -43,19 +43,19 @@ class GrayTest final {
     auto err = impl(source.data(), source.stride(), actual.data(),
                     actual.stride(), width_, actual.height());
 
-    ASSERT_EQ(INTRINSICCV_OK, err);
+    ASSERT_EQ(KLEIDICV_OK, err);
     EXPECT_EQ_ARRAY2D(actual, expected);
 
     test::test_null_args(impl, source.data(), source.stride(), actual.data(),
                          actual.stride(), width_, actual.height());
 
-    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(source.data(), source.stride(), actual.data(),
-                   actual.stride(), INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1));
+                   actual.stride(), KLEIDICV_MAX_IMAGE_PIXELS + 1, 1));
     EXPECT_EQ(
-        INTRINSICCV_ERROR_RANGE,
+        KLEIDICV_ERROR_RANGE,
         impl(source.data(), source.stride(), actual.data(), actual.stride(),
-             INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS));
+             KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS));
   }
 
  private:
@@ -108,24 +108,24 @@ class ColourTest final {
     auto err = impl(source.data(), source.stride(), actual.data(),
                     actual.stride(), logical_width, actual.height());
 
-    ASSERT_EQ(INTRINSICCV_OK, err);
+    ASSERT_EQ(KLEIDICV_OK, err);
     EXPECT_EQ_ARRAY2D(actual, expected);
 
     test::test_null_args(impl, source.data(), source.stride(), actual.data(),
                          actual.stride(), logical_width, actual.height());
 
-    EXPECT_EQ(INTRINSICCV_OK, impl(source.data(), source.stride(),
-                                   actual.data(), actual.stride(), 0, 1));
-    EXPECT_EQ(INTRINSICCV_OK, impl(source.data(), source.stride(),
-                                   actual.data(), actual.stride(), 1, 0));
+    EXPECT_EQ(KLEIDICV_OK, impl(source.data(), source.stride(), actual.data(),
+                                actual.stride(), 0, 1));
+    EXPECT_EQ(KLEIDICV_OK, impl(source.data(), source.stride(), actual.data(),
+                                actual.stride(), 1, 0));
 
-    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(source.data(), source.stride(), actual.data(),
-                   actual.stride(), INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1));
+                   actual.stride(), KLEIDICV_MAX_IMAGE_PIXELS + 1, 1));
     EXPECT_EQ(
-        INTRINSICCV_ERROR_RANGE,
+        KLEIDICV_ERROR_RANGE,
         impl(source.data(), source.stride(), actual.data(), actual.stride(),
-             INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS));
+             KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS));
   }
 
  private:

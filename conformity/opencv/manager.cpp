@@ -40,10 +40,10 @@ int main(int argc, char** argv) {
     throw ExceptionWithErrno("Cannot start subordinate executable");
   }
 
-  RecreatedSharedMemory sm{INTRINSICCV_CONFORMITY_SHM_ID,
-                           INTRINSICCV_CONFORMITY_SHM_SIZE};
-  RecreatedMessageQueue request_queue{INTRINSICCV_CONFORMITY_REQUEST_MQ_ID, sm};
-  RecreatedMessageQueue reply_queue{INTRINSICCV_CONFORMITY_REPLY_MQ_ID, sm};
+  RecreatedSharedMemory sm{KLEIDICV_CONFORMITY_SHM_ID,
+                           KLEIDICV_CONFORMITY_SHM_SIZE};
+  RecreatedMessageQueue request_queue{KLEIDICV_CONFORMITY_REQUEST_MQ_ID, sm};
+  RecreatedMessageQueue reply_queue{KLEIDICV_CONFORMITY_REPLY_MQ_ID, sm};
 
   // Let subordinate know that init is done
   kill(child_pid, SIGUSR1);

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_CONVERSIONS_SPLIT_H
-#define INTRINSICCV_CONVERSIONS_SPLIT_H
+#ifndef KLEIDICV_CONVERSIONS_SPLIT_H
+#define KLEIDICV_CONVERSIONS_SPLIT_H
 
 #include <cstddef>
 
@@ -22,4 +22,4 @@ intrinsiccv_error_t split(const void *src_data, size_t src_stride,
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_CONVERSIONS_SPLIT_H
+#endif  // KLEIDICV_CONVERSIONS_SPLIT_H

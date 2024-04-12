@@ -11,10 +11,10 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "test_config.h"
 
-#define INTRINSICCV_COUNT_NONZEROS(type, suffix) \
-  INTRINSICCV_API(count_nonzeros, intrinsiccv_count_nonzeros_##suffix, type)
+#define KLEIDICV_COUNT_NONZEROS(type, suffix) \
+  KLEIDICV_API(count_nonzeros, intrinsiccv_count_nonzeros_##suffix, type)
 
-INTRINSICCV_COUNT_NONZEROS(uint8_t, u8);
+KLEIDICV_COUNT_NONZEROS(uint8_t, u8);
 
 template <typename ElementType>
 class TestDataAllZeros {
@@ -72,7 +72,7 @@ class CountNonZerosTest {
 
     size_t expected = data_.calculateExpected(width, height);
     size_t actual = SIZE_MAX;
-    EXPECT_EQ(INTRINSICCV_OK,
+    EXPECT_EQ(KLEIDICV_OK,
               count_nonzeros<ElementType>()(source.data(), source.stride(),
                                             width, height, &actual));
     EXPECT_EQ(expected, actual);
@@ -128,16 +128,16 @@ TYPED_TEST(CountNonZeros, Misalignment) {
   TypeParam src[1];
   size_t count = 0;
   EXPECT_EQ(
-      INTRINSICCV_ERROR_ALIGNMENT,
+      KLEIDICV_ERROR_ALIGNMENT,
       count_nonzeros<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &count));
 }
 
 TYPED_TEST(CountNonZeros, ZeroImageSize) {
   TypeParam src[1] = {};
   size_t count = 123;
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             count_nonzeros<TypeParam>()(src, sizeof(TypeParam), 0, 1, &count));
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             count_nonzeros<TypeParam>()(src, sizeof(TypeParam), 1, 0, &count));
   EXPECT_EQ(0, count);
 }
@@ -146,11 +146,11 @@ TYPED_TEST(CountNonZeros, OversizeImage) {
   TypeParam src[1] = {};
   size_t count = 0;
   EXPECT_EQ(
-      INTRINSICCV_ERROR_RANGE,
+      KLEIDICV_ERROR_RANGE,
       count_nonzeros<TypeParam>()(src, sizeof(TypeParam),
-                                  INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, &count));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+                                  KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, &count));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             count_nonzeros<TypeParam>()(src, sizeof(TypeParam),
-                                        INTRINSICCV_MAX_IMAGE_PIXELS,
-                                        INTRINSICCV_MAX_IMAGE_PIXELS, &count));
+                                        KLEIDICV_MAX_IMAGE_PIXELS,
+                                        KLEIDICV_MAX_IMAGE_PIXELS, &count));
 }

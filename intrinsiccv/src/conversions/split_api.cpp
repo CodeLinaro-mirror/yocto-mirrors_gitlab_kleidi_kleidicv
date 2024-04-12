@@ -6,5 +6,5 @@
 #include "intrinsiccv/dispatch.h"
 #include "intrinsiccv/intrinsiccv.h"
 
-INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_split, &intrinsiccv::neon::split,
-                               nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API(intrinsiccv_split, &intrinsiccv::neon::split,
+                            nullptr, nullptr);

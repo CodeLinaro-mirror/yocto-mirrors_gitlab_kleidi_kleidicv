@@ -70,10 +70,10 @@ class TestTranspose final {
 
     calculate_expected(source, expected);
 
-    ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_transpose(
-                                  source.data(), source.stride(),
-                                  p_actual->data(), p_actual->stride(),
-                                  src_width, src_height, sizeof(ElementType)));
+    ASSERT_EQ(KLEIDICV_OK, intrinsiccv_transpose(
+                               source.data(), source.stride(), p_actual->data(),
+                               p_actual->stride(), src_width, src_height,
+                               sizeof(ElementType)));
 
     EXPECT_EQ_ARRAY2D(expected, *p_actual);
   }
@@ -102,7 +102,7 @@ class TestNotImplemented {
 
     ElementType source[width * height] = {0xFF};
 
-    ASSERT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+    ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
               intrinsiccv_transpose(source, stride, source, stride, width,
                                     height, sizeof(ElementType)));
   }
@@ -114,7 +114,7 @@ class TestNotImplemented {
 
     WrongType source[width * height] = {0xFF};
 
-    ASSERT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+    ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
               intrinsiccv_transpose(source, stride, source, stride, width,
                                     height, sizeof(WrongType)));
   }
@@ -209,40 +209,40 @@ TYPED_TEST(Transpose, Misalignment) {
   const size_t kBufSize = sizeof(TypeParam) * 10;
   char src[kBufSize] = {}, dst[kBufSize] = {};
 
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             intrinsiccv_transpose(src + 1, sizeof(TypeParam), dst,
                                   sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             intrinsiccv_transpose(src, sizeof(TypeParam) + 1, dst,
                                   sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             intrinsiccv_transpose(src, sizeof(TypeParam), dst + 1,
                                   sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
   EXPECT_EQ(
-      INTRINSICCV_ERROR_ALIGNMENT,
+      KLEIDICV_ERROR_ALIGNMENT,
       intrinsiccv_transpose(src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1,
                             1, 1, sizeof(TypeParam)));
 }
 
 TYPED_TEST(Transpose, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             intrinsiccv_transpose(src, sizeof(TypeParam), dst,
                                   sizeof(TypeParam), 0, 1, sizeof(TypeParam)));
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             intrinsiccv_transpose(src, sizeof(TypeParam), dst,
                                   sizeof(TypeParam), 1, 0, sizeof(TypeParam)));
 }
 
 TYPED_TEST(Transpose, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             intrinsiccv_transpose(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, sizeof(TypeParam)));
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, sizeof(TypeParam)));
   EXPECT_EQ(
-      INTRINSICCV_ERROR_RANGE,
+      KLEIDICV_ERROR_RANGE,
       intrinsiccv_transpose(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                            INTRINSICCV_MAX_IMAGE_PIXELS,
-                            INTRINSICCV_MAX_IMAGE_PIXELS, sizeof(TypeParam)));
+                            KLEIDICV_MAX_IMAGE_PIXELS,
+                            KLEIDICV_MAX_IMAGE_PIXELS, sizeof(TypeParam)));
 }

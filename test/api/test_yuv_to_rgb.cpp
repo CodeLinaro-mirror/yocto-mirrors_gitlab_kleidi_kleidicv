@@ -46,7 +46,7 @@ class YuvTest final {
 
     // the width of the UV input must be even
     test::Array2D<uint8_t> input_uv{
-        INTRINSICCV_TARGET_NAMESPACE::align_up(logical_width, 2), 3, padding};
+        KLEIDICV_TARGET_NAMESPACE::align_up(logical_width, 2), 3, padding};
     input_uv.fill(0);
     input_uv.set(0, 0, {100, 130, 255, 255});
     input_uv.set(1, 0, {0, 1, 3, 4});
@@ -65,7 +65,7 @@ class YuvTest final {
              input_uv.stride(), actual.data(), actual.stride(),
              expected.width() / channel_number_, expected.height(), is_nv21);
 
-    ASSERT_EQ(INTRINSICCV_OK, err);
+    ASSERT_EQ(KLEIDICV_OK, err);
     EXPECT_EQ_ARRAY2D(expected, actual);
 
     test::test_null_args(impl, input_y.data(), input_y.stride(),
@@ -73,24 +73,22 @@ class YuvTest final {
                          actual.stride(), expected.width() / channel_number_,
                          expected.height(), is_nv21);
 
-    EXPECT_EQ(
-        INTRINSICCV_OK,
-        impl(input_y.data(), input_y.stride(), input_uv.data(),
-             input_uv.stride(), actual.data(), actual.stride(), 0, 1, is_nv21));
-    EXPECT_EQ(
-        INTRINSICCV_OK,
-        impl(input_y.data(), input_y.stride(), input_uv.data(),
-             input_uv.stride(), actual.data(), actual.stride(), 1, 0, is_nv21));
+    EXPECT_EQ(KLEIDICV_OK, impl(input_y.data(), input_y.stride(),
+                                input_uv.data(), input_uv.stride(),
+                                actual.data(), actual.stride(), 0, 1, is_nv21));
+    EXPECT_EQ(KLEIDICV_OK, impl(input_y.data(), input_y.stride(),
+                                input_uv.data(), input_uv.stride(),
+                                actual.data(), actual.stride(), 1, 0, is_nv21));
 
-    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(input_y.data(), input_y.stride(), input_uv.data(),
                    input_uv.stride(), actual.data(), actual.stride(),
-                   INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, is_nv21));
-    EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
-              impl(input_y.data(), input_y.stride(), input_uv.data(),
-                   input_uv.stride(), actual.data(), actual.stride(),
-                   INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS,
-                   is_nv21));
+                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, is_nv21));
+    EXPECT_EQ(
+        KLEIDICV_ERROR_RANGE,
+        impl(input_y.data(), input_y.stride(), input_uv.data(),
+             input_uv.stride(), actual.data(), actual.stride(),
+             KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, is_nv21));
   }
 
   void calculate_expected(test::Array2D<uint8_t> &y_arr,

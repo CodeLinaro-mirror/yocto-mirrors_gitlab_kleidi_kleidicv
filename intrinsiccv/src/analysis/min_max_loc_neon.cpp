@@ -313,8 +313,8 @@ intrinsiccv_error_t min_max_loc(const ScalarType *src, size_t src_stride,
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_IMAGE_SIZE(width, height);
 
-  if (INTRINSICCV_UNLIKELY(width == 0 || height == 0)) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (KLEIDICV_UNLIKELY(width == 0 || height == 0)) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   Rectangle rect{width, height};
@@ -328,14 +328,14 @@ intrinsiccv_error_t min_max_loc(const ScalarType *src, size_t src_stride,
   if (max_offset) {
     *max_offset = src_rows.offset_for_index(operation.max_index(), width);
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                                \
-  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t min_max_loc<type>( \
-      const type *src, size_t src_stride, size_t width, size_t height,        \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                                \
+  template KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t min_max_loc<type>( \
+      const type *src, size_t src_stride, size_t width, size_t height,     \
       size_t *min_offset, size_t *max_offset)
 
-INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
 
 }  // namespace intrinsiccv::neon

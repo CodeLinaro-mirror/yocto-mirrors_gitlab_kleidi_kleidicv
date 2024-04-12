@@ -2,22 +2,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_CONFIG_H
-#define INTRINSICCV_TEST_CONFIG_H
+#ifndef KLEIDICV_TEST_CONFIG_H
+#define KLEIDICV_TEST_CONFIG_H
 
 // Main test configuration switches.
 
-#cmakedefine INTRINSICCV_ALLOCATION_TESTS
+#cmakedefine KLEIDICV_ALLOCATION_TESTS
 
 // GCC and clang
 #ifdef __GNUC__
-#define INTRINSICCV_NO_STRICT_ALIASING_BEGIN \
-  _Pragma("GCC diagnostic push")             \
+#define KLEIDICV_NO_STRICT_ALIASING_BEGIN \
+  _Pragma("GCC diagnostic push")          \
       _Pragma("GCC diagnostic ignored \"-Wstrict-aliasing\"")
-#define INTRINSICCV_NO_STRICT_ALIASING_END _Pragma("GCC diagnostic pop")
+#define KLEIDICV_NO_STRICT_ALIASING_END _Pragma("GCC diagnostic pop")
 #else
-#define INTRINSICCV_NO_STRICT_ALIASING_BEGIN
-#define INTRINSICCV_NO_STRICT_ALIASING_END
+#define KLEIDICV_NO_STRICT_ALIASING_BEGIN
+#define KLEIDICV_NO_STRICT_ALIASING_END
 #endif
 
-#endif  // INTRINSICCV_TEST_CONFIG_H
+#endif  // KLEIDICV_TEST_CONFIG_H

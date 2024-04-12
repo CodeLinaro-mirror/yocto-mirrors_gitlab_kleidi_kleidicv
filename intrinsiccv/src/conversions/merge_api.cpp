@@ -6,5 +6,5 @@
 #include "intrinsiccv/dispatch.h"
 #include "intrinsiccv/intrinsiccv.h"
 
-INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_merge, &intrinsiccv::neon::merge,
-                               nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API(intrinsiccv_merge, &intrinsiccv::neon::merge,
+                            nullptr, nullptr);

@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_WORKSPACE_BORDERS_H
-#define INTRINSICCV_WORKSPACE_BORDERS_H
+#ifndef KLEIDICV_WORKSPACE_BORDERS_H
+#define KLEIDICV_WORKSPACE_BORDERS_H
 
 #include <optional>
 
 #include "intrinsiccv/intrinsiccv.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 enum class FixedBorderType {
   REPLICATE,
@@ -19,15 +19,15 @@ enum class FixedBorderType {
 };
 
 inline std::optional<FixedBorderType> get_fixed_border_type(
-    intrinsiccv_border_type_t border_type) INTRINSICCV_STREAMING_COMPATIBLE {
+    intrinsiccv_border_type_t border_type) KLEIDICV_STREAMING_COMPATIBLE {
   switch (border_type) {
-    case INTRINSICCV_BORDER_TYPE_REPLICATE:
+    case KLEIDICV_BORDER_TYPE_REPLICATE:
       return FixedBorderType::REPLICATE;
-    case INTRINSICCV_BORDER_TYPE_REFLECT:
+    case KLEIDICV_BORDER_TYPE_REFLECT:
       return FixedBorderType::REFLECT;
-    case INTRINSICCV_BORDER_TYPE_WRAP:
+    case KLEIDICV_BORDER_TYPE_WRAP:
       return FixedBorderType::WRAP;
-    case INTRINSICCV_BORDER_TYPE_REVERSE:
+    case KLEIDICV_BORDER_TYPE_REVERSE:
       return FixedBorderType::REVERSE;
     default:
       return std::optional<FixedBorderType>();
@@ -65,7 +65,7 @@ class FixedBorderInfo<T, 3UL> final {
 
   // Retuns offsets for columns affected by left border.
   Offsets offsets_with_left_border(size_t /* column_index */) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
       case FixedBorderType::REFLECT:
@@ -87,7 +87,7 @@ class FixedBorderInfo<T, 3UL> final {
 
   // Retuns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t /* column_index */) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
       case FixedBorderType::REFLECT:
@@ -109,7 +109,7 @@ class FixedBorderInfo<T, 3UL> final {
 
   // Retuns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     if (row_or_column_index == 0U) {
       // Rows and columns have the same offsets.
       return offsets_with_left_border(row_or_column_index);
@@ -159,13 +159,13 @@ class FixedBorderInfo<T, 5UL> final {
       : height_(height), border_type_(border_type) {}
 
   // Retuns offsets without the influence of any border.
-  Offsets offsets_without_border() const INTRINSICCV_STREAMING_COMPATIBLE {
+  Offsets offsets_without_border() const KLEIDICV_STREAMING_COMPATIBLE {
     return get(-2, -1, 0, 1, 2);
   }
 
   // Retuns offsets for columns affected by left border.
   Offsets offsets_with_left_border(size_t column_index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == 0) {
@@ -206,7 +206,7 @@ class FixedBorderInfo<T, 5UL> final {
 
   // Retuns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t column_index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == (height_ - 2)) {
@@ -247,7 +247,7 @@ class FixedBorderInfo<T, 5UL> final {
 
   // Retuns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     if (row_or_column_index <= 1U) {
       // Rows and columns have the same offsets.
       return offsets_with_left_border(row_or_column_index);
@@ -262,7 +262,7 @@ class FixedBorderInfo<T, 5UL> final {
  private:
   // Takes care of static signed to unsigned casts.
   Offsets get(size_t o0, size_t o1, size_t o2, size_t o3,
-              size_t o4) const INTRINSICCV_STREAMING_COMPATIBLE {
+              size_t o4) const KLEIDICV_STREAMING_COMPATIBLE {
     return Offsets{o0, o1, o2, o3, o4};
   }
 
@@ -278,6 +278,6 @@ using FixedBorderInfo3x3 = FixedBorderInfo<T, 3UL>;
 template <typename T>
 using FixedBorderInfo5x5 = FixedBorderInfo<T, 5UL>;
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_WORKSPACE_BORDERS_H
+#endif  // KLEIDICV_WORKSPACE_BORDERS_H

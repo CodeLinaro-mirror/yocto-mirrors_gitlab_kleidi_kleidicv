@@ -39,14 +39,14 @@ intrinsiccv_error_t saturating_absdiff(const T *src_a, size_t src_a_stride,
 
 }  // namespace intrinsiccv
 
-#define INTRINSICCV_DEFINE_C_API(name, type)                                  \
-  INTRINSICCV_MULTIVERSION_C_API(                                             \
-      name, &intrinsiccv::neon::saturating_absdiff<type>,                     \
-      INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::saturating_absdiff<type>), \
+#define KLEIDICV_DEFINE_C_API(name, type)                                  \
+  KLEIDICV_MULTIVERSION_C_API(                                             \
+      name, &intrinsiccv::neon::saturating_absdiff<type>,                  \
+      KLEIDICV_SVE2_IMPL_IF(&intrinsiccv::sve2::saturating_absdiff<type>), \
       &intrinsiccv::sme2::saturating_absdiff<type>)
 
-INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_absdiff_u8, uint8_t);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_absdiff_s8, int8_t);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_absdiff_u16, uint16_t);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_absdiff_s16, int16_t);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_saturating_absdiff_s32, int32_t);
+KLEIDICV_DEFINE_C_API(intrinsiccv_saturating_absdiff_u8, uint8_t);
+KLEIDICV_DEFINE_C_API(intrinsiccv_saturating_absdiff_s8, int8_t);
+KLEIDICV_DEFINE_C_API(intrinsiccv_saturating_absdiff_u16, uint16_t);
+KLEIDICV_DEFINE_C_API(intrinsiccv_saturating_absdiff_s16, int16_t);
+KLEIDICV_DEFINE_C_API(intrinsiccv_saturating_absdiff_s32, int32_t);

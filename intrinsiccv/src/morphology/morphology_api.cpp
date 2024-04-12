@@ -54,7 +54,7 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
 
 extern "C" {
 
-using INTRINSICCV_TARGET_NAMESPACE::MorphologyWorkspace;
+using KLEIDICV_TARGET_NAMESPACE::MorphologyWorkspace;
 
 intrinsiccv_error_t intrinsiccv_morphology_create(
     intrinsiccv_morphology_context_t **context, intrinsiccv_rectangle_t kernel,
@@ -66,19 +66,19 @@ intrinsiccv_error_t intrinsiccv_morphology_create(
   CHECK_RECTANGLE_SIZE(kernel);
   CHECK_RECTANGLE_SIZE(image);
 
-  if (type_size > INTRINSICCV_MAXIMUM_TYPE_SIZE) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (type_size > KLEIDICV_MAXIMUM_TYPE_SIZE) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   auto morphology_border_type =
       MorphologyWorkspace::get_border_type(border_type);
 
   if (!morphology_border_type) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   MorphologyWorkspace::Pointer workspace;
@@ -90,7 +90,7 @@ intrinsiccv_error_t intrinsiccv_morphology_create(
 
   *context =
       reinterpret_cast<intrinsiccv_morphology_context_t *>(workspace.release());
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 intrinsiccv_error_t intrinsiccv_morphology_release(
@@ -103,16 +103,16 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
   MorphologyWorkspace::Pointer{
       reinterpret_cast<MorphologyWorkspace *>(context)};
   // NOLINTEND(bugprone-unused-raii)
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 }  // extern "C"
 
-#define INTRINSICCV_DEFINE_C_API(name, tname, type)              \
-  INTRINSICCV_MULTIVERSION_C_API(                                \
-      name, &intrinsiccv::neon::tname<type>,                     \
-      INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::tname<type>), \
+#define KLEIDICV_DEFINE_C_API(name, tname, type)              \
+  KLEIDICV_MULTIVERSION_C_API(                                \
+      name, &intrinsiccv::neon::tname<type>,                  \
+      KLEIDICV_SVE2_IMPL_IF(&intrinsiccv::sve2::tname<type>), \
       &intrinsiccv::sme2::tname<type>)
 
-INTRINSICCV_DEFINE_C_API(intrinsiccv_dilate_u8, dilate, uint8_t);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_erode_u8, erode, uint8_t);
+KLEIDICV_DEFINE_C_API(intrinsiccv_dilate_u8, dilate, uint8_t);
+KLEIDICV_DEFINE_C_API(intrinsiccv_erode_u8, erode, uint8_t);

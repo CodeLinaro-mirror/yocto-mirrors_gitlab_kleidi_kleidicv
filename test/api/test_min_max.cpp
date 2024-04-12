@@ -9,19 +9,19 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "test_config.h"
 
-#define INTRINSICCV_MIN_MAX(type, suffix) \
-  INTRINSICCV_API(min_max, intrinsiccv_min_max_##suffix, type)
+#define KLEIDICV_MIN_MAX(type, suffix) \
+  KLEIDICV_API(min_max, intrinsiccv_min_max_##suffix, type)
 
-INTRINSICCV_MIN_MAX(int8_t, s8);
-INTRINSICCV_MIN_MAX(uint8_t, u8);
-INTRINSICCV_MIN_MAX(int16_t, s16);
-INTRINSICCV_MIN_MAX(uint16_t, u16);
-INTRINSICCV_MIN_MAX(int32_t, s32);
+KLEIDICV_MIN_MAX(int8_t, s8);
+KLEIDICV_MIN_MAX(uint8_t, u8);
+KLEIDICV_MIN_MAX(int16_t, s16);
+KLEIDICV_MIN_MAX(uint16_t, u16);
+KLEIDICV_MIN_MAX(int32_t, s32);
 
-#define INTRINSICCV_MIN_MAX_LOC(type, suffix) \
-  INTRINSICCV_API(min_max_loc, intrinsiccv_min_max_loc_##suffix, type)
+#define KLEIDICV_MIN_MAX_LOC(type, suffix) \
+  KLEIDICV_API(min_max_loc, intrinsiccv_min_max_loc_##suffix, type)
 
-INTRINSICCV_MIN_MAX_LOC(uint8_t, u8);
+KLEIDICV_MIN_MAX_LOC(uint8_t, u8);
 
 template <typename ElementType, size_t Padding>
 class MinMaxTest {
@@ -200,7 +200,7 @@ class MinMaxTest {
     if (p_max) {
       *p_max = std::numeric_limits<ElementType>::min();
     }
-    EXPECT_EQ(INTRINSICCV_OK,
+    EXPECT_EQ(KLEIDICV_OK,
               min_max<ElementType>()(source.data(), source.stride(), width(),
                                      height(), p_min, p_max));
     if (p_min) {
@@ -220,7 +220,7 @@ class MinMaxTest {
       setup(source, testData);
 
       ElementType actual_min = 2, actual_max = 1;
-      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+      EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
                 min_max<ElementType>()(nullptr, source.stride(), width(),
                                        height(), &actual_min, &actual_max));
       EXPECT_EQ(2, actual_min);
@@ -253,9 +253,9 @@ class MinMaxLocTest : public MinMaxTest<ElementType, Padding> {
     if (p_max_offset) {
       *p_max_offset = std::numeric_limits<size_t>::max();
     }
-    EXPECT_EQ(INTRINSICCV_OK, min_max_loc<ElementType>()(
-                                  source.data(), source.stride(), width(),
-                                  height(), p_min_offset, p_max_offset));
+    EXPECT_EQ(KLEIDICV_OK, min_max_loc<ElementType>()(
+                               source.data(), source.stride(), width(),
+                               height(), p_min_offset, p_max_offset));
     if (p_min_offset) {
       EXPECT_EQ(*p_min_offset, expected_min_offset);
     }
@@ -274,7 +274,7 @@ class MinMaxLocTest : public MinMaxTest<ElementType, Padding> {
 
       size_t min_offset = 2, max_offset = 1;
 
-      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+      EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
                 min_max_loc<ElementType>()(nullptr, source.stride(), width(),
                                            height(), &min_offset, &max_offset));
       EXPECT_EQ(2, min_offset);
@@ -309,31 +309,31 @@ TYPED_TEST(MinMax, Misalignment) {
     return;
   }
   TypeParam src[1] = {}, min_value, max_value;
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             min_max<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &min_value,
                                  &max_value));
 }
 
 TYPED_TEST(MinMax, ZeroImageSize) {
   TypeParam src[1] = {}, min_value, max_value;
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             min_max<TypeParam>()(src, sizeof(TypeParam), 0, 1, &min_value,
                                  &max_value));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             min_max<TypeParam>()(src, sizeof(TypeParam), 1, 0, &min_value,
                                  &max_value));
 }
 
 TYPED_TEST(MinMax, OversizeImage) {
   TypeParam src[1] = {}, min_value, max_value;
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             min_max<TypeParam>()(src, sizeof(TypeParam),
-                                 INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1,
-                                 &min_value, &max_value));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
-            min_max<TypeParam>()(
-                src, sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS,
-                INTRINSICCV_MAX_IMAGE_PIXELS, &min_value, &max_value));
+                                 KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, &min_value,
+                                 &max_value));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      min_max<TypeParam>()(src, sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
+                           KLEIDICV_MAX_IMAGE_PIXELS, &min_value, &max_value));
 }
 
 template <typename ElementType>
@@ -351,10 +351,10 @@ TYPED_TEST(MinMaxLoc, ZeroImageSize) {
   TypeParam src[1] = {};
   size_t min_offset = 0, max_offset = 0;
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             min_max_loc<TypeParam>()(src, sizeof(TypeParam), 0, 1, &min_offset,
                                      &max_offset));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             min_max_loc<TypeParam>()(src, sizeof(TypeParam), 1, 0, &min_offset,
                                      &max_offset));
 }
@@ -363,12 +363,12 @@ TYPED_TEST(MinMaxLoc, OversizeImage) {
   TypeParam src[1] = {};
   size_t min_offset = 0, max_offset = 8;
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             min_max_loc<TypeParam>()(src, sizeof(TypeParam),
-                                     INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1,
+                                     KLEIDICV_MAX_IMAGE_PIXELS + 1, 1,
                                      &min_offset, &max_offset));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             min_max_loc<TypeParam>()(
-                src, sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS,
-                INTRINSICCV_MAX_IMAGE_PIXELS, &min_offset, &max_offset));
+                src, sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
+                KLEIDICV_MAX_IMAGE_PIXELS, &min_offset, &max_offset));
 }

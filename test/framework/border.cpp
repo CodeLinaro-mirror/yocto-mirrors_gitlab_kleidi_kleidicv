@@ -291,19 +291,19 @@ void prepare_borders(intrinsiccv_border_type_t border_type,
     default:
       GTEST_FAIL() << "Border type is not implemented.";
 
-    case INTRINSICCV_BORDER_TYPE_REPLICATE:
+    case KLEIDICV_BORDER_TYPE_REPLICATE:
       return replicate(bordered, elements);
 
-    case INTRINSICCV_BORDER_TYPE_CONSTANT:
+    case KLEIDICV_BORDER_TYPE_CONSTANT:
       return constant(bordered, border_values, elements);
 
-    case INTRINSICCV_BORDER_TYPE_REFLECT:
+    case KLEIDICV_BORDER_TYPE_REFLECT:
       return reflect(bordered, elements);
 
-    case INTRINSICCV_BORDER_TYPE_WRAP:
+    case KLEIDICV_BORDER_TYPE_WRAP:
       return wrap(bordered, elements);
 
-    case INTRINSICCV_BORDER_TYPE_REVERSE:
+    case KLEIDICV_BORDER_TYPE_REVERSE:
       return reverse(bordered, elements);
   }
 }

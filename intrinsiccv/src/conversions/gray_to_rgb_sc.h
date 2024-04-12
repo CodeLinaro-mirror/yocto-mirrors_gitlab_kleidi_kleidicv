@@ -2,48 +2,48 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_GRAY_TO_RGB_SC_H
-#define INTRINSICCV_GRAY_TO_RGB_SC_H
+#ifndef KLEIDICV_GRAY_TO_RGB_SC_H
+#define KLEIDICV_GRAY_TO_RGB_SC_H
 
 #include "intrinsiccv/conversions/gray_to_rgb.h"
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 template <typename ScalarType>
 class GrayToRGB final :
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     public UsesTailPath,
 #endif
     public UnrollTwice {
  public:
   using ContextType = Context;
-  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8x3_t dst_vect = svcreate3(src_vect, src_vect, src_vect);
     svst3(pg, dst, dst_vect);
   }
-#else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
-  explicit GrayToRGB(svuint8x3_t &indices) INTRINSICCV_STREAMING_COMPATIBLE
+#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+  explicit GrayToRGB(svuint8x3_t &indices) KLEIDICV_STREAMING_COMPATIBLE
       : indices_{indices} {
     initialize_indices();
   }
 
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     // Call the common vector path.
     auto pg = ctx.predicate();
     common_vector_path(pg, pg, pg, src_vect, dst);
   }
 
   void tail_path(ContextType ctx, VectorType src_vect,
-                 ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                 ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     // Predicates for consecutive stores.
     svbool_t pg_0, pg_1, pg_2;
@@ -55,7 +55,7 @@ class GrayToRGB final :
  private:
   void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
                           VectorType src_vect,
-                          ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                          ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     // Convert from gray to RGB using table-lookups.
     VectorType dst_vec_0 = svtbl(src_vect, svget3(indices_, 0));
     VectorType dst_vec_1 = svtbl(src_vect, svget3(indices_, 1));
@@ -66,7 +66,7 @@ class GrayToRGB final :
     svst1_vnum(pg_2, &dst[0], 2, dst_vec_2);
   }
 
-  void initialize_indices() INTRINSICCV_STREAMING_COMPATIBLE {
+  void initialize_indices() KLEIDICV_STREAMING_COMPATIBLE {
     // All-true predicate to shorten code.
     svbool_t pg_all = VecTraits::svptrue();
     // Constant used for division by 3.
@@ -76,7 +76,7 @@ class GrayToRGB final :
 
     indices_0 = svindex_u8(0, 1);
 
-    if (INTRINSICCV_UNLIKELY(svcntb() == 256)) {
+    if (KLEIDICV_UNLIKELY(svcntb() == 256)) {
       indices_1 = svext(
           svdup_u8(0),
           svqadd(svindex_u8(svcntb() % 3, 1), static_cast<uint8_t>(2)), 254);
@@ -99,17 +99,17 @@ class GrayToRGB final :
   }
 
   svuint8x3_t &indices_;
-#endif  // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 };      // end of class GrayToRGB<ScalarType>
 
 template <typename ScalarType>
 class GrayToRGBAWithInterleaving final : public UnrollTwice {
  public:
   using ContextType = Context;
-  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     svuint8_t alpha = svdup_u8(0xff);
     svuint8x4_t dst_vect = svcreate4(src_vect, src_vect, src_vect, alpha);
@@ -118,28 +118,28 @@ class GrayToRGBAWithInterleaving final : public UnrollTwice {
   }
 };  // end of class GrayToRGBAWithInterleaving<ScalarType>
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 template <typename ScalarType>
 class GrayToRGBAWithLookUpTable final : public UnrollTwice,
                                         public UsesTailPath {
  public:
   using ContextType = Context;
-  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
   explicit GrayToRGBAWithLookUpTable(svuint8x4_t &indices)
-      INTRINSICCV_STREAMING_COMPATIBLE : indices_{indices} {
+      KLEIDICV_STREAMING_COMPATIBLE : indices_{indices} {
     initialize_indices();
   }
 
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     // Call the common vector path.
     auto pg = ctx.predicate();
     common_vector_path(pg, pg, pg, pg, src_vect, dst);
   }
 
   void tail_path(ContextType ctx, VectorType src_vect,
-                 ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                 ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     // Predicates for consecutive stores.
     svbool_t pg_0, pg_1, pg_2, pg_3;
@@ -151,7 +151,7 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
  private:
   void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
                           svbool_t pg_3, VectorType src_vect,
-                          ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                          ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     svuint8x2_t src_and_alpha = svcreate2(src_vect, VecTraits::svdup(-1));
 
     // Convert from gray to RGBA using table-lookups.
@@ -166,7 +166,7 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
     svst1_vnum(pg_3, &dst[0], 3, dst_vec_3);
   }
 
-  void initialize_indices() INTRINSICCV_STREAMING_COMPATIBLE {
+  void initialize_indices() KLEIDICV_STREAMING_COMPATIBLE {
     // Number of four-tuple elements.
     uint64_t num_four_tuples = VecTraits::num_lanes() / 4;
     // Index of alpha.
@@ -199,11 +199,11 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
 
   svuint8x4_t &indices_;
 };      // end of class GrayToRGBAWithLookUpTable<ScalarType>
-#endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  // !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
+    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
@@ -211,19 +211,19 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgb_u8_sc(
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   GrayToRGB<uint8_t> operation;
 #else
   svuint8x3_t table_indices;
   GrayToRGB<uint8_t> operation{table_indices};
 #endif
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
+    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
@@ -232,7 +232,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
 
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   GrayToRGBAWithInterleaving<int8_t> operation{};
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 #else
@@ -245,9 +245,9 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t gray_to_rgba_u8_sc(
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }
 #endif
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_GRAY_TO_RGB_SC_H
+#endif  // KLEIDICV_GRAY_TO_RGB_SC_H

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_CONTAINERS_STACK_H
-#define INTRINSICCV_CONTAINERS_STACK_H
+#ifndef KLEIDICV_CONTAINERS_STACK_H
+#define KLEIDICV_CONTAINERS_STACK_H
 
 #include <cinttypes>
 #include <cstddef>
@@ -13,7 +13,7 @@
 #include "intrinsiccv/traits.h"
 #include "intrinsiccv/utils.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 // A simple last-in first-out container.
 template <typename T>
@@ -108,7 +108,7 @@ class Stack final : public NonCopyable {
     // Allocates and initializes a new block.
     [[nodiscard]] static Block *make_block(Block *prev) noexcept {
       uint8_t *block_data = new (std::nothrow) uint8_t[kBlockGranule];
-      if (INTRINSICCV_UNLIKELY(!block_data)) {
+      if (KLEIDICV_UNLIKELY(!block_data)) {
         __builtin_trap();
       }
 
@@ -171,6 +171,6 @@ class Stack final : public NonCopyable {
   Block *first_block_;
 };  // end of class Stack<T>
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_CONTAINERS_STACK_H
+#endif  // KLEIDICV_CONTAINERS_STACK_H

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_CONVERSIONS_MERGE_H
-#define INTRINSICCV_CONVERSIONS_MERGE_H
+#ifndef KLEIDICV_CONVERSIONS_MERGE_H
+#define KLEIDICV_CONVERSIONS_MERGE_H
 
 #include "intrinsiccv/intrinsiccv.h"
 
@@ -19,4 +19,4 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_CONVERSIONS_MERGE_H
+#endif  // KLEIDICV_CONVERSIONS_MERGE_H

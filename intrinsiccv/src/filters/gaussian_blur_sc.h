@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_GAUSSIAN_BLUR_SC_H
-#define INTRINSICCV_GAUSSIAN_BLUR_SC_H
+#ifndef KLEIDICV_GAUSSIAN_BLUR_SC_H
+#define KLEIDICV_GAUSSIAN_BLUR_SC_H
 
 #include <limits>
 
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Primary template for Gaussian Blur approximation filters.
 template <typename ScalarType, size_t KernelSize>
@@ -36,7 +36,7 @@ class DiscreteGaussianBlur<uint8_t, 5> {
   void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
                             svuint8_t src_2, svuint8_t src_3, svuint8_t src_4,
                             BufferType *dst) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svuint8_t const_6_u8 = svdup_n_u8(6);
     svuint16_t const_4_u16 = svdup_n_u16(4);
 
@@ -60,7 +60,7 @@ class DiscreteGaussianBlur<uint8_t, 5> {
   void horizontal_vector_path(svbool_t pg, svuint16_t src_0, svuint16_t src_1,
                               svuint16_t src_2, svuint16_t src_3,
                               svuint16_t src_4, DestinationType *dst) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svuint16_t const_4_u16 = svdup_n_u16(4);
     svuint16_t const_6_u16 = svdup_n_u16(6);
 
@@ -76,7 +76,7 @@ class DiscreteGaussianBlur<uint8_t, 5> {
   //
   // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
   void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const INTRINSICCV_STREAMING_COMPATIBLE {
+      const KLEIDICV_STREAMING_COMPATIBLE {
     auto acc = src[0] + src[4] + 4 * (src[1] + src[3]) + 6 * src[2];
     dst[0] = rounding_shift_right(acc, 8);
   }
@@ -87,7 +87,7 @@ intrinsiccv_error_t discrete_gaussian_blur(
     const ScalarType *src, size_t src_stride, ScalarType *dst,
     size_t dst_stride, size_t width, size_t height, size_t channels,
     intrinsiccv_border_type_t border_type,
-    intrinsiccv_filter_context_t *context) INTRINSICCV_STREAMING_COMPATIBLE {
+    intrinsiccv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
   CHECK_POINTERS(context);
@@ -96,11 +96,11 @@ intrinsiccv_error_t discrete_gaussian_blur(
   CHECK_IMAGE_SIZE(width, height);
 
   if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   Rectangle rect{width, height};
@@ -110,15 +110,15 @@ intrinsiccv_error_t discrete_gaussian_blur(
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
   if (workspace->buffer_type_size() != 2 * sizeof(ScalarType)) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   if (workspace->channels() != channels) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   if (workspace->image_size() != rect) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   GaussianBlurFilterType blur;
@@ -127,14 +127,14 @@ intrinsiccv_error_t discrete_gaussian_blur(
   auto fixed_border_type = get_fixed_border_type(border_type);
 
   if (!fixed_border_type) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   workspace->process(rect, src_rows, dst_rows, channels, *fixed_border_type,
                      filter);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_GAUSSIAN_BLUR_SC_H
+#endif  // KLEIDICV_GAUSSIAN_BLUR_SC_H

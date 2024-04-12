@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_FRAMEWORK_KERNEL_H_
-#define INTRINSICCV_TEST_FRAMEWORK_KERNEL_H_
+#ifndef KLEIDICV_TEST_FRAMEWORK_KERNEL_H_
+#define KLEIDICV_TEST_FRAMEWORK_KERNEL_H_
 
 #include <gtest/gtest.h>
 
@@ -268,7 +268,7 @@ class KernelTest {
       dump(&actual_);
     }
 
-    EXPECT_EQ(INTRINSICCV_OK, err);
+    EXPECT_EQ(KLEIDICV_OK, err);
 
     // Check that the actual result matches the expectation.
     EXPECT_EQ_ARRAY2D(expected_, actual_);
@@ -288,4 +288,4 @@ class KernelTest {
 
 }  // namespace test
 
-#endif  // INTRINSICCV_TEST_FRAMEWORK_KERNEL_H_
+#endif  // KLEIDICV_TEST_FRAMEWORK_KERNEL_H_

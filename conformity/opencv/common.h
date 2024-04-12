@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_OPENCV_CONFORMITY_COMMON_H_
-#define INTRINSICCV_OPENCV_CONFORMITY_COMMON_H_
+#ifndef KLEIDICV_OPENCV_CONFORMITY_COMMON_H_
+#define KLEIDICV_OPENCV_CONFORMITY_COMMON_H_
 
 #include <fcntl.h>
 #include <mqueue.h>
@@ -21,13 +21,12 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 
-#define INTRINSICCV_CONFORMITY_SHM_ID \
-  "/opencv_intrinisiccv_conformity_check_shm"
-#define INTRINSICCV_CONFORMITY_SHM_SIZE (1024 * 1024)
+#define KLEIDICV_CONFORMITY_SHM_ID "/opencv_intrinisiccv_conformity_check_shm"
+#define KLEIDICV_CONFORMITY_SHM_SIZE (1024 * 1024)
 
-#define INTRINSICCV_CONFORMITY_REQUEST_MQ_ID \
+#define KLEIDICV_CONFORMITY_REQUEST_MQ_ID \
   "/opencv_intrinisiccv_conformity_request_queue"
-#define INTRINSICCV_CONFORMITY_REPLY_MQ_ID \
+#define KLEIDICV_CONFORMITY_REPLY_MQ_ID \
   "/opencv_intrinisiccv_conformity_reply_queue"
 
 class ExceptionWithErrno : public std::exception {
@@ -273,4 +272,4 @@ class RecreatedMessageQueue : public MessageQueue<true> {
       : MessageQueue{id, sm} {}
 };  // end of class RecreatedMessageQueue
 
-#endif  // INTRINSICCV_OPENCV_CONFORMITY_COMMON_H_
+#endif  // KLEIDICV_OPENCV_CONFORMITY_COMMON_H_

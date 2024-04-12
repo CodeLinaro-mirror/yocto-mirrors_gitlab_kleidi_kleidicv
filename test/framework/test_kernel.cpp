@@ -137,7 +137,7 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
     // Fake some result.
     output->fill(OutputType{0});
 
-    return INTRINSICCV_OK;
+    return KLEIDICV_OK;
   }
 
  public:
@@ -150,7 +150,7 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   }};
 
   static constexpr std::array<intrinsiccv_border_type_t, 2> kBorders = {
-      INTRINSICCV_BORDER_TYPE_REPLICATE, INTRINSICCV_BORDER_TYPE_CONSTANT};
+      KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_CONSTANT};
 
   static constexpr std::array<intrinsiccv_border_values_t, 2> kBorderValues = {
       {{0, 0, 0, 0}, {1, 2, 3, 4}}};

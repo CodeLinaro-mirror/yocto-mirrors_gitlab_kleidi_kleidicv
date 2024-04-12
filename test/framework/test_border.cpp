@@ -48,7 +48,7 @@ TEST(Border, Replicate_1Ch_1Element) {
   expected.set(4, 0, {9, 9, 0, 1, 2, 2});
 
   ImplementsBorder bordered{1, 1, 1, 1};
-  test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
+  test::prepare_borders<ElementType>(KLEIDICV_BORDER_TYPE_REPLICATE,
                                      {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
@@ -77,7 +77,7 @@ TEST(Border, Replicate_1Ch_2Elements) {
   expected.set(5, 0, {3, 3, 3, 4, 4, 4});
 
   ImplementsBorder bordered{2, 2, 2, 2};
-  test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
+  test::prepare_borders<ElementType>(KLEIDICV_BORDER_TYPE_REPLICATE,
                                      {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
@@ -104,7 +104,7 @@ TEST(Border, Replicate_2Ch_1Element) {
   expected.set(4, 0, {9, 1, 9, 1, 2, 3, 2, 3});
 
   ImplementsBorder bordered{1, 1, 1, 1};
-  test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
+  test::prepare_borders<ElementType>(KLEIDICV_BORDER_TYPE_REPLICATE,
                                      {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
@@ -133,7 +133,7 @@ TEST(Border, Replicate_2Ch_2Elements) {
   expected.set(5, 0, {5, 6, 5, 6, 5, 6, 7, 8, 7, 8, 7, 8});
 
   ImplementsBorder bordered{2, 2, 2, 2};
-  test::prepare_borders<ElementType>(INTRINSICCV_BORDER_TYPE_REPLICATE,
+  test::prepare_borders<ElementType>(KLEIDICV_BORDER_TYPE_REPLICATE,
                                      {0, 0, 0, 0}, &bordered, &actual);
   EXPECT_EQ_ARRAY2D(expected, actual);
 }

@@ -7,22 +7,22 @@
 namespace intrinsiccv::sme2 {
 
 template <typename InputType, typename OutputType>
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 float_conversion(const InputType* src, size_t src_stride, OutputType* dst,
                  size_t dst_stride, size_t width, size_t height) {
   return float_conversion_sc<InputType, OutputType>(src, src_stride, dst,
                                                     dst_stride, width, height);
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(itype, otype)                        \
-  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t                    \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(itype, otype)                           \
+  template KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t                       \
   float_conversion<itype, otype>(const itype* src, size_t src_stride,         \
                                  otype* dst, size_t dst_stride, size_t width, \
                                  size_t height)
 
-INTRINSICCV_INSTANTIATE_TEMPLATE(float, int8_t);
-INTRINSICCV_INSTANTIATE_TEMPLATE(float, uint8_t);
-INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t, float);
-INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t, float);
+KLEIDICV_INSTANTIATE_TEMPLATE(float, int8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(float, uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(int8_t, float);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t, float);
 
 }  // namespace intrinsiccv::sme2

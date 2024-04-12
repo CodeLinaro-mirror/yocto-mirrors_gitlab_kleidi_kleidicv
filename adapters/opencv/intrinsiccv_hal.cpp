@@ -16,13 +16,13 @@ namespace intrinsiccv::hal {
 
 static int convert_error(intrinsiccv_error_t e) {
   switch (e) {
-    case INTRINSICCV_OK:
+    case KLEIDICV_OK:
       return CV_HAL_ERROR_OK;
-    case INTRINSICCV_ERROR_NOT_IMPLEMENTED:
+    case KLEIDICV_ERROR_NOT_IMPLEMENTED:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
     // Even if IntrinsicCV returns this error it's possible that another
     // implementation could handle the misalignment.
-    case INTRINSICCV_ERROR_ALIGNMENT:
+    case KLEIDICV_ERROR_ALIGNMENT:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
     default:
       return CV_HAL_ERROR_UNKNOWN;
@@ -48,7 +48,7 @@ static size_t get_type_size(int depth) {
 // Note: 'dcn' is already accounted for in 'dst_step'.
 int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                 size_t dst_step, int width, int height, int depth, int dcn) {
-  if (INTRINSICCV_UNLIKELY((dcn != 3) && (dcn != 4))) {
+  if (KLEIDICV_UNLIKELY((dcn != 3) && (dcn != 4))) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -69,8 +69,8 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int scn,
                int dcn, bool swapBlue) {
-  if (INTRINSICCV_UNLIKELY(((scn != 3) && (scn != 4)) ||
-                           ((dcn != 3) && (dcn != 4)))) {
+  if (KLEIDICV_UNLIKELY(((scn != 3) && (scn != 4)) ||
+                        ((dcn != 3) && (dcn != 4)))) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -193,27 +193,25 @@ static int from_opencv(int opencv_border_type,
     default:
       return 1;
     case CV_HAL_BORDER_CONSTANT:
-      border_type = intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT;
+      border_type = intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT;
       break;
     case CV_HAL_BORDER_REPLICATE:
-      border_type =
-          intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REPLICATE;
+      border_type = intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE;
       break;
     case CV_HAL_BORDER_REFLECT:
-      border_type = intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REFLECT;
+      border_type = intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_REFLECT;
       break;
     case CV_HAL_BORDER_REFLECT_101:
-      border_type = intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REVERSE;
+      border_type = intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_REVERSE;
       break;
     case CV_HAL_BORDER_WRAP:
-      border_type = intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_WRAP;
+      border_type = intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_WRAP;
       break;
     case CV_HAL_BORDER_TRANSPARENT:
-      border_type =
-          intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_TRANSPARENT;
+      border_type = intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_TRANSPARENT;
       break;
     case CV_HAL_BORDER_ISOLATED:
-      border_type = intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_NONE;
+      border_type = intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_NONE;
       break;
   }
 
@@ -319,10 +317,9 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (border_type !=
-          intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT &&
+  if (border_type != intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT &&
       border_type !=
-          intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_REPLICATE) {
+          intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -360,8 +357,7 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
   }
 
   intrinsiccv_border_values_t border_values = {};
-  if (border_type ==
-      intrinsiccv_border_type_t::INTRINSICCV_BORDER_TYPE_CONSTANT) {
+  if (border_type == intrinsiccv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT) {
     border_values.top = cvborder_values[0];
     border_values.left = cvborder_values[1];
     border_values.bottom = cvborder_values[2];
@@ -525,7 +521,7 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
-#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
+#if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int cn, double lowThreshold,
           double highThreshold, int ksize, bool L2gradient) {
@@ -551,7 +547,7 @@ int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
       static_cast<size_t>(width), static_cast<size_t>(height), lowThreshold,
       highThreshold));
 }
-#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height,

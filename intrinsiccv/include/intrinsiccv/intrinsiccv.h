@@ -20,8 +20,8 @@
 /// @brief For an overview of the functions and their supported types see
 /// @ref intrinsiccv/src/supported-types.md.
 
-#ifndef INTRINSICCV_H
-#define INTRINSICCV_H
+#ifndef KLEIDICV_H
+#define KLEIDICV_H
 
 #include "intrinsiccv/config.h"
 #include "intrinsiccv/ctypes.h"
@@ -35,38 +35,37 @@
 ///
 /// In case of AArch64 it is limited to (almost) 256 terapixels. This way 16 bit
 /// is left for any arithmetic operations around image size or width or height.
-#define INTRINSICCV_MAX_IMAGE_PIXELS ((1ULL << 48) - 1)
+#define KLEIDICV_MAX_IMAGE_PIXELS ((1ULL << 48) - 1)
 #endif
 
 /// Size in bytes of the largest possible element type
-#define INTRINSICCV_MAXIMUM_TYPE_SIZE (8)
+#define KLEIDICV_MAXIMUM_TYPE_SIZE (8)
 
 /// Maximum number of channels
-#define INTRINSICCV_MAXIMUM_CHANNEL_COUNT (8)
+#define KLEIDICV_MAXIMUM_CHANNEL_COUNT (8)
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
 
 #ifdef DOXYGEN
-#define INTRINSICCV_API_DECLARATION(name, ...) \
+#define KLEIDICV_API_DECLARATION(name, ...) \
   intrinsiccv_error_t name(__VA_ARGS__)
 #else
-#define INTRINSICCV_API_DECLARATION(name, ...) \
+#define KLEIDICV_API_DECLARATION(name, ...) \
   extern intrinsiccv_error_t (*name)(__VA_ARGS__)
 #endif
 
-#define INTRINSICCV_BINARY_OP(name, type)                                   \
-  INTRINSICCV_API_DECLARATION(name, const type *src_a, size_t src_a_stride, \
-                              const type *src_b, size_t src_b_stride,       \
-                              type *dst, size_t dst_stride, size_t width,   \
-                              size_t height)
+#define KLEIDICV_BINARY_OP(name, type)                                        \
+  KLEIDICV_API_DECLARATION(name, const type *src_a, size_t src_a_stride,      \
+                           const type *src_b, size_t src_b_stride, type *dst, \
+                           size_t dst_stride, size_t width, size_t height)
 
-#define INTRINSICCV_BINARY_OP_SCALE(name, type, scaletype)                  \
-  INTRINSICCV_API_DECLARATION(name, const type *src_a, size_t src_a_stride, \
-                              const type *src_b, size_t src_b_stride,       \
-                              type *dst, size_t dst_stride, size_t width,   \
-                              size_t height, scaletype scale)
+#define KLEIDICV_BINARY_OP_SCALE(name, type, scaletype)                       \
+  KLEIDICV_API_DECLARATION(name, const type *src_a, size_t src_a_stride,      \
+                           const type *src_b, size_t src_b_stride, type *dst, \
+                           size_t dst_stride, size_t width, size_t height,    \
+                           scaletype scale)
 
 /// Adds the values of the corresponding elements in `src_a` and `src_b`, and
 /// puts the result into `dst`.
@@ -75,7 +74,7 @@ extern "C" {
 /// type of the element if the addition result would overflow. Source data
 /// length (in bytes) is `stride` * `height`. Width and height are the same
 /// for the two sources and for the destination. Number of elements is limited
-/// to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -95,21 +94,21 @@ extern "C" {
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s8, int8_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_s8, int8_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u8, uint8_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_u8, uint8_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s16, int16_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_s16, int16_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u16, uint16_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_u16, uint16_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s32, int32_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_s32, int32_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u32, uint32_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_u32, uint32_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_s64, int64_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_s64, int64_t);
 /// @copydoc intrinsiccv_saturating_add_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u64, uint64_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_add_u64, uint64_t);
 
 /// Subtracts the value of the corresponding element in `src_b` from `src_a`,
 /// and puts the result into `dst`.
@@ -118,7 +117,7 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u64, uint64_t);
 /// smallest possible value of the type of the element if the subtraction result
 /// would underflow. Source data length (in bytes) is `stride` * `height`.
 /// Width and height are the same for the two sources and for the destination.
-/// Number of elements is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// Number of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -138,21 +137,21 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_add_u64, uint64_t);
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s8, int8_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_s8, int8_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u8, uint8_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_u8, uint8_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s16, int16_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_s16, int16_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u16, uint16_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_u16, uint16_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s32, int32_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_s32, int32_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u32, uint32_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_u32, uint32_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_s64, int64_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_s64, int64_t);
 /// @copydoc intrinsiccv_saturating_sub_s8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u64, uint64_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_sub_u64, uint64_t);
 
 /// From the corresponding elements in `src_a` and `src_b`, subtracts the lower
 /// one from the higher one, and puts the result into `dst`.
@@ -161,7 +160,7 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u64, uint64_t);
 /// type of the element if the result would overflow (it is only possible with
 /// signed types). Source data length (in bytes) is `stride` * `height`. Width
 /// and height are the same for the two sources and for the destination. Number
-/// of elements is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -181,15 +180,15 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_sub_u64, uint64_t);
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_u8, uint8_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_absdiff_u8, uint8_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s8, int8_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_absdiff_s8, int8_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_u16, uint16_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_absdiff_u16, uint16_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s16, int16_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_absdiff_s16, int16_t);
 /// @copydoc intrinsiccv_saturating_absdiff_u8
-INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s32, int32_t);
+KLEIDICV_BINARY_OP(intrinsiccv_saturating_absdiff_s32, int32_t);
 
 /// Multiplies the values of the corresponding elements in `src_a` and `src_b`,
 /// and puts the result into `dst`.
@@ -198,7 +197,7 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s32, int32_t);
 /// the type of the element if the multiplication result would overflow. Source
 /// data length (in bytes) is `stride` * `height`. Width and height are the
 /// same for the two sources and for the destination. Number of elements is
-/// limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -219,19 +218,15 @@ INTRINSICCV_BINARY_OP(intrinsiccv_saturating_absdiff_s32, int32_t);
 /// @param height       Number of rows in the data.
 /// @param scale        Currently unused parameter.
 ///
-INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_u8, uint8_t,
-                            double);
+KLEIDICV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_u8, uint8_t, double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s8, int8_t, double);
+KLEIDICV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s8, int8_t, double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_u16, uint16_t,
-                            double);
+KLEIDICV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_u16, uint16_t, double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s16, int16_t,
-                            double);
+KLEIDICV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s16, int16_t, double);
 /// @copydoc intrinsiccv_saturating_multiply_u8
-INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t,
-                            double);
+KLEIDICV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t, double);
 
 /// Adds the absolute values of the corresponding elements in `src_a` and
 /// `src_b`. Then, performs a comparison of each element's value in the result
@@ -242,7 +237,7 @@ INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t,
 /// type of the element if the addition result would overflow. Source data
 /// length (in bytes) is `stride` * `height`. Width and height are the same
 /// for the two sources and for the destination. Number of elements is limited
-/// to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_b        Pointer to the second source data. Must be non-null.
@@ -264,11 +259,11 @@ INTRINSICCV_BINARY_OP_SCALE(intrinsiccv_saturating_multiply_s32, int32_t,
 /// @param threshold    The value that the elements of the addition result
 ///                     are compared to.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_saturating_add_abs_with_threshold_s16,
-                            const int16_t *src_a, size_t src_a_stride,
-                            const int16_t *src_b, size_t src_b_stride,
-                            int16_t *dst, size_t dst_stride, size_t width,
-                            size_t height, int16_t threshold);
+KLEIDICV_API_DECLARATION(intrinsiccv_saturating_add_abs_with_threshold_s16,
+                         const int16_t *src_a, size_t src_a_stride,
+                         const int16_t *src_b, size_t src_b_stride,
+                         int16_t *dst, size_t dst_stride, size_t width,
+                         size_t height, int16_t threshold);
 
 /// Converts a grayscale image to RGB. All channels are 8-bit wide.
 ///
@@ -278,7 +273,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_saturating_add_abs_with_threshold_s16,
 /// by 3 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -291,9 +286,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_saturating_add_abs_with_threshold_s16,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_gray_to_rgb_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_gray_to_rgb_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts a grayscale image to RGBA. All channels are 8-bit wide.
 ///
@@ -303,7 +298,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_gray_to_rgb_u8, const uint8_t *src,
 /// by 4 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -316,9 +311,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_gray_to_rgb_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_gray_to_rgba_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_gray_to_rgba_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGB image to BGR. All channels are 8-bit wide.
 ///
@@ -328,7 +323,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_gray_to_rgba_u8, const uint8_t *src,
 /// by 3 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -341,15 +336,15 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_gray_to_rgba_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_bgr_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgb_to_bgr_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Copies a source RBG image to destination buffer.
 /// All channels are 8-bit wide.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -362,9 +357,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_bgr_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_rgb_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgb_to_rgb_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGBA image to BGRA. All channels are 8-bit wide.
 ///
@@ -374,7 +369,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_rgb_u8, const uint8_t *src,
 /// by 4 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -387,15 +382,15 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_rgb_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_bgra_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgba_to_bgra_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Copies a source RBGA image to destination buffer.
 /// All channels are 8-bit wide.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -408,9 +403,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_bgra_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_rgba_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgba_to_rgba_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGB image to BGRA. All channels are 8-bit wide.
 ///
@@ -421,7 +416,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_rgba_u8, const uint8_t *src,
 /// by 4 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -434,9 +429,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_rgba_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_bgra_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgb_to_bgra_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGB image to RGBA. All channels are 8-bit wide.
 ///
@@ -447,7 +442,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_bgra_u8, const uint8_t *src,
 /// by 4 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -460,9 +455,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_bgra_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_rgba_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgb_to_rgba_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGBA image to BGR. All channels are 8-bit wide.
 ///
@@ -473,7 +468,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_rgba_u8, const uint8_t *src,
 /// by 3 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -486,9 +481,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgb_to_rgba_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_bgr_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgba_to_bgr_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGBA image to RGB. All channels are 8-bit wide.
 ///
@@ -499,7 +494,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_bgr_u8, const uint8_t *src,
 /// by 3 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -512,9 +507,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_bgr_u8, const uint8_t *src,
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_rgb_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_rgba_to_rgb_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an NV12 or NV21 YUV image to RGB. All channels are 8-bit wide.
 ///
@@ -526,7 +521,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_rgb_u8, const uint8_t *src,
 /// used.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
@@ -548,11 +543,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_rgba_to_rgb_u8, const uint8_t *src,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
-                            size_t src_y_stride, const uint8_t *src_uv,
-                            size_t src_uv_stride, uint8_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            bool is_nv21);
+KLEIDICV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
+                         size_t src_y_stride, const uint8_t *src_uv,
+                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, bool is_nv21);
 
 /// Converts an NV12 or NV21 YUV image to BGR. All channels are 8-bit wide.
 ///
@@ -564,7 +558,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
 /// used.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
@@ -586,11 +580,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_bgr_u8, const uint8_t *src_y,
-                            size_t src_y_stride, const uint8_t *src_uv,
-                            size_t src_uv_stride, uint8_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            bool is_nv21);
+KLEIDICV_API_DECLARATION(intrinsiccv_yuv_sp_to_bgr_u8, const uint8_t *src_y,
+                         size_t src_y_stride, const uint8_t *src_uv,
+                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, bool is_nv21);
 
 /// Converts an NV12 or NV21 YUV image to RGBA. All channels are 8-bit wide.
 /// Alpha channel is set to 0xFF.
@@ -601,7 +594,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_bgr_u8, const uint8_t *src_y,
 /// by 4 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
@@ -623,11 +616,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_bgr_u8, const uint8_t *src_y,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgba_u8, const uint8_t *src_y,
-                            size_t src_y_stride, const uint8_t *src_uv,
-                            size_t src_uv_stride, uint8_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            bool is_nv21);
+KLEIDICV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgba_u8, const uint8_t *src_y,
+                         size_t src_y_stride, const uint8_t *src_uv,
+                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, bool is_nv21);
 
 /// Converts an NV12 or NV21 YUV image to BGRA. All channels are 8-bit wide.
 /// Alpha channel is set to 0xFF.
@@ -638,7 +630,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgba_u8, const uint8_t *src_y,
 /// by 4 bytes. There is no padding between the pixels.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
@@ -660,18 +652,17 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_rgba_u8, const uint8_t *src_y,
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
 ///                      as NV12.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
-                            size_t src_y_stride, const uint8_t *src_uv,
-                            size_t src_uv_stride, uint8_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            bool is_nv21);
+KLEIDICV_API_DECLARATION(intrinsiccv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
+                         size_t src_y_stride, const uint8_t *src_uv,
+                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, bool is_nv21);
 
 /// Performs a comparison of each element's value in `src` with respect to a
 /// caller defined threshold. The strictly larger elements are set to
 /// `value` and the rest to 0.
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of elements is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -689,10 +680,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
 ///                     compared to.
 /// @param value        The value that the larger elements are set to.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_threshold_binary_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height, uint8_t threshold,
-                            uint8_t value);
+KLEIDICV_API_DECLARATION(intrinsiccv_threshold_binary_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, uint8_t threshold,
+                         uint8_t value);
 
 /// Creates a morphology context according to the parameters.
 ///
@@ -703,23 +694,23 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_threshold_binary_u8, const uint8_t *src,
 ///
 /// @param context       Pointer where to return the created context's address.
 /// @param kernel        Width and height of the kernel. Its size must not be
-///                      more than @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///                      more than @ref KLEIDICV_MAX_IMAGE_PIXELS.
 /// @param anchor        Location in the kernel which is aligned to the actual
 ///                      point in the source data. Must not point out of the
 ///                      kernel.
 /// @param border_type   Way of handling the border. The supported border types
 ///                      are: \n
-///                         - @ref INTRINSICCV_BORDER_TYPE_CONSTANT \n
-///                         - @ref INTRINSICCV_BORDER_TYPE_REPLICATE
+///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT \n
+///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
 /// @param border_values Border values if the border_type is
-///                      @ref INTRINSICCV_BORDER_TYPE_CONSTANT.
+///                      @ref KLEIDICV_BORDER_TYPE_CONSTANT.
 /// @param channels      Number of channels in the data. Must be not more than
-///                      @ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
+///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param iterations    Number of times to do the morphology operation.
 /// @param type_size     Element size in bytes. Must not be more than
-///                      @ref INTRINSICCV_MAXIMUM_TYPE_SIZE.
+///                      @ref KLEIDICV_MAXIMUM_TYPE_SIZE.
 /// @param image         Image dimensions. Its size must not be more than
-///                      @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///                      @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 intrinsiccv_error_t intrinsiccv_morphology_create(
     intrinsiccv_morphology_context_t **context, intrinsiccv_rectangle_t kernel,
@@ -740,7 +731,7 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 /// result into `dst`.
 ///
 /// Width and height are the same for the source and the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// The kernel has an anchor point, it is usually the center of the kernel.
 /// The algorithm takes a rectangle from the source data using the kernel and
@@ -774,20 +765,20 @@ intrinsiccv_error_t intrinsiccv_morphology_release(
 /// @param height       Number of rows in the data.
 /// @param context      Pointer to morphology context.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_dilate_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height,
-                            intrinsiccv_morphology_context_t *context);
+KLEIDICV_API_DECLARATION(intrinsiccv_dilate_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height,
+                         intrinsiccv_morphology_context_t *context);
 
 /// @copydoc intrinsiccv_dilate_u8
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_erode_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height,
-                            intrinsiccv_morphology_context_t *context);
+KLEIDICV_API_DECLARATION(intrinsiccv_erode_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height,
+                         intrinsiccv_morphology_context_t *context);
 
 /// Counts how many nonzero elements are in the source data. Number of elements
-/// is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -798,9 +789,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_erode_u8, const uint8_t *src,
 /// @param height       Number of rows in the data.
 /// @param count        Pointer to variable to store result. Must be non-null.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_count_nonzeros_u8, const uint8_t *src,
-                            size_t src_stride, size_t width, size_t height,
-                            size_t *count);
+KLEIDICV_API_DECLARATION(intrinsiccv_count_nonzeros_u8, const uint8_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         size_t *count);
 
 /// Resizes source data by averaging 4 elements to one.
 ///
@@ -810,7 +801,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_count_nonzeros_u8, const uint8_t *src,
 /// dimensions could be either `(N+1, M+1)` or `(N, M)` or combination of both.
 /// For later cases last respective row or column of source data will not be
 /// processed. Currently only supports single-channel data. Number of pixels in
-/// the source is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// the source is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// Even dimension example of 2x2 to 1x1 conversion:
 /// ```
@@ -845,19 +836,18 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_count_nonzeros_u8, const uint8_t *src,
 ///                     For odd src_height it must be either src_height / 2
 ///                     or (src_height / 2) + 1.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_resize_to_quarter_u8,
-                            const uint8_t *src, size_t src_stride,
-                            size_t src_width, size_t src_height, uint8_t *dst,
-                            size_t dst_stride, size_t dst_width,
-                            size_t dst_height);
+KLEIDICV_API_DECLARATION(intrinsiccv_resize_to_quarter_u8, const uint8_t *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         uint8_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height);
 
 /// Resize image using linear interpolation.
 ///
 /// At present only 2*2 upsizing is supported.
-/// For other ratios INTRINSICCV_ERROR_NOT_IMPLEMENTED
+/// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED
 /// will be returned.
 /// The total number of pixels in the destination is limited to
-/// @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -876,10 +866,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_resize_to_quarter_u8,
 /// @param dst_height   Number of rows in the destination data.
 ///                     Must be src_height * 2.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_resize_linear_u8, const uint8_t *src,
-                            size_t src_stride, size_t src_width,
-                            size_t src_height, uint8_t *dst, size_t dst_stride,
-                            size_t dst_width, size_t dst_height);
+KLEIDICV_API_DECLARATION(intrinsiccv_resize_linear_u8, const uint8_t *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         uint8_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height);
 
 /// Calculates vertical derivative approximation with Sobel filter.
 ///
@@ -892,10 +882,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_resize_linear_u8, const uint8_t *src,
 /// Note, that the kernel is mirrored both vertically and horizontally during
 /// the convolution.
 ///
-/// The only supported border type is @ref INTRINSICCV_BORDER_TYPE_REPLICATE
+/// The only supported border type is @ref KLEIDICV_BORDER_TYPE_REPLICATE
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -911,12 +901,12 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_resize_linear_u8, const uint8_t *src,
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the data. Must be not more than
-///                     @ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
+///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_sobel_3x3_vertical_s16_u8,
-                            const uint8_t *src, size_t src_stride, int16_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            size_t channels);
+KLEIDICV_API_DECLARATION(intrinsiccv_sobel_3x3_vertical_s16_u8,
+                         const uint8_t *src, size_t src_stride, int16_t *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t channels);
 
 /// Calculates horizontal derivative approximation with Sobel filter.
 ///
@@ -929,10 +919,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_sobel_3x3_vertical_s16_u8,
 /// Note, that the kernel is mirrored both vertically and horizontally during
 /// the convolution.
 ///
-/// The only supported border type is @ref INTRINSICCV_BORDER_TYPE_REPLICATE
+/// The only supported border type is @ref KLEIDICV_BORDER_TYPE_REPLICATE
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -948,17 +938,17 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_sobel_3x3_vertical_s16_u8,
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the data. Must be not more than
-///                     @ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
+///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_sobel_3x3_horizontal_s16_u8,
-                            const uint8_t *src, size_t src_stride, int16_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            size_t channels);
+KLEIDICV_API_DECLARATION(intrinsiccv_sobel_3x3_horizontal_s16_u8,
+                         const uint8_t *src, size_t src_stride, int16_t *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t channels);
 
-#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
+#if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 /// Canny edge detector for uint8_t grayscale input. Output is also a uint8_t
 /// grayscale image. Width and height are the same for input and output. Number
-/// of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// The steps:
 ///  - Execute horizontal and vertical Sobel filtering with 3*3 kernels to
@@ -983,11 +973,11 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_sobel_3x3_horizontal_s16_u8,
 /// @param low_threshold  Low threshold for the edge detector algorithm.
 /// @param high_threshold High threshold for the edge detector algorithm.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_canny_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height, double low_threshold,
-                            double high_threshold);
-#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
+KLEIDICV_API_DECLARATION(intrinsiccv_canny_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, double low_threshold,
+                         double high_threshold);
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
 /// Creates a filter context according to the parameters.
 ///
@@ -997,11 +987,11 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_canny_u8, const uint8_t *src,
 ///
 /// @param context       Pointer where to return the created context's address.
 /// @param channels      Number of channels in the data. Must be not more than
-///                      @ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
+///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param type_size     Size of buffer element in bytes. It must be double the
 ///                      size of the type the filter operation is executed on.
 /// @param image         Image dimensions. Its size must not be more than
-///                      @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+///                      @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 intrinsiccv_error_t intrinsiccv_filter_create(
     intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
@@ -1034,7 +1024,7 @@ intrinsiccv_error_t intrinsiccv_filter_release(
 /// ```
 ///
 /// Width and height are the same for the source and for the destination. Number
-/// of elements is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// Usage: \n
 /// Before using this function, a context must be created using
@@ -1043,10 +1033,10 @@ intrinsiccv_error_t intrinsiccv_filter_release(
 /// image dimensions as width and height parameters, with sizeof(uint8) as
 /// size_type, and with the channel number of the data as channels. \n
 /// Note, from the border types only these are supported: \n
-///                       - @ref INTRINSICCV_BORDER_TYPE_REPLICATE \n
-///                       - @ref INTRINSICCV_BORDER_TYPE_REFLECT \n
-///                       - @ref INTRINSICCV_BORDER_TYPE_WRAP \n
-///                       - @ref INTRINSICCV_BORDER_TYPE_REVERSE
+///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE \n
+///                       - @ref KLEIDICV_BORDER_TYPE_REFLECT \n
+///                       - @ref KLEIDICV_BORDER_TYPE_WRAP \n
+///                       - @ref KLEIDICV_BORDER_TYPE_REVERSE
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1062,29 +1052,27 @@ intrinsiccv_error_t intrinsiccv_filter_release(
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the data. Must be not more than
-///                     @ref INTRINSICCV_MAXIMUM_CHANNEL_COUNT.
+///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param border_type  Way of handling the border.
 /// @param context      Pointer to filter context.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_gaussian_blur_3x3_u8,
-                            const uint8_t *src, size_t src_stride, uint8_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            size_t channels,
-                            intrinsiccv_border_type_t border_type,
-                            intrinsiccv_filter_context_t *context);
+KLEIDICV_API_DECLARATION(intrinsiccv_gaussian_blur_3x3_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, size_t channels,
+                         intrinsiccv_border_type_t border_type,
+                         intrinsiccv_filter_context_t *context);
 
 /// @copydoc intrinsiccv_gaussian_blur_3x3_u8
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_gaussian_blur_5x5_u8,
-                            const uint8_t *src, size_t src_stride, uint8_t *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            size_t channels,
-                            intrinsiccv_border_type_t border_type,
-                            intrinsiccv_filter_context_t *context);
+KLEIDICV_API_DECLARATION(intrinsiccv_gaussian_blur_5x5_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, size_t channels,
+                         intrinsiccv_border_type_t border_type,
+                         intrinsiccv_filter_context_t *context);
 
 /// Splits a multi channel source stream into separate 1-channel streams. Width
 /// and height are the same for the source stream and for all the destination
-/// streams. Number of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// streams. Number of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_data     Pointer to the source data. Must be non-null.
 ///                     Must be aligned to element_size.
@@ -1110,11 +1098,10 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_gaussian_blur_5x5_u8,
 ///                     4.
 /// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_split, const void *src_data,
-                            size_t src_stride, void **dst_data,
-                            const size_t *dst_strides, size_t width,
-                            size_t height, size_t channels,
-                            size_t element_size);
+KLEIDICV_API_DECLARATION(intrinsiccv_split, const void *src_data,
+                         size_t src_stride, void **dst_data,
+                         const size_t *dst_strides, size_t width, size_t height,
+                         size_t channels, size_t element_size);
 
 /// Matrix transpose operation.
 /// Inplace transpose ('src == dst') is only supported for
@@ -1128,7 +1115,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_split, const void *src_data,
 ///                      | 2 | 2 | 2 |
 /// ```
 ///
-/// Number of elements is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// Number of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 ///                     Must be aligned to element_size.
@@ -1147,14 +1134,14 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_split, const void *src_data,
 /// @param src_height   Number of rows in the data.
 /// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_transpose, const void *src,
-                            size_t src_stride, void *dst, size_t dst_stride,
-                            size_t src_width, size_t src_height,
-                            size_t element_size);
+KLEIDICV_API_DECLARATION(intrinsiccv_transpose, const void *src,
+                         size_t src_stride, void *dst, size_t dst_stride,
+                         size_t src_width, size_t src_height,
+                         size_t element_size);
 
 /// Merges separate 1-channel source streams to one multi channel stream. Width
 /// and height are the same for all the source streams and for the destination.
-/// Number of pixels is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// Number of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param srcs         A C style array of pointers to the source data.
 ///                     Number of pointers in the array must be the same as the
@@ -1180,13 +1167,13 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_transpose, const void *src,
 ///                     3 or 4.
 /// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_merge, const void **srcs,
-                            const size_t *src_strides, void *dst,
-                            size_t dst_stride, size_t width, size_t height,
-                            size_t channels, size_t element_size);
+KLEIDICV_API_DECLARATION(intrinsiccv_merge, const void **srcs,
+                         const size_t *src_strides, void *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t channels, size_t element_size);
 
 /// Calculates minimum and maximum element value across the source data. Number
-/// of elements is limited to @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1200,30 +1187,30 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_merge, const void **srcs,
 /// @param max_value    Pointer to save result maximum value to, or nullptr if
 ///                     maximum is not to be calculated.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_u8, const uint8_t *src,
-                            size_t src_stride, size_t width, size_t height,
-                            uint8_t *min_value, uint8_t *max_value);
+KLEIDICV_API_DECLARATION(intrinsiccv_min_max_u8, const uint8_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         uint8_t *min_value, uint8_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_s8, const int8_t *src,
-                            size_t src_stride, size_t width, size_t height,
-                            int8_t *min_value, int8_t *max_value);
+KLEIDICV_API_DECLARATION(intrinsiccv_min_max_s8, const int8_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         int8_t *min_value, int8_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_u16, const uint16_t *src,
-                            size_t src_stride, size_t width, size_t height,
-                            uint16_t *min_value, uint16_t *max_value);
+KLEIDICV_API_DECLARATION(intrinsiccv_min_max_u16, const uint16_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         uint16_t *min_value, uint16_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_s16, const int16_t *src,
-                            size_t src_stride, size_t width, size_t height,
-                            int16_t *min_value, int16_t *max_value);
+KLEIDICV_API_DECLARATION(intrinsiccv_min_max_s16, const int16_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         int16_t *min_value, int16_t *max_value);
 /// @copydoc intrinsiccv_min_max_u8
-INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_s32, const int32_t *src,
-                            size_t src_stride, size_t width, size_t height,
-                            int32_t *min_value, int32_t *max_value);
+KLEIDICV_API_DECLARATION(intrinsiccv_min_max_s32, const int32_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         int32_t *min_value, int32_t *max_value);
 
 /// Finds minimum and maximum element value across the source data,
 /// and returns their location in the source data as offset in bytes
 /// from the source beginning. Number of elements is limited to
-/// @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1237,9 +1224,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_s32, const int32_t *src,
 /// @param max_offset   Pointer to save result offset of maximum value to, or
 ///                     nullptr if maximum is not to be calculated.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_loc_u8, const uint8_t *src,
-                            size_t src_stride, size_t width, size_t height,
-                            size_t *min_offset, size_t *max_offset);
+KLEIDICV_API_DECLARATION(intrinsiccv_min_max_loc_u8, const uint8_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         size_t *min_offset, size_t *max_offset);
 
 /// Multiplies the elements in `src` by `scale`, then adds `shift` to the
 /// result and stores it in `dst`.
@@ -1248,7 +1235,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_loc_u8, const uint8_t *src,
 /// type of the element if the result would underflow/overflow. Source data
 /// length (in bytes) is `stride` * `height`. Width and height are the same
 /// for the source and destination. Number of elements is limited to
-/// @ref INTRINSICCV_MAX_IMAGE_PIXELS.
+/// @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1263,10 +1250,9 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_min_max_loc_u8, const uint8_t *src,
 /// @param scale        Value to multiply the input by.
 /// @param shift        Value to add to the result.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_scale_u8, const uint8_t *src,
-                            size_t src_stride, uint8_t *dst, size_t dst_stride,
-                            size_t width, size_t height, float scale,
-                            float shift);
+KLEIDICV_API_DECLARATION(intrinsiccv_scale_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, float scale, float shift);
 
 /// Converts the elements in `src` from a floating-point type to an integer
 /// type, then stores the result in `dst`.
@@ -1276,7 +1262,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_scale_u8, const uint8_t *src,
 /// represented as the `dst` type. In case of special values, such as the
 /// different variations of `NaN`, the result is `0`. Source and destination
 /// data length is `width` * `height`. Number of elements is limited to @ref
-/// INTRINSICCV_MAX_IMAGE_PIXELS.
+/// KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1289,13 +1275,13 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_scale_u8, const uint8_t *src,
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_float_conversion_f32_s8,
-                            const float *src, size_t src_stride, int8_t *dst,
-                            size_t dst_stride, size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_float_conversion_f32_s8, const float *src,
+                         size_t src_stride, int8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 /// @copydoc intrinsiccv_float_conversion_f32_s8
-INTRINSICCV_API_DECLARATION(intrinsiccv_float_conversion_f32_u8,
-                            const float *src, size_t src_stride, uint8_t *dst,
-                            size_t dst_stride, size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_float_conversion_f32_u8, const float *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts the elements in `src` from an integer type to a floating-point
 /// type, then stores the result in `dst`.
@@ -1304,7 +1290,7 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_float_conversion_f32_u8,
 /// number of the type of the element if the `src` data type cannot be
 /// represented as the `dst` type. Source and destination data length is `width`
 /// * `height`. Number of elements is limited to @ref
-/// INTRINSICCV_MAX_IMAGE_PIXELS.
+/// KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1319,16 +1305,16 @@ INTRINSICCV_API_DECLARATION(intrinsiccv_float_conversion_f32_u8,
 /// @param width        Number of pixels in a row.
 /// @param height       Number of rows in the data.
 ///
-INTRINSICCV_API_DECLARATION(intrinsiccv_float_conversion_s8_f32,
-                            const int8_t *src, size_t src_stride, float *dst,
-                            size_t dst_stride, size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_float_conversion_s8_f32, const int8_t *src,
+                         size_t src_stride, float *dst, size_t dst_stride,
+                         size_t width, size_t height);
 /// @copydoc intrinsiccv_float_conversion_s8_f32
-INTRINSICCV_API_DECLARATION(intrinsiccv_float_conversion_u8_f32,
-                            const uint8_t *src, size_t src_stride, float *dst,
-                            size_t dst_stride, size_t width, size_t height);
+KLEIDICV_API_DECLARATION(intrinsiccv_float_conversion_u8_f32,
+                         const uint8_t *src, size_t src_stride, float *dst,
+                         size_t dst_stride, size_t width, size_t height);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif  // INTRINSICCV_H
+#endif  // KLEIDICV_H

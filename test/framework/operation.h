@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_FRAMEWORK_OPERATION_H_
-#define INTRINSICCV_TEST_FRAMEWORK_OPERATION_H_
+#ifndef KLEIDICV_TEST_FRAMEWORK_OPERATION_H_
+#define KLEIDICV_TEST_FRAMEWORK_OPERATION_H_
 
 #include <array>
 #include <limits>
@@ -125,7 +125,7 @@ class OperationTest {
 
   // Checks that the result meets the expectations.
   virtual void check(intrinsiccv_error_t err) {
-    EXPECT_EQ(INTRINSICCV_OK, err);
+    EXPECT_EQ(KLEIDICV_OK, err);
     for (size_t index = 0; index < expected_.size(); ++index) {
       EXPECT_EQ_ARRAY2D(expected_[index], actual_[index]);
     }
@@ -169,4 +169,4 @@ template <typename ElementType>
 class UnaryOperationTest : public OperationTest<ElementType, 1, 1> {
 };  // end of class UnaryOperationTest<ElementType>
 
-#endif  // INTRINSICCV_TEST_FRAMEWORK_OPERATION_H_
+#endif  // KLEIDICV_TEST_FRAMEWORK_OPERATION_H_

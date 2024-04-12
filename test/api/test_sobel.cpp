@@ -12,17 +12,17 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "test_config.h"
 
-#define INTRINSICCV_SOBEL_3X3_HORIZONTAL(type, suffix) \
-  INTRINSICCV_API(sobel_3x3_horizontal,                \
-                  intrinsiccv_sobel_3x3_horizontal_##suffix, type)
+#define KLEIDICV_SOBEL_3X3_HORIZONTAL(type, suffix) \
+  KLEIDICV_API(sobel_3x3_horizontal,                \
+               intrinsiccv_sobel_3x3_horizontal_##suffix, type)
 
-#define INTRINSICCV_SOBEL_3X3_VERTICAL(type, suffix)                           \
-  INTRINSICCV_API(sobel_3x3_vertical, intrinsiccv_sobel_3x3_vertical_##suffix, \
-                  type)
+#define KLEIDICV_SOBEL_3X3_VERTICAL(type, suffix)                           \
+  KLEIDICV_API(sobel_3x3_vertical, intrinsiccv_sobel_3x3_vertical_##suffix, \
+               type)
 
-INTRINSICCV_SOBEL_3X3_HORIZONTAL(uint8_t, s16_u8);
+KLEIDICV_SOBEL_3X3_HORIZONTAL(uint8_t, s16_u8);
 
-INTRINSICCV_SOBEL_3X3_VERTICAL(uint8_t, s16_u8);
+KLEIDICV_SOBEL_3X3_VERTICAL(uint8_t, s16_u8);
 
 // Implements KernelTestParams for Sobel operators.
 template <typename ElementType, bool IsHorizontal>
@@ -38,7 +38,7 @@ struct SobelKernelTestParams<uint8_t, IsHorizontal> {
 };  // end of struct SobelKernelTestParams<uint8_t, IsHorizontal>
 
 static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
-    INTRINSICCV_BORDER_TYPE_REPLICATE,
+    KLEIDICV_BORDER_TYPE_REPLICATE,
 };
 
 // Test for Sobel 3x3 operator.
@@ -124,12 +124,12 @@ TYPED_TEST(Sobel, MisalignmentHorizontal) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
   if (sizeof(typename KernelTestParams::InputType) != 1) {
-    EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_horizontal<TypeParam>()(src, sizeof(src) + 1, dst,
                                                 sizeof(dst), 1, 1, 1));
   }
   if (sizeof(typename KernelTestParams::OutputType) != 1) {
-    EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_horizontal<TypeParam>()(src, sizeof(src), dst,
                                                 sizeof(dst) + 1, 1, 1, 1));
   }
@@ -140,12 +140,12 @@ TYPED_TEST(Sobel, MisalignmentVertical) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
   if (sizeof(typename KernelTestParams::InputType) != 1) {
-    EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_vertical<TypeParam>()(src, sizeof(src) + 1, dst,
                                               sizeof(dst), 1, 1, 1));
   }
   if (sizeof(typename KernelTestParams::OutputType) != 1) {
-    EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst,
                                               sizeof(dst) + 1, 1, 1, 1));
   }
@@ -156,10 +156,10 @@ TYPED_TEST(Sobel, ZeroImageSizeHorizontal) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
 
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_horizontal<TypeParam>()(src, sizeof(src), dst,
                                               sizeof(dst), 0, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_horizontal<TypeParam>()(src, sizeof(src), dst,
                                               sizeof(dst), 1, 0, 1));
 }
@@ -169,10 +169,10 @@ TYPED_TEST(Sobel, ZeroImageSizeVertical) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
 
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             0, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             1, 0, 1));
 }
@@ -188,12 +188,12 @@ TYPED_TEST(Sobel, ValidImageSize) {
 
   test::Array2D<typename KernelTestParams::OutputType> dst{
       validSize, validSize, test::Options::vector_length()};
-  EXPECT_EQ(INTRINSICCV_OK, sobel_3x3_horizontal<TypeParam>()(
-                                src.data(), src.stride(), dst.data(),
-                                dst.stride(), validSize, validSize, 1));
-  EXPECT_EQ(INTRINSICCV_OK, sobel_3x3_vertical<TypeParam>()(
-                                src.data(), src.stride(), dst.data(),
-                                dst.stride(), validSize, validSize, 1));
+  EXPECT_EQ(KLEIDICV_OK, sobel_3x3_horizontal<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             validSize, validSize, 1));
+  EXPECT_EQ(KLEIDICV_OK, sobel_3x3_vertical<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             validSize, validSize, 1));
 }
 
 TYPED_TEST(Sobel, UndersizeImage) {
@@ -204,27 +204,27 @@ TYPED_TEST(Sobel, UndersizeImage) {
   size_t validWidth = 13;
   size_t validHeight = 8;
 
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), underSize, underSize, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             underSize, underSize, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), underSize, validHeight, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             underSize, validHeight, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), validWidth, underSize, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             validWidth, underSize, 1));
 }
 
-#ifdef INTRINSICCV_ALLOCATION_TESTS
+#ifdef KLEIDICV_ALLOCATION_TESTS
 TYPED_TEST(Sobel, CannotAllocateImageHorizontal) {
   MockMallocToFail::enable();
   using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
@@ -233,16 +233,16 @@ TYPED_TEST(Sobel, CannotAllocateImageHorizontal) {
   size_t validSize = 2;
 
   EXPECT_EQ(
-      INTRINSICCV_ERROR_ALLOCATION,
+      KLEIDICV_ERROR_ALLOCATION,
       sobel_3x3_horizontal<TypeParam>()(
-          src, sizeof(src), dst, sizeof(dst), INTRINSICCV_MAX_IMAGE_PIXELS / 2,
-          validSize, INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
+          src, sizeof(src), dst, sizeof(dst), KLEIDICV_MAX_IMAGE_PIXELS / 2,
+          validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT));
 
-  EXPECT_EQ(INTRINSICCV_ERROR_ALLOCATION,
-            sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
-                                            INTRINSICCV_MAX_IMAGE_PIXELS / 2,
-                                            validSize,
-                                            INTRINSICCV_MAXIMUM_CHANNEL_COUNT));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_ALLOCATION,
+      sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
+                                      KLEIDICV_MAX_IMAGE_PIXELS / 2, validSize,
+                                      KLEIDICV_MAXIMUM_CHANNEL_COUNT));
   MockMallocToFail::disable();
 }
 #endif
@@ -252,14 +252,13 @@ TYPED_TEST(Sobel, OversizeImageHorizontal) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE, sobel_3x3_horizontal<TypeParam>()(
+                                      src, sizeof(src), dst, sizeof(dst),
+                                      KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             sobel_3x3_horizontal<TypeParam>()(
-                src, sizeof(src), dst, sizeof(dst),
-                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
-            sobel_3x3_horizontal<TypeParam>()(
-                src, sizeof(src), dst, sizeof(dst),
-                INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS, 1));
+                src, sizeof(src), dst, sizeof(dst), KLEIDICV_MAX_IMAGE_PIXELS,
+                KLEIDICV_MAX_IMAGE_PIXELS, 1));
 }
 
 TYPED_TEST(Sobel, OversizeImageVertical) {
@@ -267,14 +266,13 @@ TYPED_TEST(Sobel, OversizeImageVertical) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
 
-  EXPECT_EQ(
-      INTRINSICCV_ERROR_RANGE,
-      sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
-                                      INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE, sobel_3x3_vertical<TypeParam>()(
+                                      src, sizeof(src), dst, sizeof(dst),
+                                      KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
-                                            INTRINSICCV_MAX_IMAGE_PIXELS,
-                                            INTRINSICCV_MAX_IMAGE_PIXELS, 1));
+                                            KLEIDICV_MAX_IMAGE_PIXELS,
+                                            KLEIDICV_MAX_IMAGE_PIXELS, 1));
 }
 
 TYPED_TEST(Sobel, ChannelNumber) {
@@ -283,12 +281,12 @@ TYPED_TEST(Sobel, ChannelNumber) {
   typename KernelTestParams::OutputType dst[1];
   size_t validSize = 2;
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), validSize, validSize,
-                INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+                KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             sobel_3x3_vertical<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), validSize, validSize,
-                INTRINSICCV_MAXIMUM_CHANNEL_COUNT + 1));
+                KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1));
 }

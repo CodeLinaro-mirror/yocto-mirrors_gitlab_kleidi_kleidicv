@@ -6,7 +6,7 @@
 
 namespace intrinsiccv::sme2 {
 
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
                  const uint8_t *src_uv, size_t src_uv_stride, uint8_t *dst,
                  size_t dst_stride, size_t width, size_t height, bool is_nv21) {
@@ -14,7 +14,7 @@ yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
                              dst_stride, width, height, is_nv21);
 }
 
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 yuv_sp_to_rgba_u8(const uint8_t *src_y, size_t src_y_stride,
                   const uint8_t *src_uv, size_t src_uv_stride, uint8_t *dst,
                   size_t dst_stride, size_t width, size_t height,
@@ -23,7 +23,7 @@ yuv_sp_to_rgba_u8(const uint8_t *src_y, size_t src_y_stride,
                               dst_stride, width, height, is_nv21);
 }
 
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 yuv_sp_to_bgr_u8(const uint8_t *src_y, size_t src_y_stride,
                  const uint8_t *src_uv, size_t src_uv_stride, uint8_t *dst,
                  size_t dst_stride, size_t width, size_t height, bool is_nv21) {
@@ -31,7 +31,7 @@ yuv_sp_to_bgr_u8(const uint8_t *src_y, size_t src_y_stride,
                              dst_stride, width, height, is_nv21);
 }
 
-INTRINSICCV_LOCALLY_STREAMING INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 yuv_sp_to_bgra_u8(const uint8_t *src_y, size_t src_y_stride,
                   const uint8_t *src_uv, size_t src_uv_stride, uint8_t *dst,
                   size_t dst_stride, size_t width, size_t height,

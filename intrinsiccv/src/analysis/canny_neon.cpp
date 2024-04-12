@@ -6,7 +6,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/neon.h"
 
-#if INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
+#if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
 namespace intrinsiccv::neon {
 
@@ -237,7 +237,7 @@ T *remove_constant_pool_usage(T *ptr) {
 // bottom-left} and {left, right} neighbouring values as governed by the
 // associated directions.
 //
-// If INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV is set to 1:
+// If KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV is set to 1:
 //  - diagonal directions are swapped
 //  - diagonal non-maxima-suppressions are calculated as:
 //      curr > prev && curr > next
@@ -258,7 +258,7 @@ static void directional_masking(const int16_t *prev_rows,
   static constexpr int8_t kIndices[4 * kNumLanesS8] = {
       /* Lane offsets holding 'lane number + VL' */
       16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-#if INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV
+#if KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV
       /* Table lookup indices for previous row */
       32, 32, -2, 2, 0, 0, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
       /* Table lookup indices for next row */
@@ -318,7 +318,7 @@ static void directional_masking(const int16_t *prev_rows,
 
   // 2.1
   tmp_indices_0 = vqtbl1q_s8(next_row_table, dir);
-#if INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV
+#if KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV
   int8x16_t opencv_tmp_indices_0 = tmp_indices_0;
 #endif
   // 2.2
@@ -354,7 +354,7 @@ static void directional_masking(const int16_t *prev_rows,
   curr_row_by_directions = vreinterpretq_s16_s8(curr_row.val[1]);
   next_row_by_directions = vreinterpretq_s16_s8(next_row_by_dir);
 
-#if INTRINSICCV_CANNY_ALGORITHM_CONFORM_OPENCV
+#if KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV
   // Reuse temporary indexing values from step 2.1 to saturating add one to
   // diagonal values in the next row. This works only because of the domain of
   // input values is restricted.
@@ -472,7 +472,7 @@ static void perform_hysteresis(StrongEdgeStack &strong_edge_pixels,
   }
 }
 
-INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t canny_u8(
+KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t canny_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, double low_threshold, double high_threshold) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
@@ -485,17 +485,17 @@ INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t canny_u8(
   SobelBuffer<int16_t> horizontal_gradient{dst_rect};
   SobelBuffer<int16_t> vertical_gradient{dst_rect};
   if (!horizontal_gradient.data() || !vertical_gradient.data()) {
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   MagnitudeBuffer<int16_t> magnitudes{horizontal_gradient.rect()};
   if (!magnitudes.data()) {
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   HysteresisBuffer<uint8_t> hysteresis{horizontal_gradient.rect()};
   if (!hysteresis.data()) {
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   // Calculate horizontal dervatives using 3x3 Sobel operator.
@@ -553,4 +553,4 @@ decltype(intrinsiccv::neon::canny_u8) *intrinsiccv_canny_u8 =
 
 }  // extern "C"
 
-#endif  // INTRINSICCV_EXPERIMENTAL_FEATURE_CANNY
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY

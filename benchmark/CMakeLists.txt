@@ -8,9 +8,9 @@ cmake_minimum_required(VERSION 3.16)
 # rest of the project so disable benchmarks by default.
 # Another reason to disable it by default is that the configure time
 # for Google Benchmark is quite noticeable.
-option(INTRINSICCV_BENCHMARK "Enable IntrinsicCV benchmarks" OFF)
+option(KLEIDICV_BENCHMARK "Enable IntrinsicCV benchmarks" OFF)
 
-if(INTRINSICCV_BENCHMARK)
+if(KLEIDICV_BENCHMARK)
 
 include(FetchContent)
 
@@ -23,13 +23,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(benchmark)
 
 
-set(INTRINSICCV_INCLUDE_DIR
+set(KLEIDICV_INCLUDE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/../intrinsiccv/include
   ${CMAKE_CURRENT_BINARY_DIR}/../intrinsiccv/include
 )
-set(INTRINSICCV_BENCHMARK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(KLEIDICV_BENCHMARK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(INTRINSICCV_BENCHMARK_CXX_FLAGS
+set(KLEIDICV_BENCHMARK_CXX_FLAGS
   "-Werror"
   "-Wall"
   "-Wextra"
@@ -37,16 +37,16 @@ set(INTRINSICCV_BENCHMARK_CXX_FLAGS
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  list(APPEND INTRINSICCV_BENCHMARK_CXX_FLAGS "-O0" "-g")
+  list(APPEND KLEIDICV_BENCHMARK_CXX_FLAGS "-O0" "-g")
 else()
-  list(APPEND INTRINSICCV_BENCHMARK_CXX_FLAGS "-O2" "-g0")
+  list(APPEND KLEIDICV_BENCHMARK_CXX_FLAGS "-O2" "-g0")
 endif()
 
 file(GLOB intrinsiccv_benchmark_sources CONFIGURE_DEPENDS "*.h" "*.cpp")
 
 set_source_files_properties(
   ${intrinsiccv_benchmark_sources}
-  PROPERTIES COMPILE_OPTIONS "${INTRINSICCV_BENCHMARK_CXX_FLAGS}"
+  PROPERTIES COMPILE_OPTIONS "${KLEIDICV_BENCHMARK_CXX_FLAGS}"
 )
 
 add_executable(
@@ -61,8 +61,8 @@ set_target_properties(
 
 target_include_directories(
   intrinsiccv-benchmark
-  PRIVATE ${INTRINSICCV_INCLUDE_DIR}
-  PRIVATE ${INTRINSICCV_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${KLEIDICV_INCLUDE_DIR}
+  PRIVATE ${KLEIDICV_BENCHMARK_INCLUDE_DIR}
 )
 
 target_link_libraries(
@@ -71,4 +71,4 @@ target_link_libraries(
   benchmark::benchmark
 )
 
-endif(INTRINSICCV_BENCHMARK)
+endif(KLEIDICV_BENCHMARK)

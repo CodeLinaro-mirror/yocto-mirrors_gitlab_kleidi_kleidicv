@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_SVE2_H
-#define INTRINSICCV_SVE2_H
+#ifndef KLEIDICV_SVE2_H
+#define KLEIDICV_SVE2_H
 
 #include <arm_sve.h>
 
@@ -14,18 +14,18 @@
 #include "intrinsiccv/workspace/separable.h"
 
 // It is used by SVE2 and SME2, the actual namespace will reflect it.
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Context associated with SVE operations.
 class Context {
  public:
-  explicit Context(svbool_t &pg) INTRINSICCV_STREAMING_COMPATIBLE : pg_{pg} {}
+  explicit Context(svbool_t &pg) KLEIDICV_STREAMING_COMPATIBLE : pg_{pg} {}
 
   // Sets the predicate associated with the context to a given predicate.
-  void set_predicate(svbool_t pg) INTRINSICCV_STREAMING_COMPATIBLE { pg_ = pg; }
+  void set_predicate(svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE { pg_ = pg; }
 
   // Returns predicate associated with the context.
-  svbool_t predicate() const INTRINSICCV_STREAMING_COMPATIBLE { return pg_; }
+  svbool_t predicate() const KLEIDICV_STREAMING_COMPATIBLE { return pg_; }
 
  protected:
   // Hold a reference to an svbool_t because a sizeless type cannot be a member.
@@ -143,131 +143,131 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   using typename VectorTypes<ScalarType>::VectorType;
 
   // Number of lanes in a vector.
-  static inline size_t num_lanes() INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline size_t num_lanes() KLEIDICV_STREAMING_COMPATIBLE {
     return static_cast<size_t>(svcnt());
   }
 
   // Loads a single vector from 'src'.
   static inline void load(Context ctx, const ScalarType *src,
-                          VectorType &vec) INTRINSICCV_STREAMING_COMPATIBLE {
+                          VectorType &vec) KLEIDICV_STREAMING_COMPATIBLE {
     vec = svld1(ctx.predicate(), &src[0]);
   }
 
   // Loads two consecutive vectors from 'src'.
   static inline void load_consecutive(Context ctx, const ScalarType *src,
                                       VectorType &vec_0, VectorType &vec_1)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     vec_0 = svld1(ctx.predicate(), &src[0]);
     vec_1 = svld1_vnum(ctx.predicate(), &src[0], 1);
   }
 
   // Stores a single vector to 'dst'.
   static inline void store(Context ctx, VectorType vec,
-                           ScalarType *dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                           ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
     svst1(ctx.predicate(), &dst[0], vec);
   }
 
   // Stores two consecutive vectors to 'dst'.
   static inline void store_consecutive(Context ctx, VectorType vec_0,
                                        VectorType vec_1, ScalarType *dst)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svst1(ctx.predicate(), &dst[0], vec_0);
     svst1_vnum(ctx.predicate(), &dst[0], 1, vec_1);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), uint64_t> svcnt()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svcntb();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), uint64_t> svcnt()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svcnth();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), uint64_t> svcnt()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svcntw();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), uint64_t> svcnt()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svcntd();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), uint64_t> svcntp(
-      svbool_t pg) INTRINSICCV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
     return svcntp_b8(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), uint64_t> svcntp(
-      svbool_t pg) INTRINSICCV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
     return svcntp_b16(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), uint64_t> svcntp(
-      svbool_t pg) INTRINSICCV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
     return svcntp_b32(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), uint64_t> svcntp(
-      svbool_t pg) INTRINSICCV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
     return svcntp_b64(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svptrue()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svptrue_b8();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svptrue()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svptrue_b16();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svptrue()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svptrue_b32();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svptrue()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return svptrue_b64();
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) INTRINSICCV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
     return svwhilelt_b8(index, max_index);
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) INTRINSICCV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
     return svwhilelt_b16(index, max_index);
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) INTRINSICCV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
     return svwhilelt_b32(index, max_index);
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) INTRINSICCV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
     return svwhilelt_b64(index, max_index);
   }
 
@@ -276,7 +276,7 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   // consecutive ones starting at the lowest element.
   static void make_consecutive_predicates(svbool_t pg, svbool_t &pg_0,
                                           svbool_t &pg_1, svbool_t &pg_2)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     // Length of data. Must be signed because of the unconditional subtraction
     // of fixed values.
     int64_t length = 3 * svcntp(pg);
@@ -298,7 +298,7 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   // consecutive ones starting at the lowest element.
   static void make_consecutive_predicates(
       svbool_t pg, svbool_t &pg_0, svbool_t &pg_1, svbool_t &pg_2,
-      svbool_t &pg_3) INTRINSICCV_STREAMING_COMPATIBLE {
+      svbool_t &pg_3) KLEIDICV_STREAMING_COMPATIBLE {
     // Length of data. Must be signed because of the unconditional subtraction
     // of fixed values.
     int64_t length = 4 * svcntp(pg);
@@ -328,7 +328,7 @@ class VecTraits : public VecTraitsBase<ScalarType> {};
 template <>
 class VecTraits<int8_t> : public VecTraitsBase<int8_t> {
  public:
-  static inline svint8_t svdup(int8_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svint8_t svdup(int8_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s8(v);
   }
 };  // end of class VecTraits<int8_t>
@@ -336,7 +336,7 @@ class VecTraits<int8_t> : public VecTraitsBase<int8_t> {
 template <>
 class VecTraits<uint8_t> : public VecTraitsBase<uint8_t> {
  public:
-  static inline svuint8_t svdup(uint8_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svuint8_t svdup(uint8_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u8(v);
   }
 };  // end of class VecTraits<uint8_t>
@@ -344,7 +344,7 @@ class VecTraits<uint8_t> : public VecTraitsBase<uint8_t> {
 template <>
 class VecTraits<int16_t> : public VecTraitsBase<int16_t> {
  public:
-  static inline svint16_t svdup(int16_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svint16_t svdup(int16_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s16(v);
   }
 };  // end of class VecTraits<int16_t>
@@ -352,7 +352,7 @@ class VecTraits<int16_t> : public VecTraitsBase<int16_t> {
 template <>
 class VecTraits<uint16_t> : public VecTraitsBase<uint16_t> {
  public:
-  static inline svuint16_t svdup(uint16_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svuint16_t svdup(uint16_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u16(v);
   }
 };  // end of class VecTraits<uint16_t>
@@ -360,7 +360,7 @@ class VecTraits<uint16_t> : public VecTraitsBase<uint16_t> {
 template <>
 class VecTraits<int32_t> : public VecTraitsBase<int32_t> {
  public:
-  static inline svint32_t svdup(int32_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svint32_t svdup(int32_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s32(v);
   }
 };  // end of class VecTraits<int32_t>
@@ -368,7 +368,7 @@ class VecTraits<int32_t> : public VecTraitsBase<int32_t> {
 template <>
 class VecTraits<uint32_t> : public VecTraitsBase<uint32_t> {
  public:
-  static inline svuint32_t svdup(uint32_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svuint32_t svdup(uint32_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u32(v);
   }
 };  // end of class VecTraits<uint32_t>
@@ -376,7 +376,7 @@ class VecTraits<uint32_t> : public VecTraitsBase<uint32_t> {
 template <>
 class VecTraits<int64_t> : public VecTraitsBase<int64_t> {
  public:
-  static inline svint64_t svdup(int64_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svint64_t svdup(int64_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s64(v);
   }
 };  // end of class VecTraits<int64_t>
@@ -384,7 +384,7 @@ class VecTraits<int64_t> : public VecTraitsBase<int64_t> {
 template <>
 class VecTraits<uint64_t> : public VecTraitsBase<uint64_t> {
  public:
-  static inline svuint64_t svdup(uint64_t v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svuint64_t svdup(uint64_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u64(v);
   }
 };  // end of class VecTraits<uint64_t>
@@ -392,7 +392,7 @@ class VecTraits<uint64_t> : public VecTraitsBase<uint64_t> {
 template <>
 class VecTraits<float> : public VecTraitsBase<float> {
  public:
-  static inline svfloat32_t svdup(float v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svfloat32_t svdup(float v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_f32(v);
   }
 };  // end of class VecTraits<float>
@@ -400,7 +400,7 @@ class VecTraits<float> : public VecTraitsBase<float> {
 template <>
 class VecTraits<double> : public VecTraitsBase<double> {
  public:
-  static inline svfloat64_t svdup(double v) INTRINSICCV_STREAMING_COMPATIBLE {
+  static inline svfloat64_t svdup(double v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_f64(v);
   }
 };  // end of class VecTraits<double>
@@ -417,12 +417,11 @@ class OperationContextAdapter : public OperationBase<OperationType> {
   using VecTraits = typename OperationBase<OperationType>::VecTraits;
 
   explicit OperationContextAdapter(OperationType &operation)
-      INTRINSICCV_STREAMING_COMPATIBLE
-      : OperationBase<OperationType>(operation) {}
+      KLEIDICV_STREAMING_COMPATIBLE : OperationBase<OperationType>(operation) {}
 
   // Forwards vector_path_2x() calls to the inner operation.
   template <typename... ArgTypes>
-  void vector_path_2x(ArgTypes &&...args) INTRINSICCV_STREAMING_COMPATIBLE {
+  void vector_path_2x(ArgTypes &&...args) KLEIDICV_STREAMING_COMPATIBLE {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
     ctx.set_predicate(VecTraits::svptrue());
@@ -431,7 +430,7 @@ class OperationContextAdapter : public OperationBase<OperationType> {
 
   // Forwards vector_path() calls to the inner operation.
   template <typename... ArgTypes>
-  void vector_path(ArgTypes &&...args) INTRINSICCV_STREAMING_COMPATIBLE {
+  void vector_path(ArgTypes &&...args) KLEIDICV_STREAMING_COMPATIBLE {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
     ctx.set_predicate(VecTraits::svptrue());
@@ -442,8 +441,7 @@ class OperationContextAdapter : public OperationBase<OperationType> {
   // operation is unrolled once.
   template <typename... ColumnTypes, typename T = OperationType>
   std::enable_if_t<T::is_unrolled_once()> remaining_path(
-      size_t length,
-      ColumnTypes &&...columns) INTRINSICCV_STREAMING_COMPATIBLE {
+      size_t length, ColumnTypes &&...columns) KLEIDICV_STREAMING_COMPATIBLE {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
     ctx.set_predicate(VecTraits::svwhilelt(size_t{0}, length));
@@ -454,7 +452,7 @@ class OperationContextAdapter : public OperationBase<OperationType> {
   // operation is not unrolled once.
   template <typename... ColumnTypes, typename T = OperationType>
   std::enable_if_t<!T::is_unrolled_once()> remaining_path(
-      size_t length, ColumnTypes... columns) INTRINSICCV_STREAMING_COMPATIBLE {
+      size_t length, ColumnTypes... columns) KLEIDICV_STREAMING_COMPATIBLE {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
 
@@ -476,13 +474,12 @@ class RemainingPathAdapter : public OperationBase<OperationType> {
   using ContextType = Context;
 
   explicit RemainingPathAdapter(OperationType &operation)
-      INTRINSICCV_STREAMING_COMPATIBLE
-      : OperationBase<OperationType>(operation) {}
+      KLEIDICV_STREAMING_COMPATIBLE : OperationBase<OperationType>(operation) {}
 
   // Forwards remaining_path() to either vector_path() or tail_path() of the
   // inner operation depending on what is requested by the innermost operation.
   template <typename... ArgTypes>
-  void remaining_path(ArgTypes... args) INTRINSICCV_STREAMING_COMPATIBLE {
+  void remaining_path(ArgTypes... args) KLEIDICV_STREAMING_COMPATIBLE {
     if constexpr (OperationType::uses_tail_path()) {
       this->operation().tail_path(std::forward<ArgTypes>(args)...);
     } else {
@@ -493,8 +490,8 @@ class RemainingPathAdapter : public OperationBase<OperationType> {
 
 // Shorthand for applying a generic unrolled SVE2 operation.
 template <typename OperationType, typename... ArgTypes>
-void apply_operation_by_rows(OperationType &operation, ArgTypes &&...args)
-    INTRINSICCV_STREAMING_COMPATIBLE {
+void apply_operation_by_rows(OperationType &operation,
+                             ArgTypes &&...args) KLEIDICV_STREAMING_COMPATIBLE {
   ForwardingOperation forwarding_operation{operation};
   OperationAdapter operation_adapter{forwarding_operation};
   RemainingPathAdapter remaining_path_adapter{operation_adapter};
@@ -515,35 +512,35 @@ class SeparableFilter<FilterType, 3UL> {
   using BufferType = typename FilterType::BufferType;
   using DestinationType = typename FilterType::DestinationType;
   using SourceVecTraits =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<SourceType>;
   using SourceVectorType = typename SourceVecTraits::VectorType;
   using BufferVecTraits =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<BufferType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo3x3<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo3x3<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  explicit SeparableFilter(FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE
+  explicit SeparableFilter(FilterType filter) KLEIDICV_STREAMING_COMPATIBLE
       : filter_{filter} {}
 
-  static constexpr Margin margin() INTRINSICCV_STREAMING_COMPATIBLE {
+  static constexpr Margin margin() KLEIDICV_STREAMING_COMPATIBLE {
     return Margin{1UL};
   }
 
   void process_vertical(
       size_t width, Rows<const SourceType> src_rows, Rows<BufferType> dst_rows,
-      BorderOffsets border_offsets) const INTRINSICCV_STREAMING_COMPATIBLE {
+      BorderOffsets border_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
     LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
 
-    loop.unroll_once([&](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       svbool_t pg_all = SourceVecTraits::svptrue();
       vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
     });
 
     loop.remaining(
-        [&](size_t index, size_t length) INTRINSICCV_STREAMING_COMPATIBLE {
+        [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = SourceVecTraits::svwhilelt(index, length);
           vertical_vector_path(pg, src_rows, dst_rows, border_offsets, index);
         });
@@ -552,21 +549,21 @@ class SeparableFilter<FilterType, 3UL> {
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
                           BorderOffsets border_offsets) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svbool_t pg_all = BufferVecTraits::svptrue();
     LoopUnroll2 loop{width * src_rows.channels(), BufferVecTraits::num_lanes()};
 
-    loop.unroll_twice([&](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+    loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       horizontal_vector_path_2x(pg_all, src_rows, dst_rows, border_offsets,
                                 index);
     });
 
-    loop.unroll_once([&](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
     });
 
     loop.remaining(
-        [&](size_t index, size_t length) INTRINSICCV_STREAMING_COMPATIBLE {
+        [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = BufferVecTraits::svwhilelt(index, length);
           horizontal_vector_path(pg, src_rows, dst_rows, border_offsets, index);
         });
@@ -576,7 +573,7 @@ class SeparableFilter<FilterType, 3UL> {
   // change for each and every element in the border.
   void process_horizontal_borders(
       Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
-      BorderOffsets border_offsets) const INTRINSICCV_STREAMING_COMPATIBLE {
+      BorderOffsets border_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
       disable_loop_vectorization();
       process_horizontal_border(src_rows, dst_rows, border_offsets, index);
@@ -586,8 +583,8 @@ class SeparableFilter<FilterType, 3UL> {
  private:
   void vertical_vector_path(svbool_t pg, Rows<const SourceType> src_rows,
                             Rows<BufferType> dst_rows,
-                            BorderOffsets border_offsets, size_t index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+                            BorderOffsets border_offsets,
+                            size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     SourceVectorType src_0 =
         svld1(pg, &src_rows.at(border_offsets.c0())[index]);
     SourceVectorType src_1 =
@@ -600,7 +597,7 @@ class SeparableFilter<FilterType, 3UL> {
   void horizontal_vector_path_2x(
       svbool_t pg, Rows<const BufferType> src_rows,
       Rows<DestinationType> dst_rows, BorderOffsets border_offsets,
-      size_t index) const INTRINSICCV_STREAMING_COMPATIBLE {
+      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
     auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
     auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
@@ -622,7 +619,7 @@ class SeparableFilter<FilterType, 3UL> {
   void horizontal_vector_path(svbool_t pg, Rows<const BufferType> src_rows,
                               Rows<DestinationType> dst_rows,
                               BorderOffsets border_offsets, size_t index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     BufferVectorType src_0 =
         svld1(pg, &src_rows.at(0, border_offsets.c0())[index]);
     BufferVectorType src_1 =
@@ -635,7 +632,7 @@ class SeparableFilter<FilterType, 3UL> {
   void process_horizontal_border(
       Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets border_offsets,
-      size_t index) const INTRINSICCV_STREAMING_COMPATIBLE {
+      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     BufferType src[3];
     src[0] = src_rows.at(0, border_offsets.c0())[index];
     src[1] = src_rows.at(0, border_offsets.c1())[index];
@@ -654,35 +651,35 @@ class SeparableFilter<FilterType, 5UL> {
   using BufferType = typename FilterType::BufferType;
   using DestinationType = typename FilterType::DestinationType;
   using SourceVecTraits =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<SourceType>;
   using SourceVectorType = typename SourceVecTraits::VectorType;
   using BufferVecTraits =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::VecTraits<BufferType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo5x5<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo5x5<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  explicit SeparableFilter(FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE
+  explicit SeparableFilter(FilterType filter) KLEIDICV_STREAMING_COMPATIBLE
       : filter_{filter} {}
 
-  static constexpr Margin margin() INTRINSICCV_STREAMING_COMPATIBLE {
+  static constexpr Margin margin() KLEIDICV_STREAMING_COMPATIBLE {
     return Margin{2UL};
   }
 
   void process_vertical(
       size_t width, Rows<const SourceType> src_rows, Rows<BufferType> dst_rows,
-      BorderOffsets border_offsets) const INTRINSICCV_STREAMING_COMPATIBLE {
+      BorderOffsets border_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
     LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
 
-    loop.unroll_once([&](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       svbool_t pg_all = SourceVecTraits::svptrue();
       vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
     });
 
     loop.remaining(
-        [&](size_t index, size_t length) INTRINSICCV_STREAMING_COMPATIBLE {
+        [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = SourceVecTraits::svwhilelt(index, length);
           vertical_vector_path(pg, src_rows, dst_rows, border_offsets, index);
         });
@@ -691,21 +688,21 @@ class SeparableFilter<FilterType, 5UL> {
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
                           BorderOffsets border_offsets) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svbool_t pg_all = BufferVecTraits::svptrue();
     LoopUnroll2 loop{width * src_rows.channels(), BufferVecTraits::num_lanes()};
 
-    loop.unroll_twice([&](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+    loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       horizontal_vector_path_2x(pg_all, src_rows, dst_rows, border_offsets,
                                 index);
     });
 
-    loop.unroll_once([&](size_t index) INTRINSICCV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
     });
 
     loop.remaining(
-        [&](size_t index, size_t length) INTRINSICCV_STREAMING_COMPATIBLE {
+        [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = BufferVecTraits::svwhilelt(index, length);
           horizontal_vector_path(pg, src_rows, dst_rows, border_offsets, index);
         });
@@ -715,7 +712,7 @@ class SeparableFilter<FilterType, 5UL> {
   // change for each and every element in the border.
   void process_horizontal_borders(
       Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
-      BorderOffsets border_offsets) const INTRINSICCV_STREAMING_COMPATIBLE {
+      BorderOffsets border_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
       disable_loop_vectorization();
       process_horizontal_border(src_rows, dst_rows, border_offsets, index);
@@ -725,8 +722,8 @@ class SeparableFilter<FilterType, 5UL> {
  private:
   void vertical_vector_path(svbool_t pg, Rows<const SourceType> src_rows,
                             Rows<BufferType> dst_rows,
-                            BorderOffsets border_offsets, size_t index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+                            BorderOffsets border_offsets,
+                            size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     SourceVectorType src_0 =
         svld1(pg, &src_rows.at(border_offsets.c0())[index]);
     SourceVectorType src_1 =
@@ -744,7 +741,7 @@ class SeparableFilter<FilterType, 5UL> {
   void horizontal_vector_path_2x(
       svbool_t pg, Rows<const BufferType> src_rows,
       Rows<DestinationType> dst_rows, BorderOffsets border_offsets,
-      size_t index) const INTRINSICCV_STREAMING_COMPATIBLE {
+      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
     auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
     auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
@@ -772,7 +769,7 @@ class SeparableFilter<FilterType, 5UL> {
   void horizontal_vector_path(svbool_t pg, Rows<const BufferType> src_rows,
                               Rows<DestinationType> dst_rows,
                               BorderOffsets border_offsets, size_t index) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     BufferVectorType src_0 =
         svld1(pg, &src_rows.at(0, border_offsets.c0())[index]);
     BufferVectorType src_1 =
@@ -790,7 +787,7 @@ class SeparableFilter<FilterType, 5UL> {
   void process_horizontal_border(
       Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets border_offsets,
-      size_t index) const INTRINSICCV_STREAMING_COMPATIBLE {
+      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     BufferType src[5];
     src[0] = src_rows.at(0, border_offsets.c0())[index];
     src[1] = src_rows.at(0, border_offsets.c1())[index];
@@ -814,12 +811,12 @@ using SeparableFilter5x5 = SeparableFilter<FilterType, 5UL>;
 // Swap two variables, since some C++ Standard Library implementations do not
 // allow using std::swap for SVE vectors.
 template <typename T>
-static inline void swap_scalable(T &a, T &b) INTRINSICCV_STREAMING_COMPATIBLE {
+static inline void swap_scalable(T &a, T &b) KLEIDICV_STREAMING_COMPATIBLE {
   T tmp = a;
   a = b;
   b = tmp;
 }
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_SVE2_H
+#endif  // KLEIDICV_SVE2_H

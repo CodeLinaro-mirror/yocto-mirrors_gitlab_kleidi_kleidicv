@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_SOBEL_SC_H
-#define INTRINSICCV_SOBEL_SC_H
+#ifndef KLEIDICV_SOBEL_SC_H
+#define KLEIDICV_SOBEL_SC_H
 
 #include "intrinsiccv/filters/sobel.h"
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Template for 3x3 Sobel filters which calculate horizontal derivative
 // approximations, often denoted as Gx.
@@ -34,7 +34,7 @@ class HorizontalSobel3x3<uint8_t> {
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
   void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
                             svuint8_t src_2, BufferType *dst) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svuint16_t acc_u16_b = svaddlb(src_0, src_2);
     svuint16_t acc_u16_t = svaddlt(src_0, src_2);
     acc_u16_b = svmlalb(acc_u16_b, src_1, svdup_n_u8(2));
@@ -50,7 +50,7 @@ class HorizontalSobel3x3<uint8_t> {
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
   void horizontal_vector_path(
       svbool_t pg, svint16_t src_0, svint16_t /* src_1 */, svint16_t src_2,
-      DestinationType *dst) const INTRINSICCV_STREAMING_COMPATIBLE {
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     svst1(pg, &dst[0], svsub_x(pg, src_2, src_0));
   }
 
@@ -58,7 +58,7 @@ class HorizontalSobel3x3<uint8_t> {
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
   void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const INTRINSICCV_STREAMING_COMPATIBLE {
+      const KLEIDICV_STREAMING_COMPATIBLE {
     // Explicitly narrow. Overflow is permitted.
     dst[0] = static_cast<DestinationType>(src[2] - src[0]);
   }
@@ -87,7 +87,7 @@ class VerticalSobel3x3<uint8_t> {
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
   void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t /* src_1 */,
                             svuint8_t src_2, BufferType *dst) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svuint16_t acc_u16_b = svsublb(src_2, src_0);
     svuint16_t acc_u16_t = svsublt(src_2, src_0);
 
@@ -101,7 +101,7 @@ class VerticalSobel3x3<uint8_t> {
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
   void horizontal_vector_path(svbool_t pg, svint16_t src_0, svint16_t src_1,
                               svint16_t src_2, DestinationType *dst) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     svint16_t acc = svadd_x(pg, src_0, src_2);
     acc = svmad_s16_x(pg, src_1, svdup_n_s16(2), acc);
     svst1(pg, &dst[0], acc);
@@ -111,17 +111,17 @@ class VerticalSobel3x3<uint8_t> {
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
   void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const INTRINSICCV_STREAMING_COMPATIBLE {
+      const KLEIDICV_STREAMING_COMPATIBLE {
     // Explicitly narrow. Overflow is permitted.
     dst[0] = static_cast<DestinationType>(src[0] + 2 * src[1] + src[2]);
   }
 };  // end of class VerticalSobel3x3<uint8_t>
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height,
-    size_t channels) INTRINSICCV_STREAMING_COMPATIBLE {
+    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
@@ -129,11 +129,11 @@ static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
   const size_t KernelSize = 3;
 
   if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   Rectangle rect{width, height};
@@ -143,21 +143,21 @@ static intrinsiccv_error_t sobel_3x3_horizontal_s16_u8_sc(
   auto workspace =
       SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
   if (!workspace) {
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
   SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height,
-    size_t channels) INTRINSICCV_STREAMING_COMPATIBLE {
+    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
@@ -165,11 +165,11 @@ static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
   const size_t KernelSize = 3;
 
   if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   Rectangle rect{width, height};
@@ -179,16 +179,16 @@ static intrinsiccv_error_t sobel_3x3_vertical_s16_u8_sc(
   auto workspace =
       SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
   if (!workspace) {
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   VerticalSobel3x3<uint8_t> vertical_sobel;
   SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_SOBEL_SC_H
+#endif  // KLEIDICV_SOBEL_SC_H

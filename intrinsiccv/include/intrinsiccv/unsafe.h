@@ -9,8 +9,8 @@
 // Mellon University.
 // -----------------------------------------------------------------------------
 
-#ifndef INTRINSICCV_INCLUDE_UNSAFE_H_
-#define INTRINSICCV_INCLUDE_UNSAFE_H_
+#ifndef KLEIDICV_INCLUDE_UNSAFE_H_
+#define KLEIDICV_INCLUDE_UNSAFE_H_
 
 // Inclusion of standard library headers where the banned functions are
 // declared.
@@ -73,4 +73,4 @@
 
 #endif  // __GNUC__
 
-#endif  // INTRINSICCV_INCLUDE_UNSAFE_H_
+#endif  // KLEIDICV_INCLUDE_UNSAFE_H_

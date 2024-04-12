@@ -20,7 +20,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
 # ------------------------------------------------------------------------------
 
-INTRINSICCV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
+KLEIDICV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 
 : "${CHECK_ONLY:=OFF}"
 : "${CLANG_FORMAT_BIN_PATH:=clang-format-17}"
@@ -29,11 +29,11 @@ INTRINSICCV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 # ------------------------------------------------------------------------------
 
 SOURCES="$(find \
-    "${INTRINSICCV_ROOT_PATH}/adapters" \
-    "${INTRINSICCV_ROOT_PATH}/benchmark" \
-    "${INTRINSICCV_ROOT_PATH}/intrinsiccv" \
-    "${INTRINSICCV_ROOT_PATH}/test" \
-    "${INTRINSICCV_ROOT_PATH}/conformity/opencv" \
+    "${KLEIDICV_ROOT_PATH}/adapters" \
+    "${KLEIDICV_ROOT_PATH}/benchmark" \
+    "${KLEIDICV_ROOT_PATH}/intrinsiccv" \
+    "${KLEIDICV_ROOT_PATH}/test" \
+    "${KLEIDICV_ROOT_PATH}/conformity/opencv" \
     \( -name \*.cpp -o -name \*.h -o -name \*.h.in \) \
     -print)"
 

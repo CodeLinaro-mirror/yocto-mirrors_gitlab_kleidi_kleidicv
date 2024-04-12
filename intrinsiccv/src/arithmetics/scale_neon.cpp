@@ -189,18 +189,18 @@ intrinsiccv_error_t scale(const T *src, size_t src_stride, T *dst,
     ScaleTbx<T> operation(scale, shift);
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                          \
-  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t scale<type>( \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                             \
+  template KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t scale<type>(    \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
       size_t width, size_t height, float scale, float shift)
 
-INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
-// INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t);
-// INTRINSICCV_INSTANTIATE_TEMPLATE(int16_t);
-// INTRINSICCV_INSTANTIATE_TEMPLATE(uint16_t);
-// INTRINSICCV_INSTANTIATE_TEMPLATE(int32_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
+// KLEIDICV_INSTANTIATE_TEMPLATE(int8_t);
+// KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
+// KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
+// KLEIDICV_INSTANTIATE_TEMPLATE(int32_t);
 
 }  //  namespace intrinsiccv::neon

@@ -6,7 +6,7 @@
 #include "resize_linear_sc.h"
 
 namespace intrinsiccv::sve2 {
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t resize_linear_u8(const uint8_t *src, size_t src_stride,
                                      size_t src_width, size_t src_height,
                                      uint8_t *dst, size_t dst_stride,

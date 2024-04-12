@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_FRAMEWORK_UTILS_H_
-#define INTRINSICCV_TEST_FRAMEWORK_UTILS_H_
+#ifndef KLEIDICV_TEST_FRAMEWORK_UTILS_H_
+#define KLEIDICV_TEST_FRAMEWORK_UTILS_H_
 
 #include <array>
 #include <cstddef>
@@ -17,14 +17,14 @@
 #include "framework/types.h"
 #include "intrinsiccv/ctypes.h"
 
-#define INTRINSICCV_API(name, impl, type)                                     \
+#define KLEIDICV_API(name, impl, type)                                        \
   template <typename ElementType,                                             \
             std::enable_if_t<std::is_same_v<ElementType, type>, bool> = true> \
   static decltype(auto) name() {                                              \
     return impl;                                                              \
   }
 
-#define INTRINSICCV_DIFF_IO_API(name, impl, itype, otype)                     \
+#define KLEIDICV_DIFF_IO_API(name, impl, itype, otype)                        \
   template <typename InputType, typename OutputType,                          \
             std::enable_if_t<std::is_same_v<InputType, itype>, bool> = true,  \
             std::enable_if_t<std::is_same_v<OutputType, otype>, bool> = true> \
@@ -119,7 +119,7 @@ class NullPointerTester {
   static typename std::enable_if<std::is_pointer_v<ArgType>>::type
   test_with_null_arg(Function f, Tuple t) {
     std::get<ArgIndex>(t) = nullptr;
-    EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER, std::apply(f, t));
+    EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER, std::apply(f, t));
   }
 
   // Skip arguments that aren't pointers.
@@ -148,7 +148,7 @@ class ParamsExtractor<Ret (*)(Params...)> {
 };
 }  // namespace internal
 
-// Tests that the function returns INTRINSICCV_ERROR_NULL_POINTER if any of its
+// Tests that the function returns KLEIDICV_ERROR_NULL_POINTER if any of its
 // pointer arguments are null.
 template <typename Function, typename... Args>
 void test_null_args(Function f, Args... args) {
@@ -162,4 +162,4 @@ void test_null_args(Function f, Args... args) {
 
 }  // namespace test
 
-#endif  // INTRINSICCV_TEST_FRAMEWORK_UTILS_H_
+#endif  // KLEIDICV_TEST_FRAMEWORK_UTILS_H_

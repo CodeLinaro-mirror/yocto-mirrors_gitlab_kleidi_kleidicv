@@ -126,7 +126,7 @@ class VerticalSobel3x3<uint8_t> {
   }
 };  // end of class VerticalSobel3x3<uint8_t>
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
                                                 size_t src_stride, int16_t *dst,
                                                 size_t dst_stride, size_t width,
@@ -139,11 +139,11 @@ intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
   const size_t KernelSize = 3;
 
   if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   Rectangle rect{width, height};
@@ -153,17 +153,17 @@ intrinsiccv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
   auto workspace =
       SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
   if (!workspace) {
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
   SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
                                               size_t src_stride, int16_t *dst,
                                               size_t dst_stride, size_t width,
@@ -175,11 +175,11 @@ intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
   const size_t KernelSize = 3;
 
   if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   Rectangle rect{width, height};
@@ -189,14 +189,14 @@ intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
   auto workspace =
       SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
   if (!workspace) {
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   VerticalSobel3x3<uint8_t> vertical_sobel;
   SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
   workspace->process(rect, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 }  // namespace intrinsiccv::neon

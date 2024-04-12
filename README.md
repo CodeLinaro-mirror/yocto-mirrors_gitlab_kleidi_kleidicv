@@ -116,8 +116,8 @@ The project can be built using standard cmake.
 cmake \
 -S /path/to/opencv \
 -B build-opencv \
--DWITH_INTRINSICCV=ON \
--DINTRINSICCV_SOURCE_PATH=/path/to/intrinsiccv \
+-DWITH_KLEIDICV=ON \
+-DKLEIDICV_SOURCE_PATH=/path/to/intrinsiccv \
 -DCMAKE_CXX_STANDARD=14 \
 -DBUILD_ANDROID_EXAMPLE=OFF \
 -DBUILD_ANDROID_PROJECTS=OFF \
@@ -135,7 +135,7 @@ To target Android devices the following CMake flags are required here as well:
 
 # Benchmarking
 
-Benchmarks can be enabled with the `cmake` argument `-DINTRINSICCV_BENCHMARK=ON`.
+Benchmarks can be enabled with the `cmake` argument `-DKLEIDICV_BENCHMARK=ON`.
 The benchmarks are based on [Google Benchmark](https://github.com/google/benchmark).
 All the standard Google Benchmark command line arguments can be used. In addition,
 the image size on which the tests will be run can be set with the command line

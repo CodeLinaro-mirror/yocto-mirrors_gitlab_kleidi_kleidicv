@@ -36,17 +36,17 @@ class Merge2 final : public UnrollTwice {
   using Vector2Type = typename VecTraits::Vector2Type;
 
   void vector_path(VectorType src_a, VectorType src_b, ScalarType *dst) {
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     Vector2Type dst_vect;
     dst_vect.val[0] = src_a;
     dst_vect.val[1] = src_b;
     vst2q(&dst[0], dst_vect);
-#else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     Vector2Type dst_vect;
     dst_vect.val[0] = vzip1q(src_a, src_b);
     dst_vect.val[1] = vzip2q(src_a, src_b);
     vst1q_x2(&dst[0], dst_vect);
-#endif  // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   }
 
   void scalar_path(const ScalarType *src_a, const ScalarType *src_b,
@@ -67,19 +67,19 @@ class Merge3 final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
   using Vector3Type = typename VecTraits::Vector3Type;
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   Merge3() : table_indices_{vld1q_u8_x3(lookup_table(ScalarType()))} {}
 #endif
 
   void vector_path(VectorType src_a, VectorType src_b, VectorType src_c,
                    ScalarType *dst) {
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     Vector3Type dst_vect;
     dst_vect.val[0] = src_a;
     dst_vect.val[1] = src_b;
     dst_vect.val[2] = src_c;
     vst3q(&dst[0], dst_vect);
-#else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     uint8x16x3_t src_vect, dst_vect;
     src_vect.val[0] = vreinterpretq_u8(src_a);
     src_vect.val[1] = vreinterpretq_u8(src_b);
@@ -88,7 +88,7 @@ class Merge3 final : public UnrollTwice {
     dst_vect.val[1] = vqtbl3q_u8(src_vect, table_indices_.val[1]);
     dst_vect.val[2] = vqtbl3q_u8(src_vect, table_indices_.val[2]);
     vst1q_u8_x3(reinterpret_cast<uint8_t *>(&dst[0]), dst_vect);
-#endif  // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   }
 
   void scalar_path(const ScalarType *src_a, const ScalarType *src_b,
@@ -99,7 +99,7 @@ class Merge3 final : public UnrollTwice {
   }
 
  private:
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   static const uint8_t *lookup_table(uint8_t) {
     // clang-format off
     static constexpr uint8_t kIndices[48] = {
@@ -127,7 +127,7 @@ class Merge3 final : public UnrollTwice {
 #endif
 };  // end of class Merge3<ScalarType>
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
 // Specialized 3-way merge implementation for 32-bit elements.
 //
@@ -226,7 +226,7 @@ class Merge3<uint64_t> final : public UnrollTwice {
   }
 };  // end of class Merge3<uint64_t>
 
-#endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  // !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
 // ----------------------------------------
 // ----------- Four-way merge -------------
@@ -266,14 +266,14 @@ class Merge4 final : public UnrollTwice {
 
   void vector_path(VectorType src_a, VectorType src_b, VectorType src_c,
                    VectorType src_d, ScalarType *dst) {
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     Vector4Type dst_vect;
     dst_vect.val[0] = src_a;
     dst_vect.val[1] = src_b;
     dst_vect.val[2] = src_c;
     dst_vect.val[3] = src_d;
     vst4q(&dst[0], dst_vect);
-#else   // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     auto zip1_a_b = double_width(vzip1q(src_a, src_b));
     auto zip1_c_d = double_width(vzip1q(src_c, src_d));
     auto zip2_a_b = double_width(vzip2q(src_a, src_b));
@@ -288,7 +288,7 @@ class Merge4 final : public UnrollTwice {
     dst_vect.val[2] = vzip1q(zip2_a_b, zip2_c_d);
     dst_vect.val[3] = vzip2q(zip2_a_b, zip2_c_d);
     vst1q_x4(reinterpret_cast<DoubleScalarType *>(&dst[0]), dst_vect);
-#endif  // INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   }
 
   void scalar_path(const ScalarType *src_a, const ScalarType *src_b,
@@ -301,7 +301,7 @@ class Merge4 final : public UnrollTwice {
   }
 
  private:
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   // Polymorphic retinterpret_cast<>() between vector types where the element
   // size is doubled. For example, if 'VectorType' is 'uint8x16_t', this
   // method returns 'reinterpret_cast<uint16x8_t>(vector)'.
@@ -311,7 +311,7 @@ class Merge4 final : public UnrollTwice {
 #endif
 };  // end of class Merge4<ScalarType>
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
 // Specialized 4-way merge implementation for 64-bit elements.
 //
@@ -359,7 +359,7 @@ class Merge4<uint64_t> final : public UnrollTwice {
   }
 };  // end of class Merge4<uint64_t>
 
-#endif  // !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  // !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
@@ -368,7 +368,7 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
                           void *dst_void, size_t dst_stride, size_t width,
                           size_t height, size_t channels) {
   if (channels < 2) {
-    return INTRINSICCV_ERROR_RANGE;
+    return KLEIDICV_ERROR_RANGE;
   }
   CHECK_POINTERS(srcs, src_strides);
   MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src0, srcs[0]);
@@ -413,13 +413,13 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
     } break;
 
     default:
-      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
                           void *dst, size_t dst_stride, size_t width,
                           size_t height, size_t channels, size_t element_size) {
@@ -441,7 +441,7 @@ intrinsiccv_error_t merge(const void **srcs, const size_t *src_strides,
                              channels);
 
     default:
-      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 }
 

@@ -21,7 +21,7 @@ class VerticalOp final {
 
   void process_rows(IndirectRows<ScalarType> src_rows,
                     Rows<ScalarType> dst_rows) {
-    if (INTRINSICCV_UNLIKELY(kernel_.height()) == 1) {
+    if (KLEIDICV_UNLIKELY(kernel_.height()) == 1) {
       CopyRows<ScalarType>::copy_rows(rect_, src_rows, dst_rows);
       return;
     }
@@ -123,7 +123,7 @@ class VerticalOp final {
     vst1q(&dst_row[3 * VecTraits::num_lanes()], acc3);
 
     // Try to process one more row, because it is relatively cheap to do so.
-    if (INTRINSICCV_UNLIKELY((height + 1) >= rect_.height())) {
+    if (KLEIDICV_UNLIKELY((height + 1) >= rect_.height())) {
       return;
     }
 
@@ -197,7 +197,7 @@ class VerticalOp final {
     vst1q(&dst_row[VecTraits::num_lanes()], acc1);
 
     // Try to process one more row, because it is relatively cheap to do so.
-    if (INTRINSICCV_UNLIKELY((height + 1) >= rect_.height())) {
+    if (KLEIDICV_UNLIKELY((height + 1) >= rect_.height())) {
       return;
     }
 
@@ -248,7 +248,7 @@ class VerticalOp final {
     vst1q(&dst_rows[index], acc);
 
     // Try to process one more row, because it is relatively cheap to do so.
-    if (INTRINSICCV_UNLIKELY((height + 1) >= rect_.height())) {
+    if (KLEIDICV_UNLIKELY((height + 1) >= rect_.height())) {
       return;
     }
 
@@ -294,7 +294,7 @@ class VerticalOp final {
     dst_rows[index] = acc;
 
     // Try to process one more row, because it is relatively cheap to do so.
-    if (INTRINSICCV_UNLIKELY((height + 1) >= rect_.height())) {
+    if (KLEIDICV_UNLIKELY((height + 1) >= rect_.height())) {
       return;
     }
 
@@ -499,19 +499,19 @@ intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
   if (workspace->type_size() != sizeof(T)) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   Rectangle rect{width, height};
   if (workspace->image_size() != rect) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   // Currently valid, will need to be changed if morphology supports more border
-  // types, like INTRINSICCV_BORDER_TYPE_REVERSE.
+  // types, like KLEIDICV_BORDER_TYPE_REVERSE.
   Rectangle kernel{workspace->kernel()};
   if (width < kernel.width() - 1 || height < kernel.height() - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
@@ -528,7 +528,7 @@ intrinsiccv_error_t dilate(const T *src, size_t src_stride, T *dst,
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 // Helper structure for erode.
@@ -570,19 +570,19 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
   auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
 
   if (workspace->type_size() != sizeof(T)) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   Rectangle rect{width, height};
   if (workspace->image_size() != rect) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   // Currently valid, will need to be changed if morphology supports more border
-  // types, like INTRINSICCV_BORDER_TYPE_REVERSE.
+  // types, like KLEIDICV_BORDER_TYPE_REVERSE.
   Rectangle kernel{workspace->kernel()};
   if (width < kernel.width() - 1 || height < kernel.height() - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
@@ -599,15 +599,15 @@ intrinsiccv_error_t erode(const T *src, size_t src_stride, T *dst,
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(name, type)                    \
-  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t name<type>(  \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(name, type)                       \
+  template KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t name<type>(     \
       const type *src, size_t src_stride, type *dst, size_t dst_stride, \
       size_t width, size_t height, intrinsiccv_morphology_context_t *context)
 
-INTRINSICCV_INSTANTIATE_TEMPLATE(dilate, uint8_t);
-INTRINSICCV_INSTANTIATE_TEMPLATE(erode, uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(dilate, uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(erode, uint8_t);
 
 }  // namespace intrinsiccv::neon

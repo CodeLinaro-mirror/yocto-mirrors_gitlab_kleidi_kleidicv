@@ -2,20 +2,20 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_DEBUG_H
-#define INTRINSICCV_DEBUG_H
+#ifndef KLEIDICV_DEBUG_H
+#define KLEIDICV_DEBUG_H
 
 #include "intrinsiccv/config.h"
-#if INTRINSICCV_TARGET_NEON
+#if KLEIDICV_TARGET_NEON
 #include "intrinsiccv/neon.h"
-#elif INTRINSICCV_TARGET_SVE2
+#elif KLEIDICV_TARGET_SVE2
 #include "intrinsiccv/sve2.h"
 #endif
 #include <iostream>
 
 namespace intrinsiccv {
 
-#if INTRINSICCV_TARGET_NEON
+#if KLEIDICV_TARGET_NEON
 
 namespace neon {
 
@@ -39,9 +39,9 @@ template <typename ScalarType>
 
 }  // namespace neon
 
-#endif  // INTRINSICCV_TARGET_NEON
+#endif  // KLEIDICV_TARGET_NEON
 
-#if INTRINSICCV_TARGET_SVE2
+#if KLEIDICV_TARGET_SVE2
 
 namespace sve2 {
 
@@ -65,8 +65,8 @@ template <typename ScalarType>
 
 }  // namespace sve2
 
-#endif  // INTRINSICCV_TARGET_SVE2
+#endif  // KLEIDICV_TARGET_SVE2
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_DEBUG_H
+#endif  // KLEIDICV_DEBUG_H

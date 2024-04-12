@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_RESIZE_RESIZE_H
-#define INTRINSICCV_RESIZE_RESIZE_H
+#ifndef KLEIDICV_RESIZE_RESIZE_H
+#define KLEIDICV_RESIZE_RESIZE_H
 
 #include "intrinsiccv/intrinsiccv.h"
 
@@ -32,4 +32,4 @@ intrinsiccv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_RESIZE_RESIZE_H
+#endif  // KLEIDICV_RESIZE_RESIZE_H

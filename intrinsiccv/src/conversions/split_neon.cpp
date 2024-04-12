@@ -21,7 +21,7 @@ class Split2 final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
   using Vector2Type = typename VecTraits::Vector2Type;
 
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   void vector_path(const ScalarType *src, ScalarType *dst0, ScalarType *dst1) {
     Vector2Type vsrc;
     vsrc = vld2q(src);
@@ -56,13 +56,13 @@ class Split3 final : public UnrollTwice {
   using Vector3Type = typename VecTraits::Vector3Type;
   using VectorType = typename VecTraits::VectorType;
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   // NOLINTBEGIN(hicpp-member-init)
   Split3() { Split3Init(ScalarType()); }
 // NOLINTEND(hicpp-member-init)
 #endif
 
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   void vector_path(const ScalarType *src, ScalarType *dst0, ScalarType *dst1,
                    ScalarType *dst2) {
     Vector3Type vsrc;
@@ -92,7 +92,7 @@ class Split3 final : public UnrollTwice {
   }
 
  private:
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   uint8x16_t index1_, index2_, index3_;
 
   void Split3Init(uint8_t) {
@@ -170,7 +170,7 @@ class Split4 final : public UnrollTwice {
   using Vector2Type = typename VecTraits::Vector2Type;
   using Vector4Type = typename VecTraits::Vector4Type;
 
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   void vector_path(const ScalarType *src, ScalarType *dst0, ScalarType *dst1,
                    ScalarType *dst2, ScalarType *dst3) {
     Vector4Type vsrc;
@@ -219,7 +219,7 @@ class Split4 final : public UnrollTwice {
 // Specialized split implementation for 4 channels with 64 bits data
 // As in case of 64 bits we have 2 values in one q-sized vector,
 // the implementation is simpler, no need for cast to double size
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 template <>
 class Split4<uint64_t> final : public UnrollTwice {
  public:
@@ -253,7 +253,7 @@ intrinsiccv_error_t split(const void *src_void, const size_t src_stride,
                           void **dst_data, const size_t *dst_strides,
                           size_t width, size_t height, size_t channels) {
   if (channels < 2) {
-    return INTRINSICCV_ERROR_RANGE;
+    return KLEIDICV_ERROR_RANGE;
   }
 
   CHECK_POINTERS(dst_data, dst_strides);
@@ -295,13 +295,13 @@ intrinsiccv_error_t split(const void *src_void, const size_t src_stride,
                               dst_rows2, dst_rows3);
     } break;
     default:
-      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t split(const void *src_data, size_t src_stride,
                           void **dst_data, const size_t *dst_strides,
                           size_t width, size_t height, size_t channels,
@@ -324,7 +324,7 @@ intrinsiccv_error_t split(const void *src_data, size_t src_stride,
                              height, channels);
 
     default:
-      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 }
 }  // namespace intrinsiccv::neon

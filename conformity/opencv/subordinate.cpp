@@ -8,10 +8,10 @@
 #include "tests.h"
 
 int main(void) {
-  OpenedSharedMemory sm{INTRINSICCV_CONFORMITY_SHM_ID,
-                        INTRINSICCV_CONFORMITY_SHM_SIZE};
-  OpenedMessageQueue request_queue{INTRINSICCV_CONFORMITY_REQUEST_MQ_ID, sm};
-  OpenedMessageQueue reply_queue{INTRINSICCV_CONFORMITY_REPLY_MQ_ID, sm};
+  OpenedSharedMemory sm{KLEIDICV_CONFORMITY_SHM_ID,
+                        KLEIDICV_CONFORMITY_SHM_SIZE};
+  OpenedMessageQueue request_queue{KLEIDICV_CONFORMITY_REQUEST_MQ_ID, sm};
+  OpenedMessageQueue reply_queue{KLEIDICV_CONFORMITY_REPLY_MQ_ID, sm};
 
   wait_for_requests(request_queue, reply_queue);
 

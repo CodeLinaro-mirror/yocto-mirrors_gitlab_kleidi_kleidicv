@@ -88,7 +88,7 @@ class SplitTest final {
     for (size_t i = 0; i < Channels; ++i) {
       strides[i] = actual_outputs[i].stride();
     }
-    ASSERT_EQ(INTRINSICCV_OK,
+    ASSERT_EQ(KLEIDICV_OK,
               intrinsiccv_split(input.data(), input.stride(),
                                 actual_raw_pointers, strides, output_width,
                                 height, Channels, sizeof(ElementType)));
@@ -110,7 +110,7 @@ class SplitTest final {
 
 template <typename ElementType, int kChannels>
 static void test_not_implemented(
-    intrinsiccv_error_t expected = INTRINSICCV_ERROR_NOT_IMPLEMENTED) {
+    intrinsiccv_error_t expected = KLEIDICV_ERROR_NOT_IMPLEMENTED) {
   const size_t width = 1, height = 1;
 
   ElementType src_data[kChannels * width * height] = {234};
@@ -196,7 +196,7 @@ TYPED_TEST(Split, FourChannels) {
 }
 
 TYPED_TEST(Split, OneChannelOutOfRange) {
-  test_not_implemented<TypeParam, 1>(INTRINSICCV_ERROR_RANGE);
+  test_not_implemented<TypeParam, 1>(KLEIDICV_ERROR_RANGE);
 }
 
 TYPED_TEST(Split, FiveChannelsNotImplemented) {
@@ -224,7 +224,7 @@ TYPED_TEST(Split, NullPointer) {
       for (int i = 0; i < channels; ++i) {
         dst_data[i] = (i == null_src) ? nullptr : dst_arrays + i;
       }
-      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+      EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
                 intrinsiccv_split(src_data, src_stride, dst_data, dst_strides,
                                   1, 1, channels, sizeof(TypeParam)));
     }
@@ -257,7 +257,7 @@ TYPED_TEST(Split, Misalignment) {
   auto check_split = [&](int channels, void* src_maybe_misaligned,
                          size_t src_stride_maybe_misaligned) {
     EXPECT_EQ(
-        INTRINSICCV_ERROR_ALIGNMENT,
+        KLEIDICV_ERROR_ALIGNMENT,
         intrinsiccv_split(src_maybe_misaligned, src_stride_maybe_misaligned,
                           reinterpret_cast<void**>(dst_data), dst_strides, 1, 1,
                           channels, sizeof(TypeParam)));
@@ -294,12 +294,10 @@ TYPED_TEST(Split, ZeroImageSize) {
   void* dsts[kChannels] = {dst1, dst2};
   size_t dst_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam)};
 
-  EXPECT_EQ(INTRINSICCV_OK,
-            intrinsiccv_split(src, src_stride, dsts, dst_strides, 0, 1,
-                              kChannels, sizeof(TypeParam)));
-  EXPECT_EQ(INTRINSICCV_OK,
-            intrinsiccv_split(src, src_stride, dsts, dst_strides, 1, 0,
-                              kChannels, sizeof(TypeParam)));
+  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_split(src, src_stride, dsts, dst_strides,
+                                           0, 1, kChannels, sizeof(TypeParam)));
+  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_split(src, src_stride, dsts, dst_strides,
+                                           1, 0, kChannels, sizeof(TypeParam)));
 }
 
 TYPED_TEST(Split, OversizeImage) {
@@ -309,13 +307,12 @@ TYPED_TEST(Split, OversizeImage) {
   void* dsts[kChannels] = {dst1, dst2};
   size_t dst_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam)};
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             intrinsiccv_split(src, src_stride, dsts, dst_strides,
-                              INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, kChannels,
+                              KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, kChannels,
                               sizeof(TypeParam)));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
-            intrinsiccv_split(src, src_stride, dsts, dst_strides,
-                              INTRINSICCV_MAX_IMAGE_PIXELS,
-                              INTRINSICCV_MAX_IMAGE_PIXELS, kChannels,
-                              sizeof(TypeParam)));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            intrinsiccv_split(
+                src, src_stride, dsts, dst_strides, KLEIDICV_MAX_IMAGE_PIXELS,
+                KLEIDICV_MAX_IMAGE_PIXELS, kChannels, sizeof(TypeParam)));
 }

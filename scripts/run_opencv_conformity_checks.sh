@@ -13,10 +13,10 @@ set -exu
 SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
 SOURCE_PATH="${SCRIPT_PATH}/../conformity/opencv"
-INTRINSICCV_SOURCE_PATH="${SCRIPT_PATH}/.."
+KLEIDICV_SOURCE_PATH="${SCRIPT_PATH}/.."
 BUILD_PATH="${SCRIPT_PATH}/../build/conformity"
 OPENCV_DEFAULT_PATH="${BUILD_PATH}/opencv_default"
-OPENCV_INTRINSICCV_PATH="${BUILD_PATH}/opencv_intrinsiccv"
+OPENCV_KLEIDICV_PATH="${BUILD_PATH}/opencv_intrinsiccv"
 
 if [[ "${CLEAN}" == "ON" ]]; then
     rm -rf "${BUILD_PATH}"
@@ -43,20 +43,20 @@ fi
 
 cmake "${common_cmake_args[@]}" \
       -B "${OPENCV_DEFAULT_PATH}" \
-      -DWITH_INTRINSICCV=OFF
+      -DWITH_KLEIDICV=OFF
 ninja -C "${OPENCV_DEFAULT_PATH}" subordinate
 
 cmake "${common_cmake_args[@]}" \
-      -B "${OPENCV_INTRINSICCV_PATH}" \
-      -DWITH_INTRINSICCV=ON \
-      -DINTRINSICCV_SOURCE_PATH="${INTRINSICCV_SOURCE_PATH}" \
-      -DINTRINSICCV_ENABLE_SVE2=ON \
-      -DINTRINSICCV_ENABLE_SVE2_SELECTIVELY=OFF
-ninja -C "${OPENCV_INTRINSICCV_PATH}" manager
+      -B "${OPENCV_KLEIDICV_PATH}" \
+      -DWITH_KLEIDICV=ON \
+      -DKLEIDICV_SOURCE_PATH="${KLEIDICV_SOURCE_PATH}" \
+      -DKLEIDICV_ENABLE_SVE2=ON \
+      -DKLEIDICV_ENABLE_SVE2_SELECTIVELY=OFF
+ninja -C "${OPENCV_KLEIDICV_PATH}" manager
 
 TESTRESULT=0
-qemu-aarch64 -cpu cortex-a35 "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
-qemu-aarch64 -cpu max,sve128=on,sme=off "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
-qemu-aarch64 -cpu max,sve128=on,sme512=on "${OPENCV_INTRINSICCV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a35 "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu max,sve128=on,sme=off "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu max,sve128=on,sme512=on "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
 
 exit $TESTRESULT

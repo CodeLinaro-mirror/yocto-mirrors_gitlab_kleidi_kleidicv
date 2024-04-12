@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_OPENCV_CONFORMITY_TEST_SOBEL_H_
-#define INTRINSICCV_OPENCV_CONFORMITY_TEST_SOBEL_H_
+#ifndef KLEIDICV_OPENCV_CONFORMITY_TEST_SOBEL_H_
+#define KLEIDICV_OPENCV_CONFORMITY_TEST_SOBEL_H_
 
 #include <vector>
 
@@ -11,4 +11,4 @@
 
 std::vector<test>& sobel_tests_singleton();
 
-#endif  // INTRINSICCV_OPENCV_CONFORMITY_TEST_SOBEL_H_
+#endif  // KLEIDICV_OPENCV_CONFORMITY_TEST_SOBEL_H_

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_FRAMEWORK_BORDER_H_
-#define INTRINSICCV_TEST_FRAMEWORK_BORDER_H_
+#ifndef KLEIDICV_TEST_FRAMEWORK_BORDER_H_
+#define KLEIDICV_TEST_FRAMEWORK_BORDER_H_
 
 #include "framework/abstract.h"
 #include "intrinsiccv/intrinsiccv.h"
@@ -19,4 +19,4 @@ void prepare_borders(intrinsiccv_border_type_t border_type,
 
 }  // namespace test
 
-#endif  // INTRINSICCV_TEST_FRAMEWORK_BORDER_H_
+#endif  // KLEIDICV_TEST_FRAMEWORK_BORDER_H_

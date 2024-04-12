@@ -10,10 +10,10 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "test_config.h"
 
-#define INTRINSICCV_SCALE(type, suffix) \
-  INTRINSICCV_API(scale, intrinsiccv_scale_##suffix, type)
+#define KLEIDICV_SCALE(type, suffix) \
+  KLEIDICV_API(scale, intrinsiccv_scale_##suffix, type)
 
-INTRINSICCV_SCALE(uint8_t, u8);
+KLEIDICV_SCALE(uint8_t, u8);
 
 template <typename ElementType>
 class ScaleTestBase : public UnaryOperationTest<ElementType> {
@@ -107,7 +107,7 @@ class ScaleTestLinearBase {
     calculate_expected(source, expected);
 
     ASSERT_EQ(
-        INTRINSICCV_OK,
+        KLEIDICV_OK,
         intrinsiccv_scale_u8(source.data(), source.stride(), actual.data(),
                              actual.stride(), width, height, scale(), shift()));
 
@@ -417,29 +417,29 @@ TYPED_TEST(ScaleTest, Misalignment) {
     return;
   }
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             scale<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
                                sizeof(TypeParam), 1, 1, 2, 0));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             scale<TypeParam>()(src, sizeof(TypeParam), dst,
                                sizeof(TypeParam) + 1, 1, 1, 2, 0));
 }
 
 TYPED_TEST(ScaleTest, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_OK, scale<TypeParam>()(src, sizeof(TypeParam), dst,
-                                               sizeof(TypeParam), 0, 1, 2, 0));
-  EXPECT_EQ(INTRINSICCV_OK, scale<TypeParam>()(src, sizeof(TypeParam), dst,
-                                               sizeof(TypeParam), 1, 0, 2, 0));
+  EXPECT_EQ(KLEIDICV_OK, scale<TypeParam>()(src, sizeof(TypeParam), dst,
+                                            sizeof(TypeParam), 0, 1, 2, 0));
+  EXPECT_EQ(KLEIDICV_OK, scale<TypeParam>()(src, sizeof(TypeParam), dst,
+                                            sizeof(TypeParam), 1, 0, 2, 0));
 }
 
 TYPED_TEST(ScaleTest, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             scale<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                               INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 2, 0));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+                               KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 2, 0));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             scale<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                               INTRINSICCV_MAX_IMAGE_PIXELS,
-                               INTRINSICCV_MAX_IMAGE_PIXELS, 2, 0));
+                               KLEIDICV_MAX_IMAGE_PIXELS,
+                               KLEIDICV_MAX_IMAGE_PIXELS, 2, 0));
 }

@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_NEON_INTRINSICS_H
-#define INTRINSICCV_NEON_INTRINSICS_H
+#ifndef KLEIDICV_NEON_INTRINSICS_H
+#define KLEIDICV_NEON_INTRINSICS_H
 
-#ifndef INTRINSICCV_NEON_H
+#ifndef KLEIDICV_NEON_H
 #error "Please include neon.h instead."
 #endif
 
@@ -411,4 +411,4 @@ static inline uint64x2_t vreinterpretq_u64(uint64x2_t vec) { return vec; }
 
 }  // namespace intrinsiccv::neon
 
-#endif  // INTRINSICCV_NEON_INTRINSICS_H
+#endif  // KLEIDICV_NEON_INTRINSICS_H

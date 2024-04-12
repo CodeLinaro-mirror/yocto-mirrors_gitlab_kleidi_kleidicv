@@ -7,24 +7,24 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
 
-#define INTRINSICCV_DEFINE_C_API(name, partialname)              \
-  INTRINSICCV_MULTIVERSION_C_API(                                \
-      name, &intrinsiccv::neon::partialname,                     \
-      INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::partialname), \
+#define KLEIDICV_DEFINE_C_API(name, partialname)              \
+  KLEIDICV_MULTIVERSION_C_API(                                \
+      name, &intrinsiccv::neon::partialname,                  \
+      KLEIDICV_SVE2_IMPL_IF(&intrinsiccv::sve2::partialname), \
       &intrinsiccv::sme2::partialname)
 
-INTRINSICCV_DEFINE_C_API(intrinsiccv_rgb_to_bgr_u8, rgb_to_bgr_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_rgba_to_bgra_u8, rgba_to_bgra_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_rgb_to_bgra_u8, rgb_to_bgra_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_rgb_to_rgba_u8, rgb_to_rgba_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_rgba_to_bgr_u8, rgba_to_bgr_u8);
-INTRINSICCV_DEFINE_C_API(intrinsiccv_rgba_to_rgb_u8, rgba_to_rgb_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_rgb_to_bgr_u8, rgb_to_bgr_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_rgba_to_bgra_u8, rgba_to_bgra_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_rgb_to_bgra_u8, rgb_to_bgra_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_rgb_to_rgba_u8, rgb_to_rgba_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_rgba_to_bgr_u8, rgba_to_bgr_u8);
+KLEIDICV_DEFINE_C_API(intrinsiccv_rgba_to_rgb_u8, rgba_to_rgb_u8);
 
 extern "C" {
 
-using INTRINSICCV_TARGET_NAMESPACE::CopyRows;
-using INTRINSICCV_TARGET_NAMESPACE::Rectangle;
-using INTRINSICCV_TARGET_NAMESPACE::Rows;
+using KLEIDICV_TARGET_NAMESPACE::CopyRows;
+using KLEIDICV_TARGET_NAMESPACE::Rectangle;
+using KLEIDICV_TARGET_NAMESPACE::Rows;
 
 static intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8_impl(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
@@ -37,7 +37,7 @@ static intrinsiccv_error_t intrinsiccv_rgb_to_rgb_u8_impl(
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
   CopyRows<uint8_t>::copy_rows(rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 decltype(intrinsiccv_rgb_to_rgb_u8_impl) *intrinsiccv_rgb_to_rgb_u8 =
@@ -54,7 +54,7 @@ static intrinsiccv_error_t intrinsiccv_rgba_to_rgba_u8_impl(
   Rows<const uint8_t> src_rows{src, src_stride, 4 /* RGBA */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
   CopyRows<uint8_t>::copy_rows(rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 decltype(intrinsiccv_rgba_to_rgba_u8_impl) *intrinsiccv_rgba_to_rgba_u8 =

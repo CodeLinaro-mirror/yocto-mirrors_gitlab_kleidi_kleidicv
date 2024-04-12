@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_WORKSPACE_SEPARABLE_H
-#define INTRINSICCV_WORKSPACE_SEPARABLE_H
+#ifndef KLEIDICV_WORKSPACE_SEPARABLE_H
+#define KLEIDICV_WORKSPACE_SEPARABLE_H
 
 #include <cstdlib>
 #include <memory>
@@ -12,7 +12,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Forward declarations.
 class SeparableFilterWorkspace;
@@ -21,7 +21,7 @@ class SeparableFilterWorkspace;
 class SeparableFilterWorkspaceDeleter {
  public:
   void operator()(SeparableFilterWorkspace *ptr) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     std::free(ptr);
   };
 };
@@ -81,8 +81,7 @@ class SeparableFilterWorkspace final {
 
   // Creates a workspace on the heap.
   static Pointer create(Rectangle rect, size_t channels,
-                        size_t buffer_type_size)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+                        size_t buffer_type_size) KLEIDICV_STREAMING_COMPATIBLE {
     size_t buffer_rows_width = buffer_type_size * rect.width();
     // Adding more elements because of SVE, where interleaving stores are
     // governed by one predicate. For example, if a predicate requires 7 uint8_t
@@ -126,7 +125,7 @@ class SeparableFilterWorkspace final {
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
                size_t channels, typename FilterType::BorderType border_type,
-               FilterType filter) INTRINSICCV_STREAMING_COMPATIBLE {
+               FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
     // Border helper which calculates border offsets.
     typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                         border_type};
@@ -162,10 +161,10 @@ class SeparableFilterWorkspace final {
                           Rows<typename FilterType::DestinationType> dst_rows,
                           Margin margin, FilterType filter,
                           typename FilterType::BorderInfoType horizontal_border)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     // Process data affected by left border.
 #ifdef __clang__  // GCC is unable to unroll the loop
-    INTRINSICCV_FORCE_LOOP_UNROLL
+    KLEIDICV_FORCE_LOOP_UNROLL
 #endif
     for (size_t horizontal_index = 0; horizontal_index < margin.left();
          ++horizontal_index) {
@@ -187,7 +186,7 @@ class SeparableFilterWorkspace final {
 
     // Process data affected by right border.
 #ifdef __clang__  // GCC is unable to unroll the loop
-    INTRINSICCV_FORCE_LOOP_UNROLL
+    KLEIDICV_FORCE_LOOP_UNROLL
 #endif
     for (size_t horizontal_index = 0; horizontal_index < margin.right();
          ++horizontal_index) {
@@ -208,9 +207,9 @@ class SeparableFilterWorkspace final {
   size_t buffer_type_size_;
 
   // Workspace area begins here.
-  uint8_t data_[0] INTRINSICCV_ATTR_ALIGNED(kAlignment);
+  uint8_t data_[0] KLEIDICV_ATTR_ALIGNED(kAlignment);
 };  // end of class SeparableFilterWorkspace
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_WORKSPACE_SEPARABLE_H
+#endif  // KLEIDICV_WORKSPACE_SEPARABLE_H

@@ -57,7 +57,7 @@ uint8x8_t lerp2d_vector_p_q_q_r(uint8x8_t a, uint8x8_t b, uint8x8_t c,
   return result;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride) {
   size_t dst_width = src_width * 2;
@@ -184,10 +184,10 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8(
   process_edge_row(src + src_stride * (src_height - 1),
                    dst + dst_stride * (src_height * 2 - 1));
 
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_4x4_u8(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_4x4_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride) {
   size_t dst_width = src_width * 4, dst_height = src_height * 4;
@@ -405,10 +405,10 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_4x4_u8(
   memcpy(dst + dst_stride * (dst_height - 1),
          dst + dst_stride * (dst_height - 2), dst_stride);
 
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t resize_linear_u8(const uint8_t *src, size_t src_stride,
                                      size_t src_width, size_t src_height,
                                      uint8_t *dst, size_t dst_stride,
@@ -418,7 +418,7 @@ intrinsiccv_error_t resize_linear_u8(const uint8_t *src, size_t src_stride,
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
   if (src_width == 0 || src_height == 0) {
-    return INTRINSICCV_OK;
+    return KLEIDICV_OK;
   }
   if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
     return resize_2x2_u8(src, src_stride, src_width, src_height, dst,
@@ -428,7 +428,7 @@ intrinsiccv_error_t resize_linear_u8(const uint8_t *src, size_t src_stride,
     return resize_4x4_u8(src, src_stride, src_width, src_height, dst,
                          dst_stride);
   }
-  return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
 }  // namespace intrinsiccv::neon

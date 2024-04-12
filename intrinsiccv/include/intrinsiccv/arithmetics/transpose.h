@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_ARITHMETICS_TRANSPOSE_H
-#define INTRINSICCV_ARITHMETICS_TRANSPOSE_H
+#ifndef KLEIDICV_ARITHMETICS_TRANSPOSE_H
+#define KLEIDICV_ARITHMETICS_TRANSPOSE_H
 
 #include <cstddef>
 #include <cstdint>
@@ -24,4 +24,4 @@ namespace sme2 {}  // namespace sme2
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_ARITHMETICS_TRANSPOSE_H
+#endif  // KLEIDICV_ARITHMETICS_TRANSPOSE_H

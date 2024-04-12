@@ -16,13 +16,13 @@ TEST(ResizeLinear, NotImplemented) {
   const uint8_t src[1] = {};
   uint8_t dst[4];
 
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 2, 2, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 1, 1, 2));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 4, 4, 2));
-  EXPECT_EQ(INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst, 2, 2, 4));
 }
 
@@ -37,25 +37,25 @@ TEST(ResizeLinear, InvalidImageSize) {
   const uint8_t src[1] = {};
   uint8_t dst[4];
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             intrinsiccv_resize_linear_u8(src, 1, 1, 1, dst,
-                                         INTRINSICCV_MAX_IMAGE_PIXELS + 1,
-                                         INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1));
+                                         KLEIDICV_MAX_IMAGE_PIXELS + 1,
+                                         KLEIDICV_MAX_IMAGE_PIXELS + 1, 1));
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             intrinsiccv_resize_linear_u8(
-                src, 1, 1, 1, dst, INTRINSICCV_MAX_IMAGE_PIXELS,
-                INTRINSICCV_MAX_IMAGE_PIXELS, INTRINSICCV_MAX_IMAGE_PIXELS));
+                src, 1, 1, 1, dst, KLEIDICV_MAX_IMAGE_PIXELS,
+                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS));
 }
 
 TEST(ResizeLinear, ZeroImageSize) {
   const uint8_t src[1] = {};
   uint8_t dst[1];
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             intrinsiccv_resize_linear_u8(src, 0, 0, 0, dst, 0, 0, 0));
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             intrinsiccv_resize_linear_u8(src, 1, 1, 0, dst, 2, 2, 0));
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             intrinsiccv_resize_linear_u8(src, 0, 0, 1, dst, 0, 0, 2));
 }
 
@@ -248,9 +248,9 @@ static void do_large_dimensions_test(size_t x_scale, size_t y_scale) {
   resize_linear_unaccelerated_u8(src.data(), src_stride, src_width, src_height,
                                  expected_data.data(), dst_stride, dst_width,
                                  dst_height);
-  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_resize_linear_u8(
-                                src.data(), src_stride, src_width, src_height,
-                                dst.data(), dst_stride, dst_width, dst_height));
+  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_resize_linear_u8(
+                             src.data(), src_stride, src_width, src_height,
+                             dst.data(), dst_stride, dst_width, dst_height));
 
   for (size_t y = 0; y < dst_height; ++y) {
     // Compare as int to avoid test framework displaying values as chars.
@@ -314,9 +314,9 @@ void do_linear_resize_test(const ResizeTestParams &param, size_t src_padding,
   std::vector<uint8_t> src = flatten(param.src, src_padding), dst;
   dst.resize(dst_stride * dst_height);
 
-  ASSERT_EQ(INTRINSICCV_OK, intrinsiccv_resize_linear_u8(
-                                src.data(), src_stride, src_width, src_height,
-                                dst.data(), dst_stride, dst_width, dst_height));
+  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_resize_linear_u8(
+                             src.data(), src_stride, src_width, src_height,
+                             dst.data(), dst_stride, dst_width, dst_height));
   for (size_t y = 0; y < dst_height; ++y) {
     // Compare as int to avoid test framework displaying values as chars.
     std::vector<intmax_t> actual{

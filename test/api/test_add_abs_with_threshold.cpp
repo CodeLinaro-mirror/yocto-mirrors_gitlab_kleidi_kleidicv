@@ -189,15 +189,15 @@ TYPED_TEST(SaturatingAddAbsWithThresholdTest, Misalignment) {
     return;
   }
   TypeParam src[1] = {}, dst[1] = {};
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam) + 1, src, sizeof(TypeParam), dst,
                 sizeof(TypeParam), 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam) + 1, dst,
                 sizeof(TypeParam), 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,
                 sizeof(TypeParam) + 1, 1, 1, 1));
@@ -205,23 +205,23 @@ TYPED_TEST(SaturatingAddAbsWithThresholdTest, Misalignment) {
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_saturating_add_abs_with_threshold_s16(
-                                src, sizeof(TypeParam), src, sizeof(TypeParam),
-                                dst, sizeof(TypeParam), 0, 1, 1));
-  EXPECT_EQ(INTRINSICCV_OK, intrinsiccv_saturating_add_abs_with_threshold_s16(
-                                src, sizeof(TypeParam), src, sizeof(TypeParam),
-                                dst, sizeof(TypeParam), 1, 0, 1));
+  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_saturating_add_abs_with_threshold_s16(
+                             src, sizeof(TypeParam), src, sizeof(TypeParam),
+                             dst, sizeof(TypeParam), 0, 1, 1));
+  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_saturating_add_abs_with_threshold_s16(
+                             src, sizeof(TypeParam), src, sizeof(TypeParam),
+                             dst, sizeof(TypeParam), 1, 0, 1));
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,
-                sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+                sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             intrinsiccv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,
-                sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS,
-                INTRINSICCV_MAX_IMAGE_PIXELS, 1));
+                sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
+                KLEIDICV_MAX_IMAGE_PIXELS, 1));
 }

@@ -6,10 +6,10 @@ include("${CMAKE_CURRENT_LIST_DIR}/../../intrinsiccv/CMakeLists.txt")
 
 project("IntrinsicCV OpenCV HAL")
 
-set(INTRINSICCV_HAL_VERSION "0.0.0" CACHE INTERNAL "")
-set(INTRINSICCV_HAL_LIBRARIES "intrinsiccv_hal" CACHE INTERNAL "")
-set(INTRINSICCV_HAL_HEADERS "${CMAKE_CURRENT_LIST_DIR}/intrinsiccv_hal.h" CACHE INTERNAL "")
-set(INTRINSICCV_HAL_INCLUDE_DIRS "$<TARGET_PROPERTY:intrinsiccv,INCLUDE_DIRECTORIES>" CACHE INTERNAL "")
+set(KLEIDICV_HAL_VERSION "0.0.0" CACHE INTERNAL "")
+set(KLEIDICV_HAL_LIBRARIES "intrinsiccv_hal" CACHE INTERNAL "")
+set(KLEIDICV_HAL_HEADERS "${CMAKE_CURRENT_LIST_DIR}/intrinsiccv_hal.h" CACHE INTERNAL "")
+set(KLEIDICV_HAL_INCLUDE_DIRS "$<TARGET_PROPERTY:intrinsiccv,INCLUDE_DIRECTORIES>" CACHE INTERNAL "")
 
 add_library(intrinsiccv_hal STATIC "${CMAKE_CURRENT_LIST_DIR}/intrinsiccv_hal.cpp")
 target_link_libraries(intrinsiccv_hal PUBLIC intrinsiccv)
@@ -29,7 +29,7 @@ if(NOT BUILD_SHARED_LIBS)
     DESTINATION ${OPENCV_3P_LIB_INSTALL_PATH}
     COMPONENT dev
   )
-  if(INTRINSICCV_BUILD_SVE2)
+  if(KLEIDICV_BUILD_SVE2)
     ocv_install_target(intrinsiccv_sve2
       EXPORT OpenCVModules
       ARCHIVE
@@ -37,7 +37,7 @@ if(NOT BUILD_SHARED_LIBS)
       COMPONENT dev
     )
   endif()
-  if(INTRINSICCV_BUILD_SME2)
+  if(KLEIDICV_BUILD_SME2)
     ocv_install_target(intrinsiccv_sme2
       EXPORT OpenCVModules
       ARCHIVE

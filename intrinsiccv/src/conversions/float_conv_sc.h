@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_FLOAT_CONV_SC_H
-#define INTRINSICCV_FLOAT_CONV_SC_H
+#ifndef KLEIDICV_FLOAT_CONV_SC_H
+#define KLEIDICV_FLOAT_CONV_SC_H
 
 #include <limits>
 #include <type_traits>
@@ -11,7 +11,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 template <typename InputType, typename OutputType>
 class float_conversion_operation;
@@ -19,16 +19,16 @@ class float_conversion_operation;
 template <typename OutputType>
 class float_conversion_operation<float, OutputType> {
  public:
-  using SrcVecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<float>;
+  using SrcVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
   using SrcVectorType = typename SrcVecTraits::VectorType;
-  using IntermediateVecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<
+  using IntermediateVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<
       std::conditional_t<std::is_signed_v<OutputType>, int32_t, uint32_t>>;
   using IntermediateVectorType = typename IntermediateVecTraits::VectorType;
 
   void process_row(size_t width, Columns<const float> src,
-                   Columns<OutputType> dst) INTRINSICCV_STREAMING_COMPATIBLE {
+                   Columns<OutputType> dst) KLEIDICV_STREAMING_COMPATIBLE {
     LoopUnroll{width, SrcVecTraits::num_lanes()}
-        .unroll_twice([&](size_t step) INTRINSICCV_STREAMING_COMPATIBLE {
+        .unroll_twice([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = SrcVecTraits::svptrue();
           SrcVectorType src_vector1 = svld1(pg, &src[0]);
           SrcVectorType src_vector2 = svld1_vnum(pg, &src[0], 1);
@@ -41,7 +41,7 @@ class float_conversion_operation<float, OutputType> {
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
         })
-        .remaining([&](size_t length, size_t) INTRINSICCV_STREAMING_COMPATIBLE {
+        .remaining([&](size_t length, size_t) KLEIDICV_STREAMING_COMPATIBLE {
           size_t index = 0;
           svbool_t pg = SrcVecTraits::svwhilelt(index, length);
           while (svptest_first(SrcVecTraits::svptrue(), pg)) {
@@ -61,7 +61,7 @@ class float_conversion_operation<float, OutputType> {
       typename O,
       std::enable_if_t<std::is_integral_v<O> && std::is_signed_v<O>, int> = 0>
   IntermediateVectorType vector_path(svbool_t& pg, SrcVectorType src)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     constexpr float min_val = std::numeric_limits<O>::min();
     constexpr float max_val = std::numeric_limits<O>::max();
 
@@ -80,7 +80,7 @@ class float_conversion_operation<float, OutputType> {
       typename O,
       std::enable_if_t<std::is_integral_v<O> && !std::is_signed_v<O>, int> = 0>
   IntermediateVectorType vector_path(svbool_t& pg, SrcVectorType src)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     constexpr float max_val = std::numeric_limits<O>::max();
 
     src = svrinti_f32_x(pg, src);
@@ -95,12 +95,12 @@ class float_conversion_operation<float, OutputType> {
 template <typename InputType>
 class float_conversion_operation<InputType, float> {
  public:
-  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<float>;
+  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
   using VectorType = typename VecTraits::VectorType;
   void process_row(size_t width, Columns<const InputType> src,
                    Columns<float> dst) {
     LoopUnroll{width, VecTraits::num_lanes()}
-        .unroll_twice([&](size_t step) INTRINSICCV_STREAMING_COMPATIBLE {
+        .unroll_twice([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = VecTraits::svptrue();
           VectorType dst_vector1 = vector_path<InputType>(pg, &src[0]);
           VectorType dst_vector2 = vector_path<InputType>(
@@ -110,7 +110,7 @@ class float_conversion_operation<InputType, float> {
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
         })
-        .remaining([&](size_t length, size_t) INTRINSICCV_STREAMING_COMPATIBLE {
+        .remaining([&](size_t length, size_t) KLEIDICV_STREAMING_COMPATIBLE {
           size_t index = 0;
           svbool_t pg = VecTraits::svwhilelt(index, length);
           while (svptest_first(VecTraits::svptrue(), pg)) {
@@ -129,7 +129,7 @@ class float_conversion_operation<InputType, float> {
       typename I,
       std::enable_if_t<std::is_integral_v<I> && std::is_signed_v<I>, int> = 0>
   VectorType vector_path(svbool_t& pg,
-                         const I* src) INTRINSICCV_STREAMING_COMPATIBLE {
+                         const I* src) KLEIDICV_STREAMING_COMPATIBLE {
     svint32_t src_vector = svld1sb_s32(pg, src);
     return svcvt_f32_s32_x(pg, src_vector);
   }
@@ -138,7 +138,7 @@ class float_conversion_operation<InputType, float> {
       typename I,
       std::enable_if_t<std::is_integral_v<I> && !std::is_signed_v<I>, int> = 0>
   VectorType vector_path(svbool_t& pg,
-                         const I* src) INTRINSICCV_STREAMING_COMPATIBLE {
+                         const I* src) KLEIDICV_STREAMING_COMPATIBLE {
     svuint32_t src_vector = svld1ub_u32(pg, src);
     return svcvt_f32_u32_x(pg, src_vector);
   }
@@ -147,7 +147,7 @@ class float_conversion_operation<InputType, float> {
 template <typename I, typename O>
 static intrinsiccv_error_t float_conversion_sc(
     const I* src, size_t src_stride, O* dst, size_t dst_stride, size_t width,
-    size_t height) INTRINSICCV_STREAMING_COMPATIBLE {
+    size_t height) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(width, height);
@@ -158,9 +158,9 @@ static intrinsiccv_error_t float_conversion_sc(
   Rows<O> dst_rows{dst, dst_stride};
   zip_rows(operation, rect, src_rows, dst_rows);
 
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_FLOAT_CONV_SC_H
+#endif  // KLEIDICV_FLOAT_CONV_SC_H

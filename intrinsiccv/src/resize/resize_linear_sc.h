@@ -2,27 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_RESIZE_LINEAR_SC_H
-#define INTRINSICCV_RESIZE_LINEAR_SC_H
+#ifndef KLEIDICV_RESIZE_LINEAR_SC_H
+#define KLEIDICV_RESIZE_LINEAR_SC_H
 
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8_sc(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride) INTRINSICCV_STREAMING_COMPATIBLE {
+    uint8_t *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 2;
   size_t dst_height = src_height * 2;
 
-  auto lerp1d_scalar = [](uint8_t near, uint8_t far)
-                           INTRINSICCV_STREAMING_COMPATIBLE {
-                             return (near * 3 + far + 2) >> 2;
-                           };
+  auto lerp1d_scalar =
+      [](uint8_t near, uint8_t far)
+          KLEIDICV_STREAMING_COMPATIBLE { return (near * 3 + far + 2) >> 2; };
 
   auto lerp1d_vector = [](svuint8_t near,
-                          svuint8_t far) INTRINSICCV_STREAMING_COMPATIBLE {
+                          svuint8_t far) KLEIDICV_STREAMING_COMPATIBLE {
     // near * 3
     svuint16_t near3b = svmullb(near, uint8_t{3});
     svuint16_t near3t = svmullt(near, uint8_t{3});
@@ -43,7 +42,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8_sc(
 
   auto lerp2d_vector = [](svbool_t pg, svuint8_t near, svuint8_t mid_a,
                           svuint8_t mid_b,
-                          svuint8_t far) INTRINSICCV_STREAMING_COMPATIBLE {
+                          svuint8_t far) KLEIDICV_STREAMING_COMPATIBLE {
     // near * 9
     svuint16_t near9b = svmullb(near, uint8_t{9});
     svuint16_t near9t = svmullt(near, uint8_t{9});
@@ -72,7 +71,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8_sc(
   };
 
   // Work-around for clang-format oddness.
-#define ISC INTRINSICCV_STREAMING_COMPATIBLE
+#define ISC KLEIDICV_STREAMING_COMPATIBLE
 
   // Handle top or bottom edge
   auto process_edge_row = [src_width, lerp1d_vector](const uint8_t *src_row,
@@ -95,7 +94,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8_sc(
   auto process_row = [src_width, lerp2d_vector](
                          const uint8_t *src_row0, const uint8_t *src_row1,
                          uint8_t *dst_row0,
-                         uint8_t *dst_row1) INTRINSICCV_STREAMING_COMPATIBLE {
+                         uint8_t *dst_row1) KLEIDICV_STREAMING_COMPATIBLE {
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 2 + 1;
@@ -161,18 +160,18 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_2x2_u8_sc(
   process_edge_row(src + src_stride * (src_height - 1),
                    dst + dst_stride * (dst_height - 1));
 
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_4x4_u8_sc(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_4x4_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride) INTRINSICCV_STREAMING_COMPATIBLE {
+    uint8_t *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 4;
   size_t dst_height = src_height * 4;
 
   auto lerp1d_scalar =
       [](uint8_t p, uint8_t a, uint8_t q, uint8_t b)
-          INTRINSICCV_STREAMING_COMPATIBLE { return (p * a + q * b + 4) >> 3; };
+          KLEIDICV_STREAMING_COMPATIBLE { return (p * a + q * b + 4) >> 3; };
 
   auto lerp1d_vector = [](uint8_t p, svuint8_t a, uint8_t q, svuint8_t b) ISC {
     // bias
@@ -236,7 +235,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_4x4_u8_sc(
                          const uint8_t *src_row0, const uint8_t *src_row1,
                          uint8_t *dst_row0, uint8_t *dst_row1,
                          uint8_t *dst_row2,
-                         uint8_t *dst_row3) INTRINSICCV_STREAMING_COMPATIBLE {
+                         uint8_t *dst_row3) KLEIDICV_STREAMING_COMPATIBLE {
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 4 + 2;
@@ -344,19 +343,19 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_4x4_u8_sc(
   copy_dst_row(dst + dst_stride * (dst_height - 2),
                dst + dst_stride * (dst_height - 1));
 
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_linear_u8_sc(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_linear_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width,
-    size_t dst_height) INTRINSICCV_STREAMING_COMPATIBLE {
+    size_t dst_height) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
   if (src_width == 0 || src_height == 0) {
-    return INTRINSICCV_OK;
+    return KLEIDICV_OK;
   }
   if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
     return resize_2x2_u8_sc(src, src_stride, src_width, src_height, dst,
@@ -366,9 +365,9 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t resize_linear_u8_sc(
     return resize_4x4_u8_sc(src, src_stride, src_width, src_height, dst,
                             dst_stride);
   }
-  return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_RESIZE_SC_H
+#endif  // KLEIDICV_RESIZE_SC_H

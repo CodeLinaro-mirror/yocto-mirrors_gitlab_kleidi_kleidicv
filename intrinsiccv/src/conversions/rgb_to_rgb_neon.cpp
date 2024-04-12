@@ -13,14 +13,14 @@ class RGBToBGR final : public UnrollTwice {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   RGBToBGR() : indices_{vld1q_u8_x3(kRGBToBGRTableIndices)} {}
 #else
   RGBToBGR() = default;
 #endif
 
   void vector_path(const ScalarType *src, ScalarType *dst) {
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     uint8x16x3_t src_vect = vld3q_u8(src);
     uint8x16x3_t dst_vect;
 
@@ -57,7 +57,7 @@ class RGBToBGR final : public UnrollTwice {
   }
 
  private:
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   static constexpr uint8_t kRGBToBGRTableIndices[48] = {
       2,  1,  0,  5,  4,  3,  8,  7,  6,  11, 10, 9,  14, 13, 12, 17,
       16, 15, 20, 19, 18, 23, 22, 21, 26, 25, 24, 29, 28, 27, 32, 31,
@@ -187,7 +187,7 @@ class RGBAToRGB final : public UnrollTwice {
   }
 };  // end of class RGBAToRGB<ScalarType>
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
                                   uint8_t *dst, size_t dst_stride, size_t width,
                                   size_t height) {
@@ -200,10 +200,10 @@ intrinsiccv_error_t rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
   RGBToBGR<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t rgba_to_bgra_u8(const uint8_t *src, size_t src_stride,
                                     uint8_t *dst, size_t dst_stride,
                                     size_t width, size_t height) {
@@ -216,10 +216,10 @@ intrinsiccv_error_t rgba_to_bgra_u8(const uint8_t *src, size_t src_stride,
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* BGRA */};
   RGBAToBGRA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                size_t dst_stride, size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
@@ -231,10 +231,10 @@ rgb_to_bgra_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* BGRA */};
   RGBToBGRA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                size_t dst_stride, size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride);
@@ -246,10 +246,10 @@ rgb_to_rgba_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
   RGBToRGBA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t rgba_to_bgr_u8(const uint8_t *src, size_t src_stride,
                                    uint8_t *dst, size_t dst_stride,
                                    size_t width, size_t height) {
@@ -262,10 +262,10 @@ intrinsiccv_error_t rgba_to_bgr_u8(const uint8_t *src, size_t src_stride,
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
   RGBAToBGR<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
                                    uint8_t *dst, size_t dst_stride,
                                    size_t width, size_t height) {
@@ -278,7 +278,7 @@ intrinsiccv_error_t rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
   RGBAToRGB<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 }  // namespace intrinsiccv::neon

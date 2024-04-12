@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_UTILS_H
-#define INTRINSICCV_UTILS_H
+#ifndef KLEIDICV_UTILS_H
+#define KLEIDICV_UTILS_H
 
 #include <algorithm>
 #include <limits>
@@ -14,13 +14,13 @@
 #include "intrinsiccv/ctypes.h"
 #include "intrinsiccv/traits.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Saturating cast from signed to unsigned type.
 template <typename S, typename U,
           std::enable_if_t<std::numeric_limits<S>::is_signed, bool> = true,
           std::enable_if_t<not std::numeric_limits<U>::is_signed, bool> = true>
-static U saturating_cast(S value) INTRINSICCV_STREAMING_COMPATIBLE {
+static U saturating_cast(S value) KLEIDICV_STREAMING_COMPATIBLE {
   if (value > std::numeric_limits<U>::max()) {
     return std::numeric_limits<U>::max();
   }
@@ -36,7 +36,7 @@ template <
     typename SrcType, typename DstType,
     std::enable_if_t<std::is_unsigned_v<DstType> && std::is_unsigned_v<SrcType>,
                      bool> = true>
-static DstType saturating_cast(SrcType value) INTRINSICCV_STREAMING_COMPATIBLE {
+static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING_COMPATIBLE {
   return static_cast<DstType>(value);
 }
 
@@ -45,7 +45,7 @@ template <
     typename SrcType, typename DstType,
     std::enable_if_t<std::is_signed_v<DstType> && std::is_unsigned_v<SrcType>,
                      bool> = true>
-static DstType saturating_cast(SrcType value) INTRINSICCV_STREAMING_COMPATIBLE {
+static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING_COMPATIBLE {
   DstType max_value = std::numeric_limits<DstType>::max();
 
   if (value > static_cast<SrcType>(max_value)) {
@@ -58,21 +58,19 @@ static DstType saturating_cast(SrcType value) INTRINSICCV_STREAMING_COMPATIBLE {
 // Rounding shift right.
 template <typename T>
 static T rounding_shift_right(T value,
-                              size_t shift) INTRINSICCV_STREAMING_COMPATIBLE {
+                              size_t shift) KLEIDICV_STREAMING_COMPATIBLE {
   return (value + (1UL << (shift - 1))) >> shift;
 }
 
 // When placed in a loop, it effectively disables loop vectorization.
-static inline void disable_loop_vectorization()
-    INTRINSICCV_STREAMING_COMPATIBLE {
+static inline void disable_loop_vectorization() KLEIDICV_STREAMING_COMPATIBLE {
   __asm__("");
 }
 
 // Helper class to unroll a loop as needed.
 class LoopUnroll final {
  public:
-  explicit LoopUnroll(size_t length,
-                      size_t step) INTRINSICCV_STREAMING_COMPATIBLE
+  explicit LoopUnroll(size_t length, size_t step) KLEIDICV_STREAMING_COMPATIBLE
       : length_(length),
         step_(step),
         index_(0),
@@ -81,21 +79,21 @@ class LoopUnroll final {
   // Loop unrolled four times.
   template <typename CallbackType>
   LoopUnroll &unroll_four_times(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return unroll_n_times<4>(callback);
   }
 
   // Loop unrolled twice.
   template <typename CallbackType>
   LoopUnroll &unroll_twice(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return unroll_n_times<2>(callback);
   }
 
   // Unrolls the loop twice, if enabled.
   template <bool Enable, typename CallbackType>
   LoopUnroll &unroll_twice_if(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     if constexpr (Enable) {
       return unroll_twice(callback);
     }
@@ -105,15 +103,14 @@ class LoopUnroll final {
 
   // Loop unrolled once.
   template <typename CallbackType>
-  LoopUnroll &unroll_once(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  LoopUnroll &unroll_once(CallbackType callback) KLEIDICV_STREAMING_COMPATIBLE {
     return unroll_n_times<1>(callback);
   }
 
   // Unrolls the loop once, if enabled.
   template <bool Enable, typename CallbackType>
   LoopUnroll &unroll_once_if(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     if constexpr (Enable) {
       return unroll_once(callback);
     }
@@ -123,7 +120,7 @@ class LoopUnroll final {
 
   // Processes trailing data.
   template <typename CallbackType>
-  LoopUnroll &tail(CallbackType callback) INTRINSICCV_STREAMING_COMPATIBLE {
+  LoopUnroll &tail(CallbackType callback) KLEIDICV_STREAMING_COMPATIBLE {
     for (index_ = 0; index_ < remaining_length(); ++index_) {
       disable_loop_vectorization();
       callback(index_);
@@ -135,8 +132,7 @@ class LoopUnroll final {
 
   // Processes all remaining data at once.
   template <typename CallbackType>
-  LoopUnroll &remaining(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  LoopUnroll &remaining(CallbackType callback) KLEIDICV_STREAMING_COMPATIBLE {
     if (length_) {
       callback(length_, step_);
       length_ = 0;
@@ -146,27 +142,27 @@ class LoopUnroll final {
   }
 
   // Returns true if there is nothing left to process.
-  bool empty() const INTRINSICCV_STREAMING_COMPATIBLE { return length_ == 0; }
+  bool empty() const KLEIDICV_STREAMING_COMPATIBLE { return length_ == 0; }
 
   // Returns the step value.
-  size_t step() const INTRINSICCV_STREAMING_COMPATIBLE { return step_; }
+  size_t step() const KLEIDICV_STREAMING_COMPATIBLE { return step_; }
 
   // Returns the remaining length.
-  size_t remaining_length() const INTRINSICCV_STREAMING_COMPATIBLE {
+  size_t remaining_length() const KLEIDICV_STREAMING_COMPATIBLE {
     return length_;
   }
 
   // Returns true if it is possible to avoid the tail loop.
-  bool can_avoid_tail() const INTRINSICCV_STREAMING_COMPATIBLE {
+  bool can_avoid_tail() const KLEIDICV_STREAMING_COMPATIBLE {
     return can_avoid_tail_;
   }
 
   // Instructs the loop logic to prepare to avoid the tail loop.
-  void avoid_tail() INTRINSICCV_STREAMING_COMPATIBLE { length_ = step(); }
+  void avoid_tail() KLEIDICV_STREAMING_COMPATIBLE { length_ = step(); }
 
   template <const size_t UnrollFactor, typename CallbackType>
   LoopUnroll &unroll_n_times(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     const size_t step = UnrollFactor * step_;
     // In practice step will never be zero and we don't want to spend
     // instructions on checking that.
@@ -186,12 +182,12 @@ class LoopUnroll final {
   // Instructs the loop logic to avoid the tail loop.
   template <typename CallbackType>
   bool try_avoid_tail_loop(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
-    if (INTRINSICCV_UNLIKELY(!can_avoid_tail_)) {
+      KLEIDICV_STREAMING_COMPATIBLE {
+    if (KLEIDICV_UNLIKELY(!can_avoid_tail_)) {
       return false;
     }
 
-    if (INTRINSICCV_UNLIKELY(!remaining_length())) {
+    if (KLEIDICV_UNLIKELY(!remaining_length())) {
       return false;
     }
 
@@ -211,14 +207,13 @@ class LoopUnroll final {
 template <class Tail = UsesTailPath>
 class LoopUnroll2 final {
  public:
-  explicit LoopUnroll2(size_t length,
-                       size_t step) INTRINSICCV_STREAMING_COMPATIBLE
+  explicit LoopUnroll2(size_t length, size_t step) KLEIDICV_STREAMING_COMPATIBLE
       : length_(length),
         step_(step),
         index_(0) {}
 
   explicit LoopUnroll2(size_t start_index, size_t length,
-                       size_t step) INTRINSICCV_STREAMING_COMPATIBLE
+                       size_t step) KLEIDICV_STREAMING_COMPATIBLE
       : length_(length),
         step_(step),
         index_(std::min(start_index, length)) {}
@@ -226,21 +221,21 @@ class LoopUnroll2 final {
   // Loop unrolled four times.
   template <typename CallbackType>
   LoopUnroll2 &unroll_four_times(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return unroll_n_times<4>(callback);
   }
 
   // Loop unrolled twice.
   template <typename CallbackType>
   LoopUnroll2 &unroll_twice(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return unroll_n_times<2>(callback);
   }
 
   // Unrolls the loop twice, if enabled.
   template <bool Enable, typename CallbackType>
   LoopUnroll2 &unroll_twice_if(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     if constexpr (Enable) {
       return unroll_twice(callback);
     }
@@ -251,14 +246,14 @@ class LoopUnroll2 final {
   // Loop unrolled once.
   template <typename CallbackType>
   LoopUnroll2 &unroll_once(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     return unroll_n_times<1>(callback);
   }
 
   // Unrolls the loop once, if enabled.
   template <bool Enable, typename CallbackType>
   LoopUnroll2 &unroll_once_if(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     if constexpr (Enable) {
       return unroll_once(callback);
     }
@@ -268,7 +263,7 @@ class LoopUnroll2 final {
 
   // Processes trailing data.
   template <typename CallbackType>
-  LoopUnroll2 &tail(CallbackType callback) INTRINSICCV_STREAMING_COMPATIBLE {
+  LoopUnroll2 &tail(CallbackType callback) KLEIDICV_STREAMING_COMPATIBLE {
     while (index_ < length_) {
       disable_loop_vectorization();
       callback(index_++);
@@ -279,8 +274,7 @@ class LoopUnroll2 final {
 
   // Processes all remaining data at once.
   template <typename CallbackType>
-  LoopUnroll2 &remaining(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+  LoopUnroll2 &remaining(CallbackType callback) KLEIDICV_STREAMING_COMPATIBLE {
     if (remaining_length()) {
       callback(index_, length_);
       index_ = length_;
@@ -290,22 +284,20 @@ class LoopUnroll2 final {
   }
 
   // Returns true if there is nothing left to process.
-  bool empty() const INTRINSICCV_STREAMING_COMPATIBLE {
-    return length_ == index_;
-  }
+  bool empty() const KLEIDICV_STREAMING_COMPATIBLE { return length_ == index_; }
 
   // Returns the step value.
-  size_t step() const INTRINSICCV_STREAMING_COMPATIBLE { return step_; }
+  size_t step() const KLEIDICV_STREAMING_COMPATIBLE { return step_; }
 
   // Returns the remaining length.
-  size_t remaining_length() const INTRINSICCV_STREAMING_COMPATIBLE {
+  size_t remaining_length() const KLEIDICV_STREAMING_COMPATIBLE {
     return length_ - index_;
   }
 
  private:
   template <const size_t UnrollFactor, typename CallbackType>
   LoopUnroll2 &unroll_n_times(CallbackType callback)
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     const size_t n_step = UnrollFactor * step();
     size_t max_index = index_ + (remaining_length() / n_step) * n_step;
 
@@ -338,19 +330,19 @@ class LoopUnroll2 final {
 
 // Check whether any of the arguments are null pointers.
 template <typename... Pointers>
-bool any_null(Pointers... pointers) INTRINSICCV_STREAMING_COMPATIBLE {
+bool any_null(Pointers... pointers) KLEIDICV_STREAMING_COMPATIBLE {
   return (... || (pointers == nullptr));
 }
 
-#define CHECK_POINTERS(...)                                    \
-  do {                                                         \
-    if (INTRINSICCV_TARGET_NAMESPACE::any_null(__VA_ARGS__)) { \
-      return INTRINSICCV_ERROR_NULL_POINTER;                   \
-    }                                                          \
+#define CHECK_POINTERS(...)                                 \
+  do {                                                      \
+    if (KLEIDICV_TARGET_NAMESPACE::any_null(__VA_ARGS__)) { \
+      return KLEIDICV_ERROR_NULL_POINTER;                   \
+    }                                                       \
   } while (false)
 
 template <typename AlignType, typename Value>
-bool is_misaligned(Value v) INTRINSICCV_STREAMING_COMPATIBLE {
+bool is_misaligned(Value v) KLEIDICV_STREAMING_COMPATIBLE {
   constexpr size_t kMask = alignof(AlignType) - 1;
   static_assert(kMask == 0b0001 || kMask == 0b0011 || kMask == 0b0111 ||
                 kMask == 0b1111);
@@ -360,12 +352,12 @@ bool is_misaligned(Value v) INTRINSICCV_STREAMING_COMPATIBLE {
 // Return value aligned up to the next multiple of alignment
 // Assumes alignment is a power of two.
 template <typename T>
-T align_up(T value, size_t alignment) INTRINSICCV_STREAMING_COMPATIBLE {
+T align_up(T value, size_t alignment) KLEIDICV_STREAMING_COMPATIBLE {
   return (value + alignment - 1) & ~(alignment - 1);
 }
 
 template <typename T>
-T *align_up(T *value, size_t alignment) INTRINSICCV_STREAMING_COMPATIBLE {
+T *align_up(T *value, size_t alignment) KLEIDICV_STREAMING_COMPATIBLE {
   // NOLINTBEGIN(performance-no-int-to-ptr)
   return reinterpret_cast<T *>(
       align_up(reinterpret_cast<uintptr_t>(value), alignment));
@@ -375,42 +367,42 @@ T *align_up(T *value, size_t alignment) INTRINSICCV_STREAMING_COMPATIBLE {
 // Specialisation for when stride misalignment is possible.
 template <typename T>
 std::enable_if_t<alignof(T) != 1, intrinsiccv_error_t> check_pointer_and_stride(
-    T *pointer, size_t stride) INTRINSICCV_STREAMING_COMPATIBLE {
+    T *pointer, size_t stride) KLEIDICV_STREAMING_COMPATIBLE {
   if (pointer == nullptr) {
-    return INTRINSICCV_ERROR_NULL_POINTER;
+    return KLEIDICV_ERROR_NULL_POINTER;
   }
   if (is_misaligned<T>(stride)) {
-    return INTRINSICCV_ERROR_ALIGNMENT;
+    return KLEIDICV_ERROR_ALIGNMENT;
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 // Specialisation for when stride misalignment is impossible.
 template <typename T>
 std::enable_if_t<alignof(T) == 1, intrinsiccv_error_t> check_pointer_and_stride(
-    T *pointer, size_t /*stride*/) INTRINSICCV_STREAMING_COMPATIBLE {
+    T *pointer, size_t /*stride*/) KLEIDICV_STREAMING_COMPATIBLE {
   if (pointer == nullptr) {
-    return INTRINSICCV_ERROR_NULL_POINTER;
+    return KLEIDICV_ERROR_NULL_POINTER;
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-#define CHECK_POINTER_AND_STRIDE(pointer, stride)                             \
-  do {                                                                        \
-    if (intrinsiccv_error_t ptr_stride_err =                                  \
-            INTRINSICCV_TARGET_NAMESPACE::check_pointer_and_stride(pointer,   \
-                                                                   stride)) { \
-      return ptr_stride_err;                                                  \
-    }                                                                         \
+#define CHECK_POINTER_AND_STRIDE(pointer, stride)                          \
+  do {                                                                     \
+    if (intrinsiccv_error_t ptr_stride_err =                               \
+            KLEIDICV_TARGET_NAMESPACE::check_pointer_and_stride(pointer,   \
+                                                                stride)) { \
+      return ptr_stride_err;                                               \
+    }                                                                      \
   } while (false)
 
-#define MAKE_POINTER_CHECK_ALIGNMENT(ElementType, name, from)     \
-  if constexpr (alignof(ElementType) > 1) {                       \
-    if (INTRINSICCV_TARGET_NAMESPACE::is_misaligned<ElementType>( \
-            reinterpret_cast<uintptr_t>(from))) {                 \
-      return INTRINSICCV_ERROR_ALIGNMENT;                         \
-    }                                                             \
-  }                                                               \
+#define MAKE_POINTER_CHECK_ALIGNMENT(ElementType, name, from)  \
+  if constexpr (alignof(ElementType) > 1) {                    \
+    if (KLEIDICV_TARGET_NAMESPACE::is_misaligned<ElementType>( \
+            reinterpret_cast<uintptr_t>(from))) {              \
+      return KLEIDICV_ERROR_ALIGNMENT;                         \
+    }                                                          \
+  }                                                            \
   ElementType *name = reinterpret_cast<ElementType *>(from)
 
 // Check whether the image size is acceptable by limiting it.
@@ -418,17 +410,17 @@ std::enable_if_t<alignof(T) == 1, intrinsiccv_error_t> check_pointer_and_stride(
   do {                                                        \
     size_t image_size = 0;                                    \
     if (__builtin_mul_overflow(width, height, &image_size)) { \
-      return INTRINSICCV_ERROR_RANGE;                         \
+      return KLEIDICV_ERROR_RANGE;                            \
     }                                                         \
                                                               \
-    if (image_size > INTRINSICCV_MAX_IMAGE_PIXELS) {          \
-      return INTRINSICCV_ERROR_RANGE;                         \
+    if (image_size > KLEIDICV_MAX_IMAGE_PIXELS) {             \
+      return KLEIDICV_ERROR_RANGE;                            \
     }                                                         \
   } while (false)
 
 // Check whether the rectangle size is acceptable by limiting it.
 #define CHECK_RECTANGLE_SIZE(rect) CHECK_IMAGE_SIZE(rect.width, rect.height)
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_UTILS_H
+#endif  // KLEIDICV_UTILS_H

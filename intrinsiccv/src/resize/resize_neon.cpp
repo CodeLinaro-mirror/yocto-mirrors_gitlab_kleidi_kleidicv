@@ -8,27 +8,27 @@
 
 namespace intrinsiccv::neon {
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 static intrinsiccv_error_t check_dimensions(size_t src_dim, size_t dst_dim) {
   size_t half_src_dim = src_dim / 2;
 
   if ((src_dim % 2) == 0) {
     if (dst_dim == half_src_dim) {
-      return INTRINSICCV_OK;
+      return KLEIDICV_OK;
     }
   } else {
     if (dst_dim == half_src_dim || dst_dim == (half_src_dim + 1)) {
-      return INTRINSICCV_OK;
+      return KLEIDICV_OK;
     }
   }
 
-  return INTRINSICCV_ERROR_RANGE;
+  return KLEIDICV_ERROR_RANGE;
 }
 
 // Disable the warning, as the complexity is just above the threshold, it's
 // better to leave it in one piece.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                          size_t src_width, size_t src_height,
                                          uint8_t *dst, size_t dst_stride,
@@ -117,7 +117,7 @@ intrinsiccv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
       *dst = *src;
     }
   }
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 

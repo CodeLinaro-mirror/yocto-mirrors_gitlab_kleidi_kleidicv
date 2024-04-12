@@ -41,7 +41,7 @@ class CountNonZeros final : public UnrollTwice {
 };  // end of class CountNonZeros<ScalarType>
 
 template <typename T>
-INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
+KLEIDICV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
     const T *src, size_t src_stride, size_t width, size_t height,
     size_t *count) {
   CHECK_POINTERS(count);
@@ -55,7 +55,7 @@ INTRINSICCV_TARGET_FN_ATTRS static intrinsiccv_error_t count_nonzeros(
   apply_block_operation_by_rows(operation, rect, src_rows);
   *count = operation.result();
 
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 }  // namespace intrinsiccv::neon

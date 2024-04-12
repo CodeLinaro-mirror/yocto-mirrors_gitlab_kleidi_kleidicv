@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_MORPHOLOGY_WORKSPACE_H
-#define INTRINSICCV_MORPHOLOGY_WORKSPACE_H
+#ifndef KLEIDICV_MORPHOLOGY_WORKSPACE_H
+#define KLEIDICV_MORPHOLOGY_WORKSPACE_H
 
 #include <algorithm>
 #include <cstdlib>
@@ -13,7 +13,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/types.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Forward declarations.
 class MorphologyWorkspace;
@@ -22,7 +22,7 @@ class MorphologyWorkspace;
 class MorphologyWorkspaceDeleter {
  public:
   void operator()(MorphologyWorkspace *ptr) const
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     std::free(ptr);
   };
 };
@@ -40,11 +40,11 @@ class MorphologyWorkspace final {
   };
 
   static std::optional<BorderType> get_border_type(
-      intrinsiccv_border_type_t border_type) INTRINSICCV_STREAMING_COMPATIBLE {
+      intrinsiccv_border_type_t border_type) KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type) {
-      case INTRINSICCV_BORDER_TYPE_REPLICATE:
+      case KLEIDICV_BORDER_TYPE_REPLICATE:
         return BorderType::REPLICATE;
-      case INTRINSICCV_BORDER_TYPE_CONSTANT:
+      case KLEIDICV_BORDER_TYPE_CONSTANT:
         return BorderType::CONSTANT;
       default:
         return std::optional<BorderType>();
@@ -56,7 +56,7 @@ class MorphologyWorkspace final {
    public:
     constexpr void operator()(Rows<const T> src_rows, Rows<T> dst_rows,
                               size_t length) const
-        INTRINSICCV_STREAMING_COMPATIBLE {
+        KLEIDICV_STREAMING_COMPATIBLE {
       std::memcpy(static_cast<void *>(&dst_rows[0]),
                   static_cast<const void *>(&src_rows[0]),
                   length * sizeof(T) * dst_rows.channels());
@@ -72,14 +72,14 @@ class MorphologyWorkspace final {
       intrinsiccv_point_t anchor, BorderType border_type,
       intrinsiccv_border_values_t border_values, size_t channels,
       size_t iterations, size_t type_size,
-      intrinsiccv_rectangle_t image) INTRINSICCV_STREAMING_COMPATIBLE {
+      intrinsiccv_rectangle_t image) KLEIDICV_STREAMING_COMPATIBLE {
     // These values are arbitrarily choosen.
     const size_t rows_per_iteration = std::max(2 * kernel.height, 32UL);
     // To avoid load/store penalties.
     const size_t kAlignment = 16;
 
     if (anchor.x >= kernel.width || anchor.y >= kernel.height) {
-      return INTRINSICCV_ERROR_RANGE;
+      return KLEIDICV_ERROR_RANGE;
     }
 
     Rectangle image_size{image};
@@ -103,7 +103,7 @@ class MorphologyWorkspace final {
     size_t buffer_rows_size = 0UL;
     if (__builtin_mul_overflow(buffer_rows_stride, buffer_rows_height,
                                &buffer_rows_size)) {
-      return INTRINSICCV_ERROR_RANGE;
+      return KLEIDICV_ERROR_RANGE;
     }
     buffer_rows_size += kAlignment - 1;
 
@@ -118,7 +118,7 @@ class MorphologyWorkspace final {
     workspace = MorphologyWorkspace::Pointer{
         reinterpret_cast<MorphologyWorkspace *>(allocation)};
     if (!workspace) {
-      return INTRINSICCV_ERROR_ALLOCATION;
+      return KLEIDICV_ERROR_ALLOCATION;
     }
 
     workspace->rows_per_iteration_ = rows_per_iteration;
@@ -147,7 +147,7 @@ class MorphologyWorkspace final {
     workspace->type_size_ = type_size;
     workspace->image_size_ = image_size;
 
-    return INTRINSICCV_OK;
+    return KLEIDICV_OK;
   }
 
   intrinsiccv_rectangle_t kernel() const { return kernel_; }
@@ -165,12 +165,12 @@ class MorphologyWorkspace final {
   void process(Rectangle rect, Rows<const typename O::SourceType> src_rows,
                Rows<typename O::DestinationType> dst_rows, Margin margin,
                Border<typename O::SourceType> border, BorderType border_type,
-               O operation) INTRINSICCV_STREAMING_COMPATIBLE {
+               O operation) KLEIDICV_STREAMING_COMPATIBLE {
     using S = typename O::SourceType;
     using B = typename O::BufferType;
     typename O::CopyData copy_data{};
 
-    if (INTRINSICCV_UNLIKELY(rect.width() == 0 || rect.height() == 0)) {
+    if (KLEIDICV_UNLIKELY(rect.width() == 0 || rect.height() == 0)) {
       return;
     }
 
@@ -318,7 +318,7 @@ class MorphologyWorkspace final {
  private:
   // The number of wide rows to process in the next iteration.
   [[nodiscard]] size_t get_next_horizontal_height()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     size_t height = std::min(horizontal_height_, rows_per_iteration_);
     horizontal_height_ -= height;
     return height;
@@ -326,7 +326,7 @@ class MorphologyWorkspace final {
 
   // The number of indirect rows to process in the next iteration.
   [[nodiscard]] size_t get_next_vertical_height()
-      INTRINSICCV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING_COMPATIBLE {
     size_t height = std::min(vertical_height_, rows_per_iteration_);
     vertical_height_ -= height;
     return height;
@@ -334,7 +334,7 @@ class MorphologyWorkspace final {
 
   template <typename T, typename BorderType>
   void make_constant_border(Rows<T> dst_rows, size_t dst_index, size_t count,
-                            BorderType value) INTRINSICCV_STREAMING_COMPATIBLE {
+                            BorderType value) KLEIDICV_STREAMING_COMPATIBLE {
     auto dst = &dst_rows.at(0, dst_index)[0];
     for (size_t index = 0; index < count * dst_rows.channels(); ++index) {
       dst[index] = value;
@@ -344,7 +344,7 @@ class MorphologyWorkspace final {
   template <typename T>
   void replicate_border(Rows<const T> src_rows, Rows<T> dst_rows,
                         size_t src_index, size_t dst_index,
-                        size_t count) INTRINSICCV_STREAMING_COMPATIBLE {
+                        size_t count) KLEIDICV_STREAMING_COMPATIBLE {
     if (!count) {
       return;
     }
@@ -387,9 +387,9 @@ class MorphologyWorkspace final {
   // Stride of the wide rows.
   size_t wide_rows_stride_;
   // Workspace area begins here.
-  uint8_t data_[0] INTRINSICCV_ATTR_ALIGNED(sizeof(void *));
+  uint8_t data_[0] KLEIDICV_ATTR_ALIGNED(sizeof(void *));
 };  // end of class MorphologyWorkspace
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_MORPHOLOGY_WORKSPACE_H
+#endif  // KLEIDICV_MORPHOLOGY_WORKSPACE_H

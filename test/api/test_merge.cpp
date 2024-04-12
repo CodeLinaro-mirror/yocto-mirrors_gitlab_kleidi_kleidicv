@@ -88,7 +88,7 @@ class MergeTest final {
       strides[i] = inputs[i].stride();
     }
     ASSERT_EQ(
-        INTRINSICCV_OK,
+        KLEIDICV_OK,
         intrinsiccv_merge(input_raw_pointers, strides, actual_output.data(),
                           actual_output.stride(), input_width, height, Channels,
                           sizeof(ElementType)));
@@ -110,7 +110,7 @@ class MergeTest final {
 
 template <typename ElementType, int kChannels>
 static void test_not_implemented(
-    intrinsiccv_error_t expected = INTRINSICCV_ERROR_NOT_IMPLEMENTED) {
+    intrinsiccv_error_t expected = KLEIDICV_ERROR_NOT_IMPLEMENTED) {
   const size_t width = 1, height = 1;
   ElementType src_arrays[kChannels][width * height] = {{234}};
   ElementType dst[kChannels * width * height] = {123};
@@ -211,7 +211,7 @@ TYPED_TEST(Merge, FourChannels) {
 }
 
 TYPED_TEST(Merge, OneChannelOutOfRange) {
-  test_not_implemented<TypeParam, 1>(INTRINSICCV_ERROR_RANGE);
+  test_not_implemented<TypeParam, 1>(KLEIDICV_ERROR_RANGE);
 }
 
 TYPED_TEST(Merge, FiveChannelsNotImplemented) {
@@ -237,7 +237,7 @@ TYPED_TEST(Merge, NullPointer) {
       for (int i = 0; i < channels; ++i) {
         srcs[i] = (i == null_src) ? nullptr : src_arrays + i;
       }
-      EXPECT_EQ(INTRINSICCV_ERROR_NULL_POINTER,
+      EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
                 intrinsiccv_merge(srcs, src_strides, dst, dst_stride, 1, 1,
                                   channels, sizeof(TypeParam)));
     }
@@ -270,7 +270,7 @@ TYPED_TEST(Merge, Misalignment) {
   auto check_merge = [&](int channels, void* dst_maybe_misaligned,
                          size_t dst_stride_maybe_misaligned) {
     EXPECT_EQ(
-        INTRINSICCV_ERROR_ALIGNMENT,
+        KLEIDICV_ERROR_ALIGNMENT,
         intrinsiccv_merge(reinterpret_cast<const void**>(srcs), src_strides,
                           dst_maybe_misaligned, dst_stride_maybe_misaligned, 1,
                           1, channels, sizeof(TypeParam)));
@@ -307,12 +307,10 @@ TYPED_TEST(Merge, ZeroImageSize) {
   size_t src_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam)};
   const size_t dst_stride = kChannels * sizeof(TypeParam);
 
-  EXPECT_EQ(INTRINSICCV_OK,
-            intrinsiccv_merge(srcs, src_strides, dst, dst_stride, 0, 1,
-                              kChannels, sizeof(TypeParam)));
-  EXPECT_EQ(INTRINSICCV_OK,
-            intrinsiccv_merge(srcs, src_strides, dst, dst_stride, 1, 0,
-                              kChannels, sizeof(TypeParam)));
+  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_merge(srcs, src_strides, dst, dst_stride,
+                                           0, 1, kChannels, sizeof(TypeParam)));
+  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_merge(srcs, src_strides, dst, dst_stride,
+                                           1, 0, kChannels, sizeof(TypeParam)));
 }
 
 TYPED_TEST(Merge, OversizeImage) {
@@ -322,13 +320,12 @@ TYPED_TEST(Merge, OversizeImage) {
   size_t src_strides[kChannels] = {sizeof(TypeParam), sizeof(TypeParam)};
   const size_t dst_stride = kChannels * sizeof(TypeParam);
 
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             intrinsiccv_merge(srcs, src_strides, dst, dst_stride,
-                              INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, kChannels,
+                              KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, kChannels,
                               sizeof(TypeParam)));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
-            intrinsiccv_merge(srcs, src_strides, dst, dst_stride,
-                              INTRINSICCV_MAX_IMAGE_PIXELS,
-                              INTRINSICCV_MAX_IMAGE_PIXELS, kChannels,
-                              sizeof(TypeParam)));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            intrinsiccv_merge(
+                srcs, src_strides, dst, dst_stride, KLEIDICV_MAX_IMAGE_PIXELS,
+                KLEIDICV_MAX_IMAGE_PIXELS, kChannels, sizeof(TypeParam)));
 }

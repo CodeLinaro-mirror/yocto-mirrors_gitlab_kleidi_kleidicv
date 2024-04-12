@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_CONVERSIONS_RGB_TO_RGB_H
-#define INTRINSICCV_CONVERSIONS_RGB_TO_RGB_H
+#ifndef KLEIDICV_CONVERSIONS_RGB_TO_RGB_H
+#define KLEIDICV_CONVERSIONS_RGB_TO_RGB_H
 
 #include "intrinsiccv/intrinsiccv.h"
 
@@ -85,4 +85,4 @@ intrinsiccv_error_t rgba_to_rgb_u8(const uint8_t *src, size_t src_stride,
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_CONVERSIONS_RGB_TO_RGB_H
+#endif  // KLEIDICV_CONVERSIONS_RGB_TO_RGB_H

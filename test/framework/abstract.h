@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_FRAMEWORK_ABSTRACT_H_
-#define INTRINSICCV_TEST_FRAMEWORK_ABSTRACT_H_
+#ifndef KLEIDICV_TEST_FRAMEWORK_ABSTRACT_H_
+#define KLEIDICV_TEST_FRAMEWORK_ABSTRACT_H_
 
 #include <cstddef>
 #include <optional>
@@ -67,4 +67,4 @@ class Generator {
 
 }  // namespace test
 
-#endif  // INTRINSICCV_TEST_FRAMEWORK_ABSTRACT_H_
+#endif  // KLEIDICV_TEST_FRAMEWORK_ABSTRACT_H_

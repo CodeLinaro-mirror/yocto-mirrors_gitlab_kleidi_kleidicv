@@ -11,7 +11,7 @@ template <typename ScalarType>
 class SaturatingMultiply final : public UnrollTwice {
  public:
   using ContextType = Context;
-  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
   explicit SaturatingMultiply(double scale = 1.0) : scale_{scale} {};
@@ -57,20 +57,20 @@ intrinsiccv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
   Rows<const T> src_b_rows{src_b, src_b_stride};
   Rows<T> dst_rows{dst, dst_stride};
   apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                                 \
-  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t                     \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                                    \
+  template KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t                        \
   saturating_multiply<type>(const type *src_a, size_t src_a_stride,            \
                             const type *src_b, size_t src_b_stride, type *dst, \
                             size_t dst_stride, size_t width, size_t height,    \
                             double scale)
 
-INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
-INTRINSICCV_INSTANTIATE_TEMPLATE(int8_t);
-INTRINSICCV_INSTANTIATE_TEMPLATE(uint16_t);
-INTRINSICCV_INSTANTIATE_TEMPLATE(int16_t);
-INTRINSICCV_INSTANTIATE_TEMPLATE(int32_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(int8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(int32_t);
 
 }  // namespace intrinsiccv::sve2

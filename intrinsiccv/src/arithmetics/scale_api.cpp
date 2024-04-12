@@ -22,12 +22,12 @@ namespace sme2 {}  // namespace sme2
 
 }  // namespace intrinsiccv
 
-#define INTRINSICCV_DEFINE_SCALE_API(name, type)                        \
-  INTRINSICCV_MULTIVERSION_C_API(name, &intrinsiccv::neon::scale<type>, \
-                                 nullptr, nullptr)
+#define KLEIDICV_DEFINE_SCALE_API(name, type)                                 \
+  KLEIDICV_MULTIVERSION_C_API(name, &intrinsiccv::neon::scale<type>, nullptr, \
+                              nullptr)
 
-INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_u8, uint8_t);
-// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s8, int8_t);
-// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_u16, uint16_t);
-// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s16, int16_t);
-// INTRINSICCV_DEFINE_SCALE_API(intrinsiccv_scale_s32, int32_t);
+KLEIDICV_DEFINE_SCALE_API(intrinsiccv_scale_u8, uint8_t);
+// KLEIDICV_DEFINE_SCALE_API(intrinsiccv_scale_s8, int8_t);
+// KLEIDICV_DEFINE_SCALE_API(intrinsiccv_scale_u16, uint16_t);
+// KLEIDICV_DEFINE_SCALE_API(intrinsiccv_scale_s16, int16_t);
+// KLEIDICV_DEFINE_SCALE_API(intrinsiccv_scale_s32, int32_t);

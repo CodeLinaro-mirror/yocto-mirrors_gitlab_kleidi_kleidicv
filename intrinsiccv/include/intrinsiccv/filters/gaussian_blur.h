@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_FILTERS_GAUSSIAN_BLUR_H
-#define INTRINSICCV_FILTERS_GAUSSIAN_BLUR_H
+#ifndef KLEIDICV_FILTERS_GAUSSIAN_BLUR_H
+#define KLEIDICV_FILTERS_GAUSSIAN_BLUR_H
 
 #include "intrinsiccv/config.h"
 #include "intrinsiccv/types.h"
@@ -52,4 +52,4 @@ intrinsiccv_error_t gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride,
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_FILTERS_GAUSSIAN_BLUR_H
+#endif  // KLEIDICV_FILTERS_GAUSSIAN_BLUR_H

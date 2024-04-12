@@ -15,7 +15,7 @@ static void transpose_vectors_recursively(DstVectorType *dst_vectors,
   // order is halved at every recursive call, once it is 2 the recursion should
   // stop and the input data needs to be read.
   if constexpr (Order == 2) {
-    INTRINSICCV_FORCE_LOOP_UNROLL
+    KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t index = 0; index < BufferSize; index += Order) {
       using SrcVectorType = typename VecTraits<SrcType>::VectorType;
       SrcVectorType src_vector[2];
@@ -39,9 +39,9 @@ static void transpose_vectors_recursively(DstVectorType *dst_vectors,
 
     constexpr size_t half_order = Order / 2;
 
-    INTRINSICCV_FORCE_LOOP_UNROLL
+    KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t outer_i = 0; outer_i < BufferSize; outer_i += Order) {
-      INTRINSICCV_FORCE_LOOP_UNROLL
+      KLEIDICV_FORCE_LOOP_UNROLL
       for (size_t inner_i = 0; inner_i < half_order; ++inner_i) {
         dst_vectors[outer_i + inner_i] =
             vtrn1q(reinterpret_cast<DstVectorType>(input[outer_i + inner_i]),
@@ -78,7 +78,7 @@ static void vector_path(Rows<const ScalarType> src_rows,
   transpose_vectors_recursively<buffer_size, transpose_order_b64>(
       trn_result_b64, src_rows);
 
-  INTRINSICCV_FORCE_LOOP_UNROLL
+  KLEIDICV_FORCE_LOOP_UNROLL
   for (size_t index = 0; index < buffer_size; ++index) {
     vst1q(&dst_rows.at(index)[0], trn_result_b64[index]);
   }
@@ -126,7 +126,7 @@ static intrinsiccv_error_t transpose(Rectangle rect,
     scalar_path(src_rows.at(hindex), dst_rows.at(0, hindex),
                 final_hindex - hindex, rect.width());
   });
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 template <typename ScalarType>
@@ -191,7 +191,7 @@ static intrinsiccv_error_t transpose(Rectangle rect,
       }
     }
   });
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 template <typename T>
@@ -210,7 +210,7 @@ static intrinsiccv_error_t transpose(const void *src_void, size_t src_stride,
   if (src == dst) {
     if (src_width != src_height) {
       // Inplace transpose only implemented if width and height are the same
-      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
     }
     return transpose(rect, dst_rows);
   }
@@ -218,7 +218,7 @@ static intrinsiccv_error_t transpose(const void *src_void, size_t src_stride,
   return transpose(rect, src_rows, dst_rows);
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
                               size_t dst_stride, size_t src_width,
                               size_t src_height, size_t element_size) {
@@ -236,7 +236,7 @@ intrinsiccv_error_t transpose(const void *src, size_t src_stride, void *dst,
       return transpose<uint64_t>(src, src_stride, dst, dst_stride, src_width,
                                  src_height);
     default:
-      return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 }
 

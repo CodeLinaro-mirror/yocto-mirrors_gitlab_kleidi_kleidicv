@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_NEON_H
-#define INTRINSICCV_NEON_H
+#ifndef KLEIDICV_NEON_H
+#define KLEIDICV_NEON_H
 
 #include <utility>
 
@@ -331,7 +331,7 @@ class SeparableFilter<FilterType, 3UL> {
   using BufferVecTraits = typename neon::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo3x3<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo3x3<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -461,7 +461,7 @@ class SeparableFilter<FilterType, 5UL> {
   using BufferVecTraits = typename neon::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::INTRINSICCV_TARGET_NAMESPACE::FixedBorderInfo5x5<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo5x5<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -577,4 +577,4 @@ using SeparableFilter5x5 = SeparableFilter<FilterType, 5UL>;
 
 }  // namespace intrinsiccv::neon
 
-#endif  // INTRINSICCV_NEON_H
+#endif  // KLEIDICV_NEON_H

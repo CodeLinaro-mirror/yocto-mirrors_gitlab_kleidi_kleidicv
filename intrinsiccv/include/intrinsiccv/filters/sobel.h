@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_FILTERS_SOBEL_H
-#define INTRINSICCV_FILTERS_SOBEL_H
+#ifndef KLEIDICV_FILTERS_SOBEL_H
+#define KLEIDICV_FILTERS_SOBEL_H
 
 #include "intrinsiccv/intrinsiccv.h"
 
@@ -44,4 +44,4 @@ intrinsiccv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
 
 }  // namespace intrinsiccv
 
-#endif  // INTRINSICCV_FILTERS_SOBEL_H
+#endif  // KLEIDICV_FILTERS_SOBEL_H

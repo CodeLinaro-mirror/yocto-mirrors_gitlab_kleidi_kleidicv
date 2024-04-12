@@ -2,28 +2,28 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H
-#define INTRINSICCV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H
+#ifndef KLEIDICV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H
+#define KLEIDICV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H
 
 #include <limits>
 
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/sve2.h"
 
-namespace INTRINSICCV_TARGET_NAMESPACE {
+namespace KLEIDICV_TARGET_NAMESPACE {
 
 template <typename ScalarType>
 class SaturatingAddAbsWithThreshold final : public UnrollTwice {
  public:
   using ContextType = Context;
-  using VecTraits = INTRINSICCV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
   explicit SaturatingAddAbsWithThreshold(ScalarType threshold)
-      INTRINSICCV_STREAMING_COMPATIBLE : threshold_(threshold) {}
+      KLEIDICV_STREAMING_COMPATIBLE : threshold_(threshold) {}
 
   VectorType vector_path(ContextType ctx, VectorType src_a,
-                         VectorType src_b) INTRINSICCV_STREAMING_COMPATIBLE {
+                         VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     VectorType add_abs = svqadd_x(pg, svqabs_x(pg, src_a), svqabs_x(pg, src_b));
     svbool_t predicate = svcmpgt(pg, add_abs, threshold_);
@@ -38,7 +38,7 @@ template <typename T>
 intrinsiccv_error_t saturating_add_abs_with_threshold_sc(
     const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
     T *dst, size_t dst_stride, size_t width, size_t height,
-    T threshold) INTRINSICCV_STREAMING_COMPATIBLE {
+    T threshold) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src_a, src_a_stride);
   CHECK_POINTER_AND_STRIDE(src_b, src_b_stride);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride);
@@ -50,9 +50,9 @@ intrinsiccv_error_t saturating_add_abs_with_threshold_sc(
   Rows<const T> src_b_rows{src_b, src_b_stride};
   Rows<T> dst_rows{dst, dst_stride};
   apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-}  // namespace INTRINSICCV_TARGET_NAMESPACE
+}  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // INTRINSICCV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H
+#endif  // KLEIDICV_SATURATING_ADD_ABS_WITH_THRESHOLD_SC_H

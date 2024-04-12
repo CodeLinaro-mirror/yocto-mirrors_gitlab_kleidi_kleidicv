@@ -11,16 +11,16 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "test_config.h"
 
-#define INTRINSICCV_float_conversion(I, input_type_name, O, output_type_name) \
-  INTRINSICCV_DIFF_IO_API(                                                    \
+#define KLEIDICV_float_conversion(I, input_type_name, O, output_type_name)    \
+  KLEIDICV_DIFF_IO_API(                                                       \
       float_conversion,                                                       \
       intrinsiccv_float_conversion_##input_type_name##_##output_type_name, I, \
       O)
 
-INTRINSICCV_float_conversion(float, f32, int8_t, s8);
-INTRINSICCV_float_conversion(float, f32, uint8_t, u8);
-INTRINSICCV_float_conversion(int8_t, s8, float, f32);
-INTRINSICCV_float_conversion(uint8_t, u8, float, f32);
+KLEIDICV_float_conversion(float, f32, int8_t, s8);
+KLEIDICV_float_conversion(float, f32, uint8_t, u8);
+KLEIDICV_float_conversion(int8_t, s8, float, f32);
+KLEIDICV_float_conversion(uint8_t, u8, float, f32);
 
 template <typename InputType, typename OutputType>
 class FloatConversionTest final {
@@ -78,9 +78,9 @@ class FloatConversionTest final {
 
   static constexpr float _floatval(uint32_t v) {
     static_assert(sizeof(float) == 4);
-    INTRINSICCV_NO_STRICT_ALIASING_BEGIN
+    KLEIDICV_NO_STRICT_ALIASING_BEGIN
     return *reinterpret_cast<float*>(&v);
-    INTRINSICCV_NO_STRICT_ALIASING_END
+    KLEIDICV_NO_STRICT_ALIASING_END
   }
 
   template <typename I, typename O,
@@ -292,9 +292,9 @@ class FloatConversionTest final {
     test::Array2D<O>& expected = std::get<1>(arrays);
     test::Array2D<O>& actual = std::get<2>(arrays);
 
-    ASSERT_EQ(INTRINSICCV_OK, (float_conversion<I, O>()(
-                                  source.data(), source.stride(), actual.data(),
-                                  actual.stride(), width, height)));
+    ASSERT_EQ(KLEIDICV_OK, (float_conversion<I, O>()(
+                               source.data(), source.stride(), actual.data(),
+                               actual.stride(), width, height)));
 
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
@@ -311,9 +311,9 @@ class FloatConversionTest final {
     test::Array2D<O>& expected = std::get<1>(arrays);
     test::Array2D<O>& actual = std::get<2>(arrays);
 
-    ASSERT_EQ(INTRINSICCV_OK, (float_conversion<I, O>()(
-                                  source.data(), source.stride(), actual.data(),
-                                  actual.stride(), width, height)));
+    ASSERT_EQ(KLEIDICV_OK, (float_conversion<I, O>()(
+                               source.data(), source.stride(), actual.data(),
+                               actual.stride(), width, height)));
 
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
@@ -332,9 +332,9 @@ class FloatConversionTest final {
       expected.set(i, 0, elements_list.expected_rows[i]);
     }
 
-    ASSERT_EQ(INTRINSICCV_OK, (float_conversion<InputType, OutputType>()(
-                                  source.data(), source.stride(), actual.data(),
-                                  actual.stride(), width, height)));
+    ASSERT_EQ(KLEIDICV_OK, (float_conversion<InputType, OutputType>()(
+                               source.data(), source.stride(), actual.data(),
+                               actual.stride(), width, height)));
 
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
@@ -353,9 +353,9 @@ class FloatConversionTest final {
 
     actual.fill(0);
 
-    ASSERT_EQ(INTRINSICCV_OK, (float_conversion<InputType, OutputType>()(
-                                  source.data(), source.stride(), actual.data(),
-                                  actual.stride(), width, height)));
+    ASSERT_EQ(KLEIDICV_OK, (float_conversion<InputType, OutputType>()(
+                               source.data(), source.stride(), actual.data(),
+                               actual.stride(), width, height)));
 
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
@@ -385,19 +385,18 @@ TYPED_TEST(FloatConversion, OversizeImage) {
   using OutputType = typename TypeParam::second_type;
   InputType src[1] = {};
   OutputType dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             (float_conversion<InputType, OutputType>()(
                 src, sizeof(InputType), dst, sizeof(OutputType),
-                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1)));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1)));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             (float_conversion<InputType, OutputType>()(
                 src, sizeof(InputType), dst, sizeof(OutputType), 1,
-                INTRINSICCV_MAX_IMAGE_PIXELS + 1)));
-  EXPECT_EQ(
-      INTRINSICCV_ERROR_RANGE,
-      (float_conversion<InputType, OutputType>()(
-          src, sizeof(TypeParam), dst, sizeof(OutputType),
-          INTRINSICCV_MAX_IMAGE_PIXELS + 1, INTRINSICCV_MAX_IMAGE_PIXELS + 1)));
+                KLEIDICV_MAX_IMAGE_PIXELS + 1)));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            (float_conversion<InputType, OutputType>()(
+                src, sizeof(TypeParam), dst, sizeof(OutputType),
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, KLEIDICV_MAX_IMAGE_PIXELS + 1)));
 }
 
 TYPED_TEST(FloatConversion, Scalar) {

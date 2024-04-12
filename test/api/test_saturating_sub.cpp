@@ -10,17 +10,17 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "test_config.h"
 
-#define INTRINSICCV_SATURATING_SUB(type, suffix) \
-  INTRINSICCV_API(saturating_sub, intrinsiccv_saturating_sub_##suffix, type)
+#define KLEIDICV_SATURATING_SUB(type, suffix) \
+  KLEIDICV_API(saturating_sub, intrinsiccv_saturating_sub_##suffix, type)
 
-INTRINSICCV_SATURATING_SUB(int8_t, s8);
-INTRINSICCV_SATURATING_SUB(uint8_t, u8);
-INTRINSICCV_SATURATING_SUB(int16_t, s16);
-INTRINSICCV_SATURATING_SUB(uint16_t, u16);
-INTRINSICCV_SATURATING_SUB(int32_t, s32);
-INTRINSICCV_SATURATING_SUB(uint32_t, u32);
-INTRINSICCV_SATURATING_SUB(int64_t, s64);
-INTRINSICCV_SATURATING_SUB(uint64_t, u64);
+KLEIDICV_SATURATING_SUB(int8_t, s8);
+KLEIDICV_SATURATING_SUB(uint8_t, u8);
+KLEIDICV_SATURATING_SUB(int16_t, s16);
+KLEIDICV_SATURATING_SUB(uint16_t, u16);
+KLEIDICV_SATURATING_SUB(int32_t, s32);
+KLEIDICV_SATURATING_SUB(uint32_t, u32);
+KLEIDICV_SATURATING_SUB(int64_t, s64);
+KLEIDICV_SATURATING_SUB(uint64_t, u64);
 
 template <typename ElementType>
 class SaturatingSubTest final : public BinaryOperationTest<ElementType> {
@@ -116,15 +116,15 @@ TYPED_TEST(SaturatingSub, Misalignment) {
     return;
   }
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             saturating_sub<TypeParam>()(src, sizeof(TypeParam) + 1, src,
                                         sizeof(TypeParam), dst,
                                         sizeof(TypeParam), 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             saturating_sub<TypeParam>()(src, sizeof(TypeParam), src,
                                         sizeof(TypeParam) + 1, dst,
                                         sizeof(TypeParam), 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             saturating_sub<TypeParam>()(src, sizeof(TypeParam), src,
                                         sizeof(TypeParam), dst,
                                         sizeof(TypeParam) + 1, 1, 1));
@@ -132,23 +132,23 @@ TYPED_TEST(SaturatingSub, Misalignment) {
 
 TYPED_TEST(SaturatingSub, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_OK, saturating_sub<TypeParam>()(
-                                src, sizeof(TypeParam), src, sizeof(TypeParam),
-                                dst, sizeof(TypeParam), 0, 1));
-  EXPECT_EQ(INTRINSICCV_OK, saturating_sub<TypeParam>()(
-                                src, sizeof(TypeParam), src, sizeof(TypeParam),
-                                dst, sizeof(TypeParam), 1, 0));
+  EXPECT_EQ(KLEIDICV_OK, saturating_sub<TypeParam>()(
+                             src, sizeof(TypeParam), src, sizeof(TypeParam),
+                             dst, sizeof(TypeParam), 0, 1));
+  EXPECT_EQ(KLEIDICV_OK, saturating_sub<TypeParam>()(
+                             src, sizeof(TypeParam), src, sizeof(TypeParam),
+                             dst, sizeof(TypeParam), 1, 0));
 }
 
 TYPED_TEST(SaturatingSub, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             saturating_sub<TypeParam>()(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,
-                sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+                sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS + 1, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             saturating_sub<TypeParam>()(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,
-                sizeof(TypeParam), INTRINSICCV_MAX_IMAGE_PIXELS,
-                INTRINSICCV_MAX_IMAGE_PIXELS));
+                sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
+                KLEIDICV_MAX_IMAGE_PIXELS));
 }

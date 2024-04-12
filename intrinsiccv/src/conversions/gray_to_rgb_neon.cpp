@@ -14,7 +14,7 @@ class GrayToRGB final : public UnrollTwice {
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   GrayToRGB() : indices_{vld1q_u8_x3(kGrayToRGBTableIndices)} {}
 #else
   GrayToRGB() = default;
@@ -22,7 +22,7 @@ class GrayToRGB final : public UnrollTwice {
 
   void vector_path(VectorType src_vect, ScalarType *dst) {
     uint8x16x3_t dst_vect;
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     dst_vect.val[0] = src_vect;
     dst_vect.val[1] = src_vect;
     dst_vect.val[2] = src_vect;
@@ -40,7 +40,7 @@ class GrayToRGB final : public UnrollTwice {
   }
 
  private:
-#if !INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   static constexpr uint8_t kGrayToRGBTableIndices[48] = {
       0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
       5,  5,  6,  6,  6,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10,
@@ -56,7 +56,7 @@ class GrayToRGBA final : public UnrollTwice {
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   GrayToRGBA() : alpha_{vdupq_n_u8(0xff)} {}
 #else
   // NOLINTBEGIN(hicpp-member-init)
@@ -68,7 +68,7 @@ class GrayToRGBA final : public UnrollTwice {
 
   void vector_path(VectorType src_vect, ScalarType *dst) {
     uint8x16x4_t dst_vect;
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     dst_vect.val[0] = src_vect;
     dst_vect.val[1] = src_vect;
     dst_vect.val[2] = src_vect;
@@ -90,7 +90,7 @@ class GrayToRGBA final : public UnrollTwice {
   }
 
  private:
-#if INTRINSICCV_PREFER_INTERLEAVING_LOAD_STORE
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   uint8x16_t alpha_;
 #else
   uint8x16x4_t indices_;
@@ -104,7 +104,7 @@ class GrayToRGBA final : public UnrollTwice {
 #endif
 };  // end of class GrayToRGBA<ScalarType>
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t gray_to_rgb_u8(const uint8_t *src, size_t src_stride,
                                    uint8_t *dst, size_t dst_stride,
                                    size_t width, size_t height) {
@@ -117,10 +117,10 @@ intrinsiccv_error_t gray_to_rgb_u8(const uint8_t *src, size_t src_stride,
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* RGB */};
   GrayToRGB<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t gray_to_rgba_u8(const uint8_t *src, size_t src_stride,
                                     uint8_t *dst, size_t dst_stride,
                                     size_t width, size_t height) {
@@ -133,7 +133,7 @@ intrinsiccv_error_t gray_to_rgba_u8(const uint8_t *src, size_t src_stride,
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
   GrayToRGBA<uint8_t> operation;
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 }  // namespace intrinsiccv::neon

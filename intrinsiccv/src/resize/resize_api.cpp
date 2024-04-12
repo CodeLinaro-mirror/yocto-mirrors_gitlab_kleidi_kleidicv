@@ -6,7 +6,7 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "intrinsiccv/resize/resize.h"
 
-INTRINSICCV_MULTIVERSION_C_API(
+KLEIDICV_MULTIVERSION_C_API(
     intrinsiccv_resize_to_quarter_u8, &intrinsiccv::neon::resize_to_quarter_u8,
-    INTRINSICCV_SVE2_IMPL_IF(&intrinsiccv::sve2::resize_to_quarter_u8),
+    KLEIDICV_SVE2_IMPL_IF(&intrinsiccv::sve2::resize_to_quarter_u8),
     &intrinsiccv::sme2::resize_to_quarter_u8);

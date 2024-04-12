@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_OPENCV_CONFORMITY_TESTS_H_
-#define INTRINSICCV_OPENCV_CONFORMITY_TESTS_H_
+#ifndef KLEIDICV_OPENCV_CONFORMITY_TESTS_H_
+#define KLEIDICV_OPENCV_CONFORMITY_TESTS_H_
 
 #include <iostream>
 #include <string>
@@ -63,4 +63,4 @@ using test = std::pair<std::string, exec_function>;
   { name, exec_func }
 #endif
 
-#endif  // INTRINSICCV_OPENCV_CONFORMITY_TESTS_H_
+#endif  // KLEIDICV_OPENCV_CONFORMITY_TESTS_H_

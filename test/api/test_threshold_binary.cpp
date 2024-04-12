@@ -8,10 +8,10 @@
 #include "intrinsiccv/intrinsiccv.h"
 #include "test_config.h"
 
-#define INTRINSICCV_THRESHOLD_BINARY(type, suffix) \
-  INTRINSICCV_API(threshold_binary, intrinsiccv_threshold_binary_##suffix, type)
+#define KLEIDICV_THRESHOLD_BINARY(type, suffix) \
+  KLEIDICV_API(threshold_binary, intrinsiccv_threshold_binary_##suffix, type)
 
-INTRINSICCV_THRESHOLD_BINARY(uint8_t, u8);
+KLEIDICV_THRESHOLD_BINARY(uint8_t, u8);
 
 template <typename ElementType>
 class ThresholdBinaryTestBase : public UnaryOperationTest<ElementType> {
@@ -147,33 +147,32 @@ TYPED_TEST(ThresholdBinary, Misalignment) {
     return;
   }
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             threshold_binary<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
                                           sizeof(TypeParam), 1, 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_ALIGNMENT,
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             threshold_binary<TypeParam>()(src, sizeof(TypeParam), dst,
                                           sizeof(TypeParam) + 1, 1, 1, 1, 1));
 }
 
 TYPED_TEST(ThresholdBinary, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             threshold_binary<TypeParam>()(src, sizeof(TypeParam), dst,
                                           sizeof(TypeParam), 0, 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_OK,
+  EXPECT_EQ(KLEIDICV_OK,
             threshold_binary<TypeParam>()(src, sizeof(TypeParam), dst,
                                           sizeof(TypeParam), 1, 0, 1, 1));
 }
 
 TYPED_TEST(ThresholdBinary, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             threshold_binary<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                INTRINSICCV_MAX_IMAGE_PIXELS + 1, 1, 1, 1));
-  EXPECT_EQ(INTRINSICCV_ERROR_RANGE,
-            threshold_binary<TypeParam>()(src, sizeof(TypeParam), dst,
-                                          sizeof(TypeParam),
-                                          INTRINSICCV_MAX_IMAGE_PIXELS,
-                                          INTRINSICCV_MAX_IMAGE_PIXELS, 1, 1));
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            threshold_binary<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, 1, 1));
 }

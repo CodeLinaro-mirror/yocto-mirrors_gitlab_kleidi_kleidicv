@@ -5,8 +5,8 @@
 /// @file ctypes.h
 /// @brief Helper type definitions
 
-#ifndef INTRINSICCV_CTYPES_H
-#define INTRINSICCV_CTYPES_H
+#ifndef KLEIDICV_CTYPES_H
+#define KLEIDICV_CTYPES_H
 
 #ifdef __cplusplus
 #include <cinttypes>
@@ -19,22 +19,22 @@
 #include "intrinsiccv/config.h"
 
 /// Error values reported by IntrinsicCV
-typedef enum INTRINSICCV_NODISCARD {
+typedef enum KLEIDICV_NODISCARD {
   /// Success.
-  INTRINSICCV_OK = 0,
+  KLEIDICV_OK = 0,
   /// Requested operation is not implemented.
-  INTRINSICCV_ERROR_NOT_IMPLEMENTED,
+  KLEIDICV_ERROR_NOT_IMPLEMENTED,
   /// Null pointer was passed as an argument.
-  INTRINSICCV_ERROR_NULL_POINTER,
+  KLEIDICV_ERROR_NULL_POINTER,
   /// A value was encountered outside the representable or valid range.
-  INTRINSICCV_ERROR_RANGE,
+  KLEIDICV_ERROR_RANGE,
   /// Could not allocate memory.
-  INTRINSICCV_ERROR_ALLOCATION,
+  KLEIDICV_ERROR_ALLOCATION,
   /// A value did not meet alignment requirements.
-  INTRINSICCV_ERROR_ALIGNMENT,
+  KLEIDICV_ERROR_ALIGNMENT,
   /// The provided context (like @ref intrinsiccv_morphology_context_t) is not
   /// compatible with the operation.
-  INTRINSICCV_ERROR_CONTEXT_MISMATCH,
+  KLEIDICV_ERROR_CONTEXT_MISMATCH,
 } intrinsiccv_error_t;
 
 /// Struct to represent a point
@@ -68,23 +68,23 @@ typedef struct {
 /// IntrinsicCV border types
 typedef enum {
   /// The border is a constant value.
-  INTRINSICCV_BORDER_TYPE_CONSTANT,
+  KLEIDICV_BORDER_TYPE_CONSTANT,
   /// The border is the value of the first/last element.
-  INTRINSICCV_BORDER_TYPE_REPLICATE,
+  KLEIDICV_BORDER_TYPE_REPLICATE,
   /// The border is the mirrored value of the first/last elements.
-  INTRINSICCV_BORDER_TYPE_REFLECT,
+  KLEIDICV_BORDER_TYPE_REFLECT,
   /// The border simply acts as a "wrap around" to the beginning/end.
-  INTRINSICCV_BORDER_TYPE_WRAP,
-  /// Like INTRINSICCV_BORDER_TYPE_REFLECT, but the first/last elements are
+  KLEIDICV_BORDER_TYPE_WRAP,
+  /// Like KLEIDICV_BORDER_TYPE_REFLECT, but the first/last elements are
   /// ignored.
-  INTRINSICCV_BORDER_TYPE_REVERSE,
+  KLEIDICV_BORDER_TYPE_REVERSE,
   /// The border is the "continuation" of the input rows. It is the caller's
   /// responsibility to provide the input data (and an appropriate stride value)
   /// in a way that the rows can be under and over read. E.g. can be used when
   /// executing an operation on a region of a picture.
-  INTRINSICCV_BORDER_TYPE_TRANSPARENT,
+  KLEIDICV_BORDER_TYPE_TRANSPARENT,
   /// The border is a hard border, there are no additional values to use.
-  INTRINSICCV_BORDER_TYPE_NONE,
+  KLEIDICV_BORDER_TYPE_NONE,
 } intrinsiccv_border_type_t;
 
 /// Internal structure where morphology operations store their state
@@ -94,4 +94,4 @@ typedef struct intrinsiccv_morphology_context_t_
 /// Internal structure where filter operations store their state
 typedef struct intrinsiccv_filter_context_t_ intrinsiccv_filter_context_t;
 
-#endif  // INTRINSICCV_CTYPES_H
+#endif  // KLEIDICV_CTYPES_H

@@ -4,11 +4,11 @@
 
 file(GLOB intrinsiccv_framework_test_sources CONFIGURE_DEPENDS "*.h" "test_*.cpp")
 
-list(APPEND intrinsiccv_framework_test_sources ${INTRINSICCV_TEST_FRAMEWORK_SOURCES})
+list(APPEND intrinsiccv_framework_test_sources ${KLEIDICV_TEST_FRAMEWORK_SOURCES})
 
 set_source_files_properties(
   ${intrinsiccv_framework_test_sources}
-  PROPERTIES COMPILE_OPTIONS "${INTRINSICCV_TEST_CXX_FLAGS}"
+  PROPERTIES COMPILE_OPTIONS "${KLEIDICV_TEST_CXX_FLAGS}"
 )
 
 add_executable(
@@ -23,11 +23,11 @@ set_target_properties(
 
 target_include_directories(
   intrinsiccv-framework-test
-  PRIVATE ${INTRINSICCV_INCLUDE_DIR}
-  PRIVATE ${INTRINSICCV_TEST_INCLUDE_DIR}
+  PRIVATE ${KLEIDICV_INCLUDE_DIR}
+  PRIVATE ${KLEIDICV_TEST_INCLUDE_DIR}
 )
 
-if (INTRINSICCV_ALLOCATION_TESTS)
+if (KLEIDICV_ALLOCATION_TESTS)
   target_link_options(
     intrinsiccv-framework-test
     PRIVATE -Wl,--wrap,malloc

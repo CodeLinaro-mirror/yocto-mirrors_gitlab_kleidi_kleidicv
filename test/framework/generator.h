@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_FRAMEWORK_GENERATOR_H_
-#define INTRINSICCV_TEST_FRAMEWORK_GENERATOR_H_
+#ifndef KLEIDICV_TEST_FRAMEWORK_GENERATOR_H_
+#define KLEIDICV_TEST_FRAMEWORK_GENERATOR_H_
 
 #include <random>
 
@@ -72,4 +72,4 @@ class SequenceGenerator : public Generator<typename IterableType::value_type> {
 
 }  // namespace test
 
-#endif  // INTRINSICCV_TEST_FRAMEWORK_GENERATOR_H_
+#endif  // KLEIDICV_TEST_FRAMEWORK_GENERATOR_H_

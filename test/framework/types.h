@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef INTRINSICCV_TEST_FRAMEWORK_TYPES_H_
-#define INTRINSICCV_TEST_FRAMEWORK_TYPES_H_
+#ifndef KLEIDICV_TEST_FRAMEWORK_TYPES_H_
+#define KLEIDICV_TEST_FRAMEWORK_TYPES_H_
 
 #include <cstddef>
 
@@ -26,4 +26,4 @@ struct ArrayLayout {
 
 }  // namespace test
 
-#endif  // INTRINSICCV_TEST_FRAMEWORK_TYPES_H_
+#endif  // KLEIDICV_TEST_FRAMEWORK_TYPES_H_

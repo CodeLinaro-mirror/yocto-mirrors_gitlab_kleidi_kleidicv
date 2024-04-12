@@ -308,10 +308,10 @@ intrinsiccv_error_t yuv2rgbx_operation(
   ParallelRowsAdapter parallel_rows_adapter{context_adapter};
   RowBasedOperation row_based_operation{parallel_rows_adapter};
   zip_parallel_rows(row_based_operation, rect, y_rows, uv_rows, rgbx_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
                                      const uint8_t *src_uv,
                                      size_t src_uv_stride, uint8_t *dst,
@@ -322,7 +322,7 @@ intrinsiccv_error_t yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
                             src_uv_stride, dst, dst_stride, width, height);
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t yuv_sp_to_rgba_u8(const uint8_t *src_y, size_t src_y_stride,
                                       const uint8_t *src_uv,
                                       size_t src_uv_stride, uint8_t *dst,
@@ -332,7 +332,7 @@ intrinsiccv_error_t yuv_sp_to_rgba_u8(const uint8_t *src_y, size_t src_y_stride,
   return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
                             src_uv_stride, dst, dst_stride, width, height);
 }
-INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t
+KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t
 yuv_sp_to_bgr_u8(const uint8_t *src_y, size_t src_y_stride,
                  const uint8_t *src_uv, size_t src_uv_stride, uint8_t *dst,
                  size_t dst_stride, size_t width, size_t height, bool is_nv21) {
@@ -341,7 +341,7 @@ yuv_sp_to_bgr_u8(const uint8_t *src_y, size_t src_y_stride,
                             src_uv_stride, dst, dst_stride, width, height);
 }
 
-INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t yuv_sp_to_bgra_u8(
+KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t yuv_sp_to_bgra_u8(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21) {

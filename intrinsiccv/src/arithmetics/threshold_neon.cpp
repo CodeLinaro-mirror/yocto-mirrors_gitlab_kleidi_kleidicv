@@ -50,15 +50,15 @@ intrinsiccv_error_t threshold_binary(const T *src, size_t src_stride, T *dst,
   Rows<T> dst_rows{dst, dst_stride};
   BinaryThreshold<T> operation{threshold, value};
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-#define INTRINSICCV_INSTANTIATE_TEMPLATE(type)                           \
-  template INTRINSICCV_TARGET_FN_ATTRS intrinsiccv_error_t               \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                              \
+  template KLEIDICV_TARGET_FN_ATTRS intrinsiccv_error_t                  \
   threshold_binary<type>(const type *src, size_t src_stride, type *dst,  \
                          size_t dst_stride, size_t width, size_t height, \
                          type threshold, type value)
 
-INTRINSICCV_INSTANTIATE_TEMPLATE(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
 
 }  // namespace intrinsiccv::neon

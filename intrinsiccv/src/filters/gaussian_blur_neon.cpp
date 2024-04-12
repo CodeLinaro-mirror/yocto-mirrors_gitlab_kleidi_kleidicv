@@ -156,11 +156,11 @@ intrinsiccv_error_t discrete_gaussian_blur(
   CHECK_IMAGE_SIZE(width, height);
 
   if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   Rectangle rect{width, height};
@@ -170,31 +170,31 @@ intrinsiccv_error_t discrete_gaussian_blur(
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
   if (workspace->buffer_type_size() != 2 * sizeof(ScalarType)) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   if (workspace->channels() != channels) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   if (workspace->image_size() != rect) {
-    return INTRINSICCV_ERROR_CONTEXT_MISMATCH;
+    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
   auto fixed_border_type = get_fixed_border_type(border_type);
 
   if (!fixed_border_type) {
-    return INTRINSICCV_ERROR_NOT_IMPLEMENTED;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   GaussianBlurFilterType blur;
   SeparableFilter<GaussianBlurFilterType, KernelSize> filter{blur};
   workspace->process(rect, src_rows, dst_rows, channels, *fixed_border_type,
                      filter);
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t gaussian_blur_3x3_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
@@ -205,7 +205,7 @@ intrinsiccv_error_t gaussian_blur_3x3_u8(
                                             border_type, context);
 }
 
-INTRINSICCV_TARGET_FN_ATTRS
+KLEIDICV_TARGET_FN_ATTRS
 intrinsiccv_error_t gaussian_blur_5x5_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,

@@ -9,8 +9,8 @@
 
 extern "C" {
 
-using INTRINSICCV_TARGET_NAMESPACE::Rectangle;
-using INTRINSICCV_TARGET_NAMESPACE::SeparableFilterWorkspace;
+using KLEIDICV_TARGET_NAMESPACE::Rectangle;
+using KLEIDICV_TARGET_NAMESPACE::SeparableFilterWorkspace;
 
 intrinsiccv_error_t intrinsiccv_filter_create(
     intrinsiccv_filter_context_t **context, size_t channels, size_t type_size,
@@ -18,24 +18,24 @@ intrinsiccv_error_t intrinsiccv_filter_create(
   CHECK_POINTERS(context);
   CHECK_RECTANGLE_SIZE(image);
 
-  if (type_size > INTRINSICCV_MAXIMUM_TYPE_SIZE) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (type_size > KLEIDICV_MAXIMUM_TYPE_SIZE) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
-  if (channels > INTRINSICCV_MAXIMUM_CHANNEL_COUNT) {
-    return INTRINSICCV_ERROR_RANGE;
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_RANGE;
   }
 
   auto workspace =
       SeparableFilterWorkspace::create(Rectangle{image}, channels, type_size);
   if (!workspace) {
     *context = nullptr;
-    return INTRINSICCV_ERROR_ALLOCATION;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   *context =
       reinterpret_cast<intrinsiccv_filter_context_t *>(workspace.release());
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 intrinsiccv_error_t intrinsiccv_filter_release(
@@ -48,16 +48,16 @@ intrinsiccv_error_t intrinsiccv_filter_release(
   SeparableFilterWorkspace::Pointer{
       reinterpret_cast<SeparableFilterWorkspace *>(context)};
   // NOLINTEND(bugprone-unused-raii)
-  return INTRINSICCV_OK;
+  return KLEIDICV_OK;
 }
 
 }  // extern "C"
 
-INTRINSICCV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_3x3_u8,
-                               &intrinsiccv::neon::gaussian_blur_3x3_u8,
-                               nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API(intrinsiccv_gaussian_blur_3x3_u8,
+                            &intrinsiccv::neon::gaussian_blur_3x3_u8, nullptr,
+                            nullptr);
 
-INTRINSICCV_MULTIVERSION_C_API(
+KLEIDICV_MULTIVERSION_C_API(
     intrinsiccv_gaussian_blur_5x5_u8, &intrinsiccv::neon::gaussian_blur_5x5_u8,
-    INTRINSICCV_SVE2_IMPL_IF(intrinsiccv::sve2::gaussian_blur_5x5_u8),
+    KLEIDICV_SVE2_IMPL_IF(intrinsiccv::sve2::gaussian_blur_5x5_u8),
     &intrinsiccv::sme2::gaussian_blur_5x5_u8);
