@@ -11,7 +11,10 @@ DEBIAN_FRONTEND=noninteractive sudo apt-get install --no-install-recommends -y \
     qemu-user \
     clangd-${LLVM_VERSION} \
     ccache \
-    gdb-multiarch
+    gdb-multiarch \
+    git-email \
+    libemail-valid-perl \
+    nano
 
 # Needed to run pipx packages originally installed for the root user
 sudo chmod +x /root

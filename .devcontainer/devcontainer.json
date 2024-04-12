@@ -11,7 +11,9 @@
   "onCreateCommand" : ".devcontainer/install_deps.sh",
   "postStartCommand" : ".devcontainer/setup_ccache.sh ${containerWorkspaceFolder}/.devcontainer/ccache_storage",
   "containerEnv": {
-    "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
+    "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+    "EDITOR": "nano",
+    "LC_ALL": "C"
   },
   "portsAttributes": {
     "2345": {
