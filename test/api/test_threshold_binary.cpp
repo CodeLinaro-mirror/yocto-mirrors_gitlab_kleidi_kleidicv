@@ -5,11 +5,11 @@
 #include <gtest/gtest.h>
 
 #include "framework/operation.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
 #define KLEIDICV_THRESHOLD_BINARY(type, suffix) \
-  KLEIDICV_API(threshold_binary, intrinsiccv_threshold_binary_##suffix, type)
+  KLEIDICV_API(threshold_binary, kleidicv_threshold_binary_##suffix, type)
 
 KLEIDICV_THRESHOLD_BINARY(uint8_t, u8);
 
@@ -20,8 +20,8 @@ class ThresholdBinaryTestBase : public UnaryOperationTest<ElementType> {
   using UnaryOperationTest<ElementType>::max;
 
   // Calls the API-under-test in the appropriate way.
-  intrinsiccv_error_t call_api() override {
-    return intrinsiccv_threshold_binary_u8(
+  kleidicv_error_t call_api() override {
+    return kleidicv_threshold_binary_u8(
         this->inputs_[0].data(), this->inputs_[0].stride(),
         this->actual_[0].data(), this->actual_[0].stride(), this->width(),
         this->height(), this->threshold(), this->value());

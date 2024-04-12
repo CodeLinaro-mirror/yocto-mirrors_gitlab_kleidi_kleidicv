@@ -8,13 +8,12 @@
 #include "framework/generator.h"
 #include "framework/kernel.h"
 #include "framework/utils.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
-#define KLEIDICV_GAUSSIAN_BLUR(type, kernel_suffix, type_suffix)          \
-  KLEIDICV_API(gaussian_blur_##kernel_suffix,                             \
-               intrinsiccv_gaussian_blur_##kernel_suffix##_##type_suffix, \
-               type)
+#define KLEIDICV_GAUSSIAN_BLUR(type, kernel_suffix, type_suffix) \
+  KLEIDICV_API(gaussian_blur_##kernel_suffix,                    \
+               kleidicv_gaussian_blur_##kernel_suffix##_##type_suffix, type)
 
 KLEIDICV_GAUSSIAN_BLUR(uint8_t, 3x3, u8);
 KLEIDICV_GAUSSIAN_BLUR(uint8_t, 5x5, u8);
@@ -32,13 +31,13 @@ struct GaussianBlurKernelTestParams<uint8_t, KernelSize> {
   static constexpr size_t kKernelSize = KernelSize;
 };  // end of struct GaussianBlurKernelTestParams<uint8_t, KernelSize>
 
-static constexpr std::array<intrinsiccv_border_type_t, 1> kDefaultBorder = {
+static constexpr std::array<kleidicv_border_type_t, 1> kDefaultBorder = {
     KLEIDICV_BORDER_TYPE_REPLICATE};
 
-static constexpr std::array<intrinsiccv_border_type_t, 1> kReflectBorder = {
+static constexpr std::array<kleidicv_border_type_t, 1> kReflectBorder = {
     KLEIDICV_BORDER_TYPE_REFLECT};
 
-static constexpr std::array<intrinsiccv_border_type_t, 4> kAllBorders = {
+static constexpr std::array<kleidicv_border_type_t, 4> kAllBorders = {
     KLEIDICV_BORDER_TYPE_REPLICATE,
     KLEIDICV_BORDER_TYPE_REFLECT,
     KLEIDICV_BORDER_TYPE_WRAP,
@@ -77,7 +76,7 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
   }
 
   GaussianBlurTest &with_border_types(
-      std::unique_ptr<test::Generator<intrinsiccv_border_type_t>> g) {
+      std::unique_ptr<test::Generator<kleidicv_border_type_t>> g) {
     border_type_generator_ = std::move(g);
     return *this;
   }
@@ -96,22 +95,22 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
  protected:
   std::array<test::ArrayLayout, 6> small_array_layouts_;
   std::unique_ptr<test::Generator<test::ArrayLayout>> array_layout_generator_;
-  std::unique_ptr<test::Generator<intrinsiccv_border_type_t>>
+  std::unique_ptr<test::Generator<kleidicv_border_type_t>>
       border_type_generator_;
 
-  intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
-                               test::Array2D<OutputType> *output,
-                               intrinsiccv_border_type_t border_type,
-                               intrinsiccv_border_values_t) override {
+  kleidicv_error_t call_api(const test::Array2D<InputType> *input,
+                            test::Array2D<OutputType> *output,
+                            kleidicv_border_type_t border_type,
+                            kleidicv_border_values_t) override {
     auto api = KernelTestParams::kKernelSize == 3
                    ? gaussian_blur_3x3<InputType>()
                    : gaussian_blur_5x5<InputType>();
 
-    intrinsiccv_filter_context_t *context = nullptr;
-    auto ret = intrinsiccv_filter_create(
+    kleidicv_filter_context_t *context = nullptr;
+    auto ret = kleidicv_filter_create(
         &context, input->channels(), sizeof(IntermediateType),
-        intrinsiccv_rectangle_t{input->width() / input->channels(),
-                                input->height()});
+        kleidicv_rectangle_t{input->width() / input->channels(),
+                             input->height()});
     if (ret != KLEIDICV_OK) {
       return ret;
     }
@@ -119,7 +118,7 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
     ret = api(input->data(), input->stride(), output->data(), output->stride(),
               input->width() / input->channels(), input->height(),
               input->channels(), border_type, context);
-    auto releaseRet = intrinsiccv_filter_release(context);
+    auto releaseRet = kleidicv_filter_release(context);
     if (releaseRet != KLEIDICV_OK) {
       return releaseRet;
     }
@@ -193,13 +192,13 @@ TYPED_TEST(GaussianBlur, 5x5) {
 
 TYPED_TEST(GaussianBlur, UnsupportedBorderType3x3) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1] = {}, dst[1];
-  for (intrinsiccv_border_type_t border : {
+  for (kleidicv_border_type_t border : {
            KLEIDICV_BORDER_TYPE_CONSTANT,
            KLEIDICV_BORDER_TYPE_TRANSPARENT,
            KLEIDICV_BORDER_TYPE_NONE,
@@ -209,18 +208,18 @@ TYPED_TEST(GaussianBlur, UnsupportedBorderType3x3) {
                                              sizeof(TypeParam), validSize,
                                              validSize, 1, border, context));
   }
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, UnsupportedBorderType5x5) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1] = {}, dst[1];
-  for (intrinsiccv_border_type_t border : {
+  for (kleidicv_border_type_t border : {
            KLEIDICV_BORDER_TYPE_CONSTANT,
            KLEIDICV_BORDER_TYPE_TRANSPARENT,
            KLEIDICV_BORDER_TYPE_NONE,
@@ -230,17 +229,17 @@ TYPED_TEST(GaussianBlur, UnsupportedBorderType5x5) {
                                              sizeof(TypeParam), validSize,
                                              validSize, 1, border, context));
   }
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, NullPointer) {
   using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
   using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams3x3::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(gaussian_blur_3x3<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), validSize, validSize, 1,
@@ -249,7 +248,7 @@ TYPED_TEST(GaussianBlur, NullPointer) {
   test::test_null_args(gaussian_blur_5x5<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), validSize, validSize, 1,
                        KLEIDICV_BORDER_TYPE_REPLICATE, context);
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, Misalignment) {
@@ -259,11 +258,11 @@ TYPED_TEST(GaussianBlur, Misalignment) {
   }
   using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
   using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams3x3::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             gaussian_blur_3x3<TypeParam>()(
@@ -282,60 +281,60 @@ TYPED_TEST(GaussianBlur, Misalignment) {
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1, validSize,
                 validSize, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, ZeroImageSize3x3) {
   TypeParam src[1] = {}, dst[1];
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   ASSERT_EQ(KLEIDICV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{0, 1}));
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{0, 1}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 0, 1, 1,
                 KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 
   ASSERT_EQ(KLEIDICV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 0}));
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{1, 0}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 0, 1,
                 KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, ZeroImageSize5x5) {
   TypeParam src[1] = {}, dst[1];
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   ASSERT_EQ(KLEIDICV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{0, 1}));
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{0, 1}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 0, 1, 1,
                 KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 
   ASSERT_EQ(KLEIDICV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 0}));
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{1, 0}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 1, 0, 1,
                 KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, ValidImageSize3x3) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   test::Array2D<TypeParam> src{validSize, validSize,
                                test::Options::vector_length()};
   src.set(0, 0, {1, 2});
@@ -347,16 +346,16 @@ TYPED_TEST(GaussianBlur, ValidImageSize3x3) {
             gaussian_blur_3x3<TypeParam>()(
                 src.data(), src.stride(), dst.data(), dst.stride(), validSize,
                 validSize, 1, KLEIDICV_BORDER_TYPE_REVERSE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, ValidImageSize5x5) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   test::Array2D<TypeParam> src{validSize, validSize,
                                test::Options::vector_length()};
   src.set(0, 0, {1, 2, 3, 4});
@@ -370,81 +369,81 @@ TYPED_TEST(GaussianBlur, ValidImageSize5x5) {
             gaussian_blur_5x5<TypeParam>()(
                 src.data(), src.stride(), dst.data(), dst.stride(), validSize,
                 validSize, 1, KLEIDICV_BORDER_TYPE_REVERSE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, UndersizeImage3x3) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t underSize = KernelTestParams::kKernelSize - 2;
   size_t validWidth = KernelTestParams::kKernelSize + 10;
   size_t validHeight = KernelTestParams::kKernelSize + 5;
   TypeParam src[1], dst[1];
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{underSize, underSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{underSize, underSize}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
                 underSize, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_create(
                              &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{underSize, validHeight}));
+                             kleidicv_rectangle_t{underSize, validHeight}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
                 validHeight, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_create(
                              &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validWidth, underSize}));
+                             kleidicv_rectangle_t{validWidth, underSize}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_3x3<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validWidth,
                 underSize, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, UndersizeImage5x5) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t underSize = KernelTestParams::kKernelSize - 2;
   size_t width = KernelTestParams::kKernelSize + 8;
   size_t height = KernelTestParams::kKernelSize + 3;
 
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{underSize, underSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{underSize, underSize}));
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
                 underSize, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{underSize, height}));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{underSize, height}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize,
                 height, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{width, underSize}));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{width, underSize}));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), width,
                 underSize, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, OversizeImage) {
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   ASSERT_EQ(KLEIDICV_OK,
-            intrinsiccv_filter_create(&context, 1, 2 * sizeof(TypeParam),
-                                      intrinsiccv_rectangle_t{1, 1}));
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{1, 1}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             gaussian_blur_3x3<TypeParam>()(
@@ -466,18 +465,18 @@ TYPED_TEST(GaussianBlur, OversizeImage) {
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
                 KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, 1,
                 KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, ChannelNumber) {
   using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
   using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams3x3::kKernelSize - 1;
 
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             gaussian_blur_3x3<TypeParam>()(
@@ -491,18 +490,18 @@ TYPED_TEST(GaussianBlur, ChannelNumber) {
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
                 validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1,
                 KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, InvalidContextSizeType) {
   using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
   using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams3x3::kKernelSize - 1;
 
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam) + 1,
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam) + 1,
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_3x3<TypeParam>()(
@@ -513,18 +512,18 @@ TYPED_TEST(GaussianBlur, InvalidContextSizeType) {
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
                 validSize, 1, KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, InvalidContextChannelNumber) {
   using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
   using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams3x3::kKernelSize - 1;
 
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 2, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 2, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_3x3<TypeParam>()(
@@ -536,18 +535,18 @@ TYPED_TEST(GaussianBlur, InvalidContextChannelNumber) {
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
                 validSize, 1, KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 TYPED_TEST(GaussianBlur, InvalidContextImageSize) {
   using KernelTestParams3x3 = GaussianBlurKernelTestParams<TypeParam, 3>;
   using KernelTestParams5x5 = GaussianBlurKernelTestParams<TypeParam, 5>;
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams3x3::kKernelSize - 1;
 
-  ASSERT_EQ(KLEIDICV_OK, intrinsiccv_filter_create(
-                             &context, 1, 2 * sizeof(TypeParam),
-                             intrinsiccv_rectangle_t{validSize, validSize}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_create(&context, 1, 2 * sizeof(TypeParam),
+                                   kleidicv_rectangle_t{validSize, validSize}));
   TypeParam src[1], dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
             gaussian_blur_3x3<TypeParam>()(
@@ -559,59 +558,56 @@ TYPED_TEST(GaussianBlur, InvalidContextImageSize) {
             gaussian_blur_5x5<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize + 1,
                 validSize + 1, 1, KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, intrinsiccv_filter_release(context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_release(context));
 }
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TEST(FilterCreate, CannotAllocateFilter) {
   MockMallocToFail::enable();
-  intrinsiccv_filter_context_t *context = nullptr;
-  intrinsiccv_rectangle_t rect{KLEIDICV_MAX_IMAGE_PIXELS, 1};
+  kleidicv_filter_context_t *context = nullptr;
+  kleidicv_rectangle_t rect{KLEIDICV_MAX_IMAGE_PIXELS, 1};
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
-            intrinsiccv_filter_create(&context, 1, 1, rect));
+            kleidicv_filter_create(&context, 1, 1, rect));
   MockMallocToFail::disable();
 }
 #endif
 
 TEST(FilterCreate, OversizeImage) {
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
 
-  for (intrinsiccv_rectangle_t rect : {
-           intrinsiccv_rectangle_t{KLEIDICV_MAX_IMAGE_PIXELS + 1, 1},
-           intrinsiccv_rectangle_t{KLEIDICV_MAX_IMAGE_PIXELS,
-                                   KLEIDICV_MAX_IMAGE_PIXELS},
+  for (kleidicv_rectangle_t rect : {
+           kleidicv_rectangle_t{KLEIDICV_MAX_IMAGE_PIXELS + 1, 1},
+           kleidicv_rectangle_t{KLEIDICV_MAX_IMAGE_PIXELS,
+                                KLEIDICV_MAX_IMAGE_PIXELS},
        }) {
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              intrinsiccv_filter_create(&context, 1, 1, rect));
+              kleidicv_filter_create(&context, 1, 1, rect));
     ASSERT_EQ(nullptr, context);
   }
 }
 
 TEST(FilterCreate, TypeSize) {
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
-      intrinsiccv_filter_create(&context, 1, KLEIDICV_MAXIMUM_TYPE_SIZE + 1,
-                                intrinsiccv_rectangle_t{1, 1}));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            kleidicv_filter_create(&context, 1, KLEIDICV_MAXIMUM_TYPE_SIZE + 1,
+                                   kleidicv_rectangle_t{1, 1}));
   ASSERT_EQ(nullptr, context);
 }
 
 TEST(FilterCreate, ChannelNumber) {
-  intrinsiccv_filter_context_t *context = nullptr;
+  kleidicv_filter_context_t *context = nullptr;
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
-      intrinsiccv_filter_create(&context, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 1,
-                                intrinsiccv_rectangle_t{1, 1}));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            kleidicv_filter_create(&context, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1,
+                                   1, kleidicv_rectangle_t{1, 1}));
   ASSERT_EQ(nullptr, context);
 }
 
 TEST(FilterCreate, NullPointer) {
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NULL_POINTER,
-      intrinsiccv_filter_create(nullptr, 1, 1, intrinsiccv_rectangle_t{1, 1}));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            kleidicv_filter_create(nullptr, 1, 1, kleidicv_rectangle_t{1, 1}));
 }
 TEST(FilterRelease, NullPointer) {
-  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER, intrinsiccv_filter_release(nullptr));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER, kleidicv_filter_release(nullptr));
 }

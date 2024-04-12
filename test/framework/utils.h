@@ -15,7 +15,7 @@
 
 #include "framework/abstract.h"
 #include "framework/types.h"
-#include "intrinsiccv/ctypes.h"
+#include "kleidicv/ctypes.h"
 
 #define KLEIDICV_API(name, impl, type)                                        \
   template <typename ElementType,                                             \
@@ -101,7 +101,7 @@ template <typename ElementType>
 void dump(const TwoDimensional<ElementType> *elements);
 
 // Returns default border values.
-std::array<intrinsiccv_border_values_t, 1> default_border_values();
+std::array<kleidicv_border_values_t, 1> default_border_values();
 
 // Returns an array of just a few small layouts.
 std::array<test::ArrayLayout, 6> small_array_layouts(size_t min_width,

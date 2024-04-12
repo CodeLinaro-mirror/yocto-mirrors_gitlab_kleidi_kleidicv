@@ -15,7 +15,7 @@
 #include "framework/border.h"
 #include "framework/generator.h"
 #include "framework/types.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 
 namespace test {
 
@@ -83,8 +83,8 @@ class KernelTest {
 
   void test(Generator<Kernel<IntermediateType>>& kernel_generator,
             Generator<ArrayLayout>& array_layout_generator,
-            Generator<intrinsiccv_border_type_t>& border_type_generator,
-            Generator<intrinsiccv_border_values_t>& border_values_generator,
+            Generator<kleidicv_border_type_t>& border_type_generator,
+            Generator<kleidicv_border_values_t>& border_values_generator,
             Generator<InputType>& element_generator) {
     kernel_generator.reset();
 
@@ -98,8 +98,8 @@ class KernelTest {
 
   void test(Kernel<IntermediateType> kernel,
             Generator<ArrayLayout>& array_layout_generator,
-            Generator<intrinsiccv_border_type_t>& border_type_generator,
-            Generator<intrinsiccv_border_values_t>& border_values_generator,
+            Generator<kleidicv_border_type_t>& border_type_generator,
+            Generator<kleidicv_border_values_t>& border_values_generator,
             Generator<InputType>& element_generator) {
     array_layout_generator.reset();
 
@@ -116,12 +116,12 @@ class KernelTest {
   }
 
   void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
-            Generator<intrinsiccv_border_type_t>& border_type_generator,
-            Generator<intrinsiccv_border_values_t>& border_values_generator,
+            Generator<kleidicv_border_type_t>& border_type_generator,
+            Generator<kleidicv_border_values_t>& border_values_generator,
             Generator<InputType>& element_generator) {
     border_type_generator.reset();
 
-    std::optional<intrinsiccv_border_type_t> maybe_border_type;
+    std::optional<kleidicv_border_type_t> maybe_border_type;
     while ((maybe_border_type = border_type_generator.next()) != std::nullopt) {
       test(kernel, array_layout, *maybe_border_type, border_values_generator,
            element_generator);
@@ -130,11 +130,11 @@ class KernelTest {
   }
 
   void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
-            intrinsiccv_border_type_t border_type,
-            Generator<intrinsiccv_border_values_t>& border_values_generator,
+            kleidicv_border_type_t border_type,
+            Generator<kleidicv_border_values_t>& border_values_generator,
             Generator<InputType>& element_generator) {
     border_values_generator.reset();
-    std::optional<intrinsiccv_border_values_t> maybe_border_values;
+    std::optional<kleidicv_border_values_t> maybe_border_values;
     while ((maybe_border_values = border_values_generator.next()) !=
            std::nullopt) {
       test(kernel, array_layout, border_type, *maybe_border_values,
@@ -144,8 +144,8 @@ class KernelTest {
   }
 
   void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
-            intrinsiccv_border_type_t border_type,
-            intrinsiccv_border_values_t border_values,
+            kleidicv_border_type_t border_type,
+            kleidicv_border_values_t border_values,
             Generator<InputType>& element_generator) {
     prepare_source(element_generator);
     prepare_expected(kernel, array_layout, border_type, border_values);
@@ -158,10 +158,10 @@ class KernelTest {
   // Calls the API-under-test in the appropriate way.
   //
   // The arguments are never nullptr.
-  virtual intrinsiccv_error_t call_api(
-      const Array2D<InputType>* input, Array2D<OutputType>* output,
-      intrinsiccv_border_type_t border_type,
-      intrinsiccv_border_values_t border_values) = 0;
+  virtual kleidicv_error_t call_api(const Array2D<InputType>* input,
+                                    Array2D<OutputType>* output,
+                                    kleidicv_border_type_t border_type,
+                                    kleidicv_border_values_t border_values) = 0;
 
   // Calculates the expected output.
   virtual void calculate_expected(const Kernel<IntermediateType>& kernel,
@@ -232,8 +232,8 @@ class KernelTest {
   // Computes expected output of the kernel-based operation.
   virtual void prepare_expected(const Kernel<IntermediateType>& kernel,
                                 const ArrayLayout& array_layout,
-                                intrinsiccv_border_type_t border_type,
-                                intrinsiccv_border_values_t border_values) {
+                                kleidicv_border_type_t border_type,
+                                kleidicv_border_values_t border_values) {
     input_with_borders_.set(kernel.anchor().y,
                             kernel.anchor().x * array_layout.channels, &input_);
 
@@ -262,7 +262,7 @@ class KernelTest {
   void prepare_actual() { actual_.fill(42); }
 
   // Checks that the actual output matches the expectations.
-  void check_results(intrinsiccv_error_t err) {
+  void check_results(kleidicv_error_t err) {
     if (debug_) {
       std::cout << "[actual]" << std::endl;
       dump(&actual_);

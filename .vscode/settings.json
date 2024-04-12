@@ -2,6 +2,6 @@
   "C_Cpp.intelliSenseEngine": "disabled",
   "clangd.path": "clangd",
   "clangd.arguments": [
-      "--compile-commands-dir=${workspaceFolder}/build/intrinsiccv"
+      "--compile-commands-dir=${workspaceFolder}/build/kleidicv"
   ]
 }

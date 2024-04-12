@@ -5,13 +5,13 @@
 #include <gtest/gtest.h>
 
 #include "framework/utils.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
 #if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
 #define KLEIDICV_CANNY(type, suffix) \
-  KLEIDICV_API(canny, intrinsiccv_canny_##suffix, type)
+  KLEIDICV_API(canny, kleidicv_canny_##suffix, type)
 
 KLEIDICV_CANNY(uint8_t, u8);
 

@@ -18,14 +18,14 @@ processing functions on Arm. It is designed to be simple to import into a wide
 variety of projects.
 
 The library provides a C interface. For details see
-[the C API documentation](https://intrinsiccv.sites.arm.com/intrinsiccv/).
+[the C API documentation](https://kleidicv.sites.arm.com/kleidicv/).
 
 An adapter layer API is currently provided for:
 * OpenCV - [available functionality overview](adapters/opencv/doc-opencv.md)
 
 # Structure
 
-The directory `intrinsiccv` contains generic implementation of the library.
+The directory `kleidicv` contains generic implementation of the library.
 Integration with other projects are stored in `adapters` folder. `test` contains
 API and unit tests for the library. `benchmark` contains benchmark source.
 `conformity` contains checks to compare the library output with different
@@ -36,9 +36,9 @@ implementations. All supporting scripts are located in `scripts`.
 The library can be built using CMake:
 ```
 cmake \
--S /path/to/intrinsiccv \
--B build-intrinsiccv \
-cmake --build build-intrinsiccv --parallel
+-S /path/to/kleidicv \
+-B build-kleidicv \
+cmake --build build-kleidicv --parallel
 ```
 
 To target Android devices the following CMake flags are also required:
@@ -66,15 +66,15 @@ The build artifacts are placed in the `build` directory.
 
 ## Build and run tests for Android
 
-To build all the tests use the target `intrinsiccv-test`, to also run them use
-`check-intrinsiccv` and set a proper `CMAKE_CROSSCOMPILING_EMULATOR`.
+To build all the tests use the target `kleidicv-test`, to also run them use
+`check-kleidicv` and set a proper `CMAKE_CROSSCOMPILING_EMULATOR`.
 
 To build all tests:
 ```
 BUILD_ID=android \
 CMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
 EXTRA_CMAKE_ARGS="-DANDROID_ABI=arm64-v8a" \
-scripts/build.sh intrinsiccv-test
+scripts/build.sh kleidicv-test
 ```
 
 To run the tests:
@@ -82,9 +82,9 @@ To run the tests:
 BUILD_ID=android \
 CMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
 ADB=<path to adb executable of choice> \
-CMAKE_CROSSCOMPILING_EMULATOR="<path to intrinsiccv>/scripts/test_android.sh;<path to intrinsiccv>/build/<build_id>" \
+CMAKE_CROSSCOMPILING_EMULATOR="<path to kleidicv>/scripts/test_android.sh;<path to kleidicv>/build/<build_id>" \
 EXTRA_CMAKE_ARGS="-DANDROID_ABI=arm64-v8a" \
-scripts/build.sh check-intrinsiccv
+scripts/build.sh check-kleidicv
 ```
 
 For further options please refer to the documentation in `./scripts/build.sh`
@@ -105,7 +105,7 @@ cd opencv-4.9.0
 ```
 2. Patch OpenCV:
 ```
-patch -p1</path/to/intrinsiccv/adapters/opencv/opencv-4.9.patch
+patch -p1</path/to/kleidicv/adapters/opencv/opencv-4.9.patch
 ```
 
 ## Build Library
@@ -117,7 +117,7 @@ cmake \
 -S /path/to/opencv \
 -B build-opencv \
 -DWITH_KLEIDICV=ON \
--DKLEIDICV_SOURCE_PATH=/path/to/intrinsiccv \
+-DKLEIDICV_SOURCE_PATH=/path/to/kleidicv \
 -DCMAKE_CXX_STANDARD=14 \
 -DBUILD_ANDROID_EXAMPLE=OFF \
 -DBUILD_ANDROID_PROJECTS=OFF \

@@ -7,11 +7,11 @@
 #include <type_traits>
 
 #include "framework/operation.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
 #define KLEIDICV_SATURATING_ADD(type, suffix) \
-  KLEIDICV_API(saturating_add, intrinsiccv_saturating_add_##suffix, type)
+  KLEIDICV_API(saturating_add, kleidicv_saturating_add_##suffix, type)
 
 KLEIDICV_SATURATING_ADD(int8_t, s8);
 KLEIDICV_SATURATING_ADD(uint8_t, u8);
@@ -33,7 +33,7 @@ class SaturatingAddTest final : public BinaryOperationTest<ElementType> {
   using BinaryOperationTest<ElementType>::max;
 
   // Calls the API-under-test in the appropriate way.
-  intrinsiccv_error_t call_api() override {
+  kleidicv_error_t call_api() override {
     return saturating_add<ElementType>()(
         this->inputs_[0].data(), this->inputs_[0].stride(),
         this->inputs_[1].data(), this->inputs_[1].stride(),
@@ -82,7 +82,7 @@ using ElementTypes = ::testing::Types<int8_t, uint8_t, int16_t, uint16_t,
                                       int32_t, uint32_t, int64_t, uint64_t>;
 TYPED_TEST_SUITE(SaturatingAdd, ElementTypes);
 
-// Tests intrinsiccv_saturating_add_<type> API.
+// Tests kleidicv_saturating_add_<type> API.
 TYPED_TEST(SaturatingAdd, API) {
   // Test without padding.
   SaturatingAddTest<TypeParam>{}.test();

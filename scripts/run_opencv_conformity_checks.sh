@@ -16,7 +16,7 @@ SOURCE_PATH="${SCRIPT_PATH}/../conformity/opencv"
 KLEIDICV_SOURCE_PATH="${SCRIPT_PATH}/.."
 BUILD_PATH="${SCRIPT_PATH}/../build/conformity"
 OPENCV_DEFAULT_PATH="${BUILD_PATH}/opencv_default"
-OPENCV_KLEIDICV_PATH="${BUILD_PATH}/opencv_intrinsiccv"
+OPENCV_KLEIDICV_PATH="${BUILD_PATH}/opencv_kleidicv"
 
 if [[ "${CLEAN}" == "ON" ]]; then
     rm -rf "${BUILD_PATH}"

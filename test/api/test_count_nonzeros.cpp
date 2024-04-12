@@ -8,11 +8,11 @@
 
 #include "framework/array.h"
 #include "framework/utils.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
 #define KLEIDICV_COUNT_NONZEROS(type, suffix) \
-  KLEIDICV_API(count_nonzeros, intrinsiccv_count_nonzeros_##suffix, type)
+  KLEIDICV_API(count_nonzeros, kleidicv_count_nonzeros_##suffix, type)
 
 KLEIDICV_COUNT_NONZEROS(uint8_t, u8);
 

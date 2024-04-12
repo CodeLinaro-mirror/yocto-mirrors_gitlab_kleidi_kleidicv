@@ -7,11 +7,11 @@
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "framework/operation.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
 #define KLEIDICV_SCALE(type, suffix) \
-  KLEIDICV_API(scale, intrinsiccv_scale_##suffix, type)
+  KLEIDICV_API(scale, kleidicv_scale_##suffix, type)
 
 KLEIDICV_SCALE(uint8_t, u8);
 
@@ -22,11 +22,11 @@ class ScaleTestBase : public UnaryOperationTest<ElementType> {
   using UnaryOperationTest<ElementType>::max;
 
   // Calls the API-under-test in the appropriate way.
-  intrinsiccv_error_t call_api() override {
-    return intrinsiccv_scale_u8(
-        this->inputs_[0].data(), this->inputs_[0].stride(),
-        this->actual_[0].data(), this->actual_[0].stride(), this->width(),
-        this->height(), this->scale(), this->shift());
+  kleidicv_error_t call_api() override {
+    return kleidicv_scale_u8(this->inputs_[0].data(), this->inputs_[0].stride(),
+                             this->actual_[0].data(), this->actual_[0].stride(),
+                             this->width(), this->height(), this->scale(),
+                             this->shift());
   }
   virtual float scale() = 0;
   virtual float shift() = 0;
@@ -106,10 +106,9 @@ class ScaleTestLinearBase {
 
     calculate_expected(source, expected);
 
-    ASSERT_EQ(
-        KLEIDICV_OK,
-        intrinsiccv_scale_u8(source.data(), source.stride(), actual.data(),
-                             actual.stride(), width, height, scale(), shift()));
+    ASSERT_EQ(KLEIDICV_OK, kleidicv_scale_u8(source.data(), source.stride(),
+                                             actual.data(), actual.stride(),
+                                             width, height, scale(), shift()));
 
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
@@ -330,7 +329,7 @@ class ScaleTest : public testing::Test {};
 
 using ElementTypes = ::testing::Types<uint8_t>;
 
-// Tests intrinsiccv_scale_u8 API.
+// Tests kleidicv_scale_u8 API.
 TYPED_TEST_SUITE(ScaleTest, ElementTypes);
 
 TYPED_TEST(ScaleTest, TestScalar1) {

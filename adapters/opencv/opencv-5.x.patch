@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-diff --git a/3rdparty/intrinsiccv/CMakeLists.txt b/3rdparty/intrinsiccv/CMakeLists.txt
+diff --git a/3rdparty/kleidicv/CMakeLists.txt b/3rdparty/kleidicv/CMakeLists.txt
 new file mode 100644
 index 0000000000..c0ffb73ad7
 --- /dev/null
-+++ b/3rdparty/intrinsiccv/CMakeLists.txt
++++ b/3rdparty/kleidicv/CMakeLists.txt
 @@ -0,0 +1,3 @@
-+set(KLEIDICV_SOURCE_PATH "${CMAKE_SOURCE_DIR}/intrinsiccv" CACHE PATH "Directory containing KleidiCV sources")
++set(KLEIDICV_SOURCE_PATH "${CMAKE_SOURCE_DIR}/kleidicv" CACHE PATH "Directory containing KleidiCV sources")
 +
 +include("${KLEIDICV_SOURCE_PATH}/adapters/opencv/CMakeLists.txt")
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -39,8 +39,8 @@ index 4a628c1a6a..999df2657d 100644
 
 +if(WITH_KLEIDICV)
 +  ocv_debug_message(STATUS "Enable KleidiCV acceleration")
-+  if(NOT ";${OpenCV_HAL};" MATCHES ";intrinsiccv;")
-+    set(OpenCV_HAL "intrinsiccv;${OpenCV_HAL}")
++  if(NOT ";${OpenCV_HAL};" MATCHES ";kleidicv;")
++    set(OpenCV_HAL "kleidicv;${OpenCV_HAL}")
 +  endif()
 +endif()
 +
@@ -51,8 +51,8 @@ index 4a628c1a6a..999df2657d 100644
      else()
        message(STATUS "Carotene: NEON is not available, disabling carotene...")
      endif()
-+  elseif(hal STREQUAL "intrinsiccv")
-+    add_subdirectory(3rdparty/intrinsiccv)
++  elseif(hal STREQUAL "kleidicv")
++    add_subdirectory(3rdparty/kleidicv)
 +    ocv_hal_register(KLEIDICV_HAL_LIBRARIES KLEIDICV_HAL_HEADERS KLEIDICV_HAL_INCLUDE_DIRS)
 +    list(APPEND OpenCV_USED_HAL "KleidiCV (ver ${KLEIDICV_HAL_VERSION})")
    elseif(hal STREQUAL "openvx")

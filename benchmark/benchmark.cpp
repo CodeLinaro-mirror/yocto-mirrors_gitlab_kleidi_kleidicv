@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <random>
 
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 
 extern size_t image_width, image_height;
 
@@ -31,10 +31,10 @@ static void bench_binary_op(Function f, benchmark::State& state) {
   }
 }
 
-#define BENCH_BINARY_OP(name, type)                   \
-  static void name(benchmark::State& state) {         \
-    bench_binary_op<type>(intrinsiccv_##name, state); \
-  }                                                   \
+#define BENCH_BINARY_OP(name, type)                \
+  static void name(benchmark::State& state) {      \
+    bench_binary_op<type>(kleidicv_##name, state); \
+  }                                                \
   BENCHMARK(name)
 
 BENCH_BINARY_OP(saturating_add_s8, int8_t);
@@ -53,8 +53,8 @@ static void min_max_loc_u8(benchmark::State& state) {
   for (auto _ : state) {
     // This code gets benchmarked
     auto unused =
-        intrinsiccv_min_max_loc_u8(src.data(), image_width, image_width,
-                                   image_height, &min_offset, &max_offset);
+        kleidicv_min_max_loc_u8(src.data(), image_width, image_width,
+                                image_height, &min_offset, &max_offset);
     (void)unused;
   }
 }
@@ -75,9 +75,9 @@ static void resize_linear_u8(size_t scale_x, size_t scale_y,
 
   for (auto _ : state) {
     // This code gets benchmarked
-    auto unused = intrinsiccv_resize_linear_u8(
-        src.data(), src_width, src_width, src_height, dst.data(), dst_width,
-        dst_width, dst_height);
+    auto unused =
+        kleidicv_resize_linear_u8(src.data(), src_width, src_width, src_height,
+                                  dst.data(), dst_width, dst_width, dst_height);
     (void)unused;
   }
 }

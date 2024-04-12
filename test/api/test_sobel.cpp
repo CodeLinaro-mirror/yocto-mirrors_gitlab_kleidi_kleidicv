@@ -9,16 +9,15 @@
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "framework/kernel.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
-#define KLEIDICV_SOBEL_3X3_HORIZONTAL(type, suffix) \
-  KLEIDICV_API(sobel_3x3_horizontal,                \
-               intrinsiccv_sobel_3x3_horizontal_##suffix, type)
-
-#define KLEIDICV_SOBEL_3X3_VERTICAL(type, suffix)                           \
-  KLEIDICV_API(sobel_3x3_vertical, intrinsiccv_sobel_3x3_vertical_##suffix, \
+#define KLEIDICV_SOBEL_3X3_HORIZONTAL(type, suffix)                          \
+  KLEIDICV_API(sobel_3x3_horizontal, kleidicv_sobel_3x3_horizontal_##suffix, \
                type)
+
+#define KLEIDICV_SOBEL_3X3_VERTICAL(type, suffix) \
+  KLEIDICV_API(sobel_3x3_vertical, kleidicv_sobel_3x3_vertical_##suffix, type)
 
 KLEIDICV_SOBEL_3X3_HORIZONTAL(uint8_t, s16_u8);
 
@@ -37,7 +36,7 @@ struct SobelKernelTestParams<uint8_t, IsHorizontal> {
   static constexpr bool kIsHorizontal = IsHorizontal;
 };  // end of struct SobelKernelTestParams<uint8_t, IsHorizontal>
 
-static constexpr std::array<intrinsiccv_border_type_t, 1> kSupportedBorders = {
+static constexpr std::array<kleidicv_border_type_t, 1> kSupportedBorders = {
     KLEIDICV_BORDER_TYPE_REPLICATE,
 };
 
@@ -49,10 +48,10 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
   using typename Base::IntermediateType;
   using typename Base::OutputType;
 
-  intrinsiccv_error_t call_api(const test::Array2D<InputType> *input,
-                               test::Array2D<OutputType> *output,
-                               intrinsiccv_border_type_t,
-                               intrinsiccv_border_values_t) override {
+  kleidicv_error_t call_api(const test::Array2D<InputType> *input,
+                            test::Array2D<OutputType> *output,
+                            kleidicv_border_type_t,
+                            kleidicv_border_values_t) override {
     auto api = KernelTestParams::kIsHorizontal
                    ? sobel_3x3_horizontal<InputType>()
                    : sobel_3x3_vertical<InputType>();

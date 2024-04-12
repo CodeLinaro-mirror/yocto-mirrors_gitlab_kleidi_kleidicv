@@ -68,7 +68,7 @@ static void replicate(const Bordered *bordered,
 // |         X X | A B C D E | Y Y          |
 template <typename ElementType>
 static void constant(const Bordered *bordered,
-                     intrinsiccv_border_values_t border_values,
+                     kleidicv_border_values_t border_values,
                      TwoDimensional<ElementType> *elements) {
   ASSERT_LE((bordered->left() + bordered->right()) * elements->channels(),
             elements->width());
@@ -280,8 +280,8 @@ static void reverse(const Bordered *bordered,
 }
 
 template <typename ElementType>
-void prepare_borders(intrinsiccv_border_type_t border_type,
-                     intrinsiccv_border_values_t border_values,
+void prepare_borders(kleidicv_border_type_t border_type,
+                     kleidicv_border_values_t border_values,
                      const Bordered *bordered,
                      TwoDimensional<ElementType> *elements) {
   ASSERT_NE(bordered, nullptr);
@@ -308,8 +308,8 @@ void prepare_borders(intrinsiccv_border_type_t border_type,
   }
 }
 
-template void prepare_borders<uint8_t>(intrinsiccv_border_type_t,
-                                       intrinsiccv_border_values_t,
+template void prepare_borders<uint8_t>(kleidicv_border_type_t,
+                                       kleidicv_border_values_t,
                                        const Bordered *,
                                        TwoDimensional<uint8_t> *);
 

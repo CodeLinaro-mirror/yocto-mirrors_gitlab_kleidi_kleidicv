@@ -19,7 +19,7 @@ CLEAN="ON" \
   ./scripts/run_opencv_conformity_checks.sh || TESTRESULT=1
 
 # Build OpenCV test executables from already configured conformity check project
-ninja -C build/conformity/opencv_intrinsiccv opencv_test_imgproc opencv_test_core
+ninja -C build/conformity/opencv_kleidicv opencv_test_imgproc opencv_test_core
 
 # Run a subset of the OpenCV test suite, requres opencv_extra for the test images
 tar xf /opt/opencv-extra-${OPENCV_VERSION}.tar.gz -C build
@@ -47,7 +47,7 @@ IMGPROC_TEST_PATTERNS=(
   '*Imgproc_Canny*'
 )
 IMGPROC_TEST_PATTERNS_STR="$(join_strings_with_colon "${IMGPROC_TEST_PATTERNS[*]}")"
-../../../conformity/opencv_intrinsiccv/bin/opencv_test_imgproc \
+../../../conformity/opencv_kleidicv/bin/opencv_test_imgproc \
   --gtest_filter="${IMGPROC_TEST_PATTERNS_STR}" || TESTRESULT=1
 
 CORE_TEST_PATTERNS=(
@@ -56,7 +56,7 @@ CORE_TEST_PATTERNS=(
   '*Core_ConvertScale*'
 )
 CORE_TEST_PATTERNS_STR="$(join_strings_with_colon "${CORE_TEST_PATTERNS[*]}")"
-../../../conformity/opencv_intrinsiccv/bin/opencv_test_core \
+../../../conformity/opencv_kleidicv/bin/opencv_test_core \
   --gtest_filter="${CORE_TEST_PATTERNS_STR}" || TESTRESULT=1
 
 popd

@@ -7,10 +7,10 @@
 # Builds a given target.
 #
 # Arguments:
-#   1: Target to build. Defaults to 'intrinsiccv'.
+#   1: Target to build. Defaults to 'kleidicv'.
 #
 # Options:
-#   BUILD_ID:                      Identifier of the build, defaults to 'intrinsiccv'.
+#   BUILD_ID:                      Identifier of the build, defaults to 'kleidicv'.
 #   BUILD_PATH:                    Directory for all the files associated with a build.
 #   CLEAN:                         Clean builds if set to 'ON'. Defaults to 'OFF'.
 #   CMAKE:                         Full path of the CMake executable.
@@ -35,7 +35,7 @@ set -exu
 
 SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
-: "${BUILD_ID:=intrinsiccv}"
+: "${BUILD_ID:=kleidicv}"
 : "${BUILD_PATH:=${SCRIPT_PATH}/../build/${BUILD_ID}}"
 : "${CLEAN:=OFF}"
 : "${CMAKE:=cmake}"
@@ -51,7 +51,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 : "${EXTRA_CMAKE_ARGS:=}"
 : "${SOURCE_PATH:="$(realpath "${SCRIPT_PATH}"/../)"}"
 
-CMAKE_TARGET="${1:-intrinsiccv}"
+CMAKE_TARGET="${1:-kleidicv}"
 
 IFS=' ' read -r -a EXTRA_CMAKE_ARGS_ARRAY <<< "${EXTRA_CMAKE_ARGS}"
 

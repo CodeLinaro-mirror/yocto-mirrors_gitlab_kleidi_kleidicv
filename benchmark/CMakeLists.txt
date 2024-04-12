@@ -24,8 +24,8 @@ FetchContent_MakeAvailable(benchmark)
 
 
 set(KLEIDICV_INCLUDE_DIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/../intrinsiccv/include
-  ${CMAKE_CURRENT_BINARY_DIR}/../intrinsiccv/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../kleidicv/include
+  ${CMAKE_CURRENT_BINARY_DIR}/../kleidicv/include
 )
 set(KLEIDICV_BENCHMARK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -42,32 +42,32 @@ else()
   list(APPEND KLEIDICV_BENCHMARK_CXX_FLAGS "-O2" "-g0")
 endif()
 
-file(GLOB intrinsiccv_benchmark_sources CONFIGURE_DEPENDS "*.h" "*.cpp")
+file(GLOB kleidicv_benchmark_sources CONFIGURE_DEPENDS "*.h" "*.cpp")
 
 set_source_files_properties(
-  ${intrinsiccv_benchmark_sources}
+  ${kleidicv_benchmark_sources}
   PROPERTIES COMPILE_OPTIONS "${KLEIDICV_BENCHMARK_CXX_FLAGS}"
 )
 
 add_executable(
-  intrinsiccv-benchmark
-  ${intrinsiccv_benchmark_sources}
+  kleidicv-benchmark
+  ${kleidicv_benchmark_sources}
 )
 
 set_target_properties(
-  intrinsiccv-benchmark
+  kleidicv-benchmark
   PROPERTIES CXX_STANDARD 17
 )
 
 target_include_directories(
-  intrinsiccv-benchmark
+  kleidicv-benchmark
   PRIVATE ${KLEIDICV_INCLUDE_DIR}
   PRIVATE ${KLEIDICV_BENCHMARK_INCLUDE_DIR}
 )
 
 target_link_libraries(
-  intrinsiccv-benchmark
-  intrinsiccv
+  kleidicv-benchmark
+  kleidicv
   benchmark::benchmark
 )
 

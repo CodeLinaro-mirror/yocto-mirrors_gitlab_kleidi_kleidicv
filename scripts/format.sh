@@ -31,7 +31,7 @@ KLEIDICV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 SOURCES="$(find \
     "${KLEIDICV_ROOT_PATH}/adapters" \
     "${KLEIDICV_ROOT_PATH}/benchmark" \
-    "${KLEIDICV_ROOT_PATH}/intrinsiccv" \
+    "${KLEIDICV_ROOT_PATH}/kleidicv" \
     "${KLEIDICV_ROOT_PATH}/test" \
     "${KLEIDICV_ROOT_PATH}/conformity/opencv" \
     \( -name \*.cpp -o -name \*.h -o -name \*.h.in \) \

@@ -7,7 +7,7 @@
       "command": "${workspaceFolder}/scripts/build.sh",
       "problemMatcher" :"$gcc",
       "args": [
-        "intrinsiccv-test"
+        "kleidicv-test"
       ],
       "options": {
         "env": {
@@ -27,11 +27,11 @@
       "command": "${workspaceFolder}/scripts/build.sh",
       "problemMatcher" :"$gcc",
       "args": [
-        "intrinsiccv-test"
+        "kleidicv-test"
       ],
       "options": {
         "env": {
-          "BUILD_ID" : "intrinsiccv-debug",
+          "BUILD_ID" : "kleidicv-debug",
           "CMAKE_BUILD_TYPE" : "Debug",
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
           "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
@@ -59,7 +59,7 @@
       "type": "process",
       "command": "qemu-aarch64",
       "args": [
-        "${workspaceFolder}/build/intrinsiccv/test/framework/intrinsiccv-framework-test"
+        "${workspaceFolder}/build/kleidicv/test/framework/kleidicv-framework-test"
       ],
       "dependsOn": [
         "Build KleidiCV"
@@ -75,7 +75,7 @@
       "args": [
         "-cpu",
         "cortex-a35",
-        "${workspaceFolder}/build/intrinsiccv/test/api/intrinsiccv-api-test",
+        "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
         "--vector-length=16"
       ],
       "dependsOn": [
@@ -92,7 +92,7 @@
       "args": [
         "-cpu",
         "max,sve128=on,sme=off",
-        "${workspaceFolder}/build/intrinsiccv/test/api/intrinsiccv-api-test",
+        "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
         "--vector-length=16"
       ],
       "dependsOn": [
@@ -109,7 +109,7 @@
       "args": [
         "-cpu",
         "max,sve2048=on,sve-default-vector-length=256,sme=off",
-        "${workspaceFolder}/build/intrinsiccv/test/api/intrinsiccv-api-test",
+        "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
         "--vector-length=256"
       ],
       "dependsOn": [
@@ -126,7 +126,7 @@
       "args": [
         "-cpu",
         "max,sve128=on,sme512=on",
-        "${workspaceFolder}/build/intrinsiccv/test/api/intrinsiccv-api-test",
+        "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
         "--vector-length=64"
       ],
       "dependsOn": [

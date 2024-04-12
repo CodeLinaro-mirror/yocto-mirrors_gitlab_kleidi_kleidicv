@@ -8,7 +8,7 @@
 
 #include "framework/kernel.h"
 #include "framework/types.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 
 // Tests that the constructor of test::Kernel<T> works for odd width and
 // height.
@@ -93,10 +93,10 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   using IntermediateType = typename KernelTestParams::IntermediateType;
   using OutputType = typename KernelTestParams::OutputType;
 
-  intrinsiccv_error_t call_api(
-      const test::Array2D<InputType> *input, test::Array2D<OutputType> *output,
-      intrinsiccv_border_type_t border_type,
-      intrinsiccv_border_values_t border_values) override {
+  kleidicv_error_t call_api(const test::Array2D<InputType> *input,
+                            test::Array2D<OutputType> *output,
+                            kleidicv_border_type_t border_type,
+                            kleidicv_border_values_t border_values) override {
     // Check the expected border type.
     EXPECT_EQ(border_type, kBorders[border_count_ % kBorders.size()]);
     // Check the expected border value.
@@ -149,10 +149,10 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
       {9, 7, 11, 3},
   }};
 
-  static constexpr std::array<intrinsiccv_border_type_t, 2> kBorders = {
+  static constexpr std::array<kleidicv_border_type_t, 2> kBorders = {
       KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_CONSTANT};
 
-  static constexpr std::array<intrinsiccv_border_values_t, 2> kBorderValues = {
+  static constexpr std::array<kleidicv_border_values_t, 2> kBorderValues = {
       {{0, 0, 0, 0}, {1, 2, 3, 4}}};
 
   size_t api_calls_{0};

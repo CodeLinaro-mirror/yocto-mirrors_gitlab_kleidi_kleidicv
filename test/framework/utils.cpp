@@ -50,7 +50,7 @@ template void dump<uint32_t>(const TwoDimensional<uint32_t> *);
 template void dump<int64_t>(const TwoDimensional<int64_t> *);
 template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
 
-std::array<intrinsiccv_border_values_t, 1> default_border_values() {
+std::array<kleidicv_border_values_t, 1> default_border_values() {
   return {{
       {0, 0, 0, 0},  // default
   }};

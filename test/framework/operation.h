@@ -121,10 +121,10 @@ class OperationTest {
   }
 
   // Calls the API-under-test in the appropriate way.
-  virtual intrinsiccv_error_t call_api() = 0;
+  virtual kleidicv_error_t call_api() = 0;
 
   // Checks that the result meets the expectations.
-  virtual void check(intrinsiccv_error_t err) {
+  virtual void check(kleidicv_error_t err) {
     EXPECT_EQ(KLEIDICV_OK, err);
     for (size_t index = 0; index < expected_.size(); ++index) {
       EXPECT_EQ_ARRAY2D(expected_[index], actual_[index]);

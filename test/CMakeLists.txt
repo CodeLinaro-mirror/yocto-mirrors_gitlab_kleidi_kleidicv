@@ -5,8 +5,8 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(KLEIDICV_INCLUDE_DIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/../intrinsiccv/include
-  ${CMAKE_CURRENT_BINARY_DIR}/../intrinsiccv/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../kleidicv/include
+  ${CMAKE_CURRENT_BINARY_DIR}/../kleidicv/include
 )
 set(KLEIDICV_TEST_INCLUDE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -61,15 +61,15 @@ add_subdirectory(framework)
 
 # Target to build all tests.
 add_custom_target(
-  intrinsiccv-test
-  DEPENDS intrinsiccv-framework-test intrinsiccv-api-test
+  kleidicv-test
+  DEPENDS kleidicv-framework-test kleidicv-api-test
 )
 
 # Target to build and run all tests.
 add_custom_target(
-  check-intrinsiccv
-  COMMAND intrinsiccv-framework-test
-  COMMAND intrinsiccv-api-test
-  DEPENDS intrinsiccv-test
+  check-kleidicv
+  COMMAND kleidicv-framework-test
+  COMMAND kleidicv-api-test
+  DEPENDS kleidicv-test
   USES_TERMINAL
 )

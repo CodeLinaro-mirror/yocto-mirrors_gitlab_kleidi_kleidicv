@@ -8,14 +8,13 @@
 #include "framework/generator.h"
 #include "framework/operation.h"
 #include "framework/utils.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
-#define KLEIDICV_float_conversion(I, input_type_name, O, output_type_name)    \
-  KLEIDICV_DIFF_IO_API(                                                       \
-      float_conversion,                                                       \
-      intrinsiccv_float_conversion_##input_type_name##_##output_type_name, I, \
-      O)
+#define KLEIDICV_float_conversion(I, input_type_name, O, output_type_name) \
+  KLEIDICV_DIFF_IO_API(                                                    \
+      float_conversion,                                                    \
+      kleidicv_float_conversion_##input_type_name##_##output_type_name, I, O)
 
 KLEIDICV_float_conversion(float, f32, int8_t, s8);
 KLEIDICV_float_conversion(float, f32, uint8_t, u8);
@@ -368,7 +367,7 @@ using ElementTypes =
     ::testing::Types<std::pair<float, int8_t>, std::pair<float, uint8_t>,
                      std::pair<int8_t, float>, std::pair<uint8_t, float>>;
 
-// Tests intrinsiccv_float_conversion API.
+// Tests kleidicv_float_conversion API.
 TYPED_TEST_SUITE(FloatConversion, ElementTypes);
 
 TYPED_TEST(FloatConversion, NullPointer) {

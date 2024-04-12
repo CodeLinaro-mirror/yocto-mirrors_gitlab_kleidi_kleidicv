@@ -7,12 +7,11 @@
 #include <type_traits>
 
 #include "framework/operation.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
-#define KLEIDICV_SATURATING_ABSDIFF(type, suffix)                           \
-  KLEIDICV_API(saturating_absdiff, intrinsiccv_saturating_absdiff_##suffix, \
-               type)
+#define KLEIDICV_SATURATING_ABSDIFF(type, suffix) \
+  KLEIDICV_API(saturating_absdiff, kleidicv_saturating_absdiff_##suffix, type)
 
 KLEIDICV_SATURATING_ABSDIFF(int8_t, s8);
 KLEIDICV_SATURATING_ABSDIFF(uint8_t, u8);
@@ -31,7 +30,7 @@ class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
   using BinaryOperationTest<ElementType>::max;
 
   // Calls the API-under-test in the appropriate way.
-  intrinsiccv_error_t call_api() override {
+  kleidicv_error_t call_api() override {
     return saturating_absdiff<ElementType>()(
         this->inputs_[0].data(), this->inputs_[0].stride(),
         this->inputs_[1].data(), this->inputs_[1].stride(),
@@ -90,7 +89,7 @@ using ElementTypes =
     ::testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t>;
 TYPED_TEST_SUITE(SaturatingAbsDiff, ElementTypes);
 
-// Tests intrinsiccv_saturating_absdiff_<type> API.
+// Tests kleidicv_saturating_absdiff_<type> API.
 TYPED_TEST(SaturatingAbsDiff, API) {
   // Test without padding.
   SaturatingAbsDiffTest<TypeParam>{}.test();

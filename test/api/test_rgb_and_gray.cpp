@@ -6,7 +6,7 @@
 
 #include "framework/array.h"
 #include "framework/utils.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
 class GrayTest final {
@@ -167,57 +167,57 @@ class ColourTest final {
 };
 
 TEST(GRAY2, RGB) {
-  GrayTest{false}.execute_test(intrinsiccv_gray_to_rgb_u8);
-  GrayTest{false}.with_padding(1).execute_test(intrinsiccv_gray_to_rgb_u8);
+  GrayTest{false}.execute_test(kleidicv_gray_to_rgb_u8);
+  GrayTest{false}.with_padding(1).execute_test(kleidicv_gray_to_rgb_u8);
   GrayTest{false}
       .with_width(2 * test::Options::vector_lanes<uint8_t>())
-      .execute_test(intrinsiccv_gray_to_rgb_u8);
+      .execute_test(kleidicv_gray_to_rgb_u8);
 }
 
 TEST(GRAY2, RGBA) {
-  GrayTest{true}.execute_test(intrinsiccv_gray_to_rgba_u8);
-  GrayTest{true}.with_padding(1).execute_test(intrinsiccv_gray_to_rgba_u8);
+  GrayTest{true}.execute_test(kleidicv_gray_to_rgba_u8);
+  GrayTest{true}.with_padding(1).execute_test(kleidicv_gray_to_rgba_u8);
   GrayTest{true}
       .with_width(2 * test::Options::vector_lanes<uint8_t>())
-      .execute_test(intrinsiccv_gray_to_rgba_u8);
+      .execute_test(kleidicv_gray_to_rgba_u8);
 }
 
 TEST(RGB2, RGB) {
   ColourTest colour_test(3, 3, false);
-  colour_test.execute_test(intrinsiccv_rgb_to_rgb_u8);
+  colour_test.execute_test(kleidicv_rgb_to_rgb_u8);
 }
 
 TEST(RGBA2, RGBA) {
   ColourTest colour_test(4, 4, false);
-  colour_test.execute_test(intrinsiccv_rgba_to_rgba_u8);
+  colour_test.execute_test(kleidicv_rgba_to_rgba_u8);
 }
 
 TEST(RGB2, BGR) {
   ColourTest colour_test(3, 3, true);
-  colour_test.execute_test(intrinsiccv_rgb_to_bgr_u8);
+  colour_test.execute_test(kleidicv_rgb_to_bgr_u8);
 }
 
 TEST(RGBA2, BGRA) {
   ColourTest colour_test(4, 4, true);
-  colour_test.execute_test(intrinsiccv_rgba_to_bgra_u8);
+  colour_test.execute_test(kleidicv_rgba_to_bgra_u8);
 }
 
 TEST(RGB2, BGRA) {
   ColourTest colour_test(3, 4, true);
-  colour_test.execute_test(intrinsiccv_rgb_to_bgra_u8);
+  colour_test.execute_test(kleidicv_rgb_to_bgra_u8);
 }
 
 TEST(RGB2, RGBA) {
   ColourTest colour_test(3, 4, false);
-  colour_test.execute_test(intrinsiccv_rgb_to_rgba_u8);
+  colour_test.execute_test(kleidicv_rgb_to_rgba_u8);
 }
 
 TEST(RGBA2, BGR) {
   ColourTest colour_test(4, 3, true);
-  colour_test.execute_test(intrinsiccv_rgba_to_bgr_u8);
+  colour_test.execute_test(kleidicv_rgba_to_bgr_u8);
 }
 
 TEST(RGBA2, RGB) {
   ColourTest colour_test(4, 3, false);
-  colour_test.execute_test(intrinsiccv_rgba_to_rgb_u8);
+  colour_test.execute_test(kleidicv_rgba_to_rgb_u8);
 }

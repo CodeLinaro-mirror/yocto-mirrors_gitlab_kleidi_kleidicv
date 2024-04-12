@@ -6,11 +6,11 @@
 
 #include "framework/array.h"
 #include "framework/utils.h"
-#include "intrinsiccv/intrinsiccv.h"
+#include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
 #define KLEIDICV_MIN_MAX(type, suffix) \
-  KLEIDICV_API(min_max, intrinsiccv_min_max_##suffix, type)
+  KLEIDICV_API(min_max, kleidicv_min_max_##suffix, type)
 
 KLEIDICV_MIN_MAX(int8_t, s8);
 KLEIDICV_MIN_MAX(uint8_t, u8);
@@ -19,7 +19,7 @@ KLEIDICV_MIN_MAX(uint16_t, u16);
 KLEIDICV_MIN_MAX(int32_t, s32);
 
 #define KLEIDICV_MIN_MAX_LOC(type, suffix) \
-  KLEIDICV_API(min_max_loc, intrinsiccv_min_max_loc_##suffix, type)
+  KLEIDICV_API(min_max_loc, kleidicv_min_max_loc_##suffix, type)
 
 KLEIDICV_MIN_MAX_LOC(uint8_t, u8);
 
