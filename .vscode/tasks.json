@@ -171,7 +171,25 @@
           "OPENCV_VERSION": "4.9.0",
           "OPENCV_URL": "/opt/opencv-4.9.0.tar.gz"
         }
+      },
+      "group": {
+        "kind": "test"
       }
+    },
+    {
+      "label": "Disassemble KleidiCV",
+      "type": "shell",
+      "command": "${workspaceFolder}/.devcontainer/disassemble.sh",
+      "args": [
+        "${relativeFile}",
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "Build KleidiCV"
+      ],
+      "problemMatcher": []
     }
   ],
   "options": {

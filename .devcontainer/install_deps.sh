@@ -9,7 +9,7 @@ set -exu
 sudo apt-get update
 DEBIAN_FRONTEND=noninteractive sudo apt-get install --no-install-recommends -y \
     qemu-user \
-    clangd-${LLVM_VERSION} \
+    "clangd-${LLVM_VERSION}" \
     ccache \
     gdb-multiarch \
     git-email \
