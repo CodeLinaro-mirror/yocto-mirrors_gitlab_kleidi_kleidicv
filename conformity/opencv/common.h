@@ -21,13 +21,13 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 
-#define KLEIDICV_CONFORMITY_SHM_ID "/opencv_intrinisiccv_conformity_check_shm"
+#define KLEIDICV_CONFORMITY_SHM_ID "/opencv_kleidicv_conformity_check_shm"
 #define KLEIDICV_CONFORMITY_SHM_SIZE (1024 * 1024)
 
 #define KLEIDICV_CONFORMITY_REQUEST_MQ_ID \
-  "/opencv_intrinisiccv_conformity_request_queue"
+  "/opencv_kleidicv_conformity_request_queue"
 #define KLEIDICV_CONFORMITY_REPLY_MQ_ID \
-  "/opencv_intrinisiccv_conformity_reply_queue"
+  "/opencv_kleidicv_conformity_reply_queue"
 
 class ExceptionWithErrno : public std::exception {
  public:
