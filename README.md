@@ -18,7 +18,7 @@ processing functions on Arm. It is designed to be simple to import into a wide
 variety of projects.
 
 The library provides a C interface. For details see
-[the C API documentation](https://kleidicv.sites.arm.com/kleidicv/).
+[the C API documentation](https://kleidi.sites.arm.com/kleidicv/).
 
 An adapter layer API is currently provided for:
 * OpenCV - [available functionality overview](adapters/opencv/doc-opencv.md)
