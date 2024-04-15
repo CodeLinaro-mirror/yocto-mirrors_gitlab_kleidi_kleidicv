@@ -6,7 +6,7 @@
 ///
 /// For documentation of the KleidiCV C API see @ref kleidicv.h
 ///
-/// Project page: https://gitlab.arm.com/kleidicv/kleidicv
+/// Project page: https://gitlab.arm.com/kleidi/kleidicv
 ///
 /// KleidiCV shall use <a href="https://semver.org/spec/v2.0.0.html">Semantic
 /// Versioning 2.0.0</a>. The public API is defined according to what is
