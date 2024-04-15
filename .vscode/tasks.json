@@ -190,6 +190,15 @@
         "Build KleidiCV"
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "Generate coverage",
+      "type": "shell",
+      "command": "${workspaceFolder}/.devcontainer/coverage.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$gcc"]
     }
   ],
   "options": {
