@@ -453,12 +453,12 @@ class DoubleBufferedIndirectRows final : public IndirectRows<T> {
     std::swap(db_ptr_storage_[0], db_ptr_storage_[1]);
   }
 
-  // Retuns indirect rows where write is allowed.
+  // Returns indirect rows where write is allowed.
   [[nodiscard]] IndirectRows<T> write_at() KLEIDICV_STREAMING_COMPATIBLE {
     return IndirectRows<T>{db_ptr_storage_[0], stride(), channels()};
   }
 
-  // Retuns indirect rows where read is allowed.
+  // Returns indirect rows where read is allowed.
   [[nodiscard]] IndirectRows<T> read_at() KLEIDICV_STREAMING_COMPATIBLE {
     return IndirectRows<T>{db_ptr_storage_[1], stride(), channels()};
   }

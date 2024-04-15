@@ -60,10 +60,10 @@ class FixedBorderInfo<T, 3UL> final {
   FixedBorderInfo(size_t height, FixedBorderType border_type)
       : height_(height), border_type_(border_type) {}
 
-  // Retuns offsets without the influence of any border.
+  // Returns offsets without the influence of any border.
   Offsets offsets_without_border() const { return get(-1, 0, 1); }
 
-  // Retuns offsets for columns affected by left border.
+  // Returns offsets for columns affected by left border.
   Offsets offsets_with_left_border(size_t /* column_index */) const
       KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
@@ -85,7 +85,7 @@ class FixedBorderInfo<T, 3UL> final {
     return Offsets{};  // GCOVR_EXCL_LINE
   }
 
-  // Retuns offsets for columns affected by right border.
+  // Returns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t /* column_index */) const
       KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
@@ -107,7 +107,7 @@ class FixedBorderInfo<T, 3UL> final {
     return Offsets{};  // GCOVR_EXCL_LINE
   }
 
-  // Retuns offsets for rows or columns affected by any border.
+  // Returns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
       KLEIDICV_STREAMING_COMPATIBLE {
     if (row_or_column_index == 0U) {
@@ -158,12 +158,12 @@ class FixedBorderInfo<T, 5UL> final {
   FixedBorderInfo(size_t height, FixedBorderType border_type)
       : height_(height), border_type_(border_type) {}
 
-  // Retuns offsets without the influence of any border.
+  // Returns offsets without the influence of any border.
   Offsets offsets_without_border() const KLEIDICV_STREAMING_COMPATIBLE {
     return get(-2, -1, 0, 1, 2);
   }
 
-  // Retuns offsets for columns affected by left border.
+  // Returns offsets for columns affected by left border.
   Offsets offsets_with_left_border(size_t column_index) const
       KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
@@ -204,7 +204,7 @@ class FixedBorderInfo<T, 5UL> final {
     return Offsets{};  // GCOVR_EXCL_LINE
   }
 
-  // Retuns offsets for columns affected by right border.
+  // Returns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t column_index) const
       KLEIDICV_STREAMING_COMPATIBLE {
     switch (border_type_) {
@@ -245,7 +245,7 @@ class FixedBorderInfo<T, 5UL> final {
     return Offsets{};  // GCOVR_EXCL_LINE
   }
 
-  // Retuns offsets for rows or columns affected by any border.
+  // Returns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
       KLEIDICV_STREAMING_COMPATIBLE {
     if (row_or_column_index <= 1U) {
