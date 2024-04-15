@@ -17,10 +17,42 @@ static auto abs_diff(T a, T b) {
   return a > b ? a - b : b - a;
 }
 
-template <typename T>
-bool are_matrices_different(T threshold, cv::Mat& A, cv::Mat& B) {
+static inline bool check_matrix_size_and_type(cv::Mat& A, cv::Mat& B) {
   if (A.rows != B.rows || A.cols != B.cols || A.type() != B.type()) {
     std::cout << "Matrix size/type mismatch" << std::endl;
+    return true;
+  }
+
+  return false;
+}
+
+// Expected matrix should not contain zeros
+template <typename T>
+bool are_float_matrices_different(T threshold_percent, cv::Mat& exp,
+                                  cv::Mat& act) {
+  if (check_matrix_size_and_type(exp, act)) {
+    return true;
+  }
+
+  for (int i = 0; i < exp.rows; ++i) {
+    for (int j = 0; j < (exp.cols * CV_MAT_CN(exp.type())); ++j) {
+      T diff = abs_diff<T>(exp.at<T>(i, j), act.at<T>(i, j));
+      T diff_percentage = (diff / std::abs(exp.at<T>(i, j))) * 100;
+      if (diff_percentage > threshold_percent) {
+        std::cout << "=== Mismatch at: " << i << " " << j << std::endl
+                  << "Relative diff: " << diff_percentage << std::endl
+                  << std::endl;
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+template <typename T>
+bool are_matrices_different(T threshold, cv::Mat& A, cv::Mat& B) {
+  if (check_matrix_size_and_type(A, B)) {
     return true;
   }
 

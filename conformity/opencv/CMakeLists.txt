@@ -34,6 +34,7 @@ add_executable(
   test_min_max.cpp
   test_rgb2yuv.cpp
   test_sobel.cpp
+  test_exp.cpp
 )
 
 target_link_libraries(
@@ -72,6 +73,7 @@ add_executable(
   test_min_max.cpp
   test_rgb2yuv.cpp
   test_sobel.cpp
+  test_exp.cpp
 )
 
 target_link_libraries(

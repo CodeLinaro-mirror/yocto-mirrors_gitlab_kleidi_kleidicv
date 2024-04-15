@@ -1306,6 +1306,32 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, float scale, float shift);
 
+/// Exponential function, input is the elements in `src`, output is the elements
+/// in `dst`.
+///
+/// In case of 'float' type the maximum error is 0.36565+0.5 ULP, or the error
+/// of the toolchains's expf implementation, if it is bigger.
+///
+/// Source and destination data length is `width` * `height`. Number of elements
+/// is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data. Must
+///                     not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data. Must
+///                     not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
+/// @param width        Number of pixels in a row.
+/// @param height       Number of rows in the data.
+///
+KLEIDICV_API_DECLARATION(kleidicv_exp_f32, const float *src, size_t src_stride,
+                         float *dst, size_t dst_stride, size_t width,
+                         size_t height);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

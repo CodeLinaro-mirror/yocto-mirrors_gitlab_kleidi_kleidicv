@@ -8,16 +8,17 @@ SPDX-License-Identifier: Apache-2.0
 Note: functions listed here are not necessarily exposed to adapter API layer.
 See `doc/opencv.md` for details of the functionality available in OpenCV.
 
-## Basic arithmetic operations
-|                              | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 |
-|------------------------------|-----|-----|-----|-----|-----|-----|-----|-----|
-| Saturating Add               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Saturating Sub               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Saturating Absdiff           |  x  |  x  |  x  |  x  |  x  |     |     |     |
-| Saturating Multiply          |  x  |  x  |  x  |  x  |  x  |     |     |     |
-| Threshold binary             |     |  x  |     |     |     |     |     |     |
-| SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |
-| Scale                        |     |  x  |     |     |     |     |     |     |
+## Arithmetic operations
+|                              | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 | f32 | f64 |
+|------------------------------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+| Exp                          |     |     |     |     |     |     |     |     |  x  |     |
+| Saturating Add               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |     |     |
+| Saturating Sub               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |     |     |
+| Saturating Absdiff           |  x  |  x  |  x  |  x  |  x  |     |     |     |     |     |
+| Saturating Multiply          |  x  |  x  |  x  |  x  |  x  |     |     |     |     |     |
+| Threshold binary             |     |  x  |     |     |     |     |     |     |     |     |
+| SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |     |     |
+| Scale                        |     |  x  |     |     |     |     |     |     |     |     |
 
 ## Color conversions
 |           | u8  |

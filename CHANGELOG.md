@@ -16,6 +16,7 @@ This changelog aims to follow the guiding principles of
 ## 0.2.0 - not yet released
 
 ### Added
+- Exponential function for float.
 
 ### Fixed
 

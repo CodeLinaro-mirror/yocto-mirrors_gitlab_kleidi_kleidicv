@@ -97,8 +97,13 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
               uchar *dst_data, size_t dst_step, int dst_depth, int width,
               int height, double scale, double shift);
 
+int exp32f(const float *src, float *dst, int len);
+
 }  // namespace hal
 }  // namespace kleidicv
+
+#undef cv_hal_exp32f
+#define cv_hal_exp32f kleidicv::hal::exp32f
 
 // Other HAL implementations might require the cv namespace
 namespace cv {

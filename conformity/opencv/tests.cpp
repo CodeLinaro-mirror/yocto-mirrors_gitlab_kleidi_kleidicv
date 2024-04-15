@@ -10,6 +10,7 @@
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
+#include "test_exp.h"
 #include "test_gaussian_blur.h"
 #include "test_min_max.h"
 #include "test_rgb2yuv.h"
@@ -30,6 +31,7 @@ std::vector<test> all_tests = merge_tests({
     min_max_tests_get,
     rgb2yuv_tests_get,
     sobel_tests_get,
+    exp_tests_get,
 });
 
 #if MANAGER

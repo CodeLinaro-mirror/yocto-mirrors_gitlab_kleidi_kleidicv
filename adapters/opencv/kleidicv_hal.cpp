@@ -706,4 +706,9 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
+int exp32f(const float *src, float *dst, int len) {
+  return convert_error(kleidicv_exp_f32(src, len * sizeof(float), dst,
+                                        len * sizeof(float), len, 1));
+}
+
 }  // namespace kleidicv::hal

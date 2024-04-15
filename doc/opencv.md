@@ -168,3 +168,6 @@ Notes on parameters:
 
 ### `convertTo`
 Currently converting to different data types is not supported. This function scales given input of `src_depth == CV_8U` using `scale` and `shift`.
+
+### `exp`
+Exponential function. Currently only `CV_32F` type is supported.
