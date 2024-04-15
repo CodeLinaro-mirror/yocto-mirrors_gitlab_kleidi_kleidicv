@@ -35,9 +35,7 @@ implementations. All supporting scripts are located in `scripts`.
 
 The library can be built using CMake:
 ```
-cmake \
--S /path/to/kleidicv \
--B build-kleidicv \
+cmake -S /path/to/kleidicv -B build-kleidicv
 cmake --build build-kleidicv --parallel
 ```
 
