@@ -13,6 +13,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 rm -rf build
 
 if ! command -v qemu-aarch64; then
+  apt-get update
   apt-get -y --no-install-recommends install qemu-user
 fi
 
