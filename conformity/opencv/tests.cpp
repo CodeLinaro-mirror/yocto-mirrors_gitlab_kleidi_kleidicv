@@ -14,18 +14,17 @@
 #include "test_gaussian_blur.h"
 #include "test_sobel.h"
 
-template <typename T>
-static std::vector<T> merge_tests(
-    std::initializer_list<std::vector<T>& (*)()> test_groups) {
-  std::vector<T> all_tests;
+static std::vector<test> merge_tests(
+    std::initializer_list<std::vector<test>& (*)()> test_groups) {
+  std::vector<test> all_tests;
   for (auto getter : test_groups) {
-    std::vector<T>& group = getter();
+    std::vector<test>& group = getter();
     all_tests.insert(all_tests.cend(), group.cbegin(), group.cend());
   }
   return all_tests;
 }
 
-std::vector<test> all_tests = merge_tests<test>({
+std::vector<test> all_tests = merge_tests({
     sobel_tests_get,
     gaussian_blur_tests_get,
     float_conversion_tests_get,
