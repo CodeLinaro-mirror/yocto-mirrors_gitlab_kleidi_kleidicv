@@ -43,7 +43,7 @@ bool test_sobel(int index, RecreatedMessageQueue& request_queue,
 }
 #endif
 
-std::vector<test>& sobel_tests_singleton() {
+std::vector<test>& sobel_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
     TEST("Sobel Vertical, 1 channel", (test_sobel<true, 1>), exec_sobel<true>),

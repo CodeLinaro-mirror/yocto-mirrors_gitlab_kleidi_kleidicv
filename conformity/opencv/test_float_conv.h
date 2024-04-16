@@ -9,6 +9,6 @@
 
 #include "tests.h"
 
-std::vector<test>& float_conversion_tests_singleton();
+std::vector<test>& float_conversion_tests_get();
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TEST_FLOAT_CONV_H_

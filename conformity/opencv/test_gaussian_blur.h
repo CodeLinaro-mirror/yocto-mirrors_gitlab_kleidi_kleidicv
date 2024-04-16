@@ -9,6 +9,6 @@
 
 #include "tests.h"
 
-std::vector<test>& gaussian_blur_tests_singleton();
+std::vector<test>& gaussian_blur_tests_get();
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TEST_GAUSSIAN_BLUR_H_

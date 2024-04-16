@@ -46,17 +46,17 @@ template <typename T>
 static std::vector<T> merge_tests(
     std::initializer_list<std::vector<T>& (*)()> test_groups) {
   std::vector<T> all_tests;
-  for (auto singleton : test_groups) {
-    std::vector<T>& group = singleton();
+  for (auto getter : test_groups) {
+    std::vector<T>& group = getter();
     all_tests.insert(all_tests.cend(), group.cbegin(), group.cend());
   }
   return all_tests;
 }
 
 std::vector<test> all_tests = merge_tests<test>({
-    sobel_tests_singleton,
-    gaussian_blur_tests_singleton,
-    float_conversion_tests_singleton,
+    sobel_tests_get,
+    gaussian_blur_tests_get,
+    float_conversion_tests_get,
 });
 
 #if MANAGER

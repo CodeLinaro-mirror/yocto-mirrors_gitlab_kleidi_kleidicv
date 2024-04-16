@@ -180,7 +180,7 @@ bool test_int8_to_float32_custom(int index,
 }
 #endif
 
-std::vector<test>& float_conversion_tests_singleton() {
+std::vector<test>& float_conversion_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
     TEST("Float32 to Signed Int8, fill, 1 channel", (test_float32_to_int8_random<true, 1>), exec_float32_to_int8<true>),

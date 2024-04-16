@@ -40,7 +40,7 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
 }
 #endif
 
-std::vector<test>& gaussian_blur_tests_singleton() {
+std::vector<test>& gaussian_blur_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
     TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 1 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 1>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),

@@ -9,6 +9,6 @@
 
 #include "tests.h"
 
-std::vector<test>& sobel_tests_singleton();
+std::vector<test>& sobel_tests_get();
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TEST_SOBEL_H_
