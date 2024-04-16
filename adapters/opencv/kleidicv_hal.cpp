@@ -677,7 +677,6 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
           reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
           static_cast<float>(scale), static_cast<float>(shift)));
     }
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
   // type conversion only
