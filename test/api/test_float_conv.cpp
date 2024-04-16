@@ -11,15 +11,15 @@
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
-#define KLEIDICV_float_conversion(I, input_type_name, O, output_type_name) \
-  KLEIDICV_DIFF_IO_API(                                                    \
-      float_conversion,                                                    \
-      kleidicv_float_conversion_##input_type_name##_##output_type_name, I, O)
+#define KLEIDICV_FLOAT_CONVERSION(itype, itype_name, otype, otype_name)        \
+  KLEIDICV_API_DIFFERENT_IO_TYPES(                                             \
+      float_conversion, kleidicv_float_conversion_##itype_name##_##otype_name, \
+      itype, otype)
 
-KLEIDICV_float_conversion(float, f32, int8_t, s8);
-KLEIDICV_float_conversion(float, f32, uint8_t, u8);
-KLEIDICV_float_conversion(int8_t, s8, float, f32);
-KLEIDICV_float_conversion(uint8_t, u8, float, f32);
+KLEIDICV_FLOAT_CONVERSION(float, f32, int8_t, s8);
+KLEIDICV_FLOAT_CONVERSION(float, f32, uint8_t, u8);
+KLEIDICV_FLOAT_CONVERSION(int8_t, s8, float, f32);
+KLEIDICV_FLOAT_CONVERSION(uint8_t, u8, float, f32);
 
 template <typename InputType, typename OutputType>
 class FloatConversionTest final {

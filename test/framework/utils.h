@@ -24,7 +24,7 @@
     return impl;                                                              \
   }
 
-#define KLEIDICV_DIFF_IO_API(name, impl, itype, otype)                        \
+#define KLEIDICV_API_DIFFERENT_IO_TYPES(name, impl, itype, otype)             \
   template <typename InputType, typename OutputType,                          \
             std::enable_if_t<std::is_same_v<InputType, itype>, bool> = true,  \
             std::enable_if_t<std::is_same_v<OutputType, otype>, bool> = true> \
