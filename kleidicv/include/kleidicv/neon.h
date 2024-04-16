@@ -134,6 +134,16 @@ class VectorTypes<uint64_t> {
   using Vector4Type = uint64x2x4_t;
 };  // end of class VectorTypes<uint64_t>
 
+template <>
+class VectorTypes<float32_t> {
+ public:
+  using ScalarType = float32_t;
+  using VectorType = float32x4_t;
+  using Vector2Type = float32x4x2_t;
+  using Vector3Type = float32x4x3_t;
+  using Vector4Type = float32x4x4_t;
+};  // end of class VectorTypes<float32_t>
+
 // Base class for all NEON vector traits.
 template <typename ScalarType>
 class VecTraitsBase : public VectorTypes<ScalarType> {
