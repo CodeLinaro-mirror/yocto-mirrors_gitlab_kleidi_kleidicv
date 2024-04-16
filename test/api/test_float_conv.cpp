@@ -152,22 +152,13 @@ class FloatConversionTest final {
   const Elements& get_custom_elements() {
     static const Elements kTestElements = {
         // clang-format off
-        4, 6,
+        5, 1,
         {{
-          { min<I>(), min<I>(), max<I>() - 1, max<I>() },
-          { min<I>(), min<I>(), min<I>(), min<I>() },
-          { min<I>(), min<I>(), min<I>(), max<I>() - 1 },
-          { max<I>() - 1, max<I>(), 113, 114 },
-          { 112, 113, 114, 115 },
-          { 12, 12, 12, 12 }
+          { min<I>(), min<I>() + 1, 0, max<I>() - 1, max<I>() }
         }},
         {{
-          { min<I>(), min<I>(), max<I>() - 1.0, max<I>() },
-          { min<I>(), min<I>(), min<I>(), min<I>() },
-          { min<I>(), min<I>(), min<I>(), max<I>() - 1.0 },
-          { max<I>() - 1.0, max<I>(), 113.0, 114.0 },
-          { 112.0, 113.0, 114.0, 115.0 },
-          { 12.0, 12.0, 12.0, 12.0 }
+          { static_cast<float>(min<I>()), static_cast<float>(min<I>()) + 1.0, 0,
+            static_cast<float>(max<I>()) - 1.0, static_cast<float>(max<I>()) }
         }}
         // clang-format on
     };

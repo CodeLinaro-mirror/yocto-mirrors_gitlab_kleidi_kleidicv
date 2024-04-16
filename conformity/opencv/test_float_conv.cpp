@@ -95,53 +95,45 @@ bool test_int8_to_float32_random(int index,
   return false;
 }
 
-static constexpr int custom_data_height = 8;
-static constexpr int custom_data_width = 4;
+static constexpr int custom_data_float_height = 8;
+static constexpr int custom_data_float_width = 4;
 
-static float custom_data_float[custom_data_height * custom_data_width] = {
-    // clang-format off
-  quietNaN, signalingNaN, posInfinity, negInfinity,
-  minusNaN, plusNaN, plusZero, minusZero,
-  oneNaN, zeroDivZero, floatMin, floatMax,
-  posSubnormalMin, posSubnormalMax, negSubnormalMin, negSubnormalMax,
-  1111.11, -1112.22, 113.33, 114.44,
-  111.51, 112.62, 113.73, 114.84,
-  126.66, 127.11, 128.66, 129.11,
-  11.5, 12.5, -11.5, -12.5,
-    // clang-format on
+static float
+    custom_data_float[custom_data_float_height * custom_data_float_width] = {
+        // clang-format off
+        quietNaN, signalingNaN, posInfinity, negInfinity,
+        minusNaN, plusNaN, plusZero, minusZero,
+        oneNaN, zeroDivZero, floatMin, floatMax,
+        posSubnormalMin, posSubnormalMax, negSubnormalMin, negSubnormalMax,
+        1111.11, -1112.22, 113.33, 114.44,
+        111.51, 112.62, 113.73, 114.84,
+        126.66, 127.11, 128.66, 129.11,
+        11.5, 12.5, -11.5, -12.5,
+        // clang-format on
 };
 
-static int8_t custom_data_int8[custom_data_height * custom_data_width] = {
-    // clang-format off
-  -128, -128, 126, 127,
-  -128, -128, -128, -128,
-  -128, -128, -128, 126,
-  -127, -127, -127, 125,
-  126, 127, 113, 114,
-  112, 113, 114, 115,
-  12, 12, 12, 12,
-  11, 11, 11, 11,
-    // clang-format on
+static constexpr int custom_data_int8_height = 1;
+static constexpr int custom_data_int8_width = 7;
+
+static int8_t
+    custom_data_int8[custom_data_int8_height * custom_data_int8_width] = {
+        // clang-format off
+        -128, -127, -1, 0, 1, 126, 127
+        // clang-format on
 };
 
-static uint8_t custom_data_uint8[custom_data_height * custom_data_width] = {
-    // clang-format off
-  0, 0, 254, 255,
-  0, 0, 0, 0,
-  0, 0, 0, 254,
-  1, 1, 1, 253,
-  254, 255, 113, 114,
-  112, 113, 114, 115,
-  12, 12, 12, 12,
-  11, 11, 11, 11,
-    // clang-format on
+static uint8_t
+    custom_data_uint8[custom_data_int8_height * custom_data_int8_width] = {
+        // clang-format off
+        0, 1, 126, 127, 128, 254, 255
+        // clang-format on
 };
 
 template <bool Signed>
 bool test_float32_to_int8_custom(int index,
                                  RecreatedMessageQueue& request_queue,
                                  RecreatedMessageQueue& reply_queue) {
-  cv::Mat input(custom_data_height, custom_data_width, CV_32FC1,
+  cv::Mat input(custom_data_float_height, custom_data_float_width, CV_32FC1,
                 custom_data_float);
 
   cv::Mat actual = exec_float32_to_int8<Signed>(input);
@@ -149,8 +141,8 @@ bool test_float32_to_int8_custom(int index,
       get_expected_from_subordinate(index, request_queue, reply_queue, input);
 
   if (are_matrices_different<uint8_t>(0, actual, expected)) {
-    fail_print_matrices(custom_data_height, custom_data_width, input, actual,
-                        expected);
+    fail_print_matrices(custom_data_float_height, custom_data_float_width,
+                        input, actual, expected);
     return true;
   }
 
@@ -161,7 +153,7 @@ template <bool Signed>
 bool test_int8_to_float32_custom(int index,
                                  RecreatedMessageQueue& request_queue,
                                  RecreatedMessageQueue& reply_queue) {
-  cv::Mat input(custom_data_height, custom_data_width,
+  cv::Mat input(custom_data_int8_height, custom_data_int8_width,
                 Signed ? CV_8SC1 : CV_8UC1,
                 Signed ? static_cast<void*>(custom_data_int8)
                        : static_cast<void*>(custom_data_uint8));
@@ -171,8 +163,8 @@ bool test_int8_to_float32_custom(int index,
       get_expected_from_subordinate(index, request_queue, reply_queue, input);
 
   if (are_matrices_different<float>(0, actual, expected)) {
-    fail_print_matrices(custom_data_height, custom_data_width, input, actual,
-                        expected);
+    fail_print_matrices(custom_data_int8_height, custom_data_int8_width, input,
+                        actual, expected);
     return true;
   }
 
@@ -206,8 +198,8 @@ std::vector<test>& float_conversion_tests_get() {
     TEST("Unsigned Int8 to Float32, fill, 3 channel", (test_int8_to_float32_random<false, 3>), exec_int8_to_float32),
     TEST("Unsigned Int8 to Float32, fill, 4 channel", (test_int8_to_float32_random<false, 4>), exec_int8_to_float32),
 
-    TEST("Signed Int8 Float32, custom (special)", test_int8_to_float32_custom<true>, exec_int8_to_float32),
-    TEST("Unigned Int8 Float32, custom (special)", test_int8_to_float32_custom<false>, exec_int8_to_float32),
+    TEST("Signed Int8 Float32, custom", test_int8_to_float32_custom<true>, exec_int8_to_float32),
+    TEST("Unigned Int8 Float32, custom", test_int8_to_float32_custom<false>, exec_int8_to_float32),
   };
   // clang-format on
   return tests;
