@@ -147,6 +147,7 @@ class FloatConversionTest final {
   }
 
   template <typename I, typename O,
+            std::enable_if_t<std::is_integral_v<I>, bool> = true,
             std::enable_if_t<std::is_same_v<float, O>, bool> = true>
   const Elements& get_custom_elements() {
     static const Elements kTestElements = {
@@ -174,7 +175,8 @@ class FloatConversionTest final {
   }
 
   template <typename I, typename O,
-            std::enable_if_t<std::is_same_v<float, I>, bool> = true>
+            std::enable_if_t<std::is_same_v<float, I>, bool> = true,
+            std::enable_if_t<std::is_integral_v<O>, bool> = true>
   const Values& get_values() {
     static const Values kTestValues = {
         // clang-format off
@@ -185,6 +187,7 @@ class FloatConversionTest final {
   }
 
   template <typename I, typename O,
+            std::enable_if_t<std::is_integral_v<I>, bool> = true,
             std::enable_if_t<std::is_same_v<float, O>, bool> = true>
   const Values& get_values() {
     static const Values kTestValues = {
