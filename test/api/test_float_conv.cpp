@@ -88,27 +88,27 @@ class FloatConversionTest final {
   const Elements& get_custom_elements() {
     static const Elements kTestElements = {
         // clang-format off
-      4, 8,
-      {{
-        { floatval(quietNaN), floatval(signalingNaN), floatval(posInfinity), floatval(negInfinity) },
-        { floatval(minusNaN), floatval(plusNaN), floatval(plusZero), floatval(minusZero) },
-        { floatval(oneNaN), floatval(zeroDivZero), floatval(floatMin), floatval(floatMax) },
-        { floatval(posSubnormalMin), floatval(posSubnormalMax), floatval(negSubnormalMin), floatval(negSubnormalMax) },
-        { 1111.11, -1112.22, 113.33, 114.44 },
-        { 111.51, 112.62, 113.73, 114.84 },
-        { 126.66, 127.11, 128.66, 129.11 },
-        { 11.5, 12.5, -11.5, -12.5 }
-      }},
-      {{
-        { 0, 0, 127, -128 },
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 127 },
-        { 0, 0, 0, 0 },
-        { 127, -128, 113, 114 },
-        { 112, 113, 114, 115 },
-        { 127, 127, 127, 127 },
-        { 12, 12, -12, -12 }
-      }}
+        4, 8,
+        {{
+          { floatval(quietNaN), floatval(signalingNaN), floatval(posInfinity), floatval(negInfinity) },
+          { floatval(minusNaN), floatval(plusNaN), floatval(plusZero), floatval(minusZero) },
+          { floatval(oneNaN), floatval(zeroDivZero), floatval(floatMin), floatval(floatMax) },
+          { floatval(posSubnormalMin), floatval(posSubnormalMax), floatval(negSubnormalMin), floatval(negSubnormalMax) },
+          { 1111.11, -1112.22, 113.33, 114.44 },
+          { 111.51, 112.62, 113.73, 114.84 },
+          { 126.66, 127.11, 128.66, 129.11 },
+          { 11.5, 12.5, -11.5, -12.5 }
+        }},
+        {{
+          { 0, 0, 127, -128 },
+          { 0, 0, 0, 0 },
+          { 0, 0, 0, 127 },
+          { 0, 0, 0, 0 },
+          { 127, -128, 113, 114 },
+          { 112, 113, 114, 115 },
+          { 127, 127, 127, 127 },
+          { 12, 12, -12, -12 }
+        }}
         // clang-format on
     };
     return kTestElements;
@@ -120,27 +120,27 @@ class FloatConversionTest final {
   const Elements& get_custom_elements() {
     static const Elements kTestElements = {
         // clang-format off
-      4, 8,
-      {{
-        { floatval(quietNaN), floatval(signalingNaN), floatval(posInfinity), floatval(negInfinity) },
-        { floatval(minusNaN), floatval(plusNaN), floatval(plusZero), floatval(minusZero) },
-        { floatval(oneNaN), floatval(zeroDivZero), floatval(floatMin), floatval(floatMax) },
-        { floatval(posSubnormalMin), floatval(posSubnormalMax), floatval(negSubnormalMin), floatval(negSubnormalMax) },
-        { 1111.11, -1112.22, 113.33, 114.44 },
-        { 111.51, 112.62, 113.73, 114.84 },
-        { 126.66, 127.11, 128.66, 129.11 },
-        { 11.5, 12.5, -11.5, -12.5 }
-      }},
-      {{
-        { 0, 0, 255, 0 },
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 255 },
-        { 0, 0, 0, 0 },
-        { 255, 0, 113, 114 },
-        { 112, 113, 114, 115 },
-        { 127, 127, 129, 129 },
-        { 12, 12, 0, 0 }
-      }}
+        4, 8,
+        {{
+          { floatval(quietNaN), floatval(signalingNaN), floatval(posInfinity), floatval(negInfinity) },
+          { floatval(minusNaN), floatval(plusNaN), floatval(plusZero), floatval(minusZero) },
+          { floatval(oneNaN), floatval(zeroDivZero), floatval(floatMin), floatval(floatMax) },
+          { floatval(posSubnormalMin), floatval(posSubnormalMax), floatval(negSubnormalMin), floatval(negSubnormalMax) },
+          { 1111.11, -1112.22, 113.33, 114.44 },
+          { 111.51, 112.62, 113.73, 114.84 },
+          { 126.66, 127.11, 128.66, 129.11 },
+          { 11.5, 12.5, -11.5, -12.5 }
+        }},
+        {{
+          { 0, 0, 255, 0 },
+          { 0, 0, 0, 0 },
+          { 0, 0, 0, 255 },
+          { 0, 0, 0, 0 },
+          { 255, 0, 113, 114 },
+          { 112, 113, 114, 115 },
+          { 127, 127, 129, 129 },
+          { 12, 12, 0, 0 }
+        }}
         // clang-format on
     };
     return kTestElements;
@@ -151,23 +151,23 @@ class FloatConversionTest final {
   const Elements& get_custom_elements() {
     static const Elements kTestElements = {
         // clang-format off
-      4, 6,
-      {{
-        { min<I>(), min<I>(), max<I>() - 1, max<I>() },
-        { min<I>(), min<I>(), min<I>(), min<I>() },
-        { min<I>(), min<I>(), min<I>(), max<I>() - 1 },
-        { max<I>() - 1, max<I>(), 113, 114 },
-        { 112, 113, 114, 115 },
-        { 12, 12, 12, 12 }
-      }},
-      {{
-        { min<I>(), min<I>(), max<I>() - 1.0, max<I>() },
-        { min<I>(), min<I>(), min<I>(), min<I>() },
-        { min<I>(), min<I>(), min<I>(), max<I>() - 1.0 },
-        { max<I>() - 1.0, max<I>(), 113.0, 114.0 },
-        { 112.0, 113.0, 114.0, 115.0 },
-        { 12.0, 12.0, 12.0, 12.0 }
-      }}
+        4, 6,
+        {{
+          { min<I>(), min<I>(), max<I>() - 1, max<I>() },
+          { min<I>(), min<I>(), min<I>(), min<I>() },
+          { min<I>(), min<I>(), min<I>(), max<I>() - 1 },
+          { max<I>() - 1, max<I>(), 113, 114 },
+          { 112, 113, 114, 115 },
+          { 12, 12, 12, 12 }
+        }},
+        {{
+          { min<I>(), min<I>(), max<I>() - 1.0, max<I>() },
+          { min<I>(), min<I>(), min<I>(), min<I>() },
+          { min<I>(), min<I>(), min<I>(), max<I>() - 1.0 },
+          { max<I>() - 1.0, max<I>(), 113.0, 114.0 },
+          { 112.0, 113.0, 114.0, 115.0 },
+          { 12.0, 12.0, 12.0, 12.0 }
+        }}
         // clang-format on
     };
     return kTestElements;
@@ -340,14 +340,12 @@ class FloatConversionTest final {
 
   void test_sizes(const size_t width, const size_t height) {
     auto values_list = get_values<InputType, OutputType>();
+
     test::Array2D<InputType> source(width, height, 1, 1);
-
     test::Array2D<OutputType> expected(width, height, 1, 1);
-
     test::Array2D<OutputType> actual(width, height, 1, 1);
 
     source.fill(values_list.source);
-
     expected.fill(values_list.expected);
 
     actual.fill(0);
