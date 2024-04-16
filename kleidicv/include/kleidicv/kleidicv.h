@@ -1255,7 +1255,7 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_u8, const uint8_t *src,
 ///
 /// Each resulting element is saturated, i.e. it is the smallest/largest
 /// number of the type of the element if the `src` data type cannot be
-/// represented as the `dst` type. In case of special values, such as the
+/// represented as the `dst` type. In case of some special values, such as the
 /// different variations of `NaN`, the result is `0`. Source and destination
 /// data length is `width` * `height`. Number of elements is limited to @ref
 /// KLEIDICV_MAX_IMAGE_PIXELS.
@@ -1284,8 +1284,8 @@ KLEIDICV_API_DECLARATION(kleidicv_float_conversion_f32_u8, const float *src,
 ///
 /// Each resulting element is saturated, i.e. it is the smallest/largest
 /// number of the type of the element if the `src` data type cannot be
-/// represented as the `dst` type. Source and destination data length is `width`
-/// * `height`. Number of elements is limited to @ref
+/// represented as the `dst` type. Source and destination data length is
+/// `width` * `height`. Number of elements is limited to @ref
 /// KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
