@@ -244,36 +244,22 @@ class FloatConversionTest final {
     return height;
   }
 
-  template <typename I, typename O,
-            std::enable_if_t<std::is_same_v<float, I>, bool> = true,
-            std::enable_if_t<std::is_integral_v<O>, bool> = true>
+  template <typename I, typename O>
   std::tuple<test::Array2D<I>, test::Array2D<O>, test::Array2D<O>>
   get_linear_arrays(size_t width, size_t height) {
     test::Array2D<I> source(width, height, 1, 1);
     test::Array2D<O> expected(width, height, 1, 1);
     test::Array2D<O> actual(width, height, 1, 1);
 
-    test::GenerateLinearSeries<I> generator(min<O>());
-
-    source.fill(generator);
-
-    calculate_expected<I, O>(source, expected);
-
-    return {source, expected, actual};
-  }
-
-  template <typename I, typename O,
-            std::enable_if_t<std::is_integral_v<I>, bool> = true,
-            std::enable_if_t<std::is_same_v<float, O>, bool> = true>
-  std::tuple<test::Array2D<I>, test::Array2D<O>, test::Array2D<O>>
-  get_linear_arrays(size_t width, size_t height) {
-    test::Array2D<I> source(width, height, 1, 1);
-    test::Array2D<O> expected(width, height, 1, 1);
-    test::Array2D<O> actual(width, height, 1, 1);
-
-    test::GenerateLinearSeries<I> generator(min<I>());
-
-    source.fill(generator);
+    if constexpr (std::is_same_v<float, I> && std::is_integral_v<O>) {
+      test::GenerateLinearSeries<I> generator(min<O>());
+      source.fill(generator);
+    } else if constexpr (std::is_integral_v<I> && std::is_same_v<float, O>) {
+      test::GenerateLinearSeries<I> generator(min<I>());
+      source.fill(generator);
+    } else {
+      static_assert(sizeof(I) == 0 && sizeof(O) == 0, "should never happen");
+    }
 
     calculate_expected<I, O>(source, expected);
 
@@ -282,30 +268,16 @@ class FloatConversionTest final {
 
  public:
   // minimum_size set by caller to trigger the 'big' conversion path.
-  template <typename I, typename O,
-            std::enable_if_t<std::is_same_v<float, I>, bool> = true,
-            std::enable_if_t<std::is_integral_v<O>, bool> = true>
+  template <typename I, typename O>
   void test_linear(size_t width, size_t minimum_size = 1) {
-    size_t height = get_linear_height<O>(width, minimum_size);
-
-    auto arrays = get_linear_arrays<I, O>(width, height);
-
-    test::Array2D<I>& source = std::get<0>(arrays);
-    test::Array2D<O>& expected = std::get<1>(arrays);
-    test::Array2D<O>& actual = std::get<2>(arrays);
-
-    ASSERT_EQ(KLEIDICV_OK, (float_conversion<I, O>()(
-                               source.data(), source.stride(), actual.data(),
-                               actual.stride(), width, height)));
-
-    EXPECT_EQ_ARRAY2D(expected, actual);
-  }
-
-  template <typename I, typename O,
-            std::enable_if_t<std::is_integral_v<I>, bool> = true,
-            std::enable_if_t<std::is_same_v<float, O>, bool> = true>
-  void test_linear(size_t width, size_t minimum_size = 1) {
-    size_t height = get_linear_height<I>(width, minimum_size);
+    size_t height = 0;
+    if constexpr (std::is_same_v<float, I> && std::is_integral_v<O>) {
+      height = get_linear_height<O>(width, minimum_size);
+    } else if constexpr (std::is_integral_v<I> && std::is_same_v<float, O>) {
+      height = get_linear_height<I>(width, minimum_size);
+    } else {
+      static_assert(sizeof(I) == 0 && sizeof(O) == 0, "should never happen");
+    }
 
     auto arrays = get_linear_arrays<I, O>(width, height);
 
