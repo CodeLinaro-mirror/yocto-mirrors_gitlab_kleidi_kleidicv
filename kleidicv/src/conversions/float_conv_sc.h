@@ -90,7 +90,7 @@ class float_conversion_operation<float, OutputType> {
 
     return svcvt_u32_f32_x(pg, src);
   }
-};  // end of class float_conversion_operation<uint8_t>
+};  // end of class float_conversion_operation<float, OutputType>
 
 template <typename InputType>
 class float_conversion_operation<InputType, float> {
@@ -142,7 +142,7 @@ class float_conversion_operation<InputType, float> {
     svuint32_t src_vector = svld1ub_u32(pg, src);
     return svcvt_f32_u32_x(pg, src_vector);
   }
-};
+};  // end of class float_conversion_operation<InputType, float>
 
 template <typename I, typename O>
 static kleidicv_error_t float_conversion_sc(
