@@ -6,30 +6,30 @@
 
 #include <vector>
 
-float floatval_(uint32_t v) {
+float floatval(uint32_t v) {
   static_assert(sizeof(float) == 4);
   return *reinterpret_cast<float*>(&v);
 }
 
-float quietNaN = floatval_(0x7FC00000);
-float signalingNaN = floatval_(0x7FA00000);
-float posInfinity = floatval_(0x7F800000);
-float negInfinity = floatval_(0xFF800000);
+float quietNaN = floatval(0x7FC00000);
+float signalingNaN = floatval(0x7FA00000);
+float posInfinity = floatval(0x7F800000);
+float negInfinity = floatval(0xFF800000);
 
-float minusNaN = floatval_(0xFF800001);
-float plusNaN = floatval_(0x7F800001);
-float plusZero = floatval_(0x00000000);
-float minusZero = floatval_(0x80000000);
+float minusNaN = floatval(0xFF800001);
+float plusNaN = floatval(0x7F800001);
+float plusZero = floatval(0x00000000);
+float minusZero = floatval(0x80000000);
 
-float oneNaN = floatval_(0x7FC00001);
-float zeroDivZero = floatval_(0xFFC00000);
-float floatMin = floatval_(0x00800000);
-float floatMax = floatval_(0x7F7FFFFF);
+float oneNaN = floatval(0x7FC00001);
+float zeroDivZero = floatval(0xFFC00000);
+float floatMin = floatval(0x00800000);
+float floatMax = floatval(0x7F7FFFFF);
 
-float posSubnormalMin = floatval_(0x00000001);
-float posSubnormalMax = floatval_(0x007FFFFF);
-float negSubnormalMin = floatval_(0x80000001);
-float negSubnormalMax = floatval_(0x807FFFFF);
+float posSubnormalMin = floatval(0x00000001);
+float posSubnormalMax = floatval(0x007FFFFF);
+float negSubnormalMin = floatval(0x80000001);
+float negSubnormalMax = floatval(0x807FFFFF);
 
 template <bool Signed>
 cv::Mat exec_float32_to_int8(cv::Mat& input) {

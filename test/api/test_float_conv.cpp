@@ -75,7 +75,7 @@ class FloatConversionTest final {
   static constexpr uint32_t negSubnormalMin = 0x80000001;
   static constexpr uint32_t negSubnormalMax = 0x807FFFFF;
 
-  static constexpr float _floatval(uint32_t v) {
+  static constexpr float floatval(uint32_t v) {
     static_assert(sizeof(float) == 4);
     KLEIDICV_NO_STRICT_ALIASING_BEGIN
     return *reinterpret_cast<float*>(&v);
@@ -90,10 +90,10 @@ class FloatConversionTest final {
         // clang-format off
       4, 8,
       {{
-        { _floatval(quietNaN), _floatval(signalingNaN), _floatval(posInfinity), _floatval(negInfinity) },
-        { _floatval(minusNaN), _floatval(plusNaN), _floatval(plusZero), _floatval(minusZero) },
-        { _floatval(oneNaN), _floatval(zeroDivZero), _floatval(floatMin), _floatval(floatMax) },
-        { _floatval(posSubnormalMin), _floatval(posSubnormalMax), _floatval(negSubnormalMin), _floatval(negSubnormalMax) },
+        { floatval(quietNaN), floatval(signalingNaN), floatval(posInfinity), floatval(negInfinity) },
+        { floatval(minusNaN), floatval(plusNaN), floatval(plusZero), floatval(minusZero) },
+        { floatval(oneNaN), floatval(zeroDivZero), floatval(floatMin), floatval(floatMax) },
+        { floatval(posSubnormalMin), floatval(posSubnormalMax), floatval(negSubnormalMin), floatval(negSubnormalMax) },
         { 1111.11, -1112.22, 113.33, 114.44 },
         { 111.51, 112.62, 113.73, 114.84 },
         { 126.66, 127.11, 128.66, 129.11 },
@@ -122,10 +122,10 @@ class FloatConversionTest final {
         // clang-format off
       4, 8,
       {{
-        { _floatval(quietNaN), _floatval(signalingNaN), _floatval(posInfinity), _floatval(negInfinity) },
-        { _floatval(minusNaN), _floatval(plusNaN), _floatval(plusZero), _floatval(minusZero) },
-        { _floatval(oneNaN), _floatval(zeroDivZero), _floatval(floatMin), _floatval(floatMax) },
-        { _floatval(posSubnormalMin), _floatval(posSubnormalMax), _floatval(negSubnormalMin), _floatval(negSubnormalMax) },
+        { floatval(quietNaN), floatval(signalingNaN), floatval(posInfinity), floatval(negInfinity) },
+        { floatval(minusNaN), floatval(plusNaN), floatval(plusZero), floatval(minusZero) },
+        { floatval(oneNaN), floatval(zeroDivZero), floatval(floatMin), floatval(floatMax) },
+        { floatval(posSubnormalMin), floatval(posSubnormalMax), floatval(negSubnormalMin), floatval(negSubnormalMax) },
         { 1111.11, -1112.22, 113.33, 114.44 },
         { 111.51, 112.62, 113.73, 114.84 },
         { 126.66, 127.11, 128.66, 129.11 },
