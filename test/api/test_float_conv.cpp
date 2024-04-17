@@ -304,7 +304,7 @@ class FloatConversionTest final {
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
 
-  void test_sizes(const size_t width, const size_t height) {
+  void test_sizing(const size_t width, const size_t height) {
     auto values_list = get_values<InputType, OutputType>();
 
     test::Array2D<InputType> source(width, height, 1, 1);
@@ -381,58 +381,58 @@ TYPED_TEST(FloatConversion, Custom) {
   using OutputType = typename TypeParam::second_type;
   FloatConversionTest<InputType, OutputType>{}.test_custom();
 }
-TYPED_TEST(FloatConversion, CustomFits128VectorSize) {
+TYPED_TEST(FloatConversion, SizingFits128VectorSize) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(4, 1);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(4, 1);
 }
-TYPED_TEST(FloatConversion, CustomFits128VectorSize2x) {
+TYPED_TEST(FloatConversion, SizingFits128VectorSize2x) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(4, 2);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(4, 2);
 }
-TYPED_TEST(FloatConversion, CustomFits128VectorSize3x) {
+TYPED_TEST(FloatConversion, SizingFits128VectorSize3x) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(4, 3);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(4, 3);
 }
-TYPED_TEST(FloatConversion, CustomFits512VectorSize) {
+TYPED_TEST(FloatConversion, SizingFits512VectorSize) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(4, 4);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(4, 4);
 }
-TYPED_TEST(FloatConversion, CustomFits512VectorSize2x) {
+TYPED_TEST(FloatConversion, SizingFits512VectorSize2x) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(4, 8);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(4, 8);
 }
-TYPED_TEST(FloatConversion, CustomFits512VectorSize3x) {
+TYPED_TEST(FloatConversion, SizingFits512VectorSize3x) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(6, 8);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(6, 8);
 }
-TYPED_TEST(FloatConversion, Custom128OneRemaining) {
+TYPED_TEST(FloatConversion, Sizing128OneRemaining) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(1, 17);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(1, 17);
 }
-TYPED_TEST(FloatConversion, Custom128AllButOneRemaining) {
+TYPED_TEST(FloatConversion, Sizing128AllButOneRemaining) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(5, 3);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(5, 3);
 }
-TYPED_TEST(FloatConversion, CustomAboutHalfRemaining) {
+TYPED_TEST(FloatConversion, SizingAboutHalfRemaining) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(19, 2);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(19, 2);
 }
-TYPED_TEST(FloatConversion, CustomEmpty) {
+TYPED_TEST(FloatConversion, SizingEmpty) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(0, 0);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(0, 0);
 }
-TYPED_TEST(FloatConversion, CustomOne) {
+TYPED_TEST(FloatConversion, SizingOne) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizes(1, 1);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(1, 1);
 }
