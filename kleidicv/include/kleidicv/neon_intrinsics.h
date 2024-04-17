@@ -349,7 +349,14 @@ static inline float32x4x4_t vld1q_x4(const float32_t *src) { return vld1q_f32_x4
 // NEON store operations
 // -----------------------------------------------------------------------------
 
-static inline void vst1(uint8_t *dst, uint8x8_t vec) { vst1_u8(dst, vec); }
+static inline void vst1(int8_t   *dst, int8x8_t   vec) {  vst1_s8(dst, vec); }
+static inline void vst1(uint8_t  *dst, uint8x8_t  vec) {  vst1_u8(dst, vec); }
+static inline void vst1(int16_t  *dst, int16x4_t  vec) { vst1_s16(dst, vec); }
+static inline void vst1(uint16_t *dst, uint16x4_t vec) { vst1_u16(dst, vec); }
+static inline void vst1(int32_t  *dst, int32x2_t  vec) { vst1_s32(dst, vec); }
+static inline void vst1(uint32_t *dst, uint32x2_t vec) { vst1_u32(dst, vec); }
+static inline void vst1(int64_t  *dst, int64x1_t  vec) { vst1_s64(dst, vec); }
+static inline void vst1(uint64_t *dst, uint64x1_t vec) { vst1_u64(dst, vec); }
 
 static inline void vst1q(int8_t    *dst, int8x16_t   vec) { vst1q_s8(dst, vec); }
 static inline void vst1q(uint8_t   *dst, uint8x16_t  vec) { vst1q_u8(dst, vec); }
@@ -432,6 +439,19 @@ static inline uint64x2_t vreinterpretq_u64(int32x4_t  vec) { return vreinterpret
 static inline uint64x2_t vreinterpretq_u64(uint32x4_t vec) { return vreinterpretq_u64_u32(vec); }
 static inline uint64x2_t vreinterpretq_u64(int64x2_t  vec) { return vreinterpretq_u64_s64(vec); }
 static inline uint64x2_t vreinterpretq_u64(uint64x2_t vec) { return vec; }
+
+// -----------------------------------------------------------------------------
+// vcombine*
+// -----------------------------------------------------------------------------
+
+static inline int8x16_t  vcombine(int8x8_t   lhs, int8x8_t   rhs) { return vcombine_s8(lhs, rhs); }
+static inline uint8x16_t vcombine(uint8x8_t  lhs, uint8x8_t  rhs) { return vcombine_u8(lhs, rhs); }
+static inline int16x8_t  vcombine(int16x4_t  lhs, int16x4_t  rhs) { return vcombine_s16(lhs, rhs); }
+static inline uint16x8_t vcombine(uint16x4_t lhs, uint16x4_t rhs) { return vcombine_u16(lhs, rhs); }
+static inline int32x4_t  vcombine(int32x2_t  lhs, int32x2_t  rhs) { return vcombine_s32(lhs, rhs); }
+static inline uint32x4_t vcombine(uint32x2_t lhs, uint32x2_t rhs) { return vcombine_u32(lhs, rhs); }
+static inline int64x2_t  vcombine(int64x1_t  lhs, int64x1_t  rhs) { return vcombine_s64(lhs, rhs); }
+static inline uint64x2_t vcombine(uint64x1_t lhs, uint64x1_t rhs) { return vcombine_u64(lhs, rhs); }
 
 // clang-format on
 
