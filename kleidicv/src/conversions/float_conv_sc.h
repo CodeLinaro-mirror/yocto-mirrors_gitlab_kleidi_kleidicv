@@ -144,7 +144,7 @@ class float_conversion_operation<InputType, float> {
   }
 };  // end of class float_conversion_operation<InputType, float>
 
-template <typename I, typename O>
+template <typename InputType, typename OutputType>
 static kleidicv_error_t float_conversion_sc(
     const InputType* src, size_t src_stride, OutputType* dst, size_t dst_stride,
     size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
@@ -152,10 +152,10 @@ static kleidicv_error_t float_conversion_sc(
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
-  float_conversion_operation<I, O> operation;
+  float_conversion_operation<InputType, OutputType> operation;
   Rectangle rect{width, height};
-  Rows<const I> src_rows{src, src_stride};
-  Rows<O> dst_rows{dst, dst_stride};
+  Rows<const InputType> src_rows{src, src_stride};
+  Rows<OutputType> dst_rows{dst, dst_stride};
   zip_rows(operation, rect, src_rows, dst_rows);
 
   return KLEIDICV_OK;
