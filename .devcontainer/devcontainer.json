@@ -1,37 +1,57 @@
 {
   "build" : {
-    "dockerfile": "../docker/Dockerfile",
+    "dockerfile": "Dockerfile",
     "args": {
-      "USER": "vscode-user"
+      "USERNAME": "${localEnv:USER}"
     },
     "options" : [
       "--network=host"
     ]
   },
-  "onCreateCommand" : ".devcontainer/install_deps.sh",
-  "postStartCommand" : ".devcontainer/setup_ccache.sh ${containerWorkspaceFolder}/.devcontainer/ccache_storage",
+  "onCreateCommand" : ".devcontainer/oncreate.sh",
   "containerEnv": {
+    "CCACHE_DIR": "/persist/ccache",
     "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
-    "EDITOR": "nano",
+    // Default editor is nano. If you prefer vim then add "export EDITOR=vim"
+    // to your .profile, .bash_profile, .bashrc or .zshrc then log out and log
+    // in again before rebuilding the dev container from scratch.
+    "EDITOR": "${localEnv:EDITOR:nano}",
     "LC_ALL": "C"
   },
+  "mounts": [
+    // Volume to persist data between sessions
+    "source=${localEnv:USER}-kleidicv-persist,target=/persist,type=volume"
+  ],
   "portsAttributes": {
     "2345": {
-      "label": "Qemu GDB port",
+      "label": "QEMU GDB port",
       "onAutoForward": "ignore"
     }
   },
   "customizations": {
     "vscode": {
       "extensions": [
+        "eamodio.gitlens",
         "llvm-vs-code-extensions.vscode-clangd",
+        "ms-azuretools.vscode-docker",
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools"
-      ]
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "zsh"
+          }
+        }
+      }
     }
   },
   "runArgs" : [
     "--network=host"
   ],
-  "remoteUser": "vscode-user"
+  "remoteUser": "${localEnv:USER}",
+  // Use real path names inside the container, instead of mapping them to /workspace.
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
+  "workspaceFolder": "${localWorkspaceFolder}"
 }

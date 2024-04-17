@@ -70,10 +70,3 @@ RUN wget \
 RUN wget \
   https://github.com/opencv/opencv_extra/archive/refs/tags/${OPENCV_VERSION}.tar.gz \
   -O /opt/opencv-extra-${OPENCV_VERSION}.tar.gz
-
-# Add a normal user with sudo rights, can be useful for developement purposes
-ARG USER=user
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install sudo
-RUN useradd -s /usr/bin/bash -m ${USER} \
-    && echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER}

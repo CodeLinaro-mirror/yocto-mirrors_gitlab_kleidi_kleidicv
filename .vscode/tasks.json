@@ -5,7 +5,7 @@
       "label": "Build KleidiCV",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
-      "problemMatcher" :"$gcc",
+      "problemMatcher": "$gcc",
       "args": [
         "kleidicv-test"
       ],
@@ -25,14 +25,14 @@
       "label": "Build KleidiCV for debug",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
-      "problemMatcher" :"$gcc",
+      "problemMatcher": "$gcc",
       "args": [
         "kleidicv-test"
       ],
       "options": {
         "env": {
-          "BUILD_ID" : "kleidicv-debug",
-          "CMAKE_BUILD_TYPE" : "Debug",
+          "BUILD_ID": "kleidicv-debug",
+          "CMAKE_BUILD_TYPE": "Debug",
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
           "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
           "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SVE2=ON -DKLEIDICV_ENABLE_SVE2_SELECTIVELY=OFF"
@@ -51,7 +51,7 @@
     {
       "label": "Clean ccache cache",
       "type": "shell",
-      "command": "rm -rf ${workspaceFolder}/.devcontainer/ccache_storage/*",
+      "command": "rm -rf $CCACHE_DIR",
       "problemMatcher": []
     },
     {
@@ -181,7 +181,7 @@
       "type": "shell",
       "command": "${workspaceFolder}/.devcontainer/disassemble.sh",
       "args": [
-        "${relativeFile}",
+        "${relativeFile}"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -198,7 +198,9 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": ["$gcc"]
+      "problemMatcher": [
+        "$gcc"
+      ]
     }
   ],
   "options": {

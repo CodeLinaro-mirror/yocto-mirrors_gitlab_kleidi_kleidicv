@@ -6,8 +6,4 @@
 
 set -exu
 
-CCACHE_CACHE_DIR=$1
-
-mkdir -p "${CCACHE_CACHE_DIR}"
-mkdir -p "${HOME}/.ccache"
-echo "cache_dir = ${CCACHE_CACHE_DIR}" > "${HOME}/.ccache/ccache.conf"
+sh -c "$(wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -O -)" "" --unattended
