@@ -1202,6 +1202,10 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_s16, const int16_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_min_max_s32, const int32_t *src,
                          size_t src_stride, size_t width, size_t height,
                          int32_t *min_value, int32_t *max_value);
+/// @copydoc kleidicv_min_max_u8
+KLEIDICV_API_DECLARATION(kleidicv_min_max_f32, const float *src,
+                         size_t src_stride, size_t width, size_t height,
+                         float *min_value, float *max_value);
 
 /// Finds minimum and maximum element value across the source data,
 /// and returns their location in the source data as offset in bytes

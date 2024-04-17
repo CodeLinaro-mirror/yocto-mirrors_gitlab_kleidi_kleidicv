@@ -36,6 +36,7 @@ KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_s8, int8_t);
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_u16, uint16_t);
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_s16, int16_t);
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_s32, int32_t);
+KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_f32, float);
 
 #define KLEIDICV_DEFINE_MINMAXLOC_API(name, type)                       \
   KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::min_max_loc<type>, \

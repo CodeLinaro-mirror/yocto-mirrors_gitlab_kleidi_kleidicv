@@ -17,6 +17,7 @@ KLEIDICV_MIN_MAX(uint8_t, u8);
 KLEIDICV_MIN_MAX(int16_t, s16);
 KLEIDICV_MIN_MAX(uint16_t, u16);
 KLEIDICV_MIN_MAX(int32_t, s32);
+KLEIDICV_MIN_MAX(float, f32);
 
 #define KLEIDICV_MIN_MAX_LOC(type, suffix) \
   KLEIDICV_API(min_max_loc, kleidicv_min_max_loc_##suffix, type)
@@ -28,9 +29,9 @@ class MinMaxTest {
   using ArrayType = test::Array2D<ElementType>;
 
  protected:
-  // Returns the minimum value for ElementType.
-  static constexpr ElementType min() {
-    return std::numeric_limits<ElementType>::min();
+  // Returns the lowest value for ElementType.
+  static constexpr ElementType lowest() {
+    return std::numeric_limits<ElementType>::lowest();
   }
 
   // Returns the maximum value for ElementType.
@@ -81,8 +82,8 @@ class MinMaxTest {
       {
         {},  {},
         {},  {},
-        min(),
-        min(), min(),
+        lowest(),
+        lowest(), lowest(),
         0, 0
       },
       {
@@ -100,17 +101,17 @@ class MinMaxTest {
         0, 0
       },
       {
-        {min()+10},    {},
+        {lowest()+10},    {},
         {max()}, {},
-        min()+20,
-        min()+10, max(),
+        lowest()+20,
+        lowest()+10, max(),
         0, stride()
       },
       {
-        {},    {min()},
+        {},    {lowest()},
         {},    {max() - 10},
-        min()+20,
-        min(), max()-10,
+        lowest()+20,
+        lowest(), max()-10,
         scalar_offset(), stride() + scalar_offset()
       },
       {
@@ -198,7 +199,7 @@ class MinMaxTest {
       *p_min = std::numeric_limits<ElementType>::max();
     }
     if (p_max) {
-      *p_max = std::numeric_limits<ElementType>::min();
+      *p_max = std::numeric_limits<ElementType>::lowest();
     }
     EXPECT_EQ(KLEIDICV_OK,
               min_max<ElementType>()(source.data(), source.stride(), width(),
@@ -295,7 +296,7 @@ template <typename ElementType>
 class MinMax : public testing::Test {};
 
 using MinMaxElementTypes =
-    ::testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t>;
+    ::testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t, float>;
 TYPED_TEST_SUITE(MinMax, MinMaxElementTypes);
 
 TYPED_TEST(MinMax, API) {

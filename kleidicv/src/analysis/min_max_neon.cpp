@@ -17,9 +17,9 @@ class MinMax final : public UnrollTwice {
 
   MinMax()
       : vmin_(vdupq_n(std::numeric_limits<ScalarType>::max())),
-        vmax_(vdupq_n(std::numeric_limits<ScalarType>::min())),
+        vmax_(vdupq_n(std::numeric_limits<ScalarType>::lowest())),
         min_(std::numeric_limits<ScalarType>::max()),
-        max_(std::numeric_limits<ScalarType>::min()) {}
+        max_(std::numeric_limits<ScalarType>::lowest()) {}
 
   void vector_path(VectorType src) {
     vmin_ = vminq(vmin_, src);
@@ -78,5 +78,6 @@ KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int32_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(float);
 
 }  //  namespace kleidicv::neon
