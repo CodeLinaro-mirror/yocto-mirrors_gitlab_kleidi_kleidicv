@@ -16,8 +16,8 @@ target_link_libraries(kleidicv_hal PUBLIC kleidicv)
 target_include_directories(kleidicv_hal PRIVATE
   $<TARGET_PROPERTY:kleidicv,INCLUDE_DIRECTORIES>
   ${CMAKE_CURRENT_LIST_DIR}
-  ${OPENCV_SOURCE_DIR}/modules/core/include
-  ${OPENCV_SOURCE_DIR}/modules/imgproc/include
+  ${OpenCV_SOURCE_DIR}/modules/core/include
+  ${OpenCV_SOURCE_DIR}/modules/imgproc/include
 )
 target_compile_options(kleidicv_hal PRIVATE $<TARGET_PROPERTY:kleidicv,COMPILE_OPTIONS>)
 set_target_properties(kleidicv_hal PROPERTIES CXX_STANDARD 17)

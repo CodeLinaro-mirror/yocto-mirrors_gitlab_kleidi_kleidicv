@@ -12,19 +12,10 @@ index 0000000000..c0ffb73ad7
 +
 +include("${KLEIDICV_SOURCE_PATH}/adapters/opencv/CMakeLists.txt")
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5da9c2a695..3f1a2c7e38 100644
+index 5da9c2a695..0e25739d47 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -13,6 +13,8 @@ FATAL: In-source builds are not allowed.
- ")
- endif()
-
-+# Useful for HALs if built as a CMake submodule
-+set(OPENCV_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
- include(cmake/OpenCVMinDepVersions.cmake)
-
-@@ -254,6 +256,8 @@ OCV_OPTION(WITH_CAP_IOS "Enable iOS video capture" ON
+@@ -254,6 +254,8 @@ OCV_OPTION(WITH_CAP_IOS "Enable iOS video capture" ON
    VERIFY HAVE_CAP_IOS)
  OCV_OPTION(WITH_CAROTENE "Use NVidia carotene acceleration library for ARM platform" (NOT CV_DISABLE_OPTIMIZATION)
    VISIBLE_IF (ARM OR AARCH64) AND NOT IOS AND NOT XROS)
@@ -33,10 +24,10 @@ index 5da9c2a695..3f1a2c7e38 100644
  OCV_OPTION(WITH_CPUFEATURES "Use cpufeatures Android library" ON
    VISIBLE_IF ANDROID
    VERIFY HAVE_CPUFEATURES)
-@@ -955,6 +959,13 @@ if(HAVE_OPENVX)
+@@ -955,6 +957,13 @@ if(HAVE_OPENVX)
    endif()
  endif()
-
+ 
 +if(WITH_KLEIDICV)
 +  ocv_debug_message(STATUS "Enable KleidiCV acceleration")
 +  if(NOT ";${OpenCV_HAL};" MATCHES ";kleidicv;")
@@ -47,7 +38,7 @@ index 5da9c2a695..3f1a2c7e38 100644
  if(WITH_CAROTENE)
    ocv_debug_message(STATUS "Enable carotene acceleration")
    if(NOT ";${OpenCV_HAL};" MATCHES ";carotene;")
-@@ -979,6 +990,10 @@ foreach(hal ${OpenCV_HAL})
+@@ -979,6 +988,10 @@ foreach(hal ${OpenCV_HAL})
      else()
        message(STATUS "Carotene: NEON is not available, disabling carotene...")
      endif()
@@ -59,12 +50,12 @@ index 5da9c2a695..3f1a2c7e38 100644
      add_subdirectory(3rdparty/openvx)
      ocv_hal_register(OPENVX_HAL_LIBRARIES OPENVX_HAL_HEADERS OPENVX_HAL_INCLUDE_DIRS)
 diff --git a/doc/tutorials/introduction/config_reference/config_reference.markdown b/doc/tutorials/introduction/config_reference/config_reference.markdown
-index dba280485f..963628ee0d 100644
+index dba280485f..7ced9a2536 100644
 --- a/doc/tutorials/introduction/config_reference/config_reference.markdown
 +++ b/doc/tutorials/introduction/config_reference/config_reference.markdown
 @@ -623,6 +623,7 @@ Following build options are utilized in `opencv_contrib` modules, as stated [pre
  `CMAKE_TOOLCHAIN_FILE`
-
+ 
  `WITH_CAROTENE`
 +`WITH_KLEIDICV`
  `WITH_CPUFEATURES`
@@ -75,12 +66,12 @@ index 6f0a83d359..4c294962ca 100644
 --- a/modules/core/include/opencv2/core/hal/interface.h
 +++ b/modules/core/include/opencv2/core/hal/interface.h
 @@ -81,6 +81,8 @@ typedef signed char schar;
-
+ 
  #define CV_MAT_DEPTH_MASK       (CV_DEPTH_MAX - 1)
  #define CV_MAT_DEPTH(flags)     ((flags) & CV_MAT_DEPTH_MASK)
 +#define CV_MAT_CN_MASK          ((CV_CN_MAX - 1) << CV_CN_SHIFT)
 +#define CV_MAT_CN(flags)        ((((flags) & CV_MAT_CN_MASK) >> CV_CN_SHIFT) + 1)
-
+ 
  #define CV_MAKETYPE(depth,cn) (CV_MAT_DEPTH(depth) + (((cn)-1) << CV_CN_SHIFT))
  #define CV_MAKE_TYPE CV_MAKETYPE
 diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
@@ -97,33 +88,33 @@ index 345b4624cb..8698cc64bf 100644
 +        int width_in_elements = src.cols * cn;
 +        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dst.data, dst.step, dst.depth(), width_in_elements, src.rows, alpha, beta);
 +    }
-
+ 
      BinaryFunc func = noScale ? getConvertFunc(sdepth, ddepth) : getConvertScaleFunc(sdepth, ddepth);
      double scale[] = {alpha, beta};
 -    int cn = channels();
      CV_Assert( func != 0 );
-
+ 
      if( dims <= 2 )
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
-index 1f2b259920..b0e5db024d 100644
+index 1f2b259920..b8eb6e22b1 100644
 --- a/modules/core/src/hal_replacement.hpp
 +++ b/modules/core/src/hal_replacement.hpp
 @@ -818,6 +818,35 @@ inline int hal_ni_rotate90(int src_type, const uchar* src_data, size_t src_step,
  #define cv_hal_rotate90 hal_ni_rotate90
  //! @endcond
-
+ 
 +/**
-+   @brief Transpose
++   @brief Transpose2d
 +   @param src_data,src_step Source image
 +   @param dst_data,dst_step Destination image
 +   @param src_width,src_height Source image dimensions
 +   @param element_size Size of an element in bytes
 +*/
-+inline int hal_ni_transpose(const uchar* src_data, size_t src_step, uchar* dst_data, size_t dst_step, int src_width,
-+                            int src_height, int element_size) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst_data, size_t dst_step, int src_width,
++                              int src_height, int element_size) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
 +
 +//! @cond IGNORED
-+#define cv_hal_transpose hal_ni_transpose
++#define cv_hal_transpose2d hal_ni_transpose2d
 +//! @endcond
 +
 +/**
@@ -142,29 +133,47 @@ index 1f2b259920..b0e5db024d 100644
 +//! @endcond
 +
  //! @}
-
-
+ 
+ 
 diff --git a/modules/core/src/matrix_transform.cpp b/modules/core/src/matrix_transform.cpp
-index 5a80ac8ca7..2e79f0772a 100644
+index 5a80ac8ca7..bad17e7b6b 100644
 --- a/modules/core/src/matrix_transform.cpp
 +++ b/modules/core/src/matrix_transform.cpp
 @@ -269,6 +269,8 @@ void transpose( InputArray _src, OutputArray _dst )
          return;
      }
-
-+    CALL_HAL(transpose, cv_hal_transpose, src.data, src.step, dst.data, dst.step, src.cols, src.rows, esz);
+ 
++    CALL_HAL(transpose2d, cv_hal_transpose2d, src.data, src.step, dst.data, dst.step, src.cols, src.rows, esz);
 +
      CV_IPP_RUN_FAST(ipp_transpose(src, dst))
-
+ 
      if( dst.data == src.data )
+diff --git a/modules/imgproc/src/hal_replacement.hpp b/modules/imgproc/src/hal_replacement.hpp
+index c066f3d6f3..d8b58015f9 100644
+--- a/modules/imgproc/src/hal_replacement.hpp
++++ b/modules/imgproc/src/hal_replacement.hpp
+@@ -857,6 +857,12 @@ inline int hal_ni_gaussianBlur(const uchar* src_data, size_t src_step, uchar* ds
+ #define cv_hal_gaussianBlur hal_ni_gaussianBlur
+ //! @endcond
+ 
++inline int hal_ni_gaussianBlurBinomial(const uchar*, size_t, uchar*, size_t, int, int, int, int, size_t, size_t, size_t, size_t, size_t, int) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++
++//! @cond IGNORED
++#define cv_hal_gaussianBlurBinomial hal_ni_gaussianBlurBinomial
++//! @endcond
++
+ /**
+    @brief Computes Sobel derivatives
+    @param src_depth Depth of source image
 diff --git a/modules/imgproc/src/smooth.dispatch.cpp b/modules/imgproc/src/smooth.dispatch.cpp
-index 8a521d6df3..186335b121 100644
+index 8a521d6df3..21cfe82595 100644
 --- a/modules/imgproc/src/smooth.dispatch.cpp
 +++ b/modules/imgproc/src/smooth.dispatch.cpp
 @@ -654,6 +654,20 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
              ocl_GaussianBlur_8UC1(_src, _dst, ksize, CV_MAT_DEPTH(type), kx, ky, borderType)
      );
-
+ 
++    if (sigma1 == 0.0 && sigma2 == 0.0 && ksize.height == ksize.width)
 +    {
 +        Mat src = _src.getMat();
 +        Mat dst = _dst.getMat();
@@ -174,22 +183,10 @@ index 8a521d6df3..186335b121 100644
 +        if(!(borderType & BORDER_ISOLATED))
 +            src.locateROI( wsz, ofs );
 +
-+        CALL_HAL(gaussianBlur, cv_hal_gaussianBlur, src.ptr(), src.step, dst.ptr(), dst.step, src.cols, src.rows, sdepth, cn,
-+                ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, ksize.height,
-+                sigma1, sigma2, borderType&~BORDER_ISOLATED);
++        CALL_HAL(gaussianBlurBinomial, cv_hal_gaussianBlurBinomial, src.ptr(), src.step, dst.ptr(), dst.step, src.cols, src.rows, sdepth, cn,
++                ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, borderType&~BORDER_ISOLATED);
 +    }
 +
      if(sdepth == CV_8U && ((borderType & BORDER_ISOLATED) || !_src.isSubmatrix()))
      {
          std::vector<ufixedpoint16> fkx, fky;
-@@ -742,10 +756,6 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
-     if(!(borderType & BORDER_ISOLATED))
-         src.locateROI( wsz, ofs );
-
--    CALL_HAL(gaussianBlur, cv_hal_gaussianBlur, src.ptr(), src.step, dst.ptr(), dst.step, src.cols, src.rows, sdepth, cn,
--             ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, ksize.height,
--             sigma1, sigma2, borderType&~BORDER_ISOLATED);
--
-     CV_OVX_RUN(true,
-                openvx_gaussianBlur(src, dst, ksize, sigma1, sigma2, borderType))
-

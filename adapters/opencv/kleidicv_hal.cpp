@@ -218,16 +218,13 @@ static int from_opencv(int opencv_border_type,
   return 0;
 }
 
-int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
-                  size_t dst_step, int width, int height, int depth, int cn,
-                  size_t margin_left, size_t margin_top, size_t margin_right,
-                  size_t margin_bottom, size_t ksize_width, size_t ksize_height,
-                  double sigmaX, double sigmaY, int border_type) {
+int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
+                           uchar *dst_data, size_t dst_step, int width,
+                           int height, int depth, int cn, size_t margin_left,
+                           size_t margin_top, size_t margin_right,
+                           size_t margin_bottom, size_t kernel_size,
+                           int border_type) {
   if (src_data == dst_data) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if ((sigmaX != 0.0) || (sigmaY != 0.0)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -250,11 +247,9 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
   }
 
   decltype(kleidicv_gaussian_blur_3x3_u8) impl{nullptr};
-  if ((ksize_width == 3) && (ksize_height == 3) && (width >= 3) &&
-      (height >= 3)) {
+  if ((kernel_size == 3) && (width >= 3) && (height >= 3)) {
     impl = kleidicv_gaussian_blur_3x3_u8;
-  } else if ((ksize_width == 5) && (ksize_height == 5) && (width >= 5) &&
-             (height >= 5)) {
+  } else if ((kernel_size == 5) && (width >= 5) && (height >= 5)) {
     impl = kleidicv_gaussian_blur_5x5_u8;
   } else {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
