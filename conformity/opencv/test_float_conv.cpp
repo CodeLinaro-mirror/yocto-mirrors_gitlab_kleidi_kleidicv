@@ -198,8 +198,8 @@ std::vector<test>& float_conversion_tests_get() {
     TEST("Unsigned Int8 to Float32, fill, 3 channel", (test_int8_to_float32_random<false, 3>), exec_int8_to_float32),
     TEST("Unsigned Int8 to Float32, fill, 4 channel", (test_int8_to_float32_random<false, 4>), exec_int8_to_float32),
 
-    TEST("Signed Int8 Float32, custom", test_int8_to_float32_custom<true>, exec_int8_to_float32),
-    TEST("Unigned Int8 Float32, custom", test_int8_to_float32_custom<false>, exec_int8_to_float32),
+    TEST("Signed Int8 to Float32, custom", test_int8_to_float32_custom<true>, exec_int8_to_float32),
+    TEST("Unigned Int8 to Float32, custom", test_int8_to_float32_custom<false>, exec_int8_to_float32),
   };
   // clang-format on
   return tests;
