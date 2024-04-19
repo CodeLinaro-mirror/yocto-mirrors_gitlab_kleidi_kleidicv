@@ -1254,65 +1254,6 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, float scale, float shift);
 
-/// Converts the elements in `src` from a floating-point type to an integer
-/// type, then stores the result in `dst`.
-///
-/// Each resulting element is saturated, i.e. it is the smallest/largest
-/// number of the type of the element if the `src` data type cannot be
-/// represented as the `dst` type. In case of some special values, such as the
-/// different variations of `NaN`, the result is `0`. Source and destination
-/// data length is `width` * `height`. Number of elements is limited to @ref
-/// KLEIDICV_MAX_IMAGE_PIXELS.
-///
-/// @param src          Pointer to the source data. Must be non-null.
-/// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the source data.
-///                     Must not be less than width * sizeof(type).
-/// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination data.
-///                     Must not be less than width * sizeof(type).
-/// @param width        Number of elements in a row.
-/// @param height       Number of rows in the data.
-///
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_f32_s8, const float *src,
-                         size_t src_stride, int8_t *dst, size_t dst_stride,
-                         size_t width, size_t height);
-/// @copydoc kleidicv_float_conversion_f32_s8
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_f32_u8, const float *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height);
-
-/// Converts the elements in `src` from an integer type to a floating-point
-/// type, then stores the result in `dst`.
-///
-/// Each resulting element is saturated, i.e. it is the smallest/largest
-/// number of the type of the element if the `src` data type cannot be
-/// represented as the `dst` type. Source and destination data length is
-/// `width` * `height`. Number of elements is limited to @ref
-/// KLEIDICV_MAX_IMAGE_PIXELS.
-///
-/// @param src          Pointer to the source data. Must be non-null.
-/// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the source data. Must
-///                     not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
-/// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination data. Must
-///                     not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
-/// @param width        Number of pixels in a row.
-/// @param height       Number of rows in the data.
-///
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_s8_f32, const int8_t *src,
-                         size_t src_stride, float *dst, size_t dst_stride,
-                         size_t width, size_t height);
-/// @copydoc kleidicv_float_conversion_s8_f32
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_u8_f32, const uint8_t *src,
-                         size_t src_stride, float *dst, size_t dst_stride,
-                         size_t width, size_t height);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

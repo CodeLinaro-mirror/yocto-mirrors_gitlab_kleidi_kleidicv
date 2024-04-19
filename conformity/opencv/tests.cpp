@@ -10,7 +10,6 @@
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
-#include "test_float_conv.h"
 #include "test_gaussian_blur.h"
 #include "test_sobel.h"
 
@@ -27,7 +26,6 @@ static std::vector<test> merge_tests(
 std::vector<test> all_tests = merge_tests({
     sobel_tests_get,
     gaussian_blur_tests_get,
-    float_conversion_tests_get,
 });
 
 #if MANAGER
