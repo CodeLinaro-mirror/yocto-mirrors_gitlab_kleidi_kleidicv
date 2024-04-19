@@ -12,6 +12,7 @@
 #include "opencv2/imgproc.hpp"
 #include "test_binary_op.h"
 #include "test_exp.h"
+#include "test_float_conv.h"
 #include "test_gaussian_blur.h"
 #include "test_min_max.h"
 #include "test_rgb2yuv.h"
@@ -34,6 +35,7 @@ std::vector<test> all_tests = merge_tests({
     rgb2yuv_tests_get,
     sobel_tests_get,
     exp_tests_get,
+    float_conversion_tests_get,
 });
 
 #if MANAGER

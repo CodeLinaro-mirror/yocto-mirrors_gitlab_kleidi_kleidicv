@@ -76,6 +76,8 @@ add_executable(
   test_rgb2yuv.cpp
   test_sobel.cpp
   test_exp.cpp
+  test_float_conv.cpp
+
 )
 
 target_link_libraries(
