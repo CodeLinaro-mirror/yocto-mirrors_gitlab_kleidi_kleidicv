@@ -52,17 +52,16 @@ ninja -C build/gcc
 
 # Run tests
 LONG_VECTOR_TESTS="GRAY2.*:RGB*"
-EXCLUDE_FLOAT_CONVERSION_TESTS="-FloatConversion*"
 TESTRESULT=0
 qemu-aarch64     build/test/framework/kleidicv-framework-test --gtest_output=xml:build/test-results/ || TESTRESULT=1
-qemu-aarch64 -cpu cortex-a35 build/test/api/kleidicv-api-test --gtest_filter="${EXCLUDE_FLOAT_CONVERSION_TESTS}" --gtest_output=xml:build/test-results/clang-neon/ || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a35 build/test/api/kleidicv-api-test --gtest_output=xml:build/test-results/clang-neon/ || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme=off \
   build/test/api/kleidicv-api-test --gtest_output=xml:build/test-results/clang-sve128/ --vector-length=16 || TESTRESULT=1
 qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
   build/test/api/kleidicv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --gtest_output=xml:build/test-results/clang-sve2048/ --vector-length=256 || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme512=on \
   build/test/api/kleidicv-api-test --gtest_output=xml:build/test-results/clang-sme/ --vector-length=64 || TESTRESULT=1
-qemu-aarch64 -cpu cortex-a35 build/gcc/test/api/kleidicv-api-test --gtest_filter="${EXCLUDE_FLOAT_CONVERSION_TESTS}" --gtest_output=xml:build/test-results/gcc-neon/ || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a35 build/gcc/test/api/kleidicv-api-test --gtest_output=xml:build/test-results/gcc-neon/ || TESTRESULT=1
 
 scripts/prefix_testsuite_names.py build/test-results/clang-neon/kleidicv-api-test.xml "clang-neon."
 scripts/prefix_testsuite_names.py build/test-results/clang-sve128/kleidicv-api-test.xml "clang-sve128."
@@ -81,7 +80,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
     -DKLEIDICV_ENABLE_SME2=OFF \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
   ninja -C build/sanitize kleidicv-api-test
-  build/sanitize/test/api/kleidicv-api-test --gtest_filter="${EXCLUDE_FLOAT_CONVERSION_TESTS}"
+  build/sanitize/test/api/kleidicv-api-test
 fi
 
 # Build benchmarks, just to prevent bitrot.

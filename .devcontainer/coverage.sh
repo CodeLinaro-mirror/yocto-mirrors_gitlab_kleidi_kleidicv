@@ -16,10 +16,9 @@ EXTRA_CMAKE_ARGS="-DKLEIDICV_ENABLE_SVE2=ON -DKLEIDICV_ENABLE_SVE2_SELECTIVELY=O
 find build/kleidicv-coverage/ -type f -name *.gcda -delete
 
 LONG_VECTOR_TESTS="GRAY2.*:RGB*"
-EXCLUDE_FLOAT_CONVERSION_TESTS="-FloatConversion*"
 
 qemu-aarch64 build/kleidicv-coverage/test/framework/kleidicv-framework-test
-qemu-aarch64 -cpu cortex-a35 build/kleidicv-coverage/test/api/kleidicv-api-test --gtest_filter="${EXCLUDE_FLOAT_CONVERSION_TESTS}"
+qemu-aarch64 -cpu cortex-a35 build/kleidicv-coverage/test/api/kleidicv-api-test
 qemu-aarch64 -cpu max,sve128=on,sme=off build/kleidicv-coverage/test/api/kleidicv-api-test --vector-length=16 
 qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
   build/kleidicv-coverage/test/api/kleidicv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --vector-length=256
