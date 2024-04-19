@@ -29,8 +29,9 @@ void dump(const TwoDimensional<ElementType> *elements) {
   for (size_t row = 0; row < elements->height(); ++row) {
     for (size_t column = 0; column < elements->width(); ++column) {
       ElementType value = elements->at(row, column)[0];
+      // Unary + is used to ensure values are printed as integers, not chars
       std::cout << std::setw(2 * sizeof(ElementType)) << std::setfill('0')
-                << std::hex << (static_cast<uint64_t>(value) & mask) << " ";
+                << std::hex << +(value & mask) << " ";
     }
 
     std::cout << std::endl;
