@@ -72,21 +72,70 @@ class float_conversion_operation<float, OutputType> {
 template <typename InputType>
 class float_conversion_operation<InputType, float> {
  public:
-  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
-  using VectorType = typename VecTraits::VectorType;
-  void process_row(size_t width, Columns<const InputType> /*src*/,
-                   Columns<float> /*dst*/) {
-    LoopUnroll{width, VecTraits::num_lanes()}
+  using SrcVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<InputType>;
+  using SrcVectorType = typename SrcVecTraits::VectorType;
+  using DstVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
+  using DstVectorType = typename DstVecTraits::VectorType;
+  using DstVector4Type = typename DstVecTraits::Vector4Type;
+
+  void process_row(size_t width, Columns<const InputType> src,
+                   Columns<float> dst) {
+    LoopUnroll{width, SrcVecTraits::num_lanes()}
         .unroll_twice([&](size_t step) {
-          step = step + step;  // placeholder
+          DstVector4Type result_vector1 =
+              vector_path<InputType>(vld1q(&src[0]));
+          DstVector4Type result_vector2 =
+              vector_path<InputType>(vld1q(&src[SrcVecTraits::num_lanes()]));
+          vst1q_f32_x4(&dst[0], result_vector1);
+          vst1q_f32_x4(&dst[DstVecTraits::num_lanes() * 4], result_vector2);
+          src += ptrdiff_t(step);
+          dst += ptrdiff_t(step);
         })
-        .remaining([&](size_t /*length*/, size_t) {
-          //
+        .remaining([&](size_t length, size_t) {
+          for (size_t index = 0; index < length; ++index) {
+            disable_loop_vectorization();
+            InputType n = src[ptrdiff_t(index)];
+            dst[ptrdiff_t(index)] = static_cast<float>(n);
+          }
         });
   }
 
  private:
-  //
+  template <
+      typename I,
+      std::enable_if_t<std::is_integral_v<I> && std::is_signed_v<I>, int> = 0>
+  DstVector4Type vector_path(const SrcVectorType src) {
+    DstVector4Type dst_vect;
+    int16x8_t low = vmovl_s8(vget_low_s8(src));
+    int16x8_t hi = vmovl_high_s8(src);
+    int32x4_t lowlow = vmovl_s16(vget_low_s16(low));
+    int32x4_t lowhi = vmovl_high_s16(low);
+    int32x4_t hilow = vmovl_s16(vget_low_s16(hi));
+    int32x4_t hihi = vmovl_high_s16(hi);
+    dst_vect.val[0] = vcvtq_f32_s32(lowlow);
+    dst_vect.val[1] = vcvtq_f32_s32(lowhi);
+    dst_vect.val[2] = vcvtq_f32_s32(hilow);
+    dst_vect.val[3] = vcvtq_f32_s32(hihi);
+    return dst_vect;
+  }
+
+  template <
+      typename I,
+      std::enable_if_t<std::is_integral_v<I> && !std::is_signed_v<I>, int> = 0>
+  DstVector4Type vector_path(const SrcVectorType src) {
+    DstVector4Type dst_vect;
+    uint16x8_t low = vmovl_u8(vget_low_u8(src));
+    uint16x8_t hi = vmovl_high_u8(src);
+    uint32x4_t lowlow = vmovl_u16(vget_low_u16(low));
+    uint32x4_t lowhi = vmovl_high_u16(low);
+    uint32x4_t hilow = vmovl_u16(vget_low_u16(hi));
+    uint32x4_t hihi = vmovl_high_u16(hi);
+    dst_vect.val[0] = vcvtq_f32_u32(lowlow);
+    dst_vect.val[1] = vcvtq_f32_u32(lowhi);
+    dst_vect.val[2] = vcvtq_f32_u32(hilow);
+    dst_vect.val[3] = vcvtq_f32_u32(hihi);
+    return dst_vect;
+  }
 };  // end of class float_conversion_operation<InputType, float>
 
 template <typename InputType, typename OutputType>
