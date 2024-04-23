@@ -394,7 +394,7 @@ TYPED_TEST(FloatConversion, SizingFits128VectorSize2x) {
 TYPED_TEST(FloatConversion, SizingFits128VectorSize3x) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizing(4, 3);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(12, 1);
 }
 TYPED_TEST(FloatConversion, SizingFits512VectorSize) {
   using InputType = typename TypeParam::first_type;
@@ -404,7 +404,7 @@ TYPED_TEST(FloatConversion, SizingFits512VectorSize) {
 TYPED_TEST(FloatConversion, SizingFits512VectorSize2x) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizing(4, 8);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(16, 2);
 }
 TYPED_TEST(FloatConversion, SizingFits512VectorSize3x) {
   using InputType = typename TypeParam::first_type;
@@ -424,7 +424,7 @@ TYPED_TEST(FloatConversion, Sizing128AllButOneRemaining) {
 TYPED_TEST(FloatConversion, SizingAboutHalfRemaining) {
   using InputType = typename TypeParam::first_type;
   using OutputType = typename TypeParam::second_type;
-  FloatConversionTest<InputType, OutputType>{}.test_sizing(19, 2);
+  FloatConversionTest<InputType, OutputType>{}.test_sizing(38, 1);
 }
 TYPED_TEST(FloatConversion, SizingEmpty) {
   using InputType = typename TypeParam::first_type;
