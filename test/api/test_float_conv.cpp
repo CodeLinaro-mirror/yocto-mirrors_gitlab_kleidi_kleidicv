@@ -167,23 +167,47 @@ class FloatConversionTest final {
 
   template <typename I, typename O,
             std::enable_if_t<std::is_same_v<float, I>, bool> = true,
-            std::enable_if_t<std::is_integral_v<O>, bool> = true>
+            std::enable_if_t<std::is_same_v<int8_t, O>, bool> = true>
   const Values& get_values() {
     static const Values kTestValues = {
         // clang-format off
-        10.67F, 11
+        -1000.67F, -128
         // clang-format on
     };
     return kTestValues;
   }
 
   template <typename I, typename O,
-            std::enable_if_t<std::is_integral_v<I>, bool> = true,
+            std::enable_if_t<std::is_same_v<float, I>, bool> = true,
+            std::enable_if_t<std::is_same_v<uint8_t, O>, bool> = true>
+  const Values& get_values() {
+    static const Values kTestValues = {
+        // clang-format off
+        -1000.67F, 0
+        // clang-format on
+    };
+    return kTestValues;
+  }
+
+  template <typename I, typename O,
+            std::enable_if_t<std::is_same_v<int8_t, I>, bool> = true,
             std::enable_if_t<std::is_same_v<float, O>, bool> = true>
   const Values& get_values() {
     static const Values kTestValues = {
         // clang-format off
-        11, 11.0
+        -127, -127.0
+        // clang-format on
+    };
+    return kTestValues;
+  }
+
+  template <typename I, typename O,
+            std::enable_if_t<std::is_same_v<uint8_t, I>, bool> = true,
+            std::enable_if_t<std::is_same_v<float, O>, bool> = true>
+  const Values& get_values() {
+    static const Values kTestValues = {
+        // clang-format off
+        255, 255.0
         // clang-format on
     };
     return kTestValues;
