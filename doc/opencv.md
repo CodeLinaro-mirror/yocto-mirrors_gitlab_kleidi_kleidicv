@@ -167,7 +167,16 @@ Notes on parameters:
   + `CV_32S`
 
 ### `convertTo`
-Currently converting to different data types is not supported. This function scales given input of `src_depth == CV_8U` using `scale` and `shift`.
+This function will scale given input using `scale` and `shift` if they are significant enough, and if `src_depth` and `dst_depth` are equal to `CV_8U`.
+
+Additionally, it is able to convert between data types as follows:
+
+| src_depth | dst_depth |
+|-----------|-----------|
+|   CV_32F  |   CV_8S   |
+|   CV_32F  |   CV_8U   |
+|   CV_8S   |   CV_32F  |
+|   CV_8U   |   CV_32F  |
 
 ### `exp`
 Exponential function. Currently only `CV_32F` type is supported.
