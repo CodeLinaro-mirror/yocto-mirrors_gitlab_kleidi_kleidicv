@@ -683,6 +683,10 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
       return convert_error(call_min_max<int32_t>(kleidicv_min_max_s32, src_data,
                                                  src_step, width, height,
                                                  minVal, maxVal));
+    case CV_32F:
+      return convert_error(call_min_max<float>(kleidicv_min_max_f32, src_data,
+                                               src_step, width, height, minVal,
+                                               maxVal));
     default:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }

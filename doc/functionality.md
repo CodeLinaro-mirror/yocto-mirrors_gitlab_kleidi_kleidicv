@@ -50,11 +50,11 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | BGRA-YUV  |  x  |
 
 ## Aggregate operations
-|                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 |
-|-----------------|-----|-----|-----|-----|-----|-----|-----|
-| Minmax          |  x  |  x  |  x  |  x  |  x  |     |     |
-| Minmax loc      |     |  x  |     |     |     |     |     |
-| Count non-zeros |     |  x  |     |     |     |     |     |
+|                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 | f32 |
+|-----------------|-----|-----|-----|-----|-----|-----|-----|-----|
+| Minmax          |  x  |  x  |  x  |  x  |  x  |     |     |  x  |
+| Minmax loc      |     |  x  |     |     |     |     |     |     |
+| Count non-zeros |     |  x  |     |     |     |     |     |     |
 
 ## Matrix transformation functions
 |                 | 8-bit | 16-bit | 32-bit | 64-bit |

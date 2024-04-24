@@ -185,6 +185,7 @@ Notes on parameters:
   + `CV_16S`
   + `CV_16U`
   + `CV_32S`
+  + `CV_32F`
 
 ### `convertTo`
 This function will scale given input using `scale` and `shift` if they are significant enough, and if `src_depth` equals `dst_depth`. Supported depths:
