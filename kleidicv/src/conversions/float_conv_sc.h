@@ -102,9 +102,11 @@ class float_conversion_operation<InputType, float> {
     LoopUnroll{width, VecTraits::num_lanes()}
         .unroll_twice([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = VecTraits::svptrue();
-          VectorType dst_vector1 = vector_path<InputType>(pg, &src[0]);
-          VectorType dst_vector2 = vector_path<InputType>(
-              pg, &src.at(ptrdiff_t(VecTraits::num_lanes()))[0]);
+          auto src_vect1 = load_src(pg, &src[0], 0);
+          auto src_vect2 = load_src(pg, &src[0], 1);
+
+          VectorType dst_vector1 = vector_path(pg, src_vect1);
+          VectorType dst_vector2 = vector_path(pg, src_vect2);
           svst1(pg, &dst[0], dst_vector1);
           svst1_vnum(pg, &dst[0], 1, dst_vector2);
           src += ptrdiff_t(step);
@@ -114,8 +116,8 @@ class float_conversion_operation<InputType, float> {
           size_t index = 0;
           svbool_t pg = VecTraits::svwhilelt(index, length);
           while (svptest_first(VecTraits::svptrue(), pg)) {
-            VectorType dst_vector =
-                vector_path<InputType>(pg, &src[ptrdiff_t(index)]);
+            auto src_vect = load_src(pg, &src[ptrdiff_t(index)], 0);
+            VectorType dst_vector = vector_path(pg, src_vect);
             svst1(pg, &dst[ptrdiff_t(index)], dst_vector);
             // Update loop counter and calculate the next governing predicate.
             index += VecTraits::num_lanes();
@@ -125,22 +127,34 @@ class float_conversion_operation<InputType, float> {
   }
 
  private:
+  template <typename I, std::enable_if_t<std::is_same_v<I, svint32_t>, int> = 0>
+  VectorType vector_path(svbool_t& pg,
+                         I src_vector) KLEIDICV_STREAMING_COMPATIBLE {
+    return svcvt_f32_s32_x(pg, src_vector);
+  }
+  template <typename I,
+            std::enable_if_t<std::is_same_v<I, svuint32_t>, int> = 0>
+  VectorType vector_path(svbool_t& pg,
+                         I src_vector) KLEIDICV_STREAMING_COMPATIBLE {
+    return svcvt_f32_u32_x(pg, src_vector);
+  }
+
   template <
       typename I,
       std::enable_if_t<std::is_integral_v<I> && std::is_signed_v<I>, int> = 0>
-  VectorType vector_path(svbool_t& pg,
-                         const I* src) KLEIDICV_STREAMING_COMPATIBLE {
-    svint32_t src_vector = svld1sb_s32(pg, src);
-    return svcvt_f32_s32_x(pg, src_vector);
+  svint32_t load_src(svbool_t& pg, const I* src,
+                     size_t vnum) KLEIDICV_STREAMING_COMPATIBLE {
+    svint32_t src_vect = svld1sb_vnum_s32(pg, src, vnum);
+    return src_vect;
   }
 
   template <
       typename I,
       std::enable_if_t<std::is_integral_v<I> && !std::is_signed_v<I>, int> = 0>
-  VectorType vector_path(svbool_t& pg,
-                         const I* src) KLEIDICV_STREAMING_COMPATIBLE {
-    svuint32_t src_vector = svld1ub_u32(pg, src);
-    return svcvt_f32_u32_x(pg, src_vector);
+  svuint32_t load_src(svbool_t& pg, const I* src,
+                      size_t vnum) KLEIDICV_STREAMING_COMPATIBLE {
+    svuint32_t src_vect = svld1ub_vnum_u32(pg, src, vnum);
+    return src_vect;
   }
 };  // end of class float_conversion_operation<InputType, float>
 
