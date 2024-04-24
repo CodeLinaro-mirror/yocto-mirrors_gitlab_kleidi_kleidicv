@@ -842,7 +842,7 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 
 /// Resize image using linear interpolation.
 ///
-/// At present only 2*2 upsizing is supported.
+/// At present only 2*2 and 4*4 upsizing is supported.
 /// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED
 /// will be returned.
 /// The total number of pixels in the destination is limited to
@@ -868,6 +868,12 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_resize_linear_u8, const uint8_t *src,
                          size_t src_stride, size_t src_width, size_t src_height,
                          uint8_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height);
+
+/// @copydoc kleidicv_resize_linear_u8
+KLEIDICV_API_DECLARATION(kleidicv_resize_linear_f32, const float *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         float *dst, size_t dst_stride, size_t dst_width,
                          size_t dst_height);
 
 /// Calculates vertical derivative approximation with Sobel filter.

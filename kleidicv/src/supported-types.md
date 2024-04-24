@@ -41,3 +41,9 @@ Note: functions listed here are not necessarily exposed to adapter API layer.
 |             | Erode | Dilate | Sobel | Canny | Gaussian Blur  |
 |-------------|-------|--------|-------|-------|----------------|
 | u8          |  x    |  x     |  x    |  x    |  x             |
+
+## Resize with linear interpolation
+|             | u8  | f32 |
+|-------------|-----|-----|
+| 2x2         |  x  |  x  |
+| 4x4         |  x  |  x  |

@@ -4,6 +4,7 @@
 
 #include "kleidicv_hal.h"
 
+#include <cfloat>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
@@ -442,19 +443,27 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (CV_MAT_DEPTH(src_type) != CV_8U) {
+  if (interpolation != CV_HAL_INTER_LINEAR) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  switch (interpolation) {
-    case CV_HAL_INTER_LINEAR:
-      if ((inv_scale_x == 0 || inv_scale_x == 2) &&
-          (inv_scale_y == 0 || inv_scale_y == 2)) {
-        return convert_error(kleidicv_resize_linear_u8(
-            src_data, src_step, src_width, src_height, dst_data, dst_step,
-            dst_width, dst_height));
-      }
-      break;
+  if ((inv_scale_x != 0 &&
+       std::abs(inv_scale_x * src_width - dst_width) > FLT_EPSILON) ||
+      (inv_scale_y != 0 &&
+       std::abs(inv_scale_y * src_height - dst_height) > FLT_EPSILON)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  switch (CV_MAT_DEPTH(src_type)) {
+    case CV_8U:
+      return convert_error(
+          kleidicv_resize_linear_u8(src_data, src_step, src_width, src_height,
+                                    dst_data, dst_step, dst_width, dst_height));
+    case CV_32F:
+      return convert_error(kleidicv_resize_linear_f32(
+          reinterpret_cast<const float *>(src_data), src_step, src_width,
+          src_height, reinterpret_cast<float *>(dst_data), dst_step, dst_width,
+          dst_height));
   }
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
