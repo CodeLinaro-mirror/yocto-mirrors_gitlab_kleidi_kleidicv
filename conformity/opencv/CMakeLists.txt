@@ -32,12 +32,12 @@ add_executable(
   tests.cpp
   test_binary_op.cpp
   test_gaussian_blur.cpp
-  test_min_max.cpp
   test_rgb2yuv.cpp
   test_sobel.cpp
   test_exp.cpp
   test_float_conv.cpp
   test_scale.cpp
+  test_min_max.cpp
 )
 
 target_link_libraries(
@@ -80,6 +80,7 @@ add_executable(
   test_exp.cpp
   test_float_conv.cpp
   test_scale.cpp
+  test_min_max.cpp
 )
 
 target_link_libraries(
