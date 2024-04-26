@@ -510,7 +510,8 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
-/// Converts an NV12 or NV21 YUV image to RGB. All channels are 8-bit wide.
+/// Converts an NV12 or NV21 (Semi-Planar) YUV image to RGB. All channels are
+/// 8-bit wide.
 ///
 /// Destination data is filled liked this:
 /// | R,G,B | R,G,B | R,G,B | ...
@@ -547,7 +548,8 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
                          size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, bool is_nv21);
 
-/// Converts an NV12 or NV21 YUV image to BGR. All channels are 8-bit wide.
+/// Converts an NV12 or NV21 (Semi-Planar) YUV image to BGR. All channels are
+/// 8-bit wide.
 ///
 /// Destination data is filled liked this:
 /// | B,G,R | B,G,R | B,G,R | ...
@@ -584,8 +586,8 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgr_u8, const uint8_t *src_y,
                          size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, bool is_nv21);
 
-/// Converts an NV12 or NV21 YUV image to RGBA. All channels are 8-bit wide.
-/// Alpha channel is set to 0xFF.
+/// Converts an NV12 or NV21 (Semi-Planar) YUV image to RGBA. All channels are
+/// 8-bit wide. Alpha channel is set to 0xFF.
 ///
 /// Destination data is filled liked this:
 /// | R,G,B,A | R,G,B,A | R,G,B,A | ...
@@ -620,8 +622,8 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_rgba_u8, const uint8_t *src_y,
                          size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, bool is_nv21);
 
-/// Converts an NV12 or NV21 YUV image to BGRA. All channels are 8-bit wide.
-/// Alpha channel is set to 0xFF.
+/// Converts an NV12 or NV21 (Semi-Planar) YUV image to BGRA. All channels are
+/// 8-bit wide. Alpha channel is set to 0xFF.
 ///
 /// Destination data is filled liked this:
 /// | B,G,R,A | B,G,R,A | B,G,R,A | ...
@@ -655,6 +657,50 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
                          size_t src_y_stride, const uint8_t *src_uv,
                          size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, bool is_nv21);
+
+/// Converts an RGB image to YUV, pixel by pixel. All channels are 8-bit wide.
+///
+/// Source data can have 3 channels or 4 if there is an alpha channel:
+/// - R,G,B
+/// - R,G,B,Alpha
+/// - B,G,R
+/// - B,G,R,Alpha
+///
+/// Destination data is filled liked this:
+/// | Y,U,V | Y,U,V | Y,U,V | ...
+/// One pixel is represented by 3 bytes. There is no padding between the pixels.
+/// Alpha channel is not used in the conversion.
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than width * (number of channels) *
+///                    sizeof(uint8).
+/// @param dst         Pointer to the destination data. Must be non-null.
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than width * 3 * sizeof(uint8).
+/// @param width       Number of pixels in a row.
+/// @param height      Number of rows in the data.
+///
+KLEIDICV_API_DECLARATION(kleidicv_bgr_to_yuv_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_bgr_to_yuv_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgb_to_yuv_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_bgr_to_yuv_u8
+KLEIDICV_API_DECLARATION(kleidicv_bgra_to_yuv_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_bgr_to_yuv_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgba_to_yuv_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Performs a comparison of each element's value in `src` with respect to a
 /// caller defined threshold. The strictly larger elements are set to

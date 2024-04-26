@@ -37,6 +37,10 @@ int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
                   int dst_width, int dst_height, int dcn, bool swapBlue,
                   int uIdx);
 
+int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,
+               size_t dst_step, int width, int height, int depth, int scn,
+               bool swapBlue, bool isCbCr);
+
 int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int width, int height, int depth, int cn,
               double thresh, double maxValue, int thresholdType);
@@ -150,6 +154,17 @@ static inline int kleidicv_yuv_to_bgr_ex_with_fallback(
 }
 #undef cv_hal_cvtTwoPlaneYUVtoBGREx
 #define cv_hal_cvtTwoPlaneYUVtoBGREx kleidicv_yuv_to_bgr_ex_with_fallback
+
+// bgr_to_yuv
+static inline int kleidicv_bgr_to_yuv_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int width, int height, int depth, int scn, bool swapBlue, bool isCbCr) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(bgr_to_yuv, cv_hal_cvtBGRtoYUV, src_data,
+                                       src_step, dst_data, dst_step, width,
+                                       height, depth, scn, swapBlue, isCbCr);
+}
+#undef cv_hal_cvtBGRtoYUV
+#define cv_hal_cvtBGRtoYUV kleidicv_bgr_to_yuv_with_fallback
 
 // threshold
 static inline int kleidicv_threshold_with_fallback(

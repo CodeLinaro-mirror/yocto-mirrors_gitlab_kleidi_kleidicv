@@ -18,7 +18,7 @@ namespace kleidicv {
 After re-normalization of the analog signal:
 
   Yan = Ya
-  Uan = Ua / 1.722
+  Uan = Ua / 1.772
   Van = Va / 1.402
 
   [ Yan ] = [  0.299000  0.587000  0.114000 ] [ Ra ]
@@ -51,14 +51,14 @@ The values used in this implementation are the following:
   [ G ] = [ 1.164000 -0.391000 -0.813000 ] [ U' ]
   [ B ] = [ 1.164000  2.018000  0.000000 ] [ V' ]
 
-With 20 bit scaling and rounding, the integer constants are:
+With 20-bit scaling and rounding, the integer constants are:
 
   [ R ] = [ 1,220,542          0   1,673,527 ] [ Y' ]
   [ G ] = [ 1,220,542  - 409,993    -852,492 ] [ U' ] + (1 << 19) >> 20
   [ B ] = [ 1,220,542  2,116,026           0 ] [ V' ]
 
-The final results are calculated using roundign shift right and saturating
-to 8 bit unsigned values:
+The final results are calculated using rounding shift right and saturating
+to 8-bit unsigned values:
 
   X = saturating_cast<uint8_t>((X' + (1 << 19)) >> 20)
 

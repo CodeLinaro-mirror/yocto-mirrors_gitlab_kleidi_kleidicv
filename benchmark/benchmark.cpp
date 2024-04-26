@@ -41,6 +41,36 @@ BENCH_BINARY_OP(saturating_add_s8, int8_t);
 BENCH_BINARY_OP(saturating_sub_u16, uint16_t);
 BENCH_BINARY_OP(saturating_absdiff_s32, int32_t);
 
+template <typename T, typename Function>
+static void bench_unary_op(Function f, size_t channels,
+                           benchmark::State& state) {
+  // Setup
+  std::vector<T> src, dst;
+  src.resize(image_width * image_height * channels);
+  dst.resize(image_width * image_height * channels);
+
+  std::mt19937 generator;
+  std::generate(src.begin(), src.end(), generator);
+
+  for (auto _ : state) {
+    // This code gets benchmarked
+    auto unused = f(src.data(), image_width, dst.data(), image_width,
+                    image_width, image_height);
+    (void)unused;
+  }
+}
+
+#define BENCH_UNARY_OP(name, channels, type)                \
+  static void name(benchmark::State& state) {               \
+    bench_unary_op<type>(kleidicv_##name, channels, state); \
+  }                                                         \
+  BENCHMARK(name)
+
+BENCH_UNARY_OP(rgb_to_yuv_u8, 3, uint8_t);
+BENCH_UNARY_OP(rgba_to_yuv_u8, 4, uint8_t);
+BENCH_UNARY_OP(bgr_to_yuv_u8, 3, uint8_t);
+BENCH_UNARY_OP(bgra_to_yuv_u8, 4, uint8_t);
+
 static void min_max_loc_u8(benchmark::State& state) {
   // Setup
   std::vector<uint8_t> src;
