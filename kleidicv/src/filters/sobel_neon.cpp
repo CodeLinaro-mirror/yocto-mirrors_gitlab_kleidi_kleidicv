@@ -6,6 +6,7 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/morphology/workspace.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/separable_filter_3x3_neon.h"
 
 namespace kleidicv::neon {
 

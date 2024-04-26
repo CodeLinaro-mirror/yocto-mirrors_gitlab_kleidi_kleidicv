@@ -5,6 +5,8 @@
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/separable_filter_3x3_neon.h"
+#include "kleidicv/separable_filter_5x5_neon.h"
 
 namespace kleidicv::neon {
 
