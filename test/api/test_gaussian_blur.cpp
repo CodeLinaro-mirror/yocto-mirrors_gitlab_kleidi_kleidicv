@@ -17,6 +17,7 @@
 
 KLEIDICV_GAUSSIAN_BLUR(uint8_t, 3x3, u8);
 KLEIDICV_GAUSSIAN_BLUR(uint8_t, 5x5, u8);
+KLEIDICV_GAUSSIAN_BLUR(uint8_t, 7x7, u8);
 
 // Implements KernelTestParams for Gaussian Blur operators.
 template <typename ElementType, size_t KernelSize>
@@ -25,7 +26,7 @@ struct GaussianBlurKernelTestParams;
 template <size_t KernelSize>
 struct GaussianBlurKernelTestParams<uint8_t, KernelSize> {
   using InputType = uint8_t;
-  using IntermediateType = uint16_t;
+  using IntermediateType = uint32_t;
   using OutputType = uint8_t;
 
   static constexpr size_t kKernelSize = KernelSize;
@@ -102,9 +103,12 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t border_type,
                             kleidicv_border_values_t) override {
-    auto api = KernelTestParams::kKernelSize == 3
-                   ? gaussian_blur_3x3<InputType>()
-                   : gaussian_blur_5x5<InputType>();
+    // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
+    auto api =
+        KernelTestParams::kKernelSize == 3   ? gaussian_blur_3x3<InputType>()
+        : KernelTestParams::kKernelSize == 5 ? gaussian_blur_5x5<InputType>()
+                                             : gaussian_blur_7x7<InputType>();
+    // NOLINTEND(readability-avoid-nested-conditional-operator)
 
     kleidicv_filter_context_t *context = nullptr;
     auto ret = kleidicv_filter_create(
@@ -129,9 +133,13 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
   // Apply rounding to nearest integer division.
   IntermediateType scale_result(const test::Kernel<IntermediateType> &kernel,
                                 IntermediateType result) override {
-    return kernel.width() == 3 ? ((result + 8) / 16) : ((result + 128) / 256);
+    // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
+    return kernel.width() == 3   ? ((result + 8) / 16)
+           : kernel.width() == 5 ? ((result + 128) / 256)
+                                 : ((result + 2048) / 4096);
+    // NOLINTEND(readability-avoid-nested-conditional-operator)
   }
-};  // end of class class GaussianBlur3x3Test<KernelTestParams>
+};  // end of class GaussianBlurTest<KernelTestParams>
 
 using ElementTypes = ::testing::Types<uint8_t>;
 
@@ -184,6 +192,25 @@ TYPED_TEST(GaussianBlur, 5x5) {
   mask.set(2, 0, { 6, 24, 36, 24, 6});
   mask.set(3, 0, { 4, 16, 24, 16, 4});
   mask.set(4, 0, { 1,  4,  6,  4, 1});
+  // clang-format on
+  GaussianBlurTest<KernelTestParams>{}
+      .with_border_types(make_generator_ptr(kAllBorders))
+      .test(mask);
+}
+
+// Tests gaussian_blur_7x7_<input_type> API.
+TYPED_TEST(GaussianBlur, 7x7) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 7>;
+  // 7x7 GaussianBlur operator.
+  test::Array2D<typename KernelTestParams::IntermediateType> mask{7, 7};
+  // clang-format off
+  mask.set(0, 0, {  4,  14,  28,  36,  28,  14,  4 });
+  mask.set(1, 0, { 14,  49,  98, 126,  98,  49, 14 });
+  mask.set(2, 0, { 28,  98, 196, 252, 196,  98, 28 });
+  mask.set(3, 0, { 36, 126, 252, 324, 252, 126, 36 });
+  mask.set(4, 0, { 28,  98, 196, 252, 196,  98, 28 });
+  mask.set(5, 0, { 14,  49,  98, 126,  98,  49, 14 });
+  mask.set(6, 0, {  4,  14,  28,  36,  28,  14,  4 });
   // clang-format on
   GaussianBlurTest<KernelTestParams>{}
       .with_border_types(make_generator_ptr(kAllBorders))

@@ -1074,6 +1074,16 @@ kleidicv_error_t kleidicv_filter_release(kleidicv_filter_context_t *context);
 ///         [ 4, 16, 24, 16, 4 ]
 ///         [ 1,  4,  6,  4, 1 ]
 /// ```
+/// 7x7 Gaussian Blur filter for uint8_t types:
+/// ```
+///          [  4,  14,  28,  36,  28,  14,  4 ]
+///          [ 14,  49,  98, 126,  98,  49, 14 ]
+///          [ 28,  98, 196, 252, 196,  98, 28 ]
+/// 1/4096 * [ 36, 126, 252, 324, 252, 126, 36 ]
+///          [ 28,  98, 196, 252, 196,  98, 28 ]
+///          [ 14,  49,  98, 126,  98,  49, 14 ]
+///          [  4,  14,  28,  36,  28,  14,  4 ]
+/// ```
 ///
 /// Width and height are the same for the source and for the destination. Number
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
@@ -1117,6 +1127,14 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_3x3_u8, const uint8_t *src,
 /// @copydoc kleidicv_gaussian_blur_3x3_u8
 ///
 KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_5x5_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, size_t channels,
+                         kleidicv_border_type_t border_type,
+                         kleidicv_filter_context_t *context);
+
+/// @copydoc kleidicv_gaussian_blur_3x3_u8
+///
+KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_7x7_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, size_t channels,
                          kleidicv_border_type_t border_type,

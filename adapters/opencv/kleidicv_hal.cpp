@@ -268,6 +268,8 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
     impl = kleidicv_gaussian_blur_3x3_u8;
   } else if ((kernel_size == 5) && (width >= 5) && (height >= 5)) {
     impl = kleidicv_gaussian_blur_5x5_u8;
+  } else if ((kernel_size == 7) && (width >= 7) && (height >= 7)) {
+    impl = kleidicv_gaussian_blur_7x7_u8;
   } else {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
