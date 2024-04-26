@@ -4,14 +4,7 @@ SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-sour
 SPDX-License-Identifier: Apache-2.0
 -->
 
----
-**NOT SUITABLE FOR DEPLOYMENT OR PRODUCTION USE**
----
-
 # KleidiCV
-
-This project is in the early stages of development and is not ready for use
-except as a preview.
 
 KleidiCV is a library aiming to give high-performing image
 processing functions on Arm. It is designed to be simple to import into a wide
