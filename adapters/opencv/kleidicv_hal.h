@@ -285,6 +285,7 @@ static inline int kleidicv_min_max_idx_with_fallback(
 #undef cv_hal_minMaxIdx
 #define cv_hal_minMaxIdx kleidicv_min_max_idx_with_fallback
 
+#if defined(cv_hal_convertTo)
 static inline int kleidicv_convertTo_with_fallback(
     const uchar *src_data, size_t src_step, int src_depth, uchar *dst_data,
     size_t dst_step, int dst_depth, int width, int height, double scale,
@@ -295,6 +296,7 @@ static inline int kleidicv_convertTo_with_fallback(
 }
 #undef cv_hal_convertTo
 #define cv_hal_convertTo kleidicv_convertTo_with_fallback
+#endif  // defined(cv_hal_convertTo)
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 
