@@ -23,8 +23,8 @@ class MinMax final : public UnrollTwice {
 
   void vector_path(ContextType ctx, VectorType src) {
     auto pg = ctx.predicate();
-    vmin_ = svmin_x(pg, vmin_, src);
-    vmax_ = svmax_x(pg, vmax_, src);
+    vmin_ = svmin_m(pg, vmin_, src);
+    vmax_ = svmax_m(pg, vmax_, src);
   }
 
   ScalarType get_min() const {
