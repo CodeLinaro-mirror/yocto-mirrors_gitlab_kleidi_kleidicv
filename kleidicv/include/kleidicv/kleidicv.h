@@ -18,7 +18,7 @@
 
 /// @file
 /// @brief For an overview of the functions and their supported types see
-/// @ref kleidicv/src/supported-types.md.
+/// @ref doc/functionality.md.
 
 #ifndef KLEIDICV_H
 #define KLEIDICV_H

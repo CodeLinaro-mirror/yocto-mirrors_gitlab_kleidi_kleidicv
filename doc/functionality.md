@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Supported types of implemented functions
 Note: functions listed here are not necessarily exposed to adapter API layer.
+See `doc/opencv.md` for details of the functionality available in OpenCV.
 
 ## Basic arithmetic operations
 |                              | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 |
@@ -19,13 +20,22 @@ Note: functions listed here are not necessarily exposed to adapter API layer.
 | Scale                        |     |  x  |     |     |     |     |     |     |
 
 ## Colour conversions
-|  | gray-RGB | gray-RGBA | RGB-RGB | RGBA-RGBA | RGB-BGR | RGBA-BGRA | RGB-BGRA | RGB-RGBA | RGBA-BGR | RGBA-RGB |
-|--|----------|-----------|---------|-----------|---------|-----------|----------|----------|----------|----------|
-|u8|  x       |  x        |  x      |  x        |  x      |  x        |  x       |  x       |  x       |  x       |
-
-|          | YUV-RBG | YUV-BGR | YUV-RGBA | YUV-BGRA |
-|----------|---------|---------|----------|----------|
-| u8       |  x      |  x      |  x       |  x       |
+|           | u8  |
+|-----------|-----|
+| Gray-RGB  |  x  |
+| Gray-RGBA |  x  |
+| RGB-BGR   |  x  |
+| RGB-BGRA  |  x  |
+| RGB-RGB   |  x  |
+| RGB-RGBA  |  x  |
+| RGBA-BGR  |  x  |
+| RGBA-BGRA |  x  |
+| RGBA-RGB  |  x  |
+| RGBA-RGBA |  x  |
+| YUV-BGR   |  x  |
+| YUV-BGRA  |  x  |
+| YUV-RGB   |  x  |
+| YUV-RGBA  |  x  |
 
 ## Matrix operations
 |                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 |
@@ -38,9 +48,13 @@ Note: functions listed here are not necessarily exposed to adapter API layer.
 | Count non-zeros |     |  x  |     |     |     |     |     |
 
 ## Image filters
-|             | Erode | Dilate | Sobel | Canny | Gaussian Blur  |
-|-------------|-------|--------|-------|-------|----------------|
-| u8          |  x    |  x     |  x    |  x    |  x             |
+|                       | u8  |
+|-----------------------|-----|
+| Erode                 |  x  |
+| Dilate                |  x  |
+| Sobel                 |  x  |
+| Canny (experimental)  |  x  |
+| Gaussian Blur         |  x  |
 
 ## Resize with linear interpolation
 |             | u8  | f32 |

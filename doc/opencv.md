@@ -4,7 +4,21 @@ SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-sour
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Functionality exposed to OpenCV via adapter layer
+# OpenCV Hardware Acceleration Layer
+
+[OpenCV](https://github.com/opencv/opencv) can be built with KleidiCV
+acceleration via KleidiCV's OpenCV Hardware Acceleration Layer (HAL).
+For details of building OpenCV with KleidiCV see [the build documentation](build.md).
+
+## Performance
+
+For single-threaded use cases, enabling the KleidiCV OpenCV HAL is likely to
+provide a performance boost for the functions that it implements.
+Multithreading is planned for KleidiCV but at present it is single-threaded
+only. Therefore it is recommended to check the performance yourself in order
+to decide whether to enable KleidiCV in a multicore environment.
+
+## Functionality in KleidiCV OpenCV HAL
 
 ### `gray_to_bgr`
 Converts grayscale images to RGB or RGBA.

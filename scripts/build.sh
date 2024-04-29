@@ -6,8 +6,16 @@
 #
 # Builds a given target.
 #
+# The build artifacts are placed in the `build` directory.
+#
 # Arguments:
 #   1: Target to build. Defaults to 'kleidicv'.
+#
+# To target Android devices the following command can be used:
+#   BUILD_ID=android \
+#     CMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
+#     EXTRA_CMAKE_ARGS="-DANDROID_ABI=arm64-v8a" \
+#     scripts/build.sh
 #
 # Options:
 #   BUILD_ID:                      Identifier of the build, defaults to 'kleidicv'.
