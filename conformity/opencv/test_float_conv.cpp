@@ -4,31 +4,34 @@
 
 #include "test_float_conv.h"
 
+#include <limits>
 #include <vector>
 
 float floatval(uint32_t v) {
-  static_assert(sizeof(float) == 4);
-  return *reinterpret_cast<float*>(&v);
+  float result;
+  static_assert(sizeof(result) == sizeof(v));
+  memcpy(&result, &v, sizeof(result));
+  return result;
 }
 
-float quietNaN = floatval(0x7FC00000);
-float signalingNaN = floatval(0x7FA00000);
-float posInfinity = floatval(0x7F800000);
-float negInfinity = floatval(0xFF800000);
+float quietNaN = std::numeric_limits<float>::quiet_NaN();
+float signalingNaN = std::numeric_limits<float>::signaling_NaN();
+float posInfinity = std::numeric_limits<float>::infinity();
+float negInfinity = -std::numeric_limits<float>::infinity();
 
 float minusNaN = floatval(0xFF800001);
 float plusNaN = floatval(0x7F800001);
-float plusZero = floatval(0x00000000);
-float minusZero = floatval(0x80000000);
+float plusZero = 0.0F;
+float minusZero = -0.0F;
 
 float oneNaN = floatval(0x7FC00001);
-float zeroDivZero = floatval(0xFFC00000);
-float floatMin = floatval(0x00800000);
-float floatMax = floatval(0x7F7FFFFF);
+float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
+float floatMin = std::numeric_limits<float>::min();
+float floatMax = std::numeric_limits<float>::max();
 
-float posSubnormalMin = floatval(0x00000001);
+float posSubnormalMin = std::numeric_limits<float>::denorm_min();
 float posSubnormalMax = floatval(0x007FFFFF);
-float negSubnormalMin = floatval(0x80000001);
+float negSubnormalMin = -std::numeric_limits<float>::denorm_min();
 float negSubnormalMax = floatval(0x807FFFFF);
 
 template <bool Signed>
