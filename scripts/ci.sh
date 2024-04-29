@@ -36,8 +36,7 @@ cmake -S . -B build -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
   -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
-  -DKLEIDICV_ENABLE_SVE2=ON \
-  -DKLEIDICV_ENABLE_SVE2_SELECTIVELY=OFF \
+  -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_CHECK_BANNED_FUNCTIONS=ON
 
 # Workaround to avoid applying clang-tidy to files in build directory
@@ -92,8 +91,7 @@ cmake -S . -B build/build-benchmark -G Ninja \
   -DCMAKE_SYSTEM_NAME=Linux \
   -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
   -DKLEIDICV_BENCHMARK=ON \
-  -DKLEIDICV_ENABLE_SVE2=ON \
-  -DKLEIDICV_ENABLE_SVE2_SELECTIVELY=OFF
+  -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF
 ninja -C build/build-benchmark kleidicv-benchmark
 
 # TODO: Cross-build OpenCV

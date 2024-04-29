@@ -9,27 +9,26 @@ project("KleidiCV")
 include(CheckCXXCompilerFlag)
 
 if (CMAKE_SYSTEM_NAME MATCHES "^(Linux|Android)$")
-  option(KLEIDICV_ENABLE_SVE2 "Explicitly enables or disables SVE2 code paths for all supported algorithms" OFF)
-  option(KLEIDICV_ENABLE_SVE2_SELECTIVELY "Explicitly enables or disables SVE2 code paths for selected algorithms" ON)
-  option(KLEIDICV_ENABLE_SME2 "Explicitly enables or disables SME2 code paths for all supported algorithms" ON)
+  option(KLEIDICV_ENABLE_SVE2 "Enable SVE2 code paths" ON)
+  option(KLEIDICV_ENABLE_SME2 "Enable SME2 code paths" ON)
 else()
   set(KLEIDICV_ENABLE_SVE2 OFF)
-  set(KLEIDICV_ENABLE_SVE2_SELECTIVELY OFF)
   set(KLEIDICV_ENABLE_SME2 OFF)
 endif()
+option(
+  KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS
+  "Enables or disables SVE2 code paths for selected algorithms. Has no effect if KLEIDICV_ENABLE_SVE2 is false."
+  ON
+)
 option(KLEIDICV_CHECK_BANNED_FUNCTIONS "Check source for deprecated or obsolescent functions" OFF)
 option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector length is assumed" OFF)
 option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
 
-if (KLEIDICV_ENABLE_SVE2 AND KLEIDICV_ENABLE_SVE2_SELECTIVELY)
-  message(FATAL_ERROR "[KleidiCV] KLEIDICV_ENABLE_SVE2 and KLEIDICV_ENABLE_SVE2_SELECTIVELY cannot be set at the same time")
-endif()
-
 # Compiler feature check for SVE2.
 set(KLEIDICV_BUILD_SVE2 OFF)
-if (KLEIDICV_ENABLE_SVE2 OR KLEIDICV_ENABLE_SVE2_SELECTIVELY)
+if (KLEIDICV_ENABLE_SVE2)
   check_cxx_compiler_flag("-march=armv8-a+sve2" KLEIDICV_COMPILER_SUPPORTS_SVE2)
   if (KLEIDICV_COMPILER_SUPPORTS_SVE2)
     set(KLEIDICV_BUILD_SVE2 ON)
@@ -55,7 +54,7 @@ if (KLEIDICV_ENABLE_SME2)
   endif()
 endif()
 
-if(KLEIDICV_BUILD_SVE2 AND KLEIDICV_ENABLE_SVE2)
+if(KLEIDICV_BUILD_SVE2 AND NOT KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS)
   set(KLEIDICV_ALWAYS_ENABLE_SVE2 ON)
 endif()
 
