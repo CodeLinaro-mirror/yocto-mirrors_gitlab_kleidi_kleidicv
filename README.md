@@ -11,6 +11,7 @@ It is designed to be simple to integrate into a wide variety of projects.
 
 ## Documentation
 
+* [Platform Support](doc/platform-support.md)
 * [Building](doc/build.md)
 * [OpenCV Hardware Adapter Layer](doc/opencv.md)
 * [Overview of KleidiCV functionality](doc/functionality.md)
