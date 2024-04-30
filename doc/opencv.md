@@ -57,6 +57,22 @@ Notes on parameters:
 ### `yuv_to_bgr`
 Wrapper for [`yuv_to_bgr_ex`](#yuv_to_bgr_ex) that accepts YUV as a single buffer.
 
+### `bgr_to_yuv`
+RGB/RGBA to YUV image conversion, 3 or 4 channels to 3 channels, no subsampling.
+All supported permutations listed in the table below.
+|    | YUV |
+|----|-----|
+|RGB |  x  |
+|RGBA|  x  |
+|BGR |  x  |
+|BGRA|  x  |
+
+Notes on parameters:
+* `depth` - only supports `CV_8U` depth.
+* `scn` - Source Channel Number. Supports 3 for RGB/BGR and 4 for RGBA/BGRA
+* `swapBlue` - toggles source channels order.
+* `isCbCr` - sets particular YUV format. Only `false` (YUV) is supported.
+
 ### `threshold`
 Binary threshold operation that would apply `maxValue` to any element above threshold, and set the rest to zero.
 

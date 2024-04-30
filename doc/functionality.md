@@ -36,6 +36,10 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | YUV-BGRA  |  x  |
 | YUV-RGB   |  x  |
 | YUV-RGBA  |  x  |
+| RGB-YUV   |  x  |
+| RGBA-YUV  |  x  |
+| BGR-YUV   |  x  |
+| BGRA-YUV  |  x  |
 
 ## Matrix operations
 |                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 |
