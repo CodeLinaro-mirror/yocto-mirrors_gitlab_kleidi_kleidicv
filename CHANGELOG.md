@@ -1,0 +1,18 @@
+<!--
+SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Changelog
+
+This file documents significant changes between KleidiCV releases.
+
+KleidiCV uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+This changelog aims to follow the guiding principles of
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## 0.1.0 - Release Date To Be Determined
+
+Initial release.
