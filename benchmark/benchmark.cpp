@@ -76,6 +76,36 @@ BENCH_UNARY_OP(rgba_to_yuv_u8, 4, uint8_t);
 BENCH_UNARY_OP(bgr_to_yuv_u8, 3, uint8_t);
 BENCH_UNARY_OP(bgra_to_yuv_u8, 4, uint8_t);
 
+template <typename I, typename O, typename Function>
+static void bench_unary_op(Function f, benchmark::State& state) {
+  // Setup
+  std::vector<I> src;
+  std::vector<O> dst;
+  src.resize(image_width * image_height);
+  dst.resize(image_width * image_height);
+
+  std::mt19937 generator;
+  std::generate(src.begin(), src.end(), generator);
+
+  for (auto _ : state) {
+    // This code gets benchmarked
+    auto unused = f(src.data(), image_width, dst.data(), image_width,
+                    image_width, image_height);
+    (void)unused;
+  }
+}
+
+#define BENCH_UNARY_OP_DIFFERENT_IO_TYPES(name, itype, otype) \
+  static void name(benchmark::State& state) {                 \
+    bench_unary_op<itype, otype>(kleidicv_##name, state);     \
+  }                                                           \
+  BENCHMARK(name)
+
+BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_f32_s8, float, int8_t);
+BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_f32_u8, float, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_s8_f32, int8_t, float);
+BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_u8_f32, uint8_t, float);
+
 static void min_max_loc_u8(benchmark::State& state) {
   // Setup
   std::vector<uint8_t> src;
