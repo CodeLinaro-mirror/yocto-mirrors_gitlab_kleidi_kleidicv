@@ -7,7 +7,7 @@
 
 #include "kleidicv/config.h"
 
-#if KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME2
+#if defined(KLEIDICV_HAVE_SVE2) || defined(KLEIDICV_HAVE_SME2)
 #include <sys/auxv.h>
 
 #include <type_traits>
