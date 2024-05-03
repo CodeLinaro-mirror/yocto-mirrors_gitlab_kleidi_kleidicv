@@ -10,6 +10,7 @@
 #if defined(KLEIDICV_HAVE_SVE2) || defined(KLEIDICV_HAVE_SME2)
 #include <sys/auxv.h>
 
+#include <cstdint>
 #include <type_traits>
 
 namespace KLEIDICV_TARGET_NAMESPACE {
