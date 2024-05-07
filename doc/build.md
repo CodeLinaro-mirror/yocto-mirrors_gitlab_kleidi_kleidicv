@@ -34,7 +34,7 @@ Integration consists of the following steps:
 1. Download OpenCV sources:
 ```
 wget https://github.com/opencv/opencv/archive/refs/tags/4.9.0.tar.gz
-tar xf 4.9.0
+tar xf 4.9.0.tar.gz
 cd opencv-4.9.0
 ```
 2. Patch OpenCV:
