@@ -11,6 +11,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "test_gaussian_blur.h"
+#include "test_min_max.h"
 #include "test_rgb2yuv.h"
 #include "test_sobel.h"
 
@@ -26,6 +27,7 @@ static std::vector<test> merge_tests(
 
 std::vector<test> all_tests = merge_tests({
     gaussian_blur_tests_get,
+    min_max_tests_get,
     rgb2yuv_tests_get,
     sobel_tests_get,
 });

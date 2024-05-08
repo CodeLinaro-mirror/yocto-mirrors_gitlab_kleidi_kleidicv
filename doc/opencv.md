@@ -154,5 +154,17 @@ Notes on parameters:
   + `uint8_t`
   + `uint16_t`
 
+### `minMaxIdx`
+Finds the minimum and maximum element values and their positions.
+
+Notes on parameters:
+* `minIdx`,`maxIdx` - only supported for `depth == CV_8U`
+* `depth` - supported element size (without specifying index):
+  + `CV_8S`
+  + `CV_8U`
+  + `CV_16S`
+  + `CV_16U`
+  + `CV_32S`
+
 ### `convertTo`
 Currently converting to different data types is not supported. This function scales given input of `src_depth == CV_8U` using `scale` and `shift`.

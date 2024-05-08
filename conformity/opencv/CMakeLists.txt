@@ -31,6 +31,7 @@ add_executable(
   manager.cpp
   tests.cpp
   test_gaussian_blur.cpp
+  test_min_max.cpp
   test_rgb2yuv.cpp
   test_sobel.cpp
 )
@@ -68,6 +69,7 @@ add_executable(
   subordinate.cpp
   tests.cpp
   test_gaussian_blur.cpp
+  test_min_max.cpp
   test_rgb2yuv.cpp
   test_sobel.cpp
 )

@@ -29,6 +29,8 @@
 #define KLEIDICV_CONFORMITY_REPLY_MQ_ID \
   "/opencv_kleidicv_conformity_reply_queue"
 
+#define KLEIDICV_CONFORMITY_MAX_MAT_DIMENSIONS 4
+
 class ExceptionWithErrno : public std::exception {
  public:
   explicit ExceptionWithErrno(const std::string& msg)
@@ -119,17 +121,18 @@ class SharedMemory {
   SharedMemory(SharedMemory const&) = delete;
   SharedMemory& operator=(SharedMemory) = delete;
 
-  cv::Mat cv_mat(int rows, int cols, int mat_type) {
-    size_t requested_size = rows * cols * cv::Mat(1, 1, mat_type).elemSize();
+  cv::Mat cv_mat(int ndims, const int* sizes, int mat_type) {
+    size_t requested_size = cv::Mat(1, 1, mat_type).elemSize();
+    for (int i = 0; i < ndims; ++i) requested_size *= sizes[i];
     if (requested_size > size_) {
       throw std::runtime_error(
           "Requested matrix is bigger than the shared memory size");
     }
-    return cv::Mat(rows, cols, mat_type, mem_);
+    return cv::Mat(ndims, sizes, mat_type, mem_);
   }
 
   void store_mat(const cv::Mat& mat) {
-    size_t matrix_size = mat.rows * mat.cols * mat.elemSize();
+    size_t matrix_size = mat.total() * mat.elemSize();
     if (matrix_size > size_) {
       throw std::runtime_error(
           "Input matrix is bigger than the shared memory size");
@@ -172,13 +175,18 @@ class MessageQueue {
   MessageQueue& operator=(MessageQueue) = delete;
 
   void request_exit() {
-    message m = {-1, 0, 0, 0};
+    message m = {};
+    m.cmd = -1;
     send(m);
   }
 
   void request_operation(int cmd, const cv::Mat& mat) {
     sm_.store_mat(mat);
-    message m = {cmd, mat.rows, mat.cols, mat.type()};
+    message m;
+    m.cmd = cmd;
+    m.type = mat.type();
+    m.ndims = mat.dims;
+    memcpy(m.sizes, mat.size.p, sizeof(int) * mat.dims);
     send(m);
   }
 
@@ -205,16 +213,16 @@ class MessageQueue {
   int last_cmd() const { return last_message_.cmd; }
 
   cv::Mat cv_mat_from_last_msg() const {
-    return sm_.cv_mat(last_message_.rows, last_message_.cols,
+    return sm_.cv_mat(last_message_.ndims, last_message_.sizes,
                       last_message_.type);
   }
 
  private:
   struct message {
     int cmd;
-    int rows;
-    int cols;
     int type;
+    int ndims;
+    int sizes[KLEIDICV_CONFORMITY_MAX_MAT_DIMENSIONS];
   };
 
   static mqd_t open(const std::string& id) {
