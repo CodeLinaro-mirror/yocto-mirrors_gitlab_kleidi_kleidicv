@@ -288,6 +288,9 @@ static inline int kleidicv_transpose_with_fallback(
 #undef cv_hal_transpose2d
 #define cv_hal_transpose2d kleidicv_transpose_with_fallback
 
+// cv_hal_minMaxIdx is unstable in OpenCV
+// See https://github.com/opencv/opencv/issues/25540
+#if 0
 // min_max_idx
 static inline int kleidicv_min_max_idx_with_fallback(
     const uchar *src_data, size_t src_stride, int width, int height, int depth,
@@ -299,6 +302,7 @@ static inline int kleidicv_min_max_idx_with_fallback(
 }
 #undef cv_hal_minMaxIdx
 #define cv_hal_minMaxIdx kleidicv_min_max_idx_with_fallback
+#endif  // 0
 
 #if defined(cv_hal_convertTo)
 static inline int kleidicv_convertTo_with_fallback(
