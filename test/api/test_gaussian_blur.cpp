@@ -108,7 +108,7 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
 
     kleidicv_filter_context_t *context = nullptr;
     auto ret = kleidicv_filter_create(
-        &context, input->channels(), sizeof(IntermediateType),
+        &context, input->channels(), 2 * sizeof(InputType),
         kleidicv_rectangle_t{input->width() / input->channels(),
                              input->height()});
     if (ret != KLEIDICV_OK) {

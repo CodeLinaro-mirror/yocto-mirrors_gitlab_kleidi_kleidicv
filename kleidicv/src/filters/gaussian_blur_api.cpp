@@ -13,12 +13,13 @@ using KLEIDICV_TARGET_NAMESPACE::Rectangle;
 using KLEIDICV_TARGET_NAMESPACE::SeparableFilterWorkspace;
 
 kleidicv_error_t kleidicv_filter_create(kleidicv_filter_context_t **context,
-                                        size_t channels, size_t type_size,
+                                        size_t channels,
+                                        size_t intermediate_size,
                                         kleidicv_rectangle_t image) {
   CHECK_POINTERS(context);
   CHECK_RECTANGLE_SIZE(image);
 
-  if (type_size > KLEIDICV_MAXIMUM_TYPE_SIZE) {
+  if (intermediate_size > KLEIDICV_MAXIMUM_TYPE_SIZE) {
     return KLEIDICV_ERROR_RANGE;
   }
 
@@ -26,8 +27,8 @@ kleidicv_error_t kleidicv_filter_create(kleidicv_filter_context_t **context,
     return KLEIDICV_ERROR_RANGE;
   }
 
-  auto workspace =
-      SeparableFilterWorkspace::create(Rectangle{image}, channels, type_size);
+  auto workspace = SeparableFilterWorkspace::create(Rectangle{image}, channels,
+                                                    intermediate_size);
   if (!workspace) {
     *context = nullptr;
     return KLEIDICV_ERROR_ALLOCATION;

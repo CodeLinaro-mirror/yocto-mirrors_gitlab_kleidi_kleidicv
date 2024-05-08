@@ -81,8 +81,9 @@ class SeparableFilterWorkspace final {
 
   // Creates a workspace on the heap.
   static Pointer create(Rectangle rect, size_t channels,
-                        size_t buffer_type_size) KLEIDICV_STREAMING_COMPATIBLE {
-    size_t buffer_rows_width = buffer_type_size * rect.width();
+                        size_t intermediate_size)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    size_t buffer_rows_width = intermediate_size * rect.width();
     // Adding more elements because of SVE, where interleaving stores are
     // governed by one predicate. For example, if a predicate requires 7 uint8_t
     // elements and an algorithm performs widening to 16 bits, the resulting
@@ -110,14 +111,14 @@ class SeparableFilterWorkspace final {
     workspace->buffer_rows_stride_ = buffer_rows_stride;
     workspace->image_size_ = rect;
     workspace->channels_ = channels;
-    workspace->buffer_type_size_ = buffer_type_size;
+    workspace->intermediate_size_ = intermediate_size;
 
     return workspace;
   }
 
   size_t channels() const { return channels_; }
   Rectangle image_size() const { return image_size_; }
-  size_t buffer_type_size() const { return buffer_type_size_; }
+  size_t intermediate_size() const { return intermediate_size_; }
 
   // Processes rows vertically first along the full width
   template <typename FilterType>
@@ -204,7 +205,7 @@ class SeparableFilterWorkspace final {
 
   Rectangle image_size_;
   size_t channels_;
-  size_t buffer_type_size_;
+  size_t intermediate_size_;
 
   // Workspace area begins here.
   uint8_t data_[0] KLEIDICV_ATTR_ALIGNED(kAlignment);

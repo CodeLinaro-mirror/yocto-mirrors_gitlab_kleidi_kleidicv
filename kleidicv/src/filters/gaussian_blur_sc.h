@@ -166,7 +166,7 @@ kleidicv_error_t discrete_gaussian_blur(
 
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
-  if (workspace->buffer_type_size() != 2 * sizeof(ScalarType)) {
+  if (workspace->intermediate_size() != 2 * sizeof(ScalarType)) {
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 

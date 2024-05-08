@@ -1031,20 +1031,23 @@ KLEIDICV_API_DECLARATION(kleidicv_canny_u8, const uint8_t *src,
 
 /// Creates a filter context according to the parameters.
 ///
-/// Before a gaussian_blur operation, this initialization is needed.
+/// Before a Gaussian blur operation, this initialization is needed.
 /// After the operation is finished, the context needs to be released
 /// using @ref kleidicv_filter_release.
 ///
 /// @param context       Pointer where to return the created context's address.
 /// @param channels      Number of channels in the data. Must be not more than
 ///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
-/// @param type_size     Size of buffer element in bytes. It must be double the
-///                      size of the type the filter operation is executed on.
+/// @param intermediate_size Size of an intermediate buffer element in bytes.
+///                          The element must be large enough to fit values of
+///                          the intermediate type used internally by the
+///                          Gaussian blur operation.
 /// @param image         Image dimensions. Its size must not be more than
 ///                      @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 kleidicv_error_t kleidicv_filter_create(kleidicv_filter_context_t **context,
-                                        size_t channels, size_t type_size,
+                                        size_t channels,
+                                        size_t intermediate_size,
                                         kleidicv_rectangle_t image);
 
 /// Releases a filter context that was previously created using @ref
