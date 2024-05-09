@@ -92,7 +92,7 @@ class LoopUnroll final {
 
   // Unrolls the loop twice, if enabled.
   template <bool Enable, typename CallbackType>
-  LoopUnroll &unroll_twice_if(CallbackType callback)
+  LoopUnroll &unroll_twice_if([[maybe_unused]] CallbackType callback)
       KLEIDICV_STREAMING_COMPATIBLE {
     if constexpr (Enable) {
       return unroll_twice(callback);
@@ -109,7 +109,7 @@ class LoopUnroll final {
 
   // Unrolls the loop once, if enabled.
   template <bool Enable, typename CallbackType>
-  LoopUnroll &unroll_once_if(CallbackType callback)
+  LoopUnroll &unroll_once_if([[maybe_unused]] CallbackType callback)
       KLEIDICV_STREAMING_COMPATIBLE {
     if constexpr (Enable) {
       return unroll_once(callback);
