@@ -12,8 +12,9 @@ Support for different platforms is organised in 3 tiers[^1].
 
 A released version of KleidiCV shall be tested for correctness and performance on a Tier 1 platform.
 
-At present the only Tier 1 platform is Android on Samsung Galaxy S22 or Google Pixel 8 with an up-to-date operating system.
-Applications must be built with Android NDK r26d or later.
+At present the only Tier 1 platform is Android on Samsung Galaxy S22
+with an up-to-date operating system, where applications are built with
+Android NDK r26d.
 
 ## Tier 2
 
