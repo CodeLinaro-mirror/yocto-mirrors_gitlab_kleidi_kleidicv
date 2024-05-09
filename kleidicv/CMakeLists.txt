@@ -40,8 +40,8 @@ endif()
 # Compiler feature check for SME2.
 set(KLEIDICV_BUILD_SME2 OFF)
 if (KLEIDICV_ENABLE_SME2)
-  # Assuming clang
-  if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18)
+  # Assuming only clang >= 19 supports SME2
+  if ((NOT CMAKE_CXX_COMPILER_ID MATCHES ".*Clang") OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19)
     set(KLEIDICV_COMPILER_SUPPORTS_SME2 OFF)
   else()
     check_cxx_compiler_flag("-march=armv9-a+sme2" KLEIDICV_COMPILER_SUPPORTS_SME2)
