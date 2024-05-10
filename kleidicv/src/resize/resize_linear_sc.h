@@ -506,7 +506,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
     }
   };
 
-  auto process_row = [src_width, lerp2d_vector](
+  auto process_row = [src_width, lerp1d_vector, lerp2d_vector](
                          const float *src_row0, const float *src_row1,
                          float *dst_row0, float *dst_row1, float *dst_row2,
                          float *dst_row3) KLEIDICV_STREAMING_COMPATIBLE {
@@ -521,43 +521,46 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
       svfloat32_t c = svld1_f32(pg, src_row1 + src_x);
       svfloat32_t d = svld1_f32(pg, src_row1 + src_x + 1);
 
-      svst4_f32(pg, dst_row0 + dst_x,
-                (svcreate4(lerp2d_vector(pg, 0.765625F, a, 0.109375F, b,
-                                         0.109375F, c, 0.015625F, d),
-                           lerp2d_vector(pg, 0.546875F, a, 0.328125F, b,
-                                         0.078125F, c, 0.046875F, d),
-                           lerp2d_vector(pg, 0.328125F, a, 0.546875F, b,
-                                         0.046875F, c, 0.078125F, d),
-                           lerp2d_vector(pg, 0.109375F, a, 0.765625F, b,
-                                         0.015625F, c, 0.109375F, d))));
-
+      svfloat32x4_t dst_a =
+          svcreate4(lerp2d_vector(pg, 0.765625F, a, 0.109375F, b, 0.109375F, c,
+                                  0.015625F, d),
+                    lerp2d_vector(pg, 0.546875F, a, 0.328125F, b, 0.078125F, c,
+                                  0.046875F, d),
+                    lerp2d_vector(pg, 0.328125F, a, 0.546875F, b, 0.046875F, c,
+                                  0.078125F, d),
+                    lerp2d_vector(pg, 0.109375F, a, 0.765625F, b, 0.015625F, c,
+                                  0.109375F, d));
+      svfloat32x4_t dst_d =
+          svcreate4(lerp2d_vector(pg, 0.109375F, a, 0.015625F, b, 0.765625F, c,
+                                  0.109375F, d),
+                    lerp2d_vector(pg, 0.078125F, a, 0.046875F, b, 0.546875F, c,
+                                  0.328125F, d),
+                    lerp2d_vector(pg, 0.046875F, a, 0.078125F, b, 0.328125F, c,
+                                  0.546875F, d),
+                    lerp2d_vector(pg, 0.015625F, a, 0.109375F, b, 0.109375F, c,
+                                  0.765625F, d));
+      const float one_3rd = 0.3333333333333333F;
+      const float two_3rd = 0.6666666666666667F;
+      svst4_f32(pg, dst_row0 + dst_x, dst_a);
       svst4_f32(pg, dst_row1 + dst_x,
-                (svcreate4(lerp2d_vector(pg, 0.546875F, a, 0.078125F, b,
-                                         0.328125F, c, 0.046875F, d),
-                           lerp2d_vector(pg, 0.390625F, a, 0.234375F, b,
-                                         0.234375F, c, 0.140625F, d),
-                           lerp2d_vector(pg, 0.234375F, a, 0.390625F, b,
-                                         0.140625F, c, 0.234375F, d),
-                           lerp2d_vector(pg, 0.078125F, a, 0.546875F, b,
-                                         0.046875F, c, 0.328125F, d))));
+                svcreate4(lerp1d_vector(pg, two_3rd, svget4(dst_a, 0), one_3rd,
+                                        svget4(dst_d, 0)),
+                          lerp1d_vector(pg, two_3rd, svget4(dst_a, 1), one_3rd,
+                                        svget4(dst_d, 1)),
+                          lerp1d_vector(pg, two_3rd, svget4(dst_a, 2), one_3rd,
+                                        svget4(dst_d, 2)),
+                          lerp1d_vector(pg, two_3rd, svget4(dst_a, 3), one_3rd,
+                                        svget4(dst_d, 3))));
       svst4_f32(pg, dst_row2 + dst_x,
-                (svcreate4(lerp2d_vector(pg, 0.328125F, a, 0.046875F, b,
-                                         0.546875F, c, 0.078125F, d),
-                           lerp2d_vector(pg, 0.234375F, a, 0.140625F, b,
-                                         0.390625F, c, 0.234375F, d),
-                           lerp2d_vector(pg, 0.140625F, a, 0.234375F, b,
-                                         0.234375F, c, 0.390625F, d),
-                           lerp2d_vector(pg, 0.046875F, a, 0.328125F, b,
-                                         0.078125F, c, 0.546875F, d))));
-      svst4_f32(pg, dst_row3 + dst_x,
-                (svcreate4(lerp2d_vector(pg, 0.109375F, a, 0.015625F, b,
-                                         0.765625F, c, 0.109375F, d),
-                           lerp2d_vector(pg, 0.078125F, a, 0.046875F, b,
-                                         0.546875F, c, 0.328125F, d),
-                           lerp2d_vector(pg, 0.046875F, a, 0.078125F, b,
-                                         0.328125F, c, 0.546875F, d),
-                           lerp2d_vector(pg, 0.015625F, a, 0.109375F, b,
-                                         0.109375F, c, 0.765625F, d))));
+                svcreate4(lerp1d_vector(pg, one_3rd, svget4(dst_a, 0), two_3rd,
+                                        svget4(dst_d, 0)),
+                          lerp1d_vector(pg, one_3rd, svget4(dst_a, 1), two_3rd,
+                                        svget4(dst_d, 1)),
+                          lerp1d_vector(pg, one_3rd, svget4(dst_a, 2), two_3rd,
+                                        svget4(dst_d, 2)),
+                          lerp1d_vector(pg, one_3rd, svget4(dst_a, 3), two_3rd,
+                                        svget4(dst_d, 3))));
+      svst4_f32(pg, dst_row3 + dst_x, dst_d);
     }
   };
 

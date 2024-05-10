@@ -494,10 +494,6 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
           kleidicv_resize_linear_u8(src_data, src_step, src_width, src_height,
                                     dst_data, dst_step, dst_width, dst_height));
     case CV_32F:
-      // 4*4 performance uplift is inconsistent so don't use it.
-      if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
-        return CV_HAL_ERROR_NOT_IMPLEMENTED;
-      }
       return convert_error(kleidicv_resize_linear_f32(
           reinterpret_cast<const float *>(src_data), src_step, src_width,
           src_height, reinterpret_cast<float *>(dst_data), dst_step, dst_width,

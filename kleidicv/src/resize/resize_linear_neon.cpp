@@ -605,10 +605,10 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32(
     }
   };
 
-  auto process_row = [src_width, dst_width, lerp1d_scalar, lerp2d_scalar,
-                      lerp2d_vector](const T *src_row0, const T *src_row1,
-                                     T *dst_row0, T *dst_row1, T *dst_row2,
-                                     T *dst_row3) {
+  auto process_row = [src_width, dst_width, lerp1d_scalar, lerp1d_vector,
+                      lerp2d_scalar, lerp2d_vector](
+                         const T *src_row0, const T *src_row1, T *dst_row0,
+                         T *dst_row1, T *dst_row2, T *dst_row3) {
     // Left elements
     const T s0l = src_row0[0], s1l = src_row1[0];
     dst_row0[0] = dst_row0[1] = lerp1d_scalar(0.875F, s0l, 0.125F, s1l);
@@ -636,46 +636,36 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32(
       float32x4_t c = vld1q_f32(src_row1 + src_x);
       float32x4_t d = vld1q_f32(src_row1 + src_x + 1);
 
-      vst4q_f32(dst_row0 + dst_x, (float32x4x4_t{
-                                      lerp2d_vector(0.765625F, a, 0.109375F, b,
-                                                    0.109375F, c, 0.015625F, d),
-                                      lerp2d_vector(0.546875F, a, 0.328125F, b,
-                                                    0.078125F, c, 0.046875F, d),
-                                      lerp2d_vector(0.328125F, a, 0.546875F, b,
-                                                    0.046875F, c, 0.078125F, d),
-                                      lerp2d_vector(0.109375F, a, 0.765625F, b,
-                                                    0.015625F, c, 0.109375F, d),
-                                  }));
-      vst4q_f32(dst_row1 + dst_x, (float32x4x4_t{
-                                      lerp2d_vector(0.546875F, a, 0.078125F, b,
-                                                    0.328125F, c, 0.046875F, d),
-                                      lerp2d_vector(0.390625F, a, 0.234375F, b,
-                                                    0.234375F, c, 0.140625F, d),
-                                      lerp2d_vector(0.234375F, a, 0.390625F, b,
-                                                    0.140625F, c, 0.234375F, d),
-                                      lerp2d_vector(0.078125F, a, 0.546875F, b,
-                                                    0.046875F, c, 0.328125F, d),
-                                  }));
-      vst4q_f32(dst_row2 + dst_x, (float32x4x4_t{
-                                      lerp2d_vector(0.328125F, a, 0.046875F, b,
-                                                    0.546875F, c, 0.078125F, d),
-                                      lerp2d_vector(0.234375F, a, 0.140625F, b,
-                                                    0.390625F, c, 0.234375F, d),
-                                      lerp2d_vector(0.140625F, a, 0.234375F, b,
-                                                    0.234375F, c, 0.390625F, d),
-                                      lerp2d_vector(0.046875F, a, 0.328125F, b,
-                                                    0.078125F, c, 0.546875F, d),
-                                  }));
-      vst4q_f32(dst_row3 + dst_x, (float32x4x4_t{
-                                      lerp2d_vector(0.109375F, a, 0.015625F, b,
-                                                    0.765625F, c, 0.109375F, d),
-                                      lerp2d_vector(0.078125F, a, 0.046875F, b,
-                                                    0.546875F, c, 0.328125F, d),
-                                      lerp2d_vector(0.046875F, a, 0.078125F, b,
-                                                    0.328125F, c, 0.546875F, d),
-                                      lerp2d_vector(0.015625F, a, 0.109375F, b,
-                                                    0.109375F, c, 0.765625F, d),
-                                  }));
+      float32x4x4_t dst_a{
+          lerp2d_vector(0.765625F, a, 0.109375F, b, 0.109375F, c, 0.015625F, d),
+          lerp2d_vector(0.546875F, a, 0.328125F, b, 0.078125F, c, 0.046875F, d),
+          lerp2d_vector(0.328125F, a, 0.546875F, b, 0.046875F, c, 0.078125F, d),
+          lerp2d_vector(0.109375F, a, 0.765625F, b, 0.015625F, c, 0.109375F, d),
+      };
+      float32x4x4_t dst_d{
+          lerp2d_vector(0.109375F, a, 0.015625F, b, 0.765625F, c, 0.109375F, d),
+          lerp2d_vector(0.078125F, a, 0.046875F, b, 0.546875F, c, 0.328125F, d),
+          lerp2d_vector(0.046875F, a, 0.078125F, b, 0.328125F, c, 0.546875F, d),
+          lerp2d_vector(0.015625F, a, 0.109375F, b, 0.109375F, c, 0.765625F, d),
+      };
+      const float one_3rd = 0.3333333333333333F;
+      const float two_3rd = 0.6666666666666667F;
+      vst4q_f32(dst_row0 + dst_x, dst_a);
+      vst4q_f32(dst_row1 + dst_x,
+                (float32x4x4_t{
+                    lerp1d_vector(two_3rd, dst_a.val[0], one_3rd, dst_d.val[0]),
+                    lerp1d_vector(two_3rd, dst_a.val[1], one_3rd, dst_d.val[1]),
+                    lerp1d_vector(two_3rd, dst_a.val[2], one_3rd, dst_d.val[2]),
+                    lerp1d_vector(two_3rd, dst_a.val[3], one_3rd, dst_d.val[3]),
+                }));
+      vst4q_f32(dst_row2 + dst_x,
+                (float32x4x4_t{
+                    lerp1d_vector(one_3rd, dst_a.val[0], two_3rd, dst_d.val[0]),
+                    lerp1d_vector(one_3rd, dst_a.val[1], two_3rd, dst_d.val[1]),
+                    lerp1d_vector(one_3rd, dst_a.val[2], two_3rd, dst_d.val[2]),
+                    lerp1d_vector(one_3rd, dst_a.val[3], two_3rd, dst_d.val[3]),
+                }));
+      vst4q_f32(dst_row3 + dst_x, dst_d);
     }
 
     for (; src_x + 1 < src_width; ++src_x) {
