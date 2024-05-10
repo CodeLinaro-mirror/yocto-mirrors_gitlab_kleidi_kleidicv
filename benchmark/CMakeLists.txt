@@ -30,7 +30,6 @@ set(KLEIDICV_INCLUDE_DIR
 set(KLEIDICV_BENCHMARK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(KLEIDICV_BENCHMARK_CXX_FLAGS
-  "-Werror"
   "-Wall"
   "-Wextra"
   "-Wold-style-cast"

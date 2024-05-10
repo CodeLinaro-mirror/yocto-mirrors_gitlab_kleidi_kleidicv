@@ -14,7 +14,6 @@ set(KLEIDICV_TEST_INCLUDE_DIR
 )
 
 set(KLEIDICV_TEST_CXX_FLAGS
-  "-Werror"
   "-Wall"
   "-Wextra"
   "-Wold-style-cast"

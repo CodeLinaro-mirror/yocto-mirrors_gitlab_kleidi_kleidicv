@@ -33,6 +33,7 @@ doxygen
 
 # Build
 cmake -S . -B build -G Ninja \
+  -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
   -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
@@ -46,6 +47,7 @@ ninja -C build
 
 # Build with GCC
 CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ cmake -S . -B build/gcc -G Ninja \
+  -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_EXE_LINKER_FLAGS="-static"
 ninja -C build/gcc
 
@@ -76,6 +78,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
   # Clang address & undefined behaviour sanitizers
   cmake -S . -B build/sanitize -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
     -DKLEIDICV_ENABLE_SME2=OFF \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
   ninja -C build/sanitize kleidicv-api-test
@@ -85,6 +88,7 @@ fi
 # Build benchmarks, just to prevent bitrot.
 cmake -S . -B build/build-benchmark -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 \
   -DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu \
   -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \

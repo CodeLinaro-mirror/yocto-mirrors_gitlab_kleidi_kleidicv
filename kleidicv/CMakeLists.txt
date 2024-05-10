@@ -92,7 +92,6 @@ set(KLEIDICV_INCLUDE_DIRS
 )
 
 set(KLEIDICV_WARNING_FLAGS
-  "-Werror"
   "-Wall"
   "-Wextra"
   "-Wold-style-cast"
