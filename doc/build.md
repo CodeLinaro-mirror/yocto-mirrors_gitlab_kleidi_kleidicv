@@ -13,9 +13,10 @@ source code and generating the executable. Please ensure that these tools are
 installed on your system before proceeding with the build process.
 
 To successfully build and compile this project for Android, you'll need the following tools:
-- [Android NDK](https://developer.android.com/ndk/)
-- [CMake](https://cmake.org) version 3.16 or newer (3.21 is recommended)
-- `make` or [Ninja](https://ninja-build.org)
+- [Android NDK](https://developer.android.com/ndk/).
+  See [the platform support page](platform-support.md) for supported versions.
+- [CMake](https://cmake.org) 3.16 or higher.
+- `make`
 - `patch`
 
 Running tests on Android devices requires [ADB](https://developer.android.com/tools/adb).
@@ -83,9 +84,10 @@ documentation for cross-building instructions.
 
 ## Prerequisites
 To successfully build and compile this project for AArch64 Linux, you'll need the following tools:
-- [CMake](https://cmake.org) version 3.16 or newer (3.21 is recommended)
-- A recent version of either GCC or LLVM toolchains
-- `make` or [Ninja](https://ninja-build.org)
+- Either GCC 9.4 or higher, or Clang 10 or higher.
+- Binutils
+- [CMake](https://cmake.org) 3.16 or higher.
+- `make`
 - `patch`
 
 ## Building OpenCV & KleidiCV for AArch64 Linux

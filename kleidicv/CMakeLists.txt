@@ -30,6 +30,12 @@ option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny al
 set(KLEIDICV_BUILD_SVE2 OFF)
 if (KLEIDICV_ENABLE_SVE2)
   check_cxx_compiler_flag("-march=armv8-a+sve2" KLEIDICV_COMPILER_SUPPORTS_SVE2)
+
+  # SVE2 support is incomplete in earlier versions of Clang.
+  if (CMAKE_CXX_COMPILER_ID MATCHES ".*Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12)
+    set(KLEIDICV_COMPILER_SUPPORTS_SVE2 OFF)
+  endif()
+
   if (KLEIDICV_COMPILER_SUPPORTS_SVE2)
     set(KLEIDICV_BUILD_SVE2 ON)
   else()
