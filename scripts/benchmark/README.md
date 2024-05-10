@@ -1,0 +1,32 @@
+<!--
+SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Experimental benchmarking scripts to compare KleidiCV to vanilla OpenCV performance on Android
+
+Use at your own risk.
+
+First, you need a Linux x86 machine to build this.
+Next, to build for Android, you'll need [Android NDK](https://developer.android.com/ndk/).
+
+Let's assume you are building on a machine that has the phone attached to via USB.
+Let's assume your CWD is this directory.
+Stay in this directory.
+
+```
+KLEIDICV_PATH=../.. ./build.sh
+```
+Then push the test binaries to the phone (replace 9A9A9A9A with your actual device ID, or skip it if you have only one phone attached):
+```
+ADB=adb ANDROID_SERIAL=9A9A9A9A ./push.sh
+```
+Now you can run the benchmark set:
+```
+adb -s 9A9A9A9A shell /data/local/tmp/run_benchmarks_FHD.sh >your_phone_benchmarks_FHD.tsv
+adb -s 9A9A9A9A shell /data/local/tmp/run_benchmarks_4K.sh >your_phone_benchmarks_4K.tsv
+```
+To run on another core than BIG (CPU=7), set CPU and THERMAL to the desired value.
+To find the correct thermal zone id, it's best to log /sys/devices/virtual/thermal/thermal_zone0/type and see what's dumped.
+E.g. it can be BIG for 0, MID for 1 and LITTLE for 2, but it can be different for another phone.
