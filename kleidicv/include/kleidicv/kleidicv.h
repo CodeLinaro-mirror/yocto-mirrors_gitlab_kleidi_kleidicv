@@ -76,11 +76,11 @@ extern "C" {
 /// to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
-/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
 ///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
+/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
 ///                     Must be a multiple of sizeof(type).
@@ -119,11 +119,11 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_add_u64, uint64_t);
 /// Number of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
-/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
 ///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
+/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
 ///                     Must be a multiple of sizeof(type).
@@ -162,11 +162,11 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u64, uint64_t);
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
-/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
 ///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
+/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
 ///                     Must be a multiple of sizeof(type).
@@ -199,11 +199,11 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s32, int32_t);
 /// limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
-/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
 ///                     Must be a multiple of sizeof(type).
 ///                     Must not be less than width * sizeof(type).
+/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
 ///                     Must be a multiple of sizeof(type).
@@ -239,11 +239,11 @@ KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s32, int32_t, double);
 /// to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
-/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
 ///                     Must not be less than width * sizeof(type).
 ///                     Must be a multiple of sizeof(type).
+/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
 ///                     Must not be less than width * sizeof(type).
@@ -756,6 +756,70 @@ KLEIDICV_API_DECLARATION(kleidicv_threshold_binary_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, uint8_t threshold,
                          uint8_t value);
+
+/// Performs an 'equal to' comparison of each element's value in `src_a` with
+/// respect to the corresponding element's value in `src_b`.
+///
+/// If the result of the comparison is true then the corresponding element in
+/// `dst` is set to 255, otherwise to 0.
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_a_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the first source data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_b_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the second source data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param dst          Pointer to the first destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data. Must
+///                     not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+///
+KLEIDICV_API_DECLARATION(kleidicv_compare_equal_u8, const uint8_t *src_a,
+                         size_t src_a_stride, const uint8_t *src_b,
+                         size_t src_b_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+
+/// Performs a 'strictly greater than' comparison of each element's value in
+/// `src_a` with respect to the corresponding element's value in `src_b`.
+///
+/// If the result of the comparison is true then the corresponding element in
+/// `dst` is set to 255, otherwise to 0.
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_a_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the first source data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_b_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the second source data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param dst          Pointer to the first destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data. Must
+///                     not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type).
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+///
+KLEIDICV_API_DECLARATION(kleidicv_compare_greater_u8, const uint8_t *src_a,
+                         size_t src_a_stride, const uint8_t *src_b,
+                         size_t src_b_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Creates a morphology context according to the parameters.
 ///
