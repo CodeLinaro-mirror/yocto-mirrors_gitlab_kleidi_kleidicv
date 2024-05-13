@@ -8,22 +8,55 @@
 namespace kleidicv {
 
 namespace neon {
-template <typename T>
-kleidicv_error_t compare(const T *src_a, size_t src_a_stride, const T *src_b,
-                         size_t src_b_stride, T *dst, size_t dst_stride,
-                         size_t width, size_t height,
-                         kleidicv_cmp_type_t cmp_type);
+template <typename ScalarType>
+kleidicv_error_t compare_equal(const ScalarType *src_a, size_t src_a_stride,
+                               const ScalarType *src_b, size_t src_b_stride,
+                               ScalarType *dst, size_t dst_stride, size_t width,
+                               size_t height);
+
+template <typename ScalarType>
+kleidicv_error_t compare_greater(const ScalarType *src_a, size_t src_a_stride,
+                                 const ScalarType *src_b, size_t src_b_stride,
+                                 ScalarType *dst, size_t dst_stride,
+                                 size_t width, size_t height);
 
 }  // namespace neon
 
-namespace sve2 {}  // namespace sve2
+namespace sve2 {
+template <typename ScalarType>
+kleidicv_error_t compare_equal(const ScalarType *src_a, size_t src_a_stride,
+                               const ScalarType *src_b, size_t src_b_stride,
+                               ScalarType *dst, size_t dst_stride, size_t width,
+                               size_t height);
 
-namespace sme2 {}  // namespace sme2
+template <typename ScalarType>
+kleidicv_error_t compare_greater(const ScalarType *src_a, size_t src_a_stride,
+                                 const ScalarType *src_b, size_t src_b_stride,
+                                 ScalarType *dst, size_t dst_stride,
+                                 size_t width, size_t height);
+}  // namespace sve2
+
+namespace sme2 {
+template <typename ScalarType>
+kleidicv_error_t compare_equal(const ScalarType *src_a, size_t src_a_stride,
+                               const ScalarType *src_b, size_t src_b_stride,
+                               ScalarType *dst, size_t dst_stride, size_t width,
+                               size_t height);
+
+template <typename ScalarType>
+kleidicv_error_t compare_greater(const ScalarType *src_a, size_t src_a_stride,
+                                 const ScalarType *src_b, size_t src_b_stride,
+                                 ScalarType *dst, size_t dst_stride,
+                                 size_t width, size_t height);
+}  // namespace sme2
 
 }  // namespace kleidicv
 
-#define KLEIDICV_DEFINE_C_API(name, type)                                    \
-  KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::compare<type>, nullptr, \
-                              nullptr);
+#define KLEIDICV_DEFINE_C_API(api_name, impl_name, type)       \
+  KLEIDICV_MULTIVERSION_C_API(                                 \
+      api_name, &kleidicv::neon::impl_name<type>,              \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::impl_name<type>), \
+      &kleidicv::sme2::impl_name<type>)
 
-KLEIDICV_DEFINE_C_API(kleidicv_compare_u8, uint8_t);
+KLEIDICV_DEFINE_C_API(kleidicv_compare_equal_u8, compare_equal, uint8_t);
+KLEIDICV_DEFINE_C_API(kleidicv_compare_greater_u8, compare_greater, uint8_t);
