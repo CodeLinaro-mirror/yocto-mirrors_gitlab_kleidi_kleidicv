@@ -31,10 +31,10 @@ Notes on parameters:
 RGB to RGB/RGBA image conversion. All supported permutations listed in the table below.
 |     | RGB | BGR | RGBA | BGRA |
 |-----|-----|-----|------|------|
-| RGB |  x  |  x  |   x  |   x  |
-| BGR |  x  |  x  |   x  |   x  |
-| RGBA|  x  |  x  |   x  |   x  |
-| BGRA|  x  |  x  |   x  |   x  |
+| RGB |  x  |  x  |      |      |
+| BGR |  x  |  x  |      |      |
+| RGBA|     |     |   x  |   x  |
+| BGRA|     |     |   x  |   x  |
 
 Notes on parameters:
 * `depth` - only supports `CV_8U` depth.
@@ -125,7 +125,7 @@ Release context set up by [`morphology_init`](#morphology_init).
 ### `resize`
 Notes on parameters:
 * In-place operation not supported.
-* `src_type` - only supports single-channel `CV_8U` or `CV_32F`.
+* `src_type` - only supports `CV_8UC1` or, for 2*2 resize only, `CV_32FC1`.
 * `dst_width`,`dst_height` - must both be the same multiple of `src_width` and `src_height` respectively, and that multiple must be either 2 or 4.
 * `inv_scale_x`,`inv_scale_y` - must be 0 or `dst_width / src_width`.
 * `border_type` - Must be `INTER_LINEAR`.

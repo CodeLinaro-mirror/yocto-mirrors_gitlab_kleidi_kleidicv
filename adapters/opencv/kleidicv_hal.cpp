@@ -97,28 +97,6 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
           reinterpret_cast<const uint8_t *>(src_data), src_step,
           reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
-
-    if (scn == 3 && dcn == 4) {
-      if (swapBlue) {
-        return convert_error(kleidicv_rgb_to_bgra_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
-      }
-      return convert_error(kleidicv_rgb_to_rgba_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
-    }
-
-    if (scn == 4 && dcn == 3) {
-      if (swapBlue) {
-        return convert_error(kleidicv_rgba_to_bgr_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
-      }
-      return convert_error(kleidicv_rgba_to_rgb_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
-    }
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -498,6 +476,10 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
           kleidicv_resize_linear_u8(src_data, src_step, src_width, src_height,
                                     dst_data, dst_step, dst_width, dst_height));
     case CV_32F:
+      // 4*4 performance uplift is inconsistent so don't use it.
+      if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
+        return CV_HAL_ERROR_NOT_IMPLEMENTED;
+      }
       return convert_error(kleidicv_resize_linear_f32(
           reinterpret_cast<const float *>(src_data), src_step, src_width,
           src_height, reinterpret_cast<float *>(dst_data), dst_step, dst_width,
