@@ -17,7 +17,7 @@ else()
 endif()
 option(
   KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS
-  "Enables or disables SVE2 code paths for selected algorithms. Has no effect if KLEIDICV_ENABLE_SVE2 is false."
+  "Limits SVE2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SVE2 is false."
   ON
 )
 option(KLEIDICV_CHECK_BANNED_FUNCTIONS "Internal - Check source for deprecated or obsolescent functions" OFF)
