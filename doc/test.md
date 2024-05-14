@@ -6,10 +6,17 @@ SPDX-License-Identifier: Apache-2.0
 
 # Testing KleidiCV
 
-[Build](build.md) KleidiCV API tests using the target `kleidicv-api-test`.
+To verify whether all KleidiCV APIs behave as expected without running
+OpenCV or any sample applications, you can run KleidiCV's API tests.
 
-The tests use the [GoogleTest](https://github.com/google/googletest)
-testing framework and accept the standard GoogleTest arguments.
+These tests are based on the [GoogleTest](https://github.com/google/googletest)
+test framework.
 
-A [coverage report](https://kleidi.sites.arm.com/kleidicv/coverage/coverage_report.html)
-is generated based on this testing.
+Creating a standalone build as described in the [build documentation](build.md)
+will create a command line executable in the build folder at
+`test/api/kleidicv-api-test`.
+
+Running the executable with no arguments will run all the tests. The
+executable also accepts the standard GoogleTest command line options.
+Run the executable with the argument `--help` to see the full list of
+accepted options.
