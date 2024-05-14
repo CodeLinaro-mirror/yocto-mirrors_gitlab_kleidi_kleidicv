@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -41,15 +41,19 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | BGR-YUV   |  x  |
 | BGRA-YUV  |  x  |
 
-## Matrix operations
+## Aggregate operations
 |                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 |
 |-----------------|-----|-----|-----|-----|-----|-----|-----|
-| Merge           |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Split           |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Transpose       |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Minmax          |  x  |  x  |  x  |  x  |  x  |  x  |     |
+| Minmax          |  x  |  x  |  x  |  x  |  x  |     |     |
 | Minmax loc      |     |  x  |     |     |     |     |     |
 | Count non-zeros |     |  x  |     |     |     |     |     |
+
+## Matrix transformation functions
+|                 | 8-bit | 16-bit | 32-bit | 64-bit |
+|-----------------|-------|--------|--------|--------|
+| Merge           |   x   |    x   |    x   |    x   |
+| Split           |   x   |    x   |    x   |    x   |
+| Transpose       |   x   |    x   |    x   |    x   |
 
 ## Image filters
 |                       | u8  |
