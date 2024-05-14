@@ -145,14 +145,6 @@ Notes on parameters:
 * margins are not supported.
 * `dx`,`dy` - either vertical `{dx,dy} == {0,1}` or horizontal `{dx,dy == 1,0` operation is supported.
 
-### `canny` (Experimental)
-Apply Canny edge detection filter to a given image.
-
-Notes on parameters:
-* `ksize` - only kernel 3x3 is supported.
-* `L2gradient` - only default L1 norm is supported (`false`).
-* `cn` - channel count, only one channel is supported (`1`).
-
 ### `transpose`
 Transposes a matrix.
 

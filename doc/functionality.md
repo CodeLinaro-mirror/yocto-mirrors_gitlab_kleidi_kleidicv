@@ -61,7 +61,6 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Erode                 |  x  |
 | Dilate                |  x  |
 | Sobel                 |  x  |
-| Canny (experimental)  |  x  |
 | Gaussian Blur         |  x  |
 
 ## Resize with linear interpolation
