@@ -325,7 +325,8 @@ static void do_large_dimensions_test(size_t x_scale, size_t y_scale) {
   src.resize(src_stride_pixels * src_height);
   dst.resize(dst_stride_pixels * dst_height);
   expected_data.resize(dst_stride_pixels * dst_height);
-  std::mt19937 generator{test::Options::seed()};
+  std::mt19937 generator{
+      static_cast<std::mt19937::result_type>(test::Options::seed())};
   std::generate(src.begin(), src.end(), generator);
   resize_linear_unaccelerated(src.data(), src_stride_pixels * sizeof(T),
                               src_width, src_height, expected_data.data(),
