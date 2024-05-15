@@ -6,6 +6,7 @@
 #define KLEIDICV_SEPARABLE_FILTER_5X5_NEON_H
 
 #include "kleidicv/neon.h"
+#include "kleidicv/workspace/border_5x5.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

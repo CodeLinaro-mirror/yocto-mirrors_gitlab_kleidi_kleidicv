@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <memory>
 
-#include "borders.h"
+#include "border_types.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
 

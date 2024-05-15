@@ -6,6 +6,7 @@
 #define KLEIDICV_SEPARABLE_FILTER_7x7_SC_H
 
 #include "kleidicv/sve2.h"
+#include "kleidicv/workspace/border_7x7.h"
 
 // It is used by SVE2 and SME2, the actual namespace will reflect it.
 namespace KLEIDICV_TARGET_NAMESPACE {
