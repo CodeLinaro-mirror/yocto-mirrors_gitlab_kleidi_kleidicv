@@ -89,7 +89,7 @@ Currently does not support non-zero margins. Kernel shape is restricted to squar
 Notes on parameters:
 * `depth` - only supports `CV_8U` depth.
 * `width`,`height` - Image width and height should be greater than or equal to the size of the kernel in the given direction.
-* `ksize_width == ksize_height` - kernel size. Only 3x3 and 5x5 kernels are supported.
+* `ksize_width == ksize_height` - kernel size. Only 3x3, 5x5 and 7x7 kernels are supported.
 * `border_type` - pixel extrapolation method.
 Supported [OpenCV border types](https://docs.opencv.org/5.x/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
   + `cv::BORDER_REPLICATE`
