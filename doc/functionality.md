@@ -19,6 +19,8 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Threshold binary             |     |  x  |     |     |     |     |     |     |     |     |
 | SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |     |     |
 | Scale                        |     |  x  |     |     |     |     |     |     |     |     |
+| CompareEqual                 |     |  x  |     |     |     |     |     |     |     |     |
+| CompareGreater               |     |  x  |     |     |     |     |     |     |     |     |
 
 # Logical operations
 |                              | u8  |
