@@ -31,10 +31,10 @@ Notes on parameters:
 RGB to RGB/RGBA image conversion. All supported permutations listed in the table below.
 |     | RGB | BGR | RGBA | BGRA |
 |-----|-----|-----|------|------|
-| RGB |  x  |  x  |      |      |
-| BGR |  x  |  x  |      |      |
-| RGBA|     |     |   x  |   x  |
-| BGRA|     |     |   x  |   x  |
+| RGB |     |  x  |      |      |
+| BGR |  x  |     |      |      |
+| RGBA|     |     |      |   x  |
+| BGRA|     |     |   x  |      |
 
 Notes on parameters:
 * `depth` - only supports `CV_8U` depth.
