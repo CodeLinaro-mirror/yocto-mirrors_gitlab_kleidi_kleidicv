@@ -131,3 +131,44 @@ static void resize_linear_4x4_f32(benchmark::State& state) {
   resize_linear<float>(kleidicv_resize_linear_f32, 4, 4, state);
 }
 BENCHMARK(resize_linear_4x4_f32);
+
+template <typename T, typename Function>
+static void gaussian_blur(Function f, size_t channels,
+                          benchmark::State& state) {
+  // Setup
+  std::vector<T> src, dst;
+  src.resize(image_width * image_height * channels);
+  dst.resize(image_width * image_height * channels);
+
+  std::mt19937 generator;
+  std::generate(src.begin(), src.end(), generator);
+
+  kleidicv_filter_context_t* context;
+  kleidicv_error_t err =
+      kleidicv_filter_create(&context, channels, 2 * sizeof(T),
+                             kleidicv_rectangle_t{image_width, image_height});
+  if (err != KLEIDICV_OK) {
+    state.SkipWithError("Could not initialize Gaussian blur filter.");
+    return;
+  }
+
+  for (auto _ : state) {
+    // This code gets benchmarked
+    auto unused =
+        f(src.data(), image_width, dst.data(), image_width, image_width,
+          image_height, channels, KLEIDICV_BORDER_TYPE_REFLECT, context);
+    (void)unused;
+  }
+
+  (void)kleidicv_filter_release(context);
+}
+
+static void gaussian_blur_7x7_u8_1ch(benchmark::State& state) {
+  gaussian_blur<uint8_t>(kleidicv_gaussian_blur_7x7_u8, 1, state);
+}
+BENCHMARK(gaussian_blur_7x7_u8_1ch);
+
+static void gaussian_blur_7x7_u8_3ch(benchmark::State& state) {
+  gaussian_blur<uint8_t>(kleidicv_gaussian_blur_7x7_u8, 3, state);
+}
+BENCHMARK(gaussian_blur_7x7_u8_3ch);
