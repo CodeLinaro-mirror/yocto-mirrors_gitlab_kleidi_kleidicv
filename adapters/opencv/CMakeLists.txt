@@ -19,7 +19,13 @@ target_include_directories(kleidicv_hal PRIVATE
   ${OpenCV_SOURCE_DIR}/modules/core/include
   ${OpenCV_SOURCE_DIR}/modules/imgproc/include
 )
-target_compile_options(kleidicv_hal PRIVATE $<TARGET_PROPERTY:kleidicv,COMPILE_OPTIONS>)
+target_compile_options(
+  kleidicv_hal
+  PRIVATE
+    $<TARGET_PROPERTY:kleidicv,COMPILE_OPTIONS>
+    "-Wno-old-style-cast"
+)
+
 set_target_properties(kleidicv_hal PROPERTIES CXX_STANDARD 17)
 
 if(NOT BUILD_SHARED_LIBS)

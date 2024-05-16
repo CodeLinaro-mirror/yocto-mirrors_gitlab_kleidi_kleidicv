@@ -80,6 +80,10 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
           int margin_bottom, int dx, int dy, int ksize, double scale,
           double delta, int border_type);
 
+int compare_u8(const uchar *src1_data, size_t src1_step, const uchar *src2_data,
+               size_t src2_step, uchar *dst_data, size_t dst_step, int width,
+               int height, int operation);
+
 #if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int cn, double lowThreshold,
@@ -322,6 +326,18 @@ static inline int kleidicv_exp32f_with_fallback(const float *src, float *dst,
 }
 #undef cv_hal_exp32f
 #define cv_hal_exp32f kleidicv_exp32f_with_fallback
+
+// compare
+static inline int kleidicv_compare_u8_with_fallback(
+    const uchar *src1_data, size_t src1_step, const uchar *src2_data,
+    size_t src2_step, uchar *dst_data, size_t dst_step, int width, int height,
+    int operation) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      compare_u8, cv_hal_cmp8u, src1_data, src1_step, src2_data, src2_step,
+      dst_data, dst_step, width, height, operation);
+}
+#undef cv_hal_cmp8u
+#define cv_hal_cmp8u kleidicv_compare_u8_with_fallback
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 

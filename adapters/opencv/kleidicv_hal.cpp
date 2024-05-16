@@ -11,6 +11,8 @@
 #include <memory>
 
 #include "kleidicv/kleidicv.h"
+#include "opencv2/core/base.hpp"
+#include "opencv2/core/hal/interface.h"
 #include "opencv2/imgproc/hal/interface.h"
 
 namespace kleidicv::hal {
@@ -711,6 +713,23 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
 int exp32f(const float *src, float *dst, int len) {
   return convert_error(kleidicv_exp_f32(src, len * sizeof(float), dst,
                                         len * sizeof(float), len, 1));
+}
+
+int compare_u8(const uchar *src1_data, size_t src1_step, const uchar *src2_data,
+               size_t src2_step, uchar *dst_data, size_t dst_step, int width,
+               int height, int operation) {
+  switch (operation) {
+    case cv::CMP_EQ:
+      return convert_error(
+          kleidicv_compare_equal_u8(src1_data, src1_step, src2_data, src2_step,
+                                    dst_data, dst_step, width, height));
+    case cv::CMP_GT:
+      return convert_error(kleidicv_compare_greater_u8(
+          src1_data, src1_step, src2_data, src2_step, dst_data, dst_step, width,
+          height));
+    default:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
 }
 
 }  // namespace kleidicv::hal
