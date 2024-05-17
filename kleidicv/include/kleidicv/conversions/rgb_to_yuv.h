@@ -58,6 +58,44 @@ kleidicv_error_t rgba_to_yuv_u8(const uint8_t *src, size_t src_stride,
                                 size_t height);
 }  // namespace neon
 
+namespace sve2 {
+
+kleidicv_error_t bgr_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                               uint8_t *dst, size_t dst_stride, size_t width,
+                               size_t height);
+
+kleidicv_error_t rgb_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                               uint8_t *dst, size_t dst_stride, size_t width,
+                               size_t height);
+
+kleidicv_error_t bgra_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
+
+kleidicv_error_t rgba_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
+}  // namespace sve2
+
+namespace sme2 {
+
+kleidicv_error_t bgr_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                               uint8_t *dst, size_t dst_stride, size_t width,
+                               size_t height);
+
+kleidicv_error_t rgb_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                               uint8_t *dst, size_t dst_stride, size_t width,
+                               size_t height);
+
+kleidicv_error_t bgra_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
+
+kleidicv_error_t rgba_to_yuv_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height);
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_CONVERSIONS_RGB_TO_YUV_H
