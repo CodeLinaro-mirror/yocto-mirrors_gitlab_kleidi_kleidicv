@@ -83,9 +83,9 @@ class GrayTest final {
   size_t outChannels_;
 };
 
-class ColourTest final {
+class ColorTest final {
  public:
-  ColourTest(size_t src_channels, size_t dst_channels, bool swapBlue)
+  ColorTest(size_t src_channels, size_t dst_channels, bool swapBlue)
       : inChannels_(src_channels),
         outChannels_(dst_channels),
         swapBlue_(swapBlue) {}
@@ -183,41 +183,41 @@ TEST(GRAY2, RGBA) {
 }
 
 TEST(RGB2, RGB) {
-  ColourTest colour_test(3, 3, false);
-  colour_test.execute_test(kleidicv_rgb_to_rgb_u8);
+  ColorTest color_test(3, 3, false);
+  color_test.execute_test(kleidicv_rgb_to_rgb_u8);
 }
 
 TEST(RGBA2, RGBA) {
-  ColourTest colour_test(4, 4, false);
-  colour_test.execute_test(kleidicv_rgba_to_rgba_u8);
+  ColorTest color_test(4, 4, false);
+  color_test.execute_test(kleidicv_rgba_to_rgba_u8);
 }
 
 TEST(RGB2, BGR) {
-  ColourTest colour_test(3, 3, true);
-  colour_test.execute_test(kleidicv_rgb_to_bgr_u8);
+  ColorTest color_test(3, 3, true);
+  color_test.execute_test(kleidicv_rgb_to_bgr_u8);
 }
 
 TEST(RGBA2, BGRA) {
-  ColourTest colour_test(4, 4, true);
-  colour_test.execute_test(kleidicv_rgba_to_bgra_u8);
+  ColorTest color_test(4, 4, true);
+  color_test.execute_test(kleidicv_rgba_to_bgra_u8);
 }
 
 TEST(RGB2, BGRA) {
-  ColourTest colour_test(3, 4, true);
-  colour_test.execute_test(kleidicv_rgb_to_bgra_u8);
+  ColorTest color_test(3, 4, true);
+  color_test.execute_test(kleidicv_rgb_to_bgra_u8);
 }
 
 TEST(RGB2, RGBA) {
-  ColourTest colour_test(3, 4, false);
-  colour_test.execute_test(kleidicv_rgb_to_rgba_u8);
+  ColorTest color_test(3, 4, false);
+  color_test.execute_test(kleidicv_rgb_to_rgba_u8);
 }
 
 TEST(RGBA2, BGR) {
-  ColourTest colour_test(4, 3, true);
-  colour_test.execute_test(kleidicv_rgba_to_bgr_u8);
+  ColorTest color_test(4, 3, true);
+  color_test.execute_test(kleidicv_rgba_to_bgr_u8);
 }
 
 TEST(RGBA2, RGB) {
-  ColourTest colour_test(4, 3, false);
-  colour_test.execute_test(kleidicv_rgba_to_rgb_u8);
+  ColorTest color_test(4, 3, false);
+  color_test.execute_test(kleidicv_rgba_to_rgb_u8);
 }

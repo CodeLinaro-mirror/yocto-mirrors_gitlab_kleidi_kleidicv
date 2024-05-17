@@ -408,7 +408,7 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgba_u8, const uint8_t *src,
 
 /// Converts an RGB image to BGRA. All channels are 8-bit wide.
 ///
-/// Corresponding colours are set while Alpha channel is set to 0xFF.
+/// Corresponding colors are set while Alpha channel is set to 0xFF.
 /// Destination data is filled as follows:
 /// | B,G,R,A | B,G,R,A | B,G,R,A | ...
 /// Each letter represents one byte of data, and one pixel is represented
@@ -434,7 +434,7 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgra_u8, const uint8_t *src,
 
 /// Converts an RGB image to RGBA. All channels are 8-bit wide.
 ///
-/// Corresponding colours are set while Alpha channel is set to 0xFF.
+/// Corresponding colors are set while Alpha channel is set to 0xFF.
 /// Destination data is filled as follows:
 /// | R,G,B,A | R,G,B,A | R,G,B,A | ...
 /// Each letter represents one byte of data, and one pixel is represented
@@ -460,7 +460,7 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgba_u8, const uint8_t *src,
 
 /// Converts an RGBA image to BGR. All channels are 8-bit wide.
 ///
-/// Corresponding colours are set while Alpha channel is discarded.
+/// Corresponding colors are set while Alpha channel is discarded.
 /// Destination data is filled as follows:
 /// | B,G,R | B,G,R | B,G,R | ...
 /// Each letter represents one byte of data, and one pixel is represented
@@ -486,7 +486,7 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgr_u8, const uint8_t *src,
 
 /// Converts an RGBA image to RGB. All channels are 8-bit wide.
 ///
-/// Corresponding colours are set while Alpha channel is discarded.
+/// Corresponding colors are set while Alpha channel is discarded.
 /// Destination data is filled as follows:
 /// | R,G,B | R,G,B | R,G,B | ...
 /// Each letter represents one byte of data, and one pixel is represented

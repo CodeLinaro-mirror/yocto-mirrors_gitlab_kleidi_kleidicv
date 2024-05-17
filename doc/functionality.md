@@ -19,7 +19,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |
 | Scale                        |     |  x  |     |     |     |     |     |     |
 
-## Colour conversions
+## Color conversions
 |           | u8  |
 |-----------|-----|
 | Gray-RGB  |  x  |
