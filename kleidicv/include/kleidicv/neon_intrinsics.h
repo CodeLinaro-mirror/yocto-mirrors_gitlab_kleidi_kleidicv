@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -343,59 +343,65 @@ static inline float32x4x4_t vld1q_x4(const float32_t *src) { return vld1q_f32_x4
 
 static inline void vst1(uint8_t *dst, uint8x8_t vec) { vst1_u8(dst, vec); }
 
-static inline void vst1q(int8_t   *dst, int8x16_t  vec) { vst1q_s8(dst, vec); }
-static inline void vst1q(uint8_t  *dst, uint8x16_t vec) { vst1q_u8(dst, vec); }
-static inline void vst1q(int16_t  *dst, int16x8_t  vec) { vst1q_s16(dst, vec); }
-static inline void vst1q(uint16_t *dst, uint16x8_t vec) { vst1q_u16(dst, vec); }
-static inline void vst1q(int32_t  *dst, int32x4_t  vec) { vst1q_s32(dst, vec); }
-static inline void vst1q(uint32_t *dst, uint32x4_t vec) { vst1q_u32(dst, vec); }
-static inline void vst1q(int64_t  *dst, int64x2_t  vec) { vst1q_s64(dst, vec); }
-static inline void vst1q(uint64_t *dst, uint64x2_t vec) { vst1q_u64(dst, vec); }
+static inline void vst1q(int8_t    *dst, int8x16_t   vec) { vst1q_s8(dst, vec); }
+static inline void vst1q(uint8_t   *dst, uint8x16_t  vec) { vst1q_u8(dst, vec); }
+static inline void vst1q(int16_t   *dst, int16x8_t   vec) { vst1q_s16(dst, vec); }
+static inline void vst1q(uint16_t  *dst, uint16x8_t  vec) { vst1q_u16(dst, vec); }
+static inline void vst1q(int32_t   *dst, int32x4_t   vec) { vst1q_s32(dst, vec); }
+static inline void vst1q(uint32_t  *dst, uint32x4_t  vec) { vst1q_u32(dst, vec); }
+static inline void vst1q(int64_t   *dst, int64x2_t   vec) { vst1q_s64(dst, vec); }
+static inline void vst1q(uint64_t  *dst, uint64x2_t  vec) { vst1q_u64(dst, vec); }
+static inline void vst1q(float32_t *dst, float32x4_t vec) { vst1q_f32(dst, vec); }
 
-static inline void vst2q(int8_t   *dst, int8x16x2_t  vec) { vst2q_s8(dst, vec); }
-static inline void vst2q(uint8_t  *dst, uint8x16x2_t vec) { vst2q_u8(dst, vec); }
-static inline void vst2q(int16_t  *dst, int16x8x2_t  vec) { vst2q_s16(dst, vec); }
-static inline void vst2q(uint16_t *dst, uint16x8x2_t vec) { vst2q_u16(dst, vec); }
-static inline void vst2q(int32_t  *dst, int32x4x2_t  vec) { vst2q_s32(dst, vec); }
-static inline void vst2q(uint32_t *dst, uint32x4x2_t vec) { vst2q_u32(dst, vec); }
-static inline void vst2q(int64_t  *dst, int64x2x2_t  vec) { vst2q_s64(dst, vec); }
-static inline void vst2q(uint64_t *dst, uint64x2x2_t vec) { vst2q_u64(dst, vec); }
+static inline void vst2q(int8_t    *dst, int8x16x2_t   vec) { vst2q_s8(dst, vec); }
+static inline void vst2q(uint8_t   *dst, uint8x16x2_t  vec) { vst2q_u8(dst, vec); }
+static inline void vst2q(int16_t   *dst, int16x8x2_t   vec) { vst2q_s16(dst, vec); }
+static inline void vst2q(uint16_t  *dst, uint16x8x2_t  vec) { vst2q_u16(dst, vec); }
+static inline void vst2q(int32_t   *dst, int32x4x2_t   vec) { vst2q_s32(dst, vec); }
+static inline void vst2q(uint32_t  *dst, uint32x4x2_t  vec) { vst2q_u32(dst, vec); }
+static inline void vst2q(int64_t   *dst, int64x2x2_t   vec) { vst2q_s64(dst, vec); }
+static inline void vst2q(uint64_t  *dst, uint64x2x2_t  vec) { vst2q_u64(dst, vec); }
+static inline void vst2q(float32_t *dst, float32x4x2_t vec) { vst2q_f32(dst, vec); }
 
-static inline void vst3q(int8_t   *dst, int8x16x3_t  vec) { vst3q_s8(dst, vec); }
-static inline void vst3q(uint8_t  *dst, uint8x16x3_t vec) { vst3q_u8(dst, vec); }
-static inline void vst3q(int16_t  *dst, int16x8x3_t  vec) { vst3q_s16(dst, vec); }
-static inline void vst3q(uint16_t *dst, uint16x8x3_t vec) { vst3q_u16(dst, vec); }
-static inline void vst3q(int32_t  *dst, int32x4x3_t  vec) { vst3q_s32(dst, vec); }
-static inline void vst3q(uint32_t *dst, uint32x4x3_t vec) { vst3q_u32(dst, vec); }
-static inline void vst3q(int64_t  *dst, int64x2x3_t  vec) { vst3q_s64(dst, vec); }
-static inline void vst3q(uint64_t *dst, uint64x2x3_t vec) { vst3q_u64(dst, vec); }
+static inline void vst3q(int8_t    *dst, int8x16x3_t   vec) { vst3q_s8(dst, vec); }
+static inline void vst3q(uint8_t   *dst, uint8x16x3_t  vec) { vst3q_u8(dst, vec); }
+static inline void vst3q(int16_t   *dst, int16x8x3_t   vec) { vst3q_s16(dst, vec); }
+static inline void vst3q(uint16_t  *dst, uint16x8x3_t  vec) { vst3q_u16(dst, vec); }
+static inline void vst3q(int32_t   *dst, int32x4x3_t   vec) { vst3q_s32(dst, vec); }
+static inline void vst3q(uint32_t  *dst, uint32x4x3_t  vec) { vst3q_u32(dst, vec); }
+static inline void vst3q(int64_t   *dst, int64x2x3_t   vec) { vst3q_s64(dst, vec); }
+static inline void vst3q(uint64_t  *dst, uint64x2x3_t  vec) { vst3q_u64(dst, vec); }
+static inline void vst3q(float32_t *dst, float32x4x3_t vec) { vst3q_f32(dst, vec); }
 
-static inline void vst4q(int8_t   *dst, int8x16x4_t  vec) { vst4q_s8(dst, vec); }
-static inline void vst4q(uint8_t  *dst, uint8x16x4_t vec) { vst4q_u8(dst, vec); }
-static inline void vst4q(int16_t  *dst, int16x8x4_t  vec) { vst4q_s16(dst, vec); }
-static inline void vst4q(uint16_t *dst, uint16x8x4_t vec) { vst4q_u16(dst, vec); }
-static inline void vst4q(int32_t  *dst, int32x4x4_t  vec) { vst4q_s32(dst, vec); }
-static inline void vst4q(uint32_t *dst, uint32x4x4_t vec) { vst4q_u32(dst, vec); }
-static inline void vst4q(int64_t  *dst, int64x2x4_t  vec) { vst4q_s64(dst, vec); }
-static inline void vst4q(uint64_t *dst, uint64x2x4_t vec) { vst4q_u64(dst, vec); }
+static inline void vst4q(int8_t    *dst, int8x16x4_t   vec) { vst4q_s8(dst, vec); }
+static inline void vst4q(uint8_t   *dst, uint8x16x4_t  vec) { vst4q_u8(dst, vec); }
+static inline void vst4q(int16_t   *dst, int16x8x4_t   vec) { vst4q_s16(dst, vec); }
+static inline void vst4q(uint16_t  *dst, uint16x8x4_t  vec) { vst4q_u16(dst, vec); }
+static inline void vst4q(int32_t   *dst, int32x4x4_t   vec) { vst4q_s32(dst, vec); }
+static inline void vst4q(uint32_t  *dst, uint32x4x4_t  vec) { vst4q_u32(dst, vec); }
+static inline void vst4q(int64_t   *dst, int64x2x4_t   vec) { vst4q_s64(dst, vec); }
+static inline void vst4q(uint64_t  *dst, uint64x2x4_t  vec) { vst4q_u64(dst, vec); }
+static inline void vst4q(float32_t *dst, float32x4x4_t vec) { vst4q_f32(dst, vec); }
 
-static inline void vst1q_x2(int8_t   *dst, int8x16x2_t  vec) { vst1q_s8_x2(dst, vec); }
-static inline void vst1q_x2(uint8_t  *dst, uint8x16x2_t vec) { vst1q_u8_x2(dst, vec); }
-static inline void vst1q_x2(int16_t  *dst, int16x8x2_t  vec) { vst1q_s16_x2(dst, vec); }
-static inline void vst1q_x2(uint16_t *dst, uint16x8x2_t vec) { vst1q_u16_x2(dst, vec); }
-static inline void vst1q_x2(int32_t  *dst, int32x4x2_t  vec) { vst1q_s32_x2(dst, vec); }
-static inline void vst1q_x2(uint32_t *dst, uint32x4x2_t vec) { vst1q_u32_x2(dst, vec); }
-static inline void vst1q_x2(int64_t  *dst, int64x2x2_t  vec) { vst1q_s64_x2(dst, vec); }
-static inline void vst1q_x2(uint64_t *dst, uint64x2x2_t vec) { vst1q_u64_x2(dst, vec); }
+static inline void vst1q_x2(int8_t    *dst, int8x16x2_t   vec) { vst1q_s8_x2(dst, vec); }
+static inline void vst1q_x2(uint8_t   *dst, uint8x16x2_t  vec) { vst1q_u8_x2(dst, vec); }
+static inline void vst1q_x2(int16_t   *dst, int16x8x2_t   vec) { vst1q_s16_x2(dst, vec); }
+static inline void vst1q_x2(uint16_t  *dst, uint16x8x2_t  vec) { vst1q_u16_x2(dst, vec); }
+static inline void vst1q_x2(int32_t   *dst, int32x4x2_t   vec) { vst1q_s32_x2(dst, vec); }
+static inline void vst1q_x2(uint32_t  *dst, uint32x4x2_t  vec) { vst1q_u32_x2(dst, vec); }
+static inline void vst1q_x2(int64_t   *dst, int64x2x2_t   vec) { vst1q_s64_x2(dst, vec); }
+static inline void vst1q_x2(uint64_t  *dst, uint64x2x2_t  vec) { vst1q_u64_x2(dst, vec); }
+static inline void vst1q_x2(float32_t *dst, float32x4x2_t vec) { vst1q_f32_x2(dst, vec); }
 
-static inline void vst1q_x4(int8_t   *dst, int8x16x4_t  vec) { vst1q_s8_x4(dst, vec); }
-static inline void vst1q_x4(uint8_t  *dst, uint8x16x4_t vec) { vst1q_u8_x4(dst, vec); }
-static inline void vst1q_x4(int16_t  *dst, int16x8x4_t  vec) { vst1q_s16_x4(dst, vec); }
-static inline void vst1q_x4(uint16_t *dst, uint16x8x4_t vec) { vst1q_u16_x4(dst, vec); }
-static inline void vst1q_x4(int32_t  *dst, int32x4x4_t  vec) { vst1q_s32_x4(dst, vec); }
-static inline void vst1q_x4(uint32_t *dst, uint32x4x4_t vec) { vst1q_u32_x4(dst, vec); }
-static inline void vst1q_x4(int64_t  *dst, int64x2x4_t  vec) { vst1q_s64_x4(dst, vec); }
-static inline void vst1q_x4(uint64_t *dst, uint64x2x4_t vec) { vst1q_u64_x4(dst, vec); }
+static inline void vst1q_x4(int8_t    *dst, int8x16x4_t   vec) { vst1q_s8_x4(dst, vec); }
+static inline void vst1q_x4(uint8_t   *dst, uint8x16x4_t  vec) { vst1q_u8_x4(dst, vec); }
+static inline void vst1q_x4(int16_t   *dst, int16x8x4_t   vec) { vst1q_s16_x4(dst, vec); }
+static inline void vst1q_x4(uint16_t  *dst, uint16x8x4_t  vec) { vst1q_u16_x4(dst, vec); }
+static inline void vst1q_x4(int32_t   *dst, int32x4x4_t   vec) { vst1q_s32_x4(dst, vec); }
+static inline void vst1q_x4(uint32_t  *dst, uint32x4x4_t  vec) { vst1q_u32_x4(dst, vec); }
+static inline void vst1q_x4(int64_t   *dst, int64x2x4_t   vec) { vst1q_s64_x4(dst, vec); }
+static inline void vst1q_x4(uint64_t  *dst, uint64x2x4_t  vec) { vst1q_u64_x4(dst, vec); }
+static inline void vst1q_x4(float32_t *dst, float32x4x4_t vec) { vst1q_f32_x4(dst, vec); }
 
 // -----------------------------------------------------------------------------
 // vreinterpret*
