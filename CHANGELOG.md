@@ -13,6 +13,17 @@ KleidiCV uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.2.0 - not yet released
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
+
 ## 0.1.0 - 2024-05-21
 
 Initial release.
