@@ -6,12 +6,7 @@
 
 set -exu
 
-if [[ -z "${KLEIDICV_PATH}" ]]; then
-  echo "Please specify the local path to a checked out (cloned) KleidiCV repo in the KLEIDICV_PATH env variable"
-  exit 1
-fi
-
-if [[ -z "${OPENCV_PATH}" ]]; then
+if [[ -z "${OPENCV_PATH:-}" ]]; then
   echo "Please specify the local path to a checked out (cloned) OpenCV repo in the OPENCV_PATH env variable"
   exit 1
 fi
@@ -21,23 +16,12 @@ if [ ! -f "${NDK_TOOLCHAIN_FILE:-}" ]; then
   exit 1
 fi
 
-OPENCV_PATCH=$(realpath "${KLEIDICV_PATH}")/adapters/opencv/opencv-4.9.patch
-OPENCV_BENCHMARK_PATCH=$(realpath "${KLEIDICV_PATH}")/adapters/opencv/extra_benchmarks/opencv-4.9.patch
+SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
+KLEIDICV_PATH="${SCRIPT_PATH}"/../..
+BASE_BUILD_PATH="${SCRIPT_PATH}"/build
 
-pushd ${OPENCV_PATH}
-if [ "patch --forward -p1<${OPENCV_PATCH}" -gt 0 ]; then
-  echo patch failed!
-  exit 2
-fi
-
-if [ "patch --forward -p1<${OPENCV_BENCHMARK_PATCH}" -gt 0 ]; then
-  echo patch failed!
-  exit 2
-fi
-popd
-
-cmake -S ${OPENCV_PATH} \
-  -B build/vanilla \
+cmake -S "${OPENCV_PATH}" \
+  -B "${BASE_BUILD_PATH}"/vanilla \
   -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_STANDARD=14 \
@@ -50,10 +34,10 @@ cmake -S ${OPENCV_PATH} \
   -DBENCHMARK_DOWNLOAD_DEPENDENCIES=ON \
   -DWITH_KLEIDICV=OFF
 
-ninja -C build/vanilla opencv_perf_imgproc opencv_perf_core
+ninja -C "${BASE_BUILD_PATH}"/vanilla opencv_perf_imgproc opencv_perf_core
 
-cmake -S ${OPENCV_PATH} \
-  -B build/kleidicv \
+cmake -S "${OPENCV_PATH}" \
+  -B "${BASE_BUILD_PATH}"/kleidicv \
   -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_STANDARD=14 \
@@ -67,14 +51,14 @@ cmake -S ${OPENCV_PATH} \
   -DWITH_KLEIDICV=ON \
   -DKLEIDICV_SOURCE_PATH=$(realpath "${KLEIDICV_PATH}")
 
-ninja -C build/kleidicv opencv_perf_imgproc opencv_perf_core
+ninja -C "${BASE_BUILD_PATH}"/kleidicv opencv_perf_imgproc opencv_perf_core
 
-if [[ -z "${CUSTOM_CMAKE_OPTIONS}" ]]; then
+if [[ -z "${CUSTOM_CMAKE_OPTIONS:-}" ]]; then
   exit 0;
 fi
 
-cmake -S ${OPENCV_PATH} \
-  -B build/kleidicv_custom \
+cmake -S "${OPENCV_PATH}" \
+  -B "${BASE_BUILD_PATH}"/kleidicv_custom \
   -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_STANDARD=14 \
@@ -89,4 +73,4 @@ cmake -S ${OPENCV_PATH} \
   -DKLEIDICV_SOURCE_PATH=$(realpath "${KLEIDICV_PATH}") \
   ${CUSTOM_CMAKE_OPTIONS}
 
-ninja -C build/kleidicv_custom opencv_perf_imgproc opencv_perf_core
+ninja -C "${BASE_BUILD_PATH}"/kleidicv_custom opencv_perf_imgproc opencv_perf_core
