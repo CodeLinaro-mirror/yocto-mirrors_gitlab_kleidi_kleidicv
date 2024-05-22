@@ -10,13 +10,17 @@ Use at your own risk.
 
 First, you need a Linux x86 machine to build this.
 Next, to build for Android, you'll need [Android NDK](https://developer.android.com/ndk/).
+Also, the OpenCV 4.9.0 source should be downloaded.
 
 Let's assume you are building on a machine that has the phone attached to via USB.
 Let's assume your CWD is this directory.
 Stay in this directory.
 
 ```
-KLEIDICV_PATH=../.. ./build.sh
+KLEIDICV_PATH=../.. \
+OPENCV_PATH=<path to OpenCV> \
+NDK_TOOLCHAIN_FILE=<path to the NDK>/build/cmake/android.toolchain.cmake \
+./build.sh
 ```
 Then push the test binaries to the phone (replace 9A9A9A9A with your actual device ID, or skip it if you have only one phone attached):
 ```

@@ -52,9 +52,5 @@ RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Resize4x4_8b op
 RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Resize4x4_float opencv_perf_imgproc '*resizeUpLinearNonExact*' '(32FC1, (480x270, 1920x1080))')")
 
 RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Scale opencv_perf_core '*convertTo*' '(1920x1080, 8UC1, 8UC1, 1, 1.234, 4.567)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL TransposeInplace_8b opencv_perf_core '*Transpose_InPlace*' '(1920x1080, 8UC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL TransposeInplace_16b opencv_perf_core '*Transpose_InPlace*' '(1920x1080, 16UC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL TransposeCopy_8b opencv_perf_core '*Transpose_Copy*' '(1920x1080, 8UC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL TransposeCopy_16b opencv_perf_core '*Transpose_Copy*' '(1920x1080, 16UC1)')")
 
 echo "$RES"

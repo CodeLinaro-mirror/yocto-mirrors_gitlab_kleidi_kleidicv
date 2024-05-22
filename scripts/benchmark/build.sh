@@ -22,9 +22,15 @@ if [ ! -f "${NDK_TOOLCHAIN_FILE:-}" ]; then
 fi
 
 OPENCV_PATCH=$(realpath "${KLEIDICV_PATH}")/adapters/opencv/opencv-4.9.patch
+OPENCV_BENCHMARK_PATCH=$(realpath "${KLEIDICV_PATH}")/adapters/opencv/extra_benchmarks/opencv-4.9.patch
 
 pushd ${OPENCV_PATH}
-if [ "patch --forward -p1<${OPENCV_PATCH}" -gt 1 ]; then
+if [ "patch --forward -p1<${OPENCV_PATCH}" -gt 0 ]; then
+  echo patch failed!
+  exit 2
+fi
+
+if [ "patch --forward -p1<${OPENCV_BENCHMARK_PATCH}" -gt 0 ]; then
   echo patch failed!
   exit 2
 fi

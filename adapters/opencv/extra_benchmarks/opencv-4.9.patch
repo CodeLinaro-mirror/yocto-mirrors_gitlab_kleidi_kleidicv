@@ -1,0 +1,209 @@
+// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+diff --git a/modules/core/perf/perf_convertTo.cpp b/modules/core/perf/perf_convertTo.cpp
+index 344d81cb8a..ef5a3aa7d2 100644
+--- a/modules/core/perf/perf_convertTo.cpp
++++ b/modules/core/perf/perf_convertTo.cpp
+@@ -4,17 +4,18 @@ namespace opencv_test
+ {
+ using namespace perf;
+ 
+-typedef tuple<Size, MatType, MatType, int, double> Size_DepthSrc_DepthDst_Channels_alpha_t;
+-typedef perf::TestBaseWithParam<Size_DepthSrc_DepthDst_Channels_alpha_t> Size_DepthSrc_DepthDst_Channels_alpha;
++typedef tuple<Size, MatType, MatType, int, double, double> Size_DepthSrc_DepthDst_Channels_alpha_beta_t;
++typedef perf::TestBaseWithParam<Size_DepthSrc_DepthDst_Channels_alpha_beta_t> Size_DepthSrc_DepthDst_Channels_alpha_beta;
+ 
+-PERF_TEST_P( Size_DepthSrc_DepthDst_Channels_alpha, convertTo,
++PERF_TEST_P( Size_DepthSrc_DepthDst_Channels_alpha_beta, convertTo,
+              testing::Combine
+              (
+-                 testing::Values(szVGA, sz1080p),
++                 testing::Values(sz1080p, sz2160p),
+                  testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_32F, CV_64F),
+                  testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_32F, CV_64F),
+                  testing::Values(1, 4),
+-                 testing::Values(1.0, 1./255)
++                 testing::Values(1.0, 1./255, 1.234),
++                 testing::Values(0, 4.567)
+              )
+            )
+ {
+@@ -23,6 +24,7 @@ PERF_TEST_P( Size_DepthSrc_DepthDst_Channels_alpha, convertTo,
+     int depthDst = get<2>(GetParam());
+     int channels = get<3>(GetParam());
+     double alpha = get<4>(GetParam());
++    double beta = get<5>(GetParam());
+ 
+     int maxValue = 255;
+ 
+@@ -31,7 +33,7 @@ PERF_TEST_P( Size_DepthSrc_DepthDst_Channels_alpha, convertTo,
+     Mat dst(sz, CV_MAKETYPE(depthDst, channels));
+ 
+     int runs = (sz.width <= 640) ? 8 : 1;
+-    TEST_CYCLE_MULTIRUN(runs) src.convertTo(dst, depthDst, alpha);
++    TEST_CYCLE_MULTIRUN(runs) src.convertTo(dst, depthDst, alpha, beta);
+ 
+     double eps = depthSrc <= CV_32S && (depthDst <= CV_32S || depthDst == CV_64F) ? 1e-12 : (FLT_EPSILON * maxValue);
+     eps = eps * std::max(1.0, fabs(alpha));
+diff --git a/modules/imgproc/perf/perf_blur.cpp b/modules/imgproc/perf/perf_blur.cpp
+index d1f5a6b1ca..c4a3a6cdc5 100644
+--- a/modules/imgproc/perf/perf_blur.cpp
++++ b/modules/imgproc/perf/perf_blur.cpp
+@@ -47,7 +47,7 @@ typedef perf::TestBaseWithParam<Size_ksize_BorderType_t> Size_ksize_BorderType;
+ 
+ PERF_TEST_P(Size_MatType_BorderType3x3, gaussianBlur3x3,
+             testing::Combine(
+-                testing::Values(szODD, szQVGA, szVGA, sz720p),
++                testing::Values(szODD, szQVGA, szVGA, sz720p, sz1080p, sz2160p),
+                 testing::Values(CV_8UC1, CV_8UC4, CV_16UC1, CV_16SC1, CV_32FC1),
+                 BorderType3x3::all()
+                 )
+@@ -188,7 +188,7 @@ PERF_TEST_P(Size_MatType_BorderType3x3, box3x3_inplace,
+ 
+ PERF_TEST_P(Size_MatType_BorderType, gaussianBlur5x5,
+             testing::Combine(
+-                testing::Values(szODD, szQVGA, szVGA, sz720p),
++                testing::Values(szODD, szQVGA, szVGA, sz720p, sz1080p, sz2160p),
+                 testing::Values(CV_8UC1, CV_8UC4, CV_16UC1, CV_16SC1, CV_32FC1),
+                 BorderType::all()
+                 )
+diff --git a/modules/imgproc/perf/perf_cvt_color.cpp b/modules/imgproc/perf/perf_cvt_color.cpp
+index 5915b507ce..4a8c02df40 100644
+--- a/modules/imgproc/perf/perf_cvt_color.cpp
++++ b/modules/imgproc/perf/perf_cvt_color.cpp
+@@ -319,7 +319,7 @@ typedef perf::TestBaseWithParam<Size_CvtMode_t> Size_CvtMode;
+ 
+ PERF_TEST_P(Size_CvtMode, cvtColor8u,
+             testing::Combine(
+-                testing::Values(::perf::szODD, ::perf::szVGA, ::perf::sz1080p),
++                testing::Values(::perf::szODD, ::perf::szVGA, ::perf::sz1080p, ::perf::sz2160p),
+                 CvtMode::all()
+                 )
+             )
+@@ -435,7 +435,7 @@ typedef perf::TestBaseWithParam<Size_CvtMode2_t> Size_CvtMode2;
+ 
+ PERF_TEST_P(Size_CvtMode2, cvtColorYUV420,
+             testing::Combine(
+-                testing::Values(szVGA, sz1080p, Size(130, 60)),
++                testing::Values(szVGA, sz1080p, sz2160p, Size(130, 60)),
+                 CvtMode2::all()
+                 )
+             )
+diff --git a/modules/imgproc/perf/perf_morph.cpp b/modules/imgproc/perf/perf_morph.cpp
+index dc9e975a21..1b73c5eaee 100644
+--- a/modules/imgproc/perf/perf_morph.cpp
++++ b/modules/imgproc/perf/perf_morph.cpp
+@@ -39,4 +39,64 @@ PERF_TEST_P(Size_MatType, dilate, TYPICAL_MATS_MORPH)
+     SANITY_CHECK(dst);
+ }
+ 
++typedef tuple<Size, MatType, int> MorphParams_t;
++typedef perf::TestBaseWithParam<MorphParams_t> Erode;
++typedef perf::TestBaseWithParam<MorphParams_t> Dilate;
++
++PERF_TEST_P(Erode, big,
++    testing::Combine(
++        testing::Values(::perf::sz1080p, ::perf::sz2160p),
++        testing::Values(CV_8UC1),
++        testing::Values(3, 5, 17)
++    ))
++{
++    Size sz = get<0>(GetParam());
++    int type = get<1>(GetParam());
++    int kernelSize = get<2>(GetParam());
++
++    Mat src(sz, type);
++    Mat dst(sz, type);
++
++    declare.in(src, WARMUP_RNG).out(dst);
++
++    const cv::MorphShapes morph_shape = cv::MorphShapes::MORPH_RECT;
++    const cv::Size kernel{kernelSize, kernelSize};
++    const cv::Point anchor{-1, -1};
++
++    cv::Mat element = cv::getStructuringElement(morph_shape, kernel, anchor);
++
++    TEST_CYCLE() erode(src, dst, element, cv::Point(-1, -1), 1,
++                    cv::BorderTypes::BORDER_CONSTANT, cv::Scalar(0xAA));
++
++    SANITY_CHECK(dst);
++}
++
++PERF_TEST_P(Dilate, big,
++    testing::Combine(
++        testing::Values(::perf::sz1080p, ::perf::sz2160p),
++        testing::Values(CV_8UC1),
++        testing::Values(3, 5, 17)
++    ))
++{
++    Size sz = get<0>(GetParam());
++    int type = get<1>(GetParam());
++    int kernelSize = get<2>(GetParam());
++
++    Mat src(sz, type);
++    Mat dst(sz, type);
++
++    declare.in(src, WARMUP_RNG).out(dst);
++
++    const cv::MorphShapes morph_shape = cv::MorphShapes::MORPH_RECT;
++    const cv::Size kernel{kernelSize, kernelSize};
++    const cv::Point anchor{-1, -1};
++
++    cv::Mat element = cv::getStructuringElement(morph_shape, kernel, anchor);
++
++    TEST_CYCLE() dilate(src, dst, element, cv::Point(-1, -1), 1,
++                    cv::BorderTypes::BORDER_CONSTANT, cv::Scalar(0xAA));
++
++    SANITY_CHECK(dst);
++}
++
+ } // namespace
+diff --git a/modules/imgproc/perf/perf_resize.cpp b/modules/imgproc/perf/perf_resize.cpp
+index 0f470a5f81..89e4f746e1 100644
+--- a/modules/imgproc/perf/perf_resize.cpp
++++ b/modules/imgproc/perf/perf_resize.cpp
+@@ -67,7 +67,15 @@ PERF_TEST_P(MatInfo_SizePair, resizeUpLinearNonExact,
+             testing::Combine
+                 (
+                 testing::Values( MATTYPE_NE_VALUES ),
+-                testing::Values( Size_Size_t(szVGA, szqHD), Size_Size_t(szVGA, sz720p) )
++                testing::Values
++                    (
++                    // 2*2
++                    Size_Size_t(szqHD, sz1080p),
++                    Size_Size_t(sz1080p, sz2160p),
++                    // 4*4
++                    Size_Size_t(cv::Size(480, 270), sz1080p),
++                    Size_Size_t(szqHD, sz2160p)
++                    )
+                 )
+              )
+ {
+diff --git a/modules/imgproc/perf/perf_sepfilters.cpp b/modules/imgproc/perf/perf_sepfilters.cpp
+index 480aab9f20..8eb1667f2f 100644
+--- a/modules/imgproc/perf/perf_sepfilters.cpp
++++ b/modules/imgproc/perf/perf_sepfilters.cpp
+@@ -5,7 +5,7 @@
+ 
+ namespace opencv_test {
+ 
+-#define FILTER_SRC_SIZES szODD, szQVGA, szVGA
++#define FILTER_SRC_SIZES szODD, szQVGA, szVGA, sz1080p, sz2160p
+ 
+ CV_ENUM(BorderType3x3, BORDER_REPLICATE, BORDER_CONSTANT)
+ CV_ENUM(BorderType3x3ROI, BORDER_DEFAULT, BORDER_REPLICATE|BORDER_ISOLATED, BORDER_CONSTANT|BORDER_ISOLATED)
+diff --git a/modules/ts/include/opencv2/ts/ts_perf.hpp b/modules/ts/include/opencv2/ts/ts_perf.hpp
+index 7aa3809f27..9ff587f325 100644
+--- a/modules/ts/include/opencv2/ts/ts_perf.hpp
++++ b/modules/ts/include/opencv2/ts/ts_perf.hpp
+@@ -78,7 +78,7 @@ const static cv::Size szSmall128 = cv::Size(128, 128);
+ #define SZ_TYPICAL  ::testing::Values(::perf::szVGA, ::perf::szqHD, ::perf::sz720p, ::perf::szODD)
+ 
+ 
+-#define TYPICAL_MAT_SIZES ::perf::szVGA, ::perf::sz720p, ::perf::sz1080p, ::perf::szODD
++#define TYPICAL_MAT_SIZES ::perf::szVGA, ::perf::sz720p, ::perf::sz1080p, ::perf::szODD, ::perf::sz2160p
+ #define TYPICAL_MAT_TYPES CV_8UC1, CV_8UC4, CV_32FC1
+ #define TYPICAL_MATS testing::Combine( testing::Values( TYPICAL_MAT_SIZES ), testing::Values( TYPICAL_MAT_TYPES ) )
+ #define TYPICAL_MATS_C1 testing::Combine( testing::Values( TYPICAL_MAT_SIZES ), testing::Values( CV_8UC1, CV_32FC1 ) )
