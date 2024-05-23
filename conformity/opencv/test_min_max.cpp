@@ -11,15 +11,12 @@ template <bool GetIndex>
 cv::Mat exec_min_max(cv::Mat& input) {
   double minVal, maxVal;
   if constexpr (GetIndex) {
-    int min_index[2], max_index[2];
+    cv::Mat result(2 + 2 * input.dims, 1, CV_32SC1);
+    int32_t* min_index = result.ptr<int32_t>(2, 0);
+    int32_t* max_index = result.ptr<int32_t>(2 + input.dims, 0);
     cv::minMaxIdx(input, &minVal, &maxVal, min_index, max_index);
-    cv::Mat result(6, 1, CV_32SC1);
     result.at<int32_t>(0, 0) = minVal;
     result.at<int32_t>(1, 0) = maxVal;
-    result.at<int32_t>(2, 0) = min_index[0];
-    result.at<int32_t>(3, 0) = min_index[1];
-    result.at<int32_t>(4, 0) = max_index[0];
-    result.at<int32_t>(5, 0) = max_index[1];
     return result;
   } else {
     cv::minMaxIdx(input, &minVal, &maxVal);
@@ -45,8 +42,8 @@ bool test_min_max(int index, RecreatedMessageQueue& request_queue,
 
       // Add a few random values at random locations.
       for (int i = 0; i < 3; ++i) {
-        input.at<T>(rng.next() % x, rng.next() % y, rng.next() % Channels) =
-            rng.next();
+        T* pixel = input.ptr<T>(rng.next() % x, rng.next() % y);
+        pixel[rng.next() % Channels] = rng.next();
       }
 
       cv::Mat actual = exec_min_max<GetIndex>(input);
