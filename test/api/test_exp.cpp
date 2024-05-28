@@ -20,7 +20,12 @@ static void check_1ulp_error(test::Array2D<float>& expected_array,
                              test::Array2D<float>& actual_array) {
   for (size_t i = 0; i < expected_array.height(); ++i) {
     for (size_t j = 0; j < expected_array.width(); ++j) {
+      // Seems like clang-tidy does not understand what the fill member function
+      // of test::Array2D does, so these exceptions are required
+      // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign)
       float expected = *(expected_array.at(i, j));
+      // NOLINTEND(clang-analyzer-core.uninitialized.Assign)
+
       float actual = *(actual_array.at(i, j));
       // Error of 1 ULP means that actual is either same as expected, or
       // the next float value in negative of positive direction
@@ -89,10 +94,36 @@ class ExpTestSpecial<float> final : public UnaryOperationTest<float> {
 };  // end of class ExpTestSpecial<float>
 
 template <typename ElementType>
+class ExpTestCustomBase;
+
+template <>
+class ExpTestCustomBase<float> {
+ protected:
+  static void fill_expected(test::Array2D<float>& input,
+                            test::Array2D<float>& expected) {
+    for (size_t i = 0; i < input.height(); ++i) {
+      for (size_t j = 0; j < input.width(); ++j) {
+        // Expected values calculated as doubles to have 'perfect' references.
+        // As the NEON implementation reuses the toolchain's expf implementation
+        // for the tail path, the test expects that the error for expf is also
+        // less than 1 ULP.
+
+        // Seems like clang-tidy does not understand what the fill member
+        // function of test::Array2D does, so these exceptions are required
+        // NOLINTBEGIN(clang-analyzer-core.CallAndMessage)
+        *(expected.at(i, j)) =
+            static_cast<float>(exp(static_cast<double>(*(input.at(i, j)))));
+        // NOLINTEND(clang-analyzer-core.CallAndMessage)
+      }
+    }
+  }
+};  // end of class ExpTestCustomBase<float>
+
+template <typename ElementType>
 class ExpTestRandom;
 
 template <>
-class ExpTestRandom<float> {
+class ExpTestRandom<float> final : public ExpTestCustomBase<float> {
  public:
   void test() {
     const size_t kWidth = test::Options::vector_length() * 16;
@@ -111,24 +142,63 @@ class ExpTestRandom<float> {
 
     check_1ulp_error(expected, actual);
   }
+};  // end of class ExpTestRandom<float>
 
- private:
-  void fill_expected(test::Array2D<float>& input,
-                     test::Array2D<float>& expected) {
-    for (size_t i = 0; i < input.height(); ++i) {
-      for (size_t j = 0; j < input.width(); ++j) {
-        // Expected values calculated as doubles to have 'perfect' references.
-        // As the NEON implementation reuses the toolchain's expf implementation
-        // for the tail path, the test expects that the error for expf is also
-        // less than 1 ULP.
-        // NOLINTBEGIN(clang-analyzer-core.CallAndMessage)
-        *(expected.at(i, j)) =
-            static_cast<float>(exp(static_cast<double>(*(input.at(i, j)))));
-        // NOLINTEND(clang-analyzer-core.CallAndMessage)
-      }
+template <typename ElementType>
+class ExpTestAll;
+
+template <>
+class ExpTestAll<float> final : public ExpTestCustomBase<float> {
+ public:
+  void test() {
+    constexpr size_t kWidth = 1024;
+    constexpr size_t kHeight = 1024;
+    // Sweeping through a meaningful input range. The start value results in
+    // 0.0, the last value in inf.
+    LinearFloatGenerator generator{-104, 89};
+    test::Array2D<float> input{kWidth, kHeight};
+    test::Array2D<float> expected{kWidth, kHeight};
+    test::Array2D<float> actual{kWidth, kHeight};
+
+    while (generator.last_value_not_reached()) {
+      input.fill(generator);
+
+      fill_expected(input, expected);
+
+      EXPECT_EQ(KLEIDICV_OK,
+                exp<float>()(input.data(), input.stride(), actual.data(),
+                             actual.stride(), input.width(), input.height()));
+
+      check_1ulp_error(expected, actual);
     }
   }
-};  // end of class ExpTestRandom<float>
+
+ private:
+  class LinearFloatGenerator : public test::Generator<float> {
+   public:
+    LinearFloatGenerator(float start_value, float last_value)
+        : start_value_{start_value},
+          last_value_{last_value},
+          value_{start_value} {}
+
+    void reset() override { value_ = start_value_; }
+
+    std::optional<float> next() override {
+      float current_value = value_;
+      value_ = std::nextafterf(value_, last_value_);
+      return current_value;
+    }
+
+    bool last_value_not_reached() const {
+      return std::nextafterf(value_, last_value_) != value_;
+    }
+
+   private:
+    float start_value_;
+    float last_value_;
+    float value_;
+  };  // end of class LinearFloatGenerator
+};    // end of class ExpTestAll<float>
 
 template <typename ElementType>
 class Exp : public testing::Test {};
@@ -143,6 +213,13 @@ TYPED_TEST(Exp, SpecialValues) {
 }
 
 TYPED_TEST(Exp, RandomValues) { ExpTestRandom<TypeParam>{}.test(); }
+
+TYPED_TEST(Exp, AllValues) {
+  if (test::Options::are_long_running_tests_skipped()) {
+    GTEST_SKIP() << "Long running exp test skipped";
+  }
+  ExpTestAll<TypeParam>{}.test();
+}
 
 TYPED_TEST(Exp, OversizeImage) {
   TypeParam src[1] = {}, dst[1];

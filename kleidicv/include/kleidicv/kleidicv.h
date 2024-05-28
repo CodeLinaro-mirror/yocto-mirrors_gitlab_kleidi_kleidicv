@@ -1310,7 +1310,7 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_u8, const uint8_t *src,
 /// in `dst`.
 ///
 /// In case of 'float' type the maximum error is 0.36565+0.5 ULP, or the error
-/// of the toolchains's expf implementation, if it is bigger.
+/// of the toolchain's expf implementation, if it is bigger.
 ///
 /// Source and destination data length is `width` * `height`. Number of elements
 /// is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.

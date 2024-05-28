@@ -31,6 +31,8 @@ bool test_exp(int index, RecreatedMessageQueue& request_queue,
       cv::Mat expected_mat = get_expected_from_subordinate(
           index, request_queue, reply_queue, input_mat);
 
+      // OpenCV works with less precision, so a relatively big expected error
+      // range is defined
       if (are_float_matrices_different<float>(1.5, expected_mat, actual_mat)) {
         fail_print_matrices(x, y, input_mat, actual_mat, expected_mat);
       }

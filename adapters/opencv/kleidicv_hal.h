@@ -102,9 +102,6 @@ int exp32f(const float *src, float *dst, int len);
 }  // namespace hal
 }  // namespace kleidicv
 
-#undef cv_hal_exp32f
-#define cv_hal_exp32f kleidicv::hal::exp32f
-
 // Other HAL implementations might require the cv namespace
 namespace cv {
 
@@ -317,6 +314,14 @@ static inline int kleidicv_convertTo_with_fallback(
 #undef cv_hal_convertTo
 #define cv_hal_convertTo kleidicv_convertTo_with_fallback
 #endif  // defined(cv_hal_convertTo)
+
+// exp32f
+static inline int kleidicv_exp32f_with_fallback(const float *src, float *dst,
+                                                int len) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(exp32f, cv_hal_exp32f, src, dst, len);
+}
+#undef cv_hal_exp32f
+#define cv_hal_exp32f kleidicv_exp32f_with_fallback
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 
