@@ -67,6 +67,11 @@ class Options {
   // Returns seed to use.
   static uint64_t seed() { return seed_; }
 
+  // Whether long running tests should be skipped.
+  static bool are_long_running_tests_skipped() {
+    return are_long_running_tests_skipped_;
+  }
+
   // Returns the number of lanes in a vector for a given arithmetic type.
   template <typename ElementType,
             std::enable_if_t<std::is_arithmetic_v<ElementType>, bool> = true>
@@ -89,11 +94,18 @@ class Options {
   // Sets the seed.
   static void set_seed(uint64_t value) { seed_ = value; }
 
+  // Turns on long running tests.
+  static void turn_on_long_running_tests() {
+    are_long_running_tests_skipped_ = false;
+  }
+
  private:
   // Vector length being tested.
   static size_t vector_length_;
   // Seed to use.
   static uint64_t seed_;
+  // Whether long running tests should be skipped.
+  static bool are_long_running_tests_skipped_;
 };  // end of class Options
 
 // Prints all the elements in a two-dimensional space.

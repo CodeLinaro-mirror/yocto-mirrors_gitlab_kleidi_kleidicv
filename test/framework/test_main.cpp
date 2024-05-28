@@ -22,6 +22,7 @@ static void parse_arguments(int argc, char **argv) {
   static struct option long_options[] = {
     {"vector-length", required_argument, nullptr, 'v'},
     {"seed", required_argument, nullptr, 's'},
+    {"long-running-tests", no_argument, nullptr, 'l'},
     {nullptr, 0, nullptr, 0}
   };
   // clang-format on
@@ -47,6 +48,10 @@ static void parse_arguments(int argc, char **argv) {
       case 's':
         Options::set_seed(std::stoull(optarg));
         is_seed_set = true;
+        break;
+
+      case 'l':
+        Options::turn_on_long_running_tests();
         break;
     }
   }

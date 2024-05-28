@@ -16,6 +16,8 @@
 
 bool MockMallocToFail::enabled = false;
 
+bool test::Options::are_long_running_tests_skipped_ = true;
+
 namespace test {
 
 template <typename ElementType>
