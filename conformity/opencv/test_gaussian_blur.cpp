@@ -20,17 +20,33 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
                         RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
-  for (size_t x = 5; x <= 16; ++x) {
-    for (size_t y = 5; y <= 16; ++y) {
-      cv::Mat input(x, y, CV_8UC(Channels));
+  size_t size_min = 5;
+  size_t size_max = 16;
+  if constexpr (KernelSize == 15) {
+    size_min = 14;
+    size_max = 32;
+  }
+
+  for (size_t y = size_min; y <= size_max; ++y) {
+    for (size_t x = size_min; x <= size_max; ++x) {
+      cv::Mat input(y, x, CV_8UC(Channels));
       rng.fill(input, cv::RNG::UNIFORM, 0, 255);
 
       cv::Mat actual = exec_gaussian_blur<KernelSize, BorderType>(input);
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,
                                                        reply_queue, input);
 
-      if (are_matrices_different<uint8_t>(0, actual, expected)) {
-        fail_print_matrices(x, y, input, actual, expected);
+      uint8_t threshold = 0;
+      // There are currently rounding differences sometimes
+      // between the OpenCV and KleidiCV implementations that use
+      // the 15x15 kernel size, so we ignore any non-matching
+      // values that fall within the specified threshold.
+      if constexpr (KernelSize == 15) {
+        threshold = 2;
+      }
+
+      if (are_matrices_different<uint8_t>(threshold, actual, expected)) {
+        fail_print_matrices(y, x, input, actual, expected);
         return true;
       }
     }
@@ -102,6 +118,26 @@ std::vector<test>& gaussian_blur_tests_get() {
     TEST("Gaussian blur 7x7, BORDER_REPLICATE, 2 channel", (test_gaussian_blur<7, cv::BORDER_REPLICATE, 2>), (exec_gaussian_blur<7, cv::BORDER_REPLICATE>)),
     TEST("Gaussian blur 7x7, BORDER_REPLICATE, 3 channel", (test_gaussian_blur<7, cv::BORDER_REPLICATE, 3>), (exec_gaussian_blur<7, cv::BORDER_REPLICATE>)),
     TEST("Gaussian blur 7x7, BORDER_REPLICATE, 4 channel", (test_gaussian_blur<7, cv::BORDER_REPLICATE, 4>), (exec_gaussian_blur<7, cv::BORDER_REPLICATE>)),
+
+    TEST("Gaussian blur 15x15, BORDER_REFLECT_101, 1 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT_101, 1>), (exec_gaussian_blur<15, cv::BORDER_REFLECT_101>)),
+    TEST("Gaussian blur 15x15, BORDER_REFLECT_101, 2 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT_101, 2>), (exec_gaussian_blur<15, cv::BORDER_REFLECT_101>)),
+    TEST("Gaussian blur 15x15, BORDER_REFLECT_101, 3 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT_101, 3>), (exec_gaussian_blur<15, cv::BORDER_REFLECT_101>)),
+    TEST("Gaussian blur 15x15, BORDER_REFLECT_101, 4 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT_101, 4>), (exec_gaussian_blur<15, cv::BORDER_REFLECT_101>)),
+
+    TEST("Gaussian blur 15x15, BORDER_REFLECT, 1 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 1>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
+    TEST("Gaussian blur 15x15, BORDER_REFLECT, 2 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 2>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
+    TEST("Gaussian blur 15x15, BORDER_REFLECT, 3 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 3>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
+    TEST("Gaussian blur 15x15, BORDER_REFLECT, 4 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 4>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
+
+    TEST("Gaussian blur 15x15, BORDER_WRAP, 1 channel", (test_gaussian_blur<15, cv::BORDER_WRAP, 1>), (exec_gaussian_blur<15, cv::BORDER_WRAP>)),
+    TEST("Gaussian blur 15x15, BORDER_WRAP, 2 channel", (test_gaussian_blur<15, cv::BORDER_WRAP, 2>), (exec_gaussian_blur<15, cv::BORDER_WRAP>)),
+    TEST("Gaussian blur 15x15, BORDER_WRAP, 3 channel", (test_gaussian_blur<15, cv::BORDER_WRAP, 3>), (exec_gaussian_blur<15, cv::BORDER_WRAP>)),
+    TEST("Gaussian blur 15x15, BORDER_WRAP, 4 channel", (test_gaussian_blur<15, cv::BORDER_WRAP, 4>), (exec_gaussian_blur<15, cv::BORDER_WRAP>)),
+
+    TEST("Gaussian blur 15x15, BORDER_REPLICATE, 1 channel", (test_gaussian_blur<15, cv::BORDER_REPLICATE, 1>), (exec_gaussian_blur<15, cv::BORDER_REPLICATE>)),
+    TEST("Gaussian blur 15x15, BORDER_REPLICATE, 2 channel", (test_gaussian_blur<15, cv::BORDER_REPLICATE, 2>), (exec_gaussian_blur<15, cv::BORDER_REPLICATE>)),
+    TEST("Gaussian blur 15x15, BORDER_REPLICATE, 3 channel", (test_gaussian_blur<15, cv::BORDER_REPLICATE, 3>), (exec_gaussian_blur<15, cv::BORDER_REPLICATE>)),
+    TEST("Gaussian blur 15x15, BORDER_REPLICATE, 4 channel", (test_gaussian_blur<15, cv::BORDER_REPLICATE, 4>), (exec_gaussian_blur<15, cv::BORDER_REPLICATE>)),
   };
   // clang-format on
   return tests;

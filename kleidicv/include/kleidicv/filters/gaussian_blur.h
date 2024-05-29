@@ -33,6 +33,13 @@ kleidicv_error_t gaussian_blur_7x7_u8(const uint8_t *src, size_t src_stride,
                                       kleidicv_border_type_t border_type,
                                       kleidicv_filter_context_t *context);
 
+kleidicv_error_t gaussian_blur_15x15_u8(const uint8_t *src, size_t src_stride,
+                                        uint8_t *dst, size_t dst_stride,
+                                        size_t width, size_t height,
+                                        size_t channels,
+                                        kleidicv_border_type_t border_type,
+                                        kleidicv_filter_context_t *context);
+
 }  // namespace neon
 
 namespace sve2 {
@@ -58,6 +65,13 @@ kleidicv_error_t gaussian_blur_7x7_u8(const uint8_t *src, size_t src_stride,
                                       kleidicv_border_type_t border_type,
                                       kleidicv_filter_context_t *context);
 
+kleidicv_error_t gaussian_blur_15x15_u8(const uint8_t *src, size_t src_stride,
+                                        uint8_t *dst, size_t dst_stride,
+                                        size_t width, size_t height,
+                                        size_t channels,
+                                        kleidicv_border_type_t border_type,
+                                        kleidicv_filter_context_t *context);
+
 }  // namespace sve2
 
 namespace sme2 {
@@ -82,6 +96,13 @@ kleidicv_error_t gaussian_blur_7x7_u8(const uint8_t *src, size_t src_stride,
                                       size_t channels,
                                       kleidicv_border_type_t border_type,
                                       kleidicv_filter_context_t *context);
+
+kleidicv_error_t gaussian_blur_15x15_u8(const uint8_t *src, size_t src_stride,
+                                        uint8_t *dst, size_t dst_stride,
+                                        size_t width, size_t height,
+                                        size_t channels,
+                                        kleidicv_border_type_t border_type,
+                                        kleidicv_filter_context_t *context);
 
 }  // namespace sme2
 

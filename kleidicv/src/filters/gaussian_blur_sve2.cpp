@@ -43,4 +43,12 @@ kleidicv_error_t gaussian_blur_7x7_u8(const uint8_t *src, size_t src_stride,
                                             border_type, context);
 }
 
+KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t gaussian_blur_15x15_u8(const uint8_t *, size_t, uint8_t *,
+                                        size_t, size_t, size_t, size_t,
+                                        kleidicv_border_type_t,
+                                        kleidicv_filter_context_t *) {
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+}
+
 }  // namespace kleidicv::sve2

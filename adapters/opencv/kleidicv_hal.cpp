@@ -272,6 +272,8 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
     impl = kleidicv_gaussian_blur_5x5_u8;
   } else if ((kernel_size == 7) && (width >= 7) && (height >= 7)) {
     impl = kleidicv_gaussian_blur_7x7_u8;
+  } else if ((kernel_size == 15) && (width >= 15) && (height >= 15)) {
+    impl = kleidicv_gaussian_blur_15x15_u8;
   } else {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -281,13 +283,16 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
   if (type_size == SIZE_MAX) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
-  type_size *= 2; /* widening */
+
+  // widening
+  size_t intermediate_size =
+      (kernel_size == 15) ? 4 * type_size : 2 * type_size;
 
   kleidicv_rectangle_t image = {
       .width = static_cast<decltype(kleidicv_rectangle_t::width)>(width),
       .height = static_cast<decltype(kleidicv_rectangle_t::height)>(height)};
   if (kleidicv_error_t create_err =
-          kleidicv_filter_create(&context, cn, type_size, image)) {
+          kleidicv_filter_create(&context, cn, intermediate_size, image)) {
     return convert_error(create_err);
   }
 

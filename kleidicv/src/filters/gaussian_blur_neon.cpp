@@ -5,6 +5,7 @@
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/separable_filter_15x15_neon.h"
 #include "kleidicv/separable_filter_3x3_neon.h"
 #include "kleidicv/separable_filter_5x5_neon.h"
 #include "kleidicv/separable_filter_7x7_neon.h"
@@ -284,6 +285,228 @@ class DiscreteGaussianBlur<uint8_t, 7> {
   uint16x8_t const_9_u16_;
 };  // end of class DiscreteGaussianBlur<uint8_t, 7>
 
+// Template for 15x15 Gaussian Blur approximation filters.
+//
+//                  [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
+//                  [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
+//                  [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
+//                  [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
+//  F = 1/1048576 * [  |     |     |     |  ...   |     |     |    |  ] =
+//                  [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
+//                  [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
+//                  [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
+//                  [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
+//
+//                  [   4 ]
+//                  [  11 ]
+//                  [  25 ]
+//                  [  48 ]
+//                  [  81 ]
+//                  [ 118 ]
+//                  [ 146 ]
+//  = 1/1048576  *  [ 158 ] * [4,11,25,48,81,118,146,158,146,118,81,48,25,11,4]
+//                  [ 146 ]
+//                  [ 118 ]
+//                  [  81 ]
+//                  [  48 ]
+//                  [  25 ]
+//                  [  11 ]
+//                  [   4 ]
+template <>
+class DiscreteGaussianBlur<uint8_t, 15> {
+ public:
+  using SourceType = uint8_t;
+  using BufferType = uint32_t;
+  using DestinationType = uint8_t;
+
+  DiscreteGaussianBlur()
+      : const_11_u16_{vdupq_n_u16(11)},
+        const_11_u32_{vdupq_n_u32(11)},
+        const_25_u16_{vdupq_n_u16(25)},
+        const_25_u32_{vdupq_n_u32(25)},
+        const_81_u16_{vdupq_n_u16(81)},
+        const_81_u32_{vdupq_n_u32(81)},
+        const_118_u16_half_{vdup_n_u16(118)},
+        const_118_u32_{vdupq_n_u32(118)},
+        const_146_u16_half_{vdup_n_u16(146)},
+        const_146_u32_{vdupq_n_u32(146)},
+        const_158_u16_half_{vdup_n_u16(158)},
+        const_158_u32_{vdupq_n_u32(158)} {}
+
+  // Applies vertical filtering vector using SIMD operations.
+  //
+  // DST = [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
+  //     * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
+  void vertical_vector_path(uint8x16_t src[15], BufferType *dst) const {
+    uint16x8_t acc_7_l = vmovl_u8(vget_low_u8(src[7]));
+    uint16x8_t acc_7_h = vmovl_u8(vget_high_u8(src[7]));
+
+    uint16x8_t acc_1_13_l = vaddl_u8(vget_low_u8(src[1]), vget_low_u8(src[13]));
+    uint16x8_t acc_1_13_h =
+        vaddl_u8(vget_high_u8(src[1]), vget_high_u8(src[13]));
+
+    uint16x8_t acc_2_12_l = vaddl_u8(vget_low_u8(src[2]), vget_low_u8(src[12]));
+    uint16x8_t acc_2_12_h =
+        vaddl_u8(vget_high_u8(src[2]), vget_high_u8(src[12]));
+
+    uint16x8_t acc_6_8_l = vaddl_u8(vget_low_u8(src[6]), vget_low_u8(src[8]));
+    uint16x8_t acc_6_8_h = vaddl_u8(vget_high_u8(src[6]), vget_high_u8(src[8]));
+
+    uint16x8_t acc_5_9_l = vaddl_u8(vget_low_u8(src[5]), vget_low_u8(src[9]));
+    uint16x8_t acc_5_9_h = vaddl_u8(vget_high_u8(src[5]), vget_high_u8(src[9]));
+
+    uint16x8_t acc_0_14_l = vaddl_u8(vget_low_u8(src[0]), vget_low_u8(src[14]));
+    uint16x8_t acc_0_14_h =
+        vaddl_u8(vget_high_u8(src[0]), vget_high_u8(src[14]));
+
+    uint16x8_t acc_3_11_l = vaddl_u8(vget_low_u8(src[3]), vget_low_u8(src[11]));
+    uint16x8_t acc_3_11_h =
+        vaddl_u8(vget_high_u8(src[3]), vget_high_u8(src[11]));
+
+    uint16x8_t acc_4_10_l = vaddl_u8(vget_low_u8(src[4]), vget_low_u8(src[10]));
+    uint16x8_t acc_4_10_h =
+        vaddl_u8(vget_high_u8(src[4]), vget_high_u8(src[10]));
+
+    acc_0_14_l = vshlq_n_u16(acc_0_14_l, 2);
+    acc_0_14_h = vshlq_n_u16(acc_0_14_h, 2);
+
+    acc_3_11_l = vshlq_n_u16(acc_3_11_l, 2);
+    acc_3_11_h = vshlq_n_u16(acc_3_11_h, 2);
+
+    acc_4_10_l = vmulq_u16(acc_4_10_l, const_81_u16_);
+    acc_4_10_h = vmulq_u16(acc_4_10_h, const_81_u16_);
+
+    uint16x8_t acc_1_3_11_13_l = vaddq_u16(acc_3_11_l, acc_1_13_l);
+    uint16x8_t acc_1_3_11_13_h = vaddq_u16(acc_3_11_h, acc_1_13_h);
+    acc_1_3_11_13_l = vmlaq_u16(acc_3_11_l, acc_1_3_11_13_l, const_11_u16_);
+    acc_1_3_11_13_h = vmlaq_u16(acc_3_11_h, acc_1_3_11_13_h, const_11_u16_);
+
+    uint16x8_t acc_0_1_3_11_13_14_l = vaddq_u16(acc_1_3_11_13_l, acc_0_14_l);
+    uint16x8_t acc_0_1_3_11_13_14_h = vaddq_u16(acc_1_3_11_13_h, acc_0_14_h);
+
+    uint16x8_t acc_2_4_10_12_l =
+        vmlaq_u16(acc_4_10_l, acc_2_12_l, const_25_u16_);
+    uint16x8_t acc_2_4_10_12_h =
+        vmlaq_u16(acc_4_10_h, acc_2_12_h, const_25_u16_);
+
+    uint32x4x4_t acc = {{
+        vaddl_u16(vget_low_u16(acc_2_4_10_12_l),
+                  vget_low_u16(acc_0_1_3_11_13_14_l)),
+        vaddl_u16(vget_high_u16(acc_2_4_10_12_l),
+                  vget_high_u16(acc_0_1_3_11_13_14_l)),
+        vaddl_u16(vget_low_u16(acc_2_4_10_12_h),
+                  vget_low_u16(acc_0_1_3_11_13_14_h)),
+        vaddl_u16(vget_high_u16(acc_2_4_10_12_h),
+                  vget_high_u16(acc_0_1_3_11_13_14_h)),
+    }};
+
+    acc.val[0] =
+        vmlal_u16(acc.val[0], vget_low_u16(acc_6_8_l), const_146_u16_half_);
+    acc.val[1] =
+        vmlal_u16(acc.val[1], vget_high_u16(acc_6_8_l), const_146_u16_half_);
+    acc.val[2] =
+        vmlal_u16(acc.val[2], vget_low_u16(acc_6_8_h), const_146_u16_half_);
+    acc.val[3] =
+        vmlal_u16(acc.val[3], vget_high_u16(acc_6_8_h), const_146_u16_half_);
+
+    acc.val[0] =
+        vmlal_u16(acc.val[0], vget_low_u16(acc_5_9_l), const_118_u16_half_);
+    acc.val[1] =
+        vmlal_u16(acc.val[1], vget_high_u16(acc_5_9_l), const_118_u16_half_);
+    acc.val[2] =
+        vmlal_u16(acc.val[2], vget_low_u16(acc_5_9_h), const_118_u16_half_);
+    acc.val[3] =
+        vmlal_u16(acc.val[3], vget_high_u16(acc_5_9_h), const_118_u16_half_);
+
+    acc.val[0] =
+        vmlal_u16(acc.val[0], vget_low_u16(acc_7_l), const_158_u16_half_);
+    acc.val[1] =
+        vmlal_u16(acc.val[1], vget_high_u16(acc_7_l), const_158_u16_half_);
+    acc.val[2] =
+        vmlal_u16(acc.val[2], vget_low_u16(acc_7_h), const_158_u16_half_);
+    acc.val[3] =
+        vmlal_u16(acc.val[3], vget_high_u16(acc_7_h), const_158_u16_half_);
+
+    vst1q_u32_x4(&dst[0], acc);
+  }
+
+  // Applies vertical filtering vector using scalar operations.
+  //
+  // DST = [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
+  //     * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
+  void vertical_scalar_path(const SourceType src[15], BufferType *dst) const {
+    uint32_t acc = (static_cast<uint32_t>(src[3]) + src[11]) * 4;
+    acc += (acc + src[1] + src[13]) * 11;
+    acc += (src[0] + src[14]) * 4 + (src[2] + src[12]) * 25 +
+           (src[4] + src[10]) * 81;
+    acc += (src[5] + src[9]) * 118 + (src[6] + src[8]) * 146 + src[7] * 158;
+    dst[0] = acc;
+  }
+
+  // Applies horizontal filtering vector using SIMD operations.
+  //
+  // DST = 1/1048576 * [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
+  //                 * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
+  void horizontal_vector_path(uint32x4_t src[15], DestinationType *dst) const {
+    uint32x4_t acc_1_13 = vaddq_u32(src[1], src[13]);
+    uint32x4_t acc_2_12 = vaddq_u32(src[2], src[12]);
+    uint32x4_t acc_6_8 = vaddq_u32(src[6], src[8]);
+    uint32x4_t acc_5_9 = vaddq_u32(src[5], src[9]);
+    uint32x4_t acc_0_14 = vaddq_u32(src[0], src[14]);
+    uint32x4_t acc_3_11 = vaddq_u32(src[3], src[11]);
+    uint32x4_t acc_4_10 = vaddq_u32(src[4], src[10]);
+
+    acc_0_14 = vshlq_n_u32(acc_0_14, 2);
+    acc_3_11 = vshlq_n_u32(acc_3_11, 2);
+    acc_4_10 = vmulq_u32(acc_4_10, const_81_u32_);
+
+    uint32x4_t acc_1_3_11_13 = vaddq_u32(acc_3_11, acc_1_13);
+    acc_1_3_11_13 = vmlaq_u32(acc_3_11, acc_1_3_11_13, const_11_u32_);
+    uint32x4_t acc_0_1_3_11_13_14 = vaddq_u32(acc_1_3_11_13, acc_0_14);
+    uint32x4_t acc_2_4_10_12 = vmlaq_u32(acc_4_10, acc_2_12, const_25_u32_);
+
+    uint32x4_t acc = vaddq_u32(acc_2_4_10_12, acc_0_1_3_11_13_14);
+    acc = vmlaq_u32(acc, acc_6_8, const_146_u32_);
+    acc = vmlaq_u32(acc, acc_5_9, const_118_u32_);
+    acc = vmlaq_u32(acc, src[7], const_158_u32_);
+    acc = vrshrq_n_u32(acc, 20);
+
+    uint16x4_t narrowed = vmovn_u32(acc);
+    uint8x8_t interleaved =
+        vuzp1_u8(vreinterpret_u8_u16(narrowed), vreinterpret_u8_u16(narrowed));
+    uint32_t result = vget_lane_u32(vreinterpret_u32_u8(interleaved), 0);
+    memcpy(&dst[0], &result, sizeof(result));
+  }
+
+  // Applies horizontal filtering vector using scalar operations.
+  //
+  // DST = 1/1048576 * [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
+  //                 * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
+  void horizontal_scalar_path(const BufferType src[15],
+                              DestinationType *dst) const {
+    uint32_t acc = (static_cast<uint32_t>(src[3]) + src[11]) * 4;
+    acc += (acc + src[1] + src[13]) * 11;
+    acc += (src[0] + src[14]) * 4 + (src[2] + src[12]) * 25 +
+           (src[4] + src[10]) * 81;
+    acc += (src[5] + src[9]) * 118 + (src[6] + src[8]) * 146 + src[7] * 158;
+    dst[0] = rounding_shift_right(acc, 20);
+  }
+
+ private:
+  uint16x8_t const_11_u16_;
+  uint32x4_t const_11_u32_;
+  uint16x8_t const_25_u16_;
+  uint32x4_t const_25_u32_;
+  uint16x8_t const_81_u16_;
+  uint32x4_t const_81_u32_;
+  uint16x4_t const_118_u16_half_;
+  uint32x4_t const_118_u32_;
+  uint16x4_t const_146_u16_half_;
+  uint32x4_t const_146_u32_;
+  uint16x4_t const_158_u16_half_;
+  uint32x4_t const_158_u32_;
+};  // end of class DiscreteGaussianBlur<uint8_t, 15>
+
 template <typename ScalarType, size_t KernelSize>
 kleidicv_error_t discrete_gaussian_blur(const ScalarType *src,
                                         size_t src_stride, ScalarType *dst,
@@ -312,7 +535,11 @@ kleidicv_error_t discrete_gaussian_blur(const ScalarType *src,
 
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
-  if (workspace->intermediate_size() != 2 * sizeof(ScalarType)) {
+  if constexpr (KernelSize == 15) {
+    if (workspace->intermediate_size() != 4 * sizeof(ScalarType)) {
+      return KLEIDICV_ERROR_CONTEXT_MISMATCH;
+    }
+  } else if (workspace->intermediate_size() != 2 * sizeof(ScalarType)) {
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
@@ -371,6 +598,18 @@ kleidicv_error_t gaussian_blur_7x7_u8(const uint8_t *src, size_t src_stride,
   return discrete_gaussian_blur<uint8_t, 7>(src, src_stride, dst, dst_stride,
                                             width, height, channels,
                                             border_type, context);
+}
+
+KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t gaussian_blur_15x15_u8(const uint8_t *src, size_t src_stride,
+                                        uint8_t *dst, size_t dst_stride,
+                                        size_t width, size_t height,
+                                        size_t channels,
+                                        kleidicv_border_type_t border_type,
+                                        kleidicv_filter_context_t *context) {
+  return discrete_gaussian_blur<uint8_t, 15>(src, src_stride, dst, dst_stride,
+                                             width, height, channels,
+                                             border_type, context);
 }
 
 }  // namespace kleidicv::neon

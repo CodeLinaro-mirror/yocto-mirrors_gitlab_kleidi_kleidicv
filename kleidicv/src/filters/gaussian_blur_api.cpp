@@ -66,3 +66,8 @@ KLEIDICV_MULTIVERSION_C_API(
     kleidicv_gaussian_blur_7x7_u8, &kleidicv::neon::gaussian_blur_7x7_u8,
     KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_7x7_u8),
     &kleidicv::sme2::gaussian_blur_7x7_u8);
+
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_gaussian_blur_15x15_u8, &kleidicv::neon::gaussian_blur_15x15_u8,
+    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_15x15_u8),
+    &kleidicv::sme2::gaussian_blur_15x15_u8);
