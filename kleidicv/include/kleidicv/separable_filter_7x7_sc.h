@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_SEPARABLE_FILTER_7x7_SC_H
-#define KLEIDICV_SEPARABLE_FILTER_7x7_SC_H
+#ifndef KLEIDICV_SEPARABLE_FILTER_7X7_SC_H
+#define KLEIDICV_SEPARABLE_FILTER_7X7_SC_H
 
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/border_7x7.h"
@@ -194,4 +194,4 @@ using SeparableFilter7x7 = SeparableFilter<FilterType, 7UL>;
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // KLEIDICV_SEPARABLE_FILTER_7x7_SC_H
+#endif  // KLEIDICV_SEPARABLE_FILTER_7X7_SC_H
