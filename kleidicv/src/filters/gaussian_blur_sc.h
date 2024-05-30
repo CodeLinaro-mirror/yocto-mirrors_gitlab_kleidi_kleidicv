@@ -103,18 +103,15 @@ class GaussianBlur<uint8_t, 5, true> {
                             svuint8_t src_2, svuint8_t src_3, svuint8_t src_4,
                             BufferType *dst) const
       KLEIDICV_STREAMING_COMPATIBLE {
-    svuint8_t const_6_u8 = svdup_n_u8(6);
-    svuint16_t const_4_u16 = svdup_n_u16(4);
-
     svuint16_t acc_0_4_b = svaddlb_u16(src_0, src_4);
     svuint16_t acc_0_4_t = svaddlt_u16(src_0, src_4);
     svuint16_t acc_1_3_b = svaddlb_u16(src_1, src_3);
     svuint16_t acc_1_3_t = svaddlt_u16(src_1, src_3);
 
-    svuint16_t acc_u16_b = svmlalb_u16(acc_0_4_b, src_2, const_6_u8);
-    svuint16_t acc_u16_t = svmlalt_u16(acc_0_4_t, src_2, const_6_u8);
-    acc_u16_b = svmad_u16_x(pg, acc_1_3_b, const_4_u16, acc_u16_b);
-    acc_u16_t = svmad_u16_x(pg, acc_1_3_t, const_4_u16, acc_u16_t);
+    svuint16_t acc_u16_b = svmlalb_n_u16(acc_0_4_b, src_2, 6);
+    svuint16_t acc_u16_t = svmlalt_n_u16(acc_0_4_t, src_2, 6);
+    acc_u16_b = svmla_n_u16_x(pg, acc_u16_b, acc_1_3_b, 4);
+    acc_u16_t = svmla_n_u16_x(pg, acc_u16_t, acc_1_3_t, 4);
 
     svuint16x2_t interleaved = svcreate2(acc_u16_b, acc_u16_t);
     svst2(pg, &dst[0], interleaved);
@@ -127,13 +124,10 @@ class GaussianBlur<uint8_t, 5, true> {
                               svuint16_t src_2, svuint16_t src_3,
                               svuint16_t src_4, DestinationType *dst) const
       KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t const_4_u16 = svdup_n_u16(4);
-    svuint16_t const_6_u16 = svdup_n_u16(6);
-
     svuint16_t acc_0_4 = svadd_x(pg, src_0, src_4);
     svuint16_t acc_1_3 = svadd_x(pg, src_1, src_3);
-    svuint16_t acc = svmad_u16_x(pg, src_2, const_6_u16, acc_0_4);
-    acc = svmad_u16_x(pg, acc_1_3, const_4_u16, acc);
+    svuint16_t acc = svmla_n_u16_x(pg, acc_0_4, src_2, 6);
+    acc = svmla_n_u16_x(pg, acc, acc_1_3, 4);
     acc = svrshr_x(pg, acc, 8);
     svst1b(pg, &dst[0], acc);
   }
@@ -183,9 +177,6 @@ class GaussianBlur<uint8_t, 7, true> {
       svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
       svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t const_7_u16 = svdup_n_u16(7);
-    svuint16_t const_9_u16 = svdup_n_u16(9);
-
     svuint16_t acc_0_6_b = svaddlb_u16(src_0, src_6);
     svuint16_t acc_0_6_t = svaddlt_u16(src_0, src_6);
 
@@ -198,22 +189,18 @@ class GaussianBlur<uint8_t, 7, true> {
     svuint16_t acc_3_b = svmovlb_u16(src_3);
     svuint16_t acc_3_t = svmovlt_u16(src_3);
 
-    svuint16_t acc_0_2_4_6_b =
-        svmla_u16_x(pg, acc_0_6_b, acc_2_4_b, const_7_u16);
-    svuint16_t acc_0_2_4_6_t =
-        svmla_u16_x(pg, acc_0_6_t, acc_2_4_t, const_7_u16);
+    svuint16_t acc_0_2_4_6_b = svmla_n_u16_x(pg, acc_0_6_b, acc_2_4_b, 7);
+    svuint16_t acc_0_2_4_6_t = svmla_n_u16_x(pg, acc_0_6_t, acc_2_4_t, 7);
 
-    svuint16_t acc_0_2_3_4_6_b =
-        svmla_u16_x(pg, acc_0_2_4_6_b, acc_3_b, const_9_u16);
-    svuint16_t acc_0_2_3_4_6_t =
-        svmla_u16_x(pg, acc_0_2_4_6_t, acc_3_t, const_9_u16);
+    svuint16_t acc_0_2_3_4_6_b = svmla_n_u16_x(pg, acc_0_2_4_6_b, acc_3_b, 9);
+    svuint16_t acc_0_2_3_4_6_t = svmla_n_u16_x(pg, acc_0_2_4_6_t, acc_3_t, 9);
     acc_0_2_3_4_6_b = svlsl_n_u16_x(pg, acc_0_2_3_4_6_b, 1);
     acc_0_2_3_4_6_t = svlsl_n_u16_x(pg, acc_0_2_3_4_6_t, 1);
 
     svuint16_t acc_0_1_2_3_4_5_6_b =
-        svmla_u16_x(pg, acc_0_2_3_4_6_b, acc_1_5_b, const_7_u16);
+        svmla_n_u16_x(pg, acc_0_2_3_4_6_b, acc_1_5_b, 7);
     svuint16_t acc_0_1_2_3_4_5_6_t =
-        svmla_u16_x(pg, acc_0_2_3_4_6_t, acc_1_5_t, const_7_u16);
+        svmla_n_u16_x(pg, acc_0_2_3_4_6_t, acc_1_5_t, 7);
 
     svuint16x2_t interleaved =
         svcreate2(acc_0_1_2_3_4_5_6_b, acc_0_1_2_3_4_5_6_t);
@@ -228,10 +215,6 @@ class GaussianBlur<uint8_t, 7, true> {
       svbool_t pg, svuint16_t src_0, svuint16_t src_1, svuint16_t src_2,
       svuint16_t src_3, svuint16_t src_4, svuint16_t src_5, svuint16_t src_6,
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t const_7_u16 = svdup_n_u16(7);
-    svuint16_t const_9_u16 = svdup_n_u16(9);
-    svuint32_t const_7_u32 = svdup_n_u32(7);
-
     svuint32_t acc_0_6_b = svaddlb_u32(src_0, src_6);
     svuint32_t acc_0_6_t = svaddlt_u32(src_0, src_6);
 
@@ -240,19 +223,19 @@ class GaussianBlur<uint8_t, 7, true> {
 
     svuint16_t acc_2_4 = svadd_u16_x(pg, src_2, src_4);
 
-    svuint32_t acc_0_2_4_6_b = svmlalb_u32(acc_0_6_b, acc_2_4, const_7_u16);
-    svuint32_t acc_0_2_4_6_t = svmlalt_u32(acc_0_6_t, acc_2_4, const_7_u16);
+    svuint32_t acc_0_2_4_6_b = svmlalb_n_u32(acc_0_6_b, acc_2_4, 7);
+    svuint32_t acc_0_2_4_6_t = svmlalt_n_u32(acc_0_6_t, acc_2_4, 7);
 
-    svuint32_t acc_0_2_3_4_6_b = svmlalb_u32(acc_0_2_4_6_b, src_3, const_9_u16);
-    svuint32_t acc_0_2_3_4_6_t = svmlalt_u32(acc_0_2_4_6_t, src_3, const_9_u16);
+    svuint32_t acc_0_2_3_4_6_b = svmlalb_n_u32(acc_0_2_4_6_b, src_3, 9);
+    svuint32_t acc_0_2_3_4_6_t = svmlalt_n_u32(acc_0_2_4_6_t, src_3, 9);
 
     acc_0_2_3_4_6_b = svlsl_n_u32_x(pg, acc_0_2_3_4_6_b, 1);
     acc_0_2_3_4_6_t = svlsl_n_u32_x(pg, acc_0_2_3_4_6_t, 1);
 
     svuint32_t acc_0_1_2_3_4_5_6_b =
-        svmla_u32_x(pg, acc_0_2_3_4_6_b, acc_1_5_b, const_7_u32);
+        svmla_n_u32_x(pg, acc_0_2_3_4_6_b, acc_1_5_b, 7);
     svuint32_t acc_0_1_2_3_4_5_6_t =
-        svmla_u32_x(pg, acc_0_2_3_4_6_t, acc_1_5_t, const_7_u32);
+        svmla_n_u32_x(pg, acc_0_2_3_4_6_t, acc_1_5_t, 7);
 
     svuint16_t acc_0_1_2_3_4_5_6_u16_b =
         svrshrnb_n_u32(acc_0_1_2_3_4_5_6_b, 12);
