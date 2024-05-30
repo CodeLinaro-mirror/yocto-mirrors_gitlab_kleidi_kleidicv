@@ -177,3 +177,22 @@ static void gaussian_blur_7x7_u8_3ch(benchmark::State& state) {
   gaussian_blur<uint8_t>(kleidicv_gaussian_blur_7x7_u8, 3, state);
 }
 BENCHMARK(gaussian_blur_7x7_u8_3ch);
+
+static void exp_f32(benchmark::State& state) {
+  // Setup
+  std::vector<float> src, dst;
+  src.resize(image_width * image_height);
+  dst.resize(image_width * image_height);
+
+  std::mt19937 generator;
+  std::generate(src.begin(), src.end(), generator);
+
+  for (auto _ : state) {
+    // This code gets benchmarked
+    auto unused = kleidicv_exp_f32(src.data(), image_width * sizeof(float),
+                                   dst.data(), image_width * sizeof(float),
+                                   image_width, image_height);
+    (void)unused;
+  }
+}
+BENCHMARK(exp_f32);

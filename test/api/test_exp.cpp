@@ -237,3 +237,17 @@ TYPED_TEST(Exp, NullPointers) {
   test::test_null_args(exp<TypeParam>(), src, sizeof(TypeParam), dst,
                        sizeof(TypeParam), 1, 1);
 }
+
+TYPED_TEST(Exp, Misalignment) {
+  if (sizeof(TypeParam) == 1) {
+    // misalignment impossible
+    return;
+  }
+  TypeParam src[2] = {}, dst[2];
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+            exp<TypeParam>()(src, sizeof(TypeParam) + 1, dst, sizeof(TypeParam),
+                             1, 2));
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+            exp<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam) + 1,
+                             1, 2));
+}

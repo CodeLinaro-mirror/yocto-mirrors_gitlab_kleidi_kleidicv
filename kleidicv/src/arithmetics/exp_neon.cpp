@@ -4,6 +4,7 @@
 
 #include <cmath>
 
+#include "kleidicv/arithmetics/exp_constants.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
 
@@ -24,17 +25,17 @@ class Exp<float> final : public UnrollOnce {
 
     /* exp(x) = 2^n * poly(r), with poly(r) in [1/sqrt(2),sqrt(2)]
       x = ln2*n + r, with r in [-ln2/2, ln2/2].  */
-    z = vfmaq_f32(vdupq_n(kShift), src, vdupq_n(kInvLn2));
-    n = z - vdupq_n(kShift);
-    r = vfmaq_f32(src, n, vdupq_n(-kLn2Hi));
-    r = vfmaq_f32(r, n, vdupq_n(-kLn2Lo));
+    z = vfmaq_f32(vdupq_n(exp_f32::kShift), src, vdupq_n(exp_f32::kInvLn2));
+    n = z - vdupq_n(exp_f32::kShift);
+    r = vfmaq_f32(src, n, vdupq_n(-exp_f32::kLn2Hi));
+    r = vfmaq_f32(r, n, vdupq_n(-exp_f32::kLn2Lo));
     e = vreinterpretq_u32_f32(z) << 23;
     scale = vreinterpretq_f32_u32(e + vdupq_n(0x3f800000));
     cmp = vcagtq_f32(n, vdupq_n(126.0F));
-    poly = vfmaq_f32(vdupq_n(kPoly[1]), vdupq_n(kPoly[0]), r);
-    poly = vfmaq_f32(vdupq_n(kPoly[2]), poly, r);
-    poly = vfmaq_f32(vdupq_n(kPoly[3]), poly, r);
-    poly = vfmaq_f32(vdupq_n(kPoly[4]), poly, r);
+    poly = vfmaq_f32(vdupq_n(exp_f32::kPoly[1]), vdupq_n(exp_f32::kPoly[0]), r);
+    poly = vfmaq_f32(vdupq_n(exp_f32::kPoly[2]), poly, r);
+    poly = vfmaq_f32(vdupq_n(exp_f32::kPoly[3]), poly, r);
+    poly = vfmaq_f32(vdupq_n(exp_f32::kPoly[4]), poly, r);
     poly = vfmaq_f32(vdupq_n(1.0F), poly, r);
     poly = vfmaq_f32(vdupq_n(1.0F), poly, r);
     if (KLEIDICV_UNLIKELY(v_any_u32(cmp))) {
@@ -63,16 +64,6 @@ class Exp<float> final : public UnrollOnce {
     return vreinterpretq_f32_u32((cmp & vreinterpretq_u32_f32(r1)) |
                                  (~cmp & vreinterpretq_u32_f32(r0)));
   }
-
-  static constexpr float kShift = 0x1.8p23F;
-  static constexpr float kInvLn2 = 0x1.715476p+0F;
-  static constexpr float kLn2Hi = 0x1.62e4p-1F;
-  static constexpr float kLn2Lo = 0x1.7f7d1cp-20F;
-  static constexpr float kPoly[] = {
-      /*  maxerr: 0.36565 +0.5 ulp.  */
-      0x1.6a6000p-10F, 0x1.12718ep-7F, 0x1.555af0p-5F,
-      0x1.555430p-3F,  0x1.fffff4p-2F,
-  };
 };  // end of class Exp<float>
 
 template <typename T>
