@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/separable_filter_15x15_sc.h"
 #include "kleidicv/separable_filter_3x3_sc.h"
 #include "kleidicv/separable_filter_5x5_sc.h"
 #include "kleidicv/separable_filter_7x7_sc.h"
@@ -263,6 +264,172 @@ class DiscreteGaussianBlur<uint8_t, 7> {
   }
 };  // end of class DiscreteGaussianBlur<uint8_t, 7>
 
+// Template for 15x15 Gaussian Blur approximation filters.
+//
+//                  [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
+//                  [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
+//                  [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
+//                  [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
+//  F = 1/1048576 * [  |     |     |     |  ...   |     |     |    |  ] =
+//                  [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
+//                  [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
+//                  [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
+//                  [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
+//
+//                  [   4 ]
+//                  [  11 ]
+//                  [  25 ]
+//                  [  48 ]
+//                  [  81 ]
+//                  [ 118 ]
+//                  [ 146 ]
+//  = 1/1048576  *  [ 158 ] * [4,11,25,48,81,118,146,158,146,118,81,48,25,11,4]
+//                  [ 146 ]
+//                  [ 118 ]
+//                  [  81 ]
+//                  [  48 ]
+//                  [  25 ]
+//                  [  11 ]
+//                  [   4 ]
+template <>
+class DiscreteGaussianBlur<uint8_t, 15> {
+ public:
+  using SourceType = uint8_t;
+  using BufferType = uint32_t;
+  using DestinationType = uint8_t;
+
+  // Applies vertical filtering vector using SIMD operations.
+  //
+  // DST = [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
+  //     * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
+  void vertical_vector_path(
+      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
+      svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
+      svuint8_t src_7, svuint8_t src_8, svuint8_t src_9, svuint8_t src_10,
+      svuint8_t src_11, svuint8_t src_12, svuint8_t src_13, svuint8_t src_14,
+      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_7_b = svmovlb_u16(src_7);
+    svuint16_t acc_7_t = svmovlt_u16(src_7);
+
+    svuint16_t acc_1_13_b = svaddlb_u16(src_1, src_13);
+    svuint16_t acc_1_13_t = svaddlt_u16(src_1, src_13);
+
+    svuint16_t acc_2_12_b = svaddlb_u16(src_2, src_12);
+    svuint16_t acc_2_12_t = svaddlt_u16(src_2, src_12);
+
+    svuint16_t acc_6_8_b = svaddlb_u16(src_6, src_8);
+    svuint16_t acc_6_8_t = svaddlt_u16(src_6, src_8);
+
+    svuint16_t acc_5_9_b = svaddlb_u16(src_5, src_9);
+    svuint16_t acc_5_9_t = svaddlt_u16(src_5, src_9);
+
+    svuint16_t acc_0_14_b = svaddlb_u16(src_0, src_14);
+    svuint16_t acc_0_14_t = svaddlt_u16(src_0, src_14);
+
+    svuint16_t acc_3_11_b = svaddlb_u16(src_3, src_11);
+    svuint16_t acc_3_11_t = svaddlt_u16(src_3, src_11);
+
+    svuint16_t acc_4_10_b = svaddlb_u16(src_4, src_10);
+    svuint16_t acc_4_10_t = svaddlt_u16(src_4, src_10);
+
+    acc_0_14_b = svlsl_n_u16_x(pg, acc_0_14_b, 2);
+    acc_0_14_t = svlsl_n_u16_x(pg, acc_0_14_t, 2);
+
+    acc_3_11_b = svlsl_n_u16_x(pg, acc_3_11_b, 2);
+    acc_3_11_t = svlsl_n_u16_x(pg, acc_3_11_t, 2);
+
+    acc_4_10_b = svmul_n_u16_x(pg, acc_4_10_b, 81);
+    acc_4_10_t = svmul_n_u16_x(pg, acc_4_10_t, 81);
+
+    svuint16_t acc_1_3_11_13_b = svadd_u16_x(pg, acc_3_11_b, acc_1_13_b);
+    svuint16_t acc_1_3_11_13_t = svadd_u16_x(pg, acc_3_11_t, acc_1_13_t);
+    acc_1_3_11_13_b = svmla_n_u16_x(pg, acc_3_11_b, acc_1_3_11_13_b, 11);
+    acc_1_3_11_13_t = svmla_n_u16_x(pg, acc_3_11_t, acc_1_3_11_13_t, 11);
+
+    svuint16_t acc_0_1_3_11_13_14_b =
+        svadd_u16_x(pg, acc_1_3_11_13_b, acc_0_14_b);
+    svuint16_t acc_0_1_3_11_13_14_t =
+        svadd_u16_x(pg, acc_1_3_11_13_t, acc_0_14_t);
+
+    svuint16_t acc_2_4_10_12_b = svmla_n_u16_x(pg, acc_4_10_b, acc_2_12_b, 25);
+    svuint16_t acc_2_4_10_12_t = svmla_n_u16_x(pg, acc_4_10_t, acc_2_12_t, 25);
+
+    svuint32_t acc_b_b = svaddlb_u32(acc_2_4_10_12_b, acc_0_1_3_11_13_14_b);
+    svuint32_t acc_b_t = svaddlb_u32(acc_2_4_10_12_t, acc_0_1_3_11_13_14_t);
+    svuint32_t acc_t_b = svaddlt_u32(acc_2_4_10_12_b, acc_0_1_3_11_13_14_b);
+    svuint32_t acc_t_t = svaddlt_u32(acc_2_4_10_12_t, acc_0_1_3_11_13_14_t);
+
+    acc_b_b = svmlalb_n_u32(acc_b_b, acc_6_8_b, 146);
+    acc_b_t = svmlalb_n_u32(acc_b_t, acc_6_8_t, 146);
+    acc_t_b = svmlalt_n_u32(acc_t_b, acc_6_8_b, 146);
+    acc_t_t = svmlalt_n_u32(acc_t_t, acc_6_8_t, 146);
+
+    acc_b_b = svmlalb_n_u32(acc_b_b, acc_5_9_b, 118);
+    acc_b_t = svmlalb_n_u32(acc_b_t, acc_5_9_t, 118);
+    acc_t_b = svmlalt_n_u32(acc_t_b, acc_5_9_b, 118);
+    acc_t_t = svmlalt_n_u32(acc_t_t, acc_5_9_t, 118);
+
+    acc_b_b = svmlalb_n_u32(acc_b_b, acc_7_b, 158);
+    acc_b_t = svmlalb_n_u32(acc_b_t, acc_7_t, 158);
+    acc_t_b = svmlalt_n_u32(acc_t_b, acc_7_b, 158);
+    acc_t_t = svmlalt_n_u32(acc_t_t, acc_7_t, 158);
+
+    svuint32x4_t interleaved =
+        svcreate4_u32(acc_b_b, acc_b_t, acc_t_b, acc_t_t);
+    svst4_u32(pg, &dst[0], interleaved);
+  }
+
+  // Applies horizontal filtering vector using SIMD operations.
+  //
+  // DST = 1/1048576 * [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
+  //                 * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
+  void horizontal_vector_path(
+      svbool_t pg, svuint32_t src_0, svuint32_t src_1, svuint32_t src_2,
+      svuint32_t src_3, svuint32_t src_4, svuint32_t src_5, svuint32_t src_6,
+      svuint32_t src_7, svuint32_t src_8, svuint32_t src_9, svuint32_t src_10,
+      svuint32_t src_11, svuint32_t src_12, svuint32_t src_13,
+      svuint32_t src_14,
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint32_t acc_1_13 = svadd_u32_x(pg, src_1, src_13);
+    svuint32_t acc_2_12 = svadd_u32_x(pg, src_2, src_12);
+    svuint32_t acc_6_8 = svadd_u32_x(pg, src_6, src_8);
+    svuint32_t acc_5_9 = svadd_u32_x(pg, src_5, src_9);
+    svuint32_t acc_0_14 = svadd_u32_x(pg, src_0, src_14);
+    svuint32_t acc_3_11 = svadd_u32_x(pg, src_3, src_11);
+    svuint32_t acc_4_10 = svadd_u32_x(pg, src_4, src_10);
+
+    acc_0_14 = svlsl_n_u32_x(pg, acc_0_14, 2);
+    acc_3_11 = svlsl_n_u32_x(pg, acc_3_11, 2);
+    acc_4_10 = svmul_n_u32_x(pg, acc_4_10, 81);
+
+    svuint32_t acc_1_3_11_13 = svadd_u32_x(pg, acc_3_11, acc_1_13);
+    acc_1_3_11_13 = svmla_n_u32_x(pg, acc_3_11, acc_1_3_11_13, 11);
+    svuint32_t acc_0_1_3_11_13_14 = svadd_u32_x(pg, acc_1_3_11_13, acc_0_14);
+    svuint32_t acc_2_4_10_12 = svmla_n_u32_x(pg, acc_4_10, acc_2_12, 25);
+
+    svuint32_t acc = svadd_u32_x(pg, acc_2_4_10_12, acc_0_1_3_11_13_14);
+    acc = svmla_n_u32_x(pg, acc, acc_6_8, 146);
+    acc = svmla_n_u32_x(pg, acc, acc_5_9, 118);
+    acc = svmla_n_u32_x(pg, acc, src_7, 158);
+    acc = svrshr_n_u32_x(pg, acc, 20);
+    svst1b_u32(pg, &dst[0], acc);
+  }
+
+  // Applies horizontal filtering vector using scalar operations.
+  //
+  // DST = 1/1048576 * [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
+  //                 * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
+  void horizontal_scalar_path(const BufferType src[15], DestinationType *dst)
+      const KLEIDICV_STREAMING_COMPATIBLE {
+    uint32_t acc = (static_cast<uint32_t>(src[3]) + src[11]) * 4;
+    acc += (acc + src[1] + src[13]) * 11;
+    acc += (src[0] + src[14]) * 4 + (src[2] + src[12]) * 25 +
+           (src[4] + src[10]) * 81;
+    acc += (src[5] + src[9]) * 118 + (src[6] + src[8]) * 146 + src[7] * 158;
+    dst[0] = rounding_shift_right(acc, 20);
+  }
+};  // end of class DiscreteGaussianBlur<uint8_t, 15>
+
 template <typename ScalarType, size_t KernelSize>
 kleidicv_error_t discrete_gaussian_blur(
     const ScalarType *src, size_t src_stride, ScalarType *dst,
@@ -290,7 +457,11 @@ kleidicv_error_t discrete_gaussian_blur(
 
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
-  if (workspace->intermediate_size() != 2 * sizeof(ScalarType)) {
+  if constexpr (KernelSize == 15) {
+    if (workspace->intermediate_size() != 4 * sizeof(ScalarType)) {
+      return KLEIDICV_ERROR_CONTEXT_MISMATCH;
+    }
+  } else if (workspace->intermediate_size() != 2 * sizeof(ScalarType)) {
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
