@@ -81,6 +81,14 @@ static inline int32x4_t  vabdq(int32x4_t  lhs, int32x4_t  rhs) { return vabdq_s3
 static inline uint32x4_t vabdq(uint32x4_t lhs, uint32x4_t rhs) { return vabdq_u32(lhs, rhs); }
 
 // -----------------------------------------------------------------------------
+// vand*
+// -----------------------------------------------------------------------------
+
+static inline uint8x16_t vandq(uint8x16_t lhs, uint8x16_t rhs) { return vandq_u8(lhs, rhs); }
+static inline uint16x8_t vandq(uint16x8_t lhs, uint16x8_t rhs) { return vandq_u16(lhs, rhs); }
+static inline uint32x4_t vandq(uint32x4_t lhs, uint32x4_t rhs) { return vandq_u32(lhs, rhs); }
+
+// -----------------------------------------------------------------------------
 // vqabs*
 // -----------------------------------------------------------------------------
 

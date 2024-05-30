@@ -20,6 +20,11 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |     |     |
 | Scale                        |     |  x  |     |     |     |     |     |     |     |     |
 
+# Logical operations
+|                              | u8  |
+|------------------------------|-----|
+| Bitwise And                  |  x  |
+
 ## Color conversions
 |           | u8  |
 |-----------|-----|

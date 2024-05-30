@@ -40,6 +40,7 @@ static void bench_binary_op(Function f, benchmark::State& state) {
 BENCH_BINARY_OP(saturating_add_s8, int8_t);
 BENCH_BINARY_OP(saturating_sub_u16, uint16_t);
 BENCH_BINARY_OP(saturating_absdiff_s32, int32_t);
+BENCH_BINARY_OP(bitwise_and, uint8_t);
 
 template <typename T, typename Function>
 static void bench_unary_op(Function f, size_t channels,

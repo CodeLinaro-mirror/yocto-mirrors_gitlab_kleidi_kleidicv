@@ -264,6 +264,33 @@ KLEIDICV_API_DECLARATION(kleidicv_saturating_add_abs_with_threshold_s16,
                          int16_t *dst, size_t dst_stride, size_t width,
                          size_t height, int16_t threshold);
 
+/// Bitwise-ands the values of the corresponding elements in `src_a` and
+/// `src_b`, and puts the result into `dst`.
+///
+/// Source data length (in bytes) is `stride` * `height`. Width and height are
+/// the same for the two sources and for the destination. Number of elements is
+/// limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src_a        Pointer to the first source data. Must be non-null.
+/// @param src_b        Pointer to the second source data. Must be non-null.
+/// @param src_a_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the first source data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param src_b_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the second source data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type).
+///                     Must not be less than width * sizeof(type).
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+///
+KLEIDICV_BINARY_OP(kleidicv_bitwise_and, uint8_t);
+
 /// Converts a grayscale image to RGB. All channels are 8-bit wide.
 ///
 /// Destination data is filled as follows: R = G = B = Gray
