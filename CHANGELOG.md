@@ -19,6 +19,7 @@ This changelog aims to follow the guiding principles of
 - Exponential function for float.
 - Bitwise and.
 - Gaussian Blur for 7x7 kernels.
+- Gaussian Blur for 15x15 kernels.
 - Scale function for float.
 - Add, subtract, multiply & absdiff enabled in OpenCV HAL.
 - MinMax enabled in OpenCV HAL, float version added.
