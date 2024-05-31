@@ -5,6 +5,7 @@
 #include <benchmark/benchmark.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <random>
 
 #include "kleidicv/kleidicv.h"
@@ -25,8 +26,9 @@ static void bench_binary_op(Function f, benchmark::State& state) {
 
   for (auto _ : state) {
     // This code gets benchmarked
-    auto unused = f(src_a.data(), image_width, src_a.data(), image_width,
-                    dst.data(), image_width, image_width, image_height);
+    auto unused = f(src_a.data(), image_width * sizeof(T), src_b.data(),
+                    image_width * sizeof(T), dst.data(),
+                    image_width * sizeof(T), image_width, image_height);
     (void)unused;
   }
 }
@@ -55,8 +57,8 @@ static void bench_unary_op(Function f, size_t channels,
 
   for (auto _ : state) {
     // This code gets benchmarked
-    auto unused = f(src.data(), image_width, dst.data(), image_width,
-                    image_width, image_height);
+    auto unused = f(src.data(), image_width * sizeof(T), dst.data(),
+                    image_width * sizeof(T), image_width, image_height);
     (void)unused;
   }
 }
@@ -83,9 +85,9 @@ static void min_max_loc_u8(benchmark::State& state) {
 
   for (auto _ : state) {
     // This code gets benchmarked
-    auto unused =
-        kleidicv_min_max_loc_u8(src.data(), image_width, image_width,
-                                image_height, &min_offset, &max_offset);
+    auto unused = kleidicv_min_max_loc_u8(
+        src.data(), image_width * sizeof(uint8_t), image_width, image_height,
+        &min_offset, &max_offset);
     (void)unused;
   }
 }
@@ -107,8 +109,8 @@ static void resize_linear(F f, size_t scale_x, size_t scale_y,
 
   for (auto _ : state) {
     // This code gets benchmarked
-    auto unused = f(src.data(), src_width, src_width, src_height, dst.data(),
-                    dst_width, dst_width, dst_height);
+    auto unused = f(src.data(), src_width * sizeof(T), src_width, src_height,
+                    dst.data(), dst_width * sizeof(T), dst_width, dst_height);
     (void)unused;
   }
 }
@@ -155,9 +157,9 @@ static void gaussian_blur(Function f, size_t channels,
 
   for (auto _ : state) {
     // This code gets benchmarked
-    auto unused =
-        f(src.data(), image_width, dst.data(), image_width, image_width,
-          image_height, channels, KLEIDICV_BORDER_TYPE_REFLECT, context);
+    auto unused = f(src.data(), image_width * sizeof(T), dst.data(),
+                    image_width * sizeof(T), image_width, image_height,
+                    channels, KLEIDICV_BORDER_TYPE_REFLECT, context);
     (void)unused;
   }
 
