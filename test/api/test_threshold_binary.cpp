@@ -28,7 +28,7 @@ class ThresholdBinaryTestBase : public UnaryOperationTest<ElementType> {
   }
 
   virtual ElementType threshold() = 0;
-  static constexpr ElementType value() { return max(); }
+  constexpr ElementType value() { return max(); }
 };  // end of class ThresholdBinaryTestBase<ElementType>
 
 template <typename ElementType>
