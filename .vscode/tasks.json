@@ -43,15 +43,36 @@
       }
     },
     {
+      "label": "Build KleidiCV with GCC",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build.sh",
+      "problemMatcher": "$gcc",
+      "args": [
+        "kleidicv-test"
+      ],
+      "options": {
+        "env": {
+          "BUILD_ID": "kleidicv-gcc",
+          "CMAKE_EXE_LINKER_FLAGS": "-static",
+          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF",
+          "CC": "aarch64-linux-gnu-gcc",
+          "CXX": "aarch64-linux-gnu-g++"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
       "label": "Clean build directory",
       "type": "shell",
       "command": "rm -rf ${workspaceFolder}/build",
       "problemMatcher": []
     },
     {
-      "label": "Clean ccache cache",
+      "label": "Clear ccache cache",
       "type": "shell",
-      "command": "rm -rf $CCACHE_DIR",
+      "command": "ccache --clear",
       "problemMatcher": []
     },
     {
