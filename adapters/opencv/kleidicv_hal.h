@@ -109,6 +109,13 @@ int exp32f(const float *src, float *dst, int len);
 // Other HAL implementations might require the cv namespace
 namespace cv {
 
+// If the KleidiCV function has a signature matching the OpenCV HAL interface
+// AND it never returns KLEIDICV_NOT_IMPLEMENTED then we can call it directly
+// and convert the return code.
+#define KLEIDICV_HAL_FORWARD(kleidicv_impl, ...)               \
+  (kleidicv_impl(__VA_ARGS__) == KLEIDICV_OK ? CV_HAL_ERROR_OK \
+                                             : CV_HAL_ERROR_UNKNOWN)
+
 #define KLEIDICV_HAL_FALLBACK_FORWARD(kleidicv_impl, fallback_hal_impl, ...) \
   (KLEIDICV_HAL_API(kleidicv_impl)(__VA_ARGS__) == CV_HAL_ERROR_OK           \
        ? CV_HAL_ERROR_OK                                                     \
@@ -338,6 +345,82 @@ static inline int kleidicv_compare_u8_with_fallback(
 }
 #undef cv_hal_cmp8u
 #define cv_hal_cmp8u kleidicv_compare_u8_with_fallback
+
+#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
+
+// clang-format off
+#undef cv_hal_add8s
+#define cv_hal_add8s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_s8, __VA_ARGS__)
+#undef cv_hal_add8u
+#define cv_hal_add8u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_u8, __VA_ARGS__)
+#undef cv_hal_add16s
+#define cv_hal_add16s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_s16, __VA_ARGS__)
+#undef cv_hal_add16u
+#define cv_hal_add16u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_u16, __VA_ARGS__)
+#undef cv_hal_add32s
+#define cv_hal_add32s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_s32, __VA_ARGS__)
+
+#undef cv_hal_sub8s
+#define cv_hal_sub8s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_s8, __VA_ARGS__)
+#undef cv_hal_sub8u
+#define cv_hal_sub8u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_u8, __VA_ARGS__)
+#undef cv_hal_sub16s
+#define cv_hal_sub16s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_s16, __VA_ARGS__)
+#undef cv_hal_sub16u
+#define cv_hal_sub16u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_u16, __VA_ARGS__)
+#undef cv_hal_sub32s
+#define cv_hal_sub32s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_s32, __VA_ARGS__)
+
+#undef cv_hal_absdiff8s
+#define cv_hal_absdiff8s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_s8, __VA_ARGS__)
+#undef cv_hal_absdiff8u
+#define cv_hal_absdiff8u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_u8, __VA_ARGS__)
+#undef cv_hal_absdiff16s
+#define cv_hal_absdiff16s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_s16, __VA_ARGS__)
+#undef cv_hal_absdiff16u
+#define cv_hal_absdiff16u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_u16, __VA_ARGS__)
+#undef cv_hal_absdiff32s
+#define cv_hal_absdiff32s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_s32, __VA_ARGS__)
+
+#undef cv_hal_and8u
+#define cv_hal_and8u(...) KLEIDICV_HAL_FORWARD(kleidicv_bitwise_and, __VA_ARGS__)
+// clang-format on
+
+#define KLEIDICV_HAL_MUL(suffix, kleidicv_impl, T)                            \
+  static inline int kleidicv_##suffix##_with_fallback(                        \
+      const T *src_a, size_t src_a_stride, const T *src_b,                    \
+      size_t src_b_stride, T *dst, size_t dst_stride, size_t width,           \
+      size_t height, double scale) {                                          \
+    if (scale != 1.0) {                                                       \
+      return cv_hal_##suffix(src_a, src_a_stride, src_b, src_b_stride, dst,   \
+                             dst_stride, width, height, scale);               \
+    }                                                                         \
+    return KLEIDICV_HAL_FORWARD(kleidicv_impl, src_a, src_a_stride, src_b,    \
+                                src_b_stride, dst, dst_stride, width, height, \
+                                scale);                                       \
+  }
+
+KLEIDICV_HAL_MUL(mul8u, kleidicv_saturating_multiply_u8, uint8_t);
+#undef cv_hal_mul8u
+#define cv_hal_mul8u kleidicv_mul8u_with_fallback
+
+KLEIDICV_HAL_MUL(mul8s, kleidicv_saturating_multiply_s8, int8_t);
+#undef cv_hal_mul8s
+#define cv_hal_mul8s kleidicv_mul8s_with_fallback
+
+KLEIDICV_HAL_MUL(mul16u, kleidicv_saturating_multiply_u16, uint16_t);
+#undef cv_hal_mul16u
+#define cv_hal_mul16u kleidicv_mul16u_with_fallback
+
+KLEIDICV_HAL_MUL(mul16s, kleidicv_saturating_multiply_s16, int16_t);
+#undef cv_hal_mul16s
+#define cv_hal_mul16s kleidicv_mul16s_with_fallback
+
+KLEIDICV_HAL_MUL(mul32s, kleidicv_saturating_multiply_s32, int32_t);
+#undef cv_hal_mul32s
+#define cv_hal_mul32s kleidicv_mul32s_with_fallback
+
+#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 

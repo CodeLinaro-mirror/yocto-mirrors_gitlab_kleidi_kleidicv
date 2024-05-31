@@ -20,6 +20,12 @@ option(
   "Limits SVE2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SVE2 is false."
   ON
 )
+option(
+  KLEIDICV_ENABLE_ALL_OPENCV_HAL
+  "Internal - Enable all KleidiCV operations in the OpenCV HAL.
+ By default operations are only enabled in the HAL if benchmarks show a measurable performance uplift."
+  OFF
+)
 option(KLEIDICV_CHECK_BANNED_FUNCTIONS "Internal - Check source for deprecated or obsolescent functions" OFF)
 option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector length is assumed" OFF)
 option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
