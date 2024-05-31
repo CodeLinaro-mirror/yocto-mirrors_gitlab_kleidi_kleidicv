@@ -28,16 +28,28 @@ static cv::Mat bitwise_and(cv::Mat& a, cv::Mat& b) {
   return dst;
 }
 
-template <cv::Mat (*F)(cv::Mat&, cv::Mat&)>
+static cv::Mat compare_equal(cv::Mat& a, cv::Mat& b) {
+  cv::Mat dst;
+  cv::compare(a, b, dst, cv::CMP_EQ);
+  return dst;
+}
+
+static cv::Mat compare_greater(cv::Mat& a, cv::Mat& b) {
+  cv::Mat dst;
+  cv::compare(a, b, dst, cv::CMP_GT);
+  return dst;
+}
+
+template <cv::Mat (*Operation)(cv::Mat&, cv::Mat&)>
 static cv::Mat exec_binary_op(cv::Mat& input_mat) {
   int mid = input_mat.rows / 2;
   cv::Mat a = input_mat.rowRange(0, mid);
   cv::Mat b = input_mat.rowRange(mid, input_mat.rows);
-  return F(a, b);
+  return Operation(a, b);
 }
 
 #if MANAGER
-template <typename T, cv::Mat (*F)(cv::Mat&, cv::Mat&), size_t Format>
+template <typename T, cv::Mat (*Operation)(cv::Mat&, cv::Mat&), size_t Format>
 static bool test_binary_op(int index, RecreatedMessageQueue& request_queue,
                            RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
@@ -48,7 +60,7 @@ static bool test_binary_op(int index, RecreatedMessageQueue& request_queue,
       rng.fill(input, cv::RNG::UNIFORM, std::numeric_limits<T>::lowest(),
                std::numeric_limits<T>::max());
 
-      cv::Mat actual = exec_binary_op<F>(input);
+      cv::Mat actual = exec_binary_op<Operation>(input);
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,
                                                        reply_queue, input);
 
@@ -73,6 +85,8 @@ std::vector<test>& binary_op_tests_get() {
       BINARY_OP_TEST(mul, CV_16UC3, uint16_t),
       BINARY_OP_TEST(absdiff, CV_16SC4, int16_t),
       BINARY_OP_TEST(bitwise_and, CV_32SC2, int32_t),
+      BINARY_OP_TEST(compare_equal, CV_8UC1, uint8_t),
+      BINARY_OP_TEST(compare_greater, CV_8UC1, uint8_t),
   };
   return tests;
 }
