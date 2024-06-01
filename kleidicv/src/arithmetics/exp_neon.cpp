@@ -19,7 +19,7 @@ class Exp<float> final : public UnrollOnce {
   using VectorType = typename VecTraits::VectorType;
 
   VectorType vector_path(VectorType src) {
-    float32x4_t n, r, scale, poly, absn, z;
+    float32x4_t n, r, scale, poly, z;
     uint32x4_t cmp, e;
 
     /* exp(x) = 2^n * poly(r), with poly(r) in [1/sqrt(2),sqrt(2)]
@@ -30,8 +30,7 @@ class Exp<float> final : public UnrollOnce {
     r = vfmaq_f32(r, n, vdupq_n(-kLn2Lo));
     e = vreinterpretq_u32_f32(z) << 23;
     scale = vreinterpretq_f32_u32(e + vdupq_n(0x3f800000));
-    absn = vabsq_f32(n);
-    cmp = absn > vdupq_n(126.0F);
+    cmp = vcagtq_f32(n, vdupq_n(126.0F));
     poly = vfmaq_f32(vdupq_n(kPoly[1]), vdupq_n(kPoly[0]), r);
     poly = vfmaq_f32(vdupq_n(kPoly[2]), poly, r);
     poly = vfmaq_f32(vdupq_n(kPoly[3]), poly, r);
@@ -39,7 +38,7 @@ class Exp<float> final : public UnrollOnce {
     poly = vfmaq_f32(vdupq_n(1.0F), poly, r);
     poly = vfmaq_f32(vdupq_n(1.0F), poly, r);
     if (KLEIDICV_UNLIKELY(v_any_u32(cmp))) {
-      return specialcase(poly, n, e, absn);
+      return specialcase(poly, n, e);
     }
     return scale * poly;
   }
@@ -52,13 +51,13 @@ class Exp<float> final : public UnrollOnce {
     return vpaddd_u64(vreinterpretq_u64_u32(x)) != 0;
   }
 
-  static float32x4_t specialcase(float32x4_t poly, float32x4_t n, uint32x4_t e,
-                                 float32x4_t absn) {
+  static float32x4_t specialcase(float32x4_t poly, float32x4_t n,
+                                 uint32x4_t e) {
     /* 2^n may overflow, break it up into s1*s2.  */
     uint32x4_t b = (n <= vdupq_n(0.0F)) & vdupq_n(0x83000000);
     float32x4_t s1 = vreinterpretq_f32_u32(vdupq_n(0x7f000000) + b);
     float32x4_t s2 = vreinterpretq_f32_u32(e - b);
-    uint32x4_t cmp = absn > vdupq_n(192.0F);
+    uint32x4_t cmp = vcagtq_f32(n, vdupq_n(192.0F));
     float32x4_t r1 = s1 * s1;
     float32x4_t r0 = poly * s1 * s2;
     return vreinterpretq_f32_u32((cmp & vreinterpretq_u32_f32(r1)) |
@@ -77,8 +76,9 @@ class Exp<float> final : public UnrollOnce {
 };  // end of class Exp<float>
 
 template <typename T>
-kleidicv_error_t exp(const T* src, size_t src_stride, T* dst, size_t dst_stride,
-                     size_t width, size_t height) {
+KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t exp(const T* src, size_t src_stride,
+                                              T* dst, size_t dst_stride,
+                                              size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
