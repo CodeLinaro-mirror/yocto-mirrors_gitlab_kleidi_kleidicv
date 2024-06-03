@@ -204,8 +204,8 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgb_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
@@ -224,8 +224,8 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgb_u8_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgba_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};

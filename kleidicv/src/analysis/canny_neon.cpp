@@ -475,8 +475,8 @@ static void perform_hysteresis(StrongEdgeStack &strong_edge_pixels,
 KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t canny_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, double low_threshold, double high_threshold) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle dst_rect{width, height};

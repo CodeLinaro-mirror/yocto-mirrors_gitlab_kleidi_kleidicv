@@ -309,9 +309,9 @@ TYPED_TEST(MinMax, Misalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src[1] = {}, min_value, max_value;
+  TypeParam src[2] = {}, min_value, max_value;
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            min_max<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &min_value,
+            min_max<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 2, &min_value,
                                  &max_value));
 }
 

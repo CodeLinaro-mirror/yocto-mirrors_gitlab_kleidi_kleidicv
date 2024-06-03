@@ -33,13 +33,13 @@ TYPED_TEST(CannyTest, Misalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src[1], dst[1];
+  TypeParam src[2], dst[2];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             canny<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
-                               sizeof(TypeParam), 1, 1, 0.0, 1.0));
+                               sizeof(TypeParam), 1, 2, 0.0, 1.0));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             canny<TypeParam>()(src, sizeof(TypeParam), dst,
-                               sizeof(TypeParam) + 1, 1, 1, 0.0, 1.0));
+                               sizeof(TypeParam) + 1, 1, 2, 0.0, 1.0));
 }
 
 TYPED_TEST(CannyTest, ZeroImageSize) {

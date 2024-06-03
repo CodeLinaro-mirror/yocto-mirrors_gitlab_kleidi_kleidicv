@@ -159,8 +159,8 @@ kleidicv_error_t rgb2yuv_operation(OperationType &operation,
                                    const ScalarType *src, size_t src_stride,
                                    ScalarType *dst, size_t dst_stride,
                                    size_t width, size_t height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};

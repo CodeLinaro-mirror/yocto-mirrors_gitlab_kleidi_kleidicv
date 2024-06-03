@@ -78,18 +78,18 @@ extern "C" {
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
@@ -121,18 +121,18 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_add_u64, uint64_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
@@ -164,18 +164,18 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u64, uint64_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
@@ -201,18 +201,18 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s32, int32_t);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param scale        Currently unused parameter.
@@ -241,18 +241,18 @@ KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s32, int32_t, double);
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param threshold    The value that the elements of the addition result
@@ -272,20 +272,20 @@ KLEIDICV_API_DECLARATION(kleidicv_saturating_add_abs_with_threshold_s16,
 /// limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
-/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
+/// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
@@ -304,11 +304,13 @@ KLEIDICV_BINARY_OP(kleidicv_bitwise_and, uint8_t);
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -329,11 +331,13 @@ KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgb_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * sizeof(uint8).
+///                    Must not be less than width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -354,11 +358,13 @@ KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgba_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -375,11 +381,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgr_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -400,11 +408,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgb_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -421,11 +431,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgra_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -447,11 +459,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgba_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -473,11 +487,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgra_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -499,11 +515,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgba_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -525,11 +543,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgr_u8, const uint8_t *src,
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
-///                    Must not be less than width * 4 * sizeof(uint8).
+///                    Must not be less than 4*width, except for single-row
+///                    images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -553,18 +573,21 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
-///                      Must not be less than width * sizeof(u8).
+///                      Must not be less than width * sizeof(u8), except for
+///                      single-row images.
 /// @param src_uv        Pointer to the input's interleaved UV components.
 ///                      Must be non-null. If the width parameter is odd, the
 ///                      width of this input stream still needs to be even.
 /// @param src_uv_stride Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's UV components.
 ///                      Must not be less than
-///                      __builtin_align_up(width, 2) * sizeof(u8).
+///                      __builtin_align_up(width, 2) * sizeof(u8), except for
+///                      single-row images.
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * 3 * sizeof(type).
+///                      not be less than width * 3 * sizeof(type), except for
+///                      single-row images.
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
@@ -591,18 +614,21 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
-///                      Must not be less than width * sizeof(u8).
+///                      Must not be less than width * sizeof(u8), except for
+///                      single-row images.
 /// @param src_uv        Pointer to the input's interleaved UV components.
 ///                      Must be non-null. If the width parameter is odd, the
 ///                      width of this input stream still needs to be even.
 /// @param src_uv_stride Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's UV components.
 ///                      Must not be less than
-///                      __builtin_align_up(width, 2) * sizeof(u8).
+///                      __builtin_align_up(width, 2) * sizeof(u8), except for
+///                      single-row images.
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * 3 * sizeof(type).
+///                      not be less than width * 3 * sizeof(type), except for
+///                      single-row images.
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
@@ -627,18 +653,21 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgr_u8, const uint8_t *src_y,
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
-///                      Must not be less than width * sizeof(u8).
+///                      Must not be less than width * sizeof(u8), except for
+///                      single-row images.
 /// @param src_uv        Pointer to the input's interleaved UV components.
 ///                      Must be non-null. If the width parameter is odd, the
 ///                      width of this input stream still needs to be even.
 /// @param src_uv_stride Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's UV components.
 ///                      Must not be less than
-///                      __builtin_align_up(width, 2) * sizeof(u8).
+///                      __builtin_align_up(width, 2) * sizeof(u8), except for
+///                      single-row images.
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * 4 * sizeof(type).
+///                      not be less than width * 4 * sizeof(type), except for
+///                      single-row images.
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
@@ -663,18 +692,21 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_rgba_u8, const uint8_t *src_y,
 /// @param src_y         Pointer to the input's Y component. Must be non-null.
 /// @param src_y_stride  Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's Y component.
-///                      Must not be less than width * sizeof(u8).
+///                      Must not be less than width * sizeof(u8), except for
+///                      single-row images.
 /// @param src_uv        Pointer to the input's interleaved UV components.
 ///                      Must be non-null. If the width parameter is odd, the
 ///                      width of this input stream still needs to be even.
 /// @param src_uv_stride Distance in bytes from the start of one row to the
 ///                      start of the next row for the input's UV components.
 ///                      Must not be less than
-///                      __builtin_align_up(width, 2) * sizeof(u8).
+///                      __builtin_align_up(width, 2) * sizeof(u8), except for
+///                      single-row images.
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row for the destination data. Must
-///                      not be less than width * 4 * sizeof(type).
+///                      not be less than width * 4 * sizeof(type), except for
+///                      single-row images.
 /// @param width         Number of pixels in a row.
 /// @param height        Number of rows in the data.
 /// @param is_nv21       If true, input is treated as NV21, otherwise treated
@@ -705,11 +737,12 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
 ///                    Must not be less than width * (number of channels) *
-///                    sizeof(uint8).
+///                    sizeof(uint8), except for single-row images.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the destination data.
-///                    Must not be less than width * 3 * sizeof(uint8).
+///                    Must not be less than 3*width, except for single-row
+///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
 ///
@@ -739,13 +772,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_yuv_u8, const uint8_t *src,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data. Must
-///                     not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     not be less than width * sizeof(type), except for
+///                     single-row images.
 /// @param dst          Pointer to the first destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data. Must
-///                     not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     not be less than width * sizeof(type), except for
+///                     single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param threshold    The value that the elements of the source data are
@@ -769,13 +802,13 @@ KLEIDICV_API_DECLARATION(kleidicv_threshold_binary_u8, const uint8_t *src,
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the first destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data. Must
@@ -801,18 +834,18 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_equal_u8, const uint8_t *src_a,
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_b        Pointer to the second source data. Must be non-null.
 /// @param src_b_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the second source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst          Pointer to the first destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination data. Must
-///                     not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
@@ -892,11 +925,13 @@ kleidicv_error_t kleidicv_morphology_release(
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
-///                     Must not be less than width * channels * sizeof(uint8).
+///                     Must not be less than width * channels * sizeof(uint8),
+///                     except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data. Must
-///                     not be less than width * channels * sizeof(uint8).
+///                     not be less than width * channels * sizeof(uint8),
+///                     except for single-row images.
 /// @param width        Number of pixels in a row.
 /// @param height       Number of rows in the data.
 /// @param context      Pointer to morphology context.
@@ -919,8 +954,8 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8, const uint8_t *src,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param count        Pointer to variable to store result. Must be non-null.
@@ -954,15 +989,15 @@ KLEIDICV_API_DECLARATION(kleidicv_count_nonzeros_u8, const uint8_t *src,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_width    Number of elements in the source row.
 /// @param src_height   Number of rows in the source data.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst_width    Number of elements in the destination row.
 ///                     Must be src_width / 2 for even src_width.
 ///                     For odd src_width it must be either src_width / 2
@@ -988,15 +1023,15 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param src_width    Number of elements in the source row.
 /// @param src_height   Number of rows in the source data.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type).
-///                     Must not be less than width * sizeof(type).
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
 /// @param dst_width    Number of elements in the destination row.
 ///                     Must be src_width * 2.
 /// @param dst_height   Number of rows in the destination data.
@@ -1031,14 +1066,16 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_linear_f32, const float *src,
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(src type) * channels.
-///                     Must be a multiple of sizeof(src type).
+///                     start of the next row in the source data. Must be a
+///                     multiple of sizeof(src type) and no less than width *
+///                     sizeof(src type) * channels, except for single-row
+///                     images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the destination data. Must not
-///                     be less than width * sizeof(dst type) * channels.
-///                     Must be a multiple of sizeof(dst type).
+///                     start of the next row in the destination data. Must be a
+///                     multiple of sizeof(dst type) and no less than width *
+///                     sizeof(dst type) * channels, except for single-row
+///                     images.
 /// @param width        Number of pixels in the data. (One pixel consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
@@ -1067,14 +1104,16 @@ KLEIDICV_API_DECLARATION(kleidicv_sobel_3x3_vertical_s16_u8, const uint8_t *src,
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(src type) * channels.
-///                     Must be a multiple of sizeof(src type).
+///                     start of the next row in the source data. Must be a
+///                     multiple of sizeof(src type) and no less than width *
+///                     sizeof(src type) * channels, except for single-row
+///                     images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the destination data. Must not
-///                     be less than width * sizeof(dst type) * channels.
-///                     Must be a multiple of sizeof(dst type).
+///                     start of the next row in the destination data. Must be a
+///                     multiple of sizeof(dst type) and no less than width *
+///                     sizeof(dst type) * channels, except for single-row
+///                     images.
 /// @param width        Number of pixels in the data. (One pixel consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
@@ -1104,11 +1143,11 @@ KLEIDICV_API_DECLARATION(kleidicv_sobel_3x3_horizontal_s16_u8,
 /// @param src            Pointer to the source data. Must be non-null.
 /// @param src_stride     Distance in bytes from the start of one row to the
 ///                       start of the next row in the source data. Must not be
-///                       less than width.
+///                       less than width, except for single-row images.
 /// @param dst            Pointer to the destination data. Must be non-null.
 /// @param dst_stride     Distance in bytes from the start of one row to the
 ///                       start of the next row in the destination data. Must
-///                       not be less than width.
+///                       not be less than width, except for single-row images.
 /// @param width          Number of elements in a row.
 /// @param height         Number of rows in the data.
 /// @param low_threshold  Low threshold for the edge detector algorithm.
@@ -1193,14 +1232,14 @@ kleidicv_error_t kleidicv_filter_release(kleidicv_filter_context_t *context);
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(type) * channels.
-///                     Must be a multiple of sizeof(type).
+///                     start of the next row in the source data. Must be a
+///                     multiple of sizeof(type) and no less than width *
+///                     sizeof(type) * channels, except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the destination data. Must not
-///                     be less than width * sizeof(type) * channels.
-///                     Must be a multiple of sizeof(type).
+///                     start of the next row in the destination data. Must be a
+///                     multiple of sizeof(type) and no less than width *
+///                     sizeof(type) * channels, except for single-row images.
 /// @param width        Number of columns in the data. (One column consists of
 ///                     'channels' number of elements.)
 /// @param height       Number of rows in the data.
@@ -1238,9 +1277,9 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_7x7_u8, const uint8_t *src,
 /// @param src_data     Pointer to the source data. Must be non-null.
 ///                     Must be aligned to element_size.
 /// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the source data. Must not be
-///                     less than width * element_size * channels.
-///                     Must be a multiple of element_size.
+///                     start of the next row in the source data. Must be a
+///                     multiple of element_size and no less than width *
+///                     element_size * channels, except for single-row images.
 /// @param dst_data     A C style array of pointers to the destination data.
 ///                     Number of pointers in the array must be the same as the
 ///                     channel number. All pointers must be non-null.
@@ -1251,7 +1290,8 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_7x7_u8, const uint8_t *src,
 ///                     next row in the given destination stream. Number of
 ///                     stride values in the array must be the same as the
 ///                     channel number. All stride values must be a multiple of
-///                     element_size and not be less than width * element_size.
+///                     element_size and no less than width * element_size,
+///                     except for single-row images.
 /// @param width        Number of pixels in one row of the source data. (One
 ///                     pixel consists of 'channels' number of elements.)
 /// @param height       Number of rows in the source data.
@@ -1282,15 +1322,15 @@ KLEIDICV_API_DECLARATION(kleidicv_split, const void *src_data,
 ///                     Must be aligned to element_size.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
-///                     Must be a multiple of element_size.
-///                     Must not be less than width * element_size.
+///                     Must be a multiple of element_size and no less than
+///                     width * element_size, except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 ///                     Can be the same as source data for inplace operation.
 ///                     Must be aligned to element_size.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of element_size.
-///                     Must not be less than height * element_size.
+///                     Must be a multiple of element_size and no less than
+///                     height * element_size, except for single-column images.
 /// @param src_width    Number of elements in a row.
 /// @param src_height   Number of rows in the data.
 /// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
@@ -1313,13 +1353,14 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
 ///                     next row in the given source stream. Number of
 ///                     stride values in the array must be the same as the
 ///                     channel number. All stride values must be a multiple of
-///                     element_size and not be less than width * element_size.
+///                     element_size and no less than width * element_size,
+///                     except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 ///                     Must be aligned to element_size.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the destination data. Must not
-///                     be less than width * element_size * channels.
-///                     Must be a multiple of element_size.
+///                     start of the next row in the destination data. Must be a
+///                     multiple of element_size and no less than width *
+///                     element_size * channels, except for single-row images.
 /// @param width        Number of elements in a row for the source streams,
 ///                     number of pixels in a row for the destination data.
 /// @param height       Number of rows in the data.
@@ -1337,9 +1378,9 @@ KLEIDICV_API_DECLARATION(kleidicv_merge, const void **srcs,
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     start of the next row in the source data. Must be a
+///                     multiple of sizeof(type) and no less than width *
+///                     sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row. Must be greater than 0.
 /// @param height       Number of rows in the data. Must be greater than 0.
 /// @param min_value    Pointer to save result minimum value to, or nullptr if
@@ -1378,9 +1419,9 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_f32, const float *src,
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the source data. Must not be
-///                     less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     start of the next row in the source data. Must be a
+///                     multiple of sizeof(type) and no less than width *
+///                     sizeof(type), except for single-row images.
 /// @param width        Number of elements in a row. Must be greater than 0.
 /// @param height       Number of rows in the data. Must be greater than 0.
 /// @param min_offset   Pointer to save result offset of minimum value to, or
@@ -1404,11 +1445,13 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_loc_u8, const uint8_t *src,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
-///                     Must not be less than width * sizeof(type).
+///                     Must not be less than width * sizeof(type), except for
+///                     single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must not be less than width * sizeof(type).
+///                     Must not be less than width * sizeof(type), except for
+///                     single-row images.
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 /// @param scale        Value to multiply the input by.
@@ -1429,14 +1472,14 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_u8, const uint8_t *src,
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the source data. Must
-///                     not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     start of the next row for the source data. Must be a
+///                     multiple of sizeof(type) and no less than width *
+///                     sizeof(type), except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination data. Must
-///                     not be less than width * sizeof(type).
-///                     Must be a multiple of sizeof(type).
+///                     start of the next row for the destination data. Must be
+///                     a multiple of sizeof(type) and no less than width *
+///                     sizeof(type), except for single-row images.
 /// @param width        Number of pixels in a row.
 /// @param height       Number of rows in the data.
 ///

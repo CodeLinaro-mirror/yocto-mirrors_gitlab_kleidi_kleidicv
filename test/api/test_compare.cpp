@@ -357,15 +357,15 @@ TYPED_TEST(Compare, EqualMisalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src_a[1] = {}, src_b[1] = {}, dst[1];
+  TypeParam src_a[2] = {}, src_b[2] = {}, dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             (CompareEqualParams<TypeParam>::api()(src_a, sizeof(TypeParam) + 1,
                                                   src_b, sizeof(TypeParam), dst,
-                                                  sizeof(TypeParam), 1, 1)));
+                                                  sizeof(TypeParam), 1, 2)));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             (CompareEqualParams<TypeParam>::api()(
                 src_a, sizeof(TypeParam), src_b, sizeof(TypeParam), dst,
-                sizeof(TypeParam) + 1, 1, 1)));
+                sizeof(TypeParam) + 1, 1, 2)));
 }
 
 TYPED_TEST(Compare, GreaterMisalignment) {
@@ -373,15 +373,15 @@ TYPED_TEST(Compare, GreaterMisalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src_a[1] = {}, src_b[1] = {}, dst[1];
+  TypeParam src_a[2] = {}, src_b[2] = {}, dst[2];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             (CompareGreaterParams<TypeParam>::api()(
                 src_a, sizeof(TypeParam) + 1, src_b, sizeof(TypeParam), dst,
-                sizeof(TypeParam), 1, 1)));
+                sizeof(TypeParam), 1, 2)));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             (CompareGreaterParams<TypeParam>::api()(
                 src_a, sizeof(TypeParam), src_b, sizeof(TypeParam), dst,
-                sizeof(TypeParam) + 1, 1, 1)));
+                sizeof(TypeParam) + 1, 1, 2)));
 }
 
 TYPED_TEST(Compare, EqualZeroImageSize) {

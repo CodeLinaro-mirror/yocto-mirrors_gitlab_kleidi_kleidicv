@@ -115,19 +115,19 @@ TYPED_TEST(SaturatingSub, Misalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src[1] = {}, dst[1];
+  TypeParam src[2] = {}, dst[2];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             saturating_sub<TypeParam>()(src, sizeof(TypeParam) + 1, src,
                                         sizeof(TypeParam), dst,
-                                        sizeof(TypeParam), 1, 1));
+                                        sizeof(TypeParam), 1, 2));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             saturating_sub<TypeParam>()(src, sizeof(TypeParam), src,
                                         sizeof(TypeParam) + 1, dst,
-                                        sizeof(TypeParam), 1, 1));
+                                        sizeof(TypeParam), 1, 2));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             saturating_sub<TypeParam>()(src, sizeof(TypeParam), src,
                                         sizeof(TypeParam), dst,
-                                        sizeof(TypeParam) + 1, 1, 1));
+                                        sizeof(TypeParam) + 1, 1, 2));
 }
 
 TYPED_TEST(SaturatingSub, ZeroImageSize) {

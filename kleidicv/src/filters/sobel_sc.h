@@ -123,8 +123,8 @@ static kleidicv_error_t sobel_3x3_horizontal_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height,
     size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   const size_t KernelSize = 3;
@@ -159,8 +159,8 @@ static kleidicv_error_t sobel_3x3_vertical_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height,
     size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   const size_t KernelSize = 3;

@@ -191,9 +191,9 @@ kleidicv_error_t yuv2rgbx_operation(
     const ScalarType *src_uv, size_t src_uv_stride, ScalarType *dst,
     size_t dst_stride, size_t width,
     size_t height) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTER_AND_STRIDE(src_y, src_y_stride);
-  CHECK_POINTER_AND_STRIDE(src_uv, src_uv_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src_y, src_y_stride, height);
+  CHECK_POINTER_AND_STRIDE(src_uv, src_uv_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};

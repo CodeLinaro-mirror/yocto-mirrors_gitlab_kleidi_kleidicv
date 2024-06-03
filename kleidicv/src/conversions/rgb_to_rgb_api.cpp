@@ -29,8 +29,8 @@ using KLEIDICV_TARGET_NAMESPACE::Rows;
 static kleidicv_error_t kleidicv_rgb_to_rgb_u8_impl(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
@@ -46,8 +46,8 @@ decltype(kleidicv_rgb_to_rgb_u8_impl) *kleidicv_rgb_to_rgb_u8 =
 static kleidicv_error_t kleidicv_rgba_to_rgba_u8_impl(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};

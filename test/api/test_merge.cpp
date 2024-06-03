@@ -251,7 +251,7 @@ TYPED_TEST(Merge, Misalignment) {
   const size_t kChannels = 4;
   // A size comfortably large enough to hold the data, taking into account the
   // various offsets that this test will make.
-  const size_t kBufSize = kChannels * sizeof(TypeParam) * 2;
+  const size_t kBufSize = kChannels * sizeof(TypeParam) * 4;
   alignas(TypeParam) char src_arrays[kBufSize] = {};
   alignas(TypeParam) char dst[kBufSize] = {};
   size_t src_strides[kChannels] = {};
@@ -270,7 +270,7 @@ TYPED_TEST(Merge, Misalignment) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               kleidicv_merge(reinterpret_cast<const void**>(srcs), src_strides,
                              dst_maybe_misaligned, dst_stride_maybe_misaligned,
-                             1, 1, channels, sizeof(TypeParam)));
+                             1, 2, channels, sizeof(TypeParam)));
   };
 
   for (size_t channels = 2; channels <= kChannels; ++channels) {

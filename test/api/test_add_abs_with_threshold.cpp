@@ -188,19 +188,19 @@ TYPED_TEST(SaturatingAddAbsWithThresholdTest, Misalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src[1] = {}, dst[1] = {};
+  TypeParam src[2] = {}, dst[2] = {};
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             kleidicv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam) + 1, src, sizeof(TypeParam), dst,
-                sizeof(TypeParam), 1, 1, 1));
+                sizeof(TypeParam), 1, 2, 1));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             kleidicv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam) + 1, dst,
-                sizeof(TypeParam), 1, 1, 1));
+                sizeof(TypeParam), 1, 2, 1));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             kleidicv_saturating_add_abs_with_threshold_s16(
                 src, sizeof(TypeParam), src, sizeof(TypeParam), dst,
-                sizeof(TypeParam) + 1, 1, 1, 1));
+                sizeof(TypeParam) + 1, 1, 2, 1));
 }
 
 TYPED_TEST(SaturatingAddAbsWithThresholdTest, ZeroImageSize) {

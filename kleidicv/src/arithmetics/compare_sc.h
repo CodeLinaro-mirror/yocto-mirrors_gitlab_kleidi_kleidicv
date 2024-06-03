@@ -47,9 +47,9 @@ kleidicv_error_t compare_sc(const ScalarType *src_a, size_t src_a_stride,
                             const ScalarType *src_b, size_t src_b_stride,
                             ScalarType *dst, size_t dst_stride, size_t width,
                             size_t height) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTER_AND_STRIDE(src_a, src_a_stride);
-  CHECK_POINTER_AND_STRIDE(src_b, src_b_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src_a, src_a_stride, height);
+  CHECK_POINTER_AND_STRIDE(src_b, src_b_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Comparator operation{};

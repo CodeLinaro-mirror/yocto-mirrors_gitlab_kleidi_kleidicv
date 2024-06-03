@@ -120,33 +120,33 @@ TYPED_TEST(Sobel, Vertical3x3) {
 
 TYPED_TEST(Sobel, MisalignmentHorizontal) {
   using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
-  typename KernelTestParams::InputType src[1] = {};
-  typename KernelTestParams::OutputType dst[1];
+  typename KernelTestParams::InputType src[2] = {};
+  typename KernelTestParams::OutputType dst[2];
   if (sizeof(typename KernelTestParams::InputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_horizontal<TypeParam>()(src, sizeof(src) + 1, dst,
-                                                sizeof(dst), 1, 1, 1));
+                                                sizeof(dst), 1, 2, 1));
   }
   if (sizeof(typename KernelTestParams::OutputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_horizontal<TypeParam>()(src, sizeof(src), dst,
-                                                sizeof(dst) + 1, 1, 1, 1));
+                                                sizeof(dst) + 1, 1, 2, 1));
   }
 }
 
 TYPED_TEST(Sobel, MisalignmentVertical) {
   using KernelTestParams = SobelKernelTestParams<TypeParam, false>;
-  typename KernelTestParams::InputType src[1] = {};
-  typename KernelTestParams::OutputType dst[1];
+  typename KernelTestParams::InputType src[2] = {};
+  typename KernelTestParams::OutputType dst[2];
   if (sizeof(typename KernelTestParams::InputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_vertical<TypeParam>()(src, sizeof(src) + 1, dst,
-                                              sizeof(dst), 1, 1, 1));
+                                              sizeof(dst), 1, 2, 1));
   }
   if (sizeof(typename KernelTestParams::OutputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst,
-                                              sizeof(dst) + 1, 1, 1, 1));
+                                              sizeof(dst) + 1, 1, 2, 1));
   }
 }
 

@@ -33,8 +33,8 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       size_t src_width, size_t src_height,
                                       uint8_t *dst, size_t dst_stride,
                                       size_t dst_width, size_t dst_height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(src_width, src_height);
 
   if (kleidicv_error_t ret = check_dimensions(src_width, dst_width)) {

@@ -125,11 +125,11 @@ TYPED_TEST(CountNonZeros, Misalignment) {
     // misalignment impossible
     return;
   }
-  TypeParam src[1];
+  TypeParam src[2];
   size_t count = 0;
   EXPECT_EQ(
       KLEIDICV_ERROR_ALIGNMENT,
-      count_nonzeros<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 1, &count));
+      count_nonzeros<TypeParam>()(src, sizeof(TypeParam) + 1, 1, 2, &count));
 }
 
 TYPED_TEST(CountNonZeros, ZeroImageSize) {

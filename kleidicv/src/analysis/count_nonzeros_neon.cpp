@@ -45,7 +45,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t count_nonzeros(
     const T *src, size_t src_stride, size_t width, size_t height,
     size_t *count) {
   CHECK_POINTERS(count);
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};

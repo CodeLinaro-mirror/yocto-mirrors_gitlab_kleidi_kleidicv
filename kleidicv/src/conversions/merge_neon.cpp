@@ -374,9 +374,9 @@ kleidicv_error_t merge(const void **srcs, const size_t *src_strides,
   MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src0, srcs[0]);
   MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src1, srcs[1]);
   MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst, dst_void);
-  CHECK_POINTER_AND_STRIDE(src0, src_strides[0]);
-  CHECK_POINTER_AND_STRIDE(src1, src_strides[1]);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src0, src_strides[0], height);
+  CHECK_POINTER_AND_STRIDE(src1, src_strides[1], height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
@@ -393,7 +393,7 @@ kleidicv_error_t merge(const void **srcs, const size_t *src_strides,
 
     case 3: {
       MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src2, srcs[2]);
-      CHECK_POINTER_AND_STRIDE(src2, src_strides[2]);
+      CHECK_POINTER_AND_STRIDE(src2, src_strides[2], height);
       Merge3<ScalarType> operation;
       Rows<const ScalarType> src_c_rows{src2, src_strides[2]};
       apply_operation_by_rows(operation, rect, src_a_rows, src_b_rows,
@@ -403,8 +403,8 @@ kleidicv_error_t merge(const void **srcs, const size_t *src_strides,
     case 4: {
       MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src2, srcs[2]);
       MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src3, srcs[3]);
-      CHECK_POINTER_AND_STRIDE(src2, src_strides[2]);
-      CHECK_POINTER_AND_STRIDE(src3, src_strides[3]);
+      CHECK_POINTER_AND_STRIDE(src2, src_strides[2], height);
+      CHECK_POINTER_AND_STRIDE(src3, src_strides[3], height);
       Merge4<ScalarType> operation;
       Rows<const ScalarType> src_c_rows{src2, src_strides[2]};
       Rows<const ScalarType> src_d_rows{src3, src_strides[3]};

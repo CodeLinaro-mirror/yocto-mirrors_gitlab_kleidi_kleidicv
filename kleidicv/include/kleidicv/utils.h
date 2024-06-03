@@ -367,11 +367,11 @@ T *align_up(T *value, size_t alignment) KLEIDICV_STREAMING_COMPATIBLE {
 // Specialisation for when stride misalignment is possible.
 template <typename T>
 std::enable_if_t<alignof(T) != 1, kleidicv_error_t> check_pointer_and_stride(
-    T *pointer, size_t stride) KLEIDICV_STREAMING_COMPATIBLE {
+    T *pointer, size_t stride, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
   if (pointer == nullptr) {
     return KLEIDICV_ERROR_NULL_POINTER;
   }
-  if (is_misaligned<T>(stride)) {
+  if (height > 1 && is_misaligned<T>(stride)) {
     return KLEIDICV_ERROR_ALIGNMENT;
   }
   return KLEIDICV_OK;
@@ -380,20 +380,21 @@ std::enable_if_t<alignof(T) != 1, kleidicv_error_t> check_pointer_and_stride(
 // Specialisation for when stride misalignment is impossible.
 template <typename T>
 std::enable_if_t<alignof(T) == 1, kleidicv_error_t> check_pointer_and_stride(
-    T *pointer, size_t /*stride*/) KLEIDICV_STREAMING_COMPATIBLE {
+    T *pointer, size_t /*stride*/,
+    size_t /*height*/) KLEIDICV_STREAMING_COMPATIBLE {
   if (pointer == nullptr) {
     return KLEIDICV_ERROR_NULL_POINTER;
   }
   return KLEIDICV_OK;
 }
 
-#define CHECK_POINTER_AND_STRIDE(pointer, stride)                          \
-  do {                                                                     \
-    if (kleidicv_error_t ptr_stride_err =                                  \
-            KLEIDICV_TARGET_NAMESPACE::check_pointer_and_stride(pointer,   \
-                                                                stride)) { \
-      return ptr_stride_err;                                               \
-    }                                                                      \
+#define CHECK_POINTER_AND_STRIDE(pointer, stride, height)        \
+  do {                                                           \
+    if (kleidicv_error_t ptr_stride_err =                        \
+            KLEIDICV_TARGET_NAMESPACE::check_pointer_and_stride( \
+                pointer, stride, height)) {                      \
+      return ptr_stride_err;                                     \
+    }                                                            \
   } while (false)
 
 #define MAKE_POINTER_CHECK_ALIGNMENT(ElementType, name, from)  \

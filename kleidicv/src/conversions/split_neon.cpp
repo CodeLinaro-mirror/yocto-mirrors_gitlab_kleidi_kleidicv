@@ -260,9 +260,9 @@ kleidicv_error_t split(const void *src_void, const size_t src_stride,
   MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src_data, src_void);
   MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst0, dst_data[0]);
   MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst1, dst_data[1]);
-  CHECK_POINTER_AND_STRIDE(src_data, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst0, dst_strides[0]);
-  CHECK_POINTER_AND_STRIDE(dst1, dst_strides[1]);
+  CHECK_POINTER_AND_STRIDE(src_data, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst0, dst_strides[0], height);
+  CHECK_POINTER_AND_STRIDE(dst1, dst_strides[1], height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
@@ -277,7 +277,7 @@ kleidicv_error_t split(const void *src_void, const size_t src_stride,
     } break;
     case 3: {
       MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst2, dst_data[2]);
-      CHECK_POINTER_AND_STRIDE(dst2, dst_strides[2]);
+      CHECK_POINTER_AND_STRIDE(dst2, dst_strides[2], height);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};
       Split3<ScalarType> operation;
       apply_operation_by_rows(operation, rect, src_rows, dst_rows0, dst_rows1,
@@ -286,8 +286,8 @@ kleidicv_error_t split(const void *src_void, const size_t src_stride,
     case 4: {
       MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst2, dst_data[2]);
       MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst3, dst_data[3]);
-      CHECK_POINTER_AND_STRIDE(dst2, dst_strides[2]);
-      CHECK_POINTER_AND_STRIDE(dst3, dst_strides[3]);
+      CHECK_POINTER_AND_STRIDE(dst2, dst_strides[2], height);
+      CHECK_POINTER_AND_STRIDE(dst3, dst_strides[3], height);
       Rows<ScalarType> dst_rows2{dst2, dst_strides[2]};
       Rows<ScalarType> dst_rows3{dst3, dst_strides[3]};
       Split4<ScalarType> operation;

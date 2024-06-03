@@ -199,8 +199,8 @@ static kleidicv_error_t transpose(const void *src_void, size_t src_stride,
                                   size_t src_width, size_t src_height) {
   MAKE_POINTER_CHECK_ALIGNMENT(const T, src, src_void);
   MAKE_POINTER_CHECK_ALIGNMENT(T, dst, dst_void);
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, src_width);
   CHECK_IMAGE_SIZE(src_width, src_height);
 
   Rectangle rect{src_width, src_height};

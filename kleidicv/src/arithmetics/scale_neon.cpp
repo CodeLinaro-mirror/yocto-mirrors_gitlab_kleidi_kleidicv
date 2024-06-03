@@ -172,8 +172,8 @@ template <typename T>
 kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
                        float scale, float shift) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};

@@ -572,14 +572,14 @@ TYPED_TEST(Morphology, DilateMisalignment) {
   }
   kleidicv_morphology_context_t *context = nullptr;
   ASSERT_EQ(KLEIDICV_OK, make_minimal_context(&context, sizeof(TypeParam)));
-  TypeParam src[1] = {}, dst[1];
+  TypeParam src[2] = {}, dst[2];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             DilateParams<TypeParam>::api()(src, sizeof(TypeParam) + 1, dst,
-                                           sizeof(TypeParam), 1, 1, context));
+                                           sizeof(TypeParam), 1, 2, context));
   EXPECT_EQ(
       KLEIDICV_ERROR_ALIGNMENT,
       DilateParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
-                                     sizeof(TypeParam) + 1, 1, 1, context));
+                                     sizeof(TypeParam) + 1, 1, 2, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_release(context));
 }
 
@@ -590,14 +590,14 @@ TYPED_TEST(Morphology, ErodeMisalignment) {
   }
   kleidicv_morphology_context_t *context = nullptr;
   ASSERT_EQ(KLEIDICV_OK, make_minimal_context(&context, sizeof(TypeParam)));
-  TypeParam src[1] = {}, dst[1];
+  TypeParam src[2] = {}, dst[2];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             ErodeParams<TypeParam>::api()(src, sizeof(TypeParam) + 1, dst,
-                                          sizeof(TypeParam), 1, 1, context));
+                                          sizeof(TypeParam), 1, 2, context));
   EXPECT_EQ(
       KLEIDICV_ERROR_ALIGNMENT,
       ErodeParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
-                                    sizeof(TypeParam) + 1, 1, 1, context));
+                                    sizeof(TypeParam) + 1, 1, 2, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_release(context));
 }
 

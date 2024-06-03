@@ -413,8 +413,8 @@ kleidicv_error_t resize_linear_u8(const uint8_t *src, size_t src_stride,
                                   size_t src_width, size_t src_height,
                                   uint8_t *dst, size_t dst_stride,
                                   size_t dst_width, size_t dst_height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
   if (src_width == 0 || src_height == 0) {
@@ -749,8 +749,8 @@ kleidicv_error_t resize_linear_f32(const float *src, size_t src_stride,
                                    size_t src_width, size_t src_height,
                                    float *dst, size_t dst_stride,
                                    size_t dst_width, size_t dst_height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
   if (src_width == 0 || src_height == 0) {

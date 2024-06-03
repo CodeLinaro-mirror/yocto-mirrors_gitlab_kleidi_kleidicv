@@ -272,8 +272,8 @@ kleidicv_error_t discrete_gaussian_blur(
   using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
 
   CHECK_POINTERS(context);
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   if (width < KernelSize - 1 || height < KernelSize - 1) {

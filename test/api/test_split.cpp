@@ -240,7 +240,7 @@ TYPED_TEST(Split, Misalignment) {
   const size_t kChannels = 4;
   // A size comfortably large enough to hold the data, taking into account the
   // various offsets that this test will make.
-  const size_t kBufSize = kChannels * sizeof(TypeParam) * 2;
+  const size_t kBufSize = kChannels * sizeof(TypeParam) * 4;
   alignas(TypeParam) char src_data[kBufSize];
   size_t src_stride = kChannels * sizeof(TypeParam);
   alignas(TypeParam) char dst_arrays[kBufSize];
@@ -259,7 +259,7 @@ TYPED_TEST(Split, Misalignment) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               kleidicv_split(src_maybe_misaligned, src_stride_maybe_misaligned,
                              reinterpret_cast<void**>(dst_data), dst_strides, 1,
-                             1, channels, sizeof(TypeParam)));
+                             2, channels, sizeof(TypeParam)));
   };
 
   for (size_t channels = 2; channels <= kChannels; ++channels) {

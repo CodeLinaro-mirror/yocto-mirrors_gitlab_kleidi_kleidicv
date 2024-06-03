@@ -310,7 +310,7 @@ template <typename ScalarType>
 kleidicv_error_t min_max_loc(const ScalarType *src, size_t src_stride,
                              size_t width, size_t height, size_t *min_offset,
                              size_t *max_offset) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride);
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   if (KLEIDICV_UNLIKELY(width == 0 || height == 0)) {

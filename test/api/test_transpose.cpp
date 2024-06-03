@@ -214,11 +214,15 @@ TYPED_TEST(Transpose, Misalignment) {
                                sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             kleidicv_transpose(src, sizeof(TypeParam) + 1, dst,
-                               sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
+                               sizeof(TypeParam), 1, 2, sizeof(TypeParam)));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
             kleidicv_transpose(src, sizeof(TypeParam), dst + 1,
                                sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+            kleidicv_transpose(src, sizeof(TypeParam), dst,
+                               sizeof(TypeParam) + 1, 2, 1, sizeof(TypeParam)));
+  // Ignore stride if there's only one row
+  EXPECT_EQ(KLEIDICV_OK,
             kleidicv_transpose(src, sizeof(TypeParam), dst,
                                sizeof(TypeParam) + 1, 1, 1, sizeof(TypeParam)));
 }
