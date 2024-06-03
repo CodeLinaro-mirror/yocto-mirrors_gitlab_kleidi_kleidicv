@@ -32,7 +32,7 @@ class SeparableFilter<FilterType, 5UL> {
 
   explicit SeparableFilter(FilterType filter) : filter_{filter} {}
 
-  static constexpr Margin margin() { return Margin{2UL}; }
+  static constexpr size_t margin = 2UL;
 
   void process_vertical(size_t width, Rows<const SourceType> src_rows,
                         Rows<BufferType> dst_rows,

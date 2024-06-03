@@ -138,9 +138,6 @@ class SeparableFilterWorkspace final {
                                 &data_[buffer_rows_offset_]),
                             buffer_rows_stride_, channels};
 
-    // Margin associated with the filter.
-    constexpr Margin margin = filter.margin();
-
     // Vertical processing loop.
     for (size_t vertical_index = 0; vertical_index < rect.height();
          ++vertical_index) {
@@ -151,7 +148,7 @@ class SeparableFilterWorkspace final {
                               buffer_rows, offsets);
       // Process in the horizontal direction last.
       process_horizontal(rect.width(), buffer_rows, dst_rows.at(vertical_index),
-                         margin, filter, horizontal_border);
+                         filter, horizontal_border);
     }
   }
 
@@ -160,14 +157,15 @@ class SeparableFilterWorkspace final {
   void process_horizontal(size_t width,
                           Rows<typename FilterType::BufferType> buffer_rows,
                           Rows<typename FilterType::DestinationType> dst_rows,
-                          Margin margin, FilterType filter,
+                          FilterType filter,
                           typename FilterType::BorderInfoType horizontal_border)
       KLEIDICV_STREAMING_COMPATIBLE {
+    // Margin associated with the filter.
+    constexpr size_t margin = filter.margin;
+
     // Process data affected by left border.
-#ifdef __clang__  // GCC is unable to unroll the loop
     KLEIDICV_FORCE_LOOP_UNROLL
-#endif
-    for (size_t horizontal_index = 0; horizontal_index < margin.left();
+    for (size_t horizontal_index = 0; horizontal_index < margin;
          ++horizontal_index) {
       auto offsets =
           horizontal_border.offsets_with_left_border(horizontal_index);
@@ -178,20 +176,18 @@ class SeparableFilterWorkspace final {
 
     // Process data which is not affected by any borders in bulk.
     {
-      size_t width_without_borders = width - margin.left() - margin.right();
+      size_t width_without_borders = width - (2 * margin);
       auto offsets = horizontal_border.offsets_without_border();
       filter.process_horizontal(width_without_borders,
-                                buffer_rows.at(0, margin.left()),
-                                dst_rows.at(0, margin.left()), offsets);
+                                buffer_rows.at(0, margin),
+                                dst_rows.at(0, margin), offsets);
     }
 
     // Process data affected by right border.
-#ifdef __clang__  // GCC is unable to unroll the loop
     KLEIDICV_FORCE_LOOP_UNROLL
-#endif
-    for (size_t horizontal_index = 0; horizontal_index < margin.right();
+    for (size_t horizontal_index = 0; horizontal_index < margin;
          ++horizontal_index) {
-      size_t index = width - margin.right() + horizontal_index;
+      size_t index = width - margin + horizontal_index;
       auto offsets = horizontal_border.offsets_with_right_border(index);
       filter.process_horizontal_borders(buffer_rows.at(0, index),
                                         dst_rows.at(0, index), offsets);

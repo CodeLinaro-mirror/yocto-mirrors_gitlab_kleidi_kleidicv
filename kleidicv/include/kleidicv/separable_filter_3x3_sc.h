@@ -36,9 +36,7 @@ class SeparableFilter<FilterType, 3UL> {
   explicit SeparableFilter(FilterType filter) KLEIDICV_STREAMING_COMPATIBLE
       : filter_{filter} {}
 
-  static constexpr Margin margin() KLEIDICV_STREAMING_COMPATIBLE {
-    return Margin{1UL};
-  }
+  static constexpr size_t margin = 1UL;
 
   void process_vertical(
       size_t width, Rows<const SourceType> src_rows, Rows<BufferType> dst_rows,
