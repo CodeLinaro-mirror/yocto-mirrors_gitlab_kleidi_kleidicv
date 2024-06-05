@@ -12,10 +12,10 @@ First, you need a Linux x86 machine to build this.
 Next, to build for Android, you'll need [Android NDK](https://developer.android.com/ndk/).
 
 Also, the OpenCV 4.9.0 source needs to be downloaded and patched. Assuming CWD is the root of OpenCV's
-source directory please run :
+source directory please run:
 ```
-patch -p1<path/to/kleidicv/adapters/opencv/opencv-4.9.patch
-patch -p1<path/to/kleidicv/adapters/opencv/extra_benchmarks/opencv-4.9.patch
+patch -p1 < path/to/kleidicv/adapters/opencv/opencv-4.9.patch
+patch -p1 < path/to/kleidicv/adapters/opencv/extra_benchmarks/opencv-4.9.patch
 ```
 
 Let's assume you are building on a machine that has the phone attached to via USB.
@@ -23,13 +23,15 @@ Let's assume your CWD is this directory.
 
 ```
 OPENCV_PATH=<path to OpenCV> \
-NDK_TOOLCHAIN_FILE=<path to the NDK>/build/cmake/android.toolchain.cmake \
+CMAKE_TOOLCHAIN_FILE=<path to the NDK>/build/cmake/android.toolchain.cmake \
 ./build.sh
 ```
 
 If the `CUSTOM_CMAKE_OPTIONS` environment variable is set a third flavour is also build, next to vanilla
 OpenCV and OpenCV+KleidiCV with default options. The variable specifies the extra CMake variables for this
-custom build.
+custom build and the `CUSTOM_BUILD_SUFFIX` environment variable can alter the `custom` build name suffix.
+(If the `CUSTOM_BUILD_SUFFIX` was defined for the build, it should be provided to the further scripts as well,
+like `push` and `run_*`.)
 
 Then push the test binaries to the phone (replace 9A9A9A9A with your actual device ID, or skip it if you have only one phone attached):
 ```

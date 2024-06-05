@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Environment variables used:
-#   ADB:                adb executable. Must be set.
+#   ADB:                 adb executable. Must be set.
+#   BUILD_ROOT_PATH:     Directory of the different builds to push.
+#   CUSTOM_BUILD_SUFFIX: Try this build suffix for the extra custom build. Defaults to 'custom'.
 # Note:
 #   Use standard ADB env vars (like ANDROID_SERIAL, ANDROID_ADB_SERVER_ADDRESS and
 #   ANDROID_ADB_SERVER_PORT) to customize ADB calls.
@@ -17,21 +19,24 @@ if [[ -z "${ADB:-}" ]]; then
   exit 1
 fi
 
-SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
+BENCHMARK_SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
+BUILD_ROOT_PATH="${BUILD_ROOT_PATH:-"${BENCHMARK_SCRIPT_PATH}/../../build"}"
+CUSTOM_BUILD_SUFFIX="${CUSTOM_BUILD_SUFFIX:-custom}"
 
 DEV_DIR=/data/local/tmp
 
-"${ADB}" push "${SCRIPT_PATH}"/build/vanilla/bin/opencv_perf_core ${DEV_DIR}/opencv_perf_core_vanilla
-"${ADB}" push "${SCRIPT_PATH}"/build/vanilla/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_vanilla
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_vanilla
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_vanilla
 
-"${ADB}" push "${SCRIPT_PATH}"/build/kleidicv/bin/opencv_perf_core ${DEV_DIR}/opencv_perf_core_kleidicv
-"${ADB}" push "${SCRIPT_PATH}"/build/kleidicv/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_kleidicv
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_kleidicv
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_kleidicv
 
-if [[ -f "${SCRIPT_PATH}"/build/kleidicv_custom/bin/opencv_perf_core && -f "${SCRIPT_PATH}"/build/kleidicv_custom/bin/opencv_perf_imgproc ]]; then
-  "${ADB}" push "${SCRIPT_PATH}"/build/kleidicv_custom/bin/opencv_perf_core ${DEV_DIR}/opencv_perf_core_custom
-  "${ADB}" push "${SCRIPT_PATH}"/build/kleidicv_custom/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_custom
+if [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_core ]] && \
+   [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_imgproc ]]; then
+  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_custom
+  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_custom
 fi
 
-"${ADB}" push "${SCRIPT_PATH}"/perf_test_op.sh ${DEV_DIR}/
-"${ADB}" push "${SCRIPT_PATH}"/run_benchmarks_FHD.sh ${DEV_DIR}/
-"${ADB}" push "${SCRIPT_PATH}"/run_benchmarks_4K.sh ${DEV_DIR}/
+"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/perf_test_op.sh       ${DEV_DIR}/
+"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_FHD.sh ${DEV_DIR}/
+"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_4K.sh  ${DEV_DIR}/

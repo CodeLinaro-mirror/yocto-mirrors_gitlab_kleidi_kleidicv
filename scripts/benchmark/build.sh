@@ -3,74 +3,85 @@
 # SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+# Builds the perf benchmarks for OpenCV with Android target.
+#
+# The following builds will be created:
+#   * opencv-vanilla:                          (without KleidiCV)
+#   * opencv-kleidicv:                         (with KleidiCV)
+#   * [opencv-kleidicv-<CUSTOM_BUILD_SUFFIX>]: (with KleidiCV and CUSTOM_CMAKE_OPTIONS,
+#                                               but only if the CUSTOM_CMAKE_OPTIONS were provided)
+#
+# It uses the scripts/build-opencv.sh. See that script for detailed behavior and more options.
+# Note that the OPENCV_PATH (for OpenCV) and CMAKE_TOOLCHAIN_FILE (for Android NDK)
+# variables should be set as well.
+#
+# Options:
+#   CUSTOM_CMAKE_OPTIONS: If provided, an extra build will be created with KleidiCV.
+#   CUSTOM_BUILD_SUFFIX:  Build name suffix for the extra build. Defaults to 'custom'.
+#
+# ------------------------------------------------------------------------------
 
 set -exu
 
-if [[ -z "${OPENCV_PATH:-}" ]]; then
-  echo "Please specify the local path to a checked out (cloned) OpenCV repo in the OPENCV_PATH env variable"
+if [[ ! -f "${CMAKE_TOOLCHAIN_FILE:-}" ]]; then
+  echo "Please specify the path of the Android NDK toolchain file (e.g. android-ndk-r26d/build/cmake/android.toolchain.cmake) in the CMAKE_TOOLCHAIN_FILE env variable"
   exit 1
 fi
 
-if [ ! -f "${NDK_TOOLCHAIN_FILE:-}" ]; then
-  echo "Please specify the path of the Android NDK toolchain file (e.g. android-ndk-r26d/build/cmake/android.toolchain.cmake) in the NDK_TOOLCHAIN_FILE env variable"
-  exit 1
-fi
+# ------------------------------------------------------------------------------
 
-SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
-KLEIDICV_PATH="${SCRIPT_PATH}"/../..
-BASE_BUILD_PATH="${SCRIPT_PATH}"/build
+BENCHMARK_SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
+SCRIPT_PATH="${BENCHMARK_SCRIPT_PATH}/.."
+KLEIDICV_SOURCE_PATH="$(realpath "${SCRIPT_PATH}/..")"
 
-cmake -S "${OPENCV_PATH}" \
-  -B "${BASE_BUILD_PATH}"/vanilla \
-  -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_STANDARD=14 \
+export COMMON_EXTRA_CMAKE_ARGS="\
+  -DANDROID_ABI=arm64-v8a \
   -DBUILD_ANDROID_EXAMPLES=OFF \
+  -DCMAKE_CXX_STANDARD=14 \
   -DBUILD_TESTS=OFF \
   -DBUILD_PERF_TESTS=ON \
   -DOPENCV_DISABLE_THREAD_SUPPORT=ON \
-  -DCMAKE_TOOLCHAIN_FILE=$(readlink -f "${NDK_TOOLCHAIN_FILE}") \
-  -DANDROID_ABI=arm64-v8a \
   -DBENCHMARK_DOWNLOAD_DEPENDENCIES=ON \
-  -DWITH_KLEIDICV=OFF
+"
 
-ninja -C "${BASE_BUILD_PATH}"/vanilla opencv_perf_imgproc opencv_perf_core
+# ------------------------------------------------------------------------------
 
-cmake -S "${OPENCV_PATH}" \
-  -B "${BASE_BUILD_PATH}"/kleidicv \
-  -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_STANDARD=14 \
-  -DBUILD_ANDROID_EXAMPLES=OFF \
-  -DBUILD_TESTS=OFF \
-  -DBUILD_PERF_TESTS=ON \
-  -DOPENCV_DISABLE_THREAD_SUPPORT=ON \
-  -DCMAKE_TOOLCHAIN_FILE=$(readlink -f "${NDK_TOOLCHAIN_FILE}") \
-  -DANDROID_ABI=arm64-v8a \
-  -DBENCHMARK_DOWNLOAD_DEPENDENCIES=ON \
-  -DWITH_KLEIDICV=ON \
-  -DKLEIDICV_SOURCE_PATH=$(realpath "${KLEIDICV_PATH}")
+export BUILD_ID="opencv-vanilla"
+export EXTRA_CMAKE_ARGS="\
+    ${COMMON_EXTRA_CMAKE_ARGS} \
+    -DWITH_KLEIDICV=OFF \
+"
 
-ninja -C "${BASE_BUILD_PATH}"/kleidicv opencv_perf_imgproc opencv_perf_core
+"${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
+
+# ------------------------------------------------------------------------------
+
+export BUILD_ID="opencv-kleidicv"
+export EXTRA_CMAKE_ARGS="\
+    ${COMMON_EXTRA_CMAKE_ARGS} \
+    -DWITH_KLEIDICV=ON \
+    -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
+"
+
+"${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
+
+# ------------------------------------------------------------------------------
 
 if [[ -z "${CUSTOM_CMAKE_OPTIONS:-}" ]]; then
   exit 0;
 fi
 
-cmake -S "${OPENCV_PATH}" \
-  -B "${BASE_BUILD_PATH}"/kleidicv_custom \
-  -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_STANDARD=14 \
-  -DBUILD_ANDROID_EXAMPLES=OFF \
-  -DBUILD_TESTS=OFF \
-  -DBUILD_PERF_TESTS=ON \
-  -DOPENCV_DISABLE_THREAD_SUPPORT=ON \
-  -DCMAKE_TOOLCHAIN_FILE=$(readlink -f "${NDK_TOOLCHAIN_FILE}") \
-  -DANDROID_ABI=arm64-v8a \
-  -DBENCHMARK_DOWNLOAD_DEPENDENCIES=ON \
-  -DWITH_KLEIDICV=ON \
-  -DKLEIDICV_SOURCE_PATH=$(realpath "${KLEIDICV_PATH}") \
-  ${CUSTOM_CMAKE_OPTIONS}
+export BUILD_ID="opencv-kleidicv-${CUSTOM_BUILD_SUFFIX:-custom}"
+export EXTRA_CMAKE_ARGS="\
+    ${COMMON_EXTRA_CMAKE_ARGS} \
+    -DWITH_KLEIDICV=ON \
+    -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
+    ${CUSTOM_CMAKE_OPTIONS} \
+"
 
-ninja -C "${BASE_BUILD_PATH}"/kleidicv_custom opencv_perf_imgproc opencv_perf_core
+"${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
+
+# ------------------------------------------------------------------------------
+# End of script
+# ------------------------------------------------------------------------------
