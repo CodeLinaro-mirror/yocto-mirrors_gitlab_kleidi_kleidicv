@@ -166,7 +166,7 @@ if(KLEIDICV_BUILD_SME2)
   set_target_properties(kleidicv_sme2 PROPERTIES CXX_STANDARD 17)
   target_compile_options(kleidicv_sme2 PRIVATE
     ${KLEIDICV_CXX_FLAGS}
-    "-march=armv9-a+sve2+sme2"
+    "-march=armv9-a+sve2+sme2+nosimd"
     "-DKLEIDICV_TARGET_SME2=1"
   )
 endif()
