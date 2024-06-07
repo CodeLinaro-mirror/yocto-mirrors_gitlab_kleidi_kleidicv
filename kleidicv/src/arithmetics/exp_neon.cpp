@@ -60,7 +60,7 @@ class Exp<float> final : public UnrollOnce {
     float32x4_t s2 = vreinterpretq_f32_u32(e - b);
     uint32x4_t cmp = vcagtq_f32(n, vdupq_n(192.0F));
     float32x4_t r1 = s1 * s1;
-    float32x4_t r0 = poly * s1 * s2;
+    float32x4_t r0 = (poly * s1) * s2;
     return vreinterpretq_f32_u32((cmp & vreinterpretq_u32_f32(r1)) |
                                  (~cmp & vreinterpretq_u32_f32(r0)));
   }

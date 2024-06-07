@@ -61,7 +61,7 @@ class ExpTestSpecial<float> final : public UnaryOperationTest<float> {
   static const std::vector<ElementType>& input_values() {
     static const std::vector<ElementType> kInputValues = {
         -105.31, -100.07, -81.012, -47.66, -3.1088, -0.21,
-        0.7,     6.2,     39.7201, 86.11,  88.947};
+        0.7,     6.2,     39.7201, 86.11,  88.7,    88.947};
 
     return kInputValues;
   }

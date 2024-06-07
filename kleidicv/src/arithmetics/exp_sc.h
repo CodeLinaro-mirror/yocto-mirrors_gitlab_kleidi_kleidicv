@@ -64,7 +64,7 @@ class Exp<float, TryShortPath> final : public UnrollOnce {
     svfloat32_t s2 = svreinterpret_f32(svsub_x(pg, e, b));
     svbool_t cmp = svacgt(pg, n, 192.0F);
     svfloat32_t r1 = svmul_x(pg, s1, s1);
-    svfloat32_t r0 = svmul_x(pg, poly, svmul_x(pg, s1, s2));
+    svfloat32_t r0 = svmul_x(pg, s2, svmul_x(pg, poly, s1));
 
     return svsel(cmp, r1, r0);
   }
