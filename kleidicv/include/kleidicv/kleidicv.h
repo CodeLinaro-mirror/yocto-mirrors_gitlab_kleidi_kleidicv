@@ -1460,6 +1460,10 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_loc_u8, const uint8_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_scale_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, float scale, float shift);
+/// @copydoc kleidicv_scale_u8
+KLEIDICV_API_DECLARATION(kleidicv_scale_f32, const float *src,
+                         size_t src_stride, float *dst, size_t dst_stride,
+                         size_t width, size_t height, float scale, float shift);
 
 /// Exponential function, input is the elements in `src`, output is the elements
 /// in `dst`.

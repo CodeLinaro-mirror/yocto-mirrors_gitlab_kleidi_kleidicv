@@ -4,45 +4,82 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <limits>
+
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "framework/operation.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
-#define KLEIDICV_SCALE(type, suffix) \
-  KLEIDICV_API(scale, kleidicv_scale_##suffix, type)
+template <typename DestinationType, typename SourceType>
+static DestinationType saturating_cast(SourceType value) {
+  if (value >
+      static_cast<SourceType>(std::numeric_limits<DestinationType>::max())) {
+    return std::numeric_limits<DestinationType>::max();
+  }
+  if (value < std::numeric_limits<DestinationType>::lowest()) {
+    return std::numeric_limits<DestinationType>::lowest();
+  }
+  return static_cast<DestinationType>(value);
+}
 
-KLEIDICV_SCALE(uint8_t, u8);
+uint8_t scalar_scale_u8(uint8_t x, float scale, float shift) {
+  float result = static_cast<float>(x) * scale + shift;
+  if (result < std::numeric_limits<uint8_t>::min()) {
+    return std::numeric_limits<uint8_t>::min();
+  }
+  if (result > std::numeric_limits<uint8_t>::max()) {
+    return std::numeric_limits<uint8_t>::max();
+  }
+  return static_cast<uint8_t>(lrintf(result));
+}
+
+float scalar_scale_f32(float x, float scale, float shift) {
+  return x * scale + shift;
+}
+
+#define KLEIDICV_SCALE_API(type, suffix) \
+  KLEIDICV_API(scale_api, kleidicv_scale_##suffix, type)
+
+#define KLEIDICV_SCALE_OPERATION(type, suffix) \
+  KLEIDICV_API(scale_operation, &scalar_scale_##suffix, type)
+
+KLEIDICV_SCALE_API(uint8_t, u8);
+KLEIDICV_SCALE_OPERATION(uint8_t, u8);
+KLEIDICV_SCALE_API(float, f32);
+KLEIDICV_SCALE_OPERATION(float, f32);
 
 template <typename ElementType>
 class ScaleTestBase : public UnaryOperationTest<ElementType> {
  protected:
   using UnaryOperationTest<ElementType>::min;
   using UnaryOperationTest<ElementType>::max;
+  using typename UnaryOperationTest<ElementType>::Elements;
 
   // Calls the API-under-test in the appropriate way.
   kleidicv_error_t call_api() override {
-    return kleidicv_scale_u8(this->inputs_[0].data(), this->inputs_[0].stride(),
-                             this->actual_[0].data(), this->actual_[0].stride(),
-                             this->width(), this->height(), this->scale(),
-                             this->shift());
+    return scale_api<ElementType>()(
+        this->inputs_[0].data(), this->inputs_[0].stride(),
+        this->actual_[0].data(), this->actual_[0].stride(), this->width(),
+        this->height(), this->scale(), this->shift());
   }
   virtual float scale() = 0;
   virtual float shift() = 0;
 
   // Prepares expected outputs for the operation.
   void setup() override {
-    ElementType expected = 0;
-    if (shift() < min()) {
-      expected = min();
-    } else if (shift() > max()) {
-      expected = max();
-    } else {
-      expected = lrintf(shift());
-    }
-    this->expected_[0].fill(expected);
+    this->expected_[0].fill(
+        scale_operation<ElementType>()(0, scale(), shift()));
     UnaryOperationTest<ElementType>::setup();
+  }
+
+  void fill_expected(std::vector<Elements>& elements) {
+    for (size_t i = 0; i < elements.size(); ++i) {
+      elements[i].values[1] = scale_operation<ElementType>()(
+          elements[i].values[0], scale(), shift());
+    }
   }
 };  // end of class ScaleTestBase<ElementType>
 
@@ -50,7 +87,7 @@ template <typename ElementType>
 class ScaleTestLinearBase {
  public:
   // Sets the number of padding bytes at the end of rows.
-  ScaleTestLinearBase<ElementType>& with_padding(size_t padding) {
+  ScaleTestLinearBase& with_padding(size_t padding) {
     padding_ = padding;
     return *this;
   }
@@ -73,42 +110,51 @@ class ScaleTestLinearBase {
   static constexpr ElementType max() {
     return std::numeric_limits<ElementType>::max();
   }
+  static constexpr ElementType lowest() {
+    return std::numeric_limits<ElementType>::lowest();
+  }
   virtual float scale() = 0;
   virtual float shift() = 0;
 
  private:
   class GenerateLinearSeries : public test::Generator<ElementType> {
    public:
-    explicit GenerateLinearSeries(ElementType start_from)
-        : counter_{start_from} {}
+    explicit GenerateLinearSeries(ElementType start_from, ElementType step)
+        : counter_{start_from}, step_{step} {}
 
-    std::optional<ElementType> next() override { return counter_++; }
+    std::optional<ElementType> next() override { return counter_ + step_; }
 
    private:
-    ElementType counter_;
+    ElementType counter_, step_;
   };  // end of class GenerateLinearSeries
 
   // Number of padding bytes at the end of rows.
   size_t padding_{0};
 
   void test_linear(size_t width, size_t minimum_size) {
-    size_t image_size =
-        std::max(minimum_size, static_cast<size_t>(max() - min()));
+    size_t image_size = std::max(
+        minimum_size,
+        std::min(saturating_cast<size_t, ElementType>(max() - lowest()),
+                 10000UL));
+    size_t step =
+        std::max(static_cast<ElementType>(image_size / (max() - lowest())),
+                 static_cast<ElementType>(1));
     size_t height = image_size / width + 1;
     test::Array2D<ElementType> source(width, height, padding_, 1);
     test::Array2D<ElementType> expected(width, height, padding_, 1);
     test::Array2D<ElementType> actual =
         test::Array2D<ElementType>(width, height, padding_, 1);
 
-    GenerateLinearSeries generator(min());
+    GenerateLinearSeries generator(min(), step);
 
     source.fill(generator);
 
     calculate_expected(source, expected);
 
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_scale_u8(source.data(), source.stride(),
-                                             actual.data(), actual.stride(),
-                                             width, height, scale(), shift()));
+    ASSERT_EQ(KLEIDICV_OK,
+              scale_api<ElementType>()(source.data(), source.stride(),
+                                       actual.data(), actual.stride(), width,
+                                       height, scale(), shift()));
 
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
@@ -118,19 +164,9 @@ class ScaleTestLinearBase {
                           test::Array2D<ElementType>& expected) {
     for (size_t hindex = 0; hindex < source.height(); ++hindex) {
       for (size_t vindex = 0; vindex < source.width(); ++vindex) {
-        ElementType calculated = 0;
-        // NOLINTBEGIN(clang-analyzer-core.UndefinedBinaryOperatorResult)
-        float result = *source.at(hindex, vindex) * scale() + shift();
-        // NOLINTEND(clang-analyzer-core.UndefinedBinaryOperatorResult)
         // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign)
-        if (result > max()) {
-          calculated = max();
-        } else if (result < min()) {
-          calculated = min();
-        } else {
-          calculated = lrintf(result);
-        }
-        *expected.at(hindex, vindex) = calculated;
+        *expected.at(hindex, vindex) = scale_operation<ElementType>()(
+            *source.at(hindex, vindex), scale(), shift());
         // NOLINTEND(clang-analyzer-core.uninitialized.Assign)
       }
     }
@@ -159,16 +195,17 @@ template <typename ElementType>
 class ScaleTestAdd final : public ScaleTestBase<ElementType> {
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
 
-  float scale() override { return 6; }
-  float shift() override { return 2; }
+  float scale() override { return 1; }
+  float shift() override { return 6; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
-      { 8, 50},
-      {12, 74},
+      { 8, 14},
+      {12, 18},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -181,12 +218,13 @@ class ScaleTestSubtract final : public ScaleTestBase<ElementType> {
   float shift() override { return -3; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
       { 6,  45},
       { 20, 157},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -199,12 +237,13 @@ class ScaleTestDivide final : public ScaleTestBase<ElementType> {
   float shift() override { return 3; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
-      { 252, 66},
-      { 255, 67},
+      { 252, 0},
+      { 255, 0},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -217,12 +256,13 @@ class ScaleTestMultiply final : public ScaleTestBase<ElementType> {
   float shift() override { return 2.72; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
-      { 60, 191},
-      { 75, 238},
+      { 60, 0},
+      { 45, 0},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -232,18 +272,21 @@ class ScaleTestZero final : public ScaleTestBase<ElementType> {
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
   using UnaryOperationTest<ElementType>::min;
   using UnaryOperationTest<ElementType>::max;
+  using UnaryOperationTest<ElementType>::lowest;
 
   float scale() override { return 0; }
   float shift() override { return 0; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
+      { lowest(), 0},
       { min(), 0},
       {     0, 0},
       { max(), 0},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -252,18 +295,24 @@ template <typename ElementType>
 class ScaleTestUnderflowByShift final : public ScaleTestBase<ElementType> {
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
   using UnaryOperationTest<ElementType>::min;
-  using UnaryOperationTest<ElementType>::max;
+  using UnaryOperationTest<ElementType>::lowest;
 
   float scale() override { return 1; }
   float shift() override { return -1; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
-      {min() + 1, min()},
-      {    min(), min()},
+      {lowest() + 1, 0},
+      {    lowest(), 0},
+      {   min() + 1, 0},
+      {       min(), 0},
+      {           0, 0},
+      {           1, 0},
+      {           2, 0},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -277,12 +326,13 @@ class ScaleTestOverflowByShift final : public ScaleTestBase<ElementType> {
   float shift() override { return 1; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
-      {max() - 1, max()},
-      {    max(), max()},
+      {max() - 1, 0},
+      {    max(), 0},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -297,11 +347,12 @@ class ScaleTestUnderflowByScale final : public ScaleTestBase<ElementType> {
   float shift() override { return 0; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
-      { max(), min()}
+      { max(), 0},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -315,11 +366,12 @@ class ScaleTestOverflowByScale final : public ScaleTestBase<ElementType> {
   float shift() override { return 0; }
 
   const std::vector<Elements>& test_elements() override {
-    static const std::vector<Elements> kTestElements = {
+    static std::vector<Elements> kTestElements = {
         // clang-format off
-      { max(), max()},
+      { max(), 0},
         // clang-format on
     };
+    ScaleTestBase<ElementType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
@@ -327,9 +379,8 @@ class ScaleTestOverflowByScale final : public ScaleTestBase<ElementType> {
 template <typename ElementType>
 class ScaleTest : public testing::Test {};
 
-using ElementTypes = ::testing::Types<uint8_t>;
+using ElementTypes = ::testing::Types<uint8_t, float>;
 
-// Tests kleidicv_scale_u8 API.
 TYPED_TEST_SUITE(ScaleTest, ElementTypes);
 
 TYPED_TEST(ScaleTest, TestScalar1) {
@@ -378,13 +429,37 @@ TYPED_TEST(ScaleTest, TestVector3Tbx) {
   ScaleTestLinear3<TypeParam>{}.test_vector(2500);
 }
 
-TYPED_TEST(ScaleTest, TestAdd) { ScaleTestAdd<TypeParam>{}.test(); }
+TYPED_TEST(ScaleTest, TestAdd) {
+  ScaleTestAdd<TypeParam>{}.test();
+  ScaleTestAdd<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
+}
 
-TYPED_TEST(ScaleTest, TestSubtract) { ScaleTestSubtract<TypeParam>{}.test(); }
+TYPED_TEST(ScaleTest, TestSubtract) {
+  ScaleTestSubtract<TypeParam>{}.test();
+  ScaleTestSubtract<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
+}
 
-TYPED_TEST(ScaleTest, TestDivide) { ScaleTestDivide<TypeParam>{}.test(); }
+TYPED_TEST(ScaleTest, TestDivide) {
+  ScaleTestDivide<TypeParam>{}.test();
+  ScaleTestDivide<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
+}
 
-TYPED_TEST(ScaleTest, TestMultiply) { ScaleTestMultiply<TypeParam>{}.test(); }
+TYPED_TEST(ScaleTest, TestMultiply) {
+  ScaleTestMultiply<TypeParam>{}.test();
+  ScaleTestMultiply<TypeParam>{}
+      .with_padding(1)
+      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .test();
+}
 
 TYPED_TEST(ScaleTest, TestZero) { ScaleTestZero<TypeParam>{}.test(); }
 
@@ -406,7 +481,7 @@ TYPED_TEST(ScaleTest, TestOverflowByScale) {
 
 TYPED_TEST(ScaleTest, NullPointer) {
   TypeParam src[1] = {}, dst[1];
-  test::test_null_args(scale<TypeParam>(), src, sizeof(TypeParam), dst,
+  test::test_null_args(scale_api<TypeParam>(), src, sizeof(TypeParam), dst,
                        sizeof(TypeParam), 1, 1, 2, 0);
 }
 
@@ -417,28 +492,29 @@ TYPED_TEST(ScaleTest, Misalignment) {
   }
   TypeParam src[2] = {}, dst[2];
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            scale<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
-                               sizeof(TypeParam), 1, 2, 2, 0));
+            scale_api<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
+                                   sizeof(TypeParam), 1, 2, 2, 0));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            scale<TypeParam>()(src, sizeof(TypeParam), dst,
-                               sizeof(TypeParam) + 1, 1, 2, 2, 0));
+            scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
+                                   sizeof(TypeParam) + 1, 1, 2, 2, 0));
 }
 
 TYPED_TEST(ScaleTest, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(KLEIDICV_OK, scale<TypeParam>()(src, sizeof(TypeParam), dst,
-                                            sizeof(TypeParam), 0, 1, 2, 0));
-  EXPECT_EQ(KLEIDICV_OK, scale<TypeParam>()(src, sizeof(TypeParam), dst,
-                                            sizeof(TypeParam), 1, 0, 2, 0));
+  EXPECT_EQ(KLEIDICV_OK, scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
+                                                sizeof(TypeParam), 0, 1, 2, 0));
+  EXPECT_EQ(KLEIDICV_OK, scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
+                                                sizeof(TypeParam), 1, 0, 2, 0));
 }
 
 TYPED_TEST(ScaleTest, OversizeImage) {
   TypeParam src[1] = {}, dst[1];
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      scale_api<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                             KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 2, 0));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            scale<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                               KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 2, 0));
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            scale<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                               KLEIDICV_MAX_IMAGE_PIXELS,
-                               KLEIDICV_MAX_IMAGE_PIXELS, 2, 0));
+            scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
+                                   sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
+                                   KLEIDICV_MAX_IMAGE_PIXELS, 2, 0));
 }

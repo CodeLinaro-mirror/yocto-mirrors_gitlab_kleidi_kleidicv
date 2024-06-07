@@ -699,11 +699,19 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
     }
 
-    if (src_depth == CV_8U) {
-      return convert_error(kleidicv_scale_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-          static_cast<float>(scale), static_cast<float>(shift)));
+    switch (src_depth) {
+      case CV_8U:
+        return convert_error(kleidicv_scale_u8(
+            reinterpret_cast<const uint8_t *>(src_data), src_step,
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+            static_cast<float>(scale), static_cast<float>(shift)));
+      case CV_32F:
+        return convert_error(kleidicv_scale_f32(
+            reinterpret_cast<const float *>(src_data), src_step,
+            reinterpret_cast<float *>(dst_data), dst_step, width, height,
+            static_cast<float>(scale), static_cast<float>(shift)));
+      default:
+        break;
     }
   }
 

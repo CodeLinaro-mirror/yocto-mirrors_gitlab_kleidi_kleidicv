@@ -8,11 +8,14 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/traits.h"
 
 namespace kleidicv::neon {
 
 // Scale algorithm: for each value in the source,
 //   dst[i] = src[i] * scale + shift   (floating point operation)
+//
+// Unsigned 8-bit implementation
 //
 // Since converting from uint8 to float32 and back takes more steps,
 // 'ScaleTbx' saves time by pre-calculating all 256 values and uses TBLs
@@ -51,9 +54,9 @@ namespace kleidicv::neon {
 // size and speed.
 
 template <typename ScalarType>
-class ScaleBase : public UnrollTwice {
+class ScaleIntBase : public UnrollTwice {
  public:
-  ScaleBase(float scale, float shift) : scale_{scale}, shift_{shift} {}
+  ScaleIntBase(float scale, float shift) : scale_{scale}, shift_{shift} {}
 
  protected:
   static constexpr ScalarType ScalarMax =
@@ -70,15 +73,16 @@ class ScaleBase : public UnrollTwice {
   float scale_, shift_;
 };
 
-template <typename ScalarType>
-class ScaleTbx final : public ScaleBase<ScalarType> {
+class ScaleUint8Tbx final : public ScaleIntBase<uint8_t> {
  public:
+  using ScalarType = uint8_t;
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
   using Vector2Type = typename VecTraits::Vector2Type;
   using Vector3Type = typename VecTraits::Vector3Type;
 
-  ScaleTbx(float scale, float shift) : ScaleBase<ScalarType>(scale, shift) {
+  ScaleUint8Tbx(float scale, float shift)
+      : ScaleIntBase<uint8_t>(scale, shift) {
     constexpr size_t TableLength = 1 << (CHAR_BIT * sizeof(ScalarType));
     ScalarType values[TableLength];
     for (size_t i = 0; i < TableLength; ++i) {
@@ -112,21 +116,21 @@ class ScaleTbx final : public ScaleBase<ScalarType> {
   ScalarType scalar_path(ScalarType src) { return this->scale_value(src); }
 
  private:
-  Vector3Type t0_3_, t1_3_, t3_3_, t5_3_;
-  Vector2Type t2_2_, t4_2_;
+  Vector3Type t0_3_{}, t1_3_{}, t3_3_{}, t5_3_{};
+  Vector2Type t2_2_{}, t4_2_{};
   VectorType v_step3_, v_step2_;
-};  // end of class ScaleTbx<T>
+};  // end of class ScaleUint8Tbx<T>
 
-// Opposite to ScaleTbx, ScaleFloat is the direct approach:
+// Opposite to ScaleUint8Tbx, ScaleUint8Calc is the direct approach:
 // - calculate dst[i] = src[i] * scale + shift  using vector instructions
-template <typename ScalarType>
-class ScaleFloat final : public ScaleBase<ScalarType> {
+class ScaleUint8Calc final : public ScaleIntBase<uint8_t> {
  public:
+  using ScalarType = uint8_t;
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  ScaleFloat(float scale, float shift)
-      : ScaleBase<ScalarType>(scale, shift),
+  ScaleUint8Calc(float scale, float shift)
+      : ScaleIntBase<ScalarType>(scale, shift),
         vscale_{vdupq_n_f32(scale)},
         vshift_{vdupq_n_f32(shift)} {}
 
@@ -166,10 +170,68 @@ class ScaleFloat final : public ScaleBase<ScalarType> {
   }
 
   float32x4_t vscale_, vshift_;
-};  // end of class ScaleFloat<T>
+};  // end of class ScaleUint8Calc<T>
+
+// -----------------------------------------------------------------------
+// Float implementation
+// -----------------------------------------------------------------------
+
+class AddFloat final : public UnrollTwice,
+                       public UnrollOnce,
+                       public TryToAvoidTailLoop {
+ public:
+  using ScalarType = float;
+  using VecTraits = neon::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+
+  explicit AddFloat(float shift) : shift_{shift}, vshift_{vdupq_n_f32(shift)} {}
+
+  VectorType vector_path(VectorType src) { return vaddq_f32(vshift_, src); }
+
+  // NOLINTBEGIN(readability-make-member-function-const)
+  ScalarType scalar_path(ScalarType src) { return src + shift_; }
+  // NOLINTEND(readability-make-member-function-const)
+
+ private:
+  float shift_;
+  float32x4_t vshift_;
+};  // end of class AddFloat
+
+class ScaleFloat final : public UnrollTwice,
+                         public UnrollOnce,
+                         public TryToAvoidTailLoop {
+ public:
+  using ScalarType = float;
+  using VecTraits = neon::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+
+  ScaleFloat(float scale, float shift)
+      : scale_{scale},
+        shift_{shift},
+        vscale_{vdupq_n_f32(scale)},
+        vshift_{vdupq_n_f32(shift)} {}
+
+  VectorType vector_path(VectorType src) {
+    return vmlaq_f32(vshift_, src, vscale_);
+  }
+
+  // NOLINTBEGIN(readability-make-member-function-const)
+  ScalarType scalar_path(ScalarType src) { return src * scale_ + shift_; }
+  // NOLINTEND(readability-make-member-function-const)
+
+ private:
+  float scale_, shift_;
+  float32x4_t vscale_, vshift_;
+};  // end of class ScaleFloat
 
 template <typename T>
 kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       float scale, float shift);
+
+// Specialization for uint8_t
+template <>
+kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
                        size_t dst_stride, size_t width, size_t height,
                        float scale, float shift) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
@@ -177,30 +239,41 @@ kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
-  Rows<const T> src_rows{src, src_stride};
-  Rows<T> dst_rows{dst, dst_stride};
+  Rows<const uint8_t> src_rows{src, src_stride};
+  Rows<uint8_t> dst_rows{dst, dst_stride};
   // For smaller inputs, the full calculation is the faster
   if (width * height < 2500) {  // empirical value
-    ScaleFloat<T> operation(scale, shift);
+    ScaleUint8Calc operation(scale, shift);
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   } else {
     // For bigger inputs, it's faster to pre-calculate the table
     // and map those values during the run
-    ScaleTbx<T> operation(scale, shift);
+    ScaleUint8Tbx operation(scale, shift);
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }
   return KLEIDICV_OK;
 }
 
-#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                             \
-  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t scale<type>(       \
-      const type *src, size_t src_stride, type *dst, size_t dst_stride, \
-      size_t width, size_t height, float scale, float shift)
+// Specialization for float
+template <>
+kleidicv_error_t scale(const float *src, size_t src_stride, float *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       float scale, float shift) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
 
-KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
-// KLEIDICV_INSTANTIATE_TEMPLATE(int8_t);
-// KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
-// KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
-// KLEIDICV_INSTANTIATE_TEMPLATE(int32_t);
+  Rectangle rect{width, height};
+  Rows<const float> src_rows{src, src_stride};
+  Rows<float> dst_rows{dst, dst_stride};
+  if (scale == 1.0) {
+    AddFloat operation(shift);
+    apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  } else {
+    ScaleFloat operation(scale, shift);
+    apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  }
+  return KLEIDICV_OK;
+}
 
 }  //  namespace kleidicv::neon

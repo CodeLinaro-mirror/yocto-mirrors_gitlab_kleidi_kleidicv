@@ -27,7 +27,4 @@ namespace sme2 {}  // namespace sme2
                               nullptr)
 
 KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_u8, uint8_t);
-// KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_s8, int8_t);
-// KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_u16, uint16_t);
-// KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_s16, int16_t);
-// KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_s32, int32_t);
+KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_f32, float);

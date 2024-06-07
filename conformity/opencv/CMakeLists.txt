@@ -37,6 +37,7 @@ add_executable(
   test_sobel.cpp
   test_exp.cpp
   test_float_conv.cpp
+  test_scale.cpp
 )
 
 target_link_libraries(
@@ -78,7 +79,7 @@ add_executable(
   test_sobel.cpp
   test_exp.cpp
   test_float_conv.cpp
-
+  test_scale.cpp
 )
 
 target_link_libraries(

@@ -125,6 +125,37 @@ static void min_max_loc_u8(benchmark::State& state) {
 }
 BENCHMARK(min_max_loc_u8);
 
+template <typename T, typename Function>
+static void scale(Function f, float factor, float shift,
+                  benchmark::State& state) {
+  // Setup
+  std::vector<T> src, dst;
+  src.resize(image_width * image_height);
+  dst.resize(image_width * image_height);
+
+  std::mt19937 generator;
+  std::generate(src.begin(), src.end(), generator);
+
+  for (auto _ : state) {
+    // This code gets benchmarked
+    auto unused =
+        f(src.data(), image_width * sizeof(T), dst.data(),
+          image_width * sizeof(T), image_width, image_height, factor, shift);
+    (void)unused;
+  }
+}
+
+#define BENCH_SCALE(benchname, name, factor, shift, type) \
+  static void benchname(benchmark::State& state) {        \
+    scale<type>(kleidicv_##name, factor, shift, state);   \
+  }                                                       \
+  BENCHMARK(benchname)
+
+BENCH_SCALE(scale_u8_1, scale_u8, 1.0, 4.567, uint8_t);
+BENCH_SCALE(scale_u8_generic, scale_u8, 1.234, 4.567, uint8_t);
+BENCH_SCALE(scale_f32_1, scale_f32, 1.0, 4.567, float);
+BENCH_SCALE(scale_f32_generic, scale_f32, 1.234, 4.567, float);
+
 template <typename T, typename F>
 static void resize_linear(F f, size_t scale_x, size_t scale_y,
                           benchmark::State& state) {

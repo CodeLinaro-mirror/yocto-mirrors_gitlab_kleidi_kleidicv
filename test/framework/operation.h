@@ -142,6 +142,11 @@ class OperationTest {
     return std::numeric_limits<ElementType>::min();
   }
 
+  // Returns the lowest value for ElementType.
+  static constexpr ElementType lowest() {
+    return std::numeric_limits<ElementType>::lowest();
+  }
+
   // Returns the maximum value for ElementType.
   static constexpr ElementType max() {
     return std::numeric_limits<ElementType>::max();

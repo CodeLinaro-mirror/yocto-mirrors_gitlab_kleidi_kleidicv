@@ -16,6 +16,7 @@
 #include "test_gaussian_blur.h"
 #include "test_min_max.h"
 #include "test_rgb2yuv.h"
+#include "test_scale.h"
 #include "test_sobel.h"
 
 static std::vector<test> merge_tests(
@@ -28,15 +29,10 @@ static std::vector<test> merge_tests(
   return all_tests;
 }
 
-std::vector<test> all_tests = merge_tests({
-    binary_op_tests_get,
-    gaussian_blur_tests_get,
-    min_max_tests_get,
-    rgb2yuv_tests_get,
-    sobel_tests_get,
-    exp_tests_get,
-    float_conversion_tests_get,
-});
+std::vector<test> all_tests =
+    merge_tests({binary_op_tests_get, gaussian_blur_tests_get,
+                 min_max_tests_get, rgb2yuv_tests_get, sobel_tests_get,
+                 exp_tests_get, float_conversion_tests_get, scale_tests_get});
 
 #if MANAGER
 void fail_print_matrices(size_t height, size_t width, cv::Mat& input,
