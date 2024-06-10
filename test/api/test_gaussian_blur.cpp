@@ -95,7 +95,7 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
   }
 
  protected:
-  std::array<test::ArrayLayout, 6> small_array_layouts_;
+  std::array<test::ArrayLayout, 7> small_array_layouts_;
   std::unique_ptr<test::Generator<test::ArrayLayout>> array_layout_generator_;
   std::unique_ptr<test::Generator<kleidicv_border_type_t>>
       border_type_generator_;

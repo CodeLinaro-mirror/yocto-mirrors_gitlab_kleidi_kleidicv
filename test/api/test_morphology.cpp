@@ -125,7 +125,7 @@ class MorphologyTest
   test::Array2D<InputType> mask_;
   test::Kernel<InputType> kernel_;
   size_t iterations_;
-  std::array<test::ArrayLayout, 6> small_array_layouts_;
+  std::array<test::ArrayLayout, 7> small_array_layouts_;
   std::unique_ptr<test::Generator<test::ArrayLayout>> array_layout_generator_;
   std::unique_ptr<test::Generator<kleidicv_border_type_t>>
       border_type_generator_;
