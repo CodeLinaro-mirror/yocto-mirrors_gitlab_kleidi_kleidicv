@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_THRESHOLD_SC_H
-#define KLEIDICV_THRESHOLD_SC_H
+#ifndef KLEIDICV_COMPARE_SC_H
+#define KLEIDICV_COMPARE_SC_H
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
