@@ -40,6 +40,7 @@ IMGPROC_TEST_PATTERNS=(
   '*Imgproc_ColorRGB*'
   '*Imgproc_ColorYUV*'
   '*Imgproc_cvtColor_BE.COLOR_YUV*'
+  '*Imgproc_cvtColor_BE.COLOR_RGB2YUV'
   '*Imgproc_Threshold*'
   '*Imgproc_Morphology*'
   '*Imgproc_GaussianBlur*'
