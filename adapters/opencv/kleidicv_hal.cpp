@@ -1033,4 +1033,28 @@ int compare_u8(const uchar *src1_data, size_t src1_step, const uchar *src2_data,
   }
 }
 
+int inRange_u8(const uchar *src_data, size_t src_step, uchar *dst_data,
+               size_t dst_step, int dst_depth, int width, int height, int cn,
+               uchar lower_bound, uchar upper_bound) {
+  if (dst_depth != CV_8U || cn != 1) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+  return convert_error(kleidicv_in_range_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+      static_cast<uint8_t>(lower_bound), static_cast<uint8_t>(upper_bound)));
+}
+
+int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
+                size_t dst_step, int dst_depth, int width, int height, int cn,
+                double lower_bound, double upper_bound) {
+  if (dst_depth != CV_8U || cn != 1) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+  return convert_error(kleidicv_in_range_f32(
+      reinterpret_cast<const float *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+      static_cast<float>(lower_bound), static_cast<float>(upper_bound)));
+}
+
 }  // namespace kleidicv::hal

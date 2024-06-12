@@ -74,6 +74,30 @@ index 6f0a83d359..4c294962ca 100644
  
  #define CV_MAKETYPE(depth,cn) (CV_MAT_DEPTH(depth) + (((cn)-1) << CV_CN_SHIFT))
  #define CV_MAKE_TYPE CV_MAKETYPE
+diff --git a/modules/core/src/arithm.cpp b/modules/core/src/arithm.cpp
+index 9de474b402..4757861a34 100644
+--- a/modules/core/src/arithm.cpp
++++ b/modules/core/src/arithm.cpp
+@@ -1803,6 +1803,19 @@ void cv::inRange(InputArray _src, InputArray _lowerb,
+ 
+         convertAndUnrollScalar( lb, src.type(), lbuf, blocksize );
+         convertAndUnrollScalar( ub, src.type(), ubuf, blocksize );
++
++        if (depth == CV_8U) {
++            uint8_t lb_scalar = lb.at<uint8_t>(0, 0);
++            uint8_t ub_scalar = ub.at<uint8_t>(0, 0);
++            CALL_HAL(inRange_u8, cv_hal_inRange8u, src.data, src.step, dst.data, dst.step, dst.depth(), src.cols, src.rows, src.channels(),
++                lb_scalar, ub_scalar);
++            
++        } else if (depth == CV_32F) {
++            double lb_scalar = lb.at<double>(0, 0);
++            double ub_scalar = ub.at<double>(0, 0);
++            CALL_HAL(inRange_f32, cv_hal_inRange32f, src.data, src.step, dst.data, dst.step, dst.depth(), src.cols, src.rows, src.channels(),
++                lb_scalar, ub_scalar);
++        }
+     }
+ 
+     for( size_t i = 0; i < it.nplanes; i++, ++it )
 diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
 index 345b4624cb..8698cc64bf 100644
 --- a/modules/core/src/convert.dispatch.cpp
@@ -96,10 +120,10 @@ index 345b4624cb..8698cc64bf 100644
  
      if( dims <= 2 )
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
-index 1f2b259920..0e19b24f7f 100644
+index 1f2b259920..72a42d4beb 100644
 --- a/modules/core/src/hal_replacement.hpp
 +++ b/modules/core/src/hal_replacement.hpp
-@@ -818,6 +818,35 @@ inline int hal_ni_rotate90(int src_type, const uchar* src_data, size_t src_step,
+@@ -818,6 +818,55 @@ inline int hal_ni_rotate90(int src_type, const uchar* src_data, size_t src_step,
  #define cv_hal_rotate90 hal_ni_rotate90
  //! @endcond
  
@@ -130,6 +154,26 @@ index 1f2b259920..0e19b24f7f 100644
 +
 +//! @cond IGNORED
 +#define cv_hal_convertTo hal_ni_convertTo
++//! @endcond
++
++/**
++   @brief inRange
++   @param src_data,src_step,src_depth Source image
++   @param dst_data,dst_step,dst_depth Destination image
++   @param width,height Source image dimensions
++   @param cn number of channels
++   @param lower_bound,upper_bound Dst values = (lower_bound <= src_value) && (src_value <= upper_bound) ? 255 : 0
++*/
++inline int hal_ni_inRange8u(const uchar *src_data, size_t src_step,
++              uchar *dst_data, size_t dst_step, int dst_depth, int width,
++              int height, int cn, uchar lower_bound, uchar upper_bound) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++inline int hal_ni_inRange32f(const uchar *src_data, size_t src_step,
++              uchar *dst_data, size_t dst_step, int dst_depth, int width,
++              int height, int cn, double lower_bound, double upper_bound) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++
++//! @cond IGNORED
++#define cv_hal_inRange8u hal_ni_inRange8u
++#define cv_hal_inRange32f hal_ni_inRange32f
 +//! @endcond
 +
  //! @}

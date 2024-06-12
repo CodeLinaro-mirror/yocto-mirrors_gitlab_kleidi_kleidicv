@@ -1607,6 +1607,38 @@ KLEIDICV_API_DECLARATION(kleidicv_float_conversion_u8_f32, const uint8_t *src,
                          size_t src_stride, float *dst, size_t dst_stride,
                          size_t width, size_t height);
 
+/// Performs a per element comparison in `src` with respect to caller defined
+/// lower and upper bounds. For the elements exceeding these bounds, the
+/// corresponding elements in `dst` are set to 0 and elements within to 255.
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data. Must
+///                     not be less than width * sizeof(type), except for
+///                     single-row images.
+/// @param dst          Pointer to the first destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data. Must
+///                     not be less than width * sizeof(type), except for
+///                     single-row images.
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+/// @param lower_bound  The lower bound of the interval.
+/// @param upper_bound  The upper bound of the interval.
+///
+KLEIDICV_API_DECLARATION(kleidicv_in_range_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, uint8_t lower_bound,
+                         uint8_t upper_bound);
+/// @copydoc kleidicv_in_range_u8
+KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, float lower_bound,
+                         float upper_bound);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

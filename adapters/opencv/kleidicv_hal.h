@@ -129,6 +129,14 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
 
 int exp32f(const float *src, float *dst, int len);
 
+int inRange_u8(const uchar *src_data, size_t src_step, uchar *dst_data,
+               size_t dst_step, int dst_depth, int width, int height, int cn,
+               uchar lower_bound, uchar upper_bound);
+
+int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
+                size_t dst_step, int dst_depth, int width, int height, int cn,
+                double lower_bound, double upper_bound);
+
 }  // namespace hal
 }  // namespace kleidicv
 
@@ -496,6 +504,29 @@ KLEIDICV_HAL_MUL(mul16u, kleidicv_saturating_multiply_u16, uint16_t);
 KLEIDICV_HAL_MUL(mul16s, kleidicv_saturating_multiply_s16, int16_t);
 #undef cv_hal_mul16s
 #define cv_hal_mul16s kleidicv_mul16s_with_fallback
+
+// inRange
+static inline int kleidicv_in_range_u8_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int dst_depth, size_t width, size_t height, int cn, uchar lower_bound,
+    uchar upper_bound) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      inRange_u8, cv_hal_inRange8u, src_data, src_step, dst_data, dst_step,
+      dst_depth, width, height, cn, lower_bound, upper_bound);
+}
+#undef cv_hal_inRange8u
+#define cv_hal_inRange8u kleidicv_in_range_u8_with_fallback
+
+static inline int kleidicv_in_range_f32_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int dst_depth, size_t width, size_t height, int cn, double lower_bound,
+    double upper_bound) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      inRange_f32, cv_hal_inRange32f, src_data, src_step, dst_data, dst_step,
+      dst_depth, width, height, cn, lower_bound, upper_bound);
+}
+#undef cv_hal_inRange32f
+#define cv_hal_inRange32f kleidicv_in_range_f32_with_fallback
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 

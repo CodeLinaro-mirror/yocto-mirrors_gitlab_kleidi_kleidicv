@@ -87,6 +87,9 @@ benchmarks=(
     "UintToFloat: opencv_perf_core '*convertTo/*' '(3840x2160, 8UC1,  32FC1, 1, 1, 0)'"
 
     "CompareGt: opencv_perf_core '*compare/*' '(3840x2160, 8UC1, CMP_GT)'"
+
+    "InRange_U8:  opencv_perf_core '*inRangeScalar/*' '(3840x2160,  8UC1, 1, 2)'"
+    "InRange_F32: opencv_perf_core '*inRangeScalar/*' '(3840x2160, 32FC1, 1, 2)'"
 )
 
 for idx in "${!benchmarks[@]}"; do

@@ -15,6 +15,7 @@
 #include <cstring>
 #include <ctime>
 #include <exception>
+#include <limits>
 #include <string>
 #include <type_traits>
 
@@ -30,6 +31,21 @@
   "/opencv_kleidicv_conformity_reply_queue"
 
 #define KLEIDICV_CONFORMITY_MAX_MAT_DIMENSIONS 4
+
+template <typename T>
+static constexpr T min() {
+  return std::numeric_limits<T>::min();
+}
+
+template <typename T>
+static constexpr T lowest() {
+  return std::numeric_limits<T>::lowest();
+}
+
+template <typename T>
+static constexpr T max() {
+  return std::numeric_limits<T>::max();
+}
 
 class ExceptionWithErrno : public std::exception {
  public:

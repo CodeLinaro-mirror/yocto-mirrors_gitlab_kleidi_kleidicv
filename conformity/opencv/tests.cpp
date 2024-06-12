@@ -35,6 +35,7 @@ std::vector<test> all_tests = merge_tests({
     resize_tests_get,
     scale_tests_get,
     min_max_tests_get,
+    in_range_tests_get,
 });
 
 #if MANAGER

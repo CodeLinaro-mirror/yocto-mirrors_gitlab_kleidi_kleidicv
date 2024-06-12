@@ -31,6 +31,7 @@ This changelog aims to follow the guiding principles of
 - Conversion from float to (u)int8_t and vice versa.
 - KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS configuration option.
 - Conversion from non-subsampled, interleaved YUV to RGB/BGR.
+- InRange single channel, scalar bounds for uint8_t and float.
 
 ### Fixed
 

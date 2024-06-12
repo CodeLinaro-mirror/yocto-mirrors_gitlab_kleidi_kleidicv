@@ -60,6 +60,46 @@ index 344d81cb8a..ef5a3aa7d2 100644
  
      double eps = depthSrc <= CV_32S && (depthDst <= CV_32S || depthDst == CV_64F) ? 1e-12 : (FLT_EPSILON * maxValue);
      eps = eps * std::max(1.0, fabs(alpha));
+diff --git a/modules/core/perf/perf_inRangeScalar.cpp b/modules/core/perf/perf_inRangeScalar.cpp
+new file mode 100644
+index 0000000000..9ecca30b6c
+--- /dev/null
++++ b/modules/core/perf/perf_inRangeScalar.cpp
+@@ -0,0 +1,34 @@
++#include "perf_precomp.hpp"
++
++namespace opencv_test
++{
++using namespace perf;
++
++typedef tuple<Size, MatType, double, double> Size_TypeSrc_lb_ub_t;
++typedef perf::TestBaseWithParam<Size_TypeSrc_lb_ub_t> Size_TypeSrc_lb_ub;
++
++PERF_TEST_P( Size_TypeSrc_lb_ub, inRangeScalar,
++             testing::Combine
++             (
++                 testing::Values(sz1080p, sz2160p),
++                 testing::Values(CV_8UC1, CV_32FC1),
++                 testing::Values(1),
++                 testing::Values(2)
++             )
++           )
++{
++    Size size = get<0>(GetParam());
++    int type = get<1>(GetParam());
++    Mat lb (1, 1, type, get<2>(GetParam()));
++    Mat ub (1, 1, type, get<3>(GetParam()));
++    Mat src(size, type);
++    Mat dst(size, CV_8UC1);
++
++    declare.in(src, WARMUP_RNG).out(dst);
++
++    TEST_CYCLE() inRange( src, lb, ub, dst );
++
++    SANITY_CHECK(dst);
++}
++
++} // namespace
 diff --git a/modules/imgproc/perf/perf_blur.cpp b/modules/imgproc/perf/perf_blur.cpp
 index d1f5a6b1ca..c4a3a6cdc5 100644
 --- a/modules/imgproc/perf/perf_blur.cpp

@@ -412,3 +412,22 @@ BENCH_MORPHOLOGY(dilate, 17);
 BENCH_MORPHOLOGY(erode, 3);
 BENCH_MORPHOLOGY(erode, 5);
 BENCH_MORPHOLOGY(erode, 17);
+
+template <typename T, typename Function>
+static void in_range(Function f, T lower_bound, T upper_bound,
+                     benchmark::State& state) {
+  bench_functor(state, [f, lower_bound, upper_bound]() {
+    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T),
+            get_destination_buffer<uint8_t>(), image_width * sizeof(uint8_t),
+            image_width, image_height, lower_bound, upper_bound);
+  });
+}
+
+#define BENCH_IN_RANGE(benchname, name, lower_bound, upper_bound, type) \
+  static void benchname(benchmark::State& state) {                      \
+    in_range<type>(kleidicv_##name, lower_bound, upper_bound, state);   \
+  }                                                                     \
+  BENCHMARK(benchname)
+
+BENCH_IN_RANGE(in_range_u8, in_range_u8, 1, 2, uint8_t);
+BENCH_IN_RANGE(in_range_f32, in_range_f32, 1.111, 1.112, float);

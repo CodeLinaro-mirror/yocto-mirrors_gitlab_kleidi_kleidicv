@@ -21,6 +21,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Scale                        |     |  x  |     |     |     |     |     |     |  x  |     |
 | CompareEqual                 |     |  x  |     |     |     |     |     |     |     |     |
 | CompareGreater               |     |  x  |     |     |     |     |     |     |     |     |
+| InRange                      |     |  x  |     |     |     |     |     |     |  x  |     |
 
 # Logical operations
 |                              | u8  |
