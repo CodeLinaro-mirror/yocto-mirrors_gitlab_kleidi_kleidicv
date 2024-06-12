@@ -33,8 +33,8 @@ DEV_DIR=/data/local/tmp
 
 if [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_core ]] && \
    [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_imgproc ]]; then
-  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_custom
-  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_custom
+  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_kleidicv_${CUSTOM_BUILD_SUFFIX}
+  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_kleidicv_${CUSTOM_BUILD_SUFFIX}
 fi
 
 "${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/perf_test_op.sh       ${DEV_DIR}/

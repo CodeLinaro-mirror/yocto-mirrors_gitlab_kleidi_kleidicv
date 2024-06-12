@@ -6,12 +6,13 @@
 
 set -eu
 
-CPU_NUMBER=$1
-THERMAL_ZONE_ID=$2
-DISP_NAME=$3
-PERF_TEST_BINARY_BASENAME=$4
-GTEST_FILTER=$5
-GTEST_PARAM_FILTER=$6
+CUSTOM_BUILD_SUFFIX=$1
+CPU_NUMBER=$2
+THERMAL_ZONE_ID=$3
+DISP_NAME=$4
+PERF_TEST_BINARY_BASENAME=$5
+GTEST_FILTER=$6
+GTEST_PARAM_FILTER=$7
 
 DEV_DIR=/data/local/tmp
 
@@ -30,26 +31,35 @@ wait_for_cooldown() {
 
 FNAME=$$
 
-wait_for_cooldown
->&2 taskset ${CPU_MASK} ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_vanilla --perf_min_samples=100 --gtest_output=json:${DEV_DIR}/${FNAME}_vanilla --gtest_filter="${GTEST_FILTER}" --gtest_param_filter="${GTEST_PARAM_FILTER}"
-
-wait_for_cooldown
->&2 taskset ${CPU_MASK} ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_kleidicv --perf_min_samples=100 --gtest_output=json:${DEV_DIR}/${FNAME}_kleidicv  --gtest_filter="${GTEST_FILTER}" --gtest_param_filter="${GTEST_PARAM_FILTER}"
-
-if [ -f ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_custom ]; then
+run_test() {
   wait_for_cooldown
-  >&2 taskset ${CPU_MASK} ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_custom --perf_min_samples=100 --gtest_output=json:${DEV_DIR}/${FNAME}_custom  --gtest_filter="${GTEST_FILTER}" --gtest_param_filter="${GTEST_PARAM_FILTER}"
+  >&2 taskset ${CPU_MASK} \
+    ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_${1} \
+      --perf_min_samples=100 \
+      --gtest_output=json:${DEV_DIR}/${FNAME}_${1} \
+      --gtest_filter="${GTEST_FILTER}" \
+      --gtest_param_filter="${GTEST_PARAM_FILTER}"
+}
+
+run_test vanilla
+run_test kleidicv
+if [[ -f ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_kleidicv_$CUSTOM_BUILD_SUFFIX ]]; then
+  run_test kleidicv_$CUSTOM_BUILD_SUFFIX
 fi
 
 echo ${PREV_FREQ_GOVERNOR} > /sys/devices/system/cpu/cpu${CPU_NUMBER}/cpufreq/scaling_governor
 
 if [[ ${CDEV_TRANSITION_COUNT} != $(cat /sys/devices/virtual/thermal/thermal_zone${THERMAL_ZONE_ID}/cdev0/stats/total_trans) ]]; then
-  >&2 echo CPU throttling happened, exiting...
+  >&2 echo "BENCHMARK ERROR: CPU throttling happened, exiting..."
   exit 1
 fi
 
 if ! grep -q "\"tests\": 1," ${DEV_DIR}/${FNAME}_vanilla; then
-  >&2 echo More than one test case was triggered, exiting
+  if grep -q "\"tests\": 0," ${DEV_DIR}/${FNAME}_vanilla; then
+    >&2 echo "BENCHMARK ERROR: No test case was triggered, exiting..."
+  else
+    >&2 echo "BENCHMARK ERROR: More than one test case was triggered, exiting..."
+  fi
   exit 1
 fi
 
@@ -61,14 +71,17 @@ get_gstddev() {
   sed -n s/\"gstddev\"://p ${1} | tr -d \" | tr -d ',' | tr -d ' '
 }
 
-RES="${DISP_NAME}\t$(get_mean ${DEV_DIR}/${FNAME}_vanilla)\t$(get_gstddev ${DEV_DIR}/${FNAME}_vanilla)"
-rm ${DEV_DIR}/${FNAME}_vanilla
-RES="${RES}\t$(get_mean ${DEV_DIR}/${FNAME}_kleidicv)\t$(get_gstddev ${DEV_DIR}/${FNAME}_kleidicv)"
-rm ${DEV_DIR}/${FNAME}_kleidicv
+RES="${DISP_NAME}\t"
 
-if [ -f ${DEV_DIR}/${FNAME}_custom ]; then
-  RES="${RES}\t$(get_mean ${DEV_DIR}/${FNAME}_custom)\t$(get_gstddev ${DEV_DIR}/${FNAME}_custom)"
-  rm ${DEV_DIR}/${FNAME}_custom
+collect_run_results() {
+  RES+="\t$(get_mean ${DEV_DIR}/${FNAME}_${1})\t$(get_gstddev ${DEV_DIR}/${FNAME}_${1})"
+  rm ${DEV_DIR}/${FNAME}_${1}
+}
+
+collect_run_results vanilla
+collect_run_results kleidicv
+if [[ -f ${DEV_DIR}/${FNAME}_$CUSTOM_BUILD_SUFFIX ]]; then
+  collect_run_results kleidicv_$CUSTOM_BUILD_SUFFIX
 fi
 
 printf "${RES}"
