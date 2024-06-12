@@ -98,7 +98,7 @@ class float_conversion_operation<InputType, float> {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
   using VectorType = typename VecTraits::VectorType;
   void process_row(size_t width, Columns<const InputType> src,
-                   Columns<float> dst) {
+                   Columns<float> dst) KLEIDICV_STREAMING_COMPATIBLE {
     LoopUnroll{width, VecTraits::num_lanes()}
         .unroll_twice([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = VecTraits::svptrue();
