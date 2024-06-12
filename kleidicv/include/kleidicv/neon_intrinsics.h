@@ -109,6 +109,18 @@ static inline int64x2_t  vaddl(int32x2_t  lhs, int32x2_t  rhs) { return vaddl_s3
 static inline uint64x2_t vaddl(uint32x2_t lhs, uint32x2_t rhs) { return vaddl_u32(lhs, rhs); }
 
 // -----------------------------------------------------------------------------
+// vbslq*
+// -----------------------------------------------------------------------------
+
+static inline int8x16_t vbslq(int8x16_t a, int8x16_t b, int8x16_t c) { return vbslq_s8(a, b, c); }
+static inline uint8x16_t vbslq(uint8x16_t a, uint8x16_t b, uint8x16_t c) { return vbslq_u8(a, b, c); }
+static inline int16x8_t vbslq(int16x8_t a, int16x8_t b, int16x8_t c) { return vbslq_s16(a, b, c); }
+static inline uint16x8_t vbslq(uint16x8_t a, uint16x8_t b, uint16x8_t c) { return vbslq_u16(a, b, c); }
+static inline int32x4_t vbslq(int32x4_t a, int32x4_t b, int32x4_t c) { return vbslq_s32(a, b, c); }
+static inline uint32x4_t vbslq(uint32x4_t a, uint32x4_t b, uint32x4_t c) { return vbslq_u32(a, b, c); }
+static inline float32x4_t vbslq(uint32x4_t a, float32x4_t b, float32x4_t c) { return vbslq_f32(a, b, c); }
+
+// -----------------------------------------------------------------------------
 // vget_high*
 // -----------------------------------------------------------------------------
 
@@ -120,6 +132,12 @@ static inline int32x2_t  vget_high(int32x4_t  vec) { return vget_high_s32(vec); 
 static inline uint32x2_t vget_high(uint32x4_t vec) { return vget_high_u32(vec); }
 static inline int64x1_t  vget_high(int64x2_t  vec) { return vget_high_s64(vec); }
 static inline uint64x1_t vget_high(uint64x2_t vec) { return vget_high_u64(vec); }
+
+// -----------------------------------------------------------------------------
+// vcgeq*
+// -----------------------------------------------------------------------------
+
+static inline uint32x4_t vcgeq(float32x4_t lhs, float32x4_t rhs) { return vcgeq_f32(lhs, rhs); }
 
 // -----------------------------------------------------------------------------
 // vget_low*
@@ -181,6 +199,12 @@ static inline uint16_t  vmaxvq(uint16x8_t  src) { return vmaxvq_u16(src); }
 static inline int32_t   vmaxvq(int32x4_t   src) { return vmaxvq_s32(src); }
 static inline uint32_t  vmaxvq(uint32x4_t  src) { return vmaxvq_u32(src); }
 static inline float32_t vmaxvq(float32x4_t src) { return vmaxvq_f32(src); }
+
+// -----------------------------------------------------------------------------
+// vcleq*
+// -----------------------------------------------------------------------------
+
+static inline uint32x4_t vcleq(float32x4_t lhs, float32x4_t rhs) { return vcleq_f32(lhs, rhs); }
 
 // -----------------------------------------------------------------------------
 // vrshrn_n*
