@@ -16,15 +16,27 @@ kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
                        float scale, float shift);
 }  // namespace neon
 
-namespace sve2 {}  // namespace sve2
+namespace sve2 {
 
-namespace sme2 {}  // namespace sme2
+template <typename T>
+kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       float scale, float shift);
+
+}  // namespace sve2
+
+namespace sme2 {
+template <typename T>
+kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       float scale, float shift);
+
+}  // namespace sme2
 
 }  // namespace kleidicv
 
-#define KLEIDICV_DEFINE_SCALE_API(name, type)                              \
-  KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::scale<type>, nullptr, \
-                              nullptr)
-
-KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_u8, uint8_t);
-KLEIDICV_DEFINE_SCALE_API(kleidicv_scale_f32, float);
+KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8, &kleidicv::neon::scale<uint8_t>,
+                            nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_f32, &kleidicv::neon::scale<float>,
+                            &kleidicv::sve2::scale<float>,
+                            &kleidicv::sme2::scale<float>);
