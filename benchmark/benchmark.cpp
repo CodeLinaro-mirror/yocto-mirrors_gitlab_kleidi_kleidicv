@@ -157,6 +157,37 @@ BENCH_SCALE(scale_f32_1, scale_f32, 1.0, 4.567, float);
 BENCH_SCALE(scale_f32_generic, scale_f32, 1.234, 4.567, float);
 
 template <typename T, typename F>
+static void min_max(F f, benchmark::State& state) {
+  // Setup
+  std::vector<T> src;
+  src.resize(image_width * image_height);
+  std::mt19937 generator;
+  std::generate(src.begin(), src.end(), generator);
+
+  T min_value = 0, max_value = 0;
+
+  for (auto _ : state) {
+    // This code gets benchmarked
+    auto unused = f(src.data(), image_width * sizeof(T), image_width,
+                    image_height, &min_value, &max_value);
+    (void)unused;
+  }
+}
+
+#define BENCH_MIN_MAX(name, type)             \
+  static void name(benchmark::State& state) { \
+    min_max<type>(kleidicv_##name, state);    \
+  }                                           \
+  BENCHMARK(name)
+
+BENCH_MIN_MAX(min_max_s8, int8_t);
+BENCH_MIN_MAX(min_max_u8, uint8_t);
+BENCH_MIN_MAX(min_max_s16, int16_t);
+BENCH_MIN_MAX(min_max_u16, uint16_t);
+BENCH_MIN_MAX(min_max_s32, int32_t);
+BENCH_MIN_MAX(min_max_f32, float);
+
+template <typename T, typename F>
 static void resize_linear(F f, size_t scale_x, size_t scale_y,
                           benchmark::State& state) {
   // Setup
