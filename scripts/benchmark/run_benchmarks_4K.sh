@@ -52,5 +52,7 @@ RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Resize4x4_8b op
 RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Resize4x4_float opencv_perf_imgproc '*resizeUpLinearNonExact*' '(32FC1, (960x540, 3840x2160))')")
 
 RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Scale opencv_perf_core '*convertTo*' '(3840x2160, 8UC1, 8UC1, 1, 1.234, 4.567)')")
+RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Scale_float_1.0 opencv_perf_core '*convertTo*' '(1920x1080, 32FC1, 32FC1, 1, 1, 4.567)')")
+RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL Scale_float opencv_perf_core '*convertTo*' '(1920x1080, 32FC1, 32FC1, 1, 1.234, 4.567)')")
 
 echo "$RES"

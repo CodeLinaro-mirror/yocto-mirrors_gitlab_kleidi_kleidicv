@@ -167,7 +167,9 @@ Notes on parameters:
   + `CV_32S`
 
 ### `convertTo`
-This function will scale given input using `scale` and `shift` if they are significant enough, and if `src_depth` and `dst_depth` are equal to `CV_8U`.
+This function will scale given input using `scale` and `shift` if they are significant enough, and if `src_depth` equals `dst_depth`. Supported depths:
+  + `CV_8U`
+  + `CV_32F`
 
 Additionally, it is able to convert between data types as follows:
 

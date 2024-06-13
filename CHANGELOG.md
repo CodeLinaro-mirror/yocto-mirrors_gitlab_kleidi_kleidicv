@@ -19,6 +19,7 @@ This changelog aims to follow the guiding principles of
 - Exponential function for float.
 - Bitwise and.
 - Gaussian Blur for 7x7 kernels.
+- Scale function for float.
 
 ### Fixed
 

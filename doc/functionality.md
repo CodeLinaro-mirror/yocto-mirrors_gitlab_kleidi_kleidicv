@@ -18,7 +18,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Saturating Multiply          |  x  |  x  |  x  |  x  |  x  |     |     |     |     |     |
 | Threshold binary             |     |  x  |     |     |     |     |     |     |     |     |
 | SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |     |     |
-| Scale                        |     |  x  |     |     |     |     |     |     |     |     |
+| Scale                        |     |  x  |     |     |     |     |     |     |  x  |     |
 | CompareEqual                 |     |  x  |     |     |     |     |     |     |     |     |
 | CompareGreater               |     |  x  |     |     |     |     |     |     |     |     |
 
