@@ -346,8 +346,6 @@ static inline int kleidicv_compare_u8_with_fallback(
 #undef cv_hal_cmp8u
 #define cv_hal_cmp8u kleidicv_compare_u8_with_fallback
 
-#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
-
 // clang-format off
 #undef cv_hal_add8s
 #define cv_hal_add8s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_s8, __VA_ARGS__)
@@ -357,8 +355,6 @@ static inline int kleidicv_compare_u8_with_fallback(
 #define cv_hal_add16s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_s16, __VA_ARGS__)
 #undef cv_hal_add16u
 #define cv_hal_add16u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_u16, __VA_ARGS__)
-#undef cv_hal_add32s
-#define cv_hal_add32s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_add_s32, __VA_ARGS__)
 
 #undef cv_hal_sub8s
 #define cv_hal_sub8s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_s8, __VA_ARGS__)
@@ -368,8 +364,6 @@ static inline int kleidicv_compare_u8_with_fallback(
 #define cv_hal_sub16s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_s16, __VA_ARGS__)
 #undef cv_hal_sub16u
 #define cv_hal_sub16u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_u16, __VA_ARGS__)
-#undef cv_hal_sub32s
-#define cv_hal_sub32s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_sub_s32, __VA_ARGS__)
 
 #undef cv_hal_absdiff8s
 #define cv_hal_absdiff8s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_s8, __VA_ARGS__)
@@ -379,8 +373,6 @@ static inline int kleidicv_compare_u8_with_fallback(
 #define cv_hal_absdiff16s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_s16, __VA_ARGS__)
 #undef cv_hal_absdiff16u
 #define cv_hal_absdiff16u(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_u16, __VA_ARGS__)
-#undef cv_hal_absdiff32s
-#define cv_hal_absdiff32s(...) KLEIDICV_HAL_FORWARD(kleidicv_saturating_absdiff_s32, __VA_ARGS__)
 
 #undef cv_hal_and8u
 #define cv_hal_and8u(...) KLEIDICV_HAL_FORWARD(kleidicv_bitwise_and, __VA_ARGS__)
@@ -415,12 +407,6 @@ KLEIDICV_HAL_MUL(mul16u, kleidicv_saturating_multiply_u16, uint16_t);
 KLEIDICV_HAL_MUL(mul16s, kleidicv_saturating_multiply_s16, int16_t);
 #undef cv_hal_mul16s
 #define cv_hal_mul16s kleidicv_mul16s_with_fallback
-
-KLEIDICV_HAL_MUL(mul32s, kleidicv_saturating_multiply_s32, int32_t);
-#undef cv_hal_mul32s
-#define cv_hal_mul32s kleidicv_mul32s_with_fallback
-
-#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 

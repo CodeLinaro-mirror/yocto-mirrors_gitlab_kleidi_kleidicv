@@ -20,6 +20,26 @@ to decide whether to enable KleidiCV in a multicore environment.
 
 ## Functionality in KleidiCV OpenCV HAL
 
+### `add`, `subtract`, `absdiff`
+Element-wise addition, subtraction and absolute difference.
+
+Notes on parameters:
+* `depth` - `CV_8U`, `CV_8S`, `CV_16U` & `CV_16S` are supported.
+  `CV_32S` is not supported as KleidiCV does not currently provide the
+  non-saturating implementation required by OpenCV for this type.
+
+### `multiply`
+Element-wise multiplication.
+
+Notes on parameters:
+* `depth` - `CV_8U`, `CV_8S`, `CV_16U` & `CV_16S` are supported.
+  `CV_32S` is not supported as KleidiCV does not currently provide the
+  non-saturating implementation required by OpenCV for this type.
+* `scale` - only a value of 1.0 is supported.
+
+### `bitwise_and`
+Bitwise conjunction of two arrays.
+
 ### `gray_to_bgr`
 Converts grayscale images to RGB or RGBA.
 

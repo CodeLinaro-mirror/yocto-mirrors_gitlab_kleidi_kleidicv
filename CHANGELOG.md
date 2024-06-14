@@ -20,6 +20,7 @@ This changelog aims to follow the guiding principles of
 - Bitwise and.
 - Gaussian Blur for 7x7 kernels.
 - Scale function for float.
+- Add, subtract, multiply & absdiff enabled in OpenCV HAL.
 
 ### Fixed
 
