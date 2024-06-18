@@ -22,6 +22,8 @@ This changelog aims to follow the guiding principles of
 - Scale function for float.
 - Add, subtract, multiply & absdiff enabled in OpenCV HAL.
 - MinMax enabled in OpenCV HAL, float version added.
+- Resize 4x4 for float.
+- Resize 0.5x0.5 for uint8_t.
 
 ### Fixed
 

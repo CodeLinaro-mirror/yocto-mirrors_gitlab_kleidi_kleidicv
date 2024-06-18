@@ -38,6 +38,7 @@ add_executable(
   test_float_conv.cpp
   test_scale.cpp
   test_min_max.cpp
+  test_resize.cpp
 )
 
 target_link_libraries(
@@ -81,6 +82,7 @@ add_executable(
   test_float_conv.cpp
   test_scale.cpp
   test_min_max.cpp
+  test_resize.cpp
 )
 
 target_link_libraries(

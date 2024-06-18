@@ -48,6 +48,7 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Erode5x5 opencv_perf_imgproc '*Erode_big*' '(3840x2160, 8UC1, 5)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Erode17x17 opencv_perf_imgproc '*Erode_big*' '(3840x2160, 8UC1, 17)')")
 
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize_0.5_8b opencv_perf_imgproc '*ResizeAreaFast*' '(8UC1, 3840x2160, 2)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize2x2_8b opencv_perf_imgproc '*resizeUpLinearNonExact*' '(8UC1, (1920x1080, 3840x2160))')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize2x2_float opencv_perf_imgproc '*resizeUpLinearNonExact*' '(32FC1, (1920x1080, 3840x2160))')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize4x4_8b opencv_perf_imgproc '*resizeUpLinearNonExact*' '(8UC1, (960x540, 3840x2160))')")

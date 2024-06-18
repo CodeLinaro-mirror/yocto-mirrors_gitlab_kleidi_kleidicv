@@ -15,6 +15,7 @@
 #include "test_float_conv.h"
 #include "test_gaussian_blur.h"
 #include "test_min_max.h"
+#include "test_resize.h"
 #include "test_rgb2yuv.h"
 #include "test_scale.h"
 #include "test_sobel.h"
@@ -36,6 +37,7 @@ std::vector<test> all_tests = merge_tests({
     sobel_tests_get,
     exp_tests_get,
     float_conversion_tests_get,
+    resize_tests_get,
     scale_tests_get,
     min_max_tests_get,
 });

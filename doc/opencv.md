@@ -146,9 +146,9 @@ Release context set up by [`morphology_init`](#morphology_init).
 Notes on parameters:
 * In-place operation not supported.
 * `src_type` - only supports `CV_8UC1` or, for 2*2 resize only, `CV_32FC1`.
-* `dst_width`,`dst_height` - must both be the same multiple of `src_width` and `src_height` respectively, and that multiple must be either 2 or 4.
+* `dst_width`,`dst_height` - must both be the same multiple of `src_width` and `src_height` respectively, and that multiple must be either 0.5, 2 or 4.
 * `inv_scale_x`,`inv_scale_y` - must be 0 or `dst_width / src_width`.
-* `border_type` - Must be `INTER_LINEAR`.
+* `interpolation` - Must be `INTER_LINEAR` or `INTER_AREA` (0.5 by 0.5 only).
 
 ### `sobel`
 Applies Sobel gradient filter to a given image.

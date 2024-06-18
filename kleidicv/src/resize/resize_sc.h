@@ -23,14 +23,18 @@ static inline svuint8_t resize_parallel_vectors(svbool_t pg, svuint8_t top_row,
 static inline void parallel_rows_vectors_path_2x(
     svbool_t pg, Rows<const uint8_t> src_rows,
     Rows<uint8_t> dst_rows) KLEIDICV_STREAMING_COMPATIBLE {
-  svuint8_t top_line0 = svld1(pg, &src_rows.at(0)[0]);
-  svuint8_t bottom_line0 = svld1(pg, &src_rows.at(1)[0]);
-  svuint8_t top_line1 = svld1_vnum(pg, &src_rows.at(0)[0], 1);
-  svuint8_t bottom_line1 = svld1_vnum(pg, &src_rows.at(1)[0], 1);
-  svuint8_t result0 = resize_parallel_vectors(pg, top_line0, bottom_line0);
-  svuint8_t result1 = resize_parallel_vectors(pg, top_line1, bottom_line1);
-  svst1b(pg, &dst_rows[0], svreinterpret_u16_u8(result0));
-  svst1b_vnum(pg, &dst_rows[0], 1, svreinterpret_u16_u8(result1));
+  svuint8_t top_row_0 = svld1(pg, &src_rows.at(0)[0]);
+  svuint8_t bottom_row_0 = svld1(pg, &src_rows.at(1)[0]);
+  svuint8_t top_row_1 = svld1_vnum(pg, &src_rows.at(0)[0], 1);
+  svuint8_t bottom_row_1 = svld1_vnum(pg, &src_rows.at(1)[0], 1);
+  svuint16_t sum0b = svaddlb(top_row_0, bottom_row_0);
+  svuint16_t sum0t = svaddlt(top_row_0, bottom_row_0);
+  svuint16_t sum1b = svaddlb(top_row_1, bottom_row_1);
+  svuint16_t sum1t = svaddlt(top_row_1, bottom_row_1);
+  svuint8_t res0 = svrshrnb(svadd_x(pg, sum0b, sum0t), 2);
+  svuint8_t res1 = svrshrnb(svadd_x(pg, sum1b, sum1t), 2);
+  svuint8_t result = svuzp1(res0, res1);
+  svst1(pg, &dst_rows[0], result);
 }
 
 static inline void parallel_rows_vectors_path(

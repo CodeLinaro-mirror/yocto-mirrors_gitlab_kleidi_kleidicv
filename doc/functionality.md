@@ -71,6 +71,11 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Sobel (3x3)                   |  x  |
 | Gaussian Blur (3x3, 5x5, 7x7) |  x  |
 
+## Resize to quarter
+|             | u8  |
+|-------------|-----|
+| 0.5x0.5     |  x  |
+
 ## Resize with linear interpolation
 |             | u8  | f32 |
 |-------------|-----|-----|
