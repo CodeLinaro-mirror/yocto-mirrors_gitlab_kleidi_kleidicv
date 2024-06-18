@@ -27,8 +27,11 @@ CMAKE_TOOLCHAIN_FILE=<path to the NDK>/build/cmake/android.toolchain.cmake \
 ./build.sh
 ```
 
+By default, the script will produce two flavours of builds. One without KleidiCV (opencv-vanilla) and
+one with it (opencv-kleidicv). Both builds can be fine tuned by the `VANILLA_EXTRA_CMAKE_OPTIONS` and the
+`KLEIDICV_EXTRA_CMAKE_OPTIONS` environment variables respectively.
 If the `CUSTOM_CMAKE_OPTIONS` environment variable is set a third flavour is also build, next to vanilla
-OpenCV and OpenCV+KleidiCV with default options. The variable specifies the extra CMake variables for this
+OpenCV and OpenCV+KleidiCV. The variable specifies the extra CMake variables for this
 custom build and the `CUSTOM_BUILD_SUFFIX` environment variable can alter the `custom` build name suffix.
 (If the `CUSTOM_BUILD_SUFFIX` was defined for the build, it should be provided to the further scripts as well,
 like `push` and `run_*`.)

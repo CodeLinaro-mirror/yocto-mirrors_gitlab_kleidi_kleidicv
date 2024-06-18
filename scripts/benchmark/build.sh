@@ -7,8 +7,8 @@
 # Builds the perf benchmarks for OpenCV with Android target.
 #
 # The following builds will be created:
-#   * opencv-vanilla:                          (without KleidiCV)
-#   * opencv-kleidicv:                         (with KleidiCV)
+#   * opencv-vanilla:                          (without KleidiCV, but with VANILLA_EXTRA_CMAKE_OPTIONS)
+#   * opencv-kleidicv:                         (with KleidiCV and KLEIDICV_EXTRA_CMAKE_OPTIONS)
 #   * [opencv-kleidicv-<CUSTOM_BUILD_SUFFIX>]: (with KleidiCV and CUSTOM_CMAKE_OPTIONS,
 #                                               but only if the CUSTOM_CMAKE_OPTIONS were provided)
 #
@@ -17,8 +17,10 @@
 # variables should be set as well.
 #
 # Options:
-#   CUSTOM_CMAKE_OPTIONS: If provided, an extra build will be created with KleidiCV.
-#   CUSTOM_BUILD_SUFFIX:  Build name suffix for the extra build. Defaults to 'custom'.
+#   VANILLA_EXTRA_CMAKE_OPTIONS:  Optional extra CMake options for the opencv-vanilla build.
+#   KLEIDICV_EXTRA_CMAKE_OPTIONS: Optional extra CMake options for the opencv-kleidicv build.
+#   CUSTOM_CMAKE_OPTIONS:         If provided, an extra build will be created with KleidiCV.
+#   CUSTOM_BUILD_SUFFIX:          Build name suffix for the extra build. Defaults to 'custom'.
 #
 # ------------------------------------------------------------------------------
 
@@ -51,6 +53,7 @@ export BUILD_ID="opencv-vanilla"
 export EXTRA_CMAKE_ARGS="\
     ${COMMON_EXTRA_CMAKE_ARGS} \
     -DWITH_KLEIDICV=OFF \
+    ${VANILLA_EXTRA_CMAKE_OPTIONS:-} \
 "
 
 "${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
@@ -62,6 +65,7 @@ export EXTRA_CMAKE_ARGS="\
     ${COMMON_EXTRA_CMAKE_ARGS} \
     -DWITH_KLEIDICV=ON \
     -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
+    ${KLEIDICV_EXTRA_CMAKE_OPTIONS:-} \
 "
 
 "${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
