@@ -119,6 +119,18 @@ BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_yuv_u8, 4, 3, uint8_t);
 BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(bgr_to_yuv_u8, 3, 3, uint8_t);
 BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(bgra_to_yuv_u8, 4, 3, uint8_t);
 
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(gray_to_rgb_u8, 1, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(gray_to_rgba_u8, 1, 4, uint8_t);
+
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgb_to_bgr_u8, 3, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgb_to_rgb_u8, 3, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_bgra_u8, 4, 4, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_rgba_u8, 4, 4, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgb_to_bgra_u8, 3, 4, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgb_to_rgba_u8, 3, 4, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_bgr_u8, 4, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_rgb_u8, 4, 3, uint8_t);
+
 static void min_max_loc_u8(benchmark::State& state) {
   bench_functor(state, []() {
     size_t min_offset, max_offset;
@@ -247,6 +259,26 @@ static void gaussian_blur(benchmark::State& state) {
   (void)kleidicv_filter_context_release(context);
 }
 
+static void gaussian_blur_3x3_u8_1ch(benchmark::State& state) {
+  gaussian_blur<uint8_t, 1, 2>(state);
+}
+BENCHMARK(gaussian_blur_3x3_u8_1ch);
+
+static void gaussian_blur_3x3_u8_3ch(benchmark::State& state) {
+  gaussian_blur<uint8_t, 3, 2>(state);
+}
+BENCHMARK(gaussian_blur_3x3_u8_3ch);
+
+static void gaussian_blur_5x5_u8_1ch(benchmark::State& state) {
+  gaussian_blur<uint8_t, 1, 2>(state);
+}
+BENCHMARK(gaussian_blur_5x5_u8_1ch);
+
+static void gaussian_blur_5x5_u8_3ch(benchmark::State& state) {
+  gaussian_blur<uint8_t, 3, 2>(state);
+}
+BENCHMARK(gaussian_blur_5x5_u8_3ch);
+
 static void gaussian_blur_7x7_u8_1ch(benchmark::State& state) {
   gaussian_blur<uint8_t, 7, 1>(state);
 }
@@ -266,3 +298,88 @@ static void gaussian_blur_15x15_u8_3ch(benchmark::State& state) {
   gaussian_blur<uint8_t, 15, 3>(state);
 }
 BENCHMARK(gaussian_blur_15x15_u8_3ch);
+
+template <typename Function>
+static void sobel_filter(Function f, benchmark::State& state) {
+  bench_functor(state, [f]() {
+    (void)f(get_source_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
+            get_destination_buffer<int16_t, 1>(), image_width * sizeof(int16_t),
+            image_width, image_height, 1);
+  });
+}
+
+static void sobel_filter_vertical(benchmark::State& state) {
+  sobel_filter(kleidicv_sobel_3x3_vertical_s16_u8, state);
+}
+BENCHMARK(sobel_filter_vertical);
+
+static void sobel_filter_horizontal(benchmark::State& state) {
+  sobel_filter(kleidicv_sobel_3x3_horizontal_s16_u8, state);
+}
+BENCHMARK(sobel_filter_horizontal);
+
+template <size_t OutChannels, typename Function>
+static void yuv_sp(Function f, benchmark::State& state) {
+  bench_functor(state, [f]() {
+    (void)f(get_source_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
+            get_source_buffer_b<uint8_t, 2>(),
+            (image_width / 2) * sizeof(uint8_t),
+            get_destination_buffer<uint8_t, OutChannels>(),
+            image_width * sizeof(uint8_t), image_width, image_height, true);
+  });
+}
+
+static void yuv_sp_to_rgb(benchmark::State& state) {
+  yuv_sp<3>(kleidicv_yuv_sp_to_rgb_u8, state);
+}
+BENCHMARK(yuv_sp_to_rgb);
+
+static void yuv_sp_to_bgr(benchmark::State& state) {
+  yuv_sp<3>(kleidicv_yuv_sp_to_bgr_u8, state);
+}
+BENCHMARK(yuv_sp_to_bgr);
+
+static void yuv_sp_to_rgba(benchmark::State& state) {
+  yuv_sp<4>(kleidicv_yuv_sp_to_rgba_u8, state);
+}
+BENCHMARK(yuv_sp_to_rgba);
+
+static void yuv_sp_to_bgra(benchmark::State& state) {
+  yuv_sp<4>(kleidicv_yuv_sp_to_bgra_u8, state);
+}
+BENCHMARK(yuv_sp_to_bgra);
+
+template <typename T, size_t KernelSize, typename Function>
+static void morphology(Function f, benchmark::State& state) {
+  kleidicv_morphology_context_t* context = nullptr;
+  kleidicv_error_t err = kleidicv_morphology_create(
+      &context, kleidicv_rectangle_t{KernelSize, KernelSize},
+      kleidicv_point_t{0, 0}, KLEIDICV_BORDER_TYPE_REPLICATE,
+      kleidicv_border_values_t{0, 0, 0, 0}, 1, 1, sizeof(T),
+      kleidicv_rectangle_t{image_width, image_height});
+  if (err != KLEIDICV_OK) {
+    state.SkipWithError("Could not initialize morphology context.");
+    return;
+  }
+
+  bench_functor(state, [f, context]() {
+    (void)f(get_source_buffer_a<T, 1>(), image_width * sizeof(T),
+            get_destination_buffer<T, 1>(), image_width * sizeof(T),
+            image_width, image_height, context);
+  });
+
+  (void)kleidicv_morphology_release(context);
+}
+
+#define BENCH_MORPHOLOGY(name, kernel_size)                                   \
+  static void name##_##kernel_size##x##kernel_size(benchmark::State& state) { \
+    morphology<uint8_t, kernel_size>(kleidicv_##name##_u8, state);            \
+  }                                                                           \
+  BENCHMARK(name##_##kernel_size##x##kernel_size)
+
+BENCH_MORPHOLOGY(dilate, 3);
+BENCH_MORPHOLOGY(dilate, 5);
+BENCH_MORPHOLOGY(dilate, 17);
+BENCH_MORPHOLOGY(erode, 3);
+BENCH_MORPHOLOGY(erode, 5);
+BENCH_MORPHOLOGY(erode, 17);
