@@ -76,38 +76,48 @@ BENCH_BINARY_OP(bitwise_and, uint8_t);
 BENCH_BINARY_OP(compare_equal_u8, uint8_t);
 BENCH_BINARY_OP(compare_greater_u8, uint8_t);
 
-template <typename I, typename O, int Channels, typename Function>
+template <typename I, typename O, size_t InChannels, size_t OutChannels,
+          typename Function>
 static void bench_unary_op(Function f, benchmark::State& state) {
   bench_functor(state, [f]() {
-    (void)f(get_source_buffer_a<I, Channels>(),
-            image_width * Channels * sizeof(I),
-            get_destination_buffer<O, Channels>(),
-            image_width * Channels * sizeof(O), image_width, image_height);
+    (void)f(get_source_buffer_a<I, InChannels>(),
+            image_width * InChannels * sizeof(I),
+            get_destination_buffer<O, OutChannels>(),
+            image_width * OutChannels * sizeof(O), image_width, image_height);
   });
 }
 
-#define BENCH_UNARY_OP(name, channels, type)                      \
-  static void name(benchmark::State& state) {                     \
-    bench_unary_op<type, type, channels>(kleidicv_##name, state); \
-  }                                                               \
+#define BENCH_UNARY_OP(name, channels, type)                                \
+  static void name(benchmark::State& state) {                               \
+    bench_unary_op<type, type, channels, channels>(kleidicv_##name, state); \
+  }                                                                         \
   BENCHMARK(name)
 
-BENCH_UNARY_OP(rgb_to_yuv_u8, 3, uint8_t);
-BENCH_UNARY_OP(rgba_to_yuv_u8, 4, uint8_t);
-BENCH_UNARY_OP(bgr_to_yuv_u8, 3, uint8_t);
-BENCH_UNARY_OP(bgra_to_yuv_u8, 4, uint8_t);
 BENCH_UNARY_OP(exp_f32, 1, float);
 
-#define BENCH_UNARY_OP_DIFFERENT_IO_TYPES(name, itype, otype) \
-  static void name(benchmark::State& state) {                 \
-    bench_unary_op<itype, otype, 1>(kleidicv_##name, state);  \
-  }                                                           \
+#define BENCH_UNARY_OP_DIFFERENT_IO_TYPES(name, itype, otype)   \
+  static void name(benchmark::State& state) {                   \
+    bench_unary_op<itype, otype, 1, 1>(kleidicv_##name, state); \
+  }                                                             \
   BENCHMARK(name)
 
 BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_f32_s8, float, int8_t);
 BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_f32_u8, float, uint8_t);
 BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_s8_f32, int8_t, float);
 BENCH_UNARY_OP_DIFFERENT_IO_TYPES(float_conversion_u8_f32, uint8_t, float);
+
+#define BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(name, in_channels,         \
+                                                out_channels, type)        \
+  static void name(benchmark::State& state) {                              \
+    bench_unary_op<type, type, in_channels, out_channels>(kleidicv_##name, \
+                                                          state);          \
+  }                                                                        \
+  BENCHMARK(name)
+
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgb_to_yuv_u8, 3, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_yuv_u8, 4, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(bgr_to_yuv_u8, 3, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(bgra_to_yuv_u8, 4, 3, uint8_t);
 
 static void min_max_loc_u8(benchmark::State& state) {
   bench_functor(state, []() {
