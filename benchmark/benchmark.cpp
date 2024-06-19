@@ -152,20 +152,11 @@ BENCH_SCALE(scale_f32_generic, scale_f32, 1.234, 4.567, float);
 
 template <typename T, typename F>
 static void min_max(F f, benchmark::State& state) {
-  // Setup
-  std::vector<T> src;
-  src.resize(image_width * image_height);
-  std::mt19937 generator;
-  std::generate(src.begin(), src.end(), generator);
-
-  T min_value = 0, max_value = 0;
-
-  for (auto _ : state) {
-    // This code gets benchmarked
-    auto unused = f(src.data(), image_width * sizeof(T), image_width,
-                    image_height, &min_value, &max_value);
-    (void)unused;
-  }
+  bench_functor(state, [f]() {
+    T min_value = 0, max_value = 0;
+    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
+            image_height, &min_value, &max_value);
+  });
 }
 
 #define BENCH_MIN_MAX(name, type)             \
