@@ -49,6 +49,13 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | BGR-YUV   |  x  |
 | BGRA-YUV  |  x  |
 
+## Data type conversions
+|            | u8  | s8  | f32 |
+|------------|-----|-----|-----|
+| To float32 |  x  |  x  |     |
+| To uint8   |     |     |  x  |
+| To int8    |     |     |  x  |
+
 ## Aggregate operations
 |                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 | f32 |
 |-----------------|-----|-----|-----|-----|-----|-----|-----|-----|
