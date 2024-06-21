@@ -53,6 +53,11 @@ IMGPROC_TEST_PATTERNS_STR="$(join_strings_with_colon "${IMGPROC_TEST_PATTERNS[*]
   --gtest_filter="${IMGPROC_TEST_PATTERNS_STR}" || TESTRESULT=1
 
 CORE_TEST_PATTERNS=(
+  '*Core_AbsDiff*'
+  '*Core_Add*'
+  '*Core_And*'
+  '*Core_Mul*'
+  '*Core_Sub*'
   '*Core_Transpose*'
   '*Core_MinMaxLoc*'
   '*Core_ConvertScale*'
