@@ -9,7 +9,7 @@ set -eu
 BUILD_ID="kleidicv-coverage" \
 CMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
 CMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
-EXTRA_CMAKE_ARGS="-DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF" \
+EXTRA_CMAKE_ARGS="-DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF" \
 ./scripts/build.sh kleidicv-test
 
 # Clean any coverage results from previous runs

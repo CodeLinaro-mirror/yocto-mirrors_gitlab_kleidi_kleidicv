@@ -81,6 +81,12 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
 
 #endif  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME2
 
+#if KLEIDICV_ALWAYS_ENABLE_SME2
+#define KLEIDICV_SME2_IMPL_IF(func) func
+#else
+#define KLEIDICV_SME2_IMPL_IF(func) nullptr
+#endif  // KLEIDICV_ALWAYS_ENABLE_SME2
+
 #if KLEIDICV_ALWAYS_ENABLE_SVE2
 #define KLEIDICV_SVE2_IMPL_IF(func) func
 #else

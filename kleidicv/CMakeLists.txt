@@ -16,6 +16,11 @@ else()
   set(KLEIDICV_ENABLE_SME2 OFF)
 endif()
 option(
+  KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS
+  "Limits SME2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SME2 is false."
+  ON
+)
+option(
   KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS
   "Limits SVE2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SVE2 is false."
   ON
@@ -64,6 +69,10 @@ if (KLEIDICV_ENABLE_SME2)
   else()
     message(STATUS "[KleidiCV] Compiler does not support SME2")
   endif()
+endif()
+
+if(KLEIDICV_BUILD_SME2 AND NOT KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS)
+  set(KLEIDICV_ALWAYS_ENABLE_SME2 ON)
 endif()
 
 if(KLEIDICV_BUILD_SVE2 AND NOT KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS)

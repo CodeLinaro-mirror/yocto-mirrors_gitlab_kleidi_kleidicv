@@ -40,6 +40,6 @@ kleidicv_error_t bitwise_and(const T *src_a, size_t src_a_stride,
   KLEIDICV_MULTIVERSION_C_API(                                   \
       name, &kleidicv::neon::bitwise_and<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::bitwise_and<type>), \
-      &kleidicv::sme2::bitwise_and<type>)
+      KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::bitwise_and<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_bitwise_and, uint8_t);

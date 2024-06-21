@@ -118,5 +118,6 @@ In addition to the standard CMake settings, KleidiCV behaviour can be
 modified at build time via the following CMake options:
 - `KLEIDICV_BENCHMARK` - Enable building KleidiCV benchmarks. The benchmarks use Google Benchmark which will be downloaded automatically. Off by default.
 - `KLEIDICV_ENABLE_SME2` - Enable Scalable Matrix Extension 2 and Streaming Scalable Vector Extension code paths if supported by the compiler. On by default.
+  - `KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS` - Limit Scalable Matrix Extension 2 code paths to cases where it is expected to provide a benefit over other code paths. On by default. Has no effect if `KLEIDICV_ENABLE_SME2` is false.
 - `KLEIDICV_ENABLE_SVE2` -  Enable Scalable Vector Extension 2 code paths if supported by the compiler. On by default.
   - `KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS` - Limit Scalable Vector Extension 2 code paths to cases where it is expected to provide a benefit over other code paths. On by default. Has no effect if `KLEIDICV_ENABLE_SVE2` is false.

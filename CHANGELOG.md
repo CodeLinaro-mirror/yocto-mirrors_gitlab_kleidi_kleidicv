@@ -26,6 +26,7 @@ This changelog aims to follow the guiding principles of
 - Resize 4x4 for float.
 - Resize 0.5x0.5 for uint8_t.
 - Conversion from float to (u)int8_t and vice versa.
+- KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS configuration option.
 
 ### Fixed
 

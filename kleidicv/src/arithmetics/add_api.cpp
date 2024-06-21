@@ -40,7 +40,7 @@ kleidicv_error_t saturating_add(const T *src_a, size_t src_a_stride,
   KLEIDICV_MULTIVERSION_C_API(                                      \
       name, &kleidicv::neon::saturating_add<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_add<type>), \
-      &kleidicv::sme2::saturating_add<type>)
+      KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::saturating_add<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_saturating_add_s8, int8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_saturating_add_u8, uint8_t);
