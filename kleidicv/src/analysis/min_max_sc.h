@@ -19,20 +19,23 @@ class MinMax final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
   using ContextType = Context;
 
-  MinMax(VectorType &vmin, VectorType &vmax) : vmin_{vmin}, vmax_{vmax} {}
+  MinMax(VectorType &vmin, VectorType &vmax) KLEIDICV_STREAMING_COMPATIBLE
+      : vmin_{vmin},
+        vmax_{vmax} {}
 
-  void vector_path(ContextType ctx, VectorType src) {
+  void vector_path(ContextType ctx,
+                   VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = ctx.predicate();
     vmin_ = svmin_m(pg, vmin_, src);
     vmax_ = svmax_m(pg, vmax_, src);
   }
 
-  ScalarType get_min() const {
+  ScalarType get_min() const KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = VecTraits::svptrue();
     return svminv(pg, vmin_);
   }
 
-  ScalarType get_max() const {
+  ScalarType get_max() const KLEIDICV_STREAMING_COMPATIBLE {
     auto pg = VecTraits::svptrue();
     return svmaxv(pg, vmax_);
   }
@@ -44,7 +47,8 @@ class MinMax final : public UnrollTwice {
 template <typename ScalarType>
 kleidicv_error_t min_max_sc(const ScalarType *src, size_t src_stride,
                             size_t width, size_t height, ScalarType *min_value,
-                            ScalarType *max_value) {
+                            ScalarType *max_value)
+    KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
