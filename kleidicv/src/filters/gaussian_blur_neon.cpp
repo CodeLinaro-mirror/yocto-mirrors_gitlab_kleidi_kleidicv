@@ -514,8 +514,6 @@ kleidicv_error_t discrete_gaussian_blur(const ScalarType *src,
                                         size_t height, size_t channels,
                                         kleidicv_border_type_t border_type,
                                         kleidicv_filter_context_t *context) {
-  using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
-
   CHECK_POINTERS(context);
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
@@ -529,25 +527,21 @@ kleidicv_error_t discrete_gaussian_blur(const ScalarType *src,
     return KLEIDICV_ERROR_RANGE;
   }
 
-  Rectangle rect{width, height};
-  Rows<const ScalarType> src_rows{src, src_stride, channels};
-  Rows<ScalarType> dst_rows{dst, dst_stride, channels};
-
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
 
   if constexpr (KernelSize == 15) {
-    if (workspace->intermediate_size() != 4 * sizeof(ScalarType)) {
+    if (workspace->intermediate_size() < sizeof(uint32_t)) {
       return KLEIDICV_ERROR_CONTEXT_MISMATCH;
     }
-  } else if (workspace->intermediate_size() != 2 * sizeof(ScalarType)) {
+  }
+
+  if (workspace->channels() < channels) {
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
-  if (workspace->channels() != channels) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  if (workspace->image_size() != rect) {
+  Rectangle rect{width, height};
+  const Rectangle &context_rect = workspace->image_size();
+  if (context_rect.width() < width || context_rect.height() < height) {
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
@@ -557,59 +551,50 @@ kleidicv_error_t discrete_gaussian_blur(const ScalarType *src,
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
+  using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
+
   GaussianBlurFilterType blur;
   SeparableFilter<GaussianBlurFilterType, KernelSize> filter{blur};
+
+  Rows<const ScalarType> src_rows{src, src_stride, channels};
+  Rows<ScalarType> dst_rows{dst, dst_stride, channels};
   workspace->process(rect, src_rows, dst_rows, channels, *fixed_border_type,
                      filter);
   return KLEIDICV_OK;
 }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_3x3_u8(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height,
-                                      size_t channels,
-                                      kleidicv_border_type_t border_type,
-                                      kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 3>(src, src_stride, dst, dst_stride,
-                                            width, height, channels,
-                                            border_type, context);
-}
+#define KLEIDICV_GAUSSIAN_BLUR_WRAPPER(size, ...)              \
+  if (kernel_width == size) {                                  \
+    return discrete_gaussian_blur<uint8_t, size>(__VA_ARGS__); \
+  }
+
+#define KLEIDICV_GENERATE_GAUSSIAN_BLUR_WRAPPERS(...) \
+  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(3, __VA_ARGS__)      \
+  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(5, __VA_ARGS__)      \
+  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(7, __VA_ARGS__)      \
+  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(15, __VA_ARGS__)
 
 KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height,
-                                      size_t channels,
-                                      kleidicv_border_type_t border_type,
-                                      kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 5>(src, src_stride, dst, dst_stride,
-                                            width, height, channels,
-                                            border_type, context);
-}
+kleidicv_error_t gaussian_blur_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height, size_t channels,
+                                  size_t kernel_width, size_t kernel_height,
+                                  float sigma_x, float sigma_y,
+                                  kleidicv_border_type_t border_type,
+                                  kleidicv_filter_context_t *context) {
+  if (kernel_width != kernel_height) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_7x7_u8(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height,
-                                      size_t channels,
-                                      kleidicv_border_type_t border_type,
-                                      kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 7>(src, src_stride, dst, dst_stride,
-                                            width, height, channels,
-                                            border_type, context);
-}
+  if (sigma_x != 0.0 || sigma_y != 0.0) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_15x15_u8(const uint8_t *src, size_t src_stride,
-                                        uint8_t *dst, size_t dst_stride,
-                                        size_t width, size_t height,
-                                        size_t channels,
-                                        kleidicv_border_type_t border_type,
-                                        kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 15>(src, src_stride, dst, dst_stride,
-                                             width, height, channels,
-                                             border_type, context);
+  KLEIDICV_GENERATE_GAUSSIAN_BLUR_WRAPPERS(src, src_stride, dst, dst_stride,
+                                           width, height, channels, border_type,
+                                           context)
+
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
 }  // namespace kleidicv::neon

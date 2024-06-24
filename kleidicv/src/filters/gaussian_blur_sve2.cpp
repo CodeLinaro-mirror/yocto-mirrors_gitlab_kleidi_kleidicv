@@ -8,51 +8,16 @@
 namespace kleidicv::sve2 {
 
 KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_3x3_u8(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height,
-                                      size_t channels,
-                                      kleidicv_border_type_t border_type,
-                                      kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 3>(src, src_stride, dst, dst_stride,
-                                            width, height, channels,
-                                            border_type, context);
-}
-
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_5x5_u8(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height,
-                                      size_t channels,
-                                      kleidicv_border_type_t border_type,
-                                      kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 5>(src, src_stride, dst, dst_stride,
-                                            width, height, channels,
-                                            border_type, context);
-}
-
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_7x7_u8(const uint8_t *src, size_t src_stride,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t width, size_t height,
-                                      size_t channels,
-                                      kleidicv_border_type_t border_type,
-                                      kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 7>(src, src_stride, dst, dst_stride,
-                                            width, height, channels,
-                                            border_type, context);
-}
-
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_15x15_u8(const uint8_t *src, size_t src_stride,
-                                        uint8_t *dst, size_t dst_stride,
-                                        size_t width, size_t height,
-                                        size_t channels,
-                                        kleidicv_border_type_t border_type,
-                                        kleidicv_filter_context_t *context) {
-  return discrete_gaussian_blur<uint8_t, 15>(src, src_stride, dst, dst_stride,
-                                             width, height, channels,
-                                             border_type, context);
+kleidicv_error_t gaussian_blur_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height, size_t channels,
+                                  size_t kernel_width, size_t kernel_height,
+                                  float sigma_x, float sigma_y,
+                                  kleidicv_border_type_t border_type,
+                                  kleidicv_filter_context_t *context) {
+  return gaussian_blur_u8_entry(src, src_stride, dst, dst_stride, width, height,
+                                channels, kernel_width, kernel_height, sigma_x,
+                                sigma_y, border_type, context);
 }
 
 }  // namespace kleidicv::sve2

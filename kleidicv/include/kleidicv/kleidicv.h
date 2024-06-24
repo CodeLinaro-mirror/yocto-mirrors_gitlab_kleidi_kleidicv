@@ -1163,130 +1163,79 @@ KLEIDICV_API_DECLARATION(kleidicv_canny_u8, const uint8_t *src,
 ///
 /// Before a Gaussian blur operation, this initialization is needed.
 /// After the operation is finished, the context needs to be released
-/// using @ref kleidicv_filter_release.
+/// using @ref kleidicv_filter_context_release.
 ///
-/// @param context       Pointer where to return the created context's address.
-/// @param channels      Number of channels in the data. Must be not more than
-///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
-/// @param intermediate_size Size of an intermediate buffer element in bytes.
-///                          The element must be large enough to fit values of
-///                          the intermediate type used internally by the
-///                          Gaussian blur operation.
-/// @param image         Image dimensions. Its size must not be more than
-///                      @ref KLEIDICV_MAX_IMAGE_PIXELS.
+/// @param context           Pointer where to return the created context's
+///                          address.
+/// @param max_channels      Maximum number of channels in the data. Must not be
+///                          more than @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
+/// @param max_kernel_width  Maximum width of the Gaussian blur kernel.
+/// @param max_kernel_height Maximum height of the Gaussian blur kernel.
+/// @param max_image_width   Maximum image width. max_image_width *
+///                          max_image_height must not be more than @ref
+///                          KLEIDICV_MAX_IMAGE_PIXELS.
+/// @param max_image_height  Maximum image height. max_image_width *
+///                          max_image_height must not be more than @ref
+///                          KLEIDICV_MAX_IMAGE_PIXELS.
 ///
-kleidicv_error_t kleidicv_filter_create(kleidicv_filter_context_t **context,
-                                        size_t channels,
-                                        size_t intermediate_size,
-                                        kleidicv_rectangle_t image);
+kleidicv_error_t kleidicv_filter_context_create(
+    kleidicv_filter_context_t **context, size_t max_channels,
+    size_t max_kernel_width, size_t max_kernel_height, size_t max_image_width,
+    size_t max_image_height);
 
 /// Releases a filter context that was previously created using @ref
-/// kleidicv_filter_create.
+/// kleidicv_filter_context_create.
 ///
 /// @param context      Pointer to filter context. Must not be nullptr.
 ///
-kleidicv_error_t kleidicv_filter_release(kleidicv_filter_context_t *context);
+kleidicv_error_t kleidicv_filter_context_release(
+    kleidicv_filter_context_t *context);
 
-/// Convolves the source image with the specified Gaussian kernel.
+/// Applies Gaussian blur to the source image using the specified parameters.
 /// In-place filtering is not supported.
 ///
-/// 3x3 Gaussian Blur filter for uint8_t types:
-/// ```
-///        [ 1, 2, 1 ]
-/// 1/16 * [ 2, 4, 2 ]
-///        [ 1, 2, 1 ]
-/// ```
-/// 5x5 Gaussian Blur filter for uint8_t types:
-/// ```
-///         [ 1,  4,  6,  4, 1 ]
-///         [ 4, 16, 24, 16, 4 ]
-/// 1/256 * [ 6, 24, 36, 24, 6 ]
-///         [ 4, 16, 24, 16, 4 ]
-///         [ 1,  4,  6,  4, 1 ]
-/// ```
-/// 7x7 Gaussian Blur filter for uint8_t types:
-/// ```
-///          [  4,  14,  28,  36,  28,  14,  4 ]
-///          [ 14,  49,  98, 126,  98,  49, 14 ]
-///          [ 28,  98, 196, 252, 196,  98, 28 ]
-/// 1/4096 * [ 36, 126, 252, 324, 252, 126, 36 ]
-///          [ 28,  98, 196, 252, 196,  98, 28 ]
-///          [ 14,  49,  98, 126,  98,  49, 14 ]
-///          [  4,  14,  28,  36,  28,  14,  4 ]
-/// ```
-/// 15x15 Gaussian Blur filter for uint8_t types:
-/// ```
-///             [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
-///             [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
-///             [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
-///             [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
-/// 1/1048576 * [  |     |     |     |  ...   |     |     |    |  ]
-///             [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
-///             [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
-///             [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
-///             [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
-/// ```
-///
-/// Width and height are the same for the source and for the destination. Number
-/// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+/// Width and height are assumed to be the same for the source and for the
+/// destination. The number of elements is limited to @ref
+/// KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// Usage: \n
 /// Before using this function, a context must be created using
-/// kleidicv_filter_create, and after finished, it has to be released
-/// using kleidicv_filter_release. The context must be created with the same
-/// image dimensions as width and height parameters, with sizeof(uint8) as
-/// size_type, and with the channel number of the data as channels. \n
-/// Note, from the border types only these are supported: \n
+/// kleidicv_filter_context_create, and after finished, it has to be released
+/// using kleidicv_filter_context_release. Please ensure that your filter
+/// context parameters are large enough, otherwise this API will return with an
+/// error. \n Note, from the border types only these are supported: \n
 ///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE \n
 ///                       - @ref KLEIDICV_BORDER_TYPE_REFLECT \n
 ///                       - @ref KLEIDICV_BORDER_TYPE_WRAP \n
 ///                       - @ref KLEIDICV_BORDER_TYPE_REVERSE
 ///
-/// @param src          Pointer to the source data. Must be non-null.
-/// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the source data. Must be a
-///                     multiple of sizeof(type) and no less than width *
-///                     sizeof(type) * channels, except for single-row images.
-/// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row in the destination data. Must be a
-///                     multiple of sizeof(type) and no less than width *
-///                     sizeof(type) * channels, except for single-row images.
-/// @param width        Number of columns in the data. (One column consists of
-///                     'channels' number of elements.)
-/// @param height       Number of rows in the data.
-/// @param channels     Number of channels in the data. Must be not more than
-///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
-/// @param border_type  Way of handling the border.
-/// @param context      Pointer to filter context.
+/// @param src           Pointer to the source data. Must be non-null.
+/// @param src_stride    Distance in bytes from the start of one row to the
+///                      start of the next row in the source data. Must be a
+///                      multiple of sizeof(type) and no less than width *
+///                      sizeof(type) * channels, except for single-row images.
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row in the destination data. Must be
+///                      a multiple of sizeof(type) and no less than width *
+///                      sizeof(type) * channels, except for single-row images.
+/// @param width         Number of columns in the data. (One column consists of
+///                      'channels' number of elements.)
+/// @param height        Number of rows in the data.
+/// @param channels      Number of channels in the data. Must be not more than
+///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
+/// @param kernel_width  Width of the Gaussian kernel.
+/// @param kernel_height Height of the Gaussian kernel.
+/// @param sigma_x       Horizontal sigma (standard deviation) value.
+/// @param sigma_y       Vertical sigma (standard deviation) value.
+/// @param border_type   Way of handling the border.
+/// @param context       Pointer to filter context.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_3x3_u8, const uint8_t *src,
+KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, size_t channels,
-                         kleidicv_border_type_t border_type,
-                         kleidicv_filter_context_t *context);
-
-/// @copydoc kleidicv_gaussian_blur_3x3_u8
-///
-KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_5x5_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, size_t channels,
-                         kleidicv_border_type_t border_type,
-                         kleidicv_filter_context_t *context);
-
-/// @copydoc kleidicv_gaussian_blur_3x3_u8
-///
-KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_7x7_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, size_t channels,
-                         kleidicv_border_type_t border_type,
-                         kleidicv_filter_context_t *context);
-
-/// @copydoc kleidicv_gaussian_blur_3x3_u8
-///
-KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_15x15_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         float sigma_x, float sigma_y,
                          kleidicv_border_type_t border_type,
                          kleidicv_filter_context_t *context);
 

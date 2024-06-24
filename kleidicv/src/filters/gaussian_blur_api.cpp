@@ -12,23 +12,29 @@ extern "C" {
 using KLEIDICV_TARGET_NAMESPACE::Rectangle;
 using KLEIDICV_TARGET_NAMESPACE::SeparableFilterWorkspace;
 
-kleidicv_error_t kleidicv_filter_create(kleidicv_filter_context_t **context,
-                                        size_t channels,
-                                        size_t intermediate_size,
-                                        kleidicv_rectangle_t image) {
+kleidicv_error_t kleidicv_filter_context_create(
+    kleidicv_filter_context_t **context, size_t max_channels,
+    size_t max_kernel_width, size_t max_kernel_height, size_t max_image_width,
+    size_t max_image_height) {
   CHECK_POINTERS(context);
-  CHECK_RECTANGLE_SIZE(image);
 
-  if (intermediate_size > KLEIDICV_MAXIMUM_TYPE_SIZE) {
+  if (max_kernel_width != max_kernel_height) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (max_channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
     return KLEIDICV_ERROR_RANGE;
   }
 
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_RANGE;
-  }
+  CHECK_IMAGE_SIZE(max_image_width, max_image_height);
 
-  auto workspace = SeparableFilterWorkspace::create(Rectangle{image}, channels,
-                                                    intermediate_size);
+  // naive check because non-square kernels are not supported anyway
+  size_t intermediate_size = (max_kernel_width == 15 || max_kernel_height == 15)
+                                 ? sizeof(uint32_t)
+                                 : sizeof(uint16_t);
+  auto workspace = SeparableFilterWorkspace::create(
+      Rectangle{max_image_width, max_image_height}, max_channels,
+      intermediate_size);
   if (!workspace) {
     *context = nullptr;
     return KLEIDICV_ERROR_ALLOCATION;
@@ -38,7 +44,8 @@ kleidicv_error_t kleidicv_filter_create(kleidicv_filter_context_t **context,
   return KLEIDICV_OK;
 }
 
-kleidicv_error_t kleidicv_filter_release(kleidicv_filter_context_t *context) {
+kleidicv_error_t kleidicv_filter_context_release(
+    kleidicv_filter_context_t *context) {
   CHECK_POINTERS(context);
 
   // Deliberately create and immediately destroy a unique_ptr to delete the
@@ -53,21 +60,6 @@ kleidicv_error_t kleidicv_filter_release(kleidicv_filter_context_t *context) {
 }  // extern "C"
 
 KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_gaussian_blur_3x3_u8, &kleidicv::neon::gaussian_blur_3x3_u8,
-    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_3x3_u8),
-    &kleidicv::sme2::gaussian_blur_3x3_u8);
-
-KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_gaussian_blur_5x5_u8, &kleidicv::neon::gaussian_blur_5x5_u8,
-    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_5x5_u8),
-    &kleidicv::sme2::gaussian_blur_5x5_u8);
-
-KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_gaussian_blur_7x7_u8, &kleidicv::neon::gaussian_blur_7x7_u8,
-    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_7x7_u8),
-    &kleidicv::sme2::gaussian_blur_7x7_u8);
-
-KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_gaussian_blur_15x15_u8, &kleidicv::neon::gaussian_blur_15x15_u8,
-    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_15x15_u8),
-    &kleidicv::sme2::gaussian_blur_15x15_u8);
+    kleidicv_gaussian_blur_u8, &kleidicv::neon::gaussian_blur_u8,
+    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_u8),
+    &kleidicv::sme2::gaussian_blur_u8);
