@@ -31,6 +31,8 @@ This changelog aims to follow the guiding principles of
 ### Fixed
 
 ### Changed
+- Filter context creation API specification.
+- Gaussian Blur API specification.
 
 ### Removed
 
