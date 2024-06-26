@@ -73,4 +73,9 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_S32_4K opencv_perf_core '*minMaxVals/*' '(3840x2160, 32SC1)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_F32_4K opencv_perf_core '*minMaxVals/*' '(3840x2160, 32FC1)')")
 
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL FloatToInt opencv_perf_core '*convertTo/*' '(3840x2160, 32FC1, 8SC1, 1, 1, 0)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL FloatToUint opencv_perf_core '*convertTo/*' '(3840x2160, 32FC1, 8UC1, 1, 1, 0)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL IntToFloat opencv_perf_core '*convertTo/*' '(3840x2160, 8SC1, 32FC1, 1, 1, 0)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL UintToFloat opencv_perf_core '*convertTo/*' '(3840x2160, 8UC1, 32FC1, 1, 1, 0)')")
+
 echo "$RES"
