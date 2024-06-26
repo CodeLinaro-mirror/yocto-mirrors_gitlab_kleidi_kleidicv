@@ -52,6 +52,13 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
                            size_t margin_bottom, size_t kernel_size,
                            int border_type);
 
+int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
+                  size_t dst_step, int width, int height, int depth, int cn,
+                  size_t margin_left, size_t margin_top, size_t margin_right,
+                  size_t margin_bottom, size_t kernel_width,
+                  size_t kernel_height, double sigma_x, double sigma_y,
+                  int border_type);
+
 int morphology_init(cvhalFilter2D **context, int operation, int src_type,
                     int dst_type, int max_width, int max_height,
                     int kernel_type, uchar *kernel_data, size_t kernel_step,
@@ -205,6 +212,22 @@ static inline int kleidicv_gaussian_blur_binomial_with_fallback(
 #undef cv_hal_gaussianBlurBinomial
 #define cv_hal_gaussianBlurBinomial \
   kleidicv_gaussian_blur_binomial_with_fallback
+
+// gaussian_blur
+static inline int kleidicv_gaussian_blur_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int width, int height, int depth, int cn, size_t margin_left,
+    size_t margin_top, size_t margin_right, size_t margin_bottom,
+    size_t kernel_width, size_t kernel_height, double sigma_x, double sigma_y,
+    int border_type) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      gaussian_blur, cv_hal_gaussianBlur, src_data, src_step, dst_data,
+      dst_step, width, height, depth, cn, margin_left, margin_top, margin_right,
+      margin_bottom, kernel_width, kernel_height, sigma_x, sigma_y,
+      border_type);
+}
+#undef cv_hal_gaussianBlur
+#define cv_hal_gaussianBlur kleidicv_gaussian_blur_with_fallback
 
 // morphology_init
 static inline int kleidicv_morphology_init_with_fallback(

@@ -1226,8 +1226,14 @@ kleidicv_error_t kleidicv_filter_context_release(
 ///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param kernel_width  Width of the Gaussian kernel.
 /// @param kernel_height Height of the Gaussian kernel.
-/// @param sigma_x       Horizontal sigma (standard deviation) value.
-/// @param sigma_y       Vertical sigma (standard deviation) value.
+/// @param sigma_x       Horizontal sigma (standard deviation) value. If equal
+///                      to 0.0, Gaussian filter is approximated by the
+///                      probability mass function of the binomial distribution
+///                      in the horizontal direction.
+/// @param sigma_y       Vertical sigma (standard deviation) value. If equal
+///                      to 0.0, Gaussian filter is approximated by the
+///                      probability mass function of the binomial distribution
+///                      in the vertical direction.
 /// @param border_type   Way of handling the border.
 /// @param context       Pointer to filter context.
 ///

@@ -28,10 +28,9 @@ kleidicv_error_t kleidicv_filter_context_create(
 
   CHECK_IMAGE_SIZE(max_image_width, max_image_height);
 
-  // naive check because non-square kernels are not supported anyway
-  size_t intermediate_size = (max_kernel_width == 15 || max_kernel_height == 15)
-                                 ? sizeof(uint32_t)
-                                 : sizeof(uint16_t);
+  // We can use the maximum size that accommodates everything due to the lack of
+  // information at this stage.
+  constexpr size_t intermediate_size = sizeof(uint32_t);
   auto workspace = SeparableFilterWorkspace::create(
       Rectangle{max_image_width, max_image_height}, max_channels,
       intermediate_size);

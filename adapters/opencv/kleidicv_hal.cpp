@@ -282,6 +282,52 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
   return convert_error(blur_err ? blur_err : release_err);
 }
 
+int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
+                  size_t dst_step, int width, int height, int depth, int cn,
+                  size_t margin_left, size_t margin_top, size_t margin_right,
+                  size_t margin_bottom, size_t kernel_width,
+                  size_t kernel_height, double sigma_x, double sigma_y,
+                  int border_type) {
+  if (src_data == dst_data) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (margin_left != 0 || margin_top != 0 || margin_right != 0 ||
+      margin_bottom != 0) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  switch (depth) {
+    case CV_8U:
+      break;
+
+    default:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  kleidicv_border_type_t kleidicv_border_type;
+  if (from_opencv(border_type, kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  kleidicv_filter_context_t *context;
+  if (kleidicv_error_t create_err = kleidicv_filter_context_create(
+          &context, cn, kernel_width, kernel_height, static_cast<size_t>(width),
+          static_cast<size_t>(height))) {
+    return convert_error(create_err);
+  }
+
+  kleidicv_error_t blur_err = kleidicv_gaussian_blur_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
+      kernel_width, kernel_height, sigma_x, sigma_y, kleidicv_border_type,
+      context);
+
+  kleidicv_error_t release_err = kleidicv_filter_context_release(context);
+
+  return convert_error(blur_err ? blur_err : release_err);
+}
+
 struct MorphologyParams {
   kleidicv_morphology_context_t *context;
   decltype(kleidicv_dilate_u8) impl;

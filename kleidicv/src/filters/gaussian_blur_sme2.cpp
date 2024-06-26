@@ -14,9 +14,9 @@ gaussian_blur_u8(const uint8_t *src, size_t src_stride, uint8_t *dst,
                  float sigma_x, float sigma_y,
                  kleidicv_border_type_t border_type,
                  kleidicv_filter_context_t *context) {
-  return gaussian_blur_u8_entry(src, src_stride, dst, dst_stride, width, height,
-                                channels, kernel_width, kernel_height, sigma_x,
-                                sigma_y, border_type, context);
+  return gaussian_blur_u8_sc(src, src_stride, dst, dst_stride, width, height,
+                             channels, kernel_width, kernel_height, sigma_x,
+                             sigma_y, border_type, context);
 }
 
 }  // namespace kleidicv::sme2

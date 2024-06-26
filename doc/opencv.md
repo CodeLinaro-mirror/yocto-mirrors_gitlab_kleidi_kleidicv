@@ -104,7 +104,8 @@ Notes on parameters:
 
 ### `gaussian_blur`
 Blurs an image using a Gaussian filter.\
-Currently does not support non-zero margins. Kernel shape is restricted to square (`kernelWidth == kernelHeight`). Kernel standard deviation cannot be customized via `sigmaX` and `sigmaY` and is calculated based on kernel size.
+Currently does not support non-zero margins. Kernel shape is restricted to square (`kernelWidth == kernelHeight`). The filter's
+standard deviation must be the same in horizontal and vertical directions (`sigma_x == sigma_y`).
 
 Notes on parameters:
 * `depth` - only supports `CV_8U` depth.

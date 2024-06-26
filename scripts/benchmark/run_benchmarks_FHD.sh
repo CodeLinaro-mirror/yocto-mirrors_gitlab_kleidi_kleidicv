@@ -40,6 +40,11 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur7x7 opencv_perf_imgproc '*gaussianBlur7x7*' '(1920x1080, 8UC1, BORDER_REPLICATE)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur15x15 opencv_perf_imgproc '*gaussianBlur15x15*' '(1920x1080, 8UC1, BORDER_REPLICATE)')")
 
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur3x3_CustomSigma opencv_perf_imgproc '*gaussianBlur3x3_CustomSigma*' '(1920x1080, 8UC1, BORDER_REPLICATE)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur5x5_CustomSigma opencv_perf_imgproc '*gaussianBlur5x5_CustomSigma*' '(1920x1080, 8UC1, BORDER_REPLICATE)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur7x7_CustomSigma opencv_perf_imgproc '*gaussianBlur7x7_CustomSigma*' '(1920x1080, 8UC1, BORDER_REPLICATE)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur15x15_CustomSigma opencv_perf_imgproc '*gaussianBlur15x15_CustomSigma*' '(1920x1080, 8UC1, BORDER_REPLICATE)')")
+
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Sobel_Gx opencv_perf_imgproc '*Border3x3_sobelFilter*' '(1920x1080, 16SC1, (1, 0), BORDER_REPLICATE)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Sobel_Gy opencv_perf_imgproc '*Border3x3_sobelFilter*' '(1920x1080, 16SC1, (0, 1), BORDER_REPLICATE)')")
 

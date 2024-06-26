@@ -179,10 +179,10 @@ index c066f3d6f3..d8b58015f9 100644
     @brief Computes Sobel derivatives
     @param src_depth Depth of source image
 diff --git a/modules/imgproc/src/smooth.dispatch.cpp b/modules/imgproc/src/smooth.dispatch.cpp
-index 8a521d6df3..21cfe82595 100644
+index 8a521d6df3..c1e5ec56d1 100644
 --- a/modules/imgproc/src/smooth.dispatch.cpp
 +++ b/modules/imgproc/src/smooth.dispatch.cpp
-@@ -654,6 +654,20 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
+@@ -654,6 +654,34 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
              ocl_GaussianBlur_8UC1(_src, _dst, ksize, CV_MAT_DEPTH(type), kx, ky, borderType)
      );
  
@@ -200,6 +200,36 @@ index 8a521d6df3..21cfe82595 100644
 +                ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, borderType&~BORDER_ISOLATED);
 +    }
 +
++    {
++        Mat src = _src.getMat();
++        Mat dst = _dst.getMat();
++
++        Point ofs;
++        Size wsz(src.cols, src.rows);
++        if(!(borderType & BORDER_ISOLATED))
++            src.locateROI( wsz, ofs );
++
++        CALL_HAL(gaussianBlur, cv_hal_gaussianBlur, src.ptr(), src.step, dst.ptr(), dst.step, src.cols, src.rows, sdepth, cn,
++                ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, ksize.height,
++                sigma1, sigma2, borderType&~BORDER_ISOLATED);
++    }
++
      if(sdepth == CV_8U && ((borderType & BORDER_ISOLATED) || !_src.isSubmatrix()))
      {
          std::vector<ufixedpoint16> fkx, fky;
+@@ -737,15 +765,6 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
+     Mat src = _src.getMat();
+     Mat dst = _dst.getMat();
+ 
+-    Point ofs;
+-    Size wsz(src.cols, src.rows);
+-    if(!(borderType & BORDER_ISOLATED))
+-        src.locateROI( wsz, ofs );
+-
+-    CALL_HAL(gaussianBlur, cv_hal_gaussianBlur, src.ptr(), src.step, dst.ptr(), dst.step, src.cols, src.rows, sdepth, cn,
+-             ofs.x, ofs.y, wsz.width - src.cols - ofs.x, wsz.height - src.rows - ofs.y, ksize.width, ksize.height,
+-             sigma1, sigma2, borderType&~BORDER_ISOLATED);
+-
+     CV_OVX_RUN(true,
+                openvx_gaussianBlur(src, dst, ksize, sigma1, sigma2, borderType))
+ 

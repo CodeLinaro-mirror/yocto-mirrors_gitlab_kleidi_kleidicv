@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <array>
+
+#include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
@@ -9,20 +12,21 @@
 #include "kleidicv/separable_filter_3x3_neon.h"
 #include "kleidicv/separable_filter_5x5_neon.h"
 #include "kleidicv/separable_filter_7x7_neon.h"
+#include "kleidicv/sigma.h"
 
 namespace kleidicv::neon {
 
-// Primary template for Gaussian Blur approximation filters.
-template <typename ScalarType, size_t KernelSize>
-class DiscreteGaussianBlur;
+// Primary template for Gaussian Blur filters.
+template <typename ScalarType, size_t KernelSize, bool IsBinomial>
+class GaussianBlur;
 
-// Template for 3x3 Gaussian Blur approximation filters.
+// Template for 3x3 Gaussian Blur binomial filters.
 //
 //             [ 1, 2, 1 ]          [ 1 ]
 //  F = 1/16 * [ 2, 4, 2 ] = 1/16 * [ 2 ] * [ 1, 2, 1 ]
 //             [ 1, 2, 1 ]          [ 1 ]
 template <>
-class DiscreteGaussianBlur<uint8_t, 3> {
+class GaussianBlur<uint8_t, 3, true> {
  public:
   using ScalarType = uint8_t;
   using SourceType = ScalarType;
@@ -30,6 +34,8 @@ class DiscreteGaussianBlur<uint8_t, 3> {
   using BufferType = double_element_width_t<ScalarType>;
   using BufferVectorType = typename VecTraits<BufferType>::VectorType;
   using DestinationType = ScalarType;
+
+  explicit GaussianBlur([[maybe_unused]] float sigma) {}
 
   // Applies vertical filtering vector using SIMD operations.
   //
@@ -74,9 +80,9 @@ class DiscreteGaussianBlur<uint8_t, 3> {
     auto acc = src[0] + 2 * src[1] + src[2];
     dst[0] = rounding_shift_right(acc, 4);
   }
-};  // end of class DiscreteGaussianBlur<uint8_t, 3>
+};  // end of class GaussianBlur<uint8_t, 3, true>
 
-// Template for 5x5 Gaussian Blur approximation filters.
+// Template for 5x5 Gaussian Blur binomial filters.
 //
 //              [ 1,  4,  6,  4, 1 ]           [ 1 ]
 //              [ 4, 16, 24, 16, 4 ]           [ 4 ]
@@ -84,13 +90,13 @@ class DiscreteGaussianBlur<uint8_t, 3> {
 //              [ 4, 16, 24, 16, 4 ]           [ 4 ]
 //              [ 1,  4,  6,  4, 1 ]           [ 1 ]
 template <>
-class DiscreteGaussianBlur<uint8_t, 5> {
+class GaussianBlur<uint8_t, 5, true> {
  public:
   using SourceType = uint8_t;
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  DiscreteGaussianBlur()
+  explicit GaussianBlur([[maybe_unused]] float sigma)
       : const_6_u8_half_{vdup_n_u8(6)},
         const_6_u16_{vdupq_n_u16(6)},
         const_4_u16_{vdupq_n_u16(4)} {}
@@ -145,9 +151,9 @@ class DiscreteGaussianBlur<uint8_t, 5> {
   uint8x8_t const_6_u8_half_;
   uint16x8_t const_6_u16_;
   uint16x8_t const_4_u16_;
-};  // end of class DiscreteGaussianBlur<uint8_t, 5>
+};  // end of class GaussianBlur<uint8_t, 5, true>
 
-// Template for 7x7 Gaussian Blur approximation filters.
+// Template for 7x7 Gaussian Blur binomial filters.
 //
 //               [  4,  14,  28,  36,  28,  14,  4 ]
 //               [ 14,  49,  98, 126,  98,  49, 14 ]
@@ -165,13 +171,13 @@ class DiscreteGaussianBlur<uint8_t, 5> {
 //               [  7 ]
 //               [  2 ]
 template <>
-class DiscreteGaussianBlur<uint8_t, 7> {
+class GaussianBlur<uint8_t, 7, true> {
  public:
   using SourceType = uint8_t;
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  DiscreteGaussianBlur()
+  explicit GaussianBlur([[maybe_unused]] float sigma)
       : const_7_u16_{vdupq_n_u16(7)},
         const_7_u32_{vdupq_n_u32(7)},
         const_9_u16_{vdupq_n_u16(9)} {}
@@ -283,9 +289,9 @@ class DiscreteGaussianBlur<uint8_t, 7> {
   uint16x8_t const_7_u16_;
   uint32x4_t const_7_u32_;
   uint16x8_t const_9_u16_;
-};  // end of class DiscreteGaussianBlur<uint8_t, 7>
+};  // end of class GaussianBlur<uint8_t, 7, true>
 
-// Template for 15x15 Gaussian Blur approximation filters.
+// Template for 15x15 Gaussian Blur binomial filters.
 //
 //                  [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
 //                  [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
@@ -313,13 +319,13 @@ class DiscreteGaussianBlur<uint8_t, 7> {
 //                  [  11 ]
 //                  [   4 ]
 template <>
-class DiscreteGaussianBlur<uint8_t, 15> {
+class GaussianBlur<uint8_t, 15, true> {
  public:
   using SourceType = uint8_t;
   using BufferType = uint32_t;
   using DestinationType = uint8_t;
 
-  DiscreteGaussianBlur()
+  explicit GaussianBlur([[maybe_unused]] float sigma)
       : const_11_u16_{vdupq_n_u16(11)},
         const_11_u32_{vdupq_n_u32(11)},
         const_25_u16_{vdupq_n_u16(25)},
@@ -505,34 +511,186 @@ class DiscreteGaussianBlur<uint8_t, 15> {
   uint32x4_t const_146_u32_;
   uint16x4_t const_158_u16_half_;
   uint32x4_t const_158_u32_;
-};  // end of class DiscreteGaussianBlur<uint8_t, 15>
+};  // end of class GaussianBlur<uint8_t, 15, true>
 
-template <typename ScalarType, size_t KernelSize>
-kleidicv_error_t discrete_gaussian_blur(const ScalarType *src,
-                                        size_t src_stride, ScalarType *dst,
-                                        size_t dst_stride, size_t width,
-                                        size_t height, size_t channels,
-                                        kleidicv_border_type_t border_type,
-                                        kleidicv_filter_context_t *context) {
+template <size_t KernelSize>
+class GaussianBlur<uint8_t, KernelSize, false> {
+ public:
+  using SourceType = uint8_t;
+  using BufferType = uint32_t;
+  using DestinationType = uint8_t;
+
+  explicit GaussianBlur(float sigma)
+      : half_kernel_(
+            generate_gaussian_half_kernel<get_half_kernel_size(KernelSize)>(
+                sigma)) {}
+
+  void vertical_vector_path(uint8x16_t src[KernelSize], BufferType *dst) const {
+    uint16x8_t acc_last_l = vmovl_u8(vget_low_u8(src[KernelSize >> 1]));
+    uint16x8_t acc_last_h = vmovl_u8(vget_high_u8(src[KernelSize >> 1]));
+
+    uint32x4_t acc_l_l =
+        vmull_n_u16(vget_low_u16(acc_last_l), half_kernel_[KernelSize >> 1]);
+    uint32x4_t acc_l_h =
+        vmull_n_u16(vget_high_u16(acc_last_l), half_kernel_[KernelSize >> 1]);
+    uint32x4_t acc_h_l =
+        vmull_n_u16(vget_low_u16(acc_last_h), half_kernel_[KernelSize >> 1]);
+    uint32x4_t acc_h_h =
+        vmull_n_u16(vget_high_u16(acc_last_h), half_kernel_[KernelSize >> 1]);
+
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 0; i < (KernelSize >> 1); i++) {
+      size_t j = KernelSize - i - 1;
+      uint16x8_t acc_l = vaddl_u8(vget_low_u8(src[i]), vget_low_u8(src[j]));
+      uint16x8_t acc_h = vaddl_u8(vget_high_u8(src[i]), vget_high_u8(src[j]));
+
+      acc_l_l = vmlal_n_u16(acc_l_l, vget_low_u16(acc_l), half_kernel_[i]);
+      acc_l_h = vmlal_n_u16(acc_l_h, vget_high_u16(acc_l), half_kernel_[i]);
+      acc_h_l = vmlal_n_u16(acc_h_l, vget_low_u16(acc_h), half_kernel_[i]);
+      acc_h_h = vmlal_n_u16(acc_h_h, vget_high_u16(acc_h), half_kernel_[i]);
+    }
+
+    uint32x4x4_t result = {acc_l_l, acc_l_h, acc_h_l, acc_h_h};
+
+    vst1q_u32_x4(&dst[0], result);
+  }
+
+  void vertical_scalar_path(const SourceType src[KernelSize],
+                            BufferType *dst) const {
+    uint32_t acc = static_cast<uint32_t>(src[0]) * half_kernel_[0];
+
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 1; i <= (KernelSize >> 1); i++) {
+      acc += static_cast<uint32_t>(src[i]) * half_kernel_[i];
+    }
+
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = (KernelSize >> 1) + 1; i < KernelSize; i++) {
+      size_t j = KernelSize - i - 1;
+      acc += static_cast<uint32_t>(src[i]) * half_kernel_[j];
+    }
+
+    dst[0] = acc;
+  }
+
+  void horizontal_vector_path(uint32x4_t src[KernelSize],
+                              DestinationType *dst) const {
+    uint32x4_t acc =
+        vmulq_n_u32(src[KernelSize >> 1], half_kernel_[KernelSize >> 1]);
+
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 0; i < (KernelSize >> 1); i++) {
+      size_t j = KernelSize - i - 1;
+      uint32x4_t acc_inner = vaddq_u32(src[i], src[j]);
+      acc = vmlaq_n_u32(acc, acc_inner, half_kernel_[i]);
+    }
+
+    uint32x4_t acc_u32 = vrshrq_n_u32(acc, 16);
+    uint16x4_t narrowed = vmovn_u32(acc_u32);
+    uint8x8_t interleaved =
+        vuzp1_u8(vreinterpret_u8_u16(narrowed), vreinterpret_u8_u16(narrowed));
+    uint32_t result = vget_lane_u32(vreinterpret_u32_u8(interleaved), 0);
+    memcpy(&dst[0], &result, sizeof(result));
+  }
+
+  void horizontal_scalar_path(const BufferType src[KernelSize],
+                              DestinationType *dst) const {
+    uint32_t acc = src[0] * half_kernel_[0];
+
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 1; i <= (KernelSize >> 1); i++) {
+      acc += src[i] * half_kernel_[i];
+    }
+
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = (KernelSize >> 1) + 1; i < KernelSize; i++) {
+      size_t j = KernelSize - i - 1;
+      acc += src[i] * half_kernel_[j];
+    }
+
+    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
+  }
+
+ private:
+  const std::array<uint16_t, get_half_kernel_size(KernelSize)> half_kernel_;
+};  // end of class GaussianBlur<uint8_t, KernelSize, false>
+
+template <size_t KernelSize, bool IsBinomial, typename ScalarType>
+static kleidicv_error_t gaussian_blur_fixed_kernel_size(
+    const ScalarType *src, size_t src_stride, ScalarType *dst,
+    size_t dst_stride, Rectangle &rect, size_t channels, float sigma,
+    FixedBorderType border_type, SeparableFilterWorkspace *workspace) {
+  using GaussianBlurFilter = GaussianBlur<ScalarType, KernelSize, IsBinomial>;
+
+  GaussianBlurFilter blur{sigma};
+  SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+
+  Rows<const ScalarType> src_rows{src, src_stride, channels};
+  Rows<ScalarType> dst_rows{dst, dst_stride, channels};
+  workspace->process(rect, src_rows, dst_rows, channels, border_type, filter);
+
+  return KLEIDICV_OK;
+}
+
+template <bool IsBinomial, typename ScalarType>
+static kleidicv_error_t gaussian_blur(size_t kernel_size, const ScalarType *src,
+                                      size_t src_stride, ScalarType *dst,
+                                      size_t dst_stride, Rectangle &rect,
+                                      size_t channels, float sigma,
+                                      FixedBorderType border_type,
+                                      SeparableFilterWorkspace *workspace) {
+  switch (kernel_size) {
+    case 3:
+      return gaussian_blur_fixed_kernel_size<3, IsBinomial>(
+          src, src_stride, dst, dst_stride, rect, channels, sigma, border_type,
+          workspace);
+    case 5:
+      return gaussian_blur_fixed_kernel_size<5, IsBinomial>(
+          src, src_stride, dst, dst_stride, rect, channels, sigma, border_type,
+          workspace);
+    case 7:
+      return gaussian_blur_fixed_kernel_size<7, IsBinomial>(
+          src, src_stride, dst, dst_stride, rect, channels, sigma, border_type,
+          workspace);
+    case 15:
+      return gaussian_blur_fixed_kernel_size<15, IsBinomial>(
+          src, src_stride, dst, dst_stride, rect, channels, sigma, border_type,
+          workspace);
+    default:
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+}
+
+KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t gaussian_blur_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height, size_t channels,
+                                  size_t kernel_width, size_t kernel_height,
+                                  float sigma_x, float sigma_y,
+                                  kleidicv_border_type_t border_type,
+                                  kleidicv_filter_context_t *context) {
   CHECK_POINTERS(context);
+  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
+  auto fixed_border_type = get_fixed_border_type(border_type);
+
+  if (kernel_width != kernel_height) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (sigma_x != sigma_y) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
-  if (width < KernelSize - 1 || height < KernelSize - 1) {
+  if (width < kernel_width - 1 || height < kernel_width - 1) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
     return KLEIDICV_ERROR_RANGE;
-  }
-
-  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
-
-  if constexpr (KernelSize == 15) {
-    if (workspace->intermediate_size() < sizeof(uint32_t)) {
-      return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-    }
   }
 
   if (workspace->channels() < channels) {
@@ -545,56 +703,19 @@ kleidicv_error_t discrete_gaussian_blur(const ScalarType *src,
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
-  auto fixed_border_type = get_fixed_border_type(border_type);
-
   if (!fixed_border_type) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  using GaussianBlurFilterType = DiscreteGaussianBlur<ScalarType, KernelSize>;
-
-  GaussianBlurFilterType blur;
-  SeparableFilter<GaussianBlurFilterType, KernelSize> filter{blur};
-
-  Rows<const ScalarType> src_rows{src, src_stride, channels};
-  Rows<ScalarType> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, src_rows, dst_rows, channels, *fixed_border_type,
-                     filter);
-  return KLEIDICV_OK;
-}
-
-#define KLEIDICV_GAUSSIAN_BLUR_WRAPPER(size, ...)              \
-  if (kernel_width == size) {                                  \
-    return discrete_gaussian_blur<uint8_t, size>(__VA_ARGS__); \
+  if (sigma_x == 0.0) {
+    return gaussian_blur<true>(kernel_width, src, src_stride, dst, dst_stride,
+                               rect, channels, sigma_x, *fixed_border_type,
+                               workspace);
   }
 
-#define KLEIDICV_GENERATE_GAUSSIAN_BLUR_WRAPPERS(...) \
-  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(3, __VA_ARGS__)      \
-  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(5, __VA_ARGS__)      \
-  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(7, __VA_ARGS__)      \
-  KLEIDICV_GAUSSIAN_BLUR_WRAPPER(15, __VA_ARGS__)
-
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_u8(const uint8_t *src, size_t src_stride,
-                                  uint8_t *dst, size_t dst_stride, size_t width,
-                                  size_t height, size_t channels,
-                                  size_t kernel_width, size_t kernel_height,
-                                  float sigma_x, float sigma_y,
-                                  kleidicv_border_type_t border_type,
-                                  kleidicv_filter_context_t *context) {
-  if (kernel_width != kernel_height) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if (sigma_x != 0.0 || sigma_y != 0.0) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  KLEIDICV_GENERATE_GAUSSIAN_BLUR_WRAPPERS(src, src_stride, dst, dst_stride,
-                                           width, height, channels, border_type,
-                                           context)
-
-  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  return gaussian_blur<false>(kernel_width, src, src_stride, dst, dst_stride,
+                              rect, channels, sigma_x, *fixed_border_type,
+                              workspace);
 }
 
 }  // namespace kleidicv::neon

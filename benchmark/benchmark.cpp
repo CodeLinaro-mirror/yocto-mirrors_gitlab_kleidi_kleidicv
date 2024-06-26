@@ -242,7 +242,7 @@ static void resize_linear_8x8_f32(benchmark::State& state) {
 }
 BENCHMARK(resize_linear_8x8_f32);
 
-template <typename T, size_t KernelSize, int Channels>
+template <typename T, size_t KernelSize, int Channels, bool Binomial>
 static void gaussian_blur(benchmark::State& state) {
   kleidicv_filter_context_t* context;
   kleidicv_error_t err = kleidicv_filter_context_create(
@@ -257,52 +257,38 @@ static void gaussian_blur(benchmark::State& state) {
         get_source_buffer_a<T, Channels>(), image_width * Channels * sizeof(T),
         get_destination_buffer<T, Channels>(),
         image_width * Channels * sizeof(T), image_width, image_height, Channels,
-        KernelSize, KernelSize, 0.0, 0.0, KLEIDICV_BORDER_TYPE_REFLECT,
-        context);
+        KernelSize, KernelSize, (Binomial ? 0.0 : 2.0), (Binomial ? 0.0 : 2.0),
+        KLEIDICV_BORDER_TYPE_REFLECT, context);
   });
 
   (void)kleidicv_filter_context_release(context);
 }
 
-static void gaussian_blur_3x3_u8_1ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 1, 2>(state);
-}
-BENCHMARK(gaussian_blur_3x3_u8_1ch);
+#define BENCH_GAUSSIAN_BLUR(kernel_size, channel_number)                                    \
+  static void                                                                               \
+      gaussian_blur_binomial_u8##_##kernel_size##x##kernel_size##_##channel_number##ch(     \
+          benchmark::State& state) {                                                        \
+    gaussian_blur<uint8_t, kernel_size, channel_number, true>(state);                       \
+  }                                                                                         \
+  BENCHMARK(                                                                                \
+      gaussian_blur_binomial_u8##_##kernel_size##x##kernel_size##_##channel_number##ch);    \
+                                                                                            \
+  static void                                                                               \
+      gaussian_blur_custom_sigma_u8##_##kernel_size##x##kernel_size##_##channel_number##ch( \
+          benchmark::State& state) {                                                        \
+    gaussian_blur<uint8_t, kernel_size, channel_number, false>(state);                      \
+  }                                                                                         \
+  BENCHMARK(                                                                                \
+      gaussian_blur_custom_sigma_u8##_##kernel_size##x##kernel_size##_##channel_number##ch);
 
-static void gaussian_blur_3x3_u8_3ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 3, 2>(state);
-}
-BENCHMARK(gaussian_blur_3x3_u8_3ch);
-
-static void gaussian_blur_5x5_u8_1ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 1, 2>(state);
-}
-BENCHMARK(gaussian_blur_5x5_u8_1ch);
-
-static void gaussian_blur_5x5_u8_3ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 3, 2>(state);
-}
-BENCHMARK(gaussian_blur_5x5_u8_3ch);
-
-static void gaussian_blur_7x7_u8_1ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 7, 1>(state);
-}
-BENCHMARK(gaussian_blur_7x7_u8_1ch);
-
-static void gaussian_blur_7x7_u8_3ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 7, 3>(state);
-}
-BENCHMARK(gaussian_blur_7x7_u8_3ch);
-
-static void gaussian_blur_15x15_u8_1ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 15, 1>(state);
-}
-BENCHMARK(gaussian_blur_15x15_u8_1ch);
-
-static void gaussian_blur_15x15_u8_3ch(benchmark::State& state) {
-  gaussian_blur<uint8_t, 15, 3>(state);
-}
-BENCHMARK(gaussian_blur_15x15_u8_3ch);
+BENCH_GAUSSIAN_BLUR(3, 1);
+BENCH_GAUSSIAN_BLUR(3, 3);
+BENCH_GAUSSIAN_BLUR(5, 1);
+BENCH_GAUSSIAN_BLUR(5, 3);
+BENCH_GAUSSIAN_BLUR(7, 1);
+BENCH_GAUSSIAN_BLUR(7, 3);
+BENCH_GAUSSIAN_BLUR(15, 1);
+BENCH_GAUSSIAN_BLUR(15, 3);
 
 template <typename Function>
 static void sobel_filter(Function f, benchmark::State& state) {
