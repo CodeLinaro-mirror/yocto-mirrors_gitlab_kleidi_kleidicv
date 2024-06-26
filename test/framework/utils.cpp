@@ -26,14 +26,18 @@ void dump(const TwoDimensional<ElementType> *elements) {
     return;
   }
 
-  auto mask = std::numeric_limits<std::make_unsigned_t<ElementType>>::max();
-
   for (size_t row = 0; row < elements->height(); ++row) {
     for (size_t column = 0; column < elements->width(); ++column) {
-      ElementType value = elements->at(row, column)[0];
-      // Unary + is used to ensure values are printed as integers, not chars
-      std::cout << std::setw(2 * sizeof(ElementType)) << std::setfill('0')
-                << std::hex << +(value & mask) << " ";
+      if constexpr (std::is_integral_v<ElementType>) {
+        auto mask =
+            std::numeric_limits<std::make_unsigned_t<ElementType>>::max();
+        ElementType value = elements->at(row, column)[0];
+        // Unary + is used to ensure values are printed as integers, not chars
+        std::cout << std::setw(2 * sizeof(ElementType)) << std::setfill('0')
+                  << std::hex << +(value & mask) << " ";
+      } else {
+        std::cout << elements->at(row, column)[0] << " ";
+      }
     }
 
     std::cout << std::endl;
@@ -52,6 +56,8 @@ template void dump<int32_t>(const TwoDimensional<int32_t> *);
 template void dump<uint32_t>(const TwoDimensional<uint32_t> *);
 template void dump<int64_t>(const TwoDimensional<int64_t> *);
 template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
+template void dump<float>(const TwoDimensional<float> *);
+template void dump<double>(const TwoDimensional<double> *);
 
 std::array<kleidicv_border_values_t, 1> default_border_values() {
   return {{
