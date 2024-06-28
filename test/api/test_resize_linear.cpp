@@ -207,6 +207,103 @@ static void resize_linear_unaccelerated_4x4(const T *src, size_t src_stride,
 }
 
 template <typename T>
+static void resize_linear_unaccelerated_generic_upscale(
+    const T *src, size_t src_stride, size_t src_width, size_t src_height,
+    T *dst, size_t dst_stride, size_t dst_width, size_t dst_height) {
+  src_stride /= sizeof(T);
+  dst_stride /= sizeof(T);
+  size_t scale_width = dst_width / src_width;
+  size_t scale_height = dst_height / src_height;
+
+  auto lerp1d_horizontal = [scale_width](T coeff_a, T a, T coeff_b, T b) {
+    T bias = std::is_floating_point_v<T> ? 0 : scale_width;
+    return (coeff_a * a + coeff_b * b + bias) / (2 * scale_width);
+  };
+
+  auto lerp1d_vertical = [scale_height](T coeff_a, T a, T coeff_b, T b) {
+    T bias = std::is_floating_point_v<T> ? 0 : scale_height;
+    return (coeff_a * a + coeff_b * b + bias) / (2 * scale_height);
+  };
+
+  auto lerp2d = [scale_width, scale_height](T coeff_a, T a, T coeff_b, T b,
+                                            T coeff_c, T c, T coeff_d, T d) {
+    T bias = std::is_floating_point_v<T> ? 0 : (2 * scale_height * scale_width);
+    return (coeff_a * a + coeff_b * b + coeff_c * c + coeff_d * d + bias) /
+           (4 * scale_height * scale_width);
+  };
+  // Handle top or bottom edge
+  auto process_edge_row = [src_width, dst_width, scale_width, scale_height,
+                           lerp1d_horizontal](const T *src_row, T *dst_row,
+                                              size_t dst_stride) {
+    for (size_t y = 0; y < scale_height / 2; ++y) {
+      for (size_t x = 0; x < scale_width / 2; ++x) {
+        // Left elements
+        dst_row[x] = src_row[0];
+        // Right elements
+        dst_row[dst_width - scale_width / 2 + x] = src_row[src_width - 1];
+      }
+      // Middle elements
+      for (size_t src_x = 0; src_x + 1 < src_width; ++src_x) {
+        size_t dst_x = src_x * scale_width + scale_width / 2;
+        const T a = src_row[src_x], b = src_row[src_x + 1];
+        for (size_t x = 0; x < scale_width; ++x) {
+          dst_row[dst_x + x] =
+              lerp1d_horizontal((scale_width - x) * 2 - 1, a, x * 2 + 1, b);
+        }
+      }
+      dst_row += dst_stride;
+    }
+  };
+
+  auto process_row = [src_width, dst_width, scale_width, scale_height,
+                      lerp1d_vertical,
+                      lerp2d](const T *src_row0, const T *src_row1, T *dst_row,
+                              size_t dst_stride) {
+    for (size_t y = 0; y < scale_height; ++y) {
+      for (size_t x = 0; x < scale_width / 2; ++x) {
+        // Left elements
+        dst_row[x] = lerp1d_vertical((scale_height - y) * 2 - 1, src_row0[0],
+                                     y * 2 + 1, src_row1[0]);
+        // Right elements
+        dst_row[dst_width - scale_width / 2 + x] =
+            lerp1d_vertical((scale_height - y) * 2 - 1, src_row0[src_width - 1],
+                            y * 2 + 1, src_row1[src_width - 1]);
+      }
+      // Middle elements
+      for (size_t src_x = 0; src_x + 1 < src_width; ++src_x) {
+        size_t dst_x = src_x * scale_width + scale_width / 2;
+        const T a = src_row0[src_x], b = src_row0[src_x + 1];
+        const T c = src_row1[src_x], d = src_row1[src_x + 1];
+        for (size_t x = 0; x < scale_width; ++x) {
+          dst_row[dst_x + x] =
+              lerp2d(((scale_width - x) * 2 - 1) * ((scale_height - y) * 2 - 1),
+                     a, (x * 2 + 1) * ((scale_height - y) * 2 - 1), b,
+                     ((scale_width - x) * 2 - 1) * (y * 2 + 1), c,
+                     (x * 2 + 1) * (y * 2 + 1), d);
+        }
+      }
+      dst_row += dst_stride;
+    }
+  };
+
+  // Top rows
+  process_edge_row(src, dst, dst_stride);
+
+  // Middle rows
+  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
+    size_t dst_y = src_y * scale_height + scale_height / 2;
+    const T *src_row0 = src + src_stride * src_y;
+    const T *src_row1 = src_row0 + src_stride;
+    process_row(src_row0, src_row1, dst + dst_stride * dst_y, dst_stride);
+  }
+
+  // Bottom rows
+  process_edge_row(src + src_stride * (src_height - 1),
+                   dst + dst_stride * (dst_height - scale_height / 2),
+                   dst_stride);
+}
+
+template <typename T>
 static void resize_linear_unaccelerated(const T *src, size_t src_stride,
                                         size_t src_width, size_t src_height,
                                         T *dst, size_t dst_stride,
@@ -214,10 +311,16 @@ static void resize_linear_unaccelerated(const T *src, size_t src_stride,
   if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
     resize_linear_unaccelerated_2x2(src, src_stride, src_width, src_height, dst,
                                     dst_stride, dst_width, dst_height);
-  }
-  if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
+  } else if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
     resize_linear_unaccelerated_4x4(src, src_stride, src_width, src_height, dst,
                                     dst_stride, dst_width, dst_height);
+  } else if (src_width > 0 && src_height > 0 && dst_width % src_width == 0 &&
+             dst_height % src_height == 0 && (dst_width / src_width) % 2 == 0 &&
+             (dst_height / src_height) % 2 == 0) {
+    // even integer scaling only
+    resize_linear_unaccelerated_generic_upscale(src, src_stride, src_width,
+                                                src_height, dst, dst_stride,
+                                                dst_width, dst_height);
   }
 }
 
@@ -363,6 +466,19 @@ TYPED_TEST(ResizeLinear, LargeDimensions2x2) {
 
 TYPED_TEST(ResizeLinear, LargeDimensions4x4) {
   do_large_dimensions_test<TypeParam>(4, 4);
+}
+
+TEST(ResizeLinearFloat, LargeDimensions8x8) {
+  do_large_dimensions_test<float>(8, 8);
+}
+
+TEST(ResizeLinearU8, NotImplemented_8x8) {
+  const uint8_t src[1] = {};
+  uint8_t dst[4];
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(src, sizeof(uint8_t), 1, 1, dst,
+                                   sizeof(uint8_t) * 8, 8, 8));
 }
 
 // Parameterised tests
