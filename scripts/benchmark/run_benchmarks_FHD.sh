@@ -55,6 +55,7 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize2x2_float opencv_perf_imgproc '*resizeUpLinearNonExact*' '(32FC1, (960x540, 1920x1080))')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize4x4_8b opencv_perf_imgproc '*resizeUpLinearNonExact*' '(8UC1, (480x270, 1920x1080))')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize4x4_float opencv_perf_imgproc '*resizeUpLinearNonExact*' '(32FC1, (480x270, 1920x1080))')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Resize8x8_float opencv_perf_imgproc '*resizeUpLinearNonExact*' '(32FC1, (240x135, 1920x1080))')")
 
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Scale opencv_perf_core '*convertTo*' '(1920x1080, 8UC1, 8UC1, 1, 1.234, 4.567)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Scale_float_1.0 opencv_perf_core '*convertTo*' '(1920x1080, 32FC1, 32FC1, 1, 1, 4.567)')")

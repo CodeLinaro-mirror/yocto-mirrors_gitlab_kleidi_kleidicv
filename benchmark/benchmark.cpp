@@ -237,6 +237,11 @@ static void resize_linear_4x4_f32(benchmark::State& state) {
 }
 BENCHMARK(resize_linear_4x4_f32);
 
+static void resize_linear_8x8_f32(benchmark::State& state) {
+  resize_upscale<float>(kleidicv_resize_linear_f32, 8, 8, state);
+}
+BENCHMARK(resize_linear_8x8_f32);
+
 template <typename T, size_t KernelSize, int Channels>
 static void gaussian_blur(benchmark::State& state) {
   kleidicv_filter_context_t* context;
