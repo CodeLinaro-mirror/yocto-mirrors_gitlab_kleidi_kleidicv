@@ -71,7 +71,7 @@ get_gstddev() {
   sed -n s/\"gstddev\"://p ${1} | tr -d \" | tr -d ',' | tr -d ' '
 }
 
-RES="${DISP_NAME}\t"
+RES="${DISP_NAME}"
 
 collect_run_results() {
   RES+="\t$(get_mean ${DEV_DIR}/${FNAME}_${1})\t$(get_gstddev ${DEV_DIR}/${FNAME}_${1})"
@@ -80,7 +80,7 @@ collect_run_results() {
 
 collect_run_results vanilla
 collect_run_results kleidicv
-if [[ -f ${DEV_DIR}/${FNAME}_$CUSTOM_BUILD_SUFFIX ]]; then
+if [[ -f ${DEV_DIR}/${FNAME}_kleidicv_$CUSTOM_BUILD_SUFFIX ]]; then
   collect_run_results kleidicv_$CUSTOM_BUILD_SUFFIX
 fi
 
