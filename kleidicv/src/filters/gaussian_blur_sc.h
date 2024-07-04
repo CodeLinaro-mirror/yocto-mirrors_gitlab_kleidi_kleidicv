@@ -496,7 +496,7 @@ kleidicv_error_t discrete_gaussian_blur(
   KLEIDICV_GAUSSIAN_BLUR_WRAPPER(7, __VA_ARGS__)      \
   KLEIDICV_GAUSSIAN_BLUR_WRAPPER(15, __VA_ARGS__)
 
-kleidicv_error_t gaussian_blur_u8_entry(
+static kleidicv_error_t gaussian_blur_u8_entry(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
