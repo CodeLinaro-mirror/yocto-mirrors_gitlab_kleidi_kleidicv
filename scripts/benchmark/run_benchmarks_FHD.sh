@@ -60,11 +60,11 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Scale_float_1.0 opencv_perf_core '*convertTo*' '(1920x1080, 32FC1, 32FC1, 1, 1, 4.567)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL Scale_float opencv_perf_core '*convertTo*' '(1920x1080, 32FC1, 32FC1, 1, 1.234, 4.567)')")
 
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL MinMax_S8_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 8SC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL MinMax_U8_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 8UC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL MinMax_S16_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 16SC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL MinMax_U16_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 16UC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL MinMax_S32_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 32SC1)')")
-RES=$(printf "${RES}\n$(${DEV_DIR}/perf_test_op.sh $CPU $THERMAL MinMax_F32_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 32FC1)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_S8_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 8SC1)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_U8_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 8UC1)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_S16_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 16SC1)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_U16_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 16UC1)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_S32_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 32SC1)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL MinMax_F32_FHD opencv_perf_core '*minMaxVals*' '(1920x1080, 32FC1)')")
 
 echo "$RES"
