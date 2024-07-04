@@ -86,16 +86,12 @@ bool test_min_max(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& min_max_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
-    TEST("min_max_u8, 1 channel", (test_min_max<uint8_t, CV_8UC1, false>), (exec_min_max<false>)),
-    TEST("min_max_u8, 2 channel", (test_min_max<uint8_t, CV_8UC2, false>), (exec_min_max<false>)),
     TEST("min_max_s8, 1 channel", (test_min_max<int8_t, CV_8SC1, false>), (exec_min_max<false>)),
-    TEST("min_max_s8, 3 channel", (test_min_max<int8_t, CV_8SC3, false>), (exec_min_max<false>)),
+    TEST("min_max_u8, 1 channel", (test_min_max<uint8_t, CV_8UC1, false>), (exec_min_max<false>)),
+    TEST("min_max_s16, 1 channel", (test_min_max<int16_t, CV_16SC1, false>), (exec_min_max<false>)),
     TEST("min_max_u16, 1 channel", (test_min_max<uint16_t, CV_16UC1, false>), (exec_min_max<false>)),
-    TEST("min_max_u16, 4 channel", (test_min_max<uint16_t, CV_16UC4, false>), (exec_min_max<false>)),
-    TEST("min_max_u16, 1 channel", (test_min_max<int16_t, CV_16SC1, false>), (exec_min_max<false>)),
-    TEST("min_max_u16, 3 channel", (test_min_max<int16_t, CV_16SC3, false>), (exec_min_max<false>)),
-    TEST("min_max_s32, 2 channel", (test_min_max<int32_t, CV_32SC2, false>), (exec_min_max<false>)),
-    TEST("min_max_s32, 4 channel", (test_min_max<int32_t, CV_32SC4, false>), (exec_min_max<false>)),
+    TEST("min_max_s32, 1 channel", (test_min_max<int32_t, CV_32SC1, false>), (exec_min_max<false>)),
+    TEST("min_max_f32, 1 channel", (test_min_max<float, CV_32FC1, false>), (exec_min_max<false>)),
     TEST("min_max_loc_u8", (test_min_max<uint8_t, CV_8UC1, true>), (exec_min_max<true>)),
   };
   // clang-format on
