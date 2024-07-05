@@ -145,8 +145,8 @@ Release context set up by [`morphology_init`](#morphology_init).
 ### `resize`
 Notes on parameters:
 * In-place operation not supported.
-* `src_type` - only supports `CV_8UC1` or `CV_32FC1`, relative sizes can be 0.5x0.5 (`CV_8UC1` only), 2x2 and 4x4.
-* `dst_width`,`dst_height` - must both be the same multiple of `src_width` and `src_height` respectively, and that multiple must be either 0.5, 2 or 4.
+* `src_type` - only supports `CV_8UC1` or `CV_32FC1`, relative sizes can be 0.5x0.5 (`CV_8UC1` only), 2x2, 4x4 and 8x8 (`CV_32FC1` only).
+* `dst_width`,`dst_height` - must both be the same multiple of `src_width` and `src_height` respectively, and that multiple must be either 0.5, 2, 4 or 8.
 * `inv_scale_x`,`inv_scale_y` - must be 0 or `dst_width / src_width`.
 * `interpolation` - Must be `INTER_LINEAR` or `INTER_AREA` (0.5 by 0.5 only).
 

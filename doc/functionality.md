@@ -88,3 +88,4 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 |-------------|-----|-----|
 | 2x2         |  x  |  x  |
 | 4x4         |  x  |  x  |
+| 8x8         |     |  x  |

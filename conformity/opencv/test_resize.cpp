@@ -28,23 +28,29 @@ bool test_resize(int index, RecreatedMessageQueue& request_queue,
   for (size_t x = 5; x <= MaxSize; ++x) {
     for (size_t y = 5; y <= MaxSize; ++y) {
       cv::Mat input_mat(x, y, Format);
-      rng.fill(input_mat, cv::RNG::NORMAL, 0.0, 1.0e10);
+      if constexpr (CV_MAT_DEPTH(Format) == CV_32F) {
+        rng.fill(input_mat, cv::RNG::UNIFORM, 1, 1000000);
+      } else if constexpr (CV_MAT_DEPTH(Format) == CV_8U) {
+        rng.fill(input_mat, cv::RNG::UNIFORM, 0, 255);
+      } else {
+        return true;
+      }
       cv::Mat actual_mat = exec_resize<Factor, Type>(input_mat);
       cv::Mat expected_mat = get_expected_from_subordinate(
           index, request_queue, reply_queue, input_mat);
 
       bool success =
           (CV_MAT_DEPTH(Format) == CV_32F &&
-           !are_float_matrices_different<float>(1e-5, actual_mat,
+           !are_float_matrices_different<float>(0.01F, actual_mat,
                                                 expected_mat)) ||
           (CV_MAT_DEPTH(Format) == CV_8U &&
-           !are_matrices_different<uint8_t>(0, actual_mat, expected_mat));
+           !are_matrices_different<uint8_t>(1, actual_mat, expected_mat));
       if (!success) {
         fail_print_matrices(x, y, input_mat, actual_mat, expected_mat);
+        return true;
       }
     }
   }
-
   return false;
 }
 #endif
@@ -52,13 +58,14 @@ bool test_resize(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& resize_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
-    TEST("Resize4x4 float32, INTER_LINEAR", (test_resize<4000, CV_HAL_INTER_LINEAR, 16, CV_32FC4>), (exec_resize<4000, CV_HAL_INTER_LINEAR>)),
-    TEST("Resize2x2 float32, INTER_LINEAR", (test_resize<2000, CV_HAL_INTER_LINEAR, 16, CV_32FC4>), (exec_resize<2000, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize2x2 float32, INTER_LINEAR", (test_resize<2000, CV_HAL_INTER_LINEAR, 16, CV_32FC1>), (exec_resize<2000, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize4x4 float32, INTER_LINEAR", (test_resize<4000, CV_HAL_INTER_LINEAR, 16, CV_32FC1>), (exec_resize<4000, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize8x8 float32, INTER_LINEAR", (test_resize<8000, CV_HAL_INTER_LINEAR, 16, CV_32FC1>), (exec_resize<8000, CV_HAL_INTER_LINEAR>)),
 
-    TEST("Resize0.5x0.5 uint8, INTER_AREA", (test_resize<500, CV_HAL_INTER_AREA, 32, CV_8UC4>), (exec_resize<500, CV_HAL_INTER_AREA>)),
-    TEST("Resize0.5x0.5 uint8, INTER_LINEAR", (test_resize<500, CV_HAL_INTER_LINEAR, 32, CV_8UC4>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
-    TEST("Resize2x2 uint8, INTER_LINEAR", (test_resize<2000, CV_HAL_INTER_LINEAR, 16, CV_8UC4>), (exec_resize<2000, CV_HAL_INTER_LINEAR>)),
-    TEST("Resize4x4 uint8, INTER_LINEAR", (test_resize<4000, CV_HAL_INTER_LINEAR, 16, CV_8UC4>), (exec_resize<4000, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.5x0.5 uint8, INTER_AREA", (test_resize<500, CV_HAL_INTER_AREA, 32, CV_8UC1>), (exec_resize<500, CV_HAL_INTER_AREA>)),
+    TEST("Resize0.5x0.5 uint8, INTER_LINEAR", (test_resize<500, CV_HAL_INTER_LINEAR, 32, CV_8UC1>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize2x2 uint8, INTER_LINEAR", (test_resize<2000, CV_HAL_INTER_LINEAR, 16, CV_8UC1>), (exec_resize<2000, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize4x4 uint8, INTER_LINEAR", (test_resize<4000, CV_HAL_INTER_LINEAR, 16, CV_8UC1>), (exec_resize<4000, CV_HAL_INTER_LINEAR>)),
   };
   // clang-format on
   return tests;

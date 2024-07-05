@@ -1014,7 +1014,7 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 
 /// Resize image using linear interpolation.
 ///
-/// At present only 2*2 and 4*4 upsizing is supported.
+/// At present only 2*2 and 4*4 upsizing is supported, and 8x8 for float data.
 /// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED
 /// will be returned.
 /// The total number of pixels in the destination is limited to

@@ -40,6 +40,8 @@ bool are_float_matrices_different(T threshold_percent, cv::Mat& exp,
       T diff_percentage = (diff / std::abs(exp.at<T>(i, j))) * 100;
       if (diff_percentage > threshold_percent) {
         std::cout << "=== Mismatch at: " << i << " " << j << std::endl
+                  << "Expected: " << exp.at<T>(i, j)
+                  << "   Actual: " << act.at<T>(i, j) << std::endl
                   << "Relative diff: " << diff_percentage << std::endl
                   << std::endl;
         return true;

@@ -24,6 +24,7 @@ This changelog aims to follow the guiding principles of
 - Add, subtract, multiply & absdiff enabled in OpenCV HAL.
 - MinMax enabled in OpenCV HAL, float version added.
 - Resize 4x4 for float.
+- Resize 8x8 for float.
 - Resize 0.5x0.5 for uint8_t.
 - Conversion from float to (u)int8_t and vice versa.
 - KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS configuration option.
