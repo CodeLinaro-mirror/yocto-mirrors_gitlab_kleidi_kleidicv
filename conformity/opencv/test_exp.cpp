@@ -35,6 +35,7 @@ bool test_exp(int index, RecreatedMessageQueue& request_queue,
       // range is defined
       if (are_float_matrices_different<float>(1.5, expected_mat, actual_mat)) {
         fail_print_matrices(x, y, input_mat, actual_mat, expected_mat);
+        return true;
       }
     }
   }
