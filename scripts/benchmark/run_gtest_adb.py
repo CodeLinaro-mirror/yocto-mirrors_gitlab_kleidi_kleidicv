@@ -41,6 +41,7 @@ import json
 import os
 import shlex
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -135,9 +136,13 @@ class ADBRunner:
     def check_output(self, args):
         command = self._make_adb_command() + ["shell"] + args
         self._print_command(command)
-        return subprocess.check_output(
-            command, stderr=subprocess.STDOUT
-        ).decode()
+        try:
+            return subprocess.check_output(
+                command, stderr=subprocess.STDOUT
+            ).decode()
+        except subprocess.CalledProcessError as e:
+            print(e.stdout.decode(), file=sys.stderr)
+            raise
 
     def push(self, filenames, dst):
         command = self._make_adb_command() + ["push", *filenames, dst]
@@ -207,16 +212,19 @@ def run_executable_tests(runner, args, host_executable, cpu, thermal_zone):
 
     for test_name in test_list:
         wait_for_cooldown(runner, thermal_zone)
-        runner.check_output(
-            [
-                "taskset",
-                taskset_mask,
-                executable,
-                f"--gtest_output=json:{output_file}",
-                f"--gtest_filter={test_name}",
-                f"--perf_min_samples={args.perf_min_samples}",
-            ]
-        )
+        try:
+            runner.check_output(
+                [
+                    "taskset",
+                    taskset_mask,
+                    executable,
+                    f"--gtest_output=json:{output_file}",
+                    f"--gtest_filter={test_name}",
+                    f"--perf_min_samples={args.perf_min_samples}",
+                ]
+            )
+        except subprocess.CalledProcessError:
+            continue
         test_result = runner.read_json(output_file)
 
         if not results:
@@ -233,13 +241,16 @@ def run_executable_tests(runner, args, host_executable, cpu, thermal_zone):
 
         test_result = testsuite["testsuite"][0]
 
-        output = (
-            f"{executable}-{cpu}\t{test_name}"
-            f"\t{test_result['value_param']}"
-        )
-        for key in args.tsv_columns:
-            output += f"\t{test_result[key]}"
-        print(output)
+        try:
+            output = (
+                f"{executable}-{cpu}\t{test_name}"
+                f"\t{test_result['value_param']}"
+            )
+            for key in args.tsv_columns:
+                output += f"\t{test_result[key]}"
+            print(output)
+        except KeyError:
+            pass
 
     results["testsuites"] = list(testsuites.values())
 
@@ -293,18 +304,21 @@ def get_results_table(args, results):
             value_param = test["value_param"]
             row = [f"{testsuite_name}.{test_name}", value_param]
 
-            for cpu in args.cpus:
-                for key in args.tsv_columns:
-                    for executable in args.executables:
-                        for rep in range(args.repetitions):
-                            result = results[
-                                get_run_name(rep, executable, cpu)
-                            ]
-                            exe_test = result["testsuites"][testsuite_index][
-                                "testsuite"
-                            ][test_index]
-                            row.append(exe_test[key])
-            rows.append(row)
+            try:
+                for cpu in args.cpus:
+                    for key in args.tsv_columns:
+                        for executable in args.executables:
+                            for rep in range(args.repetitions):
+                                result = results[
+                                    get_run_name(rep, executable, cpu)
+                                ]
+                                exe_test = result["testsuites"][testsuite_index][
+                                    "testsuite"
+                                ][test_index]
+                                row.append(exe_test[key])
+                rows.append(row)
+            except KeyError:
+                pass
 
     return rows
 
