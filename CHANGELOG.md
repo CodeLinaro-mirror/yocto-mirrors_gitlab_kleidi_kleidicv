@@ -35,6 +35,7 @@ This changelog aims to follow the guiding principles of
 ### Changed
 - Filter context creation API specification.
 - Gaussian Blur API specification.
+- In the OpenCV HAL, cvtColor YUV2RGB_NV21 is multithreaded.
 
 ### Removed
 

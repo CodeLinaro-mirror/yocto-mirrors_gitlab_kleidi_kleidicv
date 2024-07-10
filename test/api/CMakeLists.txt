@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-file(GLOB kleidicv_api_test_sources CONFIGURE_DEPENDS "*.h" "test_*.cpp")
+file(GLOB kleidicv_api_test_sources CONFIGURE_DEPENDS "*.h" "*.cpp")
 
 list(APPEND kleidicv_api_test_sources ${KLEIDICV_TEST_FRAMEWORK_SOURCES})
 
@@ -25,6 +25,7 @@ target_include_directories(
   kleidicv-api-test
   PRIVATE ${KLEIDICV_INCLUDE_DIR}
   PRIVATE ${KLEIDICV_TEST_INCLUDE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../kleidicv_thread/include
 )
 
 if (KLEIDICV_ALLOCATION_TESTS)
@@ -38,6 +39,7 @@ endif()
 target_link_libraries(
   kleidicv-api-test
   kleidicv
-  gtest_main
+  kleidicv_thread
+  gtest
   gmock
 )

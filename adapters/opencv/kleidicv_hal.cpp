@@ -4,6 +4,8 @@
 
 #include "kleidicv_hal.h"
 
+#include <algorithm>
+#include <atomic>
 #include <cfloat>
 #include <cstdlib>
 #include <cstring>
@@ -11,8 +13,11 @@
 #include <memory>
 
 #include "kleidicv/kleidicv.h"
+#include "kleidicv_thread/kleidicv_thread.h"
 #include "opencv2/core/base.hpp"
 #include "opencv2/core/hal/interface.h"
+#include "opencv2/core/types.hpp"
+#include "opencv2/core/utility.hpp"
 #include "opencv2/imgproc/hal/interface.h"
 
 namespace kleidicv::hal {
@@ -46,6 +51,25 @@ static size_t get_type_size(int depth) {
     default:
       return SIZE_MAX;
   }
+}
+
+static kleidicv_error_t parallel(kleidicv_thread_callback callback,
+                                 void *callback_data, void * /*parallel_data*/,
+                                 unsigned task_count) {
+  std::atomic<kleidicv_error_t> shared_result{KLEIDICV_OK};
+
+  auto invoke_callback = [&](const cv::Range &range) {
+    kleidicv_error_t result = callback(range.start, range.end, callback_data);
+    if (result != KLEIDICV_OK) {
+      shared_result.store(result);
+    }
+  };
+  cv::parallel_for_(cv::Range(0, task_count), invoke_callback);
+  return shared_result;
+}
+
+static kleidicv_thread_multithreading get_multithreading() {
+  return kleidicv_thread_multithreading{parallel, nullptr};
 }
 
 // Note: 'dcn' is already accounted for in 'dst_step'.
@@ -128,11 +152,11 @@ int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
           reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
           dst_height, is_nv21));
     }
-    return convert_error(kleidicv_yuv_sp_to_rgb_u8(
+    return convert_error(kleidicv_thread_yuv_sp_to_rgb_u8(
         reinterpret_cast<const uint8_t *>(y_data), y_step,
         reinterpret_cast<const uint8_t *>(uv_data), uv_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
-        is_nv21));
+        is_nv21, get_multithreading()));
   }
 
   if (dcn == 4) {

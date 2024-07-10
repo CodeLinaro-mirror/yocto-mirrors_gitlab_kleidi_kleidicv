@@ -11,6 +11,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "test_binary_op.h"
+#include "test_cvtcolor.h"
 #include "test_exp.h"
 #include "test_float_conv.h"
 #include "test_gaussian_blur.h"
@@ -32,6 +33,7 @@ static std::vector<test> merge_tests(
 
 std::vector<test> all_tests = merge_tests({
     binary_op_tests_get,
+    cvtcolor_tests_get,
     gaussian_blur_tests_get,
     rgb2yuv_tests_get,
     sobel_tests_get,
