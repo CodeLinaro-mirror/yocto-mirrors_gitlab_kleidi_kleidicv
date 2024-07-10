@@ -25,20 +25,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(OpenCV)
 
+file(GLOB conformity_test_sources CONFIGURE_DEPENDS "test_*.cpp")
+
 # Manager
 add_executable(
   manager
   manager.cpp
   tests.cpp
-  test_binary_op.cpp
-  test_gaussian_blur.cpp
-  test_rgb2yuv.cpp
-  test_sobel.cpp
-  test_exp.cpp
-  test_float_conv.cpp
-  test_scale.cpp
-  test_min_max.cpp
-  test_resize.cpp
+  ${conformity_test_sources}
 )
 
 target_link_libraries(
@@ -73,16 +67,7 @@ add_executable(
   subordinate
   subordinate.cpp
   tests.cpp
-  test_binary_op.cpp
-  test_gaussian_blur.cpp
-  test_min_max.cpp
-  test_rgb2yuv.cpp
-  test_sobel.cpp
-  test_exp.cpp
-  test_float_conv.cpp
-  test_scale.cpp
-  test_min_max.cpp
-  test_resize.cpp
+  ${conformity_test_sources}
 )
 
 target_link_libraries(
