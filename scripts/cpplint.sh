@@ -15,6 +15,8 @@ set -x
 # Run cpplint.
 #
 # Disabled categories rationale:
+# * build/c++11 - cpplint's list of unapproved headers (like <thread>) doesn't
+#   make much sense outside the projects it was originally designed for.
 # * build/header_guard - our header guards are not coupled to the directory
 #   structure because they're designed to be used from other projects.
 # * build/include_subdir - it's OK to include a header in the same directory
@@ -32,5 +34,5 @@ cpplint \
     --recursive \
     --exclude=build \
     --counting=detailed \
-    --filter=-build/header_guard,-build/include_subdir,-readability/todo,-runtime/references,-whitespace/indent,-whitespace/line_length \
+    --filter=-build/c++11,-build/header_guard,-build/include_subdir,-readability/todo,-runtime/references,-whitespace/indent,-whitespace/line_length \
     .
