@@ -242,13 +242,48 @@ static void resize_linear_8x8_f32(benchmark::State& state) {
 }
 BENCHMARK(resize_linear_8x8_f32);
 
+template <typename T, size_t KernelSize, int Channels>
+static void separable_filter_2d(benchmark::State& state) {
+  kleidicv_filter_context_t* context;
+  kleidicv_error_t err = kleidicv_filter_context_create(
+      &context, Channels, KernelSize, KernelSize, image_width, image_height);
+  if (err != KLEIDICV_OK) {
+    state.SkipWithError(
+        "Could not initialize SeparableFilter2D filter context.");
+    return;
+  }
+
+  std::vector<uint8_t> kernel(KernelSize, 2);
+
+  bench_functor(state, [context, kernel]() {
+    (void)kleidicv_separable_filter_2d_u8(
+        get_source_buffer_a<T, Channels>(), image_width * Channels * sizeof(T),
+        get_destination_buffer<T, Channels>(),
+        image_width * Channels * sizeof(T), image_width, image_height, Channels,
+        kernel.data(), KernelSize, kernel.data(), KernelSize,
+        KLEIDICV_BORDER_TYPE_REPLICATE, context);
+  });
+
+  (void)kleidicv_filter_context_release(context);
+}
+
+static void separable_filter_2d_u8_5x5_1ch(benchmark::State& state) {
+  separable_filter_2d<uint8_t, 5, 1>(state);
+}
+BENCHMARK(separable_filter_2d_u8_5x5_1ch);
+
+static void separable_filter_2d_u8_5x5_3ch(benchmark::State& state) {
+  separable_filter_2d<uint8_t, 5, 3>(state);
+}
+BENCHMARK(separable_filter_2d_u8_5x5_3ch);
+
 template <typename T, size_t KernelSize, int Channels, bool Binomial>
 static void gaussian_blur(benchmark::State& state) {
   kleidicv_filter_context_t* context;
   kleidicv_error_t err = kleidicv_filter_context_create(
       &context, Channels, KernelSize, KernelSize, image_width, image_height);
   if (err != KLEIDICV_OK) {
-    state.SkipWithError("Could not initialize Gaussian blur filter.");
+    state.SkipWithError("Could not initialize Gaussian blur filter context.");
     return;
   }
 
