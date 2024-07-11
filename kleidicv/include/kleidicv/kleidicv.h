@@ -1198,15 +1198,18 @@ kleidicv_error_t kleidicv_filter_context_release(
 /// destination. The number of elements is limited to @ref
 /// KLEIDICV_MAX_IMAGE_PIXELS.
 ///
-/// Usage: \n
+/// Usage:
+///
 /// Before using this function, a context must be created using
-/// kleidicv_filter_context_create, and after finished, it has to be released
+/// kleidicv_filter_context_create, and when finished, it has to be released
 /// using kleidicv_filter_context_release. Please ensure that your filter
 /// context parameters are large enough, otherwise this API will return with an
-/// error. \n Note, from the border types only these are supported: \n
-///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE \n
-///                       - @ref KLEIDICV_BORDER_TYPE_REFLECT \n
-///                       - @ref KLEIDICV_BORDER_TYPE_WRAP \n
+/// error.
+///
+/// Note, from the border types only these are supported:
+///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE
+///                       - @ref KLEIDICV_BORDER_TYPE_REFLECT
+///                       - @ref KLEIDICV_BORDER_TYPE_WRAP
 ///                       - @ref KLEIDICV_BORDER_TYPE_REVERSE
 ///
 /// @param src           Pointer to the source data. Must be non-null.

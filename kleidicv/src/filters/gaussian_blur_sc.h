@@ -589,6 +589,7 @@ class GaussianBlur<uint8_t, 5, false> final
     dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
   }
 };  // end of class GaussianBlur<uint8_t, 5, false>
+
 template <>
 class GaussianBlur<uint8_t, 7, false> final
     : public GaussianBlurNonBinomialBase<uint8_t, 7> {

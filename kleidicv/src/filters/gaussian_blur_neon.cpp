@@ -526,28 +526,29 @@ class GaussianBlur<uint8_t, KernelSize, false> {
                 sigma)) {}
 
   void vertical_vector_path(uint8x16_t src[KernelSize], BufferType *dst) const {
-    uint16x8_t acc_last_l = vmovl_u8(vget_low_u8(src[KernelSize >> 1]));
-    uint16x8_t acc_last_h = vmovl_u8(vget_high_u8(src[KernelSize >> 1]));
+    uint16x8_t initial_l = vmovl_u8(vget_low_u8(src[KernelSize >> 1]));
+    uint16x8_t initial_h = vmovl_u8(vget_high_u8(src[KernelSize >> 1]));
 
     uint32x4_t acc_l_l =
-        vmull_n_u16(vget_low_u16(acc_last_l), half_kernel_[KernelSize >> 1]);
+        vmull_n_u16(vget_low_u16(initial_l), half_kernel_[KernelSize >> 1]);
     uint32x4_t acc_l_h =
-        vmull_n_u16(vget_high_u16(acc_last_l), half_kernel_[KernelSize >> 1]);
+        vmull_n_u16(vget_high_u16(initial_l), half_kernel_[KernelSize >> 1]);
     uint32x4_t acc_h_l =
-        vmull_n_u16(vget_low_u16(acc_last_h), half_kernel_[KernelSize >> 1]);
+        vmull_n_u16(vget_low_u16(initial_h), half_kernel_[KernelSize >> 1]);
     uint32x4_t acc_h_h =
-        vmull_n_u16(vget_high_u16(acc_last_h), half_kernel_[KernelSize >> 1]);
+        vmull_n_u16(vget_high_u16(initial_h), half_kernel_[KernelSize >> 1]);
 
+    // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 0; i < (KernelSize >> 1); i++) {
-      size_t j = KernelSize - i - 1;
-      uint16x8_t acc_l = vaddl_u8(vget_low_u8(src[i]), vget_low_u8(src[j]));
-      uint16x8_t acc_h = vaddl_u8(vget_high_u8(src[i]), vget_high_u8(src[j]));
+      const size_t j = KernelSize - i - 1;
+      uint16x8_t vec_l = vaddl_u8(vget_low_u8(src[i]), vget_low_u8(src[j]));
+      uint16x8_t vec_h = vaddl_u8(vget_high_u8(src[i]), vget_high_u8(src[j]));
 
-      acc_l_l = vmlal_n_u16(acc_l_l, vget_low_u16(acc_l), half_kernel_[i]);
-      acc_l_h = vmlal_n_u16(acc_l_h, vget_high_u16(acc_l), half_kernel_[i]);
-      acc_h_l = vmlal_n_u16(acc_h_l, vget_low_u16(acc_h), half_kernel_[i]);
-      acc_h_h = vmlal_n_u16(acc_h_h, vget_high_u16(acc_h), half_kernel_[i]);
+      acc_l_l = vmlal_n_u16(acc_l_l, vget_low_u16(vec_l), half_kernel_[i]);
+      acc_l_h = vmlal_n_u16(acc_l_h, vget_high_u16(vec_l), half_kernel_[i]);
+      acc_h_l = vmlal_n_u16(acc_h_l, vget_low_u16(vec_h), half_kernel_[i]);
+      acc_h_h = vmlal_n_u16(acc_h_h, vget_high_u16(vec_h), half_kernel_[i]);
     }
 
     uint32x4x4_t result = {acc_l_l, acc_l_h, acc_h_l, acc_h_h};
@@ -559,6 +560,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
                             BufferType *dst) const {
     uint32_t acc = static_cast<uint32_t>(src[0]) * half_kernel_[0];
 
+    // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i <= (KernelSize >> 1); i++) {
       acc += static_cast<uint32_t>(src[i]) * half_kernel_[i];
@@ -578,11 +580,12 @@ class GaussianBlur<uint8_t, KernelSize, false> {
     uint32x4_t acc =
         vmulq_n_u32(src[KernelSize >> 1], half_kernel_[KernelSize >> 1]);
 
+    // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 0; i < (KernelSize >> 1); i++) {
-      size_t j = KernelSize - i - 1;
-      uint32x4_t acc_inner = vaddq_u32(src[i], src[j]);
-      acc = vmlaq_n_u32(acc, acc_inner, half_kernel_[i]);
+      const size_t j = KernelSize - i - 1;
+      uint32x4_t vec_inner = vaddq_u32(src[i], src[j]);
+      acc = vmlaq_n_u32(acc, vec_inner, half_kernel_[i]);
     }
 
     uint32x4_t acc_u32 = vrshrq_n_u32(acc, 16);
@@ -597,6 +600,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
                               DestinationType *dst) const {
     uint32_t acc = src[0] * half_kernel_[0];
 
+    // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i <= (KernelSize >> 1); i++) {
       acc += src[i] * half_kernel_[i];
