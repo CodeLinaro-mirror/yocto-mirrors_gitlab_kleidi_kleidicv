@@ -43,6 +43,24 @@ class PseudoRandomNumberGenerator : public Generator<ElementType> {
   std::mt19937_64 rng_;
 };  // end of class PseudoRandomNumberGenerator<ElementType>
 
+// Generates pseudo-random integers of a given type within the range [min, max].
+template <typename ElementType,
+          std::enable_if_t<std::is_integral_v<ElementType>, bool> = true>
+class PseudoRandomNumberGeneratorIntRange
+    : public PseudoRandomNumberGenerator<ElementType> {
+ public:
+  PseudoRandomNumberGeneratorIntRange(ElementType min, ElementType max)
+      : PseudoRandomNumberGenerator<ElementType>(), dist_(min, max) {}
+
+  // Yields the next value or std::nullopt.
+  std::optional<ElementType> next() override {
+    return static_cast<ElementType>(dist_(this->rng_));
+  }
+
+ protected:
+  std::uniform_int_distribution<ElementType> dist_;
+};  // end of class PseudoRandomNumberGeneratorIntRange<ElementType>
+
 // Generator which yields values of an iterable container.
 template <typename IterableType>
 class SequenceGenerator : public Generator<typename IterableType::value_type> {

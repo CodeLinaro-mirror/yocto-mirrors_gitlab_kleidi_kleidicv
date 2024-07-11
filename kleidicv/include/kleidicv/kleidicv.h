@@ -1191,6 +1191,56 @@ kleidicv_error_t kleidicv_filter_context_create(
 kleidicv_error_t kleidicv_filter_context_release(
     kleidicv_filter_context_t *context);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Applies a two-dimensional separable filter to the source image using the
+/// specified parameters. In-place filtering is not supported.
+///
+/// Width and height are assumed to be the same for the source and for the
+/// destination. The number of elements is limited to @ref
+/// KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// Usage:
+///
+/// Before using this function, a context must be created using
+/// kleidicv_filter_context_create, and when finished, it has to be released
+/// using kleidicv_filter_context_release. Please ensure that your filter
+/// context parameters are large enough, otherwise this API will return with an
+/// error.
+///
+/// Note, from the border types only KLEIDICV_BORDER_TYPE_REPLICATE is
+/// supported.
+///
+/// @param src           Pointer to the source data. Must be non-null.
+/// @param src_stride    Distance in bytes from the start of one row to the
+///                      start of the next row in the source data. Must be a
+///                      multiple of sizeof(type) and no less than width *
+///                      sizeof(type) * channels, except for single-row images.
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row in the destination data. Must be
+///                      a multiple of sizeof(type) and no less than width *
+///                      sizeof(type) * channels, except for single-row images.
+/// @param width         Number of columns in the data. (One column consists of
+///                      'channels' number of elements.)
+/// @param height        Number of rows in the data.
+/// @param channels      Number of channels in the data. Must be not more than
+///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
+/// @param kernel_x      Pointer to the horizontal 2D kernel values.
+/// @param kernel_width  Size of the horizontal 2D kernel.
+/// @param kernel_y      Pointer to the vertical 2D kernel values.
+/// @param kernel_height Size of the vertical 2D kernel.
+/// @param border_type   Way of handling the border.
+/// @param context       Pointer to filter context.
+///
+KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, size_t channels,
+                         const uint8_t *kernel_x, size_t kernel_width,
+                         const uint8_t *kernel_y, size_t kernel_height,
+                         kleidicv_border_type_t border_type,
+                         kleidicv_filter_context_t *context);
+
 /// Applies Gaussian blur to the source image using the specified parameters.
 /// In-place filtering is not supported.
 ///
