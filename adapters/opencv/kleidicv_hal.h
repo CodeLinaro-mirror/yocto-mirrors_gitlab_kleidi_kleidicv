@@ -49,6 +49,20 @@ int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int width, int height, int depth, int cn,
               double thresh, double maxValue, int thresholdType);
 
+int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
+                             int dst_type, int kernel_type, uchar *kernelx_data,
+                             int kernelx_length, uchar *kernely_data,
+                             int kernely_length, int anchor_x, int anchor_y,
+                             double delta, int borderType);
+
+int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
+                                  size_t src_step, uchar *dst_data,
+                                  size_t dst_step, int width, int height,
+                                  int full_width, int full_height, int offset_x,
+                                  int offset_y);
+
+int separable_filter_2d_free(cvhalFilter2D *context);
+
 int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
                            uchar *dst_data, size_t dst_step, int width,
                            int height, int depth, int cn, size_t margin_left,
@@ -212,6 +226,42 @@ static inline int kleidicv_threshold_with_fallback(
 }
 #undef cv_hal_threshold
 #define cv_hal_threshold kleidicv_threshold_with_fallback
+
+// separable_filter_2d_init
+static inline int kleidicv_separable_filter_2d_init_with_fallback(
+    cvhalFilter2D **context, int src_type, int dst_type, int kernel_type,
+    uchar *kernelx_data, int kernelx_length, uchar *kernely_data,
+    int kernely_length, int anchor_x, int anchor_y, double delta,
+    int borderType) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      separable_filter_2d_init, cv_hal_sepFilterInit, context, src_type,
+      dst_type, kernel_type, kernelx_data, kernelx_length, kernely_data,
+      kernely_length, anchor_x, anchor_y, delta, borderType);
+}
+#undef cv_hal_sepFilterInit
+#define cv_hal_sepFilterInit kleidicv_separable_filter_2d_init_with_fallback
+
+// separable_filter_2d_operation
+static inline int kleidicv_separable_filter_2d_operation_with_fallback(
+    cvhalFilter2D *context, uchar *src_data, size_t src_step, uchar *dst_data,
+    size_t dst_step, int width, int height, int full_width, int full_height,
+    int offset_x, int offset_y) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      separable_filter_2d_operation, cv_hal_sepFilter, context, src_data,
+      src_step, dst_data, dst_step, width, height, full_width, full_height,
+      offset_x, offset_y);
+}
+#undef cv_hal_sepFilter
+#define cv_hal_sepFilter kleidicv_separable_filter_2d_operation_with_fallback
+
+// separable_filter_2d_free
+static inline int kleidicv_separable_filter_2d_free_with_fallback(
+    cvhalFilter2D *context) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(separable_filter_2d_free,
+                                       cv_hal_sepFilterFree, context);
+}
+#undef cv_hal_sepFilterFree
+#define cv_hal_sepFilterFree kleidicv_separable_filter_2d_free_with_fallback
 
 // gaussian_blur_binomial
 static inline int kleidicv_gaussian_blur_binomial_with_fallback(
