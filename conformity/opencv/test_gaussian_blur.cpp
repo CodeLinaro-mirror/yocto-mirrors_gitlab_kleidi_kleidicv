@@ -9,7 +9,7 @@
 template <size_t KernelSize, size_t BorderType>
 cv::Mat exec_gaussian_blur(cv::Mat& input) {
   double sigma =
-      *reinterpret_cast<double*>(&input.at<uint8_t>(0, input.rows - 2));
+      *reinterpret_cast<double*>(&input.at<uint8_t>(input.rows - 2, 0));
   // clone is required, otherwise the result matrix is treated as part of a
   // bigger image, and it would have impact on what border types are supported
   cv::Mat input_mat = input.rowRange(0, input.rows - 2).clone();
@@ -49,7 +49,7 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
       }
 
       // sigma is embedded into the input matrix
-      *reinterpret_cast<double*>(&input.at<uint8_t>(0, input.rows - 2)) = sigma;
+      *reinterpret_cast<double*>(&input.at<uint8_t>(input.rows - 2, 0)) = sigma;
 
       cv::Mat actual = exec_gaussian_blur<KernelSize, BorderType>(input);
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,

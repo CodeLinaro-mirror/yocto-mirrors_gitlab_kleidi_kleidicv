@@ -25,6 +25,7 @@ static std::vector<test> merge_tests(
 std::vector<test> all_tests = merge_tests({
     binary_op_tests_get,
     cvtcolor_tests_get,
+    separable_filter_2d_tests_get,
     gaussian_blur_tests_get,
     rgb2yuv_tests_get,
     yuv2rgb_tests_get,
