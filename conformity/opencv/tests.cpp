@@ -20,6 +20,7 @@
 #include "test_rgb2yuv.h"
 #include "test_scale.h"
 #include "test_sobel.h"
+#include "test_yuv2rgb.h"
 
 static std::vector<test> merge_tests(
     std::initializer_list<std::vector<test>& (*)()> test_groups) {
@@ -36,6 +37,7 @@ std::vector<test> all_tests = merge_tests({
     cvtcolor_tests_get,
     gaussian_blur_tests_get,
     rgb2yuv_tests_get,
+    yuv2rgb_tests_get,
     sobel_tests_get,
     exp_tests_get,
     float_conversion_tests_get,

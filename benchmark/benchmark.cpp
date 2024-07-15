@@ -131,6 +131,9 @@ BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgb_to_rgba_u8, 3, 4, uint8_t);
 BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_bgr_u8, 4, 3, uint8_t);
 BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_rgb_u8, 4, 3, uint8_t);
 
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(yuv_to_rgb_u8, 3, 3, uint8_t);
+BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(yuv_to_bgr_u8, 3, 3, uint8_t);
+
 static void min_max_loc_u8(benchmark::State& state) {
   bench_functor(state, []() {
     size_t min_offset, max_offset;

@@ -36,10 +36,12 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | BGR-RGB      |  x  |
 | RGBA-BGRA    |  x  |
 | BGRA-RGBA    |  x  |
-| YUV420-BGR  |  x  |
-| YUV420-BGRA |  x  |
-| YUV420-RGB  |  x  |
-| YUV420-RGBA |  x  |
+| YUV420-BGR   |  x  |
+| YUV420-BGRA  |  x  |
+| YUV420-RGB   |  x  |
+| YUV420-RGBA  |  x  |
+| YUV-BGR      |  x  |
+| YUV-RGB      |  x  |
 | RGB-YUV      |  x  |
 | RGBA-YUV     |  x  |
 | BGR-YUV      |  x  |

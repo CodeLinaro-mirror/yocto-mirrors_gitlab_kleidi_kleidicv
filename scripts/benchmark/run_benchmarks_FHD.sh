@@ -33,6 +33,9 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL RGBA2YUV opencv_perf_imgproc '*cvtColor8u/*' '(1920x1080, CX_RGBA2YUV)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL BGRA2YUV opencv_perf_imgproc '*cvtColor8u/*' '(1920x1080, CX_BGRA2YUV)')")
 
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL YUV2RGB opencv_perf_imgproc '*cvtColor8u/*' '(1920x1080, COLOR_YUV2RGB)')")
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL YUV2BGR opencv_perf_imgproc '*cvtColor8u/*' '(1920x1080, COLOR_YUV2BGR)')")
+
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL BinaryThreshold opencv_perf_imgproc '*ThreshFixture_Threshold.Threshold/*' '(1920x1080, 8UC1, THRESH_BINARY)')")
 
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur3x3 opencv_perf_imgproc '*gaussianBlur3x3/*' '(1920x1080, 8UC1, BORDER_REPLICATE)')")

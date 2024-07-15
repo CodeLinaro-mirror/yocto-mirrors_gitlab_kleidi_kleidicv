@@ -717,6 +717,40 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
                          size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, bool is_nv21);
 
+/// Converts a YUV image to RGB, pixel by pixel. All channels are 8-bit wide.
+///
+/// Source data has 3 channels like this:
+/// | Y,U,V | Y,U,V | Y,U,V | ...
+/// One pixel is represented by 3 bytes. There is no padding between the pixels.
+///
+/// Destination data has 3 channels:
+/// - R,G,B
+/// - B,G,R
+///
+/// Width and height are the same for the source and for the destination. Number
+/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src         Pointer to the source data. Must be non-null.
+/// @param src_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the source data.
+///                    Must not be less than 3*width, except for single-row
+///                    images.
+/// @param dst         Pointer to the destination data. Must be non-null.
+/// @param dst_stride  Distance in bytes from the start of one row to the
+///                    start of the next row for the destination data.
+///                    Must not be less than 3*width, except for single-row
+///                    images.
+/// @param width       Number of pixels in a row.
+/// @param height      Number of rows in the data.
+///
+KLEIDICV_API_DECLARATION(kleidicv_yuv_to_bgr_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_yuv_to_bgr_u8
+KLEIDICV_API_DECLARATION(kleidicv_yuv_to_rgb_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+
 /// Converts an RGB image to YUV, pixel by pixel. All channels are 8-bit wide.
 ///
 /// Source data can have 3 channels or 4 if there is an alpha channel:
@@ -725,7 +759,7 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
 /// - B,G,R
 /// - B,G,R,Alpha
 ///
-/// Destination data is filled liked this:
+/// Destination data is filled like this:
 /// | Y,U,V | Y,U,V | Y,U,V | ...
 /// One pixel is represented by 3 bytes. There is no padding between the pixels.
 /// Alpha channel is not used in the conversion.

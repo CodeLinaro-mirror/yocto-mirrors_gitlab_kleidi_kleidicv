@@ -77,6 +77,13 @@ Notes on parameters:
 ### `yuv_to_bgr_sp`
 Wrapper for [`yuv_to_bgr_sp_ex`](#yuv_to_bgr_sp_ex) that accepts YUV as a single buffer.
 
+### `yuv_to_bgr`
+YUV to RGB image conversion, 3 channels to 3 channels, no subsampling.
+All supported permutations listed in the table below.
+|   | RGB | BGR |
+|---|-----|-----|
+|YUV|  x  |  x  |
+
 ### `bgr_to_yuv`
 RGB/RGBA to YUV image conversion, 3 or 4 channels to 3 channels, no subsampling.
 All supported permutations listed in the table below.

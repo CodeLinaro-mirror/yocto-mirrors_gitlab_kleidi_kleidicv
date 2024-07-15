@@ -177,6 +177,27 @@ int yuv_to_bgr_sp_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
+int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
+               size_t dst_step, int width, int height, int depth, int dcn,
+               bool swapBlue, bool isCbCr) {
+  const bool is_bgr = !swapBlue;
+
+  if (depth != CV_8U || isCbCr || dcn != 3) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (is_bgr) {
+    return convert_error(kleidicv_yuv_to_bgr_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step,
+        static_cast<size_t>(width), static_cast<size_t>(height)));
+  }
+  return convert_error(kleidicv_yuv_to_rgb_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step,
+      static_cast<size_t>(width), static_cast<size_t>(height)));
+}
+
 int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int scn,
                bool swapBlue, bool isCbCr) {
