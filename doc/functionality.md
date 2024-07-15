@@ -28,26 +28,22 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Bitwise And                  |  x  |
 
 ## Color conversions
-|           | u8  |
-|-----------|-----|
-| Gray-RGB  |  x  |
-| Gray-RGBA |  x  |
-| RGB-BGR   |  x  |
-| RGB-BGRA  |  x  |
-| RGB-RGB   |  x  |
-| RGB-RGBA  |  x  |
-| RGBA-BGR  |  x  |
-| RGBA-BGRA |  x  |
-| RGBA-RGB  |  x  |
-| RGBA-RGBA |  x  |
-| YUV-BGR   |  x  |
-| YUV-BGRA  |  x  |
-| YUV-RGB   |  x  |
-| YUV-RGBA  |  x  |
-| RGB-YUV   |  x  |
-| RGBA-YUV  |  x  |
-| BGR-YUV   |  x  |
-| BGRA-YUV  |  x  |
+|              | u8  |
+|--------------|-----|
+| Gray-RGB     |  x  |
+| Gray-RGBA    |  x  |
+| RGB-BGR      |  x  |
+| BGR-RGB      |  x  |
+| RGBA-BGRA    |  x  |
+| BGRA-RGBA    |  x  |
+| YUV420-BGR  |  x  |
+| YUV420-BGRA |  x  |
+| YUV420-RGB  |  x  |
+| YUV420-RGBA |  x  |
+| RGB-YUV      |  x  |
+| RGBA-YUV     |  x  |
+| BGR-YUV      |  x  |
+| BGRA-YUV     |  x  |
 
 ## Data type conversions
 |            | u8  | s8  | f32 |

@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "yuv_to_rgb_sc.h"
+#include "yuv_sp_to_rgb_sc.h"
 
 namespace kleidicv::sve2 {
 

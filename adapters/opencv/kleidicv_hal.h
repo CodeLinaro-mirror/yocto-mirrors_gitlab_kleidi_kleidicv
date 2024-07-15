@@ -28,14 +28,14 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int scn,
                int dcn, bool swapBlue);
 
-int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
-               size_t dst_step, int dst_width, int dst_height, int dcn,
-               bool swapBlue, int uIdx);
+int yuv_to_bgr_sp(const uchar *src_data, size_t src_step, uchar *dst_data,
+                  size_t dst_step, int dst_width, int dst_height, int dcn,
+                  bool swapBlue, int uIdx);
 
-int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
-                  size_t uv_step, uchar *dst_data, size_t dst_step,
-                  int dst_width, int dst_height, int dcn, bool swapBlue,
-                  int uIdx);
+int yuv_to_bgr_sp_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
+                     size_t uv_step, uchar *dst_data, size_t dst_step,
+                     int dst_width, int dst_height, int dcn, bool swapBlue,
+                     int uIdx);
 
 int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int scn,
@@ -152,28 +152,28 @@ static inline int kleidicv_bgr_to_bgr_with_fallback(
 #undef cv_hal_cvtBGRtoBGR
 #define cv_hal_cvtBGRtoBGR kleidicv_bgr_to_bgr_with_fallback
 
-// yuv_to_bgr
-static inline int kleidicv_yuv_to_bgr_with_fallback(
+// yuv_to_bgr_sp
+static inline int kleidicv_yuv_to_bgr_sp_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
     int dst_width, int dst_height, int dcn, bool swapBlue, int uIdx) {
   return KLEIDICV_HAL_FALLBACK_FORWARD(
-      yuv_to_bgr, cv_hal_cvtTwoPlaneYUVtoBGR, src_data, src_step, dst_data,
+      yuv_to_bgr_sp, cv_hal_cvtTwoPlaneYUVtoBGR, src_data, src_step, dst_data,
       dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
 }
 #undef cv_hal_cvtTwoPlaneYUVtoBGR
-#define cv_hal_cvtTwoPlaneYUVtoBGR kleidicv_yuv_to_bgr_with_fallback
+#define cv_hal_cvtTwoPlaneYUVtoBGR kleidicv_yuv_to_bgr_sp_with_fallback
 
-// yuv_to_bgr_ex
-static inline int kleidicv_yuv_to_bgr_ex_with_fallback(
+// yuv_to_bgr_sp_ex
+static inline int kleidicv_yuv_to_bgr_sp_ex_with_fallback(
     const uchar *y_data, size_t y_step, const uchar *uv_data, size_t uv_step,
     uchar *dst_data, size_t dst_step, int dst_width, int dst_height, int dcn,
     bool swapBlue, int uIdx) {
   return KLEIDICV_HAL_FALLBACK_FORWARD(
-      yuv_to_bgr_ex, cv_hal_cvtTwoPlaneYUVtoBGREx, y_data, y_step, uv_data,
+      yuv_to_bgr_sp_ex, cv_hal_cvtTwoPlaneYUVtoBGREx, y_data, y_step, uv_data,
       uv_step, dst_data, dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
 }
 #undef cv_hal_cvtTwoPlaneYUVtoBGREx
-#define cv_hal_cvtTwoPlaneYUVtoBGREx kleidicv_yuv_to_bgr_ex_with_fallback
+#define cv_hal_cvtTwoPlaneYUVtoBGREx kleidicv_yuv_to_bgr_sp_ex_with_fallback
 
 // bgr_to_yuv
 static inline int kleidicv_bgr_to_yuv_with_fallback(

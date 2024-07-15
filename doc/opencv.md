@@ -62,8 +62,8 @@ Notes on parameters:
 * `dcn` - Destination Channel Number. Supports 3 for RGB and 4 for RGBA
 * `swapBlue` - toggles destination channel order.
 
-### `yuv_to_bgr_ex`
-YUV to RGB/RGBA image conversion. Function accepts Y plane and UV planes separately.\
+### `yuv_to_bgr_sp_ex`
+YUV420 to RGB/RGBA image conversion (semi-planar). Function accepts Y plane and UV planes separately.\
 All supported permutations listed in the table below.
 |   | RGB | BGR | RGBA | BGRA |
 |---|-----|-----|------|------|
@@ -74,8 +74,8 @@ Notes on parameters:
 * `swapBlue` - toggles destination channels order.
 * `uIdx` - sets particular YUV format. NV12 (`uIdx = 0`) and NV21 (`uIdx != 0`) are supported.
 
-### `yuv_to_bgr`
-Wrapper for [`yuv_to_bgr_ex`](#yuv_to_bgr_ex) that accepts YUV as a single buffer.
+### `yuv_to_bgr_sp`
+Wrapper for [`yuv_to_bgr_sp_ex`](#yuv_to_bgr_sp_ex) that accepts YUV as a single buffer.
 
 ### `bgr_to_yuv`
 RGB/RGBA to YUV image conversion, 3 or 4 channels to 3 channels, no subsampling.

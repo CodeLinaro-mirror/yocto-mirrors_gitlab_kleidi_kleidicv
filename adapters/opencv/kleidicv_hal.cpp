@@ -128,19 +128,19 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
-int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
-               size_t dst_step, int dst_width, int dst_height, int dcn,
-               bool swapBlue, int uIdx) {
+int yuv_to_bgr_sp(const uchar *src_data, size_t src_step, uchar *dst_data,
+                  size_t dst_step, int dst_width, int dst_height, int dcn,
+                  bool swapBlue, int uIdx) {
   const uchar *uv_data =
       reinterpret_cast<const uint8_t *>(src_data) + dst_height * src_step;
-  return yuv_to_bgr_ex(src_data, src_step, uv_data, src_step, dst_data,
-                       dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
+  return yuv_to_bgr_sp_ex(src_data, src_step, uv_data, src_step, dst_data,
+                          dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
 }
 
-int yuv_to_bgr_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
-                  size_t uv_step, uchar *dst_data, size_t dst_step,
-                  int dst_width, int dst_height, int dcn, bool swapBlue,
-                  int uIdx) {
+int yuv_to_bgr_sp_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
+                     size_t uv_step, uchar *dst_data, size_t dst_step,
+                     int dst_width, int dst_height, int dcn, bool swapBlue,
+                     int uIdx) {
   const bool is_bgr = !swapBlue;
   const bool is_nv21 = (uIdx != 0);
 

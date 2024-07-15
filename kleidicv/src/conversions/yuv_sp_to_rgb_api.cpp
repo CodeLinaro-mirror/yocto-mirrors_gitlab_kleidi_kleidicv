@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/conversions/yuv_to_rgb.h"
+#include "kleidicv/conversions/yuv_sp_to_rgb.h"
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 

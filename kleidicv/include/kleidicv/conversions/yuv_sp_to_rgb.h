@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_CONVERSIONS_YUV_TO_RGB_H
-#define KLEIDICV_CONVERSIONS_YUV_TO_RGB_H
+#ifndef KLEIDICV_CONVERSIONS_YUV_SP_TO_RGB_H
+#define KLEIDICV_CONVERSIONS_YUV_SP_TO_RGB_H
 
 #include "kleidicv/kleidicv.h"
 
@@ -154,4 +154,4 @@ kleidicv_error_t yuv_sp_to_bgra_u8(const uint8_t *src_y, size_t src_y_stride,
 
 }  // namespace kleidicv
 
-#endif  // KLEIDICV_CONVERSIONS_YUV_TO_RGB_H
+#endif  // KLEIDICV_CONVERSIONS_YUV_SP_TO_RGB_H

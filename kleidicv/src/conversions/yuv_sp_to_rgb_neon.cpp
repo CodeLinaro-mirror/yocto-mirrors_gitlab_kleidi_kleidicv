@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include "kleidicv/conversions/yuv_to_rgb.h"
+#include "kleidicv/conversions/yuv_sp_to_rgb.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
 

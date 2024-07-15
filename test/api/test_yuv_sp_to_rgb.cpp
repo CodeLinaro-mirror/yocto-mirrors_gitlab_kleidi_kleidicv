@@ -10,9 +10,9 @@
 #include "kleidicv/utils.h"
 #include "test_config.h"
 
-class YuvTest final {
+class YuvSpTest final {
  public:
-  YuvTest(size_t channel_number, bool switch_blue)
+  YuvSpTest(size_t channel_number, bool switch_blue)
       : channel_number_(channel_number), switch_blue_(switch_blue) {}
 
   template <typename F>
@@ -141,82 +141,82 @@ class YuvTest final {
   bool switch_blue_;
 };
 
-TEST(YUV2, RGB_NV12_scalar) {
-  YuvTest yuv_test(3, false);
+TEST(YUVSP, RGB_NV12_scalar) {
+  YuvSpTest yuv_test(3, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgb_u8, false);
 }
 
-TEST(YUV2, RGB_NV12_vector) {
-  YuvTest yuv_test(3, false);
+TEST(YUVSP, RGB_NV12_vector) {
+  YuvSpTest yuv_test(3, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgb_u8, false);
 }
 
-TEST(YUV2, RGB_NV21_scalar) {
-  YuvTest yuv_test(3, false);
+TEST(YUVSP, RGB_NV21_scalar) {
+  YuvSpTest yuv_test(3, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgb_u8, true);
 }
 
-TEST(YUV2, RGB_NV21_vector) {
-  YuvTest yuv_test(3, false);
+TEST(YUVSP, RGB_NV21_vector) {
+  YuvSpTest yuv_test(3, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgb_u8, true);
 }
 
-TEST(YUV2, BGR_NV12_scalar) {
-  YuvTest yuv_test(3, true);
+TEST(YUVSP, BGR_NV12_scalar) {
+  YuvSpTest yuv_test(3, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgr_u8, false);
 }
 
-TEST(YUV2, BGR_NV12_vector) {
-  YuvTest yuv_test(3, true);
+TEST(YUVSP, BGR_NV12_vector) {
+  YuvSpTest yuv_test(3, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgr_u8, false);
 }
 
-TEST(YUV2, BGR_NV21_scalar) {
-  YuvTest yuv_test(3, true);
+TEST(YUVSP, BGR_NV21_scalar) {
+  YuvSpTest yuv_test(3, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgr_u8, true);
 }
 
-TEST(YUV2, BGR_NV21_vector) {
-  YuvTest yuv_test(3, true);
+TEST(YUVSP, BGR_NV21_vector) {
+  YuvSpTest yuv_test(3, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgr_u8, true);
 }
 
-TEST(YUV2, RGBA_NV12_scalar) {
-  YuvTest yuv_test(4, false);
+TEST(YUVSP, RGBA_NV12_scalar) {
+  YuvSpTest yuv_test(4, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgba_u8, false);
 }
 
-TEST(YUV2, RGBA_NV12_vector) {
-  YuvTest yuv_test(4, false);
+TEST(YUVSP, RGBA_NV12_vector) {
+  YuvSpTest yuv_test(4, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgba_u8, false);
 }
 
-TEST(YUV2, RGBA_NV21_scalar) {
-  YuvTest yuv_test(4, false);
+TEST(YUVSP, RGBA_NV21_scalar) {
+  YuvSpTest yuv_test(4, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgba_u8, true);
 }
 
-TEST(YUV2, RGBA_NV21_vector) {
-  YuvTest yuv_test(4, false);
+TEST(YUVSP, RGBA_NV21_vector) {
+  YuvSpTest yuv_test(4, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgba_u8, true);
 }
 
-TEST(YUV2, BGRA_NV12_scalar) {
-  YuvTest yuv_test(4, true);
+TEST(YUVSP, BGRA_NV12_scalar) {
+  YuvSpTest yuv_test(4, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgra_u8, false);
 }
 
-TEST(YUV2, BGRA_NV12_vector) {
-  YuvTest yuv_test(4, true);
+TEST(YUVSP, BGRA_NV12_vector) {
+  YuvSpTest yuv_test(4, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgra_u8, false);
 }
 
-TEST(YUV2, BGRA_NV21_scalar) {
-  YuvTest yuv_test(4, true);
+TEST(YUVSP, BGRA_NV21_scalar) {
+  YuvSpTest yuv_test(4, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgra_u8, true);
 }
 
-TEST(YUV2, BGRA_NV21_vector) {
-  YuvTest yuv_test(4, true);
+TEST(YUVSP, BGRA_NV21_vector) {
+  YuvSpTest yuv_test(4, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgra_u8, true);
 }
