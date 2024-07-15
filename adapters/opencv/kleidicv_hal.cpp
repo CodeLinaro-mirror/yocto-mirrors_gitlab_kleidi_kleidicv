@@ -317,7 +317,13 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
   }
 
   if (kleidicv_border_type !=
-      kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE) {
+          kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE &&
+      kleidicv_border_type !=
+          kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REFLECT &&
+      kleidicv_border_type !=
+          kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_WRAP &&
+      kleidicv_border_type !=
+          kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REVERSE) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 

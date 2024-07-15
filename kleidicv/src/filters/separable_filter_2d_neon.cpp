@@ -123,7 +123,9 @@ kleidicv_error_t separable_filter_2d_u8(
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
-  if (!fixed_border_type || *fixed_border_type != FixedBorderType::REPLICATE) {
+  // if the std::optional is empty, that means that the border type is not
+  // supported, so there's no need to check for specific types
+  if (!fixed_border_type) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -134,8 +136,8 @@ kleidicv_error_t separable_filter_2d_u8(
 
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, src_rows, dst_rows, channels,
-                     FixedBorderType::REPLICATE, filter);
+  workspace->process(rect, src_rows, dst_rows, channels, *fixed_border_type,
+                     filter);
 
   return KLEIDICV_OK;
 }

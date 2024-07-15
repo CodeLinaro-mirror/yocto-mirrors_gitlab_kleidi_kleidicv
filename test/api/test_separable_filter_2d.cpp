@@ -29,6 +29,13 @@ struct SeparableFilter2DKernelTestParams<uint8_t, KernelSize> {
 static constexpr std::array<kleidicv_border_type_t, 1> kDefaultBorder = {
     KLEIDICV_BORDER_TYPE_REPLICATE};
 
+static constexpr std::array<kleidicv_border_type_t, 4> kAllBorders = {
+    KLEIDICV_BORDER_TYPE_REPLICATE,
+    KLEIDICV_BORDER_TYPE_REFLECT,
+    KLEIDICV_BORDER_TYPE_WRAP,
+    KLEIDICV_BORDER_TYPE_REVERSE,
+};
+
 template <typename IterableType>
 std::unique_ptr<test::Generator<typename IterableType::value_type>>
 make_generator_ptr(IterableType &elements) {
@@ -136,7 +143,9 @@ TYPED_TEST(SeparableFilter2D, 5x5) {
   mask.set(4, 0, { 2, 1, 0, 2, 1});
   // clang-format on
   uint8_t kernel[5] = {2, 1, 0, 2, 1};
-  SeparableFilter2DTest<KernelTestParams>{kernel, kernel}.test(mask, 7);
+  SeparableFilter2DTest<KernelTestParams>{kernel, kernel}
+      .with_border_types(make_generator_ptr(kAllBorders))
+      .test(mask, 7);
 }
 
 TYPED_TEST(SeparableFilter2D, NullPointer) {
@@ -323,21 +332,6 @@ TYPED_TEST(SeparableFilter2D, InvalidBorderType) {
       separable_filter_2d<TypeParam>()(
           src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
           1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_CONSTANT, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_WRAP, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_REVERSE, context));
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       separable_filter_2d<TypeParam>()(
