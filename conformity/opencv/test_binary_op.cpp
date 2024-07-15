@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_binary_op.h"
-
 #include <limits>
 #include <type_traits>
 #include <vector>
 
 #include "opencv2/core/hal/interface.h"
+#include "tests.h"
 
 static cv::Mat add(cv::Mat& a, cv::Mat& b) { return a + b; }
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_cvtcolor.h"
+#include "tests.h"
 
 template <int Code>
 static cv::Mat exec_cvtcolor(cv::Mat& input) {

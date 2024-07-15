@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_min_max.h"
-
 #include <limits>
 #include <vector>
+
+#include "tests.h"
 
 template <bool GetIndex>
 cv::Mat exec_min_max(cv::Mat& input) {

@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_exp.h"
-
 #include <limits>
 #include <type_traits>
 #include <vector>
 
 #include "opencv2/core/hal/interface.h"
+#include "tests.h"
 
 static cv::Mat exec_exp(cv::Mat& input_mat) {
   cv::Mat result;

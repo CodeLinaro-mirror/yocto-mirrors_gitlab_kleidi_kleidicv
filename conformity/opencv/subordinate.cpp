@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "common.h"
-#include "tests.h"
+#include "utils.h"
 
 int main(void) {
   OpenedSharedMemory sm{KLEIDICV_CONFORMITY_SHM_ID,

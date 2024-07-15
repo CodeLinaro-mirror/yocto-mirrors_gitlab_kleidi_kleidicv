@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_gaussian_blur.h"
-
 #include <vector>
+
+#include "tests.h"
 
 template <size_t KernelSize, size_t BorderType>
 cv::Mat exec_gaussian_blur(cv::Mat& input) {

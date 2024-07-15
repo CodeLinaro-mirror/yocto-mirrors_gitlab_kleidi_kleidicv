@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_sobel.h"
-
 #include <vector>
+
+#include "tests.h"
 
 template <bool Vertical>
 cv::Mat exec_sobel(cv::Mat& input) {

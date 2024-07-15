@@ -10,17 +10,7 @@
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
-#include "test_binary_op.h"
-#include "test_cvtcolor.h"
-#include "test_exp.h"
-#include "test_float_conv.h"
-#include "test_gaussian_blur.h"
-#include "test_min_max.h"
-#include "test_resize.h"
-#include "test_rgb2yuv.h"
-#include "test_scale.h"
-#include "test_sobel.h"
-#include "test_yuv2rgb.h"
+#include "utils.h"
 
 static std::vector<test> merge_tests(
     std::initializer_list<std::vector<test>& (*)()> test_groups) {

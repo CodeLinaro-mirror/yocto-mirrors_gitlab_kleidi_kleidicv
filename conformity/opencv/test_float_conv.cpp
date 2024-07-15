@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_float_conv.h"
-
 #include <limits>
 #include <vector>
+
+#include "tests.h"
 
 float floatval(uint32_t v) {
   float result;

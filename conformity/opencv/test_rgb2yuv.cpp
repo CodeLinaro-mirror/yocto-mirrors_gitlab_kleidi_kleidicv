@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "test_rgb2yuv.h"
-
 #include <vector>
+
+#include "tests.h"
 
 template <bool SwitchBlue>
 cv::Mat exec_rgb2yuv(cv::Mat& input) {

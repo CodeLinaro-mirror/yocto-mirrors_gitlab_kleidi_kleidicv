@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
-#include "test_resize.h"
 
 #include <limits>
 #include <type_traits>
@@ -9,6 +8,7 @@
 
 #include "opencv2/core/hal/interface.h"
 #include "opencv2/imgproc/hal/interface.h"
+#include "tests.h"
 
 // Factor is interpreted as 1/1000, i.e. 500 for 0.5
 template <int Factor, int Type>

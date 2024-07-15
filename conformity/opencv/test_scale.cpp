@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
-#include "test_scale.h"
 
 #include <limits>
 #include <type_traits>
 #include <vector>
 
 #include "opencv2/core/hal/interface.h"
+#include "tests.h"
 
 template <int Scale, int Shift>
 cv::Mat exec_scale(cv::Mat& input_mat) {

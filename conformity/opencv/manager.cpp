@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "common.h"
-#include "tests.h"
+#include "utils.h"
 
 int main(int argc, char** argv) {
   if (argc < 2) {
