@@ -11,7 +11,7 @@
 #include "framework/generator.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv_thread/kleidicv_thread.h"
-#include "multithreading_std_thread.h"
+#include "multithreading_fake.h"
 
 // Tuple of width, height, thread count.
 typedef std::tuple<unsigned, unsigned, unsigned> P;
@@ -37,7 +37,7 @@ TEST_P(YUVtoRGB, YUVtoRGB) {
   kleidicv_error_t multi_result = kleidicv_thread_yuv_sp_to_rgb_u8(
       src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
       dst_multi.data(), dst_multi.stride(), width, height, false,
-      get_multithreading_std_thread(thread_count));
+      get_multithreading_fake(thread_count));
 
   EXPECT_EQ(KLEIDICV_OK, single_result);
   EXPECT_EQ(KLEIDICV_OK, multi_result);
