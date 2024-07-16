@@ -5,6 +5,8 @@
 #ifndef KLEIDICV_SEPARABLE_FILTER_2D_SC_H
 #define KLEIDICV_SEPARABLE_FILTER_2D_SC_H
 
+#include <limits>
+
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/separable_filter_5x5_sc.h"
 #include "kleidicv/sve2.h"
@@ -18,7 +20,7 @@ template <>
 class SeparableFilter2D<uint8_t, 5> {
  public:
   using SourceType = uint8_t;
-  using BufferType = uint32_t;
+  using BufferType = uint8_t;
   using DestinationType = uint8_t;
 
   explicit SeparableFilter2D(const uint8_t *kernel_x, const uint8_t *kernel_y)
@@ -28,86 +30,86 @@ class SeparableFilter2D<uint8_t, 5> {
                             svuint8_t src_2, svuint8_t src_3, svuint8_t src_4,
                             BufferType *dst) const
       KLEIDICV_STREAMING_COMPATIBLE {
-    // 2
-    svuint16_t vec_0_b = svmovlb_u16(src_0);
-    svuint16_t vec_0_t = svmovlt_u16(src_0);
+    this->vector_path_with_kernel(pg, src_0, src_1, src_2, src_3, src_4, dst,
+                                  kernel_y_);
+  }
 
-    svuint32_t acc_b_b = svmullb_n_u32(vec_0_b, kernel_y_[0]);
-    svuint32_t acc_b_t = svmullb_n_u32(vec_0_t, kernel_y_[0]);
-    svuint32_t acc_t_b = svmullt_n_u32(vec_0_b, kernel_y_[0]);
-    svuint32_t acc_t_t = svmullt_n_u32(vec_0_t, kernel_y_[0]);
+  void horizontal_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
+                              svuint8_t src_2, svuint8_t src_3, svuint8_t src_4,
+                              DestinationType *dst) const
+      KLEIDICV_STREAMING_COMPATIBLE {
+    this->vector_path_with_kernel(pg, src_0, src_1, src_2, src_3, src_4, dst,
+                                  kernel_x_);
+  }
+
+  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
+      const KLEIDICV_STREAMING_COMPATIBLE {
+    uint8_t acc;  // NOLINT
+    if (__builtin_mul_overflow(src[0], kernel_x_[0], &acc)) {
+      dst[0] = std::numeric_limits<SourceType>::max();
+      return;
+    }
+
+    for (size_t i = 1; i < 5; i++) {
+      uint8_t temp;  // NOLINT
+      if (__builtin_mul_overflow(src[i], kernel_x_[i], &temp)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+      if (__builtin_add_overflow(acc, temp, &acc)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+    }
+
+    dst[0] = acc;
+  }
+
+ private:
+  void vector_path_with_kernel(
+      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
+      svuint8_t src_3, svuint8_t src_4, BufferType *dst,
+      const uint8_t *kernel) const KLEIDICV_STREAMING_COMPATIBLE {
+    // 0
+    svuint16_t acc_b = svmovlb_u16(src_0);
+    svuint16_t acc_t = svmovlt_u16(src_0);
+
+    acc_b = svmul_n_u16_x(pg, acc_b, kernel[0]);
+    acc_t = svmul_n_u16_x(pg, acc_t, kernel[0]);
 
     // 1
     svuint16_t vec_1_b = svmovlb_u16(src_1);
     svuint16_t vec_1_t = svmovlt_u16(src_1);
 
-    acc_b_b = svmlalb_n_u32(acc_b_b, vec_1_b, kernel_y_[1]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, vec_1_t, kernel_y_[1]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, vec_1_b, kernel_y_[1]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, vec_1_t, kernel_y_[1]);
+    acc_b = svmla_n_u16_x(pg, acc_b, vec_1_b, kernel[1]);
+    acc_t = svmla_n_u16_x(pg, acc_t, vec_1_t, kernel[1]);
 
     // 2
     svuint16_t vec_2_b = svmovlb_u16(src_2);
     svuint16_t vec_2_t = svmovlt_u16(src_2);
 
-    acc_b_b = svmlalb_n_u32(acc_b_b, vec_2_b, kernel_y_[2]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, vec_2_t, kernel_y_[2]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, vec_2_b, kernel_y_[2]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, vec_2_t, kernel_y_[2]);
+    acc_b = svmla_n_u16_x(pg, acc_b, vec_2_b, kernel[2]);
+    acc_t = svmla_n_u16_x(pg, acc_t, vec_2_t, kernel[2]);
 
     // 3
     svuint16_t vec_3_b = svmovlb_u16(src_3);
     svuint16_t vec_3_t = svmovlt_u16(src_3);
 
-    acc_b_b = svmlalb_n_u32(acc_b_b, vec_3_b, kernel_y_[3]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, vec_3_t, kernel_y_[3]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, vec_3_b, kernel_y_[3]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, vec_3_t, kernel_y_[3]);
+    acc_b = svmla_n_u16_x(pg, acc_b, vec_3_b, kernel[3]);
+    acc_t = svmla_n_u16_x(pg, acc_t, vec_3_t, kernel[3]);
 
     // 4
     svuint16_t vec_4_b = svmovlb_u16(src_4);
     svuint16_t vec_4_t = svmovlt_u16(src_4);
 
-    acc_b_b = svmlalb_n_u32(acc_b_b, vec_4_b, kernel_y_[4]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, vec_4_t, kernel_y_[4]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, vec_4_b, kernel_y_[4]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, vec_4_t, kernel_y_[4]);
+    acc_b = svmla_n_u16_x(pg, acc_b, vec_4_b, kernel[4]);
+    acc_t = svmla_n_u16_x(pg, acc_t, vec_4_t, kernel[4]);
 
-    svuint32x4_t interleaved = svcreate4(acc_b_b, acc_b_t, acc_t_b, acc_t_t);
-    svst4(pg, &dst[0], interleaved);
+    svuint8_t result_b = svqxtnb_u16(acc_b);
+    svuint8_t result = svqxtnt_u16(result_b, acc_t);
+    svst1_u8(pg, &dst[0], result);
   }
 
-  void horizontal_vector_path(svbool_t pg, svuint32_t src_0, svuint32_t src_1,
-                              svuint32_t src_2, svuint32_t src_3,
-                              svuint32_t src_4, DestinationType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    // 0
-    svuint32_t acc = svmul_n_u32_x(pg, src_0, kernel_x_[0]);
-
-    // 1
-    acc = svmla_n_u32_x(pg, acc, src_1, kernel_x_[1]);
-
-    // 2
-    acc = svmla_n_u32_x(pg, acc, src_2, kernel_x_[2]);
-
-    // 3
-    acc = svmla_n_u32_x(pg, acc, src_3, kernel_x_[3]);
-
-    // 4
-    acc = svmla_n_u32_x(pg, acc, src_4, kernel_x_[4]);
-
-    svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * kernel_x_[0] + src[1] * kernel_x_[1] +
-                   src[2] * kernel_x_[2] + src[3] * kernel_x_[3] +
-                   src[4] * kernel_x_[4];
-    dst[0] = static_cast<uint8_t>(acc);
-  }
-
- private:
   const uint8_t *kernel_x_;
   const uint8_t *kernel_y_;
 };  // end of class SeparableFilter2D<uint8_t, 5>

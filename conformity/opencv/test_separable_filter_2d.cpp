@@ -63,20 +63,15 @@ bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& separable_filter_2d_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 1 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 1>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 2 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 2>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 3 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 3>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 4 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 4>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
-//
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 1 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 1>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 2 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 2>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 3 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 3>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 4 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 4>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
-//
-//    TEST("Separable Filter 2D 5x5, BORDER_WRAP, 1 channel", (test_separable_filter_2d<5, cv::BORDER_WRAP, 1>), (exec_separable_filter_2d<5, cv::BORDER_WRAP>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_WRAP, 2 channel", (test_separable_filter_2d<5, cv::BORDER_WRAP, 2>), (exec_separable_filter_2d<5, cv::BORDER_WRAP>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_WRAP, 3 channel", (test_separable_filter_2d<5, cv::BORDER_WRAP, 3>), (exec_separable_filter_2d<5, cv::BORDER_WRAP>)),
-//    TEST("Separable Filter 2D 5x5, BORDER_WRAP, 4 channel", (test_separable_filter_2d<5, cv::BORDER_WRAP, 4>), (exec_separable_filter_2d<5, cv::BORDER_WRAP>)),
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 1 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 1>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 2 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 2>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 3 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 3>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT_101, 4 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT_101, 4>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT_101>)),
+
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 1 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 1>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 2 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 2>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 3 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 3>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
+    TEST("Separable Filter 2D 5x5, BORDER_REFLECT, 4 channel", (test_separable_filter_2d<5, cv::BORDER_REFLECT, 4>), (exec_separable_filter_2d<5, cv::BORDER_REFLECT>)),
 
     TEST("Separable Filter 2D 5x5, BORDER_REPLICATE, 1 channel", (test_separable_filter_2d<5, cv::BORDER_REPLICATE, 1>), (exec_separable_filter_2d<5, cv::BORDER_REPLICATE>)),
     TEST("Separable Filter 2D 5x5, BORDER_REPLICATE, 2 channel", (test_separable_filter_2d<5, cv::BORDER_REPLICATE, 2>), (exec_separable_filter_2d<5, cv::BORDER_REPLICATE>)),

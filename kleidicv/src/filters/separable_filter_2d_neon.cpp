@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <limits>
+
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/kleidicv.h"
@@ -17,20 +19,37 @@ template <>
 class SeparableFilter2D<uint8_t, 5> {
  public:
   using SourceType = uint8_t;
-  using BufferType = uint32_t;
+  using BufferType = uint8_t;
   using DestinationType = uint8_t;
 
   explicit SeparableFilter2D(const uint8_t *kernel_x, const uint8_t *kernel_y)
       : kernel_x_(kernel_x), kernel_y_(kernel_y) {}
 
   void vertical_vector_path(uint8x16_t src[5], BufferType *dst) const {
-    uint16x8_t initial_l = vmovl_u8(vget_low_u8(src[0]));
-    uint16x8_t initial_h = vmovl_u8(vget_high_u8(src[0]));
+    this->vector_path_with_kernel(src, dst, kernel_y_);
+  }
 
-    uint32x4_t acc_l_l = vmull_n_u16(vget_low_u16(initial_l), kernel_y_[0]);
-    uint32x4_t acc_l_h = vmull_n_u16(vget_high_u16(initial_l), kernel_y_[0]);
-    uint32x4_t acc_h_l = vmull_n_u16(vget_low_u16(initial_h), kernel_y_[0]);
-    uint32x4_t acc_h_h = vmull_n_u16(vget_high_u16(initial_h), kernel_y_[0]);
+  void vertical_scalar_path(const SourceType src[5], BufferType *dst) const {
+    this->scalar_path_with_kernel(src, dst, kernel_y_);
+  }
+
+  void horizontal_vector_path(uint8x16_t src[5], DestinationType *dst) const {
+    this->vector_path_with_kernel(src, dst, kernel_x_);
+  }
+
+  void horizontal_scalar_path(const BufferType src[5],
+                              DestinationType *dst) const {
+    this->scalar_path_with_kernel(src, dst, kernel_x_);
+  }
+
+ private:
+  void vector_path_with_kernel(uint8x16_t src[5], uint8_t *dst,
+                               const uint8_t *kernel) const {
+    uint16x8_t acc_l = vmovl_u8(vget_low_u8(src[0]));
+    uint16x8_t acc_h = vmovl_u8(vget_high_u8(src[0]));
+
+    acc_l = vmulq_n_u16(acc_l, kernel[0]);
+    acc_h = vmulq_n_u16(acc_h, kernel[0]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
@@ -38,51 +57,39 @@ class SeparableFilter2D<uint8_t, 5> {
       uint16x8_t vec_l = vmovl_u8(vget_low_u8(src[i]));
       uint16x8_t vec_h = vmovl_u8(vget_high_u8(src[i]));
 
-      acc_l_l = vmlal_n_u16(acc_l_l, vget_low_u16(vec_l), kernel_y_[i]);
-      acc_l_h = vmlal_n_u16(acc_l_h, vget_high_u16(vec_l), kernel_y_[i]);
-      acc_h_l = vmlal_n_u16(acc_h_l, vget_low_u16(vec_h), kernel_y_[i]);
-      acc_h_h = vmlal_n_u16(acc_h_h, vget_high_u16(vec_h), kernel_y_[i]);
+      acc_l = vmlaq_n_u16(acc_l, vec_l, kernel[i]);
+      acc_h = vmlaq_n_u16(acc_h, vec_h, kernel[i]);
     }
 
-    uint32x4x4_t result = {acc_l_l, acc_l_h, acc_h_l, acc_h_h};
+    uint8x8_t result_l = vqmovn_u16(acc_l);
+    uint8x16_t result = vqmovn_high_u16(result_l, acc_h);
 
-    vst1q_u32_x4(&dst[0], result);
+    vst1q_u8(&dst[0], result);
   }
 
-  void vertical_scalar_path(const SourceType src[5], BufferType *dst) const {
-    uint32_t acc = static_cast<uint32_t>(src[0]) * kernel_y_[0] +
-                   static_cast<uint32_t>(src[1]) * kernel_y_[1] +
-                   static_cast<uint32_t>(src[2]) * kernel_y_[2] +
-                   static_cast<uint32_t>(src[3]) * kernel_y_[3] +
-                   static_cast<uint32_t>(src[4]) * kernel_y_[4];
+  void scalar_path_with_kernel(const uint8_t src[5], uint8_t *dst,
+                               const uint8_t *kernel) const {
+    uint8_t acc;  // NOLINT
+    if (__builtin_mul_overflow(src[0], kernel[0], &acc)) {
+      dst[0] = std::numeric_limits<SourceType>::max();
+      return;
+    }
+
+    for (size_t i = 1; i < 5; i++) {
+      uint8_t temp;  // NOLINT
+      if (__builtin_mul_overflow(src[i], kernel[i], &temp)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+      if (__builtin_add_overflow(acc, temp, &acc)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+    }
 
     dst[0] = acc;
   }
 
-  void horizontal_vector_path(uint32x4_t src[5], DestinationType *dst) const {
-    uint32x4_t acc = vmulq_n_u32(src[0], kernel_x_[0]);
-    acc = vmlaq_n_u32(acc, src[1], kernel_x_[1]);
-    acc = vmlaq_n_u32(acc, src[2], kernel_x_[2]);
-    acc = vmlaq_n_u32(acc, src[3], kernel_x_[3]);
-    acc = vmlaq_n_u32(acc, src[4], kernel_x_[4]);
-
-    uint16x4_t narrowed = vmovn_u32(acc);
-    uint8x8_t interleaved =
-        vuzp1_u8(vreinterpret_u8_u16(narrowed), vreinterpret_u8_u16(narrowed));
-    uint32_t result = vget_lane_u32(vreinterpret_u32_u8(interleaved), 0);
-    memcpy(&dst[0], &result, sizeof(result));
-  }
-
-  void horizontal_scalar_path(const BufferType src[5],
-                              DestinationType *dst) const {
-    uint32_t acc = src[0] * kernel_x_[0] + src[1] * kernel_x_[1] +
-                   src[2] * kernel_x_[2] + src[3] * kernel_x_[3] +
-                   src[4] * kernel_x_[4];
-
-    dst[0] = static_cast<uint8_t>(acc);
-  }
-
- private:
   const uint8_t *kernel_x_;
   const uint8_t *kernel_y_;
 };
