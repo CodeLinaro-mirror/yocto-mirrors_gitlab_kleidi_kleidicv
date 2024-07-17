@@ -16,9 +16,9 @@
 // Tuple of width, height, thread count.
 typedef std::tuple<unsigned, unsigned, unsigned> P;
 
-class YUVtoRGB : public testing::TestWithParam<P> {};
+class Thread : public testing::TestWithParam<P> {};
 
-TEST_P(YUVtoRGB, YUVtoRGB) {
+TEST_P(Thread, T) {
   unsigned width = 0, height = 0, thread_count = 0;
   std::tie(width, height, thread_count) = GetParam();
   test::Array2D<uint8_t> src_y(width, height),
@@ -44,7 +44,7 @@ TEST_P(YUVtoRGB, YUVtoRGB) {
   EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
 }
 
-INSTANTIATE_TEST_SUITE_P(YUVtoRGB, YUVtoRGB,
+INSTANTIATE_TEST_SUITE_P(YuvSp, Thread,
                          testing::Values(P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2},
                                          P{2, 1, 2}, P{2, 2, 1}, P{1, 3, 2},
                                          P{2, 3, 1}, P{6, 4, 1}, P{4, 5, 2},
