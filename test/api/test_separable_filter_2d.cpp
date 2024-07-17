@@ -148,6 +148,51 @@ TYPED_TEST(SeparableFilter2D, 5x5) {
       .test(mask, 7);
 }
 
+TYPED_TEST(SeparableFilter2D, 5x5Overflow) {
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 5, 5));
+  test::Array2D<TypeParam> src{5, 5, test::Options::vector_length()};
+  // clang-format off
+  src.set(0, 0, { 1, 2, 3, 4, 5});
+  src.set(1, 0, { 2, 3, 4, 5, 6});
+  src.set(2, 0, { 3, 4, 5, 6, 7});
+  src.set(3, 0, { 4, 5, 6, 7, 8});
+  src.set(4, 0, { 5, 6, 7, 8, 9});
+  // clang-format on
+
+  test::Array2D<TypeParam> kernel_x{5, 1};
+  kernel_x.set(0, 0, {9, 9, 9, 9, 9});
+  test::Array2D<TypeParam> kernel_y{5, 1};
+  kernel_y.set(0, 0, {5, 6, 7, 8, 9});
+
+  test::Array2D<TypeParam> dst{5, 5, test::Options::vector_length()};
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             5, 5, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+
+  test::Array2D<TypeParam> dst_expected{5, 5, test::Options::vector_length()};
+  // clang-format off
+  dst_expected.set(0, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(1, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(2, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(3, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(4, 0, { 255, 255, 255, 255, 255});
+  // clang-format on
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+
+  kernel_x.set(0, 0, {0, 1, 2, 3, 4});
+  kernel_y.set(0, 0, {9, 9, 9, 9, 9});
+
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             5, 5, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
+
 TYPED_TEST(SeparableFilter2D, NullPointer) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
   kleidicv_filter_context_t *context = nullptr;
