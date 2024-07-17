@@ -10,9 +10,9 @@
 #include "kleidicv/utils.h"
 #include "test_config.h"
 
-class RGB2YUVTest final {
+class RgbToYuvTest final {
  public:
-  RGB2YUVTest(size_t channels, bool switch_blue)
+  RgbToYuvTest(size_t channels, bool switch_blue)
       : src_channels_(channels), switch_blue_(switch_blue) {}
 
   template <typename F>
@@ -111,42 +111,42 @@ class RGB2YUVTest final {
   bool switch_blue_;
 };
 
-TEST(RGBToYUV, RGB_YUV_scalar) {
-  RGB2YUVTest rgb2yuv_test(3, false);
+TEST(RgbToYuv, RgbYuvScalar) {
+  RgbToYuvTest rgb2yuv_test(3, false);
   rgb2yuv_test.execute_scalar_test(kleidicv_rgb_to_yuv_u8);
 }
 
-TEST(RGBToYUV, RGB_YUV_vector) {
-  RGB2YUVTest rgb2yuv_test(3, false);
+TEST(RgbToYuv, RgbYuvVector) {
+  RgbToYuvTest rgb2yuv_test(3, false);
   rgb2yuv_test.execute_vector_test(kleidicv_rgb_to_yuv_u8);
 }
 
-TEST(RGBToYUV, RGBA_YUV_scalar) {
-  RGB2YUVTest rgb2yuv_test(4, false);
+TEST(RgbToYuv, RgbaYuvScalar) {
+  RgbToYuvTest rgb2yuv_test(4, false);
   rgb2yuv_test.execute_scalar_test(kleidicv_rgba_to_yuv_u8);
 }
 
-TEST(RGBToYUV, RGBA_YUV_vector) {
-  RGB2YUVTest rgb2yuv_test(4, false);
+TEST(RgbToYuv, RgbaYuvVector) {
+  RgbToYuvTest rgb2yuv_test(4, false);
   rgb2yuv_test.execute_vector_test(kleidicv_rgba_to_yuv_u8);
 }
 
-TEST(RGBToYUV, BGR_YUV_scalar) {
-  RGB2YUVTest rgb2yuv_test(3, true);
+TEST(RgbToYuv, BgrYuvScalar) {
+  RgbToYuvTest rgb2yuv_test(3, true);
   rgb2yuv_test.execute_scalar_test(kleidicv_bgr_to_yuv_u8);
 }
 
-TEST(RGBToYUV, BGR_YUV_vector) {
-  RGB2YUVTest rgb2yuv_test(3, true);
+TEST(RgbToYuv, BgrYuvVector) {
+  RgbToYuvTest rgb2yuv_test(3, true);
   rgb2yuv_test.execute_vector_test(kleidicv_bgr_to_yuv_u8);
 }
 
-TEST(RGBToYUV, BGRA_YUV_scalar) {
-  RGB2YUVTest rgb2yuv_test(4, true);
+TEST(RgbToYuv, BgraYuvScalar) {
+  RgbToYuvTest rgb2yuv_test(4, true);
   rgb2yuv_test.execute_scalar_test(kleidicv_bgra_to_yuv_u8);
 }
 
-TEST(RGBToYUV, BGRA_YUV_vector) {
-  RGB2YUVTest rgb2yuv_test(4, true);
+TEST(RgbToYuv, BgraYuvVector) {
+  RgbToYuvTest rgb2yuv_test(4, true);
   rgb2yuv_test.execute_vector_test(kleidicv_bgra_to_yuv_u8);
 }

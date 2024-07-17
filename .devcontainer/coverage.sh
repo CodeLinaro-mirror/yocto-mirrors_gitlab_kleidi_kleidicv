@@ -15,11 +15,11 @@ EXTRA_CMAKE_ARGS="-DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_LI
 # Clean any coverage results from previous runs
 find build/kleidicv-coverage/ -type f -name *.gcda -delete
 
-LONG_VECTOR_TESTS="GRAY2.*:RGB*"
+LONG_VECTOR_TESTS="GRAY2.*:RGB*:Yuv*:Rgb*"
 
 qemu-aarch64 build/kleidicv-coverage/test/framework/kleidicv-framework-test
 qemu-aarch64 -cpu cortex-a35 build/kleidicv-coverage/test/api/kleidicv-api-test
-qemu-aarch64 -cpu max,sve128=on,sme=off build/kleidicv-coverage/test/api/kleidicv-api-test --vector-length=16 
+qemu-aarch64 -cpu max,sve128=on,sme=off build/kleidicv-coverage/test/api/kleidicv-api-test --vector-length=16
 qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
   build/kleidicv-coverage/test/api/kleidicv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --vector-length=256
 qemu-aarch64 -cpu max,sve128=on,sme512=on build/kleidicv-coverage/test/api/kleidicv-api-test --vector-length=64

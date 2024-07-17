@@ -10,9 +10,9 @@
 #include "kleidicv/utils.h"
 #include "test_config.h"
 
-class YUV2RGBTest final {
+class YuvToRgbTest final {
  public:
-  explicit YUV2RGBTest(bool switch_blue) : switch_blue_(switch_blue) {}
+  explicit YuvToRgbTest(bool switch_blue) : switch_blue_(switch_blue) {}
 
   template <typename F>
   void execute_scalar_test(F impl) {
@@ -106,22 +106,22 @@ class YUV2RGBTest final {
   }
 };
 
-TEST(YUV2RGB, YUV_RGB_scalar) {
-  YUV2RGBTest yuv2rgb_test(false);
+TEST(YuvToRgb, YuvRgbScalar) {
+  YuvToRgbTest yuv2rgb_test(false);
   yuv2rgb_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8);
 }
 
-TEST(YUV2RGB, YUV_RGB_vector) {
-  YUV2RGBTest yuv2rgb_test(false);
+TEST(YuvToRgb, YuvRgbVector) {
+  YuvToRgbTest yuv2rgb_test(false);
   yuv2rgb_test.execute_vector_test(kleidicv_yuv_to_rgb_u8);
 }
 
-TEST(YUV2RGB, YUV_BGR_scalar) {
-  YUV2RGBTest yuv2rgb_test(true);
+TEST(YuvToRgb, YuvBgrScalar) {
+  YuvToRgbTest yuv2rgb_test(true);
   yuv2rgb_test.execute_scalar_test(kleidicv_yuv_to_bgr_u8);
 }
 
-TEST(YUV2RGB, YUV_BGR_vector) {
-  YUV2RGBTest yuv2rgb_test(true);
+TEST(YuvToRgb, YuvBgrVector) {
+  YuvToRgbTest yuv2rgb_test(true);
   yuv2rgb_test.execute_vector_test(kleidicv_yuv_to_bgr_u8);
 }

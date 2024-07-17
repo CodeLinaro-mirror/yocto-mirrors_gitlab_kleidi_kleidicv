@@ -18,7 +18,7 @@ typedef std::tuple<unsigned, unsigned, unsigned> P;
 
 class Thread : public testing::TestWithParam<P> {};
 
-TEST_P(Thread, T) {
+TEST_P(Thread, _) {
   unsigned width = 0, height = 0, thread_count = 0;
   std::tie(width, height, thread_count) = GetParam();
   test::Array2D<uint8_t> src_y(width, height),

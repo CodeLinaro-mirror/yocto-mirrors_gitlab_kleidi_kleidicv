@@ -141,82 +141,82 @@ class YuvSpTest final {
   bool switch_blue_;
 };
 
-TEST(YUVSP, RGB_NV12_scalar) {
+TEST(YuvSp, RgbNv12Scalar) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgb_u8, false);
 }
 
-TEST(YUVSP, RGB_NV12_vector) {
+TEST(YuvSp, RgbNv12Vector) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgb_u8, false);
 }
 
-TEST(YUVSP, RGB_NV21_scalar) {
+TEST(YuvSp, RgbNv21Scalar) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgb_u8, true);
 }
 
-TEST(YUVSP, RGB_NV21_vector) {
+TEST(YuvSp, RgbNv21Vector) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgb_u8, true);
 }
 
-TEST(YUVSP, BGR_NV12_scalar) {
+TEST(YuvSp, BgrNv12Scalar) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgr_u8, false);
 }
 
-TEST(YUVSP, BGR_NV12_vector) {
+TEST(YuvSp, BgrNv12Vector) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgr_u8, false);
 }
 
-TEST(YUVSP, BGR_NV21_scalar) {
+TEST(YuvSp, BgrNv21Scalar) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgr_u8, true);
 }
 
-TEST(YUVSP, BGR_NV21_vector) {
+TEST(YuvSp, BgrNv21Vector) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgr_u8, true);
 }
 
-TEST(YUVSP, RGBA_NV12_scalar) {
+TEST(YuvSp, RgbaNv12Scalar) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgba_u8, false);
 }
 
-TEST(YUVSP, RGBA_NV12_vector) {
+TEST(YuvSp, RgbaNv12Vector) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgba_u8, false);
 }
 
-TEST(YUVSP, RGBA_NV21_scalar) {
+TEST(YuvSp, RgbaNv21Scalar) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_rgba_u8, true);
 }
 
-TEST(YUVSP, RGBA_NV21_vector) {
+TEST(YuvSp, RgbaNv21Vector) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_rgba_u8, true);
 }
 
-TEST(YUVSP, BGRA_NV12_scalar) {
+TEST(YuvSp, BgraNv12Scalar) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgra_u8, false);
 }
 
-TEST(YUVSP, BGRA_NV12_vector) {
+TEST(YuvSp, BgraNv12Vector) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgra_u8, false);
 }
 
-TEST(YUVSP, BGRA_NV21_scalar) {
+TEST(YuvSp, BgraNv21Scalar) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_sp_to_bgra_u8, true);
 }
 
-TEST(YUVSP, BGRA_NV21_vector) {
+TEST(YuvSp, BgraNv21Vector) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_vector_test(kleidicv_yuv_sp_to_bgra_u8, true);
 }
