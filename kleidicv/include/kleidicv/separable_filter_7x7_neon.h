@@ -6,7 +6,7 @@
 #define KLEIDICV_SEPARABLE_FILTER_7X7_NEON_H
 
 #include "kleidicv/neon.h"
-#include "kleidicv/workspace/border_7x7.h"
+#include "kleidicv/workspace/border.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -26,7 +26,7 @@ class SeparableFilter<FilterType, 7UL> {
   using BufferVecTraits = typename neon::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo7x7<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo<SourceType, 7UL>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -42,25 +42,25 @@ class SeparableFilter<FilterType, 7UL> {
 
     loop.unroll_once([&](size_t index) {
       SourceVectorType src[7];
-      src[0] = vld1q(&src_rows.at(border_offsets.c0())[index]);
-      src[1] = vld1q(&src_rows.at(border_offsets.c1())[index]);
-      src[2] = vld1q(&src_rows.at(border_offsets.c2())[index]);
-      src[3] = vld1q(&src_rows.at(border_offsets.c3())[index]);
-      src[4] = vld1q(&src_rows.at(border_offsets.c4())[index]);
-      src[5] = vld1q(&src_rows.at(border_offsets.c5())[index]);
-      src[6] = vld1q(&src_rows.at(border_offsets.c6())[index]);
+      src[0] = vld1q(&src_rows.at(border_offsets.c(0))[index]);
+      src[1] = vld1q(&src_rows.at(border_offsets.c(1))[index]);
+      src[2] = vld1q(&src_rows.at(border_offsets.c(2))[index]);
+      src[3] = vld1q(&src_rows.at(border_offsets.c(3))[index]);
+      src[4] = vld1q(&src_rows.at(border_offsets.c(4))[index]);
+      src[5] = vld1q(&src_rows.at(border_offsets.c(5))[index]);
+      src[6] = vld1q(&src_rows.at(border_offsets.c(6))[index]);
       filter_.vertical_vector_path(src, &dst_rows[index]);
     });
 
     loop.tail([&](size_t index) {
       SourceType src[7];
-      src[0] = src_rows.at(border_offsets.c0())[index];
-      src[1] = src_rows.at(border_offsets.c1())[index];
-      src[2] = src_rows.at(border_offsets.c2())[index];
-      src[3] = src_rows.at(border_offsets.c3())[index];
-      src[4] = src_rows.at(border_offsets.c4())[index];
-      src[5] = src_rows.at(border_offsets.c5())[index];
-      src[6] = src_rows.at(border_offsets.c6())[index];
+      src[0] = src_rows.at(border_offsets.c(0))[index];
+      src[1] = src_rows.at(border_offsets.c(1))[index];
+      src[2] = src_rows.at(border_offsets.c(2))[index];
+      src[3] = src_rows.at(border_offsets.c(3))[index];
+      src[4] = src_rows.at(border_offsets.c(4))[index];
+      src[5] = src_rows.at(border_offsets.c(5))[index];
+      src[6] = src_rows.at(border_offsets.c(6))[index];
       filter_.vertical_scalar_path(src, &dst_rows[index]);
     });
   }
@@ -72,13 +72,13 @@ class SeparableFilter<FilterType, 7UL> {
                                          BufferVecTraits::num_lanes()};
 
     loop.unroll_twice([&](size_t index) {
-      auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
-      auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
-      auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
-      auto src_3 = &src_rows.at(0, border_offsets.c3())[index];
-      auto src_4 = &src_rows.at(0, border_offsets.c4())[index];
-      auto src_5 = &src_rows.at(0, border_offsets.c5())[index];
-      auto src_6 = &src_rows.at(0, border_offsets.c6())[index];
+      auto src_0 = &src_rows.at(0, border_offsets.c(0))[index];
+      auto src_1 = &src_rows.at(0, border_offsets.c(1))[index];
+      auto src_2 = &src_rows.at(0, border_offsets.c(2))[index];
+      auto src_3 = &src_rows.at(0, border_offsets.c(3))[index];
+      auto src_4 = &src_rows.at(0, border_offsets.c(4))[index];
+      auto src_5 = &src_rows.at(0, border_offsets.c(5))[index];
+      auto src_6 = &src_rows.at(0, border_offsets.c(6))[index];
 
       BufferVectorType src_a[7], src_b[7];
       src_a[0] = vld1q(&src_0[0]);
@@ -103,13 +103,13 @@ class SeparableFilter<FilterType, 7UL> {
 
     loop.unroll_once([&](size_t index) {
       BufferVectorType src[7];
-      src[0] = vld1q(&src_rows.at(0, border_offsets.c0())[index]);
-      src[1] = vld1q(&src_rows.at(0, border_offsets.c1())[index]);
-      src[2] = vld1q(&src_rows.at(0, border_offsets.c2())[index]);
-      src[3] = vld1q(&src_rows.at(0, border_offsets.c3())[index]);
-      src[4] = vld1q(&src_rows.at(0, border_offsets.c4())[index]);
-      src[5] = vld1q(&src_rows.at(0, border_offsets.c5())[index]);
-      src[6] = vld1q(&src_rows.at(0, border_offsets.c6())[index]);
+      src[0] = vld1q(&src_rows.at(0, border_offsets.c(0))[index]);
+      src[1] = vld1q(&src_rows.at(0, border_offsets.c(1))[index]);
+      src[2] = vld1q(&src_rows.at(0, border_offsets.c(2))[index]);
+      src[3] = vld1q(&src_rows.at(0, border_offsets.c(3))[index]);
+      src[4] = vld1q(&src_rows.at(0, border_offsets.c(4))[index]);
+      src[5] = vld1q(&src_rows.at(0, border_offsets.c(5))[index]);
+      src[6] = vld1q(&src_rows.at(0, border_offsets.c(6))[index]);
       filter_.horizontal_vector_path(src, &dst_rows[index]);
     });
 
@@ -133,13 +133,13 @@ class SeparableFilter<FilterType, 7UL> {
                                  BorderOffsets border_offsets,
                                  size_t index) const {
     BufferType src[7];
-    src[0] = src_rows.at(0, border_offsets.c0())[index];
-    src[1] = src_rows.at(0, border_offsets.c1())[index];
-    src[2] = src_rows.at(0, border_offsets.c2())[index];
-    src[3] = src_rows.at(0, border_offsets.c3())[index];
-    src[4] = src_rows.at(0, border_offsets.c4())[index];
-    src[5] = src_rows.at(0, border_offsets.c5())[index];
-    src[6] = src_rows.at(0, border_offsets.c6())[index];
+    src[0] = src_rows.at(0, border_offsets.c(0))[index];
+    src[1] = src_rows.at(0, border_offsets.c(1))[index];
+    src[2] = src_rows.at(0, border_offsets.c(2))[index];
+    src[3] = src_rows.at(0, border_offsets.c(3))[index];
+    src[4] = src_rows.at(0, border_offsets.c(4))[index];
+    src[5] = src_rows.at(0, border_offsets.c(5))[index];
+    src[6] = src_rows.at(0, border_offsets.c(6))[index];
     filter_.horizontal_scalar_path(src, &dst_rows[index]);
   }
 

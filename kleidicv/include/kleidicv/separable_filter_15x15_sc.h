@@ -6,7 +6,7 @@
 #define KLEIDICV_SEPARABLE_FILTER_15X15_SC_H
 
 #include "kleidicv/sve2.h"
-#include "kleidicv/workspace/border_15x15.h"
+#include "kleidicv/workspace/border.h"
 
 // It is used by SVE2 and SME2, the actual namespace will reflect it.
 namespace KLEIDICV_TARGET_NAMESPACE {
@@ -29,7 +29,7 @@ class SeparableFilter<FilterType, 15UL> {
       typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo15x15<SourceType>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo<SourceType, 15UL>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -95,35 +95,35 @@ class SeparableFilter<FilterType, 15UL> {
                             BorderOffsets border_offsets,
                             size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     SourceVectorType src_0 =
-        svld1(pg, &src_rows.at(border_offsets.c0())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(0))[index]);
     SourceVectorType src_1 =
-        svld1(pg, &src_rows.at(border_offsets.c1())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(1))[index]);
     SourceVectorType src_2 =
-        svld1(pg, &src_rows.at(border_offsets.c2())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(2))[index]);
     SourceVectorType src_3 =
-        svld1(pg, &src_rows.at(border_offsets.c3())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(3))[index]);
     SourceVectorType src_4 =
-        svld1(pg, &src_rows.at(border_offsets.c4())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(4))[index]);
     SourceVectorType src_5 =
-        svld1(pg, &src_rows.at(border_offsets.c5())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(5))[index]);
     SourceVectorType src_6 =
-        svld1(pg, &src_rows.at(border_offsets.c6())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(6))[index]);
     SourceVectorType src_7 =
-        svld1(pg, &src_rows.at(border_offsets.c7())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(7))[index]);
     SourceVectorType src_8 =
-        svld1(pg, &src_rows.at(border_offsets.c8())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(8))[index]);
     SourceVectorType src_9 =
-        svld1(pg, &src_rows.at(border_offsets.c9())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(9))[index]);
     SourceVectorType src_10 =
-        svld1(pg, &src_rows.at(border_offsets.c10())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(10))[index]);
     SourceVectorType src_11 =
-        svld1(pg, &src_rows.at(border_offsets.c11())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(11))[index]);
     SourceVectorType src_12 =
-        svld1(pg, &src_rows.at(border_offsets.c12())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(12))[index]);
     SourceVectorType src_13 =
-        svld1(pg, &src_rows.at(border_offsets.c13())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(13))[index]);
     SourceVectorType src_14 =
-        svld1(pg, &src_rows.at(border_offsets.c14())[index]);
+        svld1(pg, &src_rows.at(border_offsets.c(14))[index]);
     filter_.vertical_vector_path(pg, src_0, src_1, src_2, src_3, src_4, src_5,
                                  src_6, src_7, src_8, src_9, src_10, src_11,
                                  src_12, src_13, src_14, &dst_rows[index]);
@@ -133,21 +133,21 @@ class SeparableFilter<FilterType, 15UL> {
       svbool_t pg, Rows<const BufferType> src_rows,
       Rows<DestinationType> dst_rows, BorderOffsets border_offsets,
       size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
-    auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
-    auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
-    auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
-    auto src_3 = &src_rows.at(0, border_offsets.c3())[index];
-    auto src_4 = &src_rows.at(0, border_offsets.c4())[index];
-    auto src_5 = &src_rows.at(0, border_offsets.c5())[index];
-    auto src_6 = &src_rows.at(0, border_offsets.c6())[index];
-    auto src_7 = &src_rows.at(0, border_offsets.c7())[index];
-    auto src_8 = &src_rows.at(0, border_offsets.c8())[index];
-    auto src_9 = &src_rows.at(0, border_offsets.c9())[index];
-    auto src_10 = &src_rows.at(0, border_offsets.c10())[index];
-    auto src_11 = &src_rows.at(0, border_offsets.c11())[index];
-    auto src_12 = &src_rows.at(0, border_offsets.c12())[index];
-    auto src_13 = &src_rows.at(0, border_offsets.c13())[index];
-    auto src_14 = &src_rows.at(0, border_offsets.c14())[index];
+    auto src_0 = &src_rows.at(0, border_offsets.c(0))[index];
+    auto src_1 = &src_rows.at(0, border_offsets.c(1))[index];
+    auto src_2 = &src_rows.at(0, border_offsets.c(2))[index];
+    auto src_3 = &src_rows.at(0, border_offsets.c(3))[index];
+    auto src_4 = &src_rows.at(0, border_offsets.c(4))[index];
+    auto src_5 = &src_rows.at(0, border_offsets.c(5))[index];
+    auto src_6 = &src_rows.at(0, border_offsets.c(6))[index];
+    auto src_7 = &src_rows.at(0, border_offsets.c(7))[index];
+    auto src_8 = &src_rows.at(0, border_offsets.c(8))[index];
+    auto src_9 = &src_rows.at(0, border_offsets.c(9))[index];
+    auto src_10 = &src_rows.at(0, border_offsets.c(10))[index];
+    auto src_11 = &src_rows.at(0, border_offsets.c(11))[index];
+    auto src_12 = &src_rows.at(0, border_offsets.c(12))[index];
+    auto src_13 = &src_rows.at(0, border_offsets.c(13))[index];
+    auto src_14 = &src_rows.at(0, border_offsets.c(14))[index];
 
     BufferVectorType src_0_0 = svld1(pg, &src_0[0]);
     BufferVectorType src_1_0 = svld1_vnum(pg, &src_0[0], 1);
@@ -195,35 +195,35 @@ class SeparableFilter<FilterType, 15UL> {
                               BorderOffsets border_offsets, size_t index) const
       KLEIDICV_STREAMING_COMPATIBLE {
     BufferVectorType src_0 =
-        svld1(pg, &src_rows.at(0, border_offsets.c0())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(0))[index]);
     BufferVectorType src_1 =
-        svld1(pg, &src_rows.at(0, border_offsets.c1())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(1))[index]);
     BufferVectorType src_2 =
-        svld1(pg, &src_rows.at(0, border_offsets.c2())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(2))[index]);
     BufferVectorType src_3 =
-        svld1(pg, &src_rows.at(0, border_offsets.c3())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(3))[index]);
     BufferVectorType src_4 =
-        svld1(pg, &src_rows.at(0, border_offsets.c4())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(4))[index]);
     BufferVectorType src_5 =
-        svld1(pg, &src_rows.at(0, border_offsets.c5())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(5))[index]);
     BufferVectorType src_6 =
-        svld1(pg, &src_rows.at(0, border_offsets.c6())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(6))[index]);
     BufferVectorType src_7 =
-        svld1(pg, &src_rows.at(0, border_offsets.c7())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(7))[index]);
     BufferVectorType src_8 =
-        svld1(pg, &src_rows.at(0, border_offsets.c8())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(8))[index]);
     BufferVectorType src_9 =
-        svld1(pg, &src_rows.at(0, border_offsets.c9())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(9))[index]);
     BufferVectorType src_10 =
-        svld1(pg, &src_rows.at(0, border_offsets.c10())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(10))[index]);
     BufferVectorType src_11 =
-        svld1(pg, &src_rows.at(0, border_offsets.c11())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(11))[index]);
     BufferVectorType src_12 =
-        svld1(pg, &src_rows.at(0, border_offsets.c12())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(12))[index]);
     BufferVectorType src_13 =
-        svld1(pg, &src_rows.at(0, border_offsets.c13())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(13))[index]);
     BufferVectorType src_14 =
-        svld1(pg, &src_rows.at(0, border_offsets.c14())[index]);
+        svld1(pg, &src_rows.at(0, border_offsets.c(14))[index]);
     filter_.horizontal_vector_path(pg, src_0, src_1, src_2, src_3, src_4, src_5,
                                    src_6, src_7, src_8, src_9, src_10, src_11,
                                    src_12, src_13, src_14, &dst_rows[index]);
@@ -234,21 +234,21 @@ class SeparableFilter<FilterType, 15UL> {
       BorderOffsets border_offsets,
       size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     BufferType src[15];
-    src[0] = src_rows.at(0, border_offsets.c0())[index];
-    src[1] = src_rows.at(0, border_offsets.c1())[index];
-    src[2] = src_rows.at(0, border_offsets.c2())[index];
-    src[3] = src_rows.at(0, border_offsets.c3())[index];
-    src[4] = src_rows.at(0, border_offsets.c4())[index];
-    src[5] = src_rows.at(0, border_offsets.c5())[index];
-    src[6] = src_rows.at(0, border_offsets.c6())[index];
-    src[7] = src_rows.at(0, border_offsets.c7())[index];
-    src[8] = src_rows.at(0, border_offsets.c8())[index];
-    src[9] = src_rows.at(0, border_offsets.c9())[index];
-    src[10] = src_rows.at(0, border_offsets.c10())[index];
-    src[11] = src_rows.at(0, border_offsets.c11())[index];
-    src[12] = src_rows.at(0, border_offsets.c12())[index];
-    src[13] = src_rows.at(0, border_offsets.c13())[index];
-    src[14] = src_rows.at(0, border_offsets.c14())[index];
+    src[0] = src_rows.at(0, border_offsets.c(0))[index];
+    src[1] = src_rows.at(0, border_offsets.c(1))[index];
+    src[2] = src_rows.at(0, border_offsets.c(2))[index];
+    src[3] = src_rows.at(0, border_offsets.c(3))[index];
+    src[4] = src_rows.at(0, border_offsets.c(4))[index];
+    src[5] = src_rows.at(0, border_offsets.c(5))[index];
+    src[6] = src_rows.at(0, border_offsets.c(6))[index];
+    src[7] = src_rows.at(0, border_offsets.c(7))[index];
+    src[8] = src_rows.at(0, border_offsets.c(8))[index];
+    src[9] = src_rows.at(0, border_offsets.c(9))[index];
+    src[10] = src_rows.at(0, border_offsets.c(10))[index];
+    src[11] = src_rows.at(0, border_offsets.c(11))[index];
+    src[12] = src_rows.at(0, border_offsets.c(12))[index];
+    src[13] = src_rows.at(0, border_offsets.c(13))[index];
+    src[14] = src_rows.at(0, border_offsets.c(14))[index];
     filter_.horizontal_scalar_path(src, &dst_rows[index]);
   }
 

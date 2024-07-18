@@ -168,7 +168,7 @@ class SeparableFilterWorkspace final {
     for (size_t horizontal_index = 0; horizontal_index < margin;
          ++horizontal_index) {
       auto offsets =
-          horizontal_border.offsets_with_left_border(horizontal_index);
+          horizontal_border.offsets_with_top_or_left_border(horizontal_index);
       filter.process_horizontal_borders(buffer_rows.at(0, horizontal_index),
                                         dst_rows.at(0, horizontal_index),
                                         offsets);
@@ -188,7 +188,8 @@ class SeparableFilterWorkspace final {
     for (size_t horizontal_index = 0; horizontal_index < margin;
          ++horizontal_index) {
       size_t index = width - margin + horizontal_index;
-      auto offsets = horizontal_border.offsets_with_right_border(index);
+      auto offsets =
+          horizontal_border.offsets_with_bottom_or_right_border(index);
       filter.process_horizontal_borders(buffer_rows.at(0, index),
                                         dst_rows.at(0, index), offsets);
     }
