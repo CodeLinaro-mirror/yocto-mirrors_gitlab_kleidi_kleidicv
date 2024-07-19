@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_SVE2_H
-#define KLEIDICV_SVE2_H
+#ifndef KLEIDICV_SC_H
+#define KLEIDICV_SC_H
 
 #include <arm_sve.h>
 
@@ -511,4 +511,4 @@ static inline void swap_scalable(T &a, T &b) KLEIDICV_STREAMING_COMPATIBLE {
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // KLEIDICV_SVE2_H
+#endif  // KLEIDICV_SC_H

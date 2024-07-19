@@ -6,7 +6,7 @@
 #define KLEIDICV_THRESHOLD_SC_H
 
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sve2.h"
+#include "kleidicv/sc.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

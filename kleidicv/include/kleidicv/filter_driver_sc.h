@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_SEPARABLE_FILTER_DRIVER_SC_H
-#define KLEIDICV_SEPARABLE_FILTER_DRIVER_SC_H
+#ifndef KLEIDICV_FILTER_DRIVER_SC_H
+#define KLEIDICV_FILTER_DRIVER_SC_H
 
 #include "kleidicv/config.h"
-#include "kleidicv/sve2.h"
+#include "kleidicv/sc.h"
 #include "kleidicv/workspace/border.h"
 
 // It is used by SVE2 and SME2, the actual namespace will reflect it.
@@ -147,4 +147,4 @@ class SeparableFilterDriver {
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // KLEIDICV_SEPARABLE_FILTER_DRIVER_SC_H
+#endif  // KLEIDICV_FILTER_DRIVER_SC_H

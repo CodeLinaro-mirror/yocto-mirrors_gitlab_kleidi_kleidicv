@@ -5,10 +5,10 @@
 #ifndef KLEIDICV_SOBEL_SC_H
 #define KLEIDICV_SOBEL_SC_H
 
+#include "kleidicv/filter_driver_sc.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/separable_filter_driver_sc.h"
-#include "kleidicv/sve2.h"
+#include "kleidicv/sc.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

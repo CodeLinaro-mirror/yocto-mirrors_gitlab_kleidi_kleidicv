@@ -7,9 +7,9 @@
 
 #include <limits>
 
+#include "kleidicv/filter_driver_sc.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/separable_filter_driver_sc.h"
-#include "kleidicv/sve2.h"
+#include "kleidicv/sc.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

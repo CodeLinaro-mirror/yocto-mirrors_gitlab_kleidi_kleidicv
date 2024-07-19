@@ -10,7 +10,7 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/morphology/workspace.h"
-#include "kleidicv/sve2.h"
+#include "kleidicv/sc.h"
 #include "kleidicv/types.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {

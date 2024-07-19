@@ -5,10 +5,10 @@
 #include <array>
 
 #include "kleidicv/ctypes.h"
+#include "kleidicv/filter_driver_neon.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/separable_filter_driver_neon.h"
 #include "kleidicv/sigma.h"
 
 namespace kleidicv::neon {

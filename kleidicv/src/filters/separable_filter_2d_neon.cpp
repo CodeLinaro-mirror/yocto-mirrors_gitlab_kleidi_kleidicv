@@ -5,10 +5,10 @@
 #include <limits>
 
 #include "kleidicv/ctypes.h"
+#include "kleidicv/filter_driver_neon.h"
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/separable_filter_driver_neon.h"
 
 namespace kleidicv::neon {
 
