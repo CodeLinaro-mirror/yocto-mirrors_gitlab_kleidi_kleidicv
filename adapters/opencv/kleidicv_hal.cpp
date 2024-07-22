@@ -830,14 +830,15 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
 template <typename T, typename FunctionType>
 kleidicv_error_t call_min_max(FunctionType min_max_func, const uchar *src_data,
                               size_t src_stride, int width, int height,
-                              double *min_value, double *max_value) {
+                              double *min_value, double *max_value,
+                              kleidicv_thread_multithreading mt) {
   T tmp_min_value, tmp_max_value;
   T *p_min_value = min_value ? &tmp_min_value : nullptr;
   T *p_max_value = max_value ? &tmp_max_value : nullptr;
   kleidicv_error_t err =
       min_max_func(reinterpret_cast<const T *>(src_data), src_stride,
                    static_cast<size_t>(width), static_cast<size_t>(height),
-                   p_min_value, p_max_value);
+                   p_min_value, p_max_value, mt);
   if (min_value) {
     *min_value = static_cast<double>(tmp_min_value);
   }
@@ -896,29 +897,29 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
 
   switch (depth) {
     case CV_8S:
-      return convert_error(call_min_max<int8_t>(kleidicv_min_max_s8, src_data,
-                                                src_step, width, height, minVal,
-                                                maxVal));
+      return convert_error(call_min_max<int8_t>(
+          kleidicv_thread_min_max_s8, src_data, src_step, width, height, minVal,
+          maxVal, get_multithreading()));
     case CV_8U:
-      return convert_error(call_min_max<uint8_t>(kleidicv_min_max_u8, src_data,
-                                                 src_step, width, height,
-                                                 minVal, maxVal));
+      return convert_error(call_min_max<uint8_t>(
+          kleidicv_thread_min_max_u8, src_data, src_step, width, height, minVal,
+          maxVal, get_multithreading()));
     case CV_16S:
-      return convert_error(call_min_max<int16_t>(kleidicv_min_max_s16, src_data,
-                                                 src_step, width, height,
-                                                 minVal, maxVal));
+      return convert_error(call_min_max<int16_t>(
+          kleidicv_thread_min_max_s16, src_data, src_step, width, height,
+          minVal, maxVal, get_multithreading()));
     case CV_16U:
-      return convert_error(call_min_max<uint16_t>(kleidicv_min_max_u16,
-                                                  src_data, src_step, width,
-                                                  height, minVal, maxVal));
+      return convert_error(call_min_max<uint16_t>(
+          kleidicv_thread_min_max_u16, src_data, src_step, width, height,
+          minVal, maxVal, get_multithreading()));
     case CV_32S:
-      return convert_error(call_min_max<int32_t>(kleidicv_min_max_s32, src_data,
-                                                 src_step, width, height,
-                                                 minVal, maxVal));
+      return convert_error(call_min_max<int32_t>(
+          kleidicv_thread_min_max_s32, src_data, src_step, width, height,
+          minVal, maxVal, get_multithreading()));
     case CV_32F:
-      return convert_error(call_min_max<float>(kleidicv_min_max_f32, src_data,
-                                               src_step, width, height, minVal,
-                                               maxVal));
+      return convert_error(call_min_max<float>(
+          kleidicv_thread_min_max_f32, src_data, src_step, width, height,
+          minVal, maxVal, get_multithreading()));
     default:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }

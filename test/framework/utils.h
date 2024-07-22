@@ -21,7 +21,7 @@
   template <typename ElementType,                                             \
             std::enable_if_t<std::is_same_v<ElementType, type>, bool> = true> \
   static decltype(auto) name() {                                              \
-    return impl;                                                              \
+    return (impl);                                                            \
   }
 
 #define KLEIDICV_API_DIFFERENT_IO_TYPES(name, impl, itype, otype)             \

@@ -5,6 +5,8 @@
 #include "kleidicv_thread/kleidicv_thread.h"
 
 #include <algorithm>
+#include <limits>
+#include <vector>
 
 #include "kleidicv/kleidicv.h"
 
@@ -46,3 +48,87 @@ kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8(
   return mt.parallel(kleidicv_thread_yuv_sp_to_rgb_u8_callback, &callback_data,
                      mt.parallel_data, (height + 1) / 2);
 }
+
+template <typename ScalarType, typename FunctionType>
+struct parallel_min_max_data {
+  FunctionType min_max_func;
+  const ScalarType *src;
+  size_t src_stride;
+  size_t width;
+  ScalarType *p_min_value;
+  ScalarType *p_max_value;
+};
+
+template <typename ScalarType, typename FunctionType>
+static kleidicv_error_t kleidicv_thread_min_max_callback(unsigned task_begin,
+                                                         unsigned task_end,
+                                                         void *void_data) {
+  auto *data =
+      reinterpret_cast<parallel_min_max_data<ScalarType, FunctionType> *>(
+          void_data);
+
+  return data->min_max_func(
+      data->src + task_begin * (data->src_stride / sizeof(ScalarType)),
+      data->src_stride, data->width, task_end - task_begin,
+      data->p_min_value ? data->p_min_value + task_begin : nullptr,
+      data->p_max_value ? data->p_max_value + task_begin : nullptr);
+}
+
+template <typename ScalarType, typename FunctionType>
+kleidicv_error_t parallel_min_max(FunctionType min_max_func,
+                                  const ScalarType *src, size_t src_stride,
+                                  size_t width, size_t height,
+                                  ScalarType *p_min_value,
+                                  ScalarType *p_max_value,
+                                  kleidicv_thread_multithreading mt) {
+  std::vector<ScalarType> min_values(height,
+                                     std::numeric_limits<ScalarType>::max());
+  std::vector<ScalarType> max_values(height,
+                                     std::numeric_limits<ScalarType>::min());
+
+  parallel_min_max_data<ScalarType, FunctionType> callback_data = {
+      min_max_func,
+      src,
+      src_stride,
+      width,
+      p_min_value ? min_values.data() : nullptr,
+      p_max_value ? max_values.data() : nullptr};
+
+  auto return_val =
+      mt.parallel(kleidicv_thread_min_max_callback<ScalarType, FunctionType>,
+                  &callback_data, mt.parallel_data, height);
+
+  if (p_min_value) {
+    *p_min_value = std::numeric_limits<ScalarType>::max();
+    for (ScalarType m : min_values) {
+      if (m < *p_min_value) {
+        *p_min_value = m;
+      }
+    }
+  }
+  if (p_max_value) {
+    *p_max_value = std::numeric_limits<ScalarType>::min();
+    for (ScalarType m : max_values) {
+      if (m > *p_max_value) {
+        *p_max_value = m;
+      }
+    }
+  }
+  return return_val;
+}
+
+#define DEFINE_KLEIDICV_THREAD_MIN_MAX(suffix, type)                           \
+  kleidicv_error_t kleidicv_thread_min_max_##suffix(                           \
+      const type *src, size_t src_stride, size_t width, size_t height,         \
+      type *p_min_value, type *p_max_value,                                    \
+      kleidicv_thread_multithreading mt) {                                     \
+    return parallel_min_max(kleidicv_min_max_##suffix, src, src_stride, width, \
+                            height, p_min_value, p_max_value, mt);             \
+  }
+
+DEFINE_KLEIDICV_THREAD_MIN_MAX(u8, uint8_t);
+DEFINE_KLEIDICV_THREAD_MIN_MAX(s8, int8_t);
+DEFINE_KLEIDICV_THREAD_MIN_MAX(u16, uint16_t);
+DEFINE_KLEIDICV_THREAD_MIN_MAX(s16, int16_t);
+DEFINE_KLEIDICV_THREAD_MIN_MAX(s32, int32_t);
+DEFINE_KLEIDICV_THREAD_MIN_MAX(f32, float);
