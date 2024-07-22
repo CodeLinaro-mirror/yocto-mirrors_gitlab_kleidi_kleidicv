@@ -38,6 +38,8 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL BinaryThreshold opencv_perf_imgproc '*ThreshFixture_Threshold.Threshold/*' '(3840x2160, 8UC1, THRESH_BINARY)')")
 
+RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL SepFilter2D_5x5 opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '(3840x2160, 8UC1, 5, BORDER_REPLICATE)')")
+
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur3x3 opencv_perf_imgproc '*gaussianBlur3x3/*' '(3840x2160, 8UC1, BORDER_REPLICATE)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur5x5 opencv_perf_imgproc '*gaussianBlur5x5/*' '(3840x2160, 8UC1, BORDER_REPLICATE)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL GaussianBlur7x7 opencv_perf_imgproc '*gaussianBlur7x7/*' '(3840x2160, 8UC1, BORDER_REPLICATE)')")
