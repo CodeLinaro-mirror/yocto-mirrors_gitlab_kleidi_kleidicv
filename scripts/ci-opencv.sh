@@ -66,6 +66,7 @@ CORE_TEST_PATTERNS=(
   '*Core_MinMaxIdx*'
   '*Core_minMaxIdx*'
   '*Core_Array*'
+  '*Compare*'
 )
 CORE_TEST_PATTERNS_STR="$(join_strings_with_colon "${CORE_TEST_PATTERNS[*]}")"
 ../../../conformity/opencv_kleidicv/bin/opencv_test_core \
