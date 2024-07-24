@@ -2,6 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+diff --git a/modules/core/perf/perf_compare.cpp b/modules/core/perf/perf_compare.cpp
+index be706e1a83..862b8b7c35 100644
+--- a/modules/core/perf/perf_compare.cpp
++++ b/modules/core/perf/perf_compare.cpp
+@@ -11,7 +11,7 @@ typedef perf::TestBaseWithParam<Size_MatType_CmpType_t> Size_MatType_CmpType;
+ 
+ PERF_TEST_P( Size_MatType_CmpType, compare,
+              testing::Combine(
+-                 testing::Values(::perf::szVGA, ::perf::sz1080p),
++                 testing::Values(::perf::szVGA, ::perf::sz1080p, ::perf::sz2160p),
+                  testing::Values(CV_8UC1, CV_8UC4, CV_8SC1, CV_16UC1, CV_16SC1, CV_32SC1, CV_32FC1),
+                  CmpType::all()
+                  )
 diff --git a/modules/core/perf/perf_convertTo.cpp b/modules/core/perf/perf_convertTo.cpp
 index 344d81cb8a..ef5a3aa7d2 100644
 --- a/modules/core/perf/perf_convertTo.cpp
