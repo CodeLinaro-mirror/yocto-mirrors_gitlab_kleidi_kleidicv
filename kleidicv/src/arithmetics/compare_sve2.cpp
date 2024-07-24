@@ -7,19 +7,19 @@
 namespace kleidicv::sve2 {
 
 template <typename ScalarType>
-KLEIDICV_LOCALLY_STREAMING kleidicv_error_t
-compare_equal(const ScalarType *src_a, size_t src_a_stride,
-              const ScalarType *src_b, size_t src_b_stride, ScalarType *dst,
-              size_t dst_stride, size_t width, size_t height) {
+kleidicv_error_t compare_equal(const ScalarType *src_a, size_t src_a_stride,
+                               const ScalarType *src_b, size_t src_b_stride,
+                               ScalarType *dst, size_t dst_stride, size_t width,
+                               size_t height) {
   return compare_sc<ComparatorEqual<ScalarType>>(
       src_a, src_a_stride, src_b, src_b_stride, dst, dst_stride, width, height);
 }
 
 template <typename ScalarType>
-KLEIDICV_LOCALLY_STREAMING kleidicv_error_t
-compare_greater(const ScalarType *src_a, size_t src_a_stride,
-                const ScalarType *src_b, size_t src_b_stride, ScalarType *dst,
-                size_t dst_stride, size_t width, size_t height) {
+kleidicv_error_t compare_greater(const ScalarType *src_a, size_t src_a_stride,
+                                 const ScalarType *src_b, size_t src_b_stride,
+                                 ScalarType *dst, size_t dst_stride,
+                                 size_t width, size_t height) {
   return compare_sc<ComparatorGreater<ScalarType>>(
       src_a, src_a_stride, src_b, src_b_stride, dst, dst_stride, width, height);
 }
