@@ -82,10 +82,11 @@ class CompareTestLinear final {
     test::Array2D<ElementType> actual =
         test::Array2D<ElementType>(width, height, padding_, 1);
 
-    GenerateLinearSeries generator(min());
+    GenerateLinearSeries generator_a(min());
+    GenerateLinearSeries generator_b(128);
 
-    source_a.fill(generator);
-    source_b.fill(255);
+    source_a.fill(generator_a);
+    source_b.fill(generator_b);
     expected.fill(0);
 
     calculate_expected(source_a, source_b, expected);
