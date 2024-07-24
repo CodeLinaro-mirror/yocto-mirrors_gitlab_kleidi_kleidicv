@@ -16,12 +16,19 @@ class ComparatorEqual : public UnrollTwice {
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using SignedScalarType = typename std::make_signed<ScalarType>::type;
+  using SignedVecTraits =
+      KLEIDICV_TARGET_NAMESPACE::VecTraits<SignedScalarType>;
+  using SignedVectorType = typename SignedVecTraits::VectorType;
 
   // NOLINTBEGIN(readability-make-member-function-const)
   VectorType vector_path(ContextType ctx, VectorType src_a,
                          VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
-    svbool_t predicate = svcmpeq(ctx.predicate(), src_a, src_b);
-    return svsel(predicate, VecTraits::svdup(255), VecTraits::svdup(0));
+    svbool_t pg = ctx.predicate();
+    VectorType result1 = sveor_x(pg, src_a, src_b);
+    VectorType result2 = svcnot_x(pg, result1);
+    svint8_t result3 = svqneg_x(pg, VecTraits::svreinterpret(result2));
+    return SignedVecTraits::svreinterpret(result3);
   }
   // NOLINTEND(readability-make-member-function-const)
 };  // end of class ComparatorEqual
@@ -32,12 +39,19 @@ class ComparatorGreater : public UnrollTwice {
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using SignedScalarType = typename std::make_signed<ScalarType>::type;
+  using SignedVecTraits =
+      KLEIDICV_TARGET_NAMESPACE::VecTraits<SignedScalarType>;
+  using SignedVectorType = typename SignedVecTraits::VectorType;
 
   // NOLINTBEGIN(readability-make-member-function-const)
   VectorType vector_path(ContextType ctx, VectorType src_a,
                          VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
-    svbool_t predicate = svcmpgt(ctx.predicate(), src_a, src_b);
-    return svsel(predicate, VecTraits::svdup(255), VecTraits::svdup(0));
+    svbool_t pg = ctx.predicate();
+    VectorType diff = VecTraits::svhsub(pg, src_b, src_a);
+    svint8_t shift_right =
+        SignedVecTraits::svasr_n(pg, VecTraits::svreinterpret(diff), 7);
+    return SignedVecTraits::svreinterpret(shift_right);
   }
   // NOLINTEND(readability-make-member-function-const)
 };  // end of class ComparatorGreater
