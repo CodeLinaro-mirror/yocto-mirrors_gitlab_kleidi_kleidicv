@@ -20,7 +20,7 @@ struct SeparableFilter2DKernelTestParams;
 template <size_t KernelSize>
 struct SeparableFilter2DKernelTestParams<uint8_t, KernelSize> {
   using InputType = uint8_t;
-  using IntermediateType = uint64_t;
+  using IntermediateType = uint8_t;
   using OutputType = uint8_t;
 
   static constexpr size_t kKernelSize = KernelSize;
@@ -133,19 +133,19 @@ TYPED_TEST_SUITE(SeparableFilter2D, ElementTypes);
 // Tests kleidicv_separable_filter_2d_<input_type> API.
 TYPED_TEST(SeparableFilter2D, 5x5) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  // 5x5 SeparableFilter2D operator.
+
+  const uint8_t kernel_x[5] = {5, 0, 1, 2, 2};
+  const uint8_t kernel_y[5] = {1, 4, 3, 1, 0};
+
+  // Mask is created by 'kernel_y (outer product) kernel_x'
   test::Array2D<typename KernelTestParams::IntermediateType> mask{5, 5};
-  // clang-format off
-  mask.set(0, 0, { 4, 2, 0, 4, 2});
-  mask.set(1, 0, { 2, 1, 0, 2, 1});
-  mask.set(2, 0, { 0, 0, 0, 0, 0});
-  mask.set(3, 0, { 4, 2, 0, 4, 2});
-  mask.set(4, 0, { 2, 1, 0, 2, 1});
-  // clang-format on
-  uint8_t kernel[5] = {2, 1, 0, 2, 1};
-  SeparableFilter2DTest<KernelTestParams>{kernel, kernel}
+  mask.fill([&](size_t row, size_t column) {
+    return kernel_y[row] * kernel_x[column];
+  });
+
+  SeparableFilter2DTest<KernelTestParams>{kernel_x, kernel_y}
       .with_border_types(make_generator_ptr(kAllBorders))
-      .test(mask, 7);
+      .test(mask, 5);
 }
 
 TYPED_TEST(SeparableFilter2D, 5x5Overflow) {

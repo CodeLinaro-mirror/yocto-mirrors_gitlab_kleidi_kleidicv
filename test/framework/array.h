@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -114,6 +115,26 @@ class Array2D : public TwoDimensional<ElementType> {
     for (size_t row = 0; row < height(); ++row) {
       for (size_t column = 0; column < width(); ++column) {
         std::optional<ElementType> optional_value = generator.next();
+        ASSERT_NE(optional_value, std::nullopt);
+        if (optional_value.has_value()) {
+          ptr[column] = optional_value.value();
+        }
+      }
+
+      ptr = add_stride(ptr, 1);
+    }
+  }
+
+  // Fills the underlying memory range with the output of a caller provided
+  // callable object skipping padding bytes.
+  void fill(
+      std::function<std::optional<ElementType>(size_t, size_t)> value_at) {
+    ASSERT_EQ(valid(), true);
+
+    ElementType *ptr = data();
+    for (size_t row = 0; row < height(); ++row) {
+      for (size_t column = 0; column < width(); ++column) {
+        std::optional<ElementType> optional_value = value_at(row, column);
         ASSERT_NE(optional_value, std::nullopt);
         if (optional_value.has_value()) {
           ptr[column] = optional_value.value();

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <tuple>
 #include <type_traits>
 
@@ -170,6 +171,39 @@ void test_null_args(Function f, Args... args) {
   constexpr int LastArgIndex = std::tuple_size_v<Tuple> - 1;
   using Tester = internal::NullPointerTester<Function, Tuple>;
   Tester::template test<LastArgIndex>(f, Tuple(args...));
+}
+
+template <typename T>
+T saturating_add(T a, T b) {
+  T result;
+  if (__builtin_add_overflow(a, b, &result)) {
+    if constexpr (std::is_unsigned_v<T>) {
+      result = std::numeric_limits<T>::max();
+    } else {
+      result =
+          b < 0 ? std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
+    }
+  }
+
+  return result;
+}
+
+template <typename T>
+T saturating_mul(T a, T b) {
+  T result;
+  if (__builtin_mul_overflow(a, b, &result)) {
+    if constexpr (std::is_unsigned_v<T>) {
+      result = std::numeric_limits<T>::max();
+    } else {
+      if ((a < 0 && b < 0) || (a > 0 && b > 0)) {
+        result = std::numeric_limits<T>::max();
+      } else {
+        result = std::numeric_limits<T>::min();
+      }
+    }
+  }
+
+  return result;
 }
 
 }  // namespace test

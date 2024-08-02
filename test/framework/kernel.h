@@ -15,6 +15,7 @@
 #include "framework/border.h"
 #include "framework/generator.h"
 #include "framework/types.h"
+#include "framework/utils.h"
 #include "kleidicv/kleidicv.h"
 
 namespace test {
@@ -186,7 +187,9 @@ class KernelTest {
         IntermediateType coefficient = kernel.at(height, width)[0];
         InputType value =
             source.at(row + height, column + width * source.channels())[0];
-        result += coefficient * static_cast<IntermediateType>(value);
+        result = saturating_add(
+            result,
+            saturating_mul(coefficient, static_cast<IntermediateType>(value)));
       }
     }
 
