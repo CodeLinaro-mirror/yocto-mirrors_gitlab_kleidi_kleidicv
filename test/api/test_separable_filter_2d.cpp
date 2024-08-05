@@ -162,7 +162,7 @@ TYPED_TEST(SeparableFilter2D, 5x5Overflow) {
   // clang-format on
 
   test::Array2D<TypeParam> kernel_x{5, 1};
-  kernel_x.set(0, 0, {9, 9, 9, 9, 9});
+  kernel_x.set(0, 0, {1, 2, 3, 4, 5});
   test::Array2D<TypeParam> kernel_y{5, 1};
   kernel_y.set(0, 0, {5, 6, 7, 8, 9});
 
@@ -171,6 +171,14 @@ TYPED_TEST(SeparableFilter2D, 5x5Overflow) {
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              5, 5, 1, kernel_x.data(), 5, kernel_y.data(), 5,
                              KLEIDICV_BORDER_TYPE_REPLICATE, context));
+
+  // clang-format off
+  src.set(0, 0, { 255, 255, 255, 255, 255});
+  src.set(1, 0, { 255, 255, 255, 255, 255});
+  src.set(2, 0, { 255, 255, 255, 255, 255});
+  src.set(3, 0, { 255, 255, 255, 255, 255});
+  src.set(4, 0, { 255, 255, 255, 255, 255});
+  // clang-format on
 
   test::Array2D<TypeParam> dst_expected{5, 5, test::Options::vector_length()};
   // clang-format off
@@ -182,8 +190,8 @@ TYPED_TEST(SeparableFilter2D, 5x5Overflow) {
   // clang-format on
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 
-  kernel_x.set(0, 0, {0, 1, 2, 3, 4});
-  kernel_y.set(0, 0, {9, 9, 9, 9, 9});
+  kernel_x.set(0, 0, {255, 255, 255, 255, 255});
+  kernel_y.set(0, 0, {255, 255, 255, 255, 255});
 
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),

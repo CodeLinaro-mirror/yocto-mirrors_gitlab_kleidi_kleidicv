@@ -19,65 +19,76 @@ template <>
 class SeparableFilter2D<uint8_t, 5> {
  public:
   using SourceType = uint8_t;
-  using BufferType = uint8_t;
+  using SourceVectorType = typename VecTraits<SourceType>::VectorType;
+  using BufferType = uint16_t;
+  using BufferVectorType = typename VecTraits<BufferType>::VectorType;
   using DestinationType = uint8_t;
+  using DestinationVectorType = typename VecTraits<DestinationType>::VectorType;
 
-  explicit SeparableFilter2D(const uint8_t *kernel_x, const uint8_t *kernel_y)
-      : kernel_x_(kernel_x), kernel_y_(kernel_y) {}
-
-  void vertical_vector_path(uint8x16_t src[5], BufferType *dst) const {
-    this->vector_path_with_kernel(src, dst, kernel_y_);
+  // NOLINTNEXTLINE - hicpp-member-init
+  SeparableFilter2D(const SourceType *kernel_x, const SourceType *kernel_y)
+      : kernel_x_(kernel_x), kernel_y_(kernel_y) {
+    for (size_t i = 0; i < 5; i++) {
+      kernel_x_u16_[i] = vdupq_n_u16(kernel_x[i]);
+      kernel_y_u8_[i] = vdupq_n_u8(kernel_y[i]);
+    }
   }
 
-  void vertical_scalar_path(const SourceType src[5], BufferType *dst) const {
-    this->scalar_path_with_kernel(src, dst, kernel_y_);
-  }
-
-  void horizontal_vector_path(uint8x16_t src[5], DestinationType *dst) const {
-    this->vector_path_with_kernel(src, dst, kernel_x_);
-  }
-
-  void horizontal_scalar_path(const BufferType src[5],
-                              DestinationType *dst) const {
-    this->scalar_path_with_kernel(src, dst, kernel_x_);
-  }
-
- private:
-  void vector_path_with_kernel(uint8x16_t src[5], uint8_t *dst,
-                               const uint8_t *kernel) const {
-    uint16x8_t acc_l = vmovl_u8(vget_low_u8(src[0]));
-    uint16x8_t acc_h = vmovl_u8(vget_high_u8(src[0]));
-
-    acc_l = vmulq_n_u16(acc_l, kernel[0]);
-    acc_h = vmulq_n_u16(acc_h, kernel[0]);
+  void vertical_vector_path(SourceVectorType src[5], BufferType *dst) const {
+    SourceVectorType acc_l =
+        vmull_u8(vget_low_u8(src[0]), vget_low_u8(kernel_y_u8_[0]));
+    SourceVectorType acc_h = vmull_high_u8(src[0], kernel_y_u8_[0]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i < 5; i++) {
-      uint16x8_t vec_l = vmovl_u8(vget_low_u8(src[i]));
-      uint16x8_t vec_h = vmovl_u8(vget_high_u8(src[i]));
-
-      acc_l = vmlaq_n_u16(acc_l, vec_l, kernel[i]);
-      acc_h = vmlaq_n_u16(acc_h, vec_h, kernel[i]);
+      acc_l =
+          vmlal_u8(acc_l, vget_low_u8(src[i]), vget_low_u8(kernel_y_u8_[i]));
+      acc_h = vmlal_high_u8(acc_h, src[i], kernel_y_u8_[i]);
     }
 
-    uint8x8_t result_l = vqmovn_u16(acc_l);
-    uint8x16_t result = vqmovn_high_u16(result_l, acc_h);
-
-    vst1q_u8(&dst[0], result);
+    vst1q_u16(&dst[0], acc_l);
+    vst1q_u16(&dst[8], acc_h);
   }
 
-  void scalar_path_with_kernel(const uint8_t src[5], uint8_t *dst,
-                               const uint8_t *kernel) const {
-    uint8_t acc;  // NOLINT
-    if (__builtin_mul_overflow(src[0], kernel[0], &acc)) {
+  void vertical_scalar_path(const SourceType src[5], BufferType *dst) const {
+    BufferType acc = static_cast<BufferType>(src[0]) * kernel_y_[0];
+    for (size_t i = 1; i < 5; i++) {
+      BufferType temp = static_cast<BufferType>(src[i]) * kernel_y_[i];
+      if (__builtin_add_overflow(acc, temp, &acc)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+    }
+
+    dst[0] = acc;
+  }
+
+  void horizontal_vector_path(BufferVectorType src[5],
+                              DestinationType *dst) const {
+    BufferVectorType acc = vmulq_u16(src[0], kernel_x_u16_[0]);
+
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 1; i < 5; i++) {
+      acc = vmlaq_u16(acc, src[i], kernel_x_u16_[i]);
+    }
+
+    uint8x8_t result = vqmovn_u16(acc);
+    vst1_u8(&dst[0], result);
+  }
+
+  void horizontal_scalar_path(const BufferType src[5],
+                              DestinationType *dst) const {
+    SourceType acc;  // NOLINT
+    if (__builtin_mul_overflow(src[0], kernel_x_[0], &acc)) {
       dst[0] = std::numeric_limits<SourceType>::max();
       return;
     }
 
     for (size_t i = 1; i < 5; i++) {
-      uint8_t temp;  // NOLINT
-      if (__builtin_mul_overflow(src[i], kernel[i], &temp)) {
+      SourceType temp;  // NOLINT
+      if (__builtin_mul_overflow(src[i], kernel_x_[i], &temp)) {
         dst[0] = std::numeric_limits<SourceType>::max();
         return;
       }
@@ -90,8 +101,12 @@ class SeparableFilter2D<uint8_t, 5> {
     dst[0] = acc;
   }
 
-  const uint8_t *kernel_x_;
-  const uint8_t *kernel_y_;
+ private:
+  const SourceType *kernel_x_;
+  const SourceType *kernel_y_;
+
+  BufferVectorType kernel_x_u16_[5];
+  SourceVectorType kernel_y_u8_[5];
 };
 
 KLEIDICV_TARGET_FN_ATTRS
