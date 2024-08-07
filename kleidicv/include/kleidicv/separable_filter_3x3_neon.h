@@ -6,7 +6,7 @@
 #define KLEIDICV_SEPARABLE_FILTER_3X3_NEON_H
 
 #include "kleidicv/neon.h"
-#include "kleidicv/workspace/border.h"
+#include "kleidicv/workspace/border_3x3.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -26,7 +26,7 @@ class SeparableFilter<FilterType, 3UL> {
   using BufferVecTraits = typename neon::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderInfoType =
-      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo<SourceType, 3UL>;
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo3x3<SourceType>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
@@ -41,9 +41,9 @@ class SeparableFilter<FilterType, 3UL> {
                                          SourceVecTraits::num_lanes()};
 
     loop.unroll_twice([&](size_t index) {
-      auto src_0 = &src_rows.at(border_offsets.c(0))[index];
-      auto src_1 = &src_rows.at(border_offsets.c(1))[index];
-      auto src_2 = &src_rows.at(border_offsets.c(2))[index];
+      auto src_0 = &src_rows.at(border_offsets.c0())[index];
+      auto src_1 = &src_rows.at(border_offsets.c1())[index];
+      auto src_2 = &src_rows.at(border_offsets.c2())[index];
 
       auto src_0_x2 = vld1q_x2(&src_0[0]);
       auto src_1_x2 = vld1q_x2(&src_1[0]);
@@ -64,17 +64,17 @@ class SeparableFilter<FilterType, 3UL> {
 
     loop.unroll_once([&](size_t index) {
       SourceVectorType src[3];
-      src[0] = vld1q(&src_rows.at(border_offsets.c(0))[index]);
-      src[1] = vld1q(&src_rows.at(border_offsets.c(1))[index]);
-      src[2] = vld1q(&src_rows.at(border_offsets.c(2))[index]);
+      src[0] = vld1q(&src_rows.at(border_offsets.c0())[index]);
+      src[1] = vld1q(&src_rows.at(border_offsets.c1())[index]);
+      src[2] = vld1q(&src_rows.at(border_offsets.c2())[index]);
       filter_.vertical_vector_path(src, &dst_rows[index]);
     });
 
     loop.tail([&](size_t index) {
       SourceType src[3];
-      src[0] = src_rows.at(border_offsets.c(0))[index];
-      src[1] = src_rows.at(border_offsets.c(1))[index];
-      src[2] = src_rows.at(border_offsets.c(2))[index];
+      src[0] = src_rows.at(border_offsets.c0())[index];
+      src[1] = src_rows.at(border_offsets.c1())[index];
+      src[2] = src_rows.at(border_offsets.c2())[index];
       filter_.vertical_scalar_path(src, &dst_rows[index]);
     });
   }
@@ -86,9 +86,9 @@ class SeparableFilter<FilterType, 3UL> {
                                          BufferVecTraits::num_lanes()};
 
     loop.unroll_twice([&](size_t index) {
-      auto src_0 = &src_rows.at(0, border_offsets.c(0))[index];
-      auto src_1 = &src_rows.at(0, border_offsets.c(1))[index];
-      auto src_2 = &src_rows.at(0, border_offsets.c(2))[index];
+      auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
+      auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
+      auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
 
       auto src_0_x2 = vld1q_x2(&src_0[0]);
       auto src_1_x2 = vld1q_x2(&src_1[0]);
@@ -109,9 +109,9 @@ class SeparableFilter<FilterType, 3UL> {
 
     loop.unroll_once([&](size_t index) {
       BufferVectorType src[3];
-      src[0] = vld1q(&src_rows.at(0, border_offsets.c(0))[index]);
-      src[1] = vld1q(&src_rows.at(0, border_offsets.c(1))[index]);
-      src[2] = vld1q(&src_rows.at(0, border_offsets.c(2))[index]);
+      src[0] = vld1q(&src_rows.at(0, border_offsets.c0())[index]);
+      src[1] = vld1q(&src_rows.at(0, border_offsets.c1())[index]);
+      src[2] = vld1q(&src_rows.at(0, border_offsets.c2())[index]);
       filter_.horizontal_vector_path(src, &dst_rows[index]);
     });
 
@@ -135,9 +135,9 @@ class SeparableFilter<FilterType, 3UL> {
                                  BorderOffsets border_offsets,
                                  size_t index) const {
     BufferType src[3];
-    src[0] = src_rows.at(0, border_offsets.c(0))[index];
-    src[1] = src_rows.at(0, border_offsets.c(1))[index];
-    src[2] = src_rows.at(0, border_offsets.c(2))[index];
+    src[0] = src_rows.at(0, border_offsets.c0())[index];
+    src[1] = src_rows.at(0, border_offsets.c1())[index];
+    src[2] = src_rows.at(0, border_offsets.c2())[index];
     filter_.horizontal_scalar_path(src, &dst_rows[index]);
   }
 
