@@ -8,7 +8,10 @@
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/separable_filter_driver_neon.h"
+#include "kleidicv/separable_filter_15x15_neon.h"
+#include "kleidicv/separable_filter_3x3_neon.h"
+#include "kleidicv/separable_filter_5x5_neon.h"
+#include "kleidicv/separable_filter_7x7_neon.h"
 #include "kleidicv/sigma.h"
 
 namespace kleidicv::neon {
@@ -624,7 +627,7 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
   using GaussianBlurFilter = GaussianBlur<ScalarType, KernelSize, IsBinomial>;
 
   GaussianBlurFilter blur{sigma};
-  SeparableFilterDriver<GaussianBlurFilter, KernelSize> filter{blur};
+  SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
 
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};

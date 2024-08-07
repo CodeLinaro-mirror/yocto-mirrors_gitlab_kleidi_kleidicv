@@ -8,7 +8,7 @@
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/separable_filter_driver_neon.h"
+#include "kleidicv/separable_filter_5x5_neon.h"
 
 namespace kleidicv::neon {
 
@@ -139,7 +139,7 @@ kleidicv_error_t separable_filter_2d_u8(
   using SeparableFilterClass = SeparableFilter2D<uint8_t, 5>;
 
   SeparableFilterClass filterClass{kernel_x, kernel_y};
-  SeparableFilterDriver<SeparableFilterClass, 5> filter{filterClass};
+  SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
 
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
