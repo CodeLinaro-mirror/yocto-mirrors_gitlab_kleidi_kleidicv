@@ -331,6 +331,14 @@ class VecTraits<int8_t> : public VecTraitsBase<int8_t> {
   static inline svint8_t svdup(int8_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s8(v);
   }
+  static inline svuint8_t svreinterpret(svint8_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_u8(v);
+  }
+  static inline svint8_t svasr_n(svbool_t pg, svint8_t v,
+                                 uint8_t s) KLEIDICV_STREAMING_COMPATIBLE {
+    return svasr_n_s8_x(pg, v, s);
+  }
 };  // end of class VecTraits<int8_t>
 
 template <>
@@ -338,6 +346,14 @@ class VecTraits<uint8_t> : public VecTraitsBase<uint8_t> {
  public:
   static inline svuint8_t svdup(uint8_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u8(v);
+  }
+  static inline svint8_t svreinterpret(svuint8_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_s8(v);
+  }
+  static inline svuint8_t svhsub(svbool_t pg, svuint8_t v,
+                                 svuint8_t u) KLEIDICV_STREAMING_COMPATIBLE {
+    return svhsub_u8_x(pg, v, u);
   }
 };  // end of class VecTraits<uint8_t>
 
