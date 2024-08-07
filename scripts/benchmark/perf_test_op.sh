@@ -18,13 +18,26 @@ DEV_DIR=/data/local/tmp
 
 CPU_MASK=$(echo "obase=16;2^${CPU_NUMBER}" | bc)
 
-PREV_FREQ_GOVERNOR=$(cat /sys/devices/system/cpu/cpu${CPU_NUMBER}/cpufreq/scaling_governor)
-echo performance > /sys/devices/system/cpu/cpu${CPU_NUMBER}/cpufreq/scaling_governor
+FREQ_GOVERNOR_FILE="/sys/devices/system/cpu/cpu${CPU_NUMBER}/cpufreq/scaling_governor"
 
-CDEV_TRANSITION_COUNT=$(cat /sys/devices/virtual/thermal/thermal_zone${THERMAL_ZONE_ID}/cdev0/stats/total_trans)
+PREV_FREQ_GOVERNOR=$(cat "${FREQ_GOVERNOR_FILE}")
+echo performance > "${FREQ_GOVERNOR_FILE}"
+
+THERMAL_ZONE_DIR="/sys/devices/virtual/thermal/thermal_zone${THERMAL_ZONE_ID}"
+
+CDEV_TRANSITION_COUNT_FILE="${THERMAL_ZONE_DIR}/cdev0/stats/total_trans"
+START_CDEV_TRANSITION_COUNT=$(cat "${CDEV_TRANSITION_COUNT_FILE}")
+
+THERMAL_ZONE_TEMPERATURE_FILE="${THERMAL_ZONE_DIR}/temp"
 
 wait_for_cooldown() {
-  while [[ $(cat /sys/devices/virtual/thermal/thermal_zone${THERMAL_ZONE_ID}/temp) > 40000 ]]; do
+  local cur_tmp
+  cur_tmp=$(cat "${THERMAL_ZONE_TEMPERATURE_FILE}")
+  if [[ "${cur_tmp}" > 40000 ]]; then
+    >&2 echo "Too hot (${cur_tmp})! Cooling..."
+  fi
+
+  while [[ $(cat "${THERMAL_ZONE_TEMPERATURE_FILE}") > 40000 ]]; do
     sleep 0.2
   done
 }
@@ -34,28 +47,28 @@ FNAME=$$
 run_test() {
   wait_for_cooldown
   >&2 taskset ${CPU_MASK} \
-    ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_${1} \
+    "${DEV_DIR}/${PERF_TEST_BINARY_BASENAME}_$1" \
       --perf_min_samples=100 \
-      --gtest_output=json:${DEV_DIR}/${FNAME}_${1} \
+      --gtest_output=json:"${DEV_DIR}/${FNAME}_$1" \
       --gtest_filter="${GTEST_FILTER}" \
       --gtest_param_filter="${GTEST_PARAM_FILTER}"
 }
 
 run_test vanilla
 run_test kleidicv
-if [[ -f ${DEV_DIR}/"${PERF_TEST_BINARY_BASENAME}"_kleidicv_$CUSTOM_BUILD_SUFFIX ]]; then
-  run_test kleidicv_$CUSTOM_BUILD_SUFFIX
+if [[ -f "${DEV_DIR}/${PERF_TEST_BINARY_BASENAME}_kleidicv_${CUSTOM_BUILD_SUFFIX}" ]]; then
+  run_test "kleidicv_${CUSTOM_BUILD_SUFFIX}"
 fi
 
-echo ${PREV_FREQ_GOVERNOR} > /sys/devices/system/cpu/cpu${CPU_NUMBER}/cpufreq/scaling_governor
+echo "${PREV_FREQ_GOVERNOR}" > "${FREQ_GOVERNOR_FILE}"
 
-if [[ ${CDEV_TRANSITION_COUNT} != $(cat /sys/devices/virtual/thermal/thermal_zone${THERMAL_ZONE_ID}/cdev0/stats/total_trans) ]]; then
+if [[ "${START_CDEV_TRANSITION_COUNT}" != $(cat "${CDEV_TRANSITION_COUNT_FILE}") ]]; then
   >&2 echo "BENCHMARK ERROR: CPU throttling happened, exiting..."
   exit 1
 fi
 
-if ! grep -q "\"tests\": 1," ${DEV_DIR}/${FNAME}_vanilla; then
-  if grep -q "\"tests\": 0," ${DEV_DIR}/${FNAME}_vanilla; then
+if ! grep -q "\"tests\": 1," "${DEV_DIR}/${FNAME}_vanilla"; then
+  if grep -q "\"tests\": 0," "${DEV_DIR}/${FNAME}_vanilla"; then
     >&2 echo "BENCHMARK ERROR: No test case was triggered, exiting..."
   else
     >&2 echo "BENCHMARK ERROR: More than one test case was triggered, exiting..."
@@ -64,24 +77,24 @@ if ! grep -q "\"tests\": 1," ${DEV_DIR}/${FNAME}_vanilla; then
 fi
 
 get_mean() {
-  sed -n s/\"mean\"://p ${1} | tr -d \" | tr -d ',' | tr -d ' '
+  sed -n s/\"mean\"://p "${1}" | tr -d \" | tr -d ',' | tr -d ' '
 }
 
 get_gstddev() {
-  sed -n s/\"gstddev\"://p ${1} | tr -d \" | tr -d ',' | tr -d ' '
+  sed -n s/\"gstddev\"://p "${1}" | tr -d \" | tr -d ',' | tr -d ' '
 }
 
 RES="${DISP_NAME}"
 
 collect_run_results() {
-  RES+="\t$(get_mean ${DEV_DIR}/${FNAME}_${1})\t$(get_gstddev ${DEV_DIR}/${FNAME}_${1})"
-  rm ${DEV_DIR}/${FNAME}_${1}
+  RES+="\t$(get_mean "${DEV_DIR}/${FNAME}_${1}")\t$(get_gstddev "${DEV_DIR}/${FNAME}_$1")"
+  rm "${DEV_DIR}/${FNAME}_$1"
 }
 
 collect_run_results vanilla
 collect_run_results kleidicv
-if [[ -f ${DEV_DIR}/${FNAME}_kleidicv_$CUSTOM_BUILD_SUFFIX ]]; then
-  collect_run_results kleidicv_$CUSTOM_BUILD_SUFFIX
+if [[ -f "${DEV_DIR}/${FNAME}_kleidicv_${CUSTOM_BUILD_SUFFIX}" ]]; then
+  collect_run_results "kleidicv_${CUSTOM_BUILD_SUFFIX}"
 fi
 
-printf "${RES}"
+echo "${RES}"
