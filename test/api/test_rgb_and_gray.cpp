@@ -166,12 +166,19 @@ class ColorTest final {
   bool swapBlue_;
 };
 
+static kleidicv_error_t kleidicv_gray_to_rgb_u8_wrapper(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height) {
+  return kleidicv_gray_to_rgb_u8(src, src_stride, dst, dst_stride, width,
+                                 height, KLEIDICV_BACKEND_AUTO);
+}
+
 TEST(GRAY2, RGB) {
-  GrayTest{false}.execute_test(kleidicv_gray_to_rgb_u8);
-  GrayTest{false}.with_padding(1).execute_test(kleidicv_gray_to_rgb_u8);
+  GrayTest{false}.execute_test(kleidicv_gray_to_rgb_u8_wrapper);
+  GrayTest{false}.with_padding(1).execute_test(kleidicv_gray_to_rgb_u8_wrapper);
   GrayTest{false}
       .with_width(2 * test::Options::vector_lanes<uint8_t>())
-      .execute_test(kleidicv_gray_to_rgb_u8);
+      .execute_test(kleidicv_gray_to_rgb_u8_wrapper);
 }
 
 TEST(GRAY2, RGBA) {

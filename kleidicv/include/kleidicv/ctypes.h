@@ -87,6 +87,22 @@ typedef enum {
   KLEIDICV_BORDER_TYPE_NONE,
 } kleidicv_border_type_t;
 
+/// KleidiCV backends
+typedef enum {
+  /// Let KleidiCV choose the backend.
+  KLEIDICV_BACKEND_AUTO,
+  /// NEON backend.
+  KLEIDICV_BACKEND_NEON,
+#ifdef KLEIDICV_HAVE_SVE2
+  /// SVE2 backend.
+  KLEIDICV_BACKEND_SVE2,
+#endif
+#ifdef KLEIDICV_HAVE_SME2
+  /// SME2 backend.
+  KLEIDICV_BACKEND_SME2,
+#endif
+} kleidicv_backend_t;
+
 /// Internal structure where morphology operations store their state
 typedef struct kleidicv_morphology_context_t_ kleidicv_morphology_context_t;
 

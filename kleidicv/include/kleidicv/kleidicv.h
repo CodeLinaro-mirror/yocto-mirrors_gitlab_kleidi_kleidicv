@@ -313,10 +313,12 @@ KLEIDICV_BINARY_OP(kleidicv_bitwise_and, uint8_t);
 ///                    images.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
+/// @param backend     SIMD backend to be used.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgb_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height);
+kleidicv_error_t kleidicv_gray_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width, size_t height,
+                                         kleidicv_backend_t backend);
 
 /// Converts a grayscale image to RGBA. All channels are 8-bit wide.
 ///

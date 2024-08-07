@@ -83,7 +83,8 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
     if (dcn == 3) {
       return convert_error(kleidicv_gray_to_rgb_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+          KLEIDICV_BACKEND_AUTO));
     }
     return convert_error(kleidicv_gray_to_rgba_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
