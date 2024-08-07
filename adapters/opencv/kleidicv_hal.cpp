@@ -853,7 +853,8 @@ kleidicv_error_t call_min_max_loc(FunctionType min_max_loc_func,
                                   const uchar *src_data, size_t src_stride,
                                   int width, int height, double *min_value,
                                   double *max_value, int *min_index,
-                                  int *max_index) {
+                                  int *max_index,
+                                  kleidicv_thread_multithreading mt) {
   size_t tmp_min_offset, tmp_max_offset;
   size_t *p_min_offset = (min_value || min_index) ? &tmp_min_offset : nullptr;
   size_t *p_max_offset = (max_value || max_index) ? &tmp_max_offset : nullptr;
@@ -861,7 +862,7 @@ kleidicv_error_t call_min_max_loc(FunctionType min_max_loc_func,
   kleidicv_error_t err =
       min_max_loc_func(reinterpret_cast<const T *>(src_data), src_stride,
                        static_cast<size_t>(width), static_cast<size_t>(height),
-                       p_min_offset, p_max_offset);
+                       p_min_offset, p_max_offset, mt);
   if (min_value) {
     *min_value = static_cast<double>(src_data[tmp_min_offset]);
   }
@@ -889,8 +890,8 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
   if (minIdx || maxIdx) {
     if (depth == CV_8U) {
       return convert_error(call_min_max_loc<uint8_t>(
-          kleidicv_min_max_loc_u8, src_data, src_step, width, height, minVal,
-          maxVal, minIdx, maxIdx));
+          kleidicv_thread_min_max_loc_u8, src_data, src_step, width, height,
+          minVal, maxVal, minIdx, maxIdx, get_multithreading()));
     }
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }

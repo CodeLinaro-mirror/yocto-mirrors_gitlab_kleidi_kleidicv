@@ -55,6 +55,8 @@ kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8(
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21, kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
 /// Multithreaded implementation of kleidicv_min_max_u8 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_min_max_u8(const uint8_t *src,
@@ -62,6 +64,9 @@ kleidicv_error_t kleidicv_thread_min_max_u8(const uint8_t *src,
                                             size_t height, uint8_t *min_value,
                                             uint8_t *max_value,
                                             kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
 /// Multithreaded implementation of kleidicv_min_max_s8 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_min_max_s8(const int8_t *src,
@@ -69,34 +74,54 @@ kleidicv_error_t kleidicv_thread_min_max_s8(const int8_t *src,
                                             size_t height, int8_t *min_value,
                                             int8_t *max_value,
                                             kleidicv_thread_multithreading);
-/// Multithreaded implementation of kleidicv_thread_min_max_u16 - see the
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_min_max_u16 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_min_max_u16(const uint16_t *src,
                                              size_t src_stride, size_t width,
                                              size_t height, uint16_t *min_value,
                                              uint16_t *max_value,
                                              kleidicv_thread_multithreading);
-/// Multithreaded implementation of kleidicv_thread_min_max_s16 - see the
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_min_max_s16 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_min_max_s16(const int16_t *src,
                                              size_t src_stride, size_t width,
                                              size_t height, int16_t *min_value,
                                              int16_t *max_value,
                                              kleidicv_thread_multithreading);
-/// Multithreaded implementation of kleidicv_thread_min_max_s32 - see the
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_min_max_s32 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_min_max_s32(const int32_t *src,
                                              size_t src_stride, size_t width,
                                              size_t height, int32_t *min_value,
                                              int32_t *max_value,
                                              kleidicv_thread_multithreading);
-/// Multithreaded implementation of kleidicv_thread_min_max_f32 - see the
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_min_max_f32 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_min_max_f32(const float *src,
                                              size_t src_stride, size_t width,
                                              size_t height, float *min_value,
                                              float *max_value,
                                              kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_min_max_loc_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_min_max_loc_u8(
+    const uint8_t *src, size_t src_stride, size_t width, size_t height,
+    size_t *min_offset, size_t *max_offset, kleidicv_thread_multithreading);
 
 #ifdef __cplusplus
 }  // extern "C"

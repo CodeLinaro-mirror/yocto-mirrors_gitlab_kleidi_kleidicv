@@ -34,9 +34,9 @@ KLEIDICV_THREAD_MIN_MAX(int32_t, s32);
 KLEIDICV_THREAD_MIN_MAX(float, f32);
 
 template <typename ElementType>
-class Thread : public testing::Test {};
+class MinMaxThread : public testing::Test {};
 
-TYPED_TEST_SUITE_P(Thread);
+TYPED_TEST_SUITE_P(MinMaxThread);
 
 // Tuple of width, height, thread count.
 typedef std::tuple<size_t, size_t, size_t> P;
@@ -45,7 +45,7 @@ static const auto test_params = {
     P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2}, P{2, 1, 2}, P{2, 2, 1}, P{1, 3, 2},
     P{2, 3, 1}, P{6, 4, 1}, P{4, 5, 2}, P{2, 6, 3}, P{1, 7, 4}, P{12, 34, 5}};
 
-TYPED_TEST_P(Thread, CompareWithSingle) {
+TYPED_TEST_P(MinMaxThread, CompareWithSingle) {
   size_t width = 0, height = 0, thread_count = 0;
   for (auto params : test_params) {
     std::tie(width, height, thread_count) = params;
@@ -69,7 +69,7 @@ TYPED_TEST_P(Thread, CompareWithSingle) {
   }
 }
 
-TYPED_TEST_P(Thread, NullArguments) {
+TYPED_TEST_P(MinMaxThread, NullArguments) {
   size_t width = 1, height = 2, thread_count = 2;
   TypeParam src[2] = {1, 2}, min_value, max_value;
 
@@ -101,9 +101,9 @@ TYPED_TEST_P(Thread, NullArguments) {
   EXPECT_EQ(0, max_value);
 }
 
-REGISTER_TYPED_TEST_SUITE_P(Thread, CompareWithSingle, NullArguments);
+REGISTER_TYPED_TEST_SUITE_P(MinMaxThread, CompareWithSingle, NullArguments);
 
 using MinMaxElementTypes =
     ::testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t, float>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(MinMax, Thread, MinMaxElementTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(MinMax, MinMaxThread, MinMaxElementTypes);

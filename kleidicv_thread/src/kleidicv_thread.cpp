@@ -132,3 +132,84 @@ DEFINE_KLEIDICV_THREAD_MIN_MAX(u16, uint16_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(s16, int16_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(s32, int32_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(f32, float);
+
+template <typename ScalarType, typename FunctionType>
+struct parallel_min_max_loc_data {
+  FunctionType min_max_loc_func;
+  const ScalarType *src;
+  size_t src_stride;
+  size_t width;
+  size_t *p_min_offset;
+  size_t *p_max_offset;
+};
+
+template <typename ScalarType, typename FunctionType>
+static kleidicv_error_t kleidicv_thread_min_max_loc_callback(
+    unsigned task_begin, unsigned task_end, void *void_data) {
+  auto *data =
+      reinterpret_cast<parallel_min_max_loc_data<ScalarType, FunctionType> *>(
+          void_data);
+
+  return data->min_max_loc_func(
+      data->src + task_begin * (data->src_stride / sizeof(ScalarType)),
+      data->src_stride, data->width, task_end - task_begin,
+      data->p_min_offset ? data->p_min_offset + task_begin : nullptr,
+      data->p_max_offset ? data->p_max_offset + task_begin : nullptr);
+}
+
+template <typename ScalarType, typename FunctionType>
+kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
+                                      const ScalarType *src, size_t src_stride,
+                                      size_t width, size_t height,
+                                      size_t *p_min_offset,
+                                      size_t *p_max_offset,
+                                      kleidicv_thread_multithreading mt) {
+  std::vector<size_t> min_offsets(height, 0);
+  std::vector<size_t> max_offsets(height, 0);
+
+  parallel_min_max_loc_data<ScalarType, FunctionType> callback_data = {
+      min_max_loc_func,
+      src,
+      src_stride,
+      width,
+      p_min_offset ? min_offsets.data() : nullptr,
+      p_max_offset ? max_offsets.data() : nullptr};
+
+  auto return_val = mt.parallel(
+      kleidicv_thread_min_max_loc_callback<ScalarType, FunctionType>,
+      &callback_data, mt.parallel_data, height);
+
+  if (p_min_offset) {
+    *p_min_offset = 0;
+    for (size_t i = 0; i < min_offsets.size(); ++i) {
+      size_t offs = min_offsets[i] + i * src_stride;
+      if (src[offs / sizeof(ScalarType)] <
+          src[*p_min_offset / sizeof(ScalarType)]) {
+        *p_min_offset = offs;
+      }
+    }
+  }
+  if (p_max_offset) {
+    *p_max_offset = 0;
+    for (size_t i = 0; i < max_offsets.size(); ++i) {
+      size_t offs = max_offsets[i] + i * src_stride;
+      if (src[offs / sizeof(ScalarType)] >
+          src[*p_max_offset / sizeof(ScalarType)]) {
+        *p_max_offset = offs;
+      }
+    }
+  }
+  return return_val;
+}
+
+#define DEFINE_KLEIDICV_THREAD_MIN_MAX_LOC(suffix, type)                 \
+  kleidicv_error_t kleidicv_thread_min_max_loc_##suffix(                 \
+      const type *src, size_t src_stride, size_t width, size_t height,   \
+      size_t *p_min_offset, size_t *p_max_offset,                        \
+      kleidicv_thread_multithreading mt) {                               \
+    return parallel_min_max_loc(kleidicv_min_max_loc_##suffix, src,      \
+                                src_stride, width, height, p_min_offset, \
+                                p_max_offset, mt);                       \
+  }
+
+DEFINE_KLEIDICV_THREAD_MIN_MAX_LOC(u8, uint8_t);
