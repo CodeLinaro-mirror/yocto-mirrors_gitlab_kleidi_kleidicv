@@ -5,7 +5,7 @@
 #include <limits>
 
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sc.h"
+#include "kleidicv/sve2.h"
 
 namespace kleidicv::sve2 {
 

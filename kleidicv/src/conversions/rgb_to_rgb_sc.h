@@ -7,7 +7,7 @@
 
 #include "kleidicv/conversions/rgb_to_rgb.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sc.h"
+#include "kleidicv/sve2.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

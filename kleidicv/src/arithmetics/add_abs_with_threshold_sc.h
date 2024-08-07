@@ -8,7 +8,7 @@
 #include <limits>
 
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sc.h"
+#include "kleidicv/sve2.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

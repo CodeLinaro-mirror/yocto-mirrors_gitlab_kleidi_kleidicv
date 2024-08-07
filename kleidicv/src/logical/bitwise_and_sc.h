@@ -6,7 +6,7 @@
 #define KLEIDICV_BITWISE_AND_SC_H
 
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sc.h"
+#include "kleidicv/sve2.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

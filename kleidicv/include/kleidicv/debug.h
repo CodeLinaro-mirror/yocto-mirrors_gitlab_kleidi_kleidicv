@@ -9,7 +9,7 @@
 #if KLEIDICV_TARGET_NEON
 #include "kleidicv/neon.h"
 #elif KLEIDICV_TARGET_SVE2
-#include "kleidicv/sc.h"
+#include "kleidicv/sve2.h"
 #endif
 #include <iostream>
 

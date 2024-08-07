@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_FILTER_DRIVER_NEON_H
-#define KLEIDICV_FILTER_DRIVER_NEON_H
+#ifndef KLEIDICV_SEPARABLE_FILTER_DRIVER_NEON_H
+#define KLEIDICV_SEPARABLE_FILTER_DRIVER_NEON_H
 
 #include "kleidicv/config.h"
 #include "kleidicv/neon.h"
@@ -137,4 +137,4 @@ class SeparableFilterDriver {
 
 }  // namespace kleidicv::neon
 
-#endif  // KLEIDICV_FILTER_DRIVER_NEON_H
+#endif  // KLEIDICV_SEPARABLE_FILTER_DRIVER_NEON_H

@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/filter_driver_neon.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/morphology/workspace.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/separable_filter_driver_neon.h"
 
 namespace kleidicv::neon {
 
