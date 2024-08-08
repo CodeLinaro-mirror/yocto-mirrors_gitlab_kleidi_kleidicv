@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Experimental benchmarking scripts to compare KleidiCV to vanilla OpenCV performance on Android
 
-Use at your own risk.
+Use at your own risk, the stability of this solution is the best on release tags.
 
 First, you need a Linux x86 machine to build this.
 Next, to build for Android, you'll need [Android NDK](https://developer.android.com/ndk/).
