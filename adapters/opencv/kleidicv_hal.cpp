@@ -992,10 +992,6 @@ int compare_u8(const uchar *src1_data, size_t src1_step, const uchar *src2_data,
                size_t src2_step, uchar *dst_data, size_t dst_step, int width,
                int height, int operation) {
   switch (operation) {
-    case cv::CMP_EQ:
-      return convert_error(
-          kleidicv_compare_equal_u8(src1_data, src1_step, src2_data, src2_step,
-                                    dst_data, dst_step, width, height));
     case cv::CMP_GT:
       return convert_error(kleidicv_compare_greater_u8(
           src1_data, src1_step, src2_data, src2_step, dst_data, dst_step, width,

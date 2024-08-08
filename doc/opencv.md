@@ -220,5 +220,4 @@ Notes on parameters:
 * `src1_data`, `src2_data`, `dst_data` - only support `CV_8U` depth.
 * `operation` - flag specifying correspondence between the arrays.
 Supported [OpenCV cmp types](https://docs.opencv.org/5.x/d2/de8/group__core__array.html#ga0cc47ff833d40b58ecbe1d609a53d784) are:
-  + `cv::CMP_EQ `
   + `cv::CMP_GT`
