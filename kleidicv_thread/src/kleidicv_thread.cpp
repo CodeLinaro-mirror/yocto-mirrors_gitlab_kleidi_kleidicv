@@ -5,49 +5,200 @@
 #include "kleidicv_thread/kleidicv_thread.h"
 
 #include <algorithm>
+#include <functional>
 #include <limits>
 #include <vector>
 
 #include "kleidicv/kleidicv.h"
 
-struct kleidicv_thread_yuv_sp_to_rgb_u8_data {
-  const uint8_t *src_y;
-  size_t src_y_stride;
-  const uint8_t *src_uv;
-  size_t src_uv_stride;
-  uint8_t *dst;
-  size_t dst_stride;
-  size_t width;
-  size_t height;
-  bool is_nv21;
-};
+typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;
 
-static kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8_callback(
-    unsigned task_begin, unsigned task_end, void *void_data) {
-  auto *data =
-      reinterpret_cast<kleidicv_thread_yuv_sp_to_rgb_u8_data *>(void_data);
-
-  size_t row_begin = size_t{task_begin} * 2;
-  size_t row_end = std::min<size_t>(data->height, size_t{task_end} * 2);
-  size_t row_uv = task_begin;
-
-  return kleidicv_yuv_sp_to_rgb_u8(
-      data->src_y + row_begin * data->src_y_stride, data->src_y_stride,
-      data->src_uv + row_uv * data->src_uv_stride, data->src_uv_stride,
-      data->dst + row_begin * data->dst_stride, data->dst_stride, data->width,
-      row_end - row_begin, data->is_nv21);
+static kleidicv_error_t kleidicv_thread_std_function_callback(
+    unsigned task_begin, unsigned task_end, void *data) {
+  auto *callback = reinterpret_cast<FunctionCallback *>(data);
+  return (*callback)(task_begin, task_end);
 }
 
-kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8(
-    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
+template <typename SrcT, typename DstT, typename F, typename... Args>
+inline kleidicv_error_t kleidicv_thread_unary_op_impl(
+    F f, kleidicv_thread_multithreading mt, const SrcT *src, size_t src_stride,
+    DstT *dst, size_t dst_stride, size_t width, size_t height, Args... args) {
+  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
+    return f(src + task_begin * src_stride / sizeof(SrcT), src_stride,
+             dst + task_begin * dst_stride / sizeof(DstT), dst_stride, width,
+             task_end - task_begin, args...);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
+                     mt.parallel_data, height);
+}
+
+template <typename SrcT, typename DstT, typename F, typename... Args>
+inline kleidicv_error_t kleidicv_thread_binary_op_impl(
+    F f, kleidicv_thread_multithreading mt, const SrcT *src_a,
+    size_t src_a_stride, const SrcT *src_b, size_t src_b_stride, DstT *dst,
+    size_t dst_stride, size_t width, size_t height, Args... args) {
+  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
+    return f(src_a + task_begin * src_a_stride / sizeof(SrcT), src_a_stride,
+             src_b + task_begin * src_b_stride / sizeof(SrcT), src_b_stride,
+             dst + task_begin * dst_stride / sizeof(DstT), dst_stride, width,
+             task_end - task_begin, args...);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
+                     mt.parallel_data, height);
+}
+
+#define KLEIDICV_THREAD_UNARY_OP_IMPL(suffix, src_type, dst_type)            \
+  kleidicv_error_t kleidicv_thread_##suffix(                                 \
+      const src_type *src, size_t src_stride, dst_type *dst,                 \
+      size_t dst_stride, size_t width, size_t height,                        \
+      kleidicv_thread_multithreading mt) {                                   \
+    return kleidicv_thread_unary_op_impl(kleidicv_##suffix, mt, src,         \
+                                         src_stride, dst, dst_stride, width, \
+                                         height);                            \
+  }
+
+KLEIDICV_THREAD_UNARY_OP_IMPL(gray_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(gray_to_rgba_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_bgr_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_bgra_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_rgba_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_bgra_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_rgba_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_bgr_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(yuv_to_bgr_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(yuv_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(bgr_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(bgra_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(exp_f32, float, float);
+KLEIDICV_THREAD_UNARY_OP_IMPL(float_conversion_f32_s8, float, int8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(float_conversion_f32_u8, float, uint8_t);
+KLEIDICV_THREAD_UNARY_OP_IMPL(float_conversion_s8_f32, int8_t, float);
+KLEIDICV_THREAD_UNARY_OP_IMPL(float_conversion_u8_f32, uint8_t, float);
+
+kleidicv_error_t kleidicv_thread_threshold_binary_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, uint8_t threshold, uint8_t value,
+    kleidicv_thread_multithreading mt) {
+  return kleidicv_thread_unary_op_impl(kleidicv_threshold_binary_u8, mt, src,
+                                       src_stride, dst, dst_stride, width,
+                                       height, threshold, value);
+}
+
+kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width, size_t height,
+                                          float scale, float shift,
+                                          kleidicv_thread_multithreading mt) {
+  return kleidicv_thread_unary_op_impl(kleidicv_scale_u8, mt, src, src_stride,
+                                       dst, dst_stride, width, height, scale,
+                                       shift);
+}
+
+kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,
+                                           float *dst, size_t dst_stride,
+                                           size_t width, size_t height,
+                                           float scale, float shift,
+                                           kleidicv_thread_multithreading mt) {
+  return kleidicv_thread_unary_op_impl(kleidicv_scale_f32, mt, src, src_stride,
+                                       dst, dst_stride, width, height, scale,
+                                       shift);
+}
+
+#define KLEIDICV_THREAD_BINARY_OP_IMPL(suffix, type)                         \
+  kleidicv_error_t kleidicv_thread_##suffix(                                 \
+      const type *src_a, size_t src_a_stride, const type *src_b,             \
+      size_t src_b_stride, type *dst, size_t dst_stride, size_t width,       \
+      size_t height, kleidicv_thread_multithreading mt) {                    \
+    return kleidicv_thread_binary_op_impl(kleidicv_##suffix, mt, src_a,      \
+                                          src_a_stride, src_b, src_b_stride, \
+                                          dst, dst_stride, width, height);   \
+  }
+
+#define KLEIDICV_THREAD_BINARY_OP_SCALE_IMPL(suffix, type, scaletype)         \
+  kleidicv_error_t kleidicv_thread_##suffix(                                  \
+      const type *src_a, size_t src_a_stride, const type *src_b,              \
+      size_t src_b_stride, type *dst, size_t dst_stride, size_t width,        \
+      size_t height, scaletype scale, kleidicv_thread_multithreading mt) {    \
+    return kleidicv_thread_binary_op_impl(                                    \
+        kleidicv_##suffix, mt, src_a, src_a_stride, src_b, src_b_stride, dst, \
+        dst_stride, width, height, scale);                                    \
+  }
+
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_s8, int8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_s16, int16_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_u16, uint16_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_s32, int32_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_u32, uint32_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_s64, int64_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_add_u64, uint64_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_s8, int8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_s16, int16_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_u16, uint16_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_s32, int32_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_u32, uint32_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_s64, int64_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_sub_u64, uint64_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_absdiff_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_absdiff_s8, int8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_absdiff_u16, uint16_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_absdiff_s16, int16_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(saturating_absdiff_s32, int32_t);
+KLEIDICV_THREAD_BINARY_OP_SCALE_IMPL(saturating_multiply_u8, uint8_t, double);
+KLEIDICV_THREAD_BINARY_OP_SCALE_IMPL(saturating_multiply_s8, int8_t, double);
+KLEIDICV_THREAD_BINARY_OP_SCALE_IMPL(saturating_multiply_u16, uint16_t, double);
+KLEIDICV_THREAD_BINARY_OP_SCALE_IMPL(saturating_multiply_s16, int16_t, double);
+KLEIDICV_THREAD_BINARY_OP_SCALE_IMPL(saturating_multiply_s32, int32_t, double);
+KLEIDICV_THREAD_BINARY_OP_IMPL(bitwise_and, uint8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(compare_equal_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP_IMPL(compare_greater_u8, uint8_t);
+
+kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
+    const int16_t *src_a, size_t src_a_stride, const int16_t *src_b,
+    size_t src_b_stride, int16_t *dst, size_t dst_stride, size_t width,
+    size_t height, int16_t threshold, kleidicv_thread_multithreading mt) {
+  return kleidicv_thread_binary_op_impl(
+      kleidicv_saturating_add_abs_with_threshold_s16, mt, src_a, src_a_stride,
+      src_b, src_b_stride, dst, dst_stride, width, height, threshold);
+}
+
+template <typename F>
+inline kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8_impl(
+    F f, const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21, kleidicv_thread_multithreading mt) {
-  kleidicv_thread_yuv_sp_to_rgb_u8_data callback_data = {
-      src_y,      src_y_stride, src_uv, src_uv_stride, dst,
-      dst_stride, width,        height, is_nv21};
-  return mt.parallel(kleidicv_thread_yuv_sp_to_rgb_u8_callback, &callback_data,
+  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
+    size_t row_begin = size_t{task_begin} * 2;
+    size_t row_end = std::min<size_t>(height, size_t{task_end} * 2);
+    size_t row_uv = task_begin;
+    return f(src_y + row_begin * src_y_stride, src_y_stride,
+             src_uv + row_uv * src_uv_stride, src_uv_stride,
+             dst + row_begin * dst_stride, dst_stride, width,
+             row_end - row_begin, is_nv21);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
                      mt.parallel_data, (height + 1) / 2);
 }
+
+#define YUV_SP_TO_RGB(suffix)                                               \
+  kleidicv_error_t kleidicv_thread_##suffix(                                \
+      const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,     \
+      size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,  \
+      size_t height, bool is_nv21, kleidicv_thread_multithreading mt) {     \
+    return kleidicv_thread_yuv_sp_to_rgb_u8_impl(                           \
+        kleidicv_##suffix, src_y, src_y_stride, src_uv, src_uv_stride, dst, \
+        dst_stride, width, height, is_nv21, mt);                            \
+  }
+
+YUV_SP_TO_RGB(yuv_sp_to_bgr_u8);
+YUV_SP_TO_RGB(yuv_sp_to_bgra_u8);
+YUV_SP_TO_RGB(yuv_sp_to_rgb_u8);
+YUV_SP_TO_RGB(yuv_sp_to_rgba_u8);
 
 template <typename ScalarType, typename FunctionType>
 struct parallel_min_max_data {

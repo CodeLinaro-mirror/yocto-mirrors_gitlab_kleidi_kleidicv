@@ -68,7 +68,7 @@ static kleidicv_error_t parallel(kleidicv_thread_callback callback,
   return shared_result;
 }
 
-static kleidicv_thread_multithreading get_multithreading() {
+kleidicv_thread_multithreading get_multithreading() {
   return kleidicv_thread_multithreading{parallel, nullptr};
 }
 
@@ -79,15 +79,17 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  auto mt = get_multithreading();
+
   if (depth == CV_8U) {
     if (dcn == 3) {
-      return convert_error(kleidicv_gray_to_rgb_u8(
+      return convert_error(kleidicv_thread_gray_to_rgb_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
     }
-    return convert_error(kleidicv_gray_to_rgba_u8(
+    return convert_error(kleidicv_thread_gray_to_rgba_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -101,27 +103,31 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  auto mt = get_multithreading();
+
   if (depth == CV_8U) {
     if (scn == 3 && dcn == 3) {
       if (swapBlue) {
-        return convert_error(kleidicv_rgb_to_bgr_u8(
+        return convert_error(kleidicv_thread_rgb_to_bgr_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+            mt));
       }
-      return convert_error(kleidicv_rgb_to_rgb_u8(
+      return convert_error(kleidicv_thread_rgb_to_rgb_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
     }
 
     if (scn == 4 && dcn == 4) {
       if (swapBlue) {
-        return convert_error(kleidicv_rgba_to_bgra_u8(
+        return convert_error(kleidicv_thread_rgba_to_bgra_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+            mt));
       }
-      return convert_error(kleidicv_rgba_to_rgba_u8(
+      return convert_error(kleidicv_thread_rgba_to_rgba_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
     }
   }
 
@@ -144,34 +150,36 @@ int yuv_to_bgr_sp_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
   const bool is_bgr = !swapBlue;
   const bool is_nv21 = (uIdx != 0);
 
+  auto mt = get_multithreading();
+
   if (dcn == 3) {
     if (is_bgr) {
-      return convert_error(kleidicv_yuv_sp_to_bgr_u8(
+      return convert_error(kleidicv_thread_yuv_sp_to_bgr_u8(
           reinterpret_cast<const uint8_t *>(y_data), y_step,
           reinterpret_cast<const uint8_t *>(uv_data), uv_step,
           reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
-          dst_height, is_nv21));
+          dst_height, is_nv21, mt));
     }
     return convert_error(kleidicv_thread_yuv_sp_to_rgb_u8(
         reinterpret_cast<const uint8_t *>(y_data), y_step,
         reinterpret_cast<const uint8_t *>(uv_data), uv_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
-        is_nv21, get_multithreading()));
+        is_nv21, mt));
   }
 
   if (dcn == 4) {
     if (is_bgr) {
-      return convert_error(kleidicv_yuv_sp_to_bgra_u8(
+      return convert_error(kleidicv_thread_yuv_sp_to_bgra_u8(
           reinterpret_cast<const uint8_t *>(y_data), y_step,
           reinterpret_cast<const uint8_t *>(uv_data), uv_step,
           reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
-          dst_height, is_nv21));
+          dst_height, is_nv21, mt));
     }
-    return convert_error(kleidicv_yuv_sp_to_rgba_u8(
+    return convert_error(kleidicv_thread_yuv_sp_to_rgba_u8(
         reinterpret_cast<const uint8_t *>(y_data), y_step,
         reinterpret_cast<const uint8_t *>(uv_data), uv_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
-        is_nv21));
+        is_nv21, mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -186,16 +194,18 @@ int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  auto mt = get_multithreading();
+
   if (is_bgr) {
-    return convert_error(kleidicv_yuv_to_bgr_u8(
+    return convert_error(kleidicv_thread_yuv_to_bgr_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height)));
+        static_cast<size_t>(width), static_cast<size_t>(height), mt));
   }
-  return convert_error(kleidicv_yuv_to_rgb_u8(
+  return convert_error(kleidicv_thread_yuv_to_rgb_u8(
       reinterpret_cast<const uint8_t *>(src_data), src_step,
       reinterpret_cast<uint8_t *>(dst_data), dst_step,
-      static_cast<size_t>(width), static_cast<size_t>(height)));
+      static_cast<size_t>(width), static_cast<size_t>(height), mt));
 }
 
 int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,
@@ -207,30 +217,32 @@ int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  auto mt = get_multithreading();
+
   if (scn == 3) {
     if (is_bgr) {
-      return convert_error(kleidicv_bgr_to_yuv_u8(
+      return convert_error(kleidicv_thread_bgr_to_yuv_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
           reinterpret_cast<uint8_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height)));
+          static_cast<size_t>(width), static_cast<size_t>(height), mt));
     }
-    return convert_error(kleidicv_rgb_to_yuv_u8(
+    return convert_error(kleidicv_thread_rgb_to_yuv_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height)));
+        static_cast<size_t>(width), static_cast<size_t>(height), mt));
   }
 
   if (scn == 4) {
     if (is_bgr) {
-      return convert_error(kleidicv_bgra_to_yuv_u8(
+      return convert_error(kleidicv_thread_bgra_to_yuv_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
           reinterpret_cast<uint8_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height)));
+          static_cast<size_t>(width), static_cast<size_t>(height), mt));
     }
-    return convert_error(kleidicv_rgba_to_yuv_u8(
+    return convert_error(kleidicv_thread_rgba_to_yuv_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height)));
+        static_cast<size_t>(width), static_cast<size_t>(height), mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -239,12 +251,15 @@ int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,
 int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int width, int height, int depth, int cn,
               double thresh, double maxValue, int thresholdType) {
+  auto mt = get_multithreading();
+
   if ((depth == CV_8U) && (thresholdType == 0 /* THRESH_BINARY */)) {
     size_t width_in_elements = width * cn;
-    return convert_error(kleidicv_threshold_binary_u8(
+    return convert_error(kleidicv_thread_threshold_binary_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step, width_in_elements,
-        height, static_cast<uint8_t>(thresh), static_cast<uint8_t>(maxValue)));
+        height, static_cast<uint8_t>(thresh), static_cast<uint8_t>(maxValue),
+        mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -929,6 +944,8 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
 int convertTo(const uchar *src_data, size_t src_step, int src_depth,
               uchar *dst_data, size_t dst_step, int dst_depth, int width,
               int height, double scale, double shift) {
+  auto mt = get_multithreading();
+
   // scaling only
   if (src_depth == dst_depth) {
     // no scaling, no advantage
@@ -939,15 +956,15 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
 
     switch (src_depth) {
       case CV_8U:
-        return convert_error(kleidicv_scale_u8(
+        return convert_error(kleidicv_thread_scale_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
             reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-            static_cast<float>(scale), static_cast<float>(shift)));
+            static_cast<float>(scale), static_cast<float>(shift), mt));
       case CV_32F:
-        return convert_error(kleidicv_scale_f32(
+        return convert_error(kleidicv_thread_scale_f32(
             reinterpret_cast<const float *>(src_data), src_step,
             reinterpret_cast<float *>(dst_data), dst_step, width, height,
-            static_cast<float>(scale), static_cast<float>(shift)));
+            static_cast<float>(scale), static_cast<float>(shift), mt));
       default:
         break;
     }
@@ -957,45 +974,49 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
   if (scale == 1.0 && shift == 0.0) {
     // float32 to int8
     if (src_depth == CV_32F && dst_depth == CV_8S) {
-      return convert_error(kleidicv_float_conversion_f32_s8(
+      return convert_error(kleidicv_thread_float_conversion_f32_s8(
           reinterpret_cast<const float *>(src_data), src_step,
-          reinterpret_cast<int8_t *>(dst_data), dst_step, width, height));
+          reinterpret_cast<int8_t *>(dst_data), dst_step, width, height, mt));
     }
     // float32 to uint8
     if (src_depth == CV_32F && dst_depth == CV_8U) {
-      return convert_error(kleidicv_float_conversion_f32_u8(
+      return convert_error(kleidicv_thread_float_conversion_f32_u8(
           reinterpret_cast<const float *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
     }
     // int8 to float32
     if (src_depth == CV_8S && dst_depth == CV_32F) {
-      return convert_error(kleidicv_float_conversion_s8_f32(
+      return convert_error(kleidicv_thread_float_conversion_s8_f32(
           reinterpret_cast<const int8_t *>(src_data), src_step,
-          reinterpret_cast<float *>(dst_data), dst_step, width, height));
+          reinterpret_cast<float *>(dst_data), dst_step, width, height, mt));
     }
     // uint8 to float32
     if (src_depth == CV_8U && dst_depth == CV_32F) {
-      return convert_error(kleidicv_float_conversion_u8_f32(
+      return convert_error(kleidicv_thread_float_conversion_u8_f32(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<float *>(dst_data), dst_step, width, height));
+          reinterpret_cast<float *>(dst_data), dst_step, width, height, mt));
     }
   }
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
 int exp32f(const float *src, float *dst, int len) {
-  return convert_error(kleidicv_exp_f32(src, len * sizeof(float), dst,
-                                        len * sizeof(float), len, 1));
+  auto mt = get_multithreading();
+
+  return convert_error(kleidicv_thread_exp_f32(
+      src, len * sizeof(float), dst, len * sizeof(float), len, 1, mt));
 }
 
 int compare_u8(const uchar *src1_data, size_t src1_step, const uchar *src2_data,
                size_t src2_step, uchar *dst_data, size_t dst_step, int width,
                int height, int operation) {
+  auto mt = get_multithreading();
+
   switch (operation) {
     case cv::CMP_GT:
-      return convert_error(kleidicv_compare_greater_u8(
+      return convert_error(kleidicv_thread_compare_greater_u8(
           src1_data, src1_step, src2_data, src2_step, dst_data, dst_step, width,
-          height));
+          height, mt));
     default:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }

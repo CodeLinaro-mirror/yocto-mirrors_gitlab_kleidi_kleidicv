@@ -46,11 +46,57 @@ typedef struct {
   void *parallel_data;
 } kleidicv_thread_multithreading;
 
+#define KLEIDICV_THREAD_UNARY_OP(name, src_type, dst_type)                     \
+  kleidicv_error_t name(const src_type *src, size_t src_stride, dst_type *dst, \
+                        size_t dst_stride, size_t width, size_t height,        \
+                        kleidicv_thread_multithreading)
+
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_gray_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_gray_to_rgba_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgb_to_bgr_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgb_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgba_to_bgra_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgba_to_rgba_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgb_to_bgra_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgb_to_rgba_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgba_to_bgr_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgba_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_yuv_to_bgr_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_yuv_to_rgb_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_bgr_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgb_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_bgra_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgba_to_yuv_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_exp_f32, float, float);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_f32_s8, float,
+                         int8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_f32_u8, float,
+                         uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_s8_f32, int8_t,
+                         float);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_u8_f32, uint8_t,
+                         float);
+
 /// Internal - not part of the public API and its direct use is not supported.
 ///
-/// Multithreaded implementation of kleidicv_yuv_sp_to_rgb_u8 - see the
+/// Multithreaded implementation of kleidicv_yuv_sp_to_bgr_u8 - see the
 /// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_yuv_sp_to_bgr_u8(
+    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
+    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
+    size_t height, bool is_nv21, kleidicv_thread_multithreading);
+
+kleidicv_error_t kleidicv_thread_yuv_sp_to_bgra_u8(
+    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
+    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
+    size_t height, bool is_nv21, kleidicv_thread_multithreading);
+
 kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8(
+    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
+    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
+    size_t height, bool is_nv21, kleidicv_thread_multithreading);
+
+kleidicv_error_t kleidicv_thread_yuv_sp_to_rgba_u8(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21, kleidicv_thread_multithreading);
@@ -122,6 +168,75 @@ kleidicv_error_t kleidicv_thread_min_max_f32(const float *src,
 kleidicv_error_t kleidicv_thread_min_max_loc_u8(
     const uint8_t *src, size_t src_stride, size_t width, size_t height,
     size_t *min_offset, size_t *max_offset, kleidicv_thread_multithreading);
+
+kleidicv_error_t kleidicv_thread_threshold_binary_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, uint8_t threshold, uint8_t value,
+    kleidicv_thread_multithreading);
+
+kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width, size_t height,
+                                          float scale, float shift,
+                                          kleidicv_thread_multithreading);
+
+kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,
+                                           float *dst, size_t dst_stride,
+                                           size_t width, size_t height,
+                                           float scale, float shift,
+                                           kleidicv_thread_multithreading);
+
+#define KLEIDICV_THREAD_BINARY_OP(name, type)                              \
+  kleidicv_error_t name(const type *src_a, size_t src_a_stride,            \
+                        const type *src_b, size_t src_b_stride, type *dst, \
+                        size_t dst_stride, size_t width, size_t height,    \
+                        kleidicv_thread_multithreading)
+
+#define KLEIDICV_THREAD_BINARY_OP_SCALE(name, type, scaletype)             \
+  kleidicv_error_t name(const type *src_a, size_t src_a_stride,            \
+                        const type *src_b, size_t src_b_stride, type *dst, \
+                        size_t dst_stride, size_t width, size_t height,    \
+                        scaletype scale, kleidicv_thread_multithreading)
+
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_s8, int8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_s16, int16_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_u16, uint16_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_s32, int32_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_u32, uint32_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_s64, int64_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_add_u64, uint64_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_s8, int8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_s16, int16_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_u16, uint16_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_s32, int32_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_u32, uint32_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_s64, int64_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_sub_u64, uint64_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_absdiff_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_absdiff_s8, int8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_absdiff_u16, uint16_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_absdiff_s16, int16_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_saturating_absdiff_s32, int32_t);
+KLEIDICV_THREAD_BINARY_OP_SCALE(kleidicv_thread_saturating_multiply_u8, uint8_t,
+                                double);
+KLEIDICV_THREAD_BINARY_OP_SCALE(kleidicv_thread_saturating_multiply_s8, int8_t,
+                                double);
+KLEIDICV_THREAD_BINARY_OP_SCALE(kleidicv_thread_saturating_multiply_u16,
+                                uint16_t, double);
+KLEIDICV_THREAD_BINARY_OP_SCALE(kleidicv_thread_saturating_multiply_s16,
+                                int16_t, double);
+KLEIDICV_THREAD_BINARY_OP_SCALE(kleidicv_thread_saturating_multiply_s32,
+                                int32_t, double);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_bitwise_and, uint8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_compare_equal_u8, uint8_t);
+KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_compare_greater_u8, uint8_t);
+
+kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
+    const int16_t *src_a, size_t src_a_stride, const int16_t *src_b,
+    size_t src_b_stride, int16_t *dst, size_t dst_stride, size_t width,
+    size_t height, int16_t threshold, kleidicv_thread_multithreading);
 
 #ifdef __cplusplus
 }  // extern "C"

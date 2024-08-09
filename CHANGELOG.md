@@ -36,8 +36,18 @@ This changelog aims to follow the guiding principles of
 ### Changed
 - Filter context creation API specification.
 - Gaussian Blur API specification.
-- In the OpenCV HAL, cvtColor YUV2RGB_NV21 is multithreaded.
-- In the OpenCV HAL, minMaxIdx is multithreaded.
+- In the OpenCV HAL, the following operations are multithreaded:
+  * cvtColor
+  * threshold
+  * convertTo
+  * exp
+  * compare
+  * add
+  * sub
+  * mul
+  * absdiff
+  * bitwise_and
+  * minMaxIdx
 - Improved performance of Compare Equal and Greater SC API.
 
 ### Removed

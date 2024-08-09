@@ -14,9 +14,19 @@ For details of building OpenCV with KleidiCV see [the build documentation](build
 
 For single-threaded use cases, enabling the KleidiCV OpenCV HAL is likely to
 provide a performance boost for the functions that it implements.
-Multithreading is planned for KleidiCV but at present it is single-threaded
-only. Therefore it is recommended to check the performance yourself in order
-to decide whether to enable KleidiCV in a multicore environment.
+The same is true for multi-threaded use cases, with the exception of the
+following functions:
+* dilate
+* erode
+* GaussianBlur
+* resize
+* sepFilter2D
+* Sobel
+* transpose
+Multithreading is planned for these functions in KleidiCV but at present they
+are single-threaded only. Therefore it is recommended to check the performance
+yourself in order to decide whether to enable KleidiCV in a multicore
+environment.
 
 ## Functionality in KleidiCV OpenCV HAL
 
