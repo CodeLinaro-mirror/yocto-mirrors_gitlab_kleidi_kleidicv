@@ -331,9 +331,9 @@ class VecTraits<int8_t> : public VecTraitsBase<int8_t> {
   static inline svint8_t svdup(int8_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s8(v);
   }
-  static inline svuint8_t svreinterpret(svint8_t v)
+  static inline svint8_t svreinterpret(svuint8_t v)
       KLEIDICV_STREAMING_COMPATIBLE {
-    return svreinterpret_u8(v);
+    return svreinterpret_s8(v);
   }
   static inline svint8_t svasr_n(svbool_t pg, svint8_t v,
                                  uint8_t s) KLEIDICV_STREAMING_COMPATIBLE {
@@ -347,9 +347,13 @@ class VecTraits<uint8_t> : public VecTraitsBase<uint8_t> {
   static inline svuint8_t svdup(uint8_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u8(v);
   }
-  static inline svint8_t svreinterpret(svuint8_t v)
+  static inline svuint8_t svreinterpret(svint8_t v)
       KLEIDICV_STREAMING_COMPATIBLE {
-    return svreinterpret_s8(v);
+    return svreinterpret_u8(v);
+  }
+  static inline svuint8_t svsub(svbool_t pg, svuint8_t v,
+                                svuint8_t u) KLEIDICV_STREAMING_COMPATIBLE {
+    return svsub_u8_x(pg, v, u);
   }
   static inline svuint8_t svhsub(svbool_t pg, svuint8_t v,
                                  svuint8_t u) KLEIDICV_STREAMING_COMPATIBLE {
@@ -363,6 +367,10 @@ class VecTraits<int16_t> : public VecTraitsBase<int16_t> {
   static inline svint16_t svdup(int16_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s16(v);
   }
+  static inline svint16_t svreinterpret(svuint16_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_s16(v);
+  }
 };  // end of class VecTraits<int16_t>
 
 template <>
@@ -370,6 +378,10 @@ class VecTraits<uint16_t> : public VecTraitsBase<uint16_t> {
  public:
   static inline svuint16_t svdup(uint16_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u16(v);
+  }
+  static inline svuint16_t svreinterpret(svint16_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_u16(v);
   }
 };  // end of class VecTraits<uint16_t>
 
@@ -379,6 +391,10 @@ class VecTraits<int32_t> : public VecTraitsBase<int32_t> {
   static inline svint32_t svdup(int32_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s32(v);
   }
+  static inline svint32_t svreinterpret(svuint32_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_s32(v);
+  }
 };  // end of class VecTraits<int32_t>
 
 template <>
@@ -386,6 +402,10 @@ class VecTraits<uint32_t> : public VecTraitsBase<uint32_t> {
  public:
   static inline svuint32_t svdup(uint32_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u32(v);
+  }
+  static inline svuint32_t svreinterpret(svint32_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_u32(v);
   }
 };  // end of class VecTraits<uint32_t>
 
@@ -395,6 +415,10 @@ class VecTraits<int64_t> : public VecTraitsBase<int64_t> {
   static inline svint64_t svdup(int64_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_s64(v);
   }
+  static inline svint64_t svreinterpret(svuint64_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_s64(v);
+  }
 };  // end of class VecTraits<int64_t>
 
 template <>
@@ -403,6 +427,10 @@ class VecTraits<uint64_t> : public VecTraitsBase<uint64_t> {
   static inline svuint64_t svdup(uint64_t v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_u64(v);
   }
+  static inline svuint64_t svreinterpret(svint64_t v)
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svreinterpret_u64(v);
+  }
 };  // end of class VecTraits<uint64_t>
 
 template <>
@@ -410,6 +438,10 @@ class VecTraits<float> : public VecTraitsBase<float> {
  public:
   static inline svfloat32_t svdup(float v) KLEIDICV_STREAMING_COMPATIBLE {
     return svdup_f32(v);
+  }
+  static inline svfloat32_t svsub(svbool_t pg, svfloat32_t v,
+                                  svfloat32_t u) KLEIDICV_STREAMING_COMPATIBLE {
+    return svsub_f32_x(pg, v, u);
   }
 };  // end of class VecTraits<float>
 
