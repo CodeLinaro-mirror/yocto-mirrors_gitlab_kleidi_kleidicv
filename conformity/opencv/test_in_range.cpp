@@ -36,6 +36,26 @@ bool test_in_range(int index, RecreatedMessageQueue& request_queue,
 
   return false;
 }
+
+template <int LowerBound, int UpperBound, size_t Format>
+bool test_in_range_custom(int index, RecreatedMessageQueue& request_queue,
+                          RecreatedMessageQueue& reply_queue) {
+  cv::Mat input(custom_data_float_height, custom_data_float_width, CV_32FC1,
+                custom_data_float);
+
+  cv::Mat actual = exec_in_range<LowerBound, UpperBound>(input);
+  cv::Mat expected =
+      get_expected_from_subordinate(index, request_queue, reply_queue, input);
+
+  if (are_matrices_different<uint8_t>(0, actual, expected)) {
+    fail_print_matrices(custom_data_float_height, custom_data_float_width,
+                        input, actual, expected);
+    return true;
+  }
+
+  return false;
+}
+
 #endif
 
 std::vector<test>& in_range_tests_get() {
@@ -56,6 +76,8 @@ std::vector<test>& in_range_tests_get() {
     TEST("InRange float,  lower_bound =      14.999, upper_bound =      20.998", (test_in_range<14999, 20998, CV_32FC1>), (exec_in_range<14999, 20998>)),
     TEST("InRange float,  lower_bound =  999999.998, upper_bound =  999999.999", (test_in_range<(999999998), (999999999), CV_32FC1>), (exec_in_range<(999999998), (999999999)>)),
     TEST("InRange float,  lower_bound =  999989.999, upper_bound =  999999.999", (test_in_range<(999989999), (999999999), CV_32FC1>), (exec_in_range<(999989999), (999999999)>)),
+    TEST("InRange float,  lower_bound =           0, upper_bound =           1", (test_in_range_custom<(0), (1), CV_32FC1>), (exec_in_range<(0), (1)>)),
+    TEST("InRange float,  lower_bound =       -11.4, upper_bound =      1111.1", (test_in_range_custom<(-11400), (1111100), CV_32FC1>), (exec_in_range<(-11400), (1111100)>)),
   };
   // clang-format on
   return tests;

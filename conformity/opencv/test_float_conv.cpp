@@ -7,33 +7,6 @@
 
 #include "tests.h"
 
-float floatval(uint32_t v) {
-  float result;
-  static_assert(sizeof(result) == sizeof(v));
-  memcpy(&result, &v, sizeof(result));
-  return result;
-}
-
-float quietNaN = std::numeric_limits<float>::quiet_NaN();
-float signalingNaN = std::numeric_limits<float>::signaling_NaN();
-float posInfinity = std::numeric_limits<float>::infinity();
-float negInfinity = -std::numeric_limits<float>::infinity();
-
-float minusNaN = floatval(0xFF800001);
-float plusNaN = floatval(0x7F800001);
-float plusZero = 0.0F;
-float minusZero = -0.0F;
-
-float oneNaN = floatval(0x7FC00001);
-float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
-float floatMin = std::numeric_limits<float>::min();
-float floatMax = std::numeric_limits<float>::max();
-
-float posSubnormalMin = std::numeric_limits<float>::denorm_min();
-float posSubnormalMax = floatval(0x007FFFFF);
-float negSubnormalMin = -std::numeric_limits<float>::denorm_min();
-float negSubnormalMax = floatval(0x807FFFFF);
-
 template <bool Signed>
 cv::Mat exec_float32_to_int8(cv::Mat& input) {
   cv::Mat result;
@@ -97,23 +70,6 @@ bool test_int8_to_float32_random(int index,
 
   return false;
 }
-
-static constexpr int custom_data_float_height = 8;
-static constexpr int custom_data_float_width = 4;
-
-static float
-    custom_data_float[custom_data_float_height * custom_data_float_width] = {
-        // clang-format off
-        quietNaN, signalingNaN, posInfinity, negInfinity,
-        minusNaN, plusNaN, plusZero, minusZero,
-        oneNaN, zeroDivZero, floatMin, floatMax,
-        posSubnormalMin, posSubnormalMax, negSubnormalMin, negSubnormalMax,
-        1111.11, -1112.22, 113.33, 114.44,
-        111.51, 112.62, 113.73, 114.84,
-        126.66, 127.11, 128.66, 129.11,
-        11.5, 12.5, -11.5, -12.5,
-        // clang-format on
-};
 
 static constexpr int custom_data_int8_height = 1;
 static constexpr int custom_data_int8_width = 7;

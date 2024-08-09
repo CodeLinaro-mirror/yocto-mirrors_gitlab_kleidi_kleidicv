@@ -32,6 +32,50 @@
 
 #define KLEIDICV_CONFORMITY_MAX_MAT_DIMENSIONS 4
 
+static float floatval(uint32_t v) {
+  float result;  // Avoid cppcoreguidelines-init-variables. NOLINT
+  static_assert(sizeof(result) == sizeof(v));
+  memcpy(&result, &v, sizeof(result));
+  return result;
+}
+
+const float quietNaN = std::numeric_limits<float>::quiet_NaN();
+const float signalingNaN = std::numeric_limits<float>::signaling_NaN();
+const float posInfinity = std::numeric_limits<float>::infinity();
+const float negInfinity = -std::numeric_limits<float>::infinity();
+
+const float minusNaN = floatval(0xFF800001);
+const float plusNaN = floatval(0x7F800001);
+const float plusZero = 0.0F;
+const float minusZero = -0.0F;
+
+const float oneNaN = floatval(0x7FC00001);
+const float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
+const float floatMin = std::numeric_limits<float>::min();
+const float floatMax = std::numeric_limits<float>::max();
+
+const float posSubnormalMin = std::numeric_limits<float>::denorm_min();
+const float posSubnormalMax = floatval(0x007FFFFF);
+const float negSubnormalMin = -std::numeric_limits<float>::denorm_min();
+const float negSubnormalMax = floatval(0x807FFFFF);
+
+static constexpr int custom_data_float_height = 8;
+static constexpr int custom_data_float_width = 4;
+
+static float
+    custom_data_float[custom_data_float_height * custom_data_float_width] = {
+        // clang-format off
+        quietNaN, signalingNaN, posInfinity, negInfinity,
+        minusNaN, plusNaN, plusZero, minusZero,
+        oneNaN, zeroDivZero, floatMin, floatMax,
+        posSubnormalMin, posSubnormalMax, negSubnormalMin, negSubnormalMax,
+        1111.11, -1112.22, 113.33, 114.44,
+        111.51, 112.62, 113.73, 114.84,
+        126.66, 127.11, 128.66, 129.11,
+        11.5, 12.5, -11.5, -12.5,
+        // clang-format on
+};
+
 template <typename T>
 static constexpr T min() {
   return std::numeric_limits<T>::min();
