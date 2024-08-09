@@ -85,7 +85,6 @@ RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL IntToFloat opencv_perf_core '*convertTo/*' '(3840x2160, 8SC1, 32FC1, 1, 1, 0)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL UintToFloat opencv_perf_core '*convertTo/*' '(3840x2160, 8UC1, 32FC1, 1, 1, 0)')")
 
-RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL CompareEq opencv_perf_core '*compare/*' '(3840x2160, 8UC1, CMP_EQ)')")
 RES+=$(printf "\n$(${DEV_DIR}/perf_test_op.sh $CUSTOM_BUILD_SUFFIX $CPU $THERMAL CompareGt opencv_perf_core '*compare/*' '(3840x2160, 8UC1, CMP_GT)')")
 
 echo "$RES"
