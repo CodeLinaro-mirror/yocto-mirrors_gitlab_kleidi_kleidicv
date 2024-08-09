@@ -109,15 +109,13 @@ class SeparableFilter2D<uint8_t, 5> {
   SourceVectorType kernel_y_u8_[5];
 };
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t separable_filter_2d_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
-    size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
-  CHECK_POINTERS(context, kernel_x, kernel_y);
-  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
-  auto fixed_border_type = get_fixed_border_type(border_type);
+template <typename T>
+static kleidicv_error_t separable_filter_2d_checks(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t channels, const T *kernel_x, size_t kernel_width,
+    const T *kernel_y, size_t kernel_height,
+    SeparableFilterWorkspace *workspace) {
+  CHECK_POINTERS(workspace, kernel_x, kernel_y);
 
   if (kernel_width != 5 || kernel_height != 5) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -139,17 +137,37 @@ kleidicv_error_t separable_filter_2d_u8(
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
-  Rectangle rect{width, height};
   const Rectangle &context_rect = workspace->image_size();
   if (context_rect.width() < width || context_rect.height() < height) {
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
+  return KLEIDICV_OK;
+}
+
+KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t separable_filter_2d_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
+    size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
+  kleidicv_error_t checks_result = separable_filter_2d_checks(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_x,
+      kernel_width, kernel_y, kernel_height, workspace);
+
+  if (checks_result != KLEIDICV_OK) {
+    return checks_result;
+  }
+
+  auto fixed_border_type = get_fixed_border_type(border_type);
   // if the std::optional is empty, that means that the border type is not
   // supported, so there's no need to check for specific types
   if (!fixed_border_type) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+
+  Rectangle rect{width, height};
 
   using SeparableFilterClass = SeparableFilter2D<uint8_t, 5>;
 
