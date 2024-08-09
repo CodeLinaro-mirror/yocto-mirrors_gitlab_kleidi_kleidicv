@@ -856,15 +856,13 @@ static kleidicv_error_t gaussian_blur(
   }
 }
 
-static kleidicv_error_t gaussian_blur_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channels, size_t kernel_width,
-    size_t kernel_height, float sigma_x, float sigma_y,
-    kleidicv_border_type_t border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(context);
-  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
-  auto fixed_border_type = get_fixed_border_type(border_type);
+template <typename T>
+static kleidicv_error_t gaussian_blur_checks(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t channels, size_t kernel_width, size_t kernel_height,
+    float sigma_x, float sigma_y,
+    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
+  CHECK_POINTERS(workspace);
 
   if (kernel_width != kernel_height) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -890,15 +888,35 @@ static kleidicv_error_t gaussian_blur_u8_sc(
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
-  Rectangle rect{width, height};
   const Rectangle &context_rect = workspace->image_size();
   if (context_rect.width() < width || context_rect.height() < height) {
     return KLEIDICV_ERROR_CONTEXT_MISMATCH;
   }
 
+  return KLEIDICV_OK;
+}
+
+static kleidicv_error_t gaussian_blur_u8_sc(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, float sigma_x, float sigma_y,
+    kleidicv_border_type_t border_type,
+    kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
+  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
+  kleidicv_error_t checks_result = gaussian_blur_checks(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
+      kernel_height, sigma_x, sigma_y, workspace);
+
+  if (checks_result != KLEIDICV_OK) {
+    return checks_result;
+  }
+
+  auto fixed_border_type = get_fixed_border_type(border_type);
   if (!fixed_border_type) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+
+  Rectangle rect{width, height};
 
   if (sigma_x == 0.0) {
     return gaussian_blur<true>(kernel_width, src, src_stride, dst, dst_stride,
