@@ -520,35 +520,45 @@ class GaussianBlur<uint8_t, KernelSize, false> {
   using BufferType = uint32_t;
   using DestinationType = uint8_t;
 
+  static constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
+
+  // NOLINTNEXTLINE - hicpp-member-init
   explicit GaussianBlur(float sigma)
-      : half_kernel_(
-            generate_gaussian_half_kernel<get_half_kernel_size(KernelSize)>(
-                sigma)) {}
+      : half_kernel_(generate_gaussian_half_kernel<kHalfKernelSize>(sigma)) {
+    for (size_t i = 0; i < kHalfKernelSize; i++) {
+      half_kernel_u16_[i] = vdupq_n_u16(half_kernel_[i]);
+      half_kernel_u32_[i] = vdupq_n_u32(half_kernel_[i]);
+    }
+  }
 
   void vertical_vector_path(uint8x16_t src[KernelSize], BufferType *dst) const {
     uint16x8_t initial_l = vmovl_u8(vget_low_u8(src[KernelSize >> 1]));
-    uint16x8_t initial_h = vmovl_u8(vget_high_u8(src[KernelSize >> 1]));
+    uint16x8_t initial_h = vmovl_high_u8(src[KernelSize >> 1]);
 
     uint32x4_t acc_l_l =
-        vmull_n_u16(vget_low_u16(initial_l), half_kernel_[KernelSize >> 1]);
+        vmull_u16(vget_low_u16(initial_l),
+                  vget_low_u16(half_kernel_u16_[KernelSize >> 1]));
     uint32x4_t acc_l_h =
-        vmull_n_u16(vget_high_u16(initial_l), half_kernel_[KernelSize >> 1]);
+        vmull_high_u16(initial_l, half_kernel_u16_[KernelSize >> 1]);
     uint32x4_t acc_h_l =
-        vmull_n_u16(vget_low_u16(initial_h), half_kernel_[KernelSize >> 1]);
+        vmull_u16(vget_low_u16(initial_h),
+                  vget_low_u16(half_kernel_u16_[KernelSize >> 1]));
     uint32x4_t acc_h_h =
-        vmull_n_u16(vget_high_u16(initial_h), half_kernel_[KernelSize >> 1]);
+        vmull_high_u16(initial_h, half_kernel_u16_[KernelSize >> 1]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 0; i < (KernelSize >> 1); i++) {
       const size_t j = KernelSize - i - 1;
       uint16x8_t vec_l = vaddl_u8(vget_low_u8(src[i]), vget_low_u8(src[j]));
-      uint16x8_t vec_h = vaddl_u8(vget_high_u8(src[i]), vget_high_u8(src[j]));
+      uint16x8_t vec_h = vaddl_high_u8(src[i], src[j]);
 
-      acc_l_l = vmlal_n_u16(acc_l_l, vget_low_u16(vec_l), half_kernel_[i]);
-      acc_l_h = vmlal_n_u16(acc_l_h, vget_high_u16(vec_l), half_kernel_[i]);
-      acc_h_l = vmlal_n_u16(acc_h_l, vget_low_u16(vec_h), half_kernel_[i]);
-      acc_h_h = vmlal_n_u16(acc_h_h, vget_high_u16(vec_h), half_kernel_[i]);
+      acc_l_l = vmlal_u16(acc_l_l, vget_low_u16(vec_l),
+                          vget_low_u16(half_kernel_u16_[i]));
+      acc_l_h = vmlal_high_u16(acc_l_h, vec_l, half_kernel_u16_[i]);
+      acc_h_l = vmlal_u16(acc_h_l, vget_low_u16(vec_h),
+                          vget_low_u16(half_kernel_u16_[i]));
+      acc_h_h = vmlal_high_u16(acc_h_h, vec_h, half_kernel_u16_[i]);
     }
 
     uint32x4x4_t result = {acc_l_l, acc_l_h, acc_h_l, acc_h_h};
@@ -578,14 +588,14 @@ class GaussianBlur<uint8_t, KernelSize, false> {
   void horizontal_vector_path(uint32x4_t src[KernelSize],
                               DestinationType *dst) const {
     uint32x4_t acc =
-        vmulq_n_u32(src[KernelSize >> 1], half_kernel_[KernelSize >> 1]);
+        vmulq_u32(src[KernelSize >> 1], half_kernel_u32_[KernelSize >> 1]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 0; i < (KernelSize >> 1); i++) {
       const size_t j = KernelSize - i - 1;
       uint32x4_t vec_inner = vaddq_u32(src[i], src[j]);
-      acc = vmlaq_n_u32(acc, vec_inner, half_kernel_[i]);
+      acc = vmlaq_u32(acc, vec_inner, half_kernel_u32_[i]);
     }
 
     uint32x4_t acc_u32 = vrshrq_n_u32(acc, 16);
@@ -616,7 +626,9 @@ class GaussianBlur<uint8_t, KernelSize, false> {
   }
 
  private:
-  const std::array<uint16_t, get_half_kernel_size(KernelSize)> half_kernel_;
+  const std::array<uint16_t, kHalfKernelSize> half_kernel_;
+  uint16x8_t half_kernel_u16_[kHalfKernelSize];
+  uint32x4_t half_kernel_u32_[kHalfKernelSize];
 };  // end of class GaussianBlur<uint8_t, KernelSize, false>
 
 template <size_t KernelSize, bool IsBinomial, typename ScalarType>
