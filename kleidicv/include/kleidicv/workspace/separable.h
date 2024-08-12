@@ -122,7 +122,7 @@ class SeparableFilterWorkspace final {
 
   // Processes rows vertically first along the full width
   template <typename FilterType>
-  void process(Rectangle rect,
+  void process(Rectangle rect, size_t y_begin, size_t y_end,
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
                size_t channels, typename FilterType::BorderType border_type,
@@ -139,7 +139,7 @@ class SeparableFilterWorkspace final {
                             buffer_rows_stride_, channels};
 
     // Vertical processing loop.
-    for (size_t vertical_index = 0; vertical_index < rect.height();
+    for (size_t vertical_index = y_begin; vertical_index < y_end;
          ++vertical_index) {
       // Recalculate vertical border offsets.
       auto offsets = vertical_border.offsets_with_border(vertical_index);

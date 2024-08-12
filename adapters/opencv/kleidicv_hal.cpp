@@ -487,10 +487,11 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
     return convert_error(create_err);
   }
 
-  kleidicv_error_t blur_err = kleidicv_gaussian_blur_u8(
+  auto mt = get_multithreading();
+  kleidicv_error_t blur_err = kleidicv_thread_gaussian_blur_u8(
       reinterpret_cast<const uint8_t *>(src_data), src_step,
       reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
-      kernel_size, kernel_size, 0.0, 0.0, kleidicv_border_type, context);
+      kernel_size, kernel_size, 0.0, 0.0, kleidicv_border_type, context, mt);
 
   kleidicv_error_t release_err = kleidicv_filter_context_release(context);
 

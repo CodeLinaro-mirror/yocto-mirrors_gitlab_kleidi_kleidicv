@@ -40,9 +40,10 @@ class Thread : public testing::TestWithParam<P> {
         src.data(), src.stride(), dst_multi.data(), dst_multi.stride(), width,
         height, args..., get_multithreading_fake(thread_count));
 
-    EXPECT_EQ(KLEIDICV_OK, single_result);
-    EXPECT_EQ(KLEIDICV_OK, multi_result);
-    EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+    EXPECT_EQ(single_result, multi_result);
+    if (KLEIDICV_OK == single_result) {
+      EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+    }
   }
 
   template <typename SrcT, typename DstT, typename SingleThreadedFunc,
@@ -143,6 +144,27 @@ TEST_BINARY_OP(bitwise_and, uint8_t, 1, 1);
 TEST_BINARY_OP(compare_equal_u8, uint8_t, 1, 1);
 TEST_BINARY_OP(compare_greater_u8, uint8_t, 1, 1);
 TEST_BINARY_OP(saturating_add_abs_with_threshold_s16, int16_t, 1, 1, 123);
+
+TEST_P(Thread, gaussian_blur_u8) {
+  unsigned width = 0, height = 0, thread_count = 0;
+  std::tie(width, height, thread_count) = GetParam();
+  (void)thread_count;
+  size_t channels = 1;
+  size_t kernel_width = 5;
+  size_t kernel_height = kernel_width;
+  float sigma_x = 0.0F, sigma_y = 0.0F;
+  kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, channels, kernel_width,
+                                           kernel_height, width, height));
+  check_unary_op<uint8_t, uint8_t>(
+      kleidicv_gaussian_blur_u8, kleidicv_thread_gaussian_blur_u8,
+      channels /*src_channels*/, channels /*dst_channels*/,
+      /*remaining arguments passed to gaussian_blur_u8 functions*/ channels,
+      kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
 
 INSTANTIATE_TEST_SUITE_P(, Thread,
                          testing::Values(P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2},

@@ -176,8 +176,8 @@ kleidicv_error_t separable_filter_2d_u8(
 
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, src_rows, dst_rows, channels, *fixed_border_type,
-                     filter);
+  workspace->process(rect, 0, rect.height(), src_rows, dst_rows, channels,
+                     *fixed_border_type, filter);
 
   return KLEIDICV_OK;
 }

@@ -238,6 +238,13 @@ kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
     size_t src_b_stride, int16_t *dst, size_t dst_stride, size_t width,
     size_t height, int16_t threshold, kleidicv_thread_multithreading);
 
+kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, float sigma_x, float sigma_y,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
+    kleidicv_thread_multithreading);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

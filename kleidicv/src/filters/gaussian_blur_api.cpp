@@ -7,6 +7,21 @@
 #include "kleidicv/kleidicv.h"
 
 KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_gaussian_blur_u8, &kleidicv::neon::gaussian_blur_u8,
-    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_u8),
-    &kleidicv::sme2::gaussian_blur_u8);
+    kleidicv_gaussian_blur_stripe_u8, &kleidicv::neon::gaussian_blur_stripe_u8,
+    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_stripe_u8),
+    &kleidicv::sme2::gaussian_blur_stripe_u8);
+
+namespace kleidicv {
+static kleidicv_error_t gaussian_blur_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, float sigma_x, float sigma_y,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+  return kleidicv_gaussian_blur_stripe_u8(
+      src, src_stride, dst, dst_stride, width, height, 0, height, channels,
+      kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
+}
+}  // namespace kleidicv
+
+KLEIDICV_MULTIVERSION_C_API(kleidicv_gaussian_blur_u8,
+                            &kleidicv::gaussian_blur_u8, nullptr, nullptr);

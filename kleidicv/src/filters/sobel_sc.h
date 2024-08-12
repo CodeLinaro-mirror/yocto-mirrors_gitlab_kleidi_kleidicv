@@ -149,7 +149,7 @@ static kleidicv_error_t sobel_3x3_horizontal_s16_u8_sc(
 
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
   SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
-  workspace->process(rect, src_rows, dst_rows, channels,
+  workspace->process(rect, 0, rect.height(), src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }
@@ -185,7 +185,7 @@ static kleidicv_error_t sobel_3x3_vertical_s16_u8_sc(
 
   VerticalSobel3x3<uint8_t> vertical_sobel;
   SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
-  workspace->process(rect, src_rows, dst_rows, channels,
+  workspace->process(rect, 0, rect.height(), src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }
