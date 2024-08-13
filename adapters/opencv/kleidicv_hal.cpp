@@ -423,12 +423,14 @@ int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
     params->cached_max_image_height = height_sz;
   }
 
-  kleidicv_error_t filter_err = kleidicv_separable_filter_2d_u8(
+  auto mt = get_multithreading();
+
+  kleidicv_error_t filter_err = kleidicv_thread_separable_filter_2d_u8(
       reinterpret_cast<const uint8_t *>(src_data), src_step,
       reinterpret_cast<uint8_t *>(dst_data), dst_step,
       static_cast<size_t>(width), static_cast<size_t>(height), params->channels,
       params->kernel_x, params->kernel_width, params->kernel_y,
-      params->kernel_height, params->border_type, filter_context);
+      params->kernel_height, params->border_type, filter_context, mt);
 
   return convert_error(filter_err);
 }

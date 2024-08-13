@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "kleidicv/filters/gaussian_blur.h"
+#include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/kleidicv.h"
 
 typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;
@@ -366,12 +367,12 @@ kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
 
 DEFINE_KLEIDICV_THREAD_MIN_MAX_LOC(u8, uint8_t);
 
-kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channels, size_t kernel_width,
-    size_t kernel_height, float sigma_x, float sigma_y,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
-    kleidicv_thread_multithreading mt) {
+template <typename F>
+kleidicv_error_t kleidicv_thread_filter(F filter, size_t width, size_t height,
+                                        size_t channels, size_t kernel_width,
+                                        size_t kernel_height,
+                                        kleidicv_filter_context_t *context,
+                                        kleidicv_thread_multithreading mt) {
   FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
     // The context contains a buffer that can only fit a single row, so can't be
     // shared between threads. Since we don't know how many threads there are,
@@ -392,10 +393,7 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
       // GCOVR_EXCL_STOP
     }
 
-    kleidicv_error_t result = kleidicv_gaussian_blur_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_width, kernel_height, sigma_x, sigma_y, border_type,
-        thread_context);
+    kleidicv_error_t result = filter(y_begin, y_end, thread_context);
 
     if (create_context) {
       kleidicv_error_t context_release_result =
@@ -408,4 +406,38 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
   };
   return mt.parallel(kleidicv_thread_std_function_callback, &callback,
                      mt.parallel_data, height);
+}
+
+kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, float sigma_x, float sigma_y,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
+    kleidicv_thread_multithreading mt) {
+  auto callback = [=](size_t y_begin, size_t y_end,
+                      kleidicv_filter_context_t *thread_context) {
+    return kleidicv_gaussian_blur_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_width, kernel_height, sigma_x, sigma_y, border_type,
+        thread_context);
+  };
+  return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
+                                kernel_height, context, mt);
+}
+
+kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
+    size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
+    kleidicv_thread_multithreading mt) {
+  auto callback = [=](size_t y_begin, size_t y_end,
+                      kleidicv_filter_context_t *thread_context) {
+    return kleidicv_separable_filter_2d_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_x, kernel_width, kernel_y, kernel_height, border_type,
+        thread_context);
+  };
+  return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
+                                kernel_height, context, mt);
 }

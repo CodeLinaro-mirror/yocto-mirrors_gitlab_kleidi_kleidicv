@@ -174,11 +174,11 @@ static kleidicv_error_t separable_filter_2d_checks(
   return KLEIDICV_OK;
 }
 
-static kleidicv_error_t separable_filter_2d_u8_sc(
+static kleidicv_error_t separable_filter_2d_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
-    size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
-    kleidicv_border_type_t border_type,
+    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const uint8_t *kernel_x, size_t kernel_width, const uint8_t *kernel_y,
+    size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
   kleidicv_error_t checks_result = separable_filter_2d_checks(
@@ -220,7 +220,7 @@ static kleidicv_error_t separable_filter_2d_u8_sc(
 
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, 0, rect.height(), src_rows, dst_rows, channels,
+  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      *fixed_border_type, filter);
 
   return KLEIDICV_OK;

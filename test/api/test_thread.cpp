@@ -166,6 +166,33 @@ TEST_P(Thread, gaussian_blur_u8) {
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
 
+TEST_P(Thread, separable_filter_2d_u8) {
+  unsigned width = 0, height = 0, thread_count = 0;
+  std::tie(width, height, thread_count) = GetParam();
+  (void)thread_count;
+  size_t channels = 1;
+  const size_t kernel_width = 5;
+  const size_t kernel_height = kernel_width;
+
+  test::Array2D<uint8_t> kernel_x{kernel_width, 1};
+  kernel_x.set(0, 0, {9, 9, 9, 9, 9});
+  test::Array2D<uint8_t> kernel_y{kernel_height, 1};
+  kernel_y.set(0, 0, {5, 6, 7, 8, 9});
+
+  kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, channels, kernel_width,
+                                           kernel_height, width, height));
+  check_unary_op<uint8_t, uint8_t>(
+      kleidicv_separable_filter_2d_u8, kleidicv_thread_separable_filter_2d_u8,
+      channels /*src_channels*/, channels /*dst_channels*/,
+      /*remaining arguments passed to separable_filter_2d_u8 functions*/
+      channels, kernel_x.data(), kernel_width, kernel_y.data(), kernel_height,
+      border_type, context);
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
+
 INSTANTIATE_TEST_SUITE_P(, Thread,
                          testing::Values(P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2},
                                          P{2, 1, 2}, P{2, 2, 1}, P{1, 3, 2},
