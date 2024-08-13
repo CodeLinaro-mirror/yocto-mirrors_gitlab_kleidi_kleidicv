@@ -313,4 +313,9 @@ template void prepare_borders<uint8_t>(kleidicv_border_type_t,
                                        const Bordered *,
                                        TwoDimensional<uint8_t> *);
 
+template void prepare_borders<uint16_t>(kleidicv_border_type_t,
+                                        kleidicv_border_values_t,
+                                        const Bordered *,
+                                        TwoDimensional<uint16_t> *);
+
 }  // namespace test

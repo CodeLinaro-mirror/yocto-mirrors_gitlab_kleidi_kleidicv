@@ -299,6 +299,7 @@ static int from_opencv(int opencv_border_type,
 struct SeparableFilter2DParams {
   size_t channels;
   kleidicv_border_type_t border_type;
+  int operation_depth;
   const uint8_t *kernel_x;
   size_t kernel_width;
   const uint8_t *kernel_y;
@@ -317,11 +318,16 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (CV_MAT_DEPTH(src_type) != CV_8U) {
+  if (CV_MAT_DEPTH(src_type) != CV_MAT_DEPTH(kernel_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (CV_MAT_DEPTH(kernel_type) != CV_8U) {
+  if (CV_MAT_CN(kernel_type) != 1) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  int operation_depth = CV_MAT_DEPTH(src_type);
+  if (operation_depth != CV_8U && operation_depth != CV_16U) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -355,14 +361,17 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
     return CV_HAL_ERROR_UNKNOWN;
   }
 
-  uint8_t *kernel_x = new uint8_t[kernelx_length];
-  uint8_t *kernel_y = new uint8_t[kernely_length];
+  size_t type_size = get_type_size(operation_depth);
 
-  std::memcpy(kernel_x, kernelx_data, kernelx_length);
-  std::memcpy(kernel_y, kernely_data, kernely_length);
+  uint8_t *kernel_x = new uint8_t[kernelx_length * type_size];
+  uint8_t *kernel_y = new uint8_t[kernely_length * type_size];
+
+  std::memcpy(kernel_x, kernelx_data, kernelx_length * type_size);
+  std::memcpy(kernel_y, kernely_data, kernely_length * type_size);
 
   params->channels = (src_type >> CV_CN_SHIFT) + 1;
   params->border_type = kleidicv_border_type;
+  params->operation_depth = operation_depth;
 
   params->kernel_x = kernel_x;
   params->kernel_width = static_cast<size_t>(kernelx_length);
@@ -424,12 +433,31 @@ int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
 
   auto mt = get_multithreading();
 
-  kleidicv_error_t filter_err = kleidicv_thread_separable_filter_2d_u8(
-      reinterpret_cast<const uint8_t *>(src_data), src_step,
-      reinterpret_cast<uint8_t *>(dst_data), dst_step,
-      static_cast<size_t>(width), static_cast<size_t>(height), params->channels,
-      params->kernel_x, params->kernel_width, params->kernel_y,
-      params->kernel_height, params->border_type, filter_context, mt);
+  kleidicv_error_t filter_err;
+  switch (params->operation_depth) {
+    case CV_8U:
+      filter_err = kleidicv_thread_separable_filter_2d_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step,
+          static_cast<size_t>(width), static_cast<size_t>(height),
+          params->channels, params->kernel_x, params->kernel_width,
+          params->kernel_y, params->kernel_height, params->border_type,
+          filter_context, mt);
+      break;
+    case CV_16U:
+      filter_err = kleidicv_thread_separable_filter_2d_u16(
+          reinterpret_cast<const uint16_t *>(src_data), src_step,
+          reinterpret_cast<uint16_t *>(dst_data), dst_step,
+          static_cast<size_t>(width), static_cast<size_t>(height),
+          params->channels,
+          reinterpret_cast<const uint16_t *>(params->kernel_x),
+          params->kernel_width,
+          reinterpret_cast<const uint16_t *>(params->kernel_y),
+          params->kernel_height, params->border_type, filter_context, mt);
+      break;
+    default:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
 
   return convert_error(filter_err);
 }

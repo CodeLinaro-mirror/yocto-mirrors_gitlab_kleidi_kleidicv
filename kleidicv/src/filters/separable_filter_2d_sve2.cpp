@@ -19,4 +19,16 @@ kleidicv_error_t separable_filter_2d_stripe_u8(
       kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
 }
 
+KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t separable_filter_2d_stripe_u16(
+    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const uint16_t *kernel_x, size_t kernel_width, const uint16_t *kernel_y,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_filter_context_t *context) {
+  return separable_filter_2d_stripe_u16_sc(
+      src, src_stride, dst, dst_stride, width, height, y_begin, y_end, channels,
+      kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
+}
+
 }  // namespace kleidicv::sve2

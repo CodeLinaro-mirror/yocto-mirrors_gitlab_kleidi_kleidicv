@@ -75,6 +75,35 @@ class Thread : public testing::TestWithParam<P> {
     EXPECT_EQ(KLEIDICV_OK, multi_result);
     EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
   }
+
+  template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc>
+  void check_separable_filter_2d(SingleThreadedFunc single_threaded_func,
+                                 MultithreadedFunc multithreaded_func) {
+    unsigned width = 0, height = 0, thread_count = 0;
+    std::tie(width, height, thread_count) = GetParam();
+    (void)thread_count;
+    size_t channels = 1;
+    const size_t kernel_width = 5;
+    const size_t kernel_height = kernel_width;
+
+    test::Array2D<T> kernel_x{kernel_width, 1};
+    kernel_x.set(0, 0, {1, 2, 3, 4, 5});
+    test::Array2D<T> kernel_y{kernel_height, 1};
+    kernel_y.set(0, 0, {5, 6, 7, 8, 9});
+
+    kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
+    kleidicv_filter_context_t *context = nullptr;
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_filter_context_create(&context, channels, kernel_width,
+                                             kernel_height, width, height));
+    check_unary_op<T, T>(
+        single_threaded_func, multithreaded_func, channels /*src_channels*/,
+        channels /*dst_channels*/,
+        /*remaining arguments passed to separable_filter_2d_... functions*/
+        channels, kernel_x.data(), kernel_width, kernel_y.data(), kernel_height,
+        border_type, context);
+    ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  }
 };
 
 #define TEST_UNARY_OP(suffix, SrcT, DstT, ...)                              \
@@ -167,30 +196,13 @@ TEST_P(Thread, gaussian_blur_u8) {
 }
 
 TEST_P(Thread, separable_filter_2d_u8) {
-  unsigned width = 0, height = 0, thread_count = 0;
-  std::tie(width, height, thread_count) = GetParam();
-  (void)thread_count;
-  size_t channels = 1;
-  const size_t kernel_width = 5;
-  const size_t kernel_height = kernel_width;
+  check_separable_filter_2d<uint8_t>(kleidicv_separable_filter_2d_u8,
+                                     kleidicv_thread_separable_filter_2d_u8);
+}
 
-  test::Array2D<uint8_t> kernel_x{kernel_width, 1};
-  kernel_x.set(0, 0, {9, 9, 9, 9, 9});
-  test::Array2D<uint8_t> kernel_y{kernel_height, 1};
-  kernel_y.set(0, 0, {5, 6, 7, 8, 9});
-
-  kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, channels, kernel_width,
-                                           kernel_height, width, height));
-  check_unary_op<uint8_t, uint8_t>(
-      kleidicv_separable_filter_2d_u8, kleidicv_thread_separable_filter_2d_u8,
-      channels /*src_channels*/, channels /*dst_channels*/,
-      /*remaining arguments passed to separable_filter_2d_u8 functions*/
-      channels, kernel_x.data(), kernel_width, kernel_y.data(), kernel_height,
-      border_type, context);
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+TEST_P(Thread, separable_filter_2d_u16) {
+  check_separable_filter_2d<uint16_t>(kleidicv_separable_filter_2d_u16,
+                                      kleidicv_thread_separable_filter_2d_u16);
 }
 
 TEST_P(Thread, SobelHorizontal1Channel) {

@@ -109,6 +109,100 @@ class SeparableFilter2D<uint8_t, 5> {
   SourceVectorType kernel_y_u8_[5];
 };  // end of class SeparableFilter2D<uint8_t, 5>
 
+template <>
+class SeparableFilter2D<uint16_t, 5> {
+ public:
+  using SourceType = uint16_t;
+  using SourceVectorType = typename VecTraits<SourceType>::VectorType;
+  using BufferType = uint32_t;
+  using BufferVectorType = typename VecTraits<BufferType>::VectorType;
+  using DestinationType = uint16_t;
+
+  // Ignored because vectors are initialized in the constructor body.
+  // NOLINTNEXTLINE - hicpp-member-init
+  SeparableFilter2D(const SourceType *kernel_x, const SourceType *kernel_y)
+      : kernel_x_(kernel_x), kernel_y_(kernel_y) {
+    for (size_t i = 0; i < 5; i++) {
+      kernel_x_u32_[i] = vdupq_n_u32(kernel_x[i]);
+      kernel_y_u16_[i] = vdupq_n_u16(kernel_y[i]);
+    }
+  }
+
+  void vertical_vector_path(SourceVectorType src[5], BufferType *dst) const {
+    SourceVectorType acc_l =
+        vmull_u16(vget_low_u16(src[0]), vget_low_u16(kernel_y_u16_[0]));
+    SourceVectorType acc_h = vmull_high_u16(src[0], kernel_y_u16_[0]);
+
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 1; i < 5; i++) {
+      acc_l = vmlal_u16(acc_l, vget_low_u16(src[i]),
+                        vget_low_u16(kernel_y_u16_[i]));
+      acc_h = vmlal_high_u16(acc_h, src[i], kernel_y_u16_[i]);
+    }
+
+    vst1q_u32(&dst[0], acc_l);
+    vst1q_u32(&dst[4], acc_h);
+  }
+
+  void vertical_scalar_path(const SourceType src[5], BufferType *dst) const {
+    BufferType acc = static_cast<BufferType>(src[0]) * kernel_y_[0];
+    for (size_t i = 1; i < 5; i++) {
+      BufferType temp = static_cast<BufferType>(src[i]) * kernel_y_[i];
+      if (__builtin_add_overflow(acc, temp, &acc)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+    }
+
+    dst[0] = acc;
+  }
+
+  void horizontal_vector_path(BufferVectorType src[5],
+                              DestinationType *dst) const {
+    BufferVectorType acc = vmulq_u32(src[0], kernel_x_u32_[0]);
+
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 1; i < 5; i++) {
+      acc = vmlaq_u32(acc, src[i], kernel_x_u32_[i]);
+    }
+
+    uint16x4_t result = vqmovn_u32(acc);
+    vst1_u16(&dst[0], result);
+  }
+
+  void horizontal_scalar_path(const BufferType src[5],
+                              DestinationType *dst) const {
+    SourceType acc;  // Avoid cppcoreguidelines-init-variables. NOLINT
+    if (__builtin_mul_overflow(src[0], kernel_x_[0], &acc)) {
+      dst[0] = std::numeric_limits<SourceType>::max();
+      return;
+    }
+
+    for (size_t i = 1; i < 5; i++) {
+      SourceType temp;  // Avoid cppcoreguidelines-init-variables. NOLINT
+      if (__builtin_mul_overflow(src[i], kernel_x_[i], &temp)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+      if (__builtin_add_overflow(acc, temp, &acc)) {
+        dst[0] = std::numeric_limits<SourceType>::max();
+        return;
+      }
+    }
+
+    dst[0] = acc;
+  }
+
+ private:
+  const SourceType *kernel_x_;
+  const SourceType *kernel_y_;
+
+  BufferVectorType kernel_x_u32_[5];
+  SourceVectorType kernel_y_u16_[5];
+};  // end of class SeparableFilter2D<uint16_t, 5>
+
 template <typename T>
 static kleidicv_error_t separable_filter_2d_checks(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
@@ -177,6 +271,44 @@ kleidicv_error_t separable_filter_2d_stripe_u8(
 
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
+  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                     *fixed_border_type, filter);
+
+  return KLEIDICV_OK;
+}
+
+KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t separable_filter_2d_stripe_u16(
+    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const uint16_t *kernel_x, size_t kernel_width, const uint16_t *kernel_y,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_filter_context_t *context) {
+  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
+  kleidicv_error_t checks_result = separable_filter_2d_checks(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_x,
+      kernel_width, kernel_y, kernel_height, workspace);
+
+  if (checks_result != KLEIDICV_OK) {
+    return checks_result;
+  }
+
+  auto fixed_border_type = get_fixed_border_type(border_type);
+  // if the std::optional is empty, that means that the border type is not
+  // supported, so there's no need to check for specific types
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  Rectangle rect{width, height};
+
+  using SeparableFilterClass = SeparableFilter2D<uint16_t, 5>;
+
+  SeparableFilterClass filterClass{kernel_x, kernel_y};
+  SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
+
+  Rows<const uint16_t> src_rows{src, src_stride, channels};
+  Rows<uint16_t> dst_rows{dst, dst_stride, channels};
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      *fixed_border_type, filter);
 

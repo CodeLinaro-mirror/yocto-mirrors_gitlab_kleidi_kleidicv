@@ -13,6 +13,12 @@ KLEIDICV_MULTIVERSION_C_API(
     KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::separable_filter_2d_stripe_u8),
     &kleidicv::sme2::separable_filter_2d_stripe_u8);
 
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_separable_filter_2d_stripe_u16,
+    &kleidicv::neon::separable_filter_2d_stripe_u16,
+    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::separable_filter_2d_stripe_u16),
+    &kleidicv::sme2::separable_filter_2d_stripe_u16);
+
 extern "C" {
 
 using KLEIDICV_TARGET_NAMESPACE::Rectangle;
@@ -68,6 +74,16 @@ kleidicv_error_t kleidicv_separable_filter_2d_u8(
     size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
   return kleidicv_separable_filter_2d_stripe_u8(
+      src, src_stride, dst, dst_stride, width, height, 0, height, channels,
+      kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
+}
+
+kleidicv_error_t kleidicv_separable_filter_2d_u16(
+    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
+    size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+  return kleidicv_separable_filter_2d_stripe_u16(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
       kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
 }

@@ -252,6 +252,13 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading);
 
+kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
+    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
+    size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
+    kleidicv_thread_multithreading);
+
 kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
