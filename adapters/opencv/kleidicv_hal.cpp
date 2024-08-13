@@ -533,11 +533,12 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
     return convert_error(create_err);
   }
 
-  kleidicv_error_t blur_err = kleidicv_gaussian_blur_u8(
+  auto mt = get_multithreading();
+  kleidicv_error_t blur_err = kleidicv_thread_gaussian_blur_u8(
       reinterpret_cast<const uint8_t *>(src_data), src_step,
       reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
       kernel_width, kernel_height, sigma_x, sigma_y, kleidicv_border_type,
-      context);
+      context, mt);
 
   kleidicv_error_t release_err = kleidicv_filter_context_release(context);
 
