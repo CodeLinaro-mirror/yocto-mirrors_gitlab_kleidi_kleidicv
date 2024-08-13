@@ -48,6 +48,9 @@ This changelog aims to follow the guiding principles of
   * absdiff
   * bitwise_and
   * minMaxIdx
+  * GaussianBlur
+  * Sobel
+  * sepFilter2D
 - Improved performance of Compare Equal and Greater SC API.
 
 ### Removed
