@@ -784,16 +784,18 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  auto mt = get_multithreading();
+
   if (dx == 1 && dy == 0) {
-    return convert_error(kleidicv_sobel_3x3_horizontal_s16_u8(
+    return convert_error(kleidicv_thread_sobel_3x3_horizontal_s16_u8(
         src_data, src_step, reinterpret_cast<int16_t *>(dst_data), dst_step,
-        width, height, cn));
+        width, height, cn, mt));
   }
 
   if (dx == 0 && dy == 1) {
-    return convert_error(kleidicv_sobel_3x3_vertical_s16_u8(
+    return convert_error(kleidicv_thread_sobel_3x3_vertical_s16_u8(
         src_data, src_step, reinterpret_cast<int16_t *>(dst_data), dst_step,
-        width, height, cn));
+        width, height, cn, mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;

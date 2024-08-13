@@ -128,10 +128,10 @@ class VerticalSobel3x3<uint8_t> {
 };  // end of class VerticalSobel3x3<uint8_t>
 
 KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
-                                             size_t src_stride, int16_t *dst,
-                                             size_t dst_stride, size_t width,
-                                             size_t height, size_t channels) {
+kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t y_begin, size_t y_end,
+    size_t channels) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -158,16 +158,16 @@ kleidicv_error_t sobel_3x3_horizontal_s16_u8(const uint8_t *src,
 
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
   SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
-  workspace->process(rect, 0, rect.height(), src_rows, dst_rows, channels,
+  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
-                                           size_t src_stride, int16_t *dst,
-                                           size_t dst_stride, size_t width,
-                                           size_t height, size_t channels) {
+kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t y_begin, size_t y_end,
+    size_t channels) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -194,7 +194,7 @@ kleidicv_error_t sobel_3x3_vertical_s16_u8(const uint8_t *src,
 
   VerticalSobel3x3<uint8_t> vertical_sobel;
   SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
-  workspace->process(rect, 0, rect.height(), src_rows, dst_rows, channels,
+  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }

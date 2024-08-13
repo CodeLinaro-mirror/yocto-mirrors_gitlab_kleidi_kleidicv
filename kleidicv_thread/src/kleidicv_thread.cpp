@@ -11,6 +11,7 @@
 
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/separable_filter_2d.h"
+#include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
 
 typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;
@@ -440,4 +441,30 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
   };
   return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
                                 kernel_height, context, mt);
+}
+
+kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels,
+    kleidicv_thread_multithreading mt) {
+  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
+                     mt.parallel_data, height);
+}
+
+kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels,
+    kleidicv_thread_multithreading mt) {
+  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_sobel_3x3_vertical_stripe_s16_u8(src, src_stride, dst,
+                                                     dst_stride, width, height,
+                                                     y_begin, y_end, channels);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
+                     mt.parallel_data, height);
 }

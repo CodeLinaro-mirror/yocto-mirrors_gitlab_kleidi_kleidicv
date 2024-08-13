@@ -193,6 +193,30 @@ TEST_P(Thread, separable_filter_2d_u8) {
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
 
+TEST_P(Thread, SobelHorizontal1Channel) {
+  check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_horizontal_s16_u8,
+                                   kleidicv_thread_sobel_3x3_horizontal_s16_u8,
+                                   1, 1, 1);
+}
+
+TEST_P(Thread, SobelHorizontal3Channels) {
+  check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_horizontal_s16_u8,
+                                   kleidicv_thread_sobel_3x3_horizontal_s16_u8,
+                                   3, 3, 3);
+}
+
+TEST_P(Thread, SobelVertical1Channel) {
+  check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_vertical_s16_u8,
+                                   kleidicv_thread_sobel_3x3_vertical_s16_u8, 1,
+                                   1, 1);
+}
+
+TEST_P(Thread, SobelVertical3Channels) {
+  check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_vertical_s16_u8,
+                                   kleidicv_thread_sobel_3x3_vertical_s16_u8, 3,
+                                   3, 3);
+}
+
 INSTANTIATE_TEST_SUITE_P(, Thread,
                          testing::Values(P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2},
                                          P{2, 1, 2}, P{2, 2, 1}, P{1, 3, 2},
