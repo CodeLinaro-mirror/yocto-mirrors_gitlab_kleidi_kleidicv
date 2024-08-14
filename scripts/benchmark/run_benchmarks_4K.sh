@@ -72,14 +72,14 @@ benchmarks=(
     "Scale_float_1.0: opencv_perf_core '*convertTo/*' '(3840x2160, 32FC1, 32FC1, 1, 1,     4.567)'"
     "Scale_float:     opencv_perf_core '*convertTo/*' '(3840x2160, 32FC1, 32FC1, 1, 1.234, 4.567)'"
 
-    "MinMax_S8_4K:  opencv_perf_core '*minMaxVals/*' '(3840x2160, 8SC1)'"
-    "MinMax_U8_4K:  opencv_perf_core '*minMaxVals/*' '(3840x2160, 8UC1)'"
-    "MinMax_S16_4K: opencv_perf_core '*minMaxVals/*' '(3840x2160, 16SC1)'"
-    "MinMax_U16_4K: opencv_perf_core '*minMaxVals/*' '(3840x2160, 16UC1)'"
-    "MinMax_S32_4K: opencv_perf_core '*minMaxVals/*' '(3840x2160, 32SC1)'"
-    "MinMax_F32_4K: opencv_perf_core '*minMaxVals/*' '(3840x2160, 32FC1)'"
+    "MinMax_S8:  opencv_perf_core '*minMaxVals/*' '(3840x2160, 8SC1)'"
+    "MinMax_U8:  opencv_perf_core '*minMaxVals/*' '(3840x2160, 8UC1)'"
+    "MinMax_S16: opencv_perf_core '*minMaxVals/*' '(3840x2160, 16SC1)'"
+    "MinMax_U16: opencv_perf_core '*minMaxVals/*' '(3840x2160, 16UC1)'"
+    "MinMax_S32: opencv_perf_core '*minMaxVals/*' '(3840x2160, 32SC1)'"
+    "MinMax_F32: opencv_perf_core '*minMaxVals/*' '(3840x2160, 32FC1)'"
 
-    "MinMaxLoc_U8_4K: opencv_perf_core '*minMaxLoc/*' '(3840x2160, 8UC1)'"
+    "MinMaxLoc_U8: opencv_perf_core '*minMaxLoc/*' '(3840x2160, 8UC1)'"
 
     "FloatToInt:  opencv_perf_core '*convertTo/*' '(3840x2160, 32FC1, 8SC1,  1, 1, 0)'"
     "FloatToUint: opencv_perf_core '*convertTo/*' '(3840x2160, 32FC1, 8UC1,  1, 1, 0)'"
@@ -89,8 +89,9 @@ benchmarks=(
     "CompareGt: opencv_perf_core '*compare/*' '(3840x2160, 8UC1, CMP_GT)'"
 )
 
-for benchmark in "${benchmarks[@]}"; do
+for idx in "${!benchmarks[@]}"; do
+    benchmark="${benchmarks[$idx]}"
     >&2 echo
-    >&2 echo RUNNING: ${benchmark%%:*} ${benchmark#*:}
+    >&2 echo "RUNNING [$((${idx} + 1))/${#benchmarks[@]}]:" ${benchmark%%:*} ${benchmark#*:}
     eval "${DEV_DIR}/perf_test_op.sh" "${CUSTOM_BUILD_SUFFIX}" "${CPU}" "${THERMAL}" ${benchmark%%:*} ${benchmark#*:}
 done

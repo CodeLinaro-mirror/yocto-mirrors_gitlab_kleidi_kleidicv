@@ -54,12 +54,12 @@ benchmarks=(
     "Sobel_Gx: opencv_perf_imgproc '*Border3x3_sobelFilter.sobelFilter/*' '(1920x1080, 16SC1, (1, 0), BORDER_REPLICATE)'"
     "Sobel_Gy: opencv_perf_imgproc '*Border3x3_sobelFilter.sobelFilter/*' '(1920x1080, 16SC1, (0, 1), BORDER_REPLICATE)'"
 
-    "Dilate3x3:  opencv_perf_imgproc '*Dilate_big.big/*'  '(1920x1080, 8UC1, 3)'"
-    "Dilate5x5:  opencv_perf_imgproc '*Dilate_big.big/*'  '(1920x1080, 8UC1, 5)'"
-    "Dilate17x17:opencv_perf_imgproc '*Dilate_big.big/*'  '(1920x1080, 8UC1, 17)'"
-    "Erode3x3:   opencv_perf_imgproc '*Erode_big.big/*'   '(1920x1080, 8UC1, 3)'"
-    "Erode5x5:   opencv_perf_imgproc '*Erode_big.big/*'   '(1920x1080, 8UC1, 5)'"
-    "Erode17x17: opencv_perf_imgproc '*Erode_big.big/*'   '(1920x1080, 8UC1, 17)'"
+    "Dilate3x3:   opencv_perf_imgproc '*Dilate_big.big/*'  '(1920x1080, 8UC1, 3)'"
+    "Dilate5x5:   opencv_perf_imgproc '*Dilate_big.big/*'  '(1920x1080, 8UC1, 5)'"
+    "Dilate17x17: opencv_perf_imgproc '*Dilate_big.big/*'  '(1920x1080, 8UC1, 17)'"
+    "Erode3x3:    opencv_perf_imgproc '*Erode_big.big/*'   '(1920x1080, 8UC1, 3)'"
+    "Erode5x5:    opencv_perf_imgproc '*Erode_big.big/*'   '(1920x1080, 8UC1, 5)'"
+    "Erode17x17:  opencv_perf_imgproc '*Erode_big.big/*'   '(1920x1080, 8UC1, 17)'"
 
     "Resize_0.5_8b:   opencv_perf_imgproc '*ResizeAreaFast/*' '(8UC1, 1920x1080, 2)'"
     "Resize2x2_8b:    opencv_perf_imgproc '*resizeUpLinearNonExact/*' '(8UC1,  (960x540, 1920x1080))'"
@@ -72,14 +72,14 @@ benchmarks=(
     "Scale_float_1.0: opencv_perf_core '*convertTo/*' '(1920x1080, 32FC1, 32FC1, 1, 1,     4.567)'"
     "Scale_float:     opencv_perf_core '*convertTo/*' '(1920x1080, 32FC1, 32FC1, 1, 1.234, 4.567)'"
 
-    "MinMax_S8_FHD:  opencv_perf_core '*minMaxVals/*' '(1920x1080, 8SC1)'"
-    "MinMax_U8_FHD:  opencv_perf_core '*minMaxVals/*' '(1920x1080, 8UC1)'"
-    "MinMax_S16_FHD: opencv_perf_core '*minMaxVals/*' '(1920x1080, 16SC1)'"
-    "MinMax_U16_FHD: opencv_perf_core '*minMaxVals/*' '(1920x1080, 16UC1)'"
-    "MinMax_S32_FHD: opencv_perf_core '*minMaxVals/*' '(1920x1080, 32SC1)'"
-    "MinMax_F32_FHD: opencv_perf_core '*minMaxVals/*' '(1920x1080, 32FC1)'"
+    "MinMax_S8:  opencv_perf_core '*minMaxVals/*' '(1920x1080, 8SC1)'"
+    "MinMax_U8:  opencv_perf_core '*minMaxVals/*' '(1920x1080, 8UC1)'"
+    "MinMax_S16: opencv_perf_core '*minMaxVals/*' '(1920x1080, 16SC1)'"
+    "MinMax_U16: opencv_perf_core '*minMaxVals/*' '(1920x1080, 16UC1)'"
+    "MinMax_S32: opencv_perf_core '*minMaxVals/*' '(1920x1080, 32SC1)'"
+    "MinMax_F32: opencv_perf_core '*minMaxVals/*' '(1920x1080, 32FC1)'"
 
-    "MinMaxLoc_U8_FHD: opencv_perf_core '*minMaxLoc/*' '(1920x1080, 8UC1)'"
+    "MinMaxLoc_U8: opencv_perf_core '*minMaxLoc/*' '(1920x1080, 8UC1)'"
 
     "FloatToInt:  opencv_perf_core '*convertTo/*' '(1920x1080, 32FC1, 8SC1,  1, 1, 0)'"
     "FloatToUint: opencv_perf_core '*convertTo/*' '(1920x1080, 32FC1, 8UC1,  1, 1, 0)'"
@@ -89,8 +89,9 @@ benchmarks=(
     "CompareGt: opencv_perf_core '*compare/*' '(1920x1080, 8UC1, CMP_GT)'"
 )
 
-for benchmark in "${benchmarks[@]}"; do
+for idx in "${!benchmarks[@]}"; do
+    benchmark="${benchmarks[$idx]}"
     >&2 echo
-    >&2 echo RUNNING: ${benchmark%%:*} ${benchmark#*:}
+    >&2 echo "RUNNING [$((${idx} + 1))/${#benchmarks[@]}]:" ${benchmark%%:*} ${benchmark#*:}
     eval "${DEV_DIR}/perf_test_op.sh" "${CUSTOM_BUILD_SUFFIX}" "${CPU}" "${THERMAL}" ${benchmark%%:*} ${benchmark#*:}
 done
