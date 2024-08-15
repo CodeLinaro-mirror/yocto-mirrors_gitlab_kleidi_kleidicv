@@ -71,6 +71,15 @@ bool are_matrices_different(T threshold, cv::Mat& A, cv::Mat& B) {
   return false;
 }
 
+template <typename T, size_t Channels>
+constexpr int get_opencv_matrix_type() {
+  if constexpr (std::is_same_v<T, uint8_t>) {
+    return CV_8UC(Channels);
+  } else if constexpr (std::is_same_v<T, uint16_t>) {
+    return CV_16UC(Channels);
+  }
+}
+
 void fail_print_matrices(size_t height, size_t width, cv::Mat& input,
                          cv::Mat& manager_result, cv::Mat& subord_result);
 
