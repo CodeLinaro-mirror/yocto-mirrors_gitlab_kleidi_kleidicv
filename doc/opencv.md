@@ -101,6 +101,21 @@ Notes on parameters:
 * `maxValue` - value that elements above `thresh` will be set to.
 * `thresholdType` - currently only binary threshold operation is supported ([cv::THRESH_BINARY](https://docs.opencv.org/5.x/d7/d1b/group__imgproc__misc.html#gaa9e58d2860d4afa658ef70a9b1115576)).
 
+### `sepFilter2D`
+Applies a separable linear filter to an image.\
+Currently only the 5x5 kernel size is supported with `CV_8U` and `CV_16U` source, destination and kernel depths.
+
+Notes on parameters:
+* `src`, `dst`, `kernelX`, `kernelY` - the number of channels must match between source and destination. The types must match between source, destination and kernels. However, the kernels must have 1 channel.
+* `anchor` - values other than `(-1, 1)` are not supported.
+* `delta` - values other than `0.0` are not supported.
+* `borderType` - pixel extrapolation method.
+Supported [OpenCV border types](https://docs.opencv.org/5.x/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
+  + `cv::BORDER_REPLICATE`
+  + `cv::BORDER_REFLECT`
+  + `cv::BORDER_WRAP`
+  + `cv::BORDER_REFLECT_101`
+
 ### `gaussian_blur`
 Blurs an image using a Gaussian filter.\
 Currently does not support non-zero margins. Kernel shape is restricted to square (`kernelWidth == kernelHeight`). The filter's

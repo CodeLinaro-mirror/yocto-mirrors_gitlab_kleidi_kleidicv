@@ -1224,8 +1224,6 @@ kleidicv_error_t kleidicv_filter_context_create(
 kleidicv_error_t kleidicv_filter_context_release(
     kleidicv_filter_context_t *context);
 
-/// Internal - not part of the public API and its direct use is not supported.
-///
 /// Applies a two-dimensional separable filter to the source image using the
 /// specified parameters. In-place filtering is not supported.
 ///

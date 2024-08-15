@@ -70,12 +70,13 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Transpose       |   x   |    x   |    x   |    x   |
 
 ## Image filters
-|                                      | u8  |
-|--------------------------------------|-----|
-| Erode                                |  x  |
-| Dilate                               |  x  |
-| Sobel (3x3)                          |  x  |
-| Gaussian Blur (3x3, 5x5, 7x7, 15x15) |  x  |
+|                                      | u8  | u16 |
+|--------------------------------------|-----|-----|
+| Erode                                |  x  |     |
+| Dilate                               |  x  |     |
+| Sobel (3x3)                          |  x  |     |
+| Separable Filter 2D (5x5)            |  x  |  x  |
+| Gaussian Blur (3x3, 5x5, 7x7, 15x15) |  x  |     |
 
 ## Resize to quarter
 |             | u8  |
