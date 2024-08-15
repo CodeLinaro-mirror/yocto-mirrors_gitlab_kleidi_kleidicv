@@ -522,6 +522,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   static constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
 
+  // Ignored because vectors are initialized in the constructor body.
   // NOLINTNEXTLINE - hicpp-member-init
   explicit GaussianBlur(float sigma)
       : half_kernel_(generate_gaussian_half_kernel<kHalfKernelSize>(sigma)) {

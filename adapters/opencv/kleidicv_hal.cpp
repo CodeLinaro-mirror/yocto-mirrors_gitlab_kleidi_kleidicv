@@ -355,11 +355,11 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
     return CV_HAL_ERROR_UNKNOWN;
   }
 
-  const uint8_t *kernel_x = new uint8_t[kernelx_length];
-  const uint8_t *kernel_y = new uint8_t[kernely_length];
+  uint8_t *kernel_x = new uint8_t[kernelx_length];
+  uint8_t *kernel_y = new uint8_t[kernely_length];
 
-  std::memcpy(const_cast<uint8_t *>(kernel_x), kernelx_data, kernelx_length);
-  std::memcpy(const_cast<uint8_t *>(kernel_y), kernely_data, kernely_length);
+  std::memcpy(kernel_x, kernelx_data, kernelx_length);
+  std::memcpy(kernel_y, kernely_data, kernely_length);
 
   params->channels = (src_type >> CV_CN_SHIFT) + 1;
   params->border_type = kleidicv_border_type;

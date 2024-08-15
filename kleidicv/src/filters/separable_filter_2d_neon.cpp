@@ -23,8 +23,8 @@ class SeparableFilter2D<uint8_t, 5> {
   using BufferType = uint16_t;
   using BufferVectorType = typename VecTraits<BufferType>::VectorType;
   using DestinationType = uint8_t;
-  using DestinationVectorType = typename VecTraits<DestinationType>::VectorType;
 
+  // Ignored because vectors are initialized in the constructor body.
   // NOLINTNEXTLINE - hicpp-member-init
   SeparableFilter2D(const SourceType *kernel_x, const SourceType *kernel_y)
       : kernel_x_(kernel_x), kernel_y_(kernel_y) {
@@ -107,7 +107,7 @@ class SeparableFilter2D<uint8_t, 5> {
 
   BufferVectorType kernel_x_u16_[5];
   SourceVectorType kernel_y_u8_[5];
-};
+};  // end of class SeparableFilter2D<uint8_t, 5>
 
 template <typename T>
 static kleidicv_error_t separable_filter_2d_checks(

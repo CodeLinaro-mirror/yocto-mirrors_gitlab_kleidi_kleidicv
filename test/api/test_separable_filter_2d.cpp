@@ -134,8 +134,8 @@ TYPED_TEST_SUITE(SeparableFilter2D, ElementTypes);
 TYPED_TEST(SeparableFilter2D, 5x5) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
 
-  const uint8_t kernel_x[5] = {5, 0, 1, 2, 2};
-  const uint8_t kernel_y[5] = {1, 4, 3, 1, 0};
+  const TypeParam kernel_x[5] = {5, 0, 1, 2, 2};
+  const TypeParam kernel_y[5] = {1, 4, 3, 1, 0};
 
   // Mask is created by 'kernel_y (outer product) kernel_x'
   test::Array2D<typename KernelTestParams::IntermediateType> mask{5, 5};
