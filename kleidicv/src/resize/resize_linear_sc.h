@@ -14,7 +14,8 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, uint8_t *dst,
+    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 2;
   size_t dst_height = src_height * 2;
 
@@ -76,8 +77,14 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
 #define KSC KLEIDICV_STREAMING_COMPATIBLE
 
   // Handle top or bottom edge
-  auto process_edge_row = [src_width, lerp1d_vector](const uint8_t *src_row,
-                                                     uint8_t *dst_row) KSC {
+  auto process_edge_row = [src_width, dst_width, lerp1d_vector](
+                              const uint8_t *src_row, uint8_t *dst_row) KSC {
+    // Left element
+    dst_row[0] = src_row[0];
+
+    // Right element
+    dst_row[dst_width - 1] = src_row[src_width - 1];
+
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 2 + 1;
 
@@ -93,10 +100,20 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
     }
   };
 
-  auto process_row = [src_width, lerp2d_vector](
+  auto process_row = [src_width, dst_width, lerp1d_scalar, lerp2d_vector](
                          const uint8_t *src_row0, const uint8_t *src_row1,
                          uint8_t *dst_row0,
                          uint8_t *dst_row1) KLEIDICV_STREAMING_COMPATIBLE {
+    // Left edge
+    dst_row0[0] = lerp1d_scalar(src_row0[0], src_row1[0]);
+    dst_row1[0] = lerp1d_scalar(src_row1[0], src_row0[0]);
+
+    // Right edge
+    dst_row0[dst_width - 1] =
+        lerp1d_scalar(src_row0[src_width - 1], src_row1[src_width - 1]);
+    dst_row1[dst_width - 1] =
+        lerp1d_scalar(src_row1[src_width - 1], src_row0[src_width - 1]);
+
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 2 + 1;
@@ -118,37 +135,13 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
     }
   };
 
-  // Corners
-  dst[0] = src[0];
-  dst[dst_width - 1] = src[src_width - 1];
-  dst[dst_stride * (dst_height - 1)] = src[src_stride * (src_height - 1)];
-  dst[dst_stride * (dst_height - 1) + dst_width - 1] =
-      src[src_stride * (src_height - 1) + src_width - 1];
-
-  // Left & right edge
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
-    size_t dst_y = src_y * 2 + 1;
-    const uint8_t *src_row0 = src + src_stride * src_y;
-    const uint8_t *src_row1 = src_row0 + src_stride;
-    uint8_t *dst_row0 = dst + dst_stride * dst_y;
-    uint8_t *dst_row1 = dst_row0 + dst_stride;
-
-    // Left edge
-    dst_row0[0] = lerp1d_scalar(src_row0[0], src_row1[0]);
-    dst_row1[0] = lerp1d_scalar(src_row1[0], src_row0[0]);
-
-    // Right edge
-    dst_row0[dst_width - 1] =
-        lerp1d_scalar(src_row0[src_width - 1], src_row1[src_width - 1]);
-    dst_row1[dst_width - 1] =
-        lerp1d_scalar(src_row1[src_width - 1], src_row0[src_width - 1]);
+  // Top row
+  if (KLEIDICV_LIKELY(y_begin == 0)) {
+    process_edge_row(src, dst);
   }
 
-  // Top row
-  process_edge_row(src, dst);
-
   // Middle rows
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
+  for (size_t src_y = y_begin; src_y + 1 < y_end; ++src_y) {
     size_t dst_y = src_y * 2 + 1;
     const uint8_t *src_row0 = src + src_stride * src_y;
     const uint8_t *src_row1 = src_row0 + src_stride;
@@ -159,15 +152,18 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
   }
 
   // Bottom row
-  process_edge_row(src + src_stride * (src_height - 1),
-                   dst + dst_stride * (dst_height - 1));
+  if (KLEIDICV_LIKELY(y_end == src_height)) {
+    process_edge_row(src + src_stride * (src_height - 1),
+                     dst + dst_stride * (dst_height - 1));
+  }
 
   return KLEIDICV_OK;
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, uint8_t *dst,
+    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 4;
   size_t dst_height = src_height * 4;
 
@@ -220,8 +216,15 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
   };
 
   // Handle top or bottom edge
-  auto process_edge_row = [src_width, lerp1d_vector](const uint8_t *src_row,
-                                                     uint8_t *dst_row) KSC {
+  auto process_edge_row = [src_width, dst_width, lerp1d_vector](
+                              const uint8_t *src_row, uint8_t *dst_row) KSC {
+    // Left elements
+    dst_row[1] = dst_row[0] = src_row[0];
+
+    // Right elements
+    dst_row[dst_width - 1] = dst_row[dst_width - 2] = src_row[src_width - 1];
+
+    // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 4 + 2;
       svbool_t pg = svwhilelt_b8(src_x + 1, src_width);
@@ -233,11 +236,27 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     }
   };
 
-  auto process_row = [src_width, lerp2d_vector](
+  auto process_row = [src_width, dst_width, lerp1d_scalar, lerp2d_vector](
                          const uint8_t *src_row0, const uint8_t *src_row1,
                          uint8_t *dst_row0, uint8_t *dst_row1,
                          uint8_t *dst_row2,
                          uint8_t *dst_row3) KLEIDICV_STREAMING_COMPATIBLE {
+    // Left elements
+    const uint8_t s0l = src_row0[0], s1l = src_row1[0];
+    dst_row0[0] = dst_row0[1] = lerp1d_scalar(7, s0l, 1, s1l);
+    dst_row1[0] = dst_row1[1] = lerp1d_scalar(5, s0l, 3, s1l);
+    dst_row2[0] = dst_row2[1] = lerp1d_scalar(3, s0l, 5, s1l);
+    dst_row3[0] = dst_row3[1] = lerp1d_scalar(1, s0l, 7, s1l);
+
+    // Right elements
+    const size_t s0r = src_row0[src_width - 1], s1r = src_row1[src_width - 1];
+    const size_t dr0 = dst_width - 2;
+    const size_t dr1 = dst_width - 1;
+    dst_row0[dr0] = dst_row0[dr1] = lerp1d_scalar(7, s0r, 1, s1r);
+    dst_row1[dr0] = dst_row1[dr1] = lerp1d_scalar(5, s0r, 3, s1r);
+    dst_row2[dr0] = dst_row2[dr1] = lerp1d_scalar(3, s0r, 5, s1r);
+    dst_row3[dr0] = dst_row3[dr1] = lerp1d_scalar(1, s0r, 7, s1r);
+
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 4 + 2;
@@ -273,47 +292,6 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     }
   };
 
-  // Corners
-  auto set_corner = [dst, dst_stride](size_t left_column, size_t top_row,
-                                      uint8_t value) KSC {
-    dst[dst_stride * top_row + left_column] = value;
-    dst[dst_stride * top_row + left_column + 1] = value;
-    dst[dst_stride * (top_row + 1) + left_column] = value;
-    dst[dst_stride * (top_row + 1) + left_column + 1] = value;
-  };
-  set_corner(0, 0, src[0]);
-  set_corner(dst_width - 2, 0, src[src_width - 1]);
-  set_corner(0, dst_height - 2, src[src_stride * (src_height - 1)]);
-  set_corner(dst_width - 2, dst_height - 2,
-             src[src_stride * (src_height - 1) + src_width - 1]);
-
-  // Left & right edge
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
-    size_t dst_y = src_y * 4 + 2;
-    const uint8_t *src_row0 = src + src_stride * src_y;
-    const uint8_t *src_row1 = src_row0 + src_stride;
-    uint8_t *dst_row0 = dst + dst_stride * dst_y;
-    uint8_t *dst_row1 = dst_row0 + dst_stride;
-    uint8_t *dst_row2 = dst_row1 + dst_stride;
-    uint8_t *dst_row3 = dst_row2 + dst_stride;
-
-    // Left elements
-    const uint8_t s0l = src_row0[0], s1l = src_row1[0];
-    dst_row0[0] = dst_row0[1] = lerp1d_scalar(7, s0l, 1, s1l);
-    dst_row1[0] = dst_row1[1] = lerp1d_scalar(5, s0l, 3, s1l);
-    dst_row2[0] = dst_row2[1] = lerp1d_scalar(3, s0l, 5, s1l);
-    dst_row3[0] = dst_row3[1] = lerp1d_scalar(1, s0l, 7, s1l);
-
-    // Right elements
-    const uint8_t s0r = src_row0[src_width - 1], s1r = src_row1[src_width - 1];
-    const size_t dr0 = dst_width - 2;
-    const size_t dr1 = dst_width - 1;
-    dst_row0[dr0] = dst_row0[dr1] = lerp1d_scalar(7, s0r, 1, s1r);
-    dst_row1[dr0] = dst_row1[dr1] = lerp1d_scalar(5, s0r, 3, s1r);
-    dst_row2[dr0] = dst_row2[dr1] = lerp1d_scalar(3, s0r, 5, s1r);
-    dst_row3[dr0] = dst_row3[dr1] = lerp1d_scalar(1, s0r, 7, s1r);
-  }
-
   auto copy_dst_row = [src_width](const uint8_t *dst_from,
                                   uint8_t *dst_to) KSC {
     for (size_t i = 0; i < src_width; i += svcntb()) {
@@ -322,12 +300,14 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     }
   };
 
-  // Top row
-  process_edge_row(src, dst);
-  copy_dst_row(dst, dst + dst_stride);
+  // Top rows
+  if (KLEIDICV_LIKELY(y_begin == 0)) {
+    process_edge_row(src, dst);
+    copy_dst_row(dst, dst + dst_stride);
+  }
 
   // Middle rows
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
+  for (size_t src_y = y_begin; src_y + 1 < y_end; ++src_y) {
     size_t dst_y = src_y * 4 + 2;
     const uint8_t *src_row0 = src + src_stride * src_y;
     const uint8_t *src_row1 = src_row0 + src_stride;
@@ -339,20 +319,22 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     process_row(src_row0, src_row1, dst_row0, dst_row1, dst_row2, dst_row3);
   }
 
-  // Bottom row
-  process_edge_row(src + src_stride * (src_height - 1),
-                   dst + dst_stride * (dst_height - 2));
-  copy_dst_row(dst + dst_stride * (dst_height - 2),
-               dst + dst_stride * (dst_height - 1));
+  // Bottom rows
+  if (KLEIDICV_LIKELY(y_end == src_height)) {
+    process_edge_row(src + src_stride * (src_height - 1),
+                     dst + dst_stride * (dst_height - 2));
+    copy_dst_row(dst + dst_stride * (dst_height - 2),
+                 dst + dst_stride * (dst_height - 1));
+  }
 
   return KLEIDICV_OK;
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
-    float *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, float *dst,
+    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 2;
-  size_t dst_height = src_height * 2;
   src_stride /= sizeof(float);
   dst_stride /= sizeof(float);
 
@@ -381,8 +363,12 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
 #define KSC KLEIDICV_STREAMING_COMPATIBLE
 
   // Handle top or bottom edge
-  auto process_edge_row = [src_width, lerp1d_vector](const float *src_row,
-                                                     float *dst_row) KSC {
+  auto process_edge_row = [src_width, dst_width, lerp1d_vector](
+                              const float *src_row, float *dst_row) KSC {
+    // Left element
+    dst_row[0] = src_row[0];
+
+    // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 2 + 1;
 
@@ -394,11 +380,18 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
       svst2_f32(pg, dst_row + dst_x,
                 svcreate2(lerp1d_vector(pg, a, b), lerp1d_vector(pg, b, a)));
     }
+
+    // Right element
+    dst_row[dst_width - 1] = src_row[src_width - 1];
   };
 
-  auto process_row = [src_width, lerp2d_vector](
+  auto process_row = [src_width, dst_width, lerp1d_scalar, lerp2d_vector](
                          const float *src_row0, const float *src_row1,
                          float *dst_row0, float *dst_row1) KSC {
+    // Left element
+    dst_row0[0] = lerp1d_scalar(src_row0[0], src_row1[0]);
+    dst_row1[0] = lerp1d_scalar(src_row1[0], src_row0[0]);
+
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 2 + 1;
@@ -417,39 +410,20 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
                 svcreate2(lerp2d_vector(pg, c, a, d, b),
                           lerp2d_vector(pg, d, b, c, a)));
     }
-  };
 
-  // Corners
-  dst[0] = src[0];
-  dst[dst_width - 1] = src[src_width - 1];
-  dst[dst_stride * (dst_height - 1)] = src[src_stride * (src_height - 1)];
-  dst[dst_stride * (dst_height - 1) + dst_width - 1] =
-      src[src_stride * (src_height - 1) + src_width - 1];
-
-  // Left & right edge
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
-    size_t dst_y = src_y * 2 + 1;
-    const float *src_row0 = src + src_stride * src_y;
-    const float *src_row1 = src_row0 + src_stride;
-    float *dst_row0 = dst + dst_stride * dst_y;
-    float *dst_row1 = dst_row0 + dst_stride;
-
-    // Left edge
-    dst_row0[0] = lerp1d_scalar(src_row0[0], src_row1[0]);
-    dst_row1[0] = lerp1d_scalar(src_row1[0], src_row0[0]);
-
-    // Right edge
+    // Right element
     dst_row0[dst_width - 1] =
         lerp1d_scalar(src_row0[src_width - 1], src_row1[src_width - 1]);
     dst_row1[dst_width - 1] =
         lerp1d_scalar(src_row1[src_width - 1], src_row0[src_width - 1]);
-  }
+  };
 
   // Top row
-  process_edge_row(src, dst);
-
+  if (KLEIDICV_LIKELY(y_begin == 0)) {
+    process_edge_row(src, dst);
+  }
   // Middle rows
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
+  for (size_t src_y = y_begin; src_y + 1 < y_end; ++src_y) {
     size_t dst_y = src_y * 2 + 1;
     const float *src_row0 = src + src_stride * src_y;
     const float *src_row1 = src_row0 + src_stride;
@@ -460,23 +434,22 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
   }
 
   // Bottom row
-  process_edge_row(src + src_stride * (src_height - 1),
-                   dst + dst_stride * (dst_height - 1));
+  if (KLEIDICV_LIKELY(y_end == src_height)) {
+    process_edge_row(src + src_stride * (src_height - 1),
+                     dst + dst_stride * (src_height * 2 - 1));
+  }
 
   return KLEIDICV_OK;
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
-    float *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, float *dst,
+    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 4;
   size_t dst_height = src_height * 4;
   src_stride /= sizeof(float);
   dst_stride /= sizeof(float);
-
-  auto lerp1d_scalar =
-      [](float p, float a, float q, float b)
-          KLEIDICV_STREAMING_COMPATIBLE { return p * a + q * b; };
 
   auto lerp1d_vector =
       [](svbool_t pg, float p, svfloat32_t a, float q, svfloat32_t b)
@@ -493,25 +466,46 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
   };
 
   // Handle top or bottom edge
-  auto process_edge_row = [src_width, lerp1d_vector](const float *src_row,
-                                                     float *dst_row) KSC {
+  auto process_edge_row = [src_width, dst_width, dst_stride, lerp1d_vector](
+                              const float *src_row, float *dst_row) KSC {
+    // Left elements
+    dst_row[1] = dst_row[0] = dst_row[dst_stride + 1] = dst_row[dst_stride] =
+        src_row[0];
+
+    // Right elements
+    dst_row[dst_width - 1] = dst_row[dst_width - 2] =
+        dst_row[dst_stride + dst_width - 1] =
+            dst_row[dst_stride + dst_width - 2] = src_row[src_width - 1];
+
+    // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 4 + 2;
       svbool_t pg = svwhilelt_b32(src_x + 1, src_width);
       svfloat32_t a = svld1_f32(pg, src_row + src_x);
       svfloat32_t b = svld1_f32(pg, src_row + src_x + 1);
-      svst4_f32(pg, dst_row + dst_x,
-                svcreate4(lerp1d_vector(pg, 0.875F, a, 0.125F, b),
-                          lerp1d_vector(pg, 0.625F, a, 0.375F, b),
-                          lerp1d_vector(pg, 0.375F, a, 0.625F, b),
-                          lerp1d_vector(pg, 0.125F, a, 0.875F, b)));
+      svfloat32x4_t result = svcreate4(lerp1d_vector(pg, 0.875F, a, 0.125F, b),
+                                       lerp1d_vector(pg, 0.625F, a, 0.375F, b),
+                                       lerp1d_vector(pg, 0.375F, a, 0.625F, b),
+                                       lerp1d_vector(pg, 0.125F, a, 0.875F, b));
+      svst4_f32(pg, dst_row + dst_x, result);
+      svst4_f32(pg, dst_row + dst_stride + dst_x, result);
     }
   };
 
-  auto process_row = [src_width, lerp1d_vector, lerp2d_vector](
+  auto process_row = [src_width, dst_width, lerp1d_vector, lerp2d_vector](
                          const float *src_row0, const float *src_row1,
                          float *dst_row0, float *dst_row1, float *dst_row2,
-                         float *dst_row3) KLEIDICV_STREAMING_COMPATIBLE {
+                         float *dst_row3) KSC {
+    // Left elements
+    svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
+    svbool_t pg2 = svptrue_pat_b32(SV_VL2);  // write 2 elements
+    svfloat32_t s0l = svdup_lane(svld1(pg1, src_row0), 0);
+    svfloat32_t s1l = svdup_lane(svld1(pg1, src_row1), 0);
+    svst1(pg2, dst_row0, lerp1d_vector(pg2, 0.875F, s0l, 0.125F, s1l));
+    svst1(pg2, dst_row1, lerp1d_vector(pg2, 0.625F, s0l, 0.375F, s1l));
+    svst1(pg2, dst_row2, lerp1d_vector(pg2, 0.375F, s0l, 0.625F, s1l));
+    svst1(pg2, dst_row3, lerp1d_vector(pg2, 0.125F, s0l, 0.875F, s1l));
+
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 4 + 2;
@@ -564,62 +558,27 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
                                         svget4(dst_d, 3))));
       svst4_f32(pg, dst_row3 + dst_x, dst_d);
     }
-  };
-
-  // Corners
-  auto set_corner = [dst, dst_stride](size_t left_column, size_t top_row,
-                                      float value) KSC {
-    dst[dst_stride * top_row + left_column] = value;
-    dst[dst_stride * top_row + left_column + 1] = value;
-    dst[dst_stride * (top_row + 1) + left_column] = value;
-    dst[dst_stride * (top_row + 1) + left_column + 1] = value;
-  };
-  set_corner(0, 0, src[0]);
-  set_corner(dst_width - 2, 0, src[src_width - 1]);
-  set_corner(0, dst_height - 2, src[src_stride * (src_height - 1)]);
-  set_corner(dst_width - 2, dst_height - 2,
-             src[src_stride * (src_height - 1) + src_width - 1]);
-
-  // Left & right edge
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
-    size_t dst_y = src_y * 4 + 2;
-    const float *src_row0 = src + src_stride * src_y;
-    const float *src_row1 = src_row0 + src_stride;
-    float *dst_row0 = dst + dst_stride * dst_y;
-    float *dst_row1 = dst_row0 + dst_stride;
-    float *dst_row2 = dst_row1 + dst_stride;
-    float *dst_row3 = dst_row2 + dst_stride;
-
-    // Left elements
-    const float s0l = src_row0[0], s1l = src_row1[0];
-    dst_row0[0] = dst_row0[1] = lerp1d_scalar(0.875F, s0l, 0.125F, s1l);
-    dst_row1[0] = dst_row1[1] = lerp1d_scalar(0.625F, s0l, 0.375F, s1l);
-    dst_row2[0] = dst_row2[1] = lerp1d_scalar(0.375F, s0l, 0.625F, s1l);
-    dst_row3[0] = dst_row3[1] = lerp1d_scalar(0.125F, s0l, 0.875F, s1l);
 
     // Right elements
-    const float s0r = src_row0[src_width - 1], s1r = src_row1[src_width - 1];
-    const size_t dr0 = dst_width - 2;
-    const size_t dr1 = dst_width - 1;
-    dst_row0[dr0] = dst_row0[dr1] = lerp1d_scalar(0.875F, s0r, 0.125F, s1r);
-    dst_row1[dr0] = dst_row1[dr1] = lerp1d_scalar(0.625F, s0r, 0.375F, s1r);
-    dst_row2[dr0] = dst_row2[dr1] = lerp1d_scalar(0.375F, s0r, 0.625F, s1r);
-    dst_row3[dr0] = dst_row3[dr1] = lerp1d_scalar(0.125F, s0r, 0.875F, s1r);
-  }
-
-  auto copy_dst_row = [src_width](const float *dst_from, float *dst_to) KSC {
-    for (size_t i = 0; i < src_width; i += svcntw()) {
-      svbool_t pg = svwhilelt_b32(i, src_width);
-      svst4(pg, dst_to + i * 4, svld4(pg, dst_from + i * 4));
-    }
+    svfloat32_t s0r = svdup_lane(svld1(pg1, src_row0 + src_width - 1), 0);
+    svfloat32_t s1r = svdup_lane(svld1(pg1, src_row1 + src_width - 1), 0);
+    svst1(pg2, dst_row0 + dst_width - 2,
+          lerp1d_vector(pg2, 0.875F, s0r, 0.125F, s1r));
+    svst1(pg2, dst_row1 + dst_width - 2,
+          lerp1d_vector(pg2, 0.625F, s0r, 0.375F, s1r));
+    svst1(pg2, dst_row2 + dst_width - 2,
+          lerp1d_vector(pg2, 0.375F, s0r, 0.625F, s1r));
+    svst1(pg2, dst_row3 + dst_width - 2,
+          lerp1d_vector(pg2, 0.125F, s0r, 0.875F, s1r));
   };
 
-  // Top row
-  process_edge_row(src, dst);
-  copy_dst_row(dst, dst + dst_stride);
+  // Top rows
+  if (KLEIDICV_LIKELY(y_begin == 0)) {
+    process_edge_row(src, dst);
+  }
 
   // Middle rows
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
+  for (size_t src_y = y_begin; src_y + 1 < y_end; ++src_y) {
     size_t dst_y = src_y * 4 + 2;
     const float *src_row0 = src + src_stride * src_y;
     const float *src_row1 = src_row0 + src_stride;
@@ -631,18 +590,18 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
     process_row(src_row0, src_row1, dst_row0, dst_row1, dst_row2, dst_row3);
   }
 
-  // Bottom row
-  process_edge_row(src + src_stride * (src_height - 1),
-                   dst + dst_stride * (dst_height - 2));
-  copy_dst_row(dst + dst_stride * (dst_height - 2),
-               dst + dst_stride * (dst_height - 1));
-
+  // Bottom rows
+  if (KLEIDICV_LIKELY(y_end == src_height)) {
+    process_edge_row(src + src_stride * (src_height - 1),
+                     dst + dst_stride * (dst_height - 2));
+  }
   return KLEIDICV_OK;
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
-    float *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, float *dst,
+    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 8;
   size_t dst_height = src_height * 8;
   src_stride /= sizeof(float);
@@ -669,8 +628,20 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
 
   // Handle top or bottom edge
   auto process_edge_row =
-      [src_width, lerp1d_vector, &coeffs_a0, &coeffs_a1, &coeffs_b0,
+      [src_width, dst_width, lerp1d_vector, &coeffs_a0, &coeffs_a1, &coeffs_b0,
        &coeffs_b1](const float *src_row, float *dst_row, size_t dst_stride) {
+        // Left elements
+        float left = src_row[0];
+        float *dst = dst_row;
+        for (size_t i = 0; i < 4; ++i) {
+          *dst++ = left;
+          *dst++ = left;
+          *dst++ = left;
+          *dst = left;
+          dst += dst_stride - 3;
+        }
+
+        // Middle elements
         svfloat32_t a, b = svdup_n_f32(src_row[0]);
         for (size_t src_x = 0; src_x + 1 < src_width; src_x++) {
           a = b;
@@ -690,6 +661,17 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
           svst1(svptrue_b32(), dst_row1 + 4, dst);
           svst1(svptrue_b32(), dst_row2 + 4, dst);
           svst1(svptrue_b32(), dst_row3 + 4, dst);
+        }
+
+        // Right elements
+        dst = dst_row + dst_width - 4;
+        float right = src_row[src_width - 1];
+        for (size_t i = 0; i < 4; ++i) {
+          *dst++ = right;
+          *dst++ = right;
+          *dst++ = right;
+          *dst = right;
+          dst += dst_stride - 3;
         }
       };
 
@@ -716,6 +698,19 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
                          const float *src_row0, const float *src_row1,
                          float *dst_row0,
                          size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    // Left elements
+    svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
+    svbool_t pg4 = svptrue_pat_b32(SV_VL4);  // write 4 elements
+    float *dst_lr = dst_row0;
+    svfloat32_t s0l = svdup_lane(svld1(pg1, src_row0), 0);
+    svfloat32_t s1l = svdup_lane(svld1(pg1, src_row1), 0);
+    for (size_t i = 0; i < 8; ++i) {
+      svst1(pg4, dst_lr,
+            lerp1d_vector_n(pg4, static_cast<float>(15 - i * 2) / 16.0F, s0l,
+                            static_cast<float>(i * 2 + 1) / 16.0F, s1l));
+      dst_lr += dst_stride;
+    }
+
     // Middle elements
     dst_row0 += 4;
     float *dst_row1 = dst_row0 + dst_stride;
@@ -785,52 +780,26 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
       dst_row6 += 4;
       dst_row7 += 4;
     }
-  };
 
-  // Corners
-  auto set_corner = [dst, dst_stride](size_t left_column, size_t top_row,
-                                      float value) {
-    float *row = dst + dst_stride * top_row + left_column;
-    for (size_t i = 0; i < 4; ++i) {
-      for (size_t j = 0; j < 4; ++j) {
-        row[j] = value;
-      }
-      row += dst_stride;
-    }
-  };
-  set_corner(0, 0, src[0]);
-  set_corner(dst_width - 4, 0, src[src_width - 1]);
-  set_corner(0, dst_height - 4, src[src_stride * (src_height - 1)]);
-  set_corner(dst_width - 4, dst_height - 4,
-             src[src_stride * (src_height - 1) + src_width - 1]);
-
-  // Left & right edge
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
-    float *dst_row = dst + dst_stride * (src_y * 8 + 4);
-    const float *src_row0 = src + src_stride * src_y;
-    const float *src_row1 = src_row0 + src_stride;
-    const float s0l = src_row0[0], s1l = src_row1[0];
-    const float s0r = src_row0[src_width - 1], s1r = src_row1[src_width - 1];
+    // Right elements
+    dst_lr = dst_row0;
+    svfloat32_t s0r = svdup_lane(svld1(pg1, src_row0 + src_width - 1), 0);
+    svfloat32_t s1r = svdup_lane(svld1(pg1, src_row1 + src_width - 1), 0);
     for (size_t i = 0; i < 8; ++i) {
-      svst1(
-          svptrue_b32(), dst_row,
-          lerp1d_vector_n(svptrue_b32(), static_cast<float>(15 - i * 2) / 16.0F,
-                          svdup_f32(s0l), static_cast<float>(i * 2 + 1) / 16.0F,
-                          svdup_f32(s1l)));
-      svst1(
-          svptrue_b32(), dst_row + dst_width - 4,
-          lerp1d_vector_n(svptrue_b32(), static_cast<float>(15 - i * 2) / 16.0F,
-                          svdup_f32(s0r), static_cast<float>(i * 2 + 1) / 16.0F,
-                          svdup_f32(s1r)));
-      dst_row += dst_stride;
+      svst1(pg4, dst_lr,
+            lerp1d_vector_n(pg4, static_cast<float>(15 - i * 2) / 16.0F, s0r,
+                            static_cast<float>(i * 2 + 1) / 16.0F, s1r));
+      dst_lr += dst_stride;
     }
-  }
+  };
 
   // Top rows
-  process_edge_row(src, dst, dst_stride);
+  if (KLEIDICV_LIKELY(y_begin == 0)) {
+    process_edge_row(src, dst, dst_stride);
+  }
 
   // Middle rows
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
+  for (size_t src_y = y_begin; src_y + 1 < y_end; ++src_y) {
     size_t dst_y = src_y * 8 + 4;
     const float *src_row0 = src + src_stride * src_y;
     const float *src_row1 = src_row0 + src_stride;
@@ -838,15 +807,18 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
   }
 
   // Bottom rows
-  process_edge_row(src + src_stride * (src_height - 1),
-                   dst + dst_stride * (dst_height - 4), dst_stride);
+  if (KLEIDICV_LIKELY(y_end == src_height)) {
+    process_edge_row(src + src_stride * (src_height - 1),
+                     dst + dst_stride * (dst_height - 4), dst_stride);
+  }
 
   return KLEIDICV_OK;
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
-    float *dst, size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, float *dst,
+    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
   size_t dst_width = src_width * 8;
   size_t dst_height = src_height * 8;
   src_stride /= sizeof(float);
@@ -899,11 +871,23 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
   };
 
   // Handle top or bottom edge
-  auto process_edge_row = [src_width, index_and_lerp1d, &indices_0a,
+  auto process_edge_row = [src_width, dst_width, index_and_lerp1d, &indices_0a,
                            &indices_0b, &indices_1a, &indices_1b, &indices_2a,
                            &indices_2b, &indices_3a,
                            &indices_3b](const float *src_row, float *dst_row,
                                         size_t dst_stride) KSC {
+    // Left elements
+    float left = src_row[0];
+    float *dst = dst_row;
+    for (size_t i = 0; i < 4; ++i) {
+      *dst++ = left;
+      *dst++ = left;
+      *dst++ = left;
+      *dst = left;
+      dst += dst_stride - 3;
+    }
+
+    // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw() / 2) {
       svbool_t pg = svwhilelt_b32(src_x, src_width);
       svfloat32_t svsrc = svld1_f32(pg, src_row + src_x);
@@ -942,6 +926,17 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
       svst1_vnum(pg_4, dst_row2, 3, dst);
       svst1_vnum(pg_4, dst_row3, 3, dst);
     }
+
+    // Right elements
+    dst = dst_row + dst_width - 4;
+    float right = src_row[src_width - 1];
+    for (size_t i = 0; i < 4; ++i) {
+      *dst++ = right;
+      *dst++ = right;
+      *dst++ = right;
+      *dst = right;
+      dst += dst_stride - 3;
+    }
   };
 
   svfloat32_t coeffs_p = svmul_n_f32_x(svptrue_b32(), coeffs_a, 15.0 / 16);
@@ -963,12 +958,25 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
         svtbl(src1, indices_b), coeffs_s);
   };
 
-  auto process_row = [src_width, index_and_lerp2d, lerp1d_vector, &indices_0a,
-                      &indices_0b, &indices_1a, &indices_1b, &indices_2a,
-                      &indices_2b, &indices_3a, &indices_3b](
+  auto process_row = [src_width, dst_width, index_and_lerp2d, lerp1d_vector,
+                      &indices_0a, &indices_0b, &indices_1a, &indices_1b,
+                      &indices_2a, &indices_2b, &indices_3a, &indices_3b](
                          const float *src_row0, const float *src_row1,
                          float *dst_row,
                          size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    // Left edge
+    svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
+    svbool_t pg4 = svptrue_pat_b32(SV_VL4);  // write 4 elements
+    float *dst_lr = dst_row;
+    svfloat32_t s0l = svdup_lane(svld1(pg1, src_row0), 0);
+    svfloat32_t s1l = svdup_lane(svld1(pg1, src_row1), 0);
+    for (size_t i = 0; i < 8; ++i) {
+      svst1(pg4, dst_lr,
+            lerp1d_vector(pg4, static_cast<float>(15 - i * 2) / 16.0F, s0l,
+                          static_cast<float>(i * 2 + 1) / 16.0F, s1l));
+      dst_lr += dst_stride;
+    }
+
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw() / 2) {
       size_t dst_x = src_x * 8 + 4;
@@ -1062,53 +1070,26 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
       svst1_vnum(pg_4, dst_row6, 3,
                  lerp1d_vector(pg_4, 1.0 / 7, dst_0, 6.0 / 7, dst_7));
     }
-  };
 
-  // Corners
-  auto set_corner = [dst, dst_stride](size_t left_column, size_t top_row,
-                                      float value) KSC {
-    float *row = dst + dst_stride * top_row + left_column;
-    for (size_t i = 0; i < 4; ++i) {
-      for (size_t j = 0; j < 4; ++j) {
-        row[j] = value;
-      }
-      row += dst_stride;
-    }
-  };
-  set_corner(0, 0, src[0]);
-  set_corner(dst_width - 4, 0, src[src_width - 1]);
-  set_corner(0, dst_height - 4, src[src_stride * (src_height - 1)]);
-  set_corner(dst_width - 4, dst_height - 4,
-             src[src_stride * (src_height - 1) + src_width - 1]);
-
-  // Left & right edge
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
-    float *dst_row = dst + dst_stride * (src_y * 8 + 4);
-    const float *src_row0 = src + src_stride * src_y;
-    const float *src_row1 = src_row0 + src_stride;
-    const float s0l = src_row0[0], s1l = src_row1[0];
-    const float s0r = src_row0[src_width - 1], s1r = src_row1[src_width - 1];
-    svbool_t pg = svptrue_pat_b32(SV_VL4);  // write 4 elements
+    // Right edge
+    dst_lr = dst_row;
+    svfloat32_t s0r = svdup_lane(svld1(pg1, src_row0 + src_width - 1), 0);
+    svfloat32_t s1r = svdup_lane(svld1(pg1, src_row1 + src_width - 1), 0);
     for (size_t i = 0; i < 8; ++i) {
-      svst1(pg, dst_row,
-            lerp1d_vector(pg, static_cast<float>(15 - i * 2) / 16.0F,
-                          svdup_f32_x(pg, s0l),
-                          static_cast<float>(i * 2 + 1) / 16.0F,
-                          svdup_f32_x(pg, s1l)));
-      svst1(pg, dst_row + dst_width - 4,
-            lerp1d_vector(pg, static_cast<float>(15 - i * 2) / 16.0F,
-                          svdup_f32_x(pg, s0r),
-                          static_cast<float>(i * 2 + 1) / 16.0F,
-                          svdup_f32_x(pg, s1r)));
-      dst_row += dst_stride;
+      svst1(pg4, dst_lr + dst_width - 4,
+            lerp1d_vector(pg4, static_cast<float>(15 - i * 2) / 16.0F, s0r,
+                          static_cast<float>(i * 2 + 1) / 16.0F, s1r));
+      dst_lr += dst_stride;
     }
-  }
+  };
 
   // Top rows
-  process_edge_row(src, dst, dst_stride);
+  if (KLEIDICV_LIKELY(y_begin == 0)) {
+    process_edge_row(src, dst, dst_stride);
+  }
 
   // Middle rows
-  for (size_t src_y = 0; src_y + 1 < src_height; ++src_y) {
+  for (size_t src_y = y_begin; src_y + 1 < y_end; ++src_y) {
     size_t dst_y = src_y * 8 + 4;
     const float *src_row0 = src + src_stride * src_y;
     const float *src_row1 = src_row0 + src_stride;
@@ -1116,16 +1097,18 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
   }
 
   // Bottom rows
-  process_edge_row(src + src_stride * (src_height - 1),
-                   dst + dst_stride * (dst_height - 4), dst_stride);
+  if (KLEIDICV_LIKELY(y_end == src_height)) {
+    process_edge_row(src + src_stride * (src_height - 1),
+                     dst + dst_stride * (dst_height - 4), dst_stride);
+  }
 
   return KLEIDICV_OK;
 }
 
-KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_u8_sc(
+KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride, size_t dst_width,
-    size_t dst_height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
+    size_t dst_width, size_t dst_height) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
@@ -1134,20 +1117,20 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_u8_sc(
     return KLEIDICV_OK;
   }
   if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
-    return resize_2x2_u8_sc(src, src_stride, src_width, src_height, dst,
-                            dst_stride);
+    return resize_2x2_u8_sc(src, src_stride, src_width, src_height, y_begin,
+                            y_end, dst, dst_stride);
   }
   if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
-    return resize_4x4_u8_sc(src, src_stride, src_width, src_height, dst,
-                            dst_stride);
+    return resize_4x4_u8_sc(src, src_stride, src_width, src_height, y_begin,
+                            y_end, dst, dst_stride);
   }
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
-KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_f32_sc(
+KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_f32_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
-    float *dst, size_t dst_stride, size_t dst_width,
-    size_t dst_height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_begin, size_t y_end, float *dst, size_t dst_stride,
+    size_t dst_width, size_t dst_height) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
@@ -1156,20 +1139,21 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_f32_sc(
     return KLEIDICV_OK;
   }
   if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
-    return resize_2x2_f32_sc(src, src_stride, src_width, src_height, dst,
-                             dst_stride);
+    return resize_2x2_f32_sc(src, src_stride, src_width, src_height, y_begin,
+                             y_end, dst, dst_stride);
   }
   if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
-    return resize_4x4_f32_sc(src, src_stride, src_width, src_height, dst,
-                             dst_stride);
+    return resize_4x4_f32_sc(src, src_stride, src_width, src_height, y_begin,
+                             y_end, dst, dst_stride);
   }
   if (src_width * 8 == dst_width && src_height * 8 == dst_height) {
     if (svcntw() >= 8) {
       return resize_8x8_f32_sve256plus_sc(src, src_stride, src_width,
-                                          src_height, dst, dst_stride);
+                                          src_height, y_begin, y_end, dst,
+                                          dst_stride);
     }
-    return resize_8x8_f32_sve128_sc(src, src_stride, src_width, src_height, dst,
-                                    dst_stride);
+    return resize_8x8_f32_sve128_sc(src, src_stride, src_width, src_height,
+                                    y_begin, y_end, dst, dst_stride);
   }
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }

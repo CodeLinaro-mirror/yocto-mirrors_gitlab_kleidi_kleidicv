@@ -86,16 +86,28 @@ kleidicv_error_t kleidicv_thread_yuv_sp_to_bgr_u8(
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21, kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_yuv_sp_to_bgra_u8(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21, kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21, kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_yuv_sp_to_rgba_u8(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
@@ -169,17 +181,29 @@ kleidicv_error_t kleidicv_thread_min_max_loc_u8(
     const uint8_t *src, size_t src_stride, size_t width, size_t height,
     size_t *min_offset, size_t *max_offset, kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_threshold_binary_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, uint8_t threshold, uint8_t value,
     kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
                                           uint8_t *dst, size_t dst_stride,
                                           size_t width, size_t height,
                                           float scale, float shift,
                                           kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,
                                            float *dst, size_t dst_stride,
                                            size_t width, size_t height,
@@ -233,11 +257,20 @@ KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_bitwise_and, uint8_t);
 KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_compare_equal_u8, uint8_t);
 KLEIDICV_THREAD_BINARY_OP(kleidicv_thread_compare_greater_u8, uint8_t);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of
+/// kleidicv_saturating_add_abs_with_threshold_s16 - see the documentation of
+/// that function for more details.
 kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
     const int16_t *src_a, size_t src_a_stride, const int16_t *src_b,
     size_t src_b_stride, int16_t *dst, size_t dst_stride, size_t width,
     size_t height, int16_t threshold, kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_gaussian_blur_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, size_t kernel_width,
@@ -245,6 +278,10 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_separable_filter_2d_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
@@ -252,6 +289,10 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_separable_filter_2d_u16 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
     const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
@@ -259,6 +300,10 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_sobel_3x3_horizontal_s16_u8 - see
+/// the documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
     const int16_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, const int16_t *kernel_x,
@@ -266,14 +311,49 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_sobel_3x3_horizontal_s16_u8 - see
+/// the documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     kleidicv_thread_multithreading);
 
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_sobel_3x3_vertical_s16_u8 - see the
+/// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
+    kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_linear_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_resize_linear_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_resize_linear_f32 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_resize_linear_f32(
+    const float *src, size_t src_stride, size_t src_width, size_t src_height,
+    float *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading);
 
 #ifdef __cplusplus

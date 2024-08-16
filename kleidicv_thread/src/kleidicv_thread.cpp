@@ -13,6 +13,7 @@
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/resize/resize_linear.h"
 
 typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;
 
@@ -501,4 +502,56 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
   };
   return mt.parallel(kleidicv_thread_std_function_callback, &callback,
                      mt.parallel_data, height);
+}
+
+kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    kleidicv_thread_multithreading mt) {
+  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
+    size_t src_begin = size_t{task_begin} * 2;
+    size_t src_end = std::min<size_t>(src_height, size_t{task_end} * 2);
+    size_t dst_begin = task_begin;
+    size_t dst_end = std::min<size_t>(dst_height, task_end);
+
+    // half of odd height is rounded towards zero?
+    if (dst_begin == dst_end) {
+      return KLEIDICV_OK;
+    }
+
+    return kleidicv_resize_to_quarter_u8(
+        src + src_begin * src_stride, src_stride, src_width,
+        src_end - src_begin, dst + dst_begin * dst_stride, dst_stride,
+        dst_width, dst_end - dst_begin);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
+                     mt.parallel_data, (src_height + 1) / 2);
+}
+
+kleidicv_error_t kleidicv_thread_resize_linear_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    kleidicv_thread_multithreading mt) {
+  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_resize_linear_stripe_u8(
+        src, src_stride, src_width, src_height, y_begin,
+        std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
+        dst_height);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
+                     mt.parallel_data, std::max<size_t>(1, src_height - 1));
+}
+
+kleidicv_error_t kleidicv_thread_resize_linear_f32(
+    const float *src, size_t src_stride, size_t src_width, size_t src_height,
+    float *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    kleidicv_thread_multithreading mt) {
+  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_resize_linear_stripe_f32(
+        src, src_stride, src_width, src_height, y_begin,
+        std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
+        dst_height);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
+                     mt.parallel_data, std::max<size_t>(1, src_height - 1));
 }
