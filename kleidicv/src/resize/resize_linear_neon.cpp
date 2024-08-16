@@ -771,6 +771,10 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32(
     return vmlaq_n_f32(vmulq_n_f32(a, p), b, q);
   };
 
+  auto lerp1d_vector_n2 = [](float32x4_t a, float q, float32x4_t b) {
+    return vmlaq_n_f32(a, b, q);
+  };
+
   auto lerp1d_vector = [](float32x4_t p, float32x4_t a, float32x4_t q,
                           float32x4_t b) {
     return vmlaq_f32(vmulq_f32(a, p), b, q);
@@ -840,24 +844,19 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32(
     return vmlaq_f32(vmlaq_f32(vmlaq_f32(vmulq_f32(a, p), b, q), c, r), d, s);
   };
 
-  auto process_row = [src_width, dst_width, lerp2d_vector, lerp1d_vector_n,
-                      &coeffs_p0, &coeffs_q0, &coeffs_r0, &coeffs_s0,
-                      &coeffs_p1, &coeffs_q1, &coeffs_r1,
+  auto process_row = [src_width, lerp2d_vector, lerp1d_vector_n,
+                      lerp1d_vector_n2, &coeffs_p0, &coeffs_q0, &coeffs_r0,
+                      &coeffs_s0, &coeffs_p1, &coeffs_q1, &coeffs_r1,
                       &coeffs_s1](const float *src_row0, const float *src_row1,
                                   float *dst_row0, size_t dst_stride) {
-    // Left & right elements
-    const float s0l = src_row0[0], s1l = src_row1[0];
-    const float s0r = src_row0[src_width - 1], s1r = src_row1[src_width - 1];
+    // Left elements
+    float32x4_t s0 = vdupq_n_f32(src_row0[0]);
+    float32x4_t s1 = vdupq_n_f32(src_row1[0]);
     float *dst_row = dst_row0;
     for (size_t i = 0; i < 8; ++i) {
-      vst1q(dst_row, lerp1d_vector_n(static_cast<float>(15 - i * 2) / 16.0F,
-                                     vdupq_n_f32(s0l),
-                                     static_cast<float>(i * 2 + 1) / 16.0F,
-                                     vdupq_n_f32(s1l)));
-      vst1q(dst_row + dst_width - 4,
-            lerp1d_vector_n(
-                static_cast<float>(15 - i * 2) / 16.0F, vdupq_n_f32(s0r),
-                static_cast<float>(i * 2 + 1) / 16.0F, vdupq_n_f32(s1r)));
+      vst1q(dst_row,
+            lerp1d_vector_n(static_cast<float>(15 - i * 2) / 16.0F, s0,
+                            static_cast<float>(i * 2 + 1) / 16.0F, s1));
       dst_row += dst_stride;
     }
 
@@ -870,53 +869,69 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32(
     float *dst_row5 = dst_row4 + dst_stride;
     float *dst_row6 = dst_row5 + dst_stride;
     float *dst_row7 = dst_row6 + dst_stride;
-    float32x4_t a, b = vdupq_n_f32(src_row0[0]);
-    float32x4_t c, d = vdupq_n_f32(src_row1[0]);
+    float32x4_t a, b = s0;
+    float32x4_t c, d = s1;
     for (size_t src_x = 0; src_x + 1 < src_width; src_x++) {
       a = b;
       b = vdupq_n_f32(src_row0[src_x + 1]);
       c = d;
       d = vdupq_n_f32(src_row1[src_x + 1]);
-      float32x4_t dst_0 =
+      float32x4x2_t dst_0;
+      dst_0.val[0] =
           lerp2d_vector(coeffs_p0, a, coeffs_q0, b, coeffs_r0, c, coeffs_s0, d);
-      vst1q(dst_row0, dst_0);
-      float32x4_t dst_7 =
-          lerp2d_vector(coeffs_r0, a, coeffs_s0, b, coeffs_p0, c, coeffs_q0, d);
-      vst1q(dst_row7, dst_7);
-      vst1q(dst_row1, lerp1d_vector_n(6.0 / 7, dst_0, 1.0 / 7, dst_7));
-      vst1q(dst_row2, lerp1d_vector_n(5.0 / 7, dst_0, 2.0 / 7, dst_7));
-      vst1q(dst_row3, lerp1d_vector_n(4.0 / 7, dst_0, 3.0 / 7, dst_7));
-      vst1q(dst_row4, lerp1d_vector_n(3.0 / 7, dst_0, 4.0 / 7, dst_7));
-      vst1q(dst_row5, lerp1d_vector_n(2.0 / 7, dst_0, 5.0 / 7, dst_7));
-      vst1q(dst_row6, lerp1d_vector_n(1.0 / 7, dst_0, 6.0 / 7, dst_7));
-      dst_row0 += 4;
-      dst_row1 += 4;
-      dst_row2 += 4;
-      dst_row3 += 4;
-      dst_row4 += 4;
-      dst_row5 += 4;
-      dst_row6 += 4;
-      dst_row7 += 4;
-      dst_0 =
+      dst_0.val[1] =
           lerp2d_vector(coeffs_p1, a, coeffs_q1, b, coeffs_r1, c, coeffs_s1, d);
-      vst1q(dst_row0, dst_0);
-      dst_7 =
+      vst1q_x2(dst_row0, dst_0);
+
+      float32x4x2_t dst_7;
+      dst_7.val[0] =
+          lerp2d_vector(coeffs_r0, a, coeffs_s0, b, coeffs_p0, c, coeffs_q0, d);
+      dst_7.val[1] =
           lerp2d_vector(coeffs_r1, a, coeffs_s1, b, coeffs_p1, c, coeffs_q1, d);
-      vst1q(dst_row7, dst_7);
-      vst1q(dst_row1, lerp1d_vector_n(6.0 / 7, dst_0, 1.0 / 7, dst_7));
-      vst1q(dst_row2, lerp1d_vector_n(5.0 / 7, dst_0, 2.0 / 7, dst_7));
-      vst1q(dst_row3, lerp1d_vector_n(4.0 / 7, dst_0, 3.0 / 7, dst_7));
-      vst1q(dst_row4, lerp1d_vector_n(3.0 / 7, dst_0, 4.0 / 7, dst_7));
-      vst1q(dst_row5, lerp1d_vector_n(2.0 / 7, dst_0, 5.0 / 7, dst_7));
-      vst1q(dst_row6, lerp1d_vector_n(1.0 / 7, dst_0, 6.0 / 7, dst_7));
-      dst_row0 += 4;
-      dst_row1 += 4;
-      dst_row2 += 4;
-      dst_row3 += 4;
-      dst_row4 += 4;
-      dst_row5 += 4;
-      dst_row6 += 4;
-      dst_row7 += 4;
+      vst1q_x2(dst_row7, dst_7);
+
+      float32x4_t delta07_0 = vsubq_f32(dst_7.val[0], dst_0.val[0]);
+      float32x4_t delta07_1 = vsubq_f32(dst_7.val[1], dst_0.val[1]);
+
+      float32x4x2_t dst;
+      dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 1.0 / 7, delta07_0);
+      dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 1.0 / 7, delta07_1);
+      vst1q_x2(dst_row1, dst);
+      dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 2.0 / 7, delta07_0);
+      dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 2.0 / 7, delta07_1);
+      vst1q_x2(dst_row2, dst);
+      dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 3.0 / 7, delta07_0);
+      dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 3.0 / 7, delta07_1);
+      vst1q_x2(dst_row3, dst);
+      dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 4.0 / 7, delta07_0);
+      dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 4.0 / 7, delta07_1);
+      vst1q_x2(dst_row4, dst);
+      dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 5.0 / 7, delta07_0);
+      dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 5.0 / 7, delta07_1);
+      vst1q_x2(dst_row5, dst);
+      dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 6.0 / 7, delta07_0);
+      dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 6.0 / 7, delta07_1);
+      vst1q_x2(dst_row6, dst);
+
+      dst_row0 += 8;
+      dst_row1 += 8;
+      dst_row2 += 8;
+      dst_row3 += 8;
+      dst_row4 += 8;
+      dst_row5 += 8;
+      dst_row6 += 8;
+      dst_row7 += 8;
+    }
+
+    // Right elements
+    s0 = b;
+    s1 = d;
+    dst_row = dst_row0;
+    for (size_t i = 0; i < 8; ++i) {
+      vst1q(dst_row,
+            lerp1d_vector_n(static_cast<float>(15 - i * 2) / 16.0F, s0,
+                            static_cast<float>(i * 2 + 1) / 16.0F, s1));
+      dst_row += dst_stride;
     }
   };
 
