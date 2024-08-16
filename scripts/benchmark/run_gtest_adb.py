@@ -24,7 +24,7 @@ cores, and writes the mean & stddev to a tsv file that can be opened in a
 text editor or spreadsheet editor for further analysis:
 
 ./run_gtest_adb.py \
-    --cpus 4 7 \
+    --taskset_masks 0x10 0x80 \
     --thermal_zones 1 0 \
     --serial 0123456789ABCDEF \
     --tsv multiply_subtract.tsv \
@@ -46,6 +46,10 @@ import tempfile
 import time
 
 
+def int_hex(x):
+    return int(x, 16)
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -56,17 +60,17 @@ def parse_args():
     )
     parser.add_argument("--adb", default="adb", help="Path to adb")
     parser.add_argument(
-        "--cpus",
-        type=int,
+        "--taskset_masks",
+        type=int_hex,
         nargs="+",
-        help="Indices of CPUs to run on. "
-        "Typically 7 for big, 4-6 for mid, 0-3 for little",
+        help="taskset masks to run with. "
+        "Typically 0x80 for big, 0x10 for mid, 0x1 for little",
     )
     parser.add_argument(
         "--thermal_zones",
         type=int,
         nargs="+",
-        help="Thermal zones of CPUs to run on, corresponding to --cpus argument. "
+        help="Thermal zones of CPUs to run on, corresponding to --taskset_masks argument. "
         "Typically 0 for big CPU, 1 for mid CPU, 2 for little CPU",
     )
     parser.add_argument(
@@ -112,7 +116,7 @@ def parse_args():
     parser.add_argument("--perf_min_samples", type=int, default=100)
     args = parser.parse_args()
 
-    assert len(args.cpus) == len(args.thermal_zones)
+    assert len(args.taskset_masks) == len(args.thermal_zones)
 
     return args
 
@@ -174,15 +178,16 @@ def wait_for_cooldown(runner, thermal_zone):
         time.sleep(1)
 
 
-def get_run_name(rep, executable, cpu):
-    return f"{os.path.basename(executable)}-{cpu}-#{rep}"
+def get_run_name(rep, executable, taskset_mask):
+    return f"{os.path.basename(executable)}-{taskset_mask:x}-#{rep}"
 
 
-def run_executable_tests(runner, args, host_executable, cpu, thermal_zone):
-
+def run_executable_tests(
+    runner, args, host_executable, taskset_mask, thermal_zone
+):
     executable = os.path.join(args.tmpdir, os.path.basename(host_executable))
 
-    output_file = f"{os.path.splitext(executable)[0]}-{cpu}.json"
+    output_file = f"{os.path.splitext(executable)[0]}-{taskset_mask:x}.json"
 
     command_args = [
         executable,
@@ -208,15 +213,13 @@ def run_executable_tests(runner, args, host_executable, cpu, thermal_zone):
     results = None
     testsuites = collections.OrderedDict()
 
-    taskset_mask = "{:x}".format(1 << cpu)
-
     for test_name in test_list:
         wait_for_cooldown(runner, thermal_zone)
         try:
             runner.check_output(
                 [
                     "taskset",
-                    taskset_mask,
+                    f"{taskset_mask:x}",
                     executable,
                     f"--gtest_output=json:{output_file}",
                     f"--gtest_filter={test_name}",
@@ -243,7 +246,7 @@ def run_executable_tests(runner, args, host_executable, cpu, thermal_zone):
 
         try:
             output = (
-                f"{executable}-{cpu}\t{test_name}"
+                f"{executable}-{taskset_mask:x}\t{test_name}"
                 f"\t{test_result['value_param']}"
             )
             for key in args.tsv_columns:
@@ -257,27 +260,39 @@ def run_executable_tests(runner, args, host_executable, cpu, thermal_zone):
     return results
 
 
-def run_tests_on_cpu(runner, args, rep, cpu, thermal_zone):
-    scaling_governor_filename = (
-        f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
-    )
-    prev_scaling_governor = runner.check_output(
-        ["cat", scaling_governor_filename]
-    ).strip()
-    try:
-        runner.check_output(
-            ["echo", "performance", "~>", scaling_governor_filename]
+def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone):
+    # Iterate through the CPUs enabled in the taskset mask
+    for cpu in range(taskset_mask.bit_length()):
+        if (1 << cpu) & taskset_mask == 0:
+            continue
+
+        scaling_governor_filename = (
+            f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
         )
-        return {
-            get_run_name(rep, executable, cpu): run_executable_tests(
-                runner, args, executable, cpu, thermal_zone
+        prev_scaling_governor = runner.check_output(
+            ["cat", scaling_governor_filename]
+        ).strip()
+        try:
+            runner.check_output(
+                ["echo", "performance", "~>", scaling_governor_filename]
             )
-            for executable in args.executables
-        }
-    finally:
-        runner.check_output(
-            ["echo", prev_scaling_governor, "~>", scaling_governor_filename]
-        )
+            return {
+                get_run_name(
+                    rep, executable, taskset_mask
+                ): run_executable_tests(
+                    runner, args, executable, taskset_mask, thermal_zone
+                )
+                for executable in args.executables
+            }
+        finally:
+            runner.check_output(
+                [
+                    "echo",
+                    prev_scaling_governor,
+                    "~>",
+                    scaling_governor_filename,
+                ]
+            )
 
 
 def get_results_table(args, results):
@@ -286,12 +301,12 @@ def get_results_table(args, results):
     exe_common_prefix_len = len(os.path.commonprefix(args.executables))
 
     field_names = ["name", "value_param"]
-    for cpu in args.cpus:
+    for taskset_mask in args.taskset_masks:
         for key in args.tsv_columns:
             for executable in args.executables:
                 for rep in range(args.repetitions):
                     field_names.append(
-                        f"{cpu} {executable[exe_common_prefix_len:]} {key} #{rep}"
+                        f"{taskset_mask:x} {executable[exe_common_prefix_len:]} {key} #{rep}"
                     )
 
     rows = [field_names]
@@ -305,16 +320,16 @@ def get_results_table(args, results):
             row = [f"{testsuite_name}.{test_name}", value_param]
 
             try:
-                for cpu in args.cpus:
+                for taskset_mask in args.taskset_masks:
                     for key in args.tsv_columns:
                         for executable in args.executables:
                             for rep in range(args.repetitions):
                                 result = results[
-                                    get_run_name(rep, executable, cpu)
+                                    get_run_name(rep, executable, taskset_mask)
                                 ]
-                                exe_test = result["testsuites"][testsuite_index][
-                                    "testsuite"
-                                ][test_index]
+                                exe_test = result["testsuites"][
+                                    testsuite_index
+                                ]["testsuite"][test_index]
                                 row.append(exe_test[key])
                 rows.append(row)
             except KeyError:
@@ -336,9 +351,13 @@ def main():
     results = {}
 
     for rep in range(args.repetitions):
-        for cpu, thermal_zone in zip(args.cpus, args.thermal_zones):
+        for taskset_mask, thermal_zone in zip(
+            args.taskset_masks, args.thermal_zones
+        ):
             results.update(
-                run_tests_on_cpu(runner, args, rep, cpu, thermal_zone)
+                run_tests_on_cpus(
+                    runner, args, rep, taskset_mask, thermal_zone
+                )
             )
 
     with open(args.json, "w") as f:
