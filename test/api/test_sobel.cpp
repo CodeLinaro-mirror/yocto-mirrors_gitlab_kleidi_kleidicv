@@ -61,7 +61,7 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
   }
 
  public:
-  void test(test::Array2D<IntermediateType> mask) {
+  void test(const test::Array2D<IntermediateType> &mask) {
     test::Kernel kernel{mask};
     // Use the default array layouts for testing.
     auto array_layouts =

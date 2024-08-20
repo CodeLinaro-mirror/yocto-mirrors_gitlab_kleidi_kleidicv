@@ -86,7 +86,7 @@ class SeparableFilter2DTest : public test::KernelTest<KernelTestParams> {
     return *this;
   }
 
-  void test(test::Array2D<IntermediateType> mask, InputType max_value) {
+  void test(const test::Array2D<IntermediateType> &mask, InputType max_value) {
     test::Kernel kernel{mask};
     // Use the default border values for testing.
     auto kSupportedBorderValues = test::default_border_values();

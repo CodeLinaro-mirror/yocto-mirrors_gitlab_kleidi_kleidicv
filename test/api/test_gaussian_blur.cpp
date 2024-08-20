@@ -80,7 +80,7 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
     return *this;
   }
 
-  void test(test::Array2D<IntermediateType> mask) {
+  void test(const test::Array2D<IntermediateType> &mask) {
     test::Kernel kernel{mask};
     // Use the default border values for testing.
     auto kSupportedBorderValues = test::default_border_values();
