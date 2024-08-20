@@ -68,7 +68,7 @@ static kleidicv_error_t parallel(kleidicv_thread_callback callback,
   return shared_result;
 }
 
-kleidicv_thread_multithreading get_multithreading() {
+static kleidicv_thread_multithreading get_multithreading() {
   return kleidicv_thread_multithreading{parallel, nullptr};
 }
 
@@ -120,14 +120,13 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 
     if (scn == 4 && dcn == 4) {
       if (swapBlue) {
-        return convert_error(kleidicv_thread_rgba_to_bgra_u8(
+        return convert_error(kleidicv_rgba_to_bgra_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-            mt));
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
       }
-      return convert_error(kleidicv_thread_rgba_to_rgba_u8(
+      return convert_error(kleidicv_rgba_to_rgba_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
   }
 

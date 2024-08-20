@@ -43,11 +43,6 @@ This changelog aims to follow the guiding principles of
   * convertTo
   * exp
   * compare
-  * add
-  * sub
-  * mul
-  * absdiff
-  * bitwise_and
   * minMaxIdx
   * GaussianBlur
   * Sobel
