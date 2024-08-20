@@ -11,7 +11,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Run OpenCV conformity checks
 TESTRESULT=0
-export OPENCV_VERSION="4.9.0"
+export OPENCV_VERSION="4.10.0"
 
 CLEAN="ON" \
   OPENCV_URL="/opt/opencv-${OPENCV_VERSION}.tar.gz" \

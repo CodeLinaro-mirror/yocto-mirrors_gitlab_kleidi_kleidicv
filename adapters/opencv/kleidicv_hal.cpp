@@ -903,7 +903,7 @@ kleidicv_error_t call_min_max_loc(FunctionType min_max_loc_func,
                                   double *max_value, int *min_index,
                                   int *max_index,
                                   kleidicv_thread_multithreading mt) {
-  size_t tmp_min_offset, tmp_max_offset;
+  size_t tmp_min_offset = 0, tmp_max_offset = 0;
   size_t *p_min_offset = (min_value || min_index) ? &tmp_min_offset : nullptr;
   size_t *p_max_offset = (max_value || max_index) ? &tmp_max_offset : nullptr;
 
@@ -917,14 +917,21 @@ kleidicv_error_t call_min_max_loc(FunctionType min_max_loc_func,
   if (max_value) {
     *max_value = static_cast<double>(src_data[tmp_max_offset]);
   }
-  if (min_index) {
-    /* row */ min_index[0] = tmp_min_offset / src_stride;
-    /* col */ min_index[1] = (tmp_min_offset % src_stride) / sizeof(T);
-  }
-  if (max_index) {
-    /* row */ max_index[0] = tmp_max_offset / src_stride;
-    /* col */ max_index[1] = (tmp_max_offset % src_stride) / sizeof(T);
-  }
+
+  // Convert from offset into array to x,y coordinates.
+  auto offset_to_coords = [](int *coords, size_t offset, size_t src_stride) {
+    if (!coords) return;
+    if (src_stride) {
+      /* row */ coords[0] = offset / src_stride;
+      /* col */ coords[1] = (offset % src_stride) / sizeof(T);
+    } else {
+      /* row */ coords[0] = 0;
+      /* col */ coords[1] = offset / sizeof(T);
+    }
+  };
+  offset_to_coords(min_index, tmp_min_offset, src_stride);
+  offset_to_coords(max_index, tmp_max_offset, src_stride);
+
   return err;
 }
 
