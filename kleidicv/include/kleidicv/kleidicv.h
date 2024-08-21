@@ -1116,9 +1116,9 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_linear_f32, const float *src,
 /// @param channels     Number of channels in the data. Must be not more than
 ///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_sobel_3x3_vertical_s16_u8, const uint8_t *src,
-                         size_t src_stride, int16_t *dst, size_t dst_stride,
-                         size_t width, size_t height, size_t channels);
+kleidicv_error_t kleidicv_sobel_3x3_vertical_s16_u8(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels);
 
 /// Calculates horizontal derivative approximation with Sobel filter.
 ///
@@ -1154,10 +1154,9 @@ KLEIDICV_API_DECLARATION(kleidicv_sobel_3x3_vertical_s16_u8, const uint8_t *src,
 /// @param channels     Number of channels in the data. Must be not more than
 ///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_sobel_3x3_horizontal_s16_u8,
-                         const uint8_t *src, size_t src_stride, int16_t *dst,
-                         size_t dst_stride, size_t width, size_t height,
-                         size_t channels);
+kleidicv_error_t kleidicv_sobel_3x3_horizontal_s16_u8(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels);
 
 #if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 /// Canny edge detector for uint8_t grayscale input. Output is also a uint8_t
@@ -1267,13 +1266,11 @@ kleidicv_error_t kleidicv_filter_context_release(
 /// @param border_type   Way of handling the border.
 /// @param context       Pointer to filter context.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, size_t channels,
-                         const uint8_t *kernel_x, size_t kernel_width,
-                         const uint8_t *kernel_y, size_t kernel_height,
-                         kleidicv_border_type_t border_type,
-                         kleidicv_filter_context_t *context);
+kleidicv_error_t kleidicv_separable_filter_2d_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
+    size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
 
 /// Applies Gaussian blur to the source image using the specified parameters.
 /// In-place filtering is not supported.
@@ -1324,13 +1321,11 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_u8, const uint8_t *src,
 /// @param border_type   Way of handling the border.
 /// @param context       Pointer to filter context.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, size_t channels,
-                         size_t kernel_width, size_t kernel_height,
-                         float sigma_x, float sigma_y,
-                         kleidicv_border_type_t border_type,
-                         kleidicv_filter_context_t *context);
+kleidicv_error_t kleidicv_gaussian_blur_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, float sigma_x, float sigma_y,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
 
 /// Splits a multi channel source stream into separate 1-channel streams. Width
 /// and height are the same for the source stream and for all the destination

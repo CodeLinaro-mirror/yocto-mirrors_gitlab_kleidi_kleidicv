@@ -11,8 +11,9 @@ KLEIDICV_MULTIVERSION_C_API(
     KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_stripe_u8),
     &kleidicv::sme2::gaussian_blur_stripe_u8);
 
-namespace kleidicv {
-static kleidicv_error_t gaussian_blur_u8(
+extern "C" {
+
+kleidicv_error_t kleidicv_gaussian_blur_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
@@ -21,7 +22,5 @@ static kleidicv_error_t gaussian_blur_u8(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
       kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
 }
-}  // namespace kleidicv
 
-KLEIDICV_MULTIVERSION_C_API(kleidicv_gaussian_blur_u8,
-                            &kleidicv::gaussian_blur_u8, nullptr, nullptr);
+}  // extern "C"
