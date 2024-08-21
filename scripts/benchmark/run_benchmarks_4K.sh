@@ -39,7 +39,8 @@ benchmarks=(
 
     "BinaryThreshold: opencv_perf_imgproc '*ThreshFixture_Threshold.Threshold/*' '(3840x2160, 8UC1, THRESH_BINARY)'"
 
-    "SepFilter2D_5x5: opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '(3840x2160, 8UC1, 5, BORDER_REPLICATE)'"
+    "SepFilter2D_5x5_U8:  opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '(3840x2160, 8UC1, 5, BORDER_REPLICATE)'"
+    "SepFilter2D_5x5_U16: opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '(3840x2160, 16UC1, 5, BORDER_REPLICATE)'"
 
     "GaussianBlur3x3:   opencv_perf_imgproc '*gaussianBlur3x3/*'   '(3840x2160, 8UC1, BORDER_REPLICATE)'"
     "GaussianBlur5x5:   opencv_perf_imgproc '*gaussianBlur5x5/*'   '(3840x2160, 8UC1, BORDER_REPLICATE)'"
