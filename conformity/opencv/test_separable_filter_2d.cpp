@@ -2,9 +2,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <iostream>
 #include <vector>
 
 #include "tests.h"
+
+// This function tries running the Separable Filter 2D API via OpenCV with the
+// specified InputType and KernelType. An exception should be thrown in case the
+// constraint in the HAL has not been met.
+// Returns a 1x1-sized boolean matrix.
+template <size_t KernelSize, int InputType, int KernelType>
+cv::Mat exec_separable_filter_2d_channel_check(cv::Mat& input) {
+  cv::Mat kernel(KernelSize, 1, KernelType);
+  cv::Mat result;
+  try {
+    cv::sepFilter2D(input, result, -1, kernel, kernel, cv::Point(-1, -1), 0,
+                    cv::BORDER_REPLICATE);
+  } catch (const cv::Exception&) {
+    return cv::Mat(1, 1, CV_8UC1, cv::Scalar(1));
+  }
+  return cv::Mat(1, 1, CV_8UC1, cv::Scalar(0));
+}
 
 template <typename TypeParam, size_t KernelSize, size_t BorderType>
 cv::Mat exec_separable_filter_2d(cv::Mat& input) {
@@ -27,6 +45,38 @@ cv::Mat exec_separable_filter_2d(cv::Mat& input) {
 }
 
 #if MANAGER
+// The purpose of this test is to check one of the initial constraints of the
+// Separable Filter 2D HAL, that the kernel can only have one channel.
+template <size_t KernelSize, int InputType, int KernelType>
+bool test_separable_filter_2d_channel_check(
+    int index, RecreatedMessageQueue& request_queue,
+    RecreatedMessageQueue& reply_queue) {
+  cv::Mat input(10, 10, InputType, cv::Scalar(0));
+
+  cv::Mat actual =
+      exec_separable_filter_2d_channel_check<KernelSize, InputType, KernelType>(
+          input);
+  cv::Mat expected =
+      get_expected_from_subordinate(index, request_queue, reply_queue, input);
+
+  bool actual_exception_caught = actual.at<uint8_t>(0, 0);
+  bool expected_exception_caught = expected.at<uint8_t>(0, 0);
+
+  if (actual_exception_caught != expected_exception_caught) {
+    std::cout << "[FAIL]" << std::endl
+              << "Actual: "
+              << (actual_exception_caught ? "exception" : "no exception")
+              << std::endl
+              << "Expected: "
+              << (expected_exception_caught ? "exception" : "no exception")
+              << std::endl
+              << std::endl;
+    return true;
+  }
+
+  return false;
+}
+
 template <typename TypeParam, size_t KernelSize, size_t BorderType,
           size_t Channels>
 bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
@@ -65,6 +115,11 @@ bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& separable_filter_2d_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
+    TEST("Separable Filter 2D 5x5 channels: CV_8UC1 input, CV_8UC1 kernel", (test_separable_filter_2d_channel_check<5, CV_8UC1, CV_8UC1>), (exec_separable_filter_2d_channel_check<5, CV_8UC1, CV_8UC1>)),
+    TEST("Separable Filter 2D 5x5 channels: CV_8UC1 input, CV_8UC2 kernel", (test_separable_filter_2d_channel_check<5, CV_8UC1, CV_8UC2>), (exec_separable_filter_2d_channel_check<5, CV_8UC1, CV_8UC2>)),
+    TEST("Separable Filter 2D 5x5 channels: CV_8UC2 input, CV_8UC1 kernel", (test_separable_filter_2d_channel_check<5, CV_8UC2, CV_8UC1>), (exec_separable_filter_2d_channel_check<5, CV_8UC2, CV_8UC1>)),
+    TEST("Separable Filter 2D 5x5 channels: CV_8UC2 input, CV_8UC2 kernel", (test_separable_filter_2d_channel_check<5, CV_8UC2, CV_8UC2>), (exec_separable_filter_2d_channel_check<5, CV_8UC2, CV_8UC2>)),
+
     TEST("Separable Filter 2D 5x5 (u8), BORDER_REFLECT_101, 1 channel", (test_separable_filter_2d<uint8_t, 5, cv::BORDER_REFLECT_101, 1>), (exec_separable_filter_2d<uint8_t, 5, cv::BORDER_REFLECT_101>)),
     TEST("Separable Filter 2D 5x5 (u8), BORDER_REFLECT_101, 2 channel", (test_separable_filter_2d<uint8_t, 5, cv::BORDER_REFLECT_101, 2>), (exec_separable_filter_2d<uint8_t, 5, cv::BORDER_REFLECT_101>)),
     TEST("Separable Filter 2D 5x5 (u8), BORDER_REFLECT_101, 3 channel", (test_separable_filter_2d<uint8_t, 5, cv::BORDER_REFLECT_101, 3>), (exec_separable_filter_2d<uint8_t, 5, cv::BORDER_REFLECT_101>)),
