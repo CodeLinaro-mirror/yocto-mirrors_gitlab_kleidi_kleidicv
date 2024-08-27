@@ -42,9 +42,12 @@ class SeparableFilter2D<uint8_t, 5> {
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i < 5; i++) {
-      acc_l =
-          vmlal_u8(acc_l, vget_low_u8(src[i]), vget_low_u8(kernel_y_u8_[i]));
-      acc_h = vmlal_high_u8(acc_h, src[i], kernel_y_u8_[i]);
+      BufferVectorType vec_l =
+          vmull_u8(vget_low_u8(src[i]), vget_low_u8(kernel_y_u8_[i]));
+      BufferVectorType vec_h = vmull_high_u8(src[i], kernel_y_u8_[i]);
+
+      acc_l = vqaddq_u16(acc_l, vec_l);
+      acc_h = vqaddq_u16(acc_h, vec_h);
     }
 
     vst1q_u16(&dst[0], acc_l);
@@ -66,15 +69,20 @@ class SeparableFilter2D<uint8_t, 5> {
 
   void horizontal_vector_path(BufferVectorType src[5],
                               DestinationType *dst) const {
-    BufferVectorType acc = vmulq_u16(src[0], kernel_x_u16_[0]);
+    uint32x4_t acc_l =
+        vmull_u16(vget_low_u16(src[0]), vget_low_u16(kernel_x_u16_[0]));
+    uint32x4_t acc_h = vmull_high_u16(src[0], kernel_x_u16_[0]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i < 5; i++) {
-      acc = vmlaq_u16(acc, src[i], kernel_x_u16_[i]);
+      acc_l = vmlal_u16(acc_l, vget_low_u16(src[i]),
+                        vget_low_u16(kernel_x_u16_[i]));
+      acc_h = vmlal_high_u16(acc_h, src[i], kernel_x_u16_[i]);
     }
 
-    uint8x8_t result = vqmovn_u16(acc);
+    uint16x8_t acc_u16 = vcombine_u16(vqmovn_u32(acc_l), vqmovn_u32(acc_h));
+    uint8x8_t result = vqmovn_u16(acc_u16);
     vst1_u8(&dst[0], result);
   }
 
@@ -136,9 +144,12 @@ class SeparableFilter2D<uint16_t, 5> {
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i < 5; i++) {
-      acc_l = vmlal_u16(acc_l, vget_low_u16(src[i]),
-                        vget_low_u16(kernel_y_u16_[i]));
-      acc_h = vmlal_high_u16(acc_h, src[i], kernel_y_u16_[i]);
+      BufferVectorType vec_l =
+          vmull_u16(vget_low_u16(src[i]), vget_low_u16(kernel_y_u16_[i]));
+      BufferVectorType vec_h = vmull_high_u16(src[i], kernel_y_u16_[i]);
+
+      acc_l = vqaddq_u32(acc_l, vec_l);
+      acc_h = vqaddq_u32(acc_h, vec_h);
     }
 
     vst1q_u32(&dst[0], acc_l);
@@ -160,15 +171,20 @@ class SeparableFilter2D<uint16_t, 5> {
 
   void horizontal_vector_path(BufferVectorType src[5],
                               DestinationType *dst) const {
-    BufferVectorType acc = vmulq_u32(src[0], kernel_x_u32_[0]);
+    uint64x2_t acc_l =
+        vmull_u32(vget_low_u32(src[0]), vget_low_u32(kernel_x_u32_[0]));
+    uint64x2_t acc_h = vmull_high_u32(src[0], kernel_x_u32_[0]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i < 5; i++) {
-      acc = vmlaq_u32(acc, src[i], kernel_x_u32_[i]);
+      acc_l = vmlal_u32(acc_l, vget_low_u32(src[i]),
+                        vget_low_u32(kernel_x_u32_[i]));
+      acc_h = vmlal_high_u32(acc_h, src[i], kernel_x_u32_[i]);
     }
 
-    uint16x4_t result = vqmovn_u32(acc);
+    uint32x4_t acc_u32 = vcombine_u32(vqmovn_u64(acc_l), vqmovn_u64(acc_h));
+    uint16x4_t result = vqmovn_u32(acc_u32);
     vst1_u16(&dst[0], result);
   }
 

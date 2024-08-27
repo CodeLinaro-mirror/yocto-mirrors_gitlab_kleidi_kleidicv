@@ -55,20 +55,28 @@ class SeparableFilter2D<uint8_t, 5> {
     BufferVectorType acc_t = svmullt_u16(src_0, kernel_y_0_u8_);
 
     // 1
-    acc_b = svmlalb_u16(acc_b, src_1, kernel_y_1_u8_);
-    acc_t = svmlalt_u16(acc_t, src_1, kernel_y_1_u8_);
+    BufferVectorType vec_b = svmullb_u16(src_1, kernel_y_1_u8_);
+    BufferVectorType vec_t = svmullt_u16(src_1, kernel_y_1_u8_);
+    acc_b = svqadd_u16_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
     // 2
-    acc_b = svmlalb_u16(acc_b, src_2, kernel_y_2_u8_);
-    acc_t = svmlalt_u16(acc_t, src_2, kernel_y_2_u8_);
+    vec_b = svmullb_u16(src_2, kernel_y_2_u8_);
+    vec_t = svmullt_u16(src_2, kernel_y_2_u8_);
+    acc_b = svqadd_u16_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
     // 3
-    acc_b = svmlalb_u16(acc_b, src_3, kernel_y_3_u8_);
-    acc_t = svmlalt_u16(acc_t, src_3, kernel_y_3_u8_);
+    vec_b = svmullb_u16(src_3, kernel_y_3_u8_);
+    vec_t = svmullt_u16(src_3, kernel_y_3_u8_);
+    acc_b = svqadd_u16_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
     // 4
-    acc_b = svmlalb_u16(acc_b, src_4, kernel_y_4_u8_);
-    acc_t = svmlalt_u16(acc_t, src_4, kernel_y_4_u8_);
+    vec_b = svmullb_u16(src_4, kernel_y_4_u8_);
+    vec_t = svmullt_u16(src_4, kernel_y_4_u8_);
+    acc_b = svqadd_u16_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
     BufferDoubleVectorType interleaved = svcreate2_u16(acc_b, acc_t);
     svst2(pg, &dst[0], interleaved);
@@ -79,24 +87,34 @@ class SeparableFilter2D<uint8_t, 5> {
       BufferVectorType src_2, BufferVectorType src_3, BufferVectorType src_4,
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    BufferVectorType acc = svmul_u16_x(pg, src_0, kernel_x_0_u16_);
+    svuint32_t acc_b = svmullb_u32(src_0, kernel_x_0_u16_);
+    svuint32_t acc_t = svmullt_u32(src_0, kernel_x_0_u16_);
 
     // 1
-    acc = svmla_u16_x(pg, acc, src_1, kernel_x_1_u16_);
+    acc_b = svmlalb_u32(acc_b, src_1, kernel_x_1_u16_);
+    acc_t = svmlalt_u32(acc_t, src_1, kernel_x_1_u16_);
 
     // 2
-    acc = svmla_u16_x(pg, acc, src_2, kernel_x_2_u16_);
+    acc_b = svmlalb_u32(acc_b, src_2, kernel_x_2_u16_);
+    acc_t = svmlalt_u32(acc_t, src_2, kernel_x_2_u16_);
 
     // 3
-    acc = svmla_u16_x(pg, acc, src_3, kernel_x_3_u16_);
+    acc_b = svmlalb_u32(acc_b, src_3, kernel_x_3_u16_);
+    acc_t = svmlalt_u32(acc_t, src_3, kernel_x_3_u16_);
 
     // 4
-    acc = svmla_u16_x(pg, acc, src_4, kernel_x_4_u16_);
+    acc_b = svmlalb_u32(acc_b, src_4, kernel_x_4_u16_);
+    acc_t = svmlalt_u32(acc_t, src_4, kernel_x_4_u16_);
+
+    svuint16_t acc_u16_b = svqxtnb_u32(acc_b);
+    svuint16_t acc_u16 = svqxtnt_u32(acc_u16_b, acc_t);
 
     svbool_t greater =
-        svcmpgt_n_u16(pg, acc, std::numeric_limits<SourceType>::max());
-    acc = svdup_n_u16_m(acc, greater, std::numeric_limits<SourceType>::max());
-    svst1b_u16(pg, &dst[0], acc);
+        svcmpgt_n_u16(pg, acc_u16, std::numeric_limits<SourceType>::max());
+    acc_u16 =
+        svdup_n_u16_m(acc_u16, greater, std::numeric_limits<SourceType>::max());
+
+    svst1b_u16(pg, &dst[0], acc_u16);
   }
 
   void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
@@ -177,20 +195,28 @@ class SeparableFilter2D<uint16_t, 5> {
     BufferVectorType acc_t = svmullt_u32(src_0, kernel_y_0_u16_);
 
     // 1
-    acc_b = svmlalb_u32(acc_b, src_1, kernel_y_1_u16_);
-    acc_t = svmlalt_u32(acc_t, src_1, kernel_y_1_u16_);
+    BufferVectorType vec_b = svmullb_u32(src_1, kernel_y_1_u16_);
+    BufferVectorType vec_t = svmullt_u32(src_1, kernel_y_1_u16_);
+    acc_b = svqadd_u32_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
     // 2
-    acc_b = svmlalb_u32(acc_b, src_2, kernel_y_2_u16_);
-    acc_t = svmlalt_u32(acc_t, src_2, kernel_y_2_u16_);
+    vec_b = svmullb_u32(src_2, kernel_y_2_u16_);
+    vec_t = svmullt_u32(src_2, kernel_y_2_u16_);
+    acc_b = svqadd_u32_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
     // 3
-    acc_b = svmlalb_u32(acc_b, src_3, kernel_y_3_u16_);
-    acc_t = svmlalt_u32(acc_t, src_3, kernel_y_3_u16_);
+    vec_b = svmullb_u32(src_3, kernel_y_3_u16_);
+    vec_t = svmullt_u32(src_3, kernel_y_3_u16_);
+    acc_b = svqadd_u32_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
     // 4
-    acc_b = svmlalb_u32(acc_b, src_4, kernel_y_4_u16_);
-    acc_t = svmlalt_u32(acc_t, src_4, kernel_y_4_u16_);
+    vec_b = svmullb_u32(src_4, kernel_y_4_u16_);
+    vec_t = svmullt_u32(src_4, kernel_y_4_u16_);
+    acc_b = svqadd_u32_x(pg, acc_b, vec_b);
+    acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
     BufferDoubleVectorType interleaved = svcreate2_u32(acc_b, acc_t);
     svst2(pg, &dst[0], interleaved);
@@ -201,24 +227,34 @@ class SeparableFilter2D<uint16_t, 5> {
       BufferVectorType src_2, BufferVectorType src_3, BufferVectorType src_4,
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    BufferVectorType acc = svmul_u32_x(pg, src_0, kernel_x_0_u32_);
+    svuint64_t acc_b = svmullb_u64(src_0, kernel_x_0_u32_);
+    svuint64_t acc_t = svmullt_u64(src_0, kernel_x_0_u32_);
 
     // 1
-    acc = svmla_u32_x(pg, acc, src_1, kernel_x_1_u32_);
+    acc_b = svmlalb_u64(acc_b, src_1, kernel_x_1_u32_);
+    acc_t = svmlalt_u64(acc_t, src_1, kernel_x_1_u32_);
 
     // 2
-    acc = svmla_u32_x(pg, acc, src_2, kernel_x_2_u32_);
+    acc_b = svmlalb_u64(acc_b, src_2, kernel_x_2_u32_);
+    acc_t = svmlalt_u64(acc_t, src_2, kernel_x_2_u32_);
 
     // 3
-    acc = svmla_u32_x(pg, acc, src_3, kernel_x_3_u32_);
+    acc_b = svmlalb_u64(acc_b, src_3, kernel_x_3_u32_);
+    acc_t = svmlalt_u64(acc_t, src_3, kernel_x_3_u32_);
 
     // 4
-    acc = svmla_u32_x(pg, acc, src_4, kernel_x_4_u32_);
+    acc_b = svmlalb_u64(acc_b, src_4, kernel_x_4_u32_);
+    acc_t = svmlalt_u64(acc_t, src_4, kernel_x_4_u32_);
+
+    svuint32_t acc_u32_b = svqxtnb_u64(acc_b);
+    svuint32_t acc_u32 = svqxtnt_u64(acc_u32_b, acc_t);
 
     svbool_t greater =
-        svcmpgt_n_u32(pg, acc, std::numeric_limits<SourceType>::max());
-    acc = svdup_n_u32_m(acc, greater, std::numeric_limits<SourceType>::max());
-    svst1h_u32(pg, &dst[0], acc);
+        svcmpgt_n_u32(pg, acc_u32, std::numeric_limits<SourceType>::max());
+    acc_u32 =
+        svdup_n_u32_m(acc_u32, greater, std::numeric_limits<SourceType>::max());
+
+    svst1h_u32(pg, &dst[0], acc_u32);
   }
 
   void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
