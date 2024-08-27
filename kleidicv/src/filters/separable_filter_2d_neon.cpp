@@ -35,9 +35,9 @@ class SeparableFilter2D<uint8_t, 5> {
   }
 
   void vertical_vector_path(SourceVectorType src[5], BufferType *dst) const {
-    SourceVectorType acc_l =
+    BufferVectorType acc_l =
         vmull_u8(vget_low_u8(src[0]), vget_low_u8(kernel_y_u8_[0]));
-    SourceVectorType acc_h = vmull_high_u8(src[0], kernel_y_u8_[0]);
+    BufferVectorType acc_h = vmull_high_u8(src[0], kernel_y_u8_[0]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
@@ -129,9 +129,9 @@ class SeparableFilter2D<uint16_t, 5> {
   }
 
   void vertical_vector_path(SourceVectorType src[5], BufferType *dst) const {
-    SourceVectorType acc_l =
+    BufferVectorType acc_l =
         vmull_u16(vget_low_u16(src[0]), vget_low_u16(kernel_y_u16_[0]));
-    SourceVectorType acc_h = vmull_high_u16(src[0], kernel_y_u16_[0]);
+    BufferVectorType acc_h = vmull_high_u16(src[0], kernel_y_u16_[0]);
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL

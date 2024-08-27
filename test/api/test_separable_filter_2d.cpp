@@ -242,7 +242,7 @@ TEST(SeparableFilter2D, 5x5_U16Overflow) {
                              7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
                              KLEIDICV_BORDER_TYPE_REPLICATE, context));
 
-  test::Array2D<uint16_t> dst_expected{7, 8, test::Options::vector_length()};
+  test::Array2D<TypeParam> dst_expected{7, 8, test::Options::vector_length()};
   // clang-format off
   dst_expected.set(0, 0, { 30324, 38988, 47652, 60648, 65535, 65535, 65535});
   dst_expected.set(1, 0, { 38988, 47652, 56316, 65535, 65535, 65535, 65535});

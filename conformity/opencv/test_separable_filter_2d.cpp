@@ -33,9 +33,9 @@ cv::Mat exec_separable_filter_2d(cv::Mat& input) {
   cv::Mat input_mat = input.rowRange(0, input.rows - 1).clone();
 
   cv::RNG rng(kernel_seed);
-  cv::Mat kernel_x(KernelSize, 1, CV_8UC1);
+  cv::Mat kernel_x(KernelSize, 1, get_opencv_matrix_type<TypeParam, 1>());
   rng.fill(kernel_x, cv::RNG::UNIFORM, 0, 5);
-  cv::Mat kernel_y(KernelSize, 1, CV_8UC1);
+  cv::Mat kernel_y(KernelSize, 1, get_opencv_matrix_type<TypeParam, 1>());
   rng.fill(kernel_y, cv::RNG::UNIFORM, 0, 5);
 
   cv::Mat result;

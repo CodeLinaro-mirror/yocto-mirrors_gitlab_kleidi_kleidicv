@@ -224,7 +224,7 @@ class GaussianBlur<uint8_t, 7, true> {
   // DST = [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6 ] *
   //     * [ 2, 7, 14, 18, 14, 7, 2 ]T
   void vertical_scalar_path(const SourceType src[7], BufferType *dst) const {
-    uint32_t acc = src[0] * 2 + src[1] * 7 + src[2] * 14 + src[3] * 18 +
+    uint16_t acc = src[0] * 2 + src[1] * 7 + src[2] * 14 + src[3] * 18 +
                    src[4] * 14 + src[5] * 7 + src[6] * 2;
     dst[0] = acc;
   }
@@ -282,7 +282,7 @@ class GaussianBlur<uint8_t, 7, true> {
                               DestinationType *dst) const {
     uint32_t acc = src[0] * 2 + src[1] * 7 + src[2] * 14 + src[3] * 18 +
                    src[4] * 14 + src[5] * 7 + src[6] * 2;
-    dst[0] = rounding_shift_right(acc, 12);
+    dst[0] = static_cast<DestinationType>(rounding_shift_right(acc, 12));
   }
 
  private:
@@ -495,7 +495,7 @@ class GaussianBlur<uint8_t, 15, true> {
     acc += (src[0] + src[14]) * 4 + (src[2] + src[12]) * 25 +
            (src[4] + src[10]) * 81;
     acc += (src[5] + src[9]) * 118 + (src[6] + src[8]) * 146 + src[7] * 158;
-    dst[0] = rounding_shift_right(acc, 20);
+    dst[0] = static_cast<DestinationType>(rounding_shift_right(acc, 20));
   }
 
  private:
@@ -569,18 +569,18 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   void vertical_scalar_path(const SourceType src[KernelSize],
                             BufferType *dst) const {
-    uint32_t acc = static_cast<uint32_t>(src[0]) * half_kernel_[0];
+    BufferType acc = static_cast<BufferType>(src[0]) * half_kernel_[0];
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 1; i <= (KernelSize >> 1); i++) {
-      acc += static_cast<uint32_t>(src[i]) * half_kernel_[i];
+      acc += static_cast<BufferType>(src[i]) * half_kernel_[i];
     }
 
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = (KernelSize >> 1) + 1; i < KernelSize; i++) {
       size_t j = KernelSize - i - 1;
-      acc += static_cast<uint32_t>(src[i]) * half_kernel_[j];
+      acc += static_cast<BufferType>(src[i]) * half_kernel_[j];
     }
 
     dst[0] = acc;
@@ -609,7 +609,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   void horizontal_scalar_path(const BufferType src[KernelSize],
                               DestinationType *dst) const {
-    uint32_t acc = src[0] * half_kernel_[0];
+    BufferType acc = src[0] * half_kernel_[0];
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
@@ -623,7 +623,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
       acc += src[i] * half_kernel_[j];
     }
 
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
+    dst[0] = static_cast<DestinationType>(rounding_shift_right(acc, 16));
   }
 
  private:
