@@ -999,6 +999,7 @@ KLEIDICV_API_DECLARATION(kleidicv_count_nonzeros_u8, const uint8_t *src,
                          size_t *count);
 
 /// Resizes source data by averaging 4 elements to one.
+/// In-place operation not supported.
 ///
 /// For even source dimensions `(2*N, 2*M)` destination dimensions should be
 /// `(N, M)`.
@@ -1047,6 +1048,7 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
                          size_t dst_height);
 
 /// Resize image using linear interpolation.
+/// In-place operation not supported.
 ///
 /// At present only 2*2 and 4*4 upsizing is supported, and 8x8 for float data.
 /// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED
@@ -1366,7 +1368,7 @@ KLEIDICV_API_DECLARATION(kleidicv_split, const void *src_data,
                          size_t channels, size_t element_size);
 
 /// Matrix transpose operation.
-/// Inplace transpose ('src == dst') is only supported for
+/// In-place transpose ('src == dst') is only supported for
 /// square matrixes (`src_width == src_height`).
 ///
 /// Example for `src[4,3]` to `dst[3,4]`:
@@ -1386,7 +1388,7 @@ KLEIDICV_API_DECLARATION(kleidicv_split, const void *src_data,
 ///                     Must be a multiple of element_size and no less than
 ///                     width * element_size, except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
-///                     Can be the same as source data for inplace operation.
+///                     Can be the same as source data for in-place operation.
 ///                     Must be aligned to element_size.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
