@@ -158,7 +158,7 @@ TYPED_TEST(SeparableFilter2D, 5x5) {
       .test(mask, 5);
 }
 
-TEST(SeparableFilter2D, 5x5_U8Overflow) {
+TEST(SeparableFilter2D, 5x5_U8OverflowSequence) {
   using TypeParam = uint8_t;
 
   kleidicv_filter_context_t *context = nullptr;
@@ -178,12 +178,31 @@ TEST(SeparableFilter2D, 5x5_U8Overflow) {
   test::Array2D<TypeParam> kernel_y{5, 1};
   kernel_y.set(0, 0, {5, 6, 7, 8, 9});
 
+  test::Array2D<TypeParam> dst_expected{5, 5, test::Options::vector_length()};
+  // clang-format off
+  dst_expected.set(0, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(1, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(2, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(3, 0, { 255, 255, 255, 255, 255});
+  dst_expected.set(4, 0, { 255, 255, 255, 255, 255});
+  // clang-format on
+
   test::Array2D<TypeParam> dst{5, 5, test::Options::vector_length()};
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              5, 5, 1, kernel_x.data(), 5, kernel_y.data(), 5,
                              KLEIDICV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
 
+TEST(SeparableFilter2D, 5x5_U8OverflowMax) {
+  using TypeParam = uint8_t;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 5, 5));
+  test::Array2D<TypeParam> src{5, 5, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 255, 255, 255, 255, 255});
   src.set(1, 0, { 255, 255, 255, 255, 255});
@@ -191,6 +210,11 @@ TEST(SeparableFilter2D, 5x5_U8Overflow) {
   src.set(3, 0, { 255, 255, 255, 255, 255});
   src.set(4, 0, { 255, 255, 255, 255, 255});
   // clang-format on
+
+  test::Array2D<TypeParam> kernel_x{5, 1};
+  kernel_x.set(0, 0, {255, 255, 255, 255, 255});
+  test::Array2D<TypeParam> kernel_y{5, 1};
+  kernel_y.set(0, 0, {255, 255, 255, 255, 255});
 
   test::Array2D<TypeParam> dst_expected{5, 5, test::Options::vector_length()};
   // clang-format off
@@ -200,11 +224,8 @@ TEST(SeparableFilter2D, 5x5_U8Overflow) {
   dst_expected.set(3, 0, { 255, 255, 255, 255, 255});
   dst_expected.set(4, 0, { 255, 255, 255, 255, 255});
   // clang-format on
-  EXPECT_EQ_ARRAY2D(dst_expected, dst);
 
-  kernel_x.set(0, 0, {255, 255, 255, 255, 255});
-  kernel_y.set(0, 0, {255, 255, 255, 255, 255});
-
+  test::Array2D<TypeParam> dst{5, 5, test::Options::vector_length()};
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              5, 5, 1, kernel_x.data(), 5, kernel_y.data(), 5,
@@ -213,7 +234,87 @@ TEST(SeparableFilter2D, 5x5_U8Overflow) {
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
-TEST(SeparableFilter2D, 5x5_U16Overflow) {
+TEST(SeparableFilter2D, 5x5_U8OverflowVectorNEON) {
+  using TypeParam = uint8_t;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 13, 6));
+  test::Array2D<TypeParam> src{13, 6, test::Options::vector_length()};
+  // clang-format off
+  src.set(0, 0, { 232, 175,   8,  66, 167, 249, 190, 176,  89, 230, 120,  71,  14});
+  src.set(1, 0, { 222, 254, 230, 253,  64, 127, 144,  43, 172, 110,  22, 232, 233});
+  src.set(2, 0, { 106,  40,  40,  59,  18, 204, 247, 252, 179,  69, 163, 190,  58});
+  src.set(3, 0, { 213,  22, 107, 111, 233,  10,  51,  17,  35,  14, 197, 157, 237});
+  src.set(4, 0, {  96, 180, 160, 185, 146,  15, 103,  62, 227, 180, 249,  82,  83});
+  src.set(5, 0, { 167, 150, 176, 149,  65, 246, 237, 234, 138,  51, 159, 218, 245});
+  // clang-format on
+
+  test::Array2D<TypeParam> kernel_x{5, 1};
+  kernel_x.set(0, 0, {23, 149, 238, 48, 224});
+  test::Array2D<TypeParam> kernel_y{5, 1};
+  kernel_y.set(0, 0, {96, 254, 32, 81, 7});
+
+  test::Array2D<TypeParam> dst_expected{13, 6, test::Options::vector_length()};
+  // clang-format off
+  dst_expected.set(0, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(1, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(2, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(3, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(4, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(5, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  // clang-format on
+
+  test::Array2D<TypeParam> dst{13, 6, test::Options::vector_length()};
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             13, 6, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
+
+TEST(SeparableFilter2D, 5x5_U8OverflowVectorSC) {
+  using TypeParam = uint8_t;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 13, 6));
+  test::Array2D<TypeParam> src{13, 6, test::Options::vector_length()};
+  // clang-format off
+  src.set(0, 0, { 133, 210, 177,   6,   5, 200,   6, 242, 237,  80, 223, 253, 241});
+  src.set(1, 0, { 112, 148, 209, 186, 188, 202,  18, 215, 193, 109, 226, 154, 207});
+  src.set(2, 0, {  95, 216,  99, 161, 209, 183,  45, 226, 116, 210, 183,  11, 190});
+  src.set(3, 0, { 237, 170,  10,  80, 207,  52,  69, 119,  68,  16, 239, 103,  25});
+  src.set(4, 0, { 249, 106, 195, 207,  18, 123, 244,  63, 183,  13,  52, 196, 106});
+  src.set(5, 0, {  66,  17, 191, 246, 246, 166, 137, 102,  84, 239, 245, 199, 144});
+  // clang-format on
+
+  test::Array2D<TypeParam> kernel_x{5, 1};
+  kernel_x.set(0, 0, {99, 31, 197, 141, 71});
+  test::Array2D<TypeParam> kernel_y{5, 1};
+  kernel_y.set(0, 0, {60, 231, 86, 4, 140});
+
+  test::Array2D<TypeParam> dst_expected{13, 6, test::Options::vector_length()};
+  // clang-format off
+  dst_expected.set(0, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(1, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(2, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(3, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(4, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  dst_expected.set(5, 0, { 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255});
+  // clang-format on
+
+  test::Array2D<TypeParam> dst{13, 6, test::Options::vector_length()};
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             13, 6, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
+
+TEST(SeparableFilter2D, 5x5_U16OverflowSequence) {
   using TypeParam = uint16_t;
 
   kleidicv_filter_context_t *context = nullptr;
@@ -236,12 +337,6 @@ TEST(SeparableFilter2D, 5x5_U16Overflow) {
   test::Array2D<TypeParam> kernel_y{5, 1};
   kernel_y.set(0, 0, {38, 0, 38, 0, 38});
 
-  test::Array2D<TypeParam> dst{7, 8, test::Options::vector_length()};
-  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
-                             src.data(), src.stride(), dst.data(), dst.stride(),
-                             7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-
   test::Array2D<TypeParam> dst_expected{7, 8, test::Options::vector_length()};
   // clang-format off
   dst_expected.set(0, 0, { 30324, 38988, 47652, 60648, 65535, 65535, 65535});
@@ -253,11 +348,40 @@ TEST(SeparableFilter2D, 5x5_U16Overflow) {
   dst_expected.set(6, 0, { 65535, 65535, 65535, 60648, 60648, 43320, 51984});
   dst_expected.set(7, 0, { 65535, 65535, 56316, 65535, 43320, 51984, 47652});
   // clang-format on
-  EXPECT_EQ_ARRAY2D(dst_expected, dst);
 
+  test::Array2D<TypeParam> dst{7, 8, test::Options::vector_length()};
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
+
+TEST(SeparableFilter2D, 5x5_U16OverflowBigKernel) {
+  using TypeParam = uint16_t;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 7, 8));
+  test::Array2D<TypeParam> src{7, 8, test::Options::vector_length()};
+  // clang-format off
+  src.set(0, 0, { 1, 2, 3, 4, 5, 6, 7});
+  src.set(1, 0, { 2, 3, 4, 5, 6, 7, 8});
+  src.set(2, 0, { 3, 4, 5, 6, 7, 8, 9});
+  src.set(3, 0, { 4, 5, 6, 7, 8, 9, 1});
+  src.set(4, 0, { 5, 6, 7, 8, 9, 1, 2});
+  src.set(5, 0, { 6, 7, 8, 9, 1, 2, 3});
+  src.set(6, 0, { 7, 8, 9, 1, 2, 3, 4});
+  src.set(7, 0, { 8, 9, 1, 2, 3, 4, 5});
+  // clang-format on
+
+  test::Array2D<TypeParam> kernel_x{5, 1};
   kernel_x.set(0, 0, {83, 94, 83, 94, 83});
+  test::Array2D<TypeParam> kernel_y{5, 1};
   kernel_y.set(0, 0, {94, 83, 94, 83, 94});
 
+  test::Array2D<TypeParam> dst_expected{7, 8, test::Options::vector_length()};
   // clang-format off
   dst_expected.set(0, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
   dst_expected.set(1, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
@@ -269,12 +393,22 @@ TEST(SeparableFilter2D, 5x5_U16Overflow) {
   dst_expected.set(7, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
   // clang-format on
 
+  test::Array2D<TypeParam> dst{7, 8, test::Options::vector_length()};
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
                              KLEIDICV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
 
+TEST(SeparableFilter2D, 5x5_U16OverflowMax) {
+  using TypeParam = uint16_t;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 7, 8));
+  test::Array2D<TypeParam> src{7, 8, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
   src.set(1, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
@@ -286,12 +420,83 @@ TEST(SeparableFilter2D, 5x5_U16Overflow) {
   src.set(7, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
   // clang-format on
 
+  test::Array2D<TypeParam> kernel_x{5, 1};
   kernel_x.set(0, 0, {65535, 65535, 65535, 65535, 65535});
+  test::Array2D<TypeParam> kernel_y{5, 1};
   kernel_y.set(0, 0, {65535, 65535, 65535, 65535, 65535});
 
+  test::Array2D<TypeParam> dst_expected{7, 8, test::Options::vector_length()};
+  // clang-format off
+  dst_expected.set(0, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(1, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(2, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(3, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(4, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(5, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(6, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(7, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  // clang-format on
+
+  test::Array2D<TypeParam> dst{7, 8, test::Options::vector_length()};
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
+
+TEST(SeparableFilter2D, 5x5_U16OverflowVector) {
+  using TypeParam = uint16_t;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 18, 7));
+  test::Array2D<TypeParam> src{18, 7, test::Options::vector_length()};
+  // clang-format off
+  src.set(0, 0, {  7069, 15555, 36257, 50924, 19919, 14775,  5812, 63033,
+    12337, 31198, 64955, 38064, 52102, 33736, 44794, 28036, 28418, 51544});
+  src.set(1, 0, { 56176, 39501, 12937, 60165, 41073, 42249, 26998,  8958,
+    17167,   567, 49467, 56007,  9385, 49384, 52038,  3262, 42863, 57617});
+  src.set(2, 0, { 53432,  9693, 54092,   741,   835, 61755,  3707,  3429,
+    20223, 65475, 42973,  9837, 41947, 41431, 53538,  2774, 50094, 65193});
+  src.set(3, 0, {  2673, 45570,  2199, 38120, 55556,  7612, 53485, 44718,
+    16967, 60551, 63543, 55699, 45352, 58886, 52300, 36045, 16187,  6794});
+  src.set(4, 0, { 50260, 62222, 30989, 44610, 41729, 64829, 48408, 62415,
+    20341, 13347, 26792,  9543, 45732,  3551, 43217, 41365,  4666, 41742});
+  src.set(5, 0, { 55105, 31681, 64645, 51293, 43515,  8779, 43396, 12372,
+    37819, 61444, 10427, 49746, 12989, 58916, 27310, 46273, 60514, 59064});
+  src.set(6, 0, { 40983, 23334, 50325, 15939, 50201, 54234,  2318,  5649,
+    32631, 44612, 49516, 36557, 20168, 17045, 40077, 60173, 61168,  3247});
+  // clang-format on
+
+  test::Array2D<TypeParam> kernel_x{5, 1};
+  kernel_x.set(0, 0, {60064, 6000, 11871, 49673, 48017});
+  test::Array2D<TypeParam> kernel_y{5, 1};
+  kernel_y.set(0, 0, {8956, 29661, 59112, 41299, 41083});
+
+  test::Array2D<TypeParam> dst_expected{18, 7, test::Options::vector_length()};
+  // clang-format off
+  dst_expected.set(0, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,
+    65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(1, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,
+    65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(2, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,
+    65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(3, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,
+    65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(4, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,
+    65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(5, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,
+    65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  dst_expected.set(6, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535,
+    65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535});
+  // clang-format on
+
+  test::Array2D<TypeParam> dst{18, 7, test::Options::vector_length()};
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             18, 7, 1, kernel_x.data(), 5, kernel_y.data(), 5,
                              KLEIDICV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
