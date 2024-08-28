@@ -51,7 +51,7 @@ This changelog aims to follow the guiding principles of
 - Improved performance of Compare Equal and Greater SC API.
 
 ### Removed
-
+- Support for OpenCV 4.9.
 
 ## 0.1.0 - 2024-05-21
 
