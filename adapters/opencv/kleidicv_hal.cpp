@@ -347,7 +347,11 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (anchor_x != -1 || anchor_y != -1) {
+  if (anchor_x > -1 && anchor_x != (kernelx_length >> 1)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (anchor_y > -1 && anchor_y != (kernely_length >> 1)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 

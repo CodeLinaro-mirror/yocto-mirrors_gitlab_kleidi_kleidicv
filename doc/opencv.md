@@ -104,7 +104,7 @@ In-place filtering not supported.
 
 Notes on parameters:
 * `src`, `dst`, `kernelX`, `kernelY` - the number of channels must match between source and destination. The types must match between source, destination and kernels. However, the kernels must have 1 channel.
-* `anchor` - values other than `(-1, -1)` are not supported.
+* `anchor` - values other than `(-1, -1)` or the midpoints of the X and Y kernels respectively are not supported.
 * `delta` - values other than `0.0` are not supported.
 * `borderType` - pixel extrapolation method.
 Supported [OpenCV border types](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
