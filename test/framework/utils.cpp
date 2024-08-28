@@ -20,6 +20,13 @@ bool test::Options::are_long_running_tests_skipped_ = true;
 
 namespace test {
 
+float floatval(uint32_t v) {
+  float result;  // Avoid cppcoreguidelines-init-variables. NOLINT
+  static_assert(sizeof(result) == sizeof(v));
+  memcpy(&result, &v, sizeof(result));
+  return result;
+}
+
 template <typename ElementType>
 void dump(const TwoDimensional<ElementType> *elements) {
   if (!elements) {

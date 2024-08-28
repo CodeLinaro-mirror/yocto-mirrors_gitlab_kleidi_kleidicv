@@ -205,6 +205,11 @@ TEST_P(Thread, separable_filter_2d_u16) {
                                       kleidicv_thread_separable_filter_2d_u16);
 }
 
+TEST_P(Thread, separable_filter_2d_f32) {
+  check_separable_filter_2d<float>(kleidicv_separable_filter_2d_f32,
+                                   kleidicv_thread_separable_filter_2d_f32);
+}
+
 TEST_P(Thread, SobelHorizontal1Channel) {
   check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_horizontal_s16_u8,
                                    kleidicv_thread_sobel_3x3_horizontal_s16_u8,

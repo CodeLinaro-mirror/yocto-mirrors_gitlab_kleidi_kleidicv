@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -214,6 +215,41 @@ class Array2D : public TwoDimensional<ElementType> {
     return std::nullopt;
   }
 
+  // Compares two instances for approximate equality considering only element
+  // bytes. Returns the location of the first mismatch, if any.
+  std::optional<std::tuple<size_t, size_t>> compare_approx_to(
+      ElementType threshold_percent, const Array2D<ElementType> &other) const {
+    for (size_t row = 0; row < height(); ++row) {
+      for (size_t column = 0; column < width(); ++column) {
+        const ElementType *lhs = at(row, column);
+        const ElementType *rhs = other.at(row, column);
+        if (lhs != 0) {
+          ElementType diff = abs_diff<ElementType>(*lhs, *rhs);
+          ElementType diff_percentage = (diff / std::abs(*lhs)) * 100;
+          if (!lhs || !rhs || diff_percentage > threshold_percent) {
+            return std::make_tuple(row, column);
+          }
+          // Special handling to avoid division by 0.
+        } else {
+          // Seems like clang-tidy does not understand what the fill member
+          // function of test::Array2D does, so these exceptions are required
+          // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign)
+          float expected = *(lhs);
+          // NOLINTEND(clang-analyzer-core.uninitialized.Assign)
+
+          float actual = *(rhs);
+          // Error of 1 ULP means that actual is either same as expected, or
+          // the next float value in negative of positive direction
+          if (!lhs || !rhs || (std::nextafterf(actual, expected) != expected)) {
+            return std::make_tuple(row, column);
+          }
+        }
+      }
+    }
+
+    return std::nullopt;
+  }
+
   // Returns a pointer to the first element.
   ElementType *data() { return data_; }
 
@@ -383,6 +419,25 @@ class Array2D : public TwoDimensional<ElementType> {
                    << +(lhs).at(row, col)[0] << " vs "              \
                    << +(rhs).at(row, col)[0] << "." << std::endl;   \
     }                                                               \
+  } while (0 != 0)
+
+// Compares two Array2D objects for approximate equality.
+#define EXPECT_APPROX_EQ_ARRAY2D(threshold_percent, lhs, rhs)            \
+  do {                                                                   \
+    ASSERT_EQ((lhs).width(), (rhs).width())                              \
+        << "Mismatch in width." << std::endl;                            \
+    ASSERT_EQ((lhs).height(), (rhs).height())                            \
+        << "Mismatch in height." << std::endl;                           \
+    ASSERT_EQ((lhs).channels(), (rhs).channels())                        \
+        << "Mismatch in channels." << std::endl;                         \
+    auto mismatch = (lhs).compare_approx_to((threshold_percent), (rhs)); \
+    if (mismatch) {                                                      \
+      auto [row, col] = *mismatch;                                       \
+      GTEST_FAIL() << "Mismatch at (row=" << row << ", col=" << col      \
+                   << "): " << std::hex << std::showbase                 \
+                   << +(lhs).at(row, col)[0] << " vs "                   \
+                   << +(rhs).at(row, col)[0] << "." << std::endl;        \
+    }                                                                    \
   } while (0 != 0)
 
 // Compares two Array2D objects for inequality.

@@ -13,6 +13,7 @@
 
 KLEIDICV_API(separable_filter_2d, kleidicv_separable_filter_2d_u8, uint8_t)
 KLEIDICV_API(separable_filter_2d, kleidicv_separable_filter_2d_u16, uint16_t)
+KLEIDICV_API(separable_filter_2d, kleidicv_separable_filter_2d_f32, float)
 
 // Implements KernelTestParams for SeparableFilter2D operators.
 template <typename ElementType, size_t KernelSize>
@@ -35,6 +36,15 @@ struct SeparableFilter2DKernelTestParams<uint16_t, KernelSize> {
 
   static constexpr size_t kKernelSize = KernelSize;
 };  // end of struct SeparableFilter2DKernelTestParams<uint16_t, KernelSize>
+
+template <size_t KernelSize>
+struct SeparableFilter2DKernelTestParams<float, KernelSize> {
+  using InputType = float;
+  using IntermediateType = float;
+  using OutputType = float;
+
+  static constexpr size_t kKernelSize = KernelSize;
+};  // end of struct SeparableFilter2DKernelTestParams<float, KernelSize>
 
 static constexpr std::array<kleidicv_border_type_t, 1> kDefaultBorder = {
     KLEIDICV_BORDER_TYPE_REPLICATE};
@@ -92,10 +102,17 @@ class SeparableFilter2DTest : public test::KernelTest<KernelTestParams> {
     auto kSupportedBorderValues = test::default_border_values();
     // Create generators and execute test.
     test::SequenceGenerator tested_border_values{kSupportedBorderValues};
-    test::PseudoRandomNumberGeneratorIntRange<InputType> element_generator{
-        0, max_value};
-    Base::test(kernel, *array_layout_generator_, *border_type_generator_,
-               tested_border_values, element_generator);
+    if constexpr (std::is_integral_v<InputType>) {
+      test::PseudoRandomNumberGeneratorIntRange<InputType> element_generator{
+          0, max_value};
+      Base::test(kernel, *array_layout_generator_, *border_type_generator_,
+                 tested_border_values, element_generator);
+    } else {
+      test::PseudoRandomNumberGeneratorFloatRange<InputType> element_generator{
+          0, max_value};
+      Base::test(kernel, *array_layout_generator_, *border_type_generator_,
+                 tested_border_values, element_generator);
+    }
   }
 
  protected:
@@ -133,7 +150,7 @@ class SeparableFilter2DTest : public test::KernelTest<KernelTestParams> {
   }
 };  // end of class SeparableFilter2DTest<KernelTestParams>
 
-using ElementTypes = ::testing::Types<uint8_t, uint16_t>;
+using ElementTypes = ::testing::Types<uint8_t, uint16_t, float>;
 
 template <typename ElementType>
 class SeparableFilter2D : public testing::Test {};
@@ -500,6 +517,119 @@ TEST(SeparableFilter2D, 5x5_U16OverflowVector) {
                              KLEIDICV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
+
+TEST(SeparableFilter2D, 5x5_F32MaxInf) {
+  using TypeParam = float;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 5, 7));
+
+  const float posInfinity = std::numeric_limits<float>::infinity();
+  const float floatMax = std::numeric_limits<float>::max();
+
+  test::Array2D<TypeParam> src{5, 7, test::Options::vector_length()};
+  test::Array2D<TypeParam> kernel_x{5, 1};
+  test::Array2D<TypeParam> kernel_y{5, 1};
+  test::Array2D<TypeParam> dst{5, 7, test::Options::vector_length()};
+  test::Array2D<float> dst_expected{5, 7, test::Options::vector_length()};
+
+  // clang-format off
+  src.set(0, 0, { 1, 1, 1, 1, 1});
+  src.set(1, 0, { 1, 1, 1, 1, 1});
+  src.set(2, 0, { 1, 1, 1, 1, 1});
+  src.set(3, 0, { 1, 1, 1, 1, 1});
+  src.set(4, 0, { 1, 1, 1, 1, 1});
+  src.set(5, 0, { 1, 1, 1, 1, 1});
+  src.set(6, 0, { 1, 1, 1, 1, 1});
+  // clang-format on
+
+  kernel_x.set(0, 0, {floatMax, 1, 1, 1, 1});
+  kernel_y.set(0, 0, {1, 1, 1, 1, 1});
+
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             5, 7, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+
+  // clang-format off
+  dst_expected.set(0, 0, { posInfinity, posInfinity, posInfinity, posInfinity, posInfinity});
+  dst_expected.set(1, 0, { posInfinity, posInfinity, posInfinity, posInfinity, posInfinity});
+  dst_expected.set(2, 0, { posInfinity, posInfinity, posInfinity, posInfinity, posInfinity});
+  dst_expected.set(3, 0, { posInfinity, posInfinity, posInfinity, posInfinity, posInfinity});
+  dst_expected.set(4, 0, { posInfinity, posInfinity, posInfinity, posInfinity, posInfinity});
+  dst_expected.set(5, 0, { posInfinity, posInfinity, posInfinity, posInfinity, posInfinity});
+  dst_expected.set(6, 0, { posInfinity, posInfinity, posInfinity, posInfinity, posInfinity});
+  // clang-format on
+
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+}
+
+TEST(SeparableFilter2D, 5x5_F32SpecialValues) {
+  using TypeParam = float;
+
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, 1, 5, 5, 5, 7));
+  test::Array2D<TypeParam> src{5, 7, test::Options::vector_length()};
+  test::Array2D<TypeParam> kernel_x{5, 1};
+  test::Array2D<TypeParam> kernel_y{5, 1};
+  test::Array2D<TypeParam> dst{5, 7, test::Options::vector_length()};
+  test::Array2D<TypeParam> dst_expected{5, 7, test::Options::vector_length()};
+
+  const float quietMinusNaN = test::floatval(0xFFC00001);
+  const float quietPlusNaN = std::numeric_limits<float>::quiet_NaN();
+  const float signalingNaN = std::numeric_limits<float>::signaling_NaN();
+  const float negInfinity = -std::numeric_limits<float>::infinity();
+  const float posInfinity = std::numeric_limits<float>::infinity();
+
+  const float minusNaN = test::floatval(0xFF800001);
+  const float plusNaN = test::floatval(0x7F800001);
+  const float minusZero = -0.0F;
+  const float plusZero = 0.0F;
+
+  const float oneNaN = test::floatval(0x7FC00001);
+  const float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
+  const float floatMin = std::numeric_limits<float>::min();
+  const float floatMax = std::numeric_limits<float>::max();
+
+  const float posSubnormalMin = std::numeric_limits<float>::denorm_min();
+  const float posSubnormalMax = test::floatval(0x007FFFFF);
+  const float negSubnormalMin = -std::numeric_limits<float>::denorm_min();
+  const float negSubnormalMax = test::floatval(0x807FFFFF);
+
+  // clang-format off
+  src.set(0, 0, { quietPlusNaN, signalingNaN, negInfinity, posInfinity, zeroDivZero });
+  src.set(1, 0, { minusNaN, plusNaN, oneNaN, minusZero, plusZero });
+  src.set(2, 0, { 1111.11, -1112.22, 113.33, floatMin, floatMax });
+  src.set(3, 0, { 114.44, posSubnormalMin, posSubnormalMax, negSubnormalMin, negSubnormalMax });
+  src.set(4, 0, { 111.51, 112.62, 113.73, 114.84, 114.83 });
+  src.set(5, 0, { 126.66, 127.11, 128.66, 129.11, 129.1 });
+  src.set(6, 0, { 11.5, 12.5, -11.5, -12.5, -12.51 });
+  // clang-format on
+
+  kernel_x.set(0, 0, {38, 0, 38, 0, 38});
+  kernel_y.set(0, 0, {38, 0, 38, 0, 38});
+
+  EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
+                             src.data(), src.stride(), dst.data(), dst.stride(),
+                             5, 7, 1, kernel_x.data(), 5, kernel_y.data(), 5,
+                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
+
+  // clang-format off
+  dst_expected.set(0, 0, {quietMinusNaN, quietMinusNaN, quietMinusNaN, oneNaN, quietPlusNaN});
+  dst_expected.set(1, 0, {quietMinusNaN, quietMinusNaN, quietMinusNaN, oneNaN, quietPlusNaN});
+  dst_expected.set(2, 0, {quietMinusNaN, quietMinusNaN, quietMinusNaN, oneNaN, oneNaN});
+  dst_expected.set(3, 0, {quietMinusNaN, quietMinusNaN, quietMinusNaN, oneNaN, oneNaN});
+  dst_expected.set(4, 0, {3875407.25, 504475.8125, posInfinity, quietPlusNaN, quietPlusNaN});
+  dst_expected.set(5, 0, {898687.9375, 734736.125, 702289.5, 538337.625, 505890.96875});
+  dst_expected.set(6, 0, {519479, 522684.6875, 454932.1875, 458137.875, 390385.375});
+  // clang-format on
+
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_APPROX_EQ_ARRAY2D(1e-4, dst_expected, dst);
 }
 
 TYPED_TEST(SeparableFilter2D, NullPointer) {

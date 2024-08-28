@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <cmath>
 #include <limits>
 
 #include "kleidicv/ctypes.h"
@@ -219,6 +220,79 @@ class SeparableFilter2D<uint16_t, 5> {
   SourceVectorType kernel_y_u16_[5];
 };  // end of class SeparableFilter2D<uint16_t, 5>
 
+template <>
+class SeparableFilter2D<float, 5> {
+ public:
+  using SourceType = float;
+  using SourceVectorType = typename VecTraits<SourceType>::VectorType;
+  using BufferType = float;
+  using BufferVectorType = typename VecTraits<BufferType>::VectorType;
+  using DestinationType = float;
+
+  // Ignored because vectors are initialized in the constructor body.
+  // NOLINTNEXTLINE - hicpp-member-init
+  SeparableFilter2D(const SourceType *kernel_x, const SourceType *kernel_y)
+      : kernel_x_(kernel_x), kernel_y_(kernel_y) {
+    for (size_t i = 0; i < 5; i++) {
+      kernel_x_f32_[i] = vdupq_n_f32(kernel_x[i]);
+      kernel_y_f32_[i] = vdupq_n_f32(kernel_y[i]);
+    }
+  }
+
+  void vertical_vector_path(SourceVectorType src[5],
+                            DestinationType *dst) const {
+    auto acc = vmulq_f32(src[0], kernel_y_f32_[0]);
+
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 1; i < 5; i++) {
+      acc = vmlaq_f32(acc, src[i], kernel_y_f32_[i]);
+    }
+
+    vst1q_f32(&dst[0], acc);
+  }
+
+  void vertical_scalar_path(const SourceType src[5],
+                            DestinationType *dst) const {
+    SourceType acc = src[0] * kernel_y_[0];
+    for (size_t i = 1; i < 5; i++) {
+      acc += src[i] * kernel_y_[i];
+    }
+
+    dst[0] = acc;
+  }
+
+  void horizontal_vector_path(SourceVectorType src[5],
+                              DestinationType *dst) const {
+    SourceVectorType acc = vmulq_f32(src[0], kernel_x_f32_[0]);
+
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 1; i < 5; i++) {
+      acc = vmlaq_f32(acc, src[i], kernel_x_f32_[i]);
+    }
+    vst1q_f32(&dst[0], acc);
+  }
+
+  void horizontal_scalar_path(const SourceType src[5],
+                              DestinationType *dst) const {
+    SourceType acc = src[0] * kernel_x_[0];
+
+    for (size_t i = 1; i < 5; i++) {
+      acc += src[i] * kernel_x_[i];
+    }
+
+    dst[0] = acc;
+  }
+
+ private:
+  const SourceType *kernel_x_;
+  const SourceType *kernel_y_;
+
+  SourceVectorType kernel_x_f32_[5];
+  SourceVectorType kernel_y_f32_[5];
+};  // end of class SeparableFilter2D<float, 5>
+
 template <typename T>
 static kleidicv_error_t separable_filter_2d_checks(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
@@ -255,11 +329,11 @@ static kleidicv_error_t separable_filter_2d_checks(
   return KLEIDICV_OK;
 }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t separable_filter_2d_stripe_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
-    const uint8_t *kernel_x, size_t kernel_width, const uint8_t *kernel_y,
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe_entry(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_filter_context_t *context) {
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
@@ -280,55 +354,35 @@ kleidicv_error_t separable_filter_2d_stripe_u8(
 
   Rectangle rect{width, height};
 
-  using SeparableFilterClass = SeparableFilter2D<uint8_t, 5>;
+  using SeparableFilterClass = SeparableFilter2D<T, 5>;
 
   SeparableFilterClass filterClass{kernel_x, kernel_y};
   SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
 
-  Rows<const uint8_t> src_rows{src, src_stride, channels};
-  Rows<uint8_t> dst_rows{dst, dst_stride, channels};
+  Rows<const T> src_rows{src, src_stride, channels};
+  Rows<T> dst_rows{dst, dst_stride, channels};
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      *fixed_border_type, filter);
 
   return KLEIDICV_OK;
 }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t separable_filter_2d_stripe_u16(
-    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
-    const uint16_t *kernel_x, size_t kernel_width, const uint16_t *kernel_y,
-    size_t kernel_height, kleidicv_border_type_t border_type,
-    kleidicv_filter_context_t *context) {
-  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
-  kleidicv_error_t checks_result = separable_filter_2d_checks(
-      src, src_stride, dst, dst_stride, width, height, channels, kernel_x,
-      kernel_width, kernel_y, kernel_height, workspace);
-
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+#define KLEIDICV_INSTANTIATE_WRAPPER(type, type_suffix)                  \
+  kleidicv_error_t separable_filter_2d_stripe_##type_suffix(             \
+      const type *src, size_t src_stride, type *dst, size_t dst_stride,  \
+      size_t width, size_t height, size_t y_begin, size_t y_end,         \
+      size_t channels, const type *kernel_x, size_t kernel_width,        \
+      const type *kernel_y, size_t kernel_height,                        \
+      kleidicv_border_type_t border_type,                                \
+      kleidicv_filter_context_t *context) {                              \
+    return separable_filter_2d_stripe_entry(                             \
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end, \
+        channels, kernel_x, kernel_width, kernel_y, kernel_height,       \
+        border_type, context);                                           \
   }
 
-  auto fixed_border_type = get_fixed_border_type(border_type);
-  // if the std::optional is empty, that means that the border type is not
-  // supported, so there's no need to check for specific types
-  if (!fixed_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  Rectangle rect{width, height};
-
-  using SeparableFilterClass = SeparableFilter2D<uint16_t, 5>;
-
-  SeparableFilterClass filterClass{kernel_x, kernel_y};
-  SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
-
-  Rows<const uint16_t> src_rows{src, src_stride, channels};
-  Rows<uint16_t> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     *fixed_border_type, filter);
-
-  return KLEIDICV_OK;
-}
+KLEIDICV_INSTANTIATE_WRAPPER(uint8_t, u8);
+KLEIDICV_INSTANTIATE_WRAPPER(uint16_t, u16);
+KLEIDICV_INSTANTIATE_WRAPPER(float, f32);
 
 }  // namespace kleidicv::neon

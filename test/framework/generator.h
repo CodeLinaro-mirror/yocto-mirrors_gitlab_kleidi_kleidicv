@@ -61,6 +61,24 @@ class PseudoRandomNumberGeneratorIntRange
   std::uniform_int_distribution<ElementType> dist_;
 };  // end of class PseudoRandomNumberGeneratorIntRange<ElementType>
 
+// Generates pseudo-random floats within the range [min, max].
+template <typename ElementType,
+          std::enable_if_t<std::is_same_v<ElementType, float>, bool> = true>
+class PseudoRandomNumberGeneratorFloatRange
+    : public PseudoRandomNumberGenerator<ElementType> {
+ public:
+  PseudoRandomNumberGeneratorFloatRange(ElementType min, ElementType max)
+      : PseudoRandomNumberGenerator<ElementType>(), dist_(min, max) {}
+
+  // Yields the next value or std::nullopt.
+  std::optional<ElementType> next() override {
+    return static_cast<ElementType>(dist_(this->rng_));
+  }
+
+ protected:
+  std::uniform_real_distribution<ElementType> dist_;
+};  // end of class PseudoRandomNumberGeneratorFloatRange<ElementType>
+
 // Generator which yields values of an iterable container.
 template <typename IterableType>
 class SequenceGenerator : public Generator<typename IterableType::value_type> {

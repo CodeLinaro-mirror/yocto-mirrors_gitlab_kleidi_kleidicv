@@ -47,6 +47,7 @@ static size_t get_type_size(int depth) {
     case CV_16S:
       return 2;
     case CV_32S:
+    case CV_32F:
       return 4;
     default:
       return SIZE_MAX;
@@ -327,7 +328,8 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
   }
 
   int operation_depth = CV_MAT_DEPTH(src_type);
-  if (operation_depth != CV_8U && operation_depth != CV_16U) {
+  if (operation_depth != CV_8U && operation_depth != CV_16U &&
+      operation_depth != CV_32F) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -457,6 +459,16 @@ int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
           reinterpret_cast<const uint16_t *>(params->kernel_x),
           params->kernel_width,
           reinterpret_cast<const uint16_t *>(params->kernel_y),
+          params->kernel_height, params->border_type, filter_context, mt);
+      break;
+    case CV_32F:
+      filter_err = kleidicv_thread_separable_filter_2d_f32(
+          reinterpret_cast<const float *>(src_data), src_step,
+          reinterpret_cast<float *>(dst_data), dst_step,
+          static_cast<size_t>(width), static_cast<size_t>(height),
+          params->channels, reinterpret_cast<const float *>(params->kernel_x),
+          params->kernel_width,
+          reinterpret_cast<const float *>(params->kernel_y),
           params->kernel_height, params->border_type, filter_context, mt);
       break;
     default:

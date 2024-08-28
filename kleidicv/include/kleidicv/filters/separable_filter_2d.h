@@ -32,6 +32,17 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u16,
                          const uint16_t *kernel_y, size_t kernel_height,
                          kleidicv_border_type_t border_type,
                          kleidicv_filter_context_t *context);
+// For internal use only. See instead kleidicv_separable_filter_2d_f32.
+// Filter a horizontal stripe across an image. The stripe is defined by the
+// range (y_begin, y_end].
+KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_f32,
+                         const float *src, size_t src_stride, float *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t y_begin, size_t y_end, size_t channels,
+                         const float *kernel_x, size_t kernel_width,
+                         const float *kernel_y, size_t kernel_height,
+                         kleidicv_border_type_t border_type,
+                         kleidicv_filter_context_t *context);
 }
 
 namespace kleidicv {
@@ -49,6 +60,13 @@ kleidicv_error_t separable_filter_2d_stripe_u16(
     const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     const uint16_t *kernel_x, size_t kernel_width, const uint16_t *kernel_y,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_filter_context_t *context);
+
+kleidicv_error_t separable_filter_2d_stripe_f32(
+    const float *src, size_t src_stride, float *dst, size_t dst_stride,
+    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const float *kernel_x, size_t kernel_width, const float *kernel_y,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_filter_context_t *context);
 

@@ -151,8 +151,13 @@ class KernelTest {
     prepare_source(element_generator);
     prepare_expected(kernel, array_layout, border_type, border_values);
     prepare_actual();
-    check_results(
-        this->call_api(&input_, &actual_, border_type, border_values));
+    if constexpr (std::is_same_v<InputType, float>) {
+      check_approx_results(
+          this->call_api(&input_, &actual_, border_type, border_values));
+    } else {
+      check_results(
+          this->call_api(&input_, &actual_, border_type, border_values));
+    }
   }
 
  protected:
@@ -187,9 +192,14 @@ class KernelTest {
         IntermediateType coefficient = kernel.at(height, width)[0];
         InputType value =
             source.at(row + height, column + width * source.channels())[0];
-        result = saturating_add(
-            result,
-            saturating_mul(coefficient, static_cast<IntermediateType>(value)));
+        IntermediateType product{0};
+        if constexpr (std::is_integral_v<InputType>) {
+          product =
+              saturating_mul(coefficient, static_cast<IntermediateType>(value));
+          result = saturating_add(result, product);
+        } else {
+          result += (coefficient * value);
+        }
       }
     }
 
@@ -275,6 +285,18 @@ class KernelTest {
 
     // Check that the actual result matches the expectation.
     EXPECT_EQ_ARRAY2D(expected_, actual_);
+  }
+
+  void check_approx_results(kleidicv_error_t err) {
+    if (debug_) {
+      std::cout << "[actual]" << std::endl;
+      dump(&actual_);
+    }
+
+    EXPECT_EQ(KLEIDICV_OK, err);
+
+    // Check that the actual result matches the expectation with less precision.
+    EXPECT_APPROX_EQ_ARRAY2D(1e-4, expected_, actual_);
   }
 
   // Input operand for the operation.

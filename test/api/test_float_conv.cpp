@@ -55,32 +55,25 @@ class FloatConversionTest final {
     OutputType expected;
   };
 
-  static float floatval(uint32_t v) {
-    float result;  // Avoid cppcoreguidelines-init-variables. NOLINT
-    static_assert(sizeof(result) == sizeof(v));
-    memcpy(&result, &v, sizeof(result));
-    return result;
-  }
-
   const float quietNaN = std::numeric_limits<float>::quiet_NaN();
   const float signalingNaN = std::numeric_limits<float>::signaling_NaN();
   const float posInfinity = std::numeric_limits<float>::infinity();
   const float negInfinity = -std::numeric_limits<float>::infinity();
 
-  const float minusNaN = floatval(0xFF800001);
-  const float plusNaN = floatval(0x7F800001);
+  const float minusNaN = test::floatval(0xFF800001);
+  const float plusNaN = test::floatval(0x7F800001);
   const float plusZero = 0.0F;
   const float minusZero = -0.0F;
 
-  const float oneNaN = floatval(0x7FC00001);
+  const float oneNaN = test::floatval(0x7FC00001);
   const float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
   const float floatMin = std::numeric_limits<float>::min();
   const float floatMax = std::numeric_limits<float>::max();
 
   const float posSubnormalMin = std::numeric_limits<float>::denorm_min();
-  const float posSubnormalMax = floatval(0x007FFFFF);
+  const float posSubnormalMax = test::floatval(0x007FFFFF);
   const float negSubnormalMin = -std::numeric_limits<float>::denorm_min();
-  const float negSubnormalMax = floatval(0x807FFFFF);
+  const float negSubnormalMax = test::floatval(0x807FFFFF);
 
   template <typename I, typename O,
             std::enable_if_t<std::is_same_v<float, I>, bool> = true,

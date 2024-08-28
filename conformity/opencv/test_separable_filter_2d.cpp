@@ -92,17 +92,20 @@ bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
       // One extra line allocated to be sure the kernel seed can be placed next
       // to the real input
       cv::Mat input(y + 1, x, get_opencv_matrix_type<TypeParam, Channels>());
-      // use the minimum value 1 for the input in order to properly work around
-      // the potential OpenCV bug (mentioned lower)
-      rng.fill(input, cv::RNG::UNIFORM, 1,
-               std::numeric_limits<TypeParam>::max());
 
-      uint32_t kernel_seed = rng.next();
+      if constexpr (std::is_same_v<TypeParam, float>) {
+        rng.fill(input, cv::RNG::NORMAL, 0.0, 1.0e10);
+      } else {
+        // use the minimum value 1 for the input in order to properly work
+        // around the potential OpenCV bug (mentioned lower)
+        rng.fill(input, cv::RNG::UNIFORM, 1,
+                 std::numeric_limits<TypeParam>::max());
+      }
 
       // kernel seed is embedded into the input matrix
+      uint32_t kernel_seed = rng.next();
       *reinterpret_cast<uint32_t*>(&input.at<TypeParam>(input.rows - 1, 0)) =
           kernel_seed;
-
       cv::Mat actual =
           exec_separable_filter_2d<TypeParam, KernelSize, BorderType>(input);
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,
@@ -118,7 +121,11 @@ bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
         }
       }
 
-      if (are_matrices_different<TypeParam>(0, actual, expected)) {
+      bool success =
+          (std::is_same_v<TypeParam, float> &&
+           !are_float_matrices_different<float>(0.3, actual, expected)) ||
+          (!are_matrices_different<TypeParam>(0, actual, expected));
+      if (!success) {
         fail_print_matrices(y, x, input, actual, expected);
         return true;
       }
@@ -166,6 +173,21 @@ std::vector<test>& separable_filter_2d_tests_get() {
     TEST("Separable Filter 2D 5x5 (u16), BORDER_REPLICATE, 2 channel", (test_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE, 2>), (exec_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE>)),
     TEST("Separable Filter 2D 5x5 (u16), BORDER_REPLICATE, 3 channel", (test_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE, 3>), (exec_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE>)),
     TEST("Separable Filter 2D 5x5 (u16), BORDER_REPLICATE, 4 channel", (test_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE, 4>), (exec_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE>)),
+
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT_101, 1 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101, 1>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT_101, 2 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101, 2>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT_101, 3 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101, 3>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT_101, 4 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101, 4>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT_101>)),
+
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT, 1 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT, 1>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT, 2 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT, 2>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT, 3 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT, 3>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REFLECT, 4 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REFLECT, 4>), (exec_separable_filter_2d<float, 5, cv::BORDER_REFLECT>)),
+
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REPLICATE, 1 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REPLICATE, 1>), (exec_separable_filter_2d<float, 5, cv::BORDER_REPLICATE>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REPLICATE, 2 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REPLICATE, 2>), (exec_separable_filter_2d<float, 5, cv::BORDER_REPLICATE>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REPLICATE, 3 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REPLICATE, 3>), (exec_separable_filter_2d<float, 5, cv::BORDER_REPLICATE>)),
+    TEST("Separable Filter 2D 5x5 (f32), BORDER_REPLICATE, 4 channel", (test_separable_filter_2d<float, 5, cv::BORDER_REPLICATE, 4>), (exec_separable_filter_2d<float, 5, cv::BORDER_REPLICATE>)),
   };
   // clang-format on
   return tests;

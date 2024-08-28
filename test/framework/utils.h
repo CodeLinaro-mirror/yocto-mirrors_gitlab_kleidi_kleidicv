@@ -109,6 +109,8 @@ class Options {
   static bool are_long_running_tests_skipped_;
 };  // end of class Options
 
+float floatval(uint32_t v);
+
 // Prints all the elements in a two-dimensional space.
 template <typename ElementType>
 void dump(const TwoDimensional<ElementType> *elements);
@@ -204,6 +206,11 @@ T saturating_mul(T a, T b) {
   }
 
   return result;
+}
+
+template <typename T>
+auto abs_diff(T a, T b) {
+  return a > b ? a - b : b - a;
 }
 
 }  // namespace test
