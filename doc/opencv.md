@@ -32,9 +32,6 @@ Notes on parameters:
 ### [`cv::bitwise_and()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga60b4d04b251ba5eb1392c34425497e14)
 Bitwise conjunction of two arrays.
 
-Notes on parameters:
-* `src1.depth() == src2.depth()` - only support `CV_8U`.
-
 ### [`cv::cvtColor()`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#ga397ae87e1288a81d2363b61574eb8cab)
 Converts the color space of an image.
 
