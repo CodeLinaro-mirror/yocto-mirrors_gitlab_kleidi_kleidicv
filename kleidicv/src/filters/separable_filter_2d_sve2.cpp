@@ -7,28 +7,29 @@
 
 namespace kleidicv::sve2 {
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t separable_filter_2d_stripe_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
-    const uint8_t *kernel_x, size_t kernel_width, const uint8_t *kernel_y,
+template <typename T>
+KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_filter_context_t *context) {
-  return separable_filter_2d_stripe_u8_sc(
+  return separable_filter_2d_stripe_sc<T>(
       src, src_stride, dst, dst_stride, width, height, y_begin, y_end, channels,
       kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
 }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t separable_filter_2d_stripe_u16(
-    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
-    const uint16_t *kernel_x, size_t kernel_width, const uint16_t *kernel_y,
-    size_t kernel_height, kleidicv_border_type_t border_type,
-    kleidicv_filter_context_t *context) {
-  return separable_filter_2d_stripe_u16_sc(
-      src, src_stride, dst, dst_stride, width, height, y_begin, y_end, channels,
-      kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
-}
+#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                             \
+  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t                    \
+  separable_filter_2d_stripe<type>(                                     \
+      const type *src, size_t src_stride, type *dst, size_t dst_stride, \
+      size_t width, size_t height, size_t y_begin, size_t y_end,        \
+      size_t channels, const type *kernel_x, size_t kernel_width,       \
+      const type *kernel_y, size_t kernel_height,                       \
+      kleidicv_border_type_t border_type, kleidicv_filter_context_t *context)
+
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
+KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
 
 }  // namespace kleidicv::sve2

@@ -7,17 +7,55 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/workspace/separable.h"
 
-KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_separable_filter_2d_stripe_u8,
-    &kleidicv::neon::separable_filter_2d_stripe_u8,
-    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::separable_filter_2d_stripe_u8),
-    &kleidicv::sme2::separable_filter_2d_stripe_u8);
+namespace kleidicv {
 
-KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_separable_filter_2d_stripe_u16,
-    &kleidicv::neon::separable_filter_2d_stripe_u16,
-    KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::separable_filter_2d_stripe_u16),
-    &kleidicv::sme2::separable_filter_2d_stripe_u16);
+namespace neon {
+
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_filter_context_t *context);
+
+}  // namespace neon
+
+namespace sve2 {
+
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_filter_context_t *context);
+
+}  // namespace sve2
+
+namespace sme2 {
+
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_filter_context_t *context);
+
+}  // namespace sme2
+
+}  // namespace kleidicv
+
+#define KLEIDICV_DEFINE_C_API(name, type)                                      \
+  KLEIDICV_MULTIVERSION_C_API(                                                 \
+      name, &kleidicv::neon::separable_filter_2d_stripe<type>,                 \
+      KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::separable_filter_2d_stripe<type>), \
+      &kleidicv::sme2::separable_filter_2d_stripe<type>)
+
+KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u8, uint8_t);
+KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u16, uint16_t);
+KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_s16, int16_t);
 
 extern "C" {
 
@@ -84,6 +122,16 @@ kleidicv_error_t kleidicv_separable_filter_2d_u16(
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
   return kleidicv_separable_filter_2d_stripe_u16(
+      src, src_stride, dst, dst_stride, width, height, 0, height, channels,
+      kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
+}
+
+kleidicv_error_t kleidicv_separable_filter_2d_s16(
+    const int16_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const int16_t *kernel_x,
+    size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+  return kleidicv_separable_filter_2d_stripe_s16(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
       kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
 }

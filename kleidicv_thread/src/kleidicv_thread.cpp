@@ -460,6 +460,23 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
                                 kernel_height, context, mt);
 }
 
+kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
+    const int16_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const int16_t *kernel_x,
+    size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
+    kleidicv_thread_multithreading mt) {
+  auto callback = [=](size_t y_begin, size_t y_end,
+                      kleidicv_filter_context_t *thread_context) {
+    return kleidicv_separable_filter_2d_stripe_s16(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_x, kernel_width, kernel_y, kernel_height, border_type,
+        thread_context);
+  };
+  return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
+                                kernel_height, context, mt);
+}
+
 kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,

@@ -99,7 +99,7 @@ Notes on parameters:
 
 ### [`cv::sepFilter2D()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d)
 Applies a separable linear filter to an image.\
-Currently only the 5x5 kernel size is supported with `CV_8U` and `CV_16U` source, destination and kernel depths.\
+Currently only the 5x5 kernel size is supported with `CV_8U`, `CV_16U` or `CV_16S` depths for the source, destination and kernels.\
 In-place filtering not supported.
 
 Notes on parameters:

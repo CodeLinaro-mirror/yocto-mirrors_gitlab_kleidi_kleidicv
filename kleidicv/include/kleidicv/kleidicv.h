@@ -1277,6 +1277,12 @@ kleidicv_error_t kleidicv_separable_filter_2d_u16(
     size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
+/// @copydoc kleidicv_separable_filter_2d_u8
+kleidicv_error_t kleidicv_separable_filter_2d_s16(
+    const int16_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const int16_t *kernel_x,
+    size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
 
 /// Applies Gaussian blur to the source image using the specified parameters.
 /// In-place filtering is not supported.

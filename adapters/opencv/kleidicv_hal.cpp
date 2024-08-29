@@ -327,7 +327,8 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
   }
 
   int operation_depth = CV_MAT_DEPTH(src_type);
-  if (operation_depth != CV_8U && operation_depth != CV_16U) {
+  if (operation_depth != CV_8U && operation_depth != CV_16U &&
+      operation_depth != CV_16S) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -457,6 +458,16 @@ int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
           reinterpret_cast<const uint16_t *>(params->kernel_x),
           params->kernel_width,
           reinterpret_cast<const uint16_t *>(params->kernel_y),
+          params->kernel_height, params->border_type, filter_context, mt);
+      break;
+    case CV_16S:
+      filter_err = kleidicv_thread_separable_filter_2d_s16(
+          reinterpret_cast<const int16_t *>(src_data), src_step,
+          reinterpret_cast<int16_t *>(dst_data), dst_step,
+          static_cast<size_t>(width), static_cast<size_t>(height),
+          params->channels, reinterpret_cast<const int16_t *>(params->kernel_x),
+          params->kernel_width,
+          reinterpret_cast<const int16_t *>(params->kernel_y),
           params->kernel_height, params->border_type, filter_context, mt);
       break;
     default:

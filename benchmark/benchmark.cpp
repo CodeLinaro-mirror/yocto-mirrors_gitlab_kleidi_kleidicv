@@ -290,6 +290,16 @@ static void separable_filter_2d_u16_5x5_3ch(benchmark::State& state) {
 }
 BENCHMARK(separable_filter_2d_u16_5x5_3ch);
 
+static void separable_filter_2d_s16_5x5_1ch(benchmark::State& state) {
+  separable_filter_2d<int16_t, 5, 1>(state, kleidicv_separable_filter_2d_s16);
+}
+BENCHMARK(separable_filter_2d_s16_5x5_1ch);
+
+static void separable_filter_2d_s16_5x5_3ch(benchmark::State& state) {
+  separable_filter_2d<int16_t, 5, 3>(state, kleidicv_separable_filter_2d_s16);
+}
+BENCHMARK(separable_filter_2d_s16_5x5_3ch);
+
 template <typename T, size_t KernelSize, int Channels, bool Binomial>
 static void gaussian_blur(benchmark::State& state) {
   kleidicv_filter_context_t* context;

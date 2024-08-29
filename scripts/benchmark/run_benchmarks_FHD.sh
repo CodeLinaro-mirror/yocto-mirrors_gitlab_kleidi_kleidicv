@@ -41,6 +41,7 @@ benchmarks=(
 
     "SepFilter2D_5x5_U8:  opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '(1920x1080, 8UC1, 5, BORDER_REPLICATE)'"
     "SepFilter2D_5x5_U16: opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '(1920x1080, 16UC1, 5, BORDER_REPLICATE)'"
+    "SepFilter2D_5x5_S16: opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '(1920x1080, 16SC1, 5, BORDER_REPLICATE)'"
 
     "GaussianBlur3x3:   opencv_perf_imgproc '*gaussianBlur3x3/*'   '(1920x1080, 8UC1, BORDER_REPLICATE)'"
     "GaussianBlur5x5:   opencv_perf_imgproc '*gaussianBlur5x5/*'   '(1920x1080, 8UC1, BORDER_REPLICATE)'"

@@ -175,15 +175,33 @@ template <class T>
 using double_element_width_t = typename double_element_width<T>::type;
 
 template <>
+class double_element_width<int8_t> {
+ public:
+  using type = int16_t;
+};
+
+template <>
 class double_element_width<uint8_t> {
  public:
   using type = uint16_t;
 };
 
 template <>
+class double_element_width<int16_t> {
+ public:
+  using type = int32_t;
+};
+
+template <>
 class double_element_width<uint16_t> {
  public:
   using type = uint32_t;
+};
+
+template <>
+class double_element_width<int32_t> {
+ public:
+  using type = int64_t;
 };
 
 template <>
