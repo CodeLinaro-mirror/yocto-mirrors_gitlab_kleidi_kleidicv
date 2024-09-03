@@ -19,7 +19,7 @@ index 2b4035285f..729cd1dd43 100644
 @@ -281,6 +281,11 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
      dst.create(dims, size, dtype);
      Mat dstMat = dst.getMat();
- 
+
 +    if( dims <= 2 ) {
 +        int width_in_elements = src.cols * cn;
 +        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dstMat.data, dstMat.step, dstMat.depth(), width_in_elements, src.rows, alpha, beta);
@@ -35,7 +35,7 @@ index f78608dbad..299b5e54bd 100644
 @@ -953,6 +953,41 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
  #define cv_hal_transpose2d hal_ni_transpose2d
  //! @endcond
- 
+
 +/**
 +   @brief convertTo
 +   @param src_data,src_step,src_depth Source image
@@ -72,8 +72,8 @@ index f78608dbad..299b5e54bd 100644
 +//! @endcond
 +
  //! @}
- 
- 
+
+
 diff --git a/modules/core/src/minmax.cpp b/modules/core/src/minmax.cpp
 index 8c6d8ad9a9..47eb6fdb66 100644
 --- a/modules/core/src/minmax.cpp
@@ -90,6 +90,58 @@ index 8c6d8ad9a9..47eb6fdb66 100644
              return;
          }
          else if (res != CV_HAL_ERROR_NOT_IMPLEMENTED)
+diff --git a/modules/imgproc/src/hal_replacement.hpp b/modules/imgproc/src/hal_replacement.hpp
+index 773fed9b48..3f545740f2 100644
+--- a/modules/imgproc/src/hal_replacement.hpp
++++ b/modules/imgproc/src/hal_replacement.hpp
+@@ -328,6 +328,32 @@ inline int hal_ni_remap32f(int src_type, const uchar *src_data, size_t src_step,
+ #define cv_hal_remap32f hal_ni_remap32f
+ //! @endcond
+
++/**
++   @brief hal_remap with short maps
++   @param src_type source and destination image type
++   @param src_data source image data
++   @param src_step source image step
++   @param src_width source image width
++   @param src_height source image height
++   @param dst_data destination image data
++   @param dst_step destination image step
++   @param dst_width destination image width
++   @param dst_height destination image height
++   @param mapxy map for interleaved x and y values
++   @param mapxy_step mapxy matrix step
++   @param border_type border processing mode (CV_HAL_BORDER_REFLECT, ...)
++   @param border_value values to use for CV_HAL_BORDER_CONSTANT mode
++   @sa cv::remap
++ */
++inline int hal_ni_remap16s(int src_type, const uchar *src_data, size_t src_step, int src_width, int src_height,
++                           uchar *dst_data, size_t dst_step, int dst_width, int dst_height,
++                           short* mapxy, size_t mapxy_step, int border_type, const double border_value[4])
++{ return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++
++//! @cond IGNORED
++#define cv_hal_remap16s hal_ni_remap16s
++//! @endcond
++
+ /**
+    @brief hal_cvtBGRtoBGR
+    @param src_data source image data
+diff --git a/modules/imgproc/src/imgwarp.cpp b/modules/imgproc/src/imgwarp.cpp
+index d7c9c64c3c..1a382811fa 100644
+--- a/modules/imgproc/src/imgwarp.cpp
++++ b/modules/imgproc/src/imgwarp.cpp
+@@ -1819,6 +1819,10 @@ void cv::remap( InputArray _src, OutputArray _dst,
+     {
+         CALL_HAL(remap32f, cv_hal_remap32f, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
+                  map1.ptr<float>(), map1.step, map2.ptr<float>(), map2.step, interpolation, borderType, borderValue.val);
++    } else if ((map1.type() == CV_16SC2) && map2.empty() && interpolation == INTER_NEAREST)
++    {
++        CALL_HAL(remap16s, cv_hal_remap16s, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
++                 map1.ptr<short>(), map1.step, borderType, borderValue.val);
+     }
+
+     interpolation &= ~WARP_RELATIVE_MAP;
 diff --git a/modules/imgproc/src/smooth.dispatch.cpp b/modules/imgproc/src/smooth.dispatch.cpp
 index d0f50a73bb..1c308887dc 100644
 --- a/modules/imgproc/src/smooth.dispatch.cpp
@@ -97,7 +149,7 @@ index d0f50a73bb..1c308887dc 100644
 @@ -654,6 +654,25 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
              ocl_GaussianBlur_8UC1(_src, _dst, ksize, CV_MAT_DEPTH(type), kx, ky, borderType)
      );
- 
+
 +    {
 +        Mat src = _src.getMat();
 +        Mat dst = _dst.getMat();
