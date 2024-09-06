@@ -33,6 +33,25 @@ KLEIDICV_THREAD_MIN_MAX(uint16_t, u16);
 KLEIDICV_THREAD_MIN_MAX(int32_t, s32);
 KLEIDICV_THREAD_MIN_MAX(float, f32);
 
+TEST(MinMaxThread, SimpleFloat) {
+  size_t width = 10, height = 10;
+  test::Array2D<float> src(width, height);
+
+  for (auto value : {1.0F, -1.0F}) {
+    src.fill(value);
+
+    float minval = 1, maxval = -1;
+
+    kleidicv_error_t result =
+        thread_min_max<float>()(src.data(), src.stride(), width, height,
+                                &minval, &maxval, get_multithreading_fake(3));
+
+    EXPECT_EQ(KLEIDICV_OK, result);
+    EXPECT_EQ(value, minval);
+    EXPECT_EQ(value, maxval);
+  }
+}
+
 template <typename ElementType>
 class MinMaxThread : public testing::Test {};
 
@@ -46,13 +65,13 @@ static const auto test_params = {
     P{2, 3, 1}, P{6, 4, 1}, P{4, 5, 2}, P{2, 6, 3}, P{1, 7, 4}, P{12, 34, 5}};
 
 TYPED_TEST_P(MinMaxThread, CompareWithSingle) {
+  test::PseudoRandomNumberGenerator<TypeParam> generator;
   size_t width = 0, height = 0, thread_count = 0;
   for (auto params : test_params) {
     std::tie(width, height, thread_count) = params;
     test::Array2D<TypeParam> src(width, height);
     TypeParam min_single, max_single, min_multi, max_multi;
 
-    test::PseudoRandomNumberGenerator<TypeParam> generator;
     src.fill(generator);
 
     kleidicv_error_t single_result = min_max<TypeParam>()(

@@ -239,7 +239,7 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
   std::vector<ScalarType> min_values(height,
                                      std::numeric_limits<ScalarType>::max());
   std::vector<ScalarType> max_values(height,
-                                     std::numeric_limits<ScalarType>::min());
+                                     std::numeric_limits<ScalarType>::lowest());
 
   parallel_min_max_data<ScalarType, FunctionType> callback_data = {
       min_max_func,
@@ -262,7 +262,7 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
     }
   }
   if (p_max_value) {
-    *p_max_value = std::numeric_limits<ScalarType>::min();
+    *p_max_value = std::numeric_limits<ScalarType>::lowest();
     for (ScalarType m : max_values) {
       if (m > *p_max_value) {
         *p_max_value = m;

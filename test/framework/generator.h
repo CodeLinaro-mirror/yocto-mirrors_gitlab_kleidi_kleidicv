@@ -5,6 +5,7 @@
 #ifndef KLEIDICV_TEST_FRAMEWORK_GENERATOR_H_
 #define KLEIDICV_TEST_FRAMEWORK_GENERATOR_H_
 
+#include <cmath>
 #include <random>
 
 #include "framework/abstract.h"
@@ -35,7 +36,27 @@ class PseudoRandomNumberGenerator : public Generator<ElementType> {
 
   // Yields the next value or std::nullopt.
   std::optional<ElementType> next() override {
-    return static_cast<ElementType>(rng_());
+    if constexpr (std::is_floating_point_v<ElementType>) {
+      // Return a random floating point value.
+      // The value is from a uniform distribution of the *representable*
+      // finite floating point values, not the range. This means that the
+      // likelihood of producing a tiny value is about the same as the
+      // likelihood of producing a huge value.
+
+      for (;;) {
+        ElementType result;
+        const auto r = rng_();
+        static_assert(sizeof(result) <= sizeof(r));
+        memcpy(&result, &r, sizeof(result));
+        if (std::isfinite(result)) {
+          return result;
+        }
+      }
+    } else {
+      return std::uniform_int_distribution<ElementType>(
+          std::numeric_limits<ElementType>::lowest(),
+          std::numeric_limits<ElementType>::max())(rng_);
+    }
   }
 
  protected:
