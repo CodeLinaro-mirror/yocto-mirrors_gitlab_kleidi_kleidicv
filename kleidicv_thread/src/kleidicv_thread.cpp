@@ -205,31 +205,6 @@ YUV_SP_TO_RGB(yuv_sp_to_rgb_u8);
 YUV_SP_TO_RGB(yuv_sp_to_rgba_u8);
 
 template <typename ScalarType, typename FunctionType>
-struct parallel_min_max_data {
-  FunctionType min_max_func;
-  const ScalarType *src;
-  size_t src_stride;
-  size_t width;
-  ScalarType *p_min_value;
-  ScalarType *p_max_value;
-};
-
-template <typename ScalarType, typename FunctionType>
-static kleidicv_error_t kleidicv_thread_min_max_callback(unsigned task_begin,
-                                                         unsigned task_end,
-                                                         void *void_data) {
-  auto *data =
-      reinterpret_cast<parallel_min_max_data<ScalarType, FunctionType> *>(
-          void_data);
-
-  return data->min_max_func(
-      data->src + task_begin * (data->src_stride / sizeof(ScalarType)),
-      data->src_stride, data->width, task_end - task_begin,
-      data->p_min_value ? data->p_min_value + task_begin : nullptr,
-      data->p_max_value ? data->p_max_value + task_begin : nullptr);
-}
-
-template <typename ScalarType, typename FunctionType>
 kleidicv_error_t parallel_min_max(FunctionType min_max_func,
                                   const ScalarType *src, size_t src_stride,
                                   size_t width, size_t height,
@@ -241,17 +216,15 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
   std::vector<ScalarType> max_values(height,
                                      std::numeric_limits<ScalarType>::lowest());
 
-  parallel_min_max_data<ScalarType, FunctionType> callback_data = {
-      min_max_func,
-      src,
-      src_stride,
-      width,
-      p_min_value ? min_values.data() : nullptr,
-      p_max_value ? max_values.data() : nullptr};
+  FunctionCallback callback = [&](unsigned task_begin, unsigned task_end) {
+    return min_max_func(src + task_begin * (src_stride / sizeof(ScalarType)),
+                        src_stride, width, task_end - task_begin,
+                        p_min_value ? min_values.data() + task_begin : nullptr,
+                        p_max_value ? max_values.data() + task_begin : nullptr);
+  };
 
-  auto return_val =
-      mt.parallel(kleidicv_thread_min_max_callback<ScalarType, FunctionType>,
-                  &callback_data, mt.parallel_data, height);
+  auto return_val = mt.parallel(kleidicv_thread_std_function_callback,
+                                &callback, mt.parallel_data, height);
 
   if (p_min_value) {
     *p_min_value = std::numeric_limits<ScalarType>::max();
@@ -289,30 +262,6 @@ DEFINE_KLEIDICV_THREAD_MIN_MAX(s32, int32_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(f32, float);
 
 template <typename ScalarType, typename FunctionType>
-struct parallel_min_max_loc_data {
-  FunctionType min_max_loc_func;
-  const ScalarType *src;
-  size_t src_stride;
-  size_t width;
-  size_t *p_min_offset;
-  size_t *p_max_offset;
-};
-
-template <typename ScalarType, typename FunctionType>
-static kleidicv_error_t kleidicv_thread_min_max_loc_callback(
-    unsigned task_begin, unsigned task_end, void *void_data) {
-  auto *data =
-      reinterpret_cast<parallel_min_max_loc_data<ScalarType, FunctionType> *>(
-          void_data);
-
-  return data->min_max_loc_func(
-      data->src + task_begin * (data->src_stride / sizeof(ScalarType)),
-      data->src_stride, data->width, task_end - task_begin,
-      data->p_min_offset ? data->p_min_offset + task_begin : nullptr,
-      data->p_max_offset ? data->p_max_offset + task_begin : nullptr);
-}
-
-template <typename ScalarType, typename FunctionType>
 kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
                                       const ScalarType *src, size_t src_stride,
                                       size_t width, size_t height,
@@ -322,17 +271,16 @@ kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
   std::vector<size_t> min_offsets(height, 0);
   std::vector<size_t> max_offsets(height, 0);
 
-  parallel_min_max_loc_data<ScalarType, FunctionType> callback_data = {
-      min_max_loc_func,
-      src,
-      src_stride,
-      width,
-      p_min_offset ? min_offsets.data() : nullptr,
-      p_max_offset ? max_offsets.data() : nullptr};
+  FunctionCallback callback = [&](unsigned task_begin, unsigned task_end) {
+    return min_max_loc_func(
+        src + task_begin * (src_stride / sizeof(ScalarType)), src_stride, width,
+        task_end - task_begin,
+        p_min_offset ? min_offsets.data() + task_begin : nullptr,
+        p_max_offset ? max_offsets.data() + task_begin : nullptr);
+  };
 
-  auto return_val = mt.parallel(
-      kleidicv_thread_min_max_loc_callback<ScalarType, FunctionType>,
-      &callback_data, mt.parallel_data, height);
+  auto return_val = mt.parallel(kleidicv_thread_std_function_callback,
+                                &callback, mt.parallel_data, height);
 
   if (p_min_offset) {
     *p_min_offset = 0;
