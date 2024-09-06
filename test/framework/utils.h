@@ -180,8 +180,8 @@ T saturating_add(T a, T b) {
     if constexpr (std::is_unsigned_v<T>) {
       result = std::numeric_limits<T>::max();
     } else {
-      result =
-          b < 0 ? std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
+      result = b < 0 ? std::numeric_limits<T>::lowest()
+                     : std::numeric_limits<T>::max();
     }
   }
 
@@ -198,7 +198,7 @@ T saturating_mul(T a, T b) {
       if ((a < 0 && b < 0) || (a > 0 && b > 0)) {
         result = std::numeric_limits<T>::max();
       } else {
-        result = std::numeric_limits<T>::min();
+        result = std::numeric_limits<T>::lowest();
       }
     }
   }

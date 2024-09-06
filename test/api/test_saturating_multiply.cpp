@@ -26,7 +26,7 @@ class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
 
  protected:
   using Elements = typename BinaryOperationTest<ElementType>::Elements;
-  using BinaryOperationTest<ElementType>::min;
+  using BinaryOperationTest<ElementType>::lowest;
   using BinaryOperationTest<ElementType>::max;
 
   // Calls the API-under-test in the appropriate way.
@@ -59,10 +59,10 @@ class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
     } else {
       static const std::vector<Elements> kTestElements = {
           // clang-format off
-          {    min(), min(),     max()},
-          {    min(), max(),     min()},
-          {    min(),    -1,     max()},
-          {min() + 2,    -1, max() - 1},
+          {    lowest(), lowest(),     max()},
+          {    lowest(), max(),     lowest()},
+          {    lowest(),    -1,     max()},
+          {lowest() + 2,    -1, max() - 1},
           {        6,    -8,       -48},
           {       -2,     2,        -4},
           {       -1,    -1,         1},
@@ -70,7 +70,7 @@ class SaturatingMultiplyTest final : public BinaryOperationTest<ElementType> {
           {        1,     1,         1},
           {        2,     2,         4},
           {        6,     8,        48},
-          {max() - 2,    -1, min() + 3},
+          {max() - 2,    -1, lowest() + 3},
           {    max(),     1,     max()},
           {    max(),     2,     max()},
           {    max(), max(),     max()},

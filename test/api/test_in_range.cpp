@@ -19,8 +19,8 @@ template <typename ElementType>
 class InRangeTest final {
  private:
   template <typename T>
-  static constexpr T min() {
-    return std::numeric_limits<T>::min();
+  static constexpr T lowest() {
+    return std::numeric_limits<T>::lowest();
   }
 
   template <typename T>
@@ -67,7 +67,7 @@ class InRangeTest final {
 
   const float oneNaN = floatval(0x7FC00001);
   const float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
-  const float floatMin = std::numeric_limits<float>::min();
+  const float floatMin = std::numeric_limits<float>::lowest();
   const float floatMax = std::numeric_limits<float>::max();
 
   const float posSubnormalMin = std::numeric_limits<float>::denorm_min();
@@ -98,8 +98,11 @@ class InRangeTest final {
 
   template <typename T>
   size_t get_linear_height(size_t width, size_t minimum_size) {
+    // Calling this with a float type would generate a value of infinity.
+    static_assert(std::is_integral_v<T>);
+
     size_t image_size =
-        std::max(minimum_size, static_cast<size_t>(max<T>() - min<T>()));
+        std::max(minimum_size, static_cast<size_t>(max<T>() - lowest<T>()));
     size_t height = image_size / width + 1;
 
     return height;
@@ -112,15 +115,8 @@ class InRangeTest final {
     test::Array2D<uint8_t> expected(width, height, 1, 1);
     test::Array2D<uint8_t> actual(width, height, 1, 1);
 
-    if constexpr (std::is_same_v<float, T>) {
-      test::GenerateLinearSeries<T> generator(min<uint8_t>());
-      source.fill(generator);
-    } else if constexpr (std::is_same_v<uint8_t, T>) {
-      test::GenerateLinearSeries<T> generator(min<T>());
-      source.fill(generator);
-    } else {
-      static_assert(sizeof(T), "should never happen");
-    }
+    test::GenerateLinearSeries<T> generator(0);
+    source.fill(generator);
 
     calculate_expected(source, expected);
 
@@ -149,7 +145,7 @@ class InRangeTest final {
         {{
           { 0,    0,   0,   0},
           { 0,    0, 255, 255},
-          {  0,   0, 255,   0},
+          {  0,   0,   0,   0},
           {255, 255, 255, 255},
           {  0,   0, 255, 255},
           {255, 255,   0,   0},
@@ -286,13 +282,19 @@ class InRangeTest final {
     return kTestElements;
   }
 
+  static uint8_t increment(uint8_t x) { return x + 1; }
+
+  static float increment(float x) { return std::nextafter(x, FLT_MAX); }
+
   const Elements& get_min_test_elements() {
     static const Elements kTestElements = {
         // clang-format off
         3, 1,
-        min<ElementType>(), min<ElementType>() + 1,
+        lowest<ElementType>(), increment(lowest<ElementType>()),
         {{
-          {min<ElementType>(), min<ElementType>() + 1, min<ElementType>() + 2}
+          {lowest<ElementType>(),
+           increment(lowest<ElementType>()),
+           increment(increment(lowest<ElementType>()))}
         }},
         {{
           { 255, 255, 0}

@@ -51,7 +51,7 @@ const float minusZero = -0.0F;
 
 const float oneNaN = floatval(0x7FC00001);
 const float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
-const float floatMin = std::numeric_limits<float>::min();
+const float floatMin = std::numeric_limits<float>::lowest();
 const float floatMax = std::numeric_limits<float>::max();
 
 const float posSubnormalMin = std::numeric_limits<float>::denorm_min();
@@ -75,11 +75,6 @@ static float
         11.5, 12.5, -11.5, -12.5,
         // clang-format on
 };
-
-template <typename T>
-static constexpr T min() {
-  return std::numeric_limits<T>::min();
-}
 
 template <typename T>
 static constexpr T lowest() {

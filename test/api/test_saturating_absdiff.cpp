@@ -26,7 +26,7 @@ class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
 
  protected:
   using Elements = typename BinaryOperationTest<ElementType>::Elements;
-  using BinaryOperationTest<ElementType>::min;
+  using BinaryOperationTest<ElementType>::lowest;
   using BinaryOperationTest<ElementType>::max;
 
   // Calls the API-under-test in the appropriate way.
@@ -58,22 +58,22 @@ class SaturatingAbsDiffTest final : public BinaryOperationTest<ElementType> {
     } else {
       static const std::vector<Elements> kTestElements = {
           // clang-format off
-          {min(),     max(), max()},
-          {max(),     min(), max()},
-          {   -1,     max(), max()},
-          {max(),        -1, max()},
-          {min(), min() + 1,     1},
-          {   -1,        -2,     1},
-          {   -2,        -1,     1},
-          {   -1,        -1,     0},
-          {    0,         0,     0},
-          {    1,         1,     0},
-          {    2,         1,     1},
-          {    1,         2,     1},
-          {    0,     max(), max()},
-          {max(),     max(),     0},
-          {max(), max() - 1,     1},
-          {max(),         0, max()},
+          {lowest(),        max(), max()},
+          {   max(),     lowest(), max()},
+          {      -1,        max(), max()},
+          {   max(),           -1, max()},
+          {lowest(), lowest() + 1,     1},
+          {      -1,           -2,     1},
+          {      -2,           -1,     1},
+          {      -1,           -1,     0},
+          {       0,            0,     0},
+          {       1,            1,     0},
+          {       2,            1,     1},
+          {       1,            2,     1},
+          {       0,        max(), max()},
+          {   max(),        max(),     0},
+          {   max(),    max() - 1,     1},
+          {   max(),            0, max()},
           // clang-format on
       };
 

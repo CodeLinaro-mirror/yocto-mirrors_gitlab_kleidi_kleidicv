@@ -50,8 +50,8 @@ class CompareTestLinear final {
   }
 
  protected:
-  static constexpr ElementType min() {
-    return std::numeric_limits<ElementType>::min();
+  static constexpr ElementType lowest() {
+    return std::numeric_limits<ElementType>::lowest();
   }
   static constexpr ElementType max() {
     return std::numeric_limits<ElementType>::max();
@@ -74,7 +74,7 @@ class CompareTestLinear final {
 
   void test_linear(size_t width, size_t minimum_size) {
     size_t image_size =
-        std::max(minimum_size, static_cast<size_t>(max() - min()));
+        std::max(minimum_size, static_cast<size_t>(max() - lowest()));
     size_t height = image_size / width + 1;
     test::Array2D<ElementType> source_a(width, height, padding_, 1);
     test::Array2D<ElementType> source_b(width, height, padding_, 1);
@@ -82,7 +82,7 @@ class CompareTestLinear final {
     test::Array2D<ElementType> actual =
         test::Array2D<ElementType>(width, height, padding_, 1);
 
-    GenerateLinearSeries generator_a(min());
+    GenerateLinearSeries generator_a(lowest());
     GenerateLinearSeries generator_b(128);
 
     source_a.fill(generator_a);
@@ -166,13 +166,13 @@ template <typename ElementType>
 class CompareEqTestMin final
     : public CompareTestBase<ElementType, CompareEqualParams> {
   using Elements = typename BinaryOperationTest<ElementType>::Elements;
-  using BinaryOperationTest<ElementType>::min;
+  using BinaryOperationTest<ElementType>::lowest;
 
   const std::vector<Elements>& test_elements() override {
     static const std::vector<Elements> kTestElements = {
         // clang-format off
-      {    min(), min(), this->value()},
-      {min() + 1, min(), 0},
+      {    lowest(), lowest(), this->value()},
+      {lowest() + 1, lowest(), 0},
         // clang-format on
     };
     return kTestElements;
@@ -233,13 +233,13 @@ template <typename ElementType>
 class CompareGtTestMin final
     : public CompareTestBase<ElementType, CompareGreaterParams> {
   using Elements = typename BinaryOperationTest<ElementType>::Elements;
-  using BinaryOperationTest<ElementType>::min;
+  using BinaryOperationTest<ElementType>::lowest;
 
   const std::vector<Elements>& test_elements() override {
     static const std::vector<Elements> kTestElements = {
         // clang-format off
-      {    min(), min(),             0},
-      {min() + 1, min(), this->value()},
+      {    lowest(), lowest(),             0},
+      {lowest() + 1, lowest(), this->value()},
         // clang-format on
     };
     return kTestElements;

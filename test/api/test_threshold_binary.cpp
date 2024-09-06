@@ -53,15 +53,15 @@ template <typename ElementType>
 class ThresholdBinaryTestMin final
     : public ThresholdBinaryTestBase<ElementType> {
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<ElementType>::min;
+  using UnaryOperationTest<ElementType>::lowest;
 
-  ElementType threshold() override { return min(); }
+  ElementType threshold() override { return lowest(); }
 
   const std::vector<Elements>& test_elements() override {
     static const std::vector<Elements> kTestElements = {
         // clang-format off
-      {    min(),             0},
-      {min() + 1, this->value()},
+      {    lowest(),             0},
+      {lowest() + 1, this->value()},
         // clang-format on
     };
     return kTestElements;

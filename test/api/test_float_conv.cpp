@@ -25,8 +25,8 @@ template <typename InputType, typename OutputType>
 class FloatConversionTest final {
  private:
   template <typename T>
-  static constexpr T min() {
-    return std::numeric_limits<T>::min();
+  static constexpr T lowest() {
+    return std::numeric_limits<T>::lowest();
   }
 
   template <typename T>
@@ -74,7 +74,7 @@ class FloatConversionTest final {
 
   const float oneNaN = floatval(0x7FC00001);
   const float zeroDivZero = -std::numeric_limits<float>::quiet_NaN();
-  const float floatMin = std::numeric_limits<float>::min();
+  const float floatMin = std::numeric_limits<float>::lowest();
   const float floatMax = std::numeric_limits<float>::max();
 
   const float posSubnormalMin = std::numeric_limits<float>::denorm_min();
@@ -102,7 +102,7 @@ class FloatConversionTest final {
         {{
           { 0, 0, 127, -128 },
           { 0, 0, 0, 0 },
-          { 0, 0, 0, 127 },
+          { 0, 0, -128, 127 },
           { 0, 0, 0, 0 },
           { 127, -128, 113, 114 },
           { 112, 113, 114, 115 },
@@ -154,10 +154,10 @@ class FloatConversionTest final {
         // clang-format off
         5, 1,
         {{
-          { min<I>(), min<I>() + 1, 0, max<I>() - 1, max<I>() }
+          { lowest<I>(), lowest<I>() + 1, 0, max<I>() - 1, max<I>() }
         }},
         {{
-          { static_cast<float>(min<I>()), static_cast<float>(min<I>()) + 1.0, 0,
+          { static_cast<float>(lowest<I>()), static_cast<float>(lowest<I>()) + 1.0, 0,
             static_cast<float>(max<I>()) - 1.0, static_cast<float>(max<I>()) }
         }}
         // clang-format on
@@ -226,8 +226,8 @@ class FloatConversionTest final {
         // NOLINTEND(clang-analyzer-core.uninitialized.Assign)
         if (result > max<O>()) {
           calculated = max<O>();
-        } else if (result < min<O>()) {
-          calculated = min<O>();
+        } else if (result < lowest<O>()) {
+          calculated = lowest<O>();
         } else {
           calculated = result;
         }
@@ -252,8 +252,11 @@ class FloatConversionTest final {
 
   template <typename T>
   size_t get_linear_height(size_t width, size_t minimum_size) {
+    // Calling this with a float type would generate a value of infinity.
+    static_assert(std::is_integral_v<T>);
+
     size_t image_size =
-        std::max(minimum_size, static_cast<size_t>(max<T>() - min<T>()));
+        std::max(minimum_size, static_cast<size_t>(max<T>() - lowest<T>()));
     size_t height = image_size / width + 1;
 
     return height;
@@ -267,10 +270,10 @@ class FloatConversionTest final {
     test::Array2D<O> actual(width, height, 1, 1);
 
     if constexpr (std::is_same_v<float, I> && std::is_integral_v<O>) {
-      test::GenerateLinearSeries<I> generator(min<O>());
+      test::GenerateLinearSeries<I> generator(lowest<O>());
       source.fill(generator);
     } else if constexpr (std::is_integral_v<I> && std::is_same_v<float, O>) {
-      test::GenerateLinearSeries<I> generator(min<I>());
+      test::GenerateLinearSeries<I> generator(lowest<I>());
       source.fill(generator);
     } else {
       static_assert(sizeof(I) == 0 && sizeof(O) == 0, "should never happen");

@@ -6,6 +6,7 @@
 #define KLEIDICV_TEST_FRAMEWORK_GENERATOR_H_
 
 #include <cmath>
+#include <limits>
 #include <random>
 
 #include "framework/abstract.h"

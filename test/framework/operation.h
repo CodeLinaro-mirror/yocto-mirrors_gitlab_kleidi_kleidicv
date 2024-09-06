@@ -137,8 +137,10 @@ class OperationTest {
   // Tested number of elements in a row.
   virtual size_t width() const { return width_; }
 
-  // Returns the minimum value for ElementType.
-  static constexpr ElementType min() {
+  // Returns the minimum value for integral types, or the minimum normalized
+  // positive value for floating point types.
+  static constexpr ElementType
+  min_if_integral_else_smallest_positive_normalized() {
     return std::numeric_limits<ElementType>::min();
   }
 

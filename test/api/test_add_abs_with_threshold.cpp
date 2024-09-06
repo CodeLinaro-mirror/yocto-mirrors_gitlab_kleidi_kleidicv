@@ -66,18 +66,18 @@ template <typename ElementType>
 class SaturatingAddAbsWithThresholdTestMin final
     : public SaturatingAddAbsWithThresholdTestBase<ElementType> {
   using Elements = typename BinaryOperationTest<ElementType>::Elements;
-  using BinaryOperationTest<ElementType>::min;
+  using BinaryOperationTest<ElementType>::lowest;
   using BinaryOperationTest<ElementType>::max;
 
-  ElementType threshold() override { return min(); }
+  ElementType threshold() override { return lowest(); }
 
   const std::vector<Elements>& test_elements() override {
     static const std::vector<Elements> kTestElements = {
         // clang-format off
-      { min(), min(), max()},
-      { min(),     0, max()},
-      { min(),     1, max()},
-      { min(), max(), max()},
+      { lowest(), lowest(), max()},
+      { lowest(),     0, max()},
+      { lowest(),     1, max()},
+      { lowest(), max(), max()},
         // clang-format on
     };
     return kTestElements;

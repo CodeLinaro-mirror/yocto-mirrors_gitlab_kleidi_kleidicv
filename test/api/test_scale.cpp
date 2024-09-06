@@ -27,8 +27,8 @@ static DestinationType saturating_cast(SourceType value) {
 
 uint8_t scalar_scale_u8(uint8_t x, float scale, float shift) {
   float result = static_cast<float>(x) * scale + shift;
-  if (result < std::numeric_limits<uint8_t>::min()) {
-    return std::numeric_limits<uint8_t>::min();
+  if (result < std::numeric_limits<uint8_t>::lowest()) {
+    return std::numeric_limits<uint8_t>::lowest();
   }
   if (result > std::numeric_limits<uint8_t>::max()) {
     return std::numeric_limits<uint8_t>::max();
@@ -54,7 +54,7 @@ KLEIDICV_SCALE_OPERATION(float, f32);
 template <typename ElementType>
 class ScaleTestBase : public UnaryOperationTest<ElementType> {
  protected:
-  using UnaryOperationTest<ElementType>::min;
+  using UnaryOperationTest<ElementType>::lowest;
   using UnaryOperationTest<ElementType>::max;
   using typename UnaryOperationTest<ElementType>::Elements;
 
@@ -104,7 +104,8 @@ class ScaleTestLinearBase {
   }
 
  protected:
-  static constexpr ElementType min() {
+  static constexpr ElementType
+  min_if_integral_else_smallest_positive_normalized() {
     return std::numeric_limits<ElementType>::min();
   }
   static constexpr ElementType max() {
@@ -145,7 +146,8 @@ class ScaleTestLinearBase {
     test::Array2D<ElementType> actual =
         test::Array2D<ElementType>(width, height, padding_, 1);
 
-    GenerateLinearSeries generator(min(), step);
+    GenerateLinearSeries generator(
+        min_if_integral_else_smallest_positive_normalized(), step);
 
     source.fill(generator);
 
@@ -270,7 +272,8 @@ class ScaleTestMultiply final : public ScaleTestBase<ElementType> {
 template <typename ElementType>
 class ScaleTestZero final : public ScaleTestBase<ElementType> {
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<ElementType>::min;
+  using UnaryOperationTest<
+      ElementType>::min_if_integral_else_smallest_positive_normalized;
   using UnaryOperationTest<ElementType>::max;
   using UnaryOperationTest<ElementType>::lowest;
 
@@ -281,7 +284,7 @@ class ScaleTestZero final : public ScaleTestBase<ElementType> {
     static std::vector<Elements> kTestElements = {
         // clang-format off
       { lowest(), 0},
-      { min(), 0},
+      { min_if_integral_else_smallest_positive_normalized(), 0},
       {     0, 0},
       { max(), 0},
         // clang-format on
@@ -294,7 +297,8 @@ class ScaleTestZero final : public ScaleTestBase<ElementType> {
 template <typename ElementType>
 class ScaleTestUnderflowByShift final : public ScaleTestBase<ElementType> {
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<ElementType>::min;
+  using UnaryOperationTest<
+      ElementType>::min_if_integral_else_smallest_positive_normalized;
   using UnaryOperationTest<ElementType>::lowest;
 
   float scale() override { return 1; }
@@ -305,8 +309,8 @@ class ScaleTestUnderflowByShift final : public ScaleTestBase<ElementType> {
         // clang-format off
       {lowest() + 1, 0},
       {    lowest(), 0},
-      {   min() + 1, 0},
-      {       min(), 0},
+      {min_if_integral_else_smallest_positive_normalized() + 1, 0},
+      {    min_if_integral_else_smallest_positive_normalized(), 0},
       {           0, 0},
       {           1, 0},
       {           2, 0},
@@ -341,7 +345,6 @@ template <typename ElementType>
 class ScaleTestUnderflowByScale final : public ScaleTestBase<ElementType> {
   using Elements = typename UnaryOperationTest<ElementType>::Elements;
   using UnaryOperationTest<ElementType>::max;
-  using UnaryOperationTest<ElementType>::min;
 
   float scale() override { return -2; }
   float shift() override { return 0; }
