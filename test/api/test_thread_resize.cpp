@@ -76,7 +76,6 @@ class ResizeThread : public testing::TestWithParam<P> {
         dst_single(dst_width, dst_height), dst_multi(dst_width, dst_height);
     test::PseudoRandomNumberGenerator<ScalarType> generator;
     src.fill(generator);
-    dump(&src);
 
     kleidicv_error_t single_result = single_threaded_func(
         src.data(), src.stride(), src_width, src_height, dst_single.data(),
