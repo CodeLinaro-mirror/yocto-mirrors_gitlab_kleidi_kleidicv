@@ -38,7 +38,7 @@ class SaturatingAddAbsWithThreshold final : public UnrollOnce,
  private:
   ScalarType saturate_abs(ScalarType input) {
     if (std::numeric_limits<ScalarType>::is_signed &&
-        input == std::numeric_limits<ScalarType>::min()) {
+        input == std::numeric_limits<ScalarType>::lowest()) {
       return std::numeric_limits<ScalarType>::max();
     }
     return std::abs(input);

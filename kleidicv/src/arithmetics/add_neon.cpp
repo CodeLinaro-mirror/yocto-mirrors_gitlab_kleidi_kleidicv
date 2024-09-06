@@ -23,7 +23,7 @@ class SaturatingAdd final : public UnrollTwice {
     if (std::numeric_limits<ScalarType>::is_signed && src_b < 0) {
       ScalarType result;
       return __builtin_add_overflow(src_a, src_b, &result)
-                 ? std::numeric_limits<ScalarType>::min()
+                 ? std::numeric_limits<ScalarType>::lowest()
                  : result;
     }
 

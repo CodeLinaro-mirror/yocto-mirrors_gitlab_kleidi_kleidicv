@@ -46,7 +46,7 @@ class SaturatingMultiply final : public UnrollTwice {
     if (std::numeric_limits<ScalarType>::is_signed) {
       if (__builtin_mul_overflow(src_a, src_b, &result)) {
         return (src_a < 0 && src_b > 0) || (src_a > 0 && src_b < 0)
-                   ? std::numeric_limits<ScalarType>::min()
+                   ? std::numeric_limits<ScalarType>::lowest()
                    : std::numeric_limits<ScalarType>::max();
       }
       return result;

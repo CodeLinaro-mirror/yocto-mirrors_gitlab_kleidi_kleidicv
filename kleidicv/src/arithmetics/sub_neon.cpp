@@ -29,7 +29,7 @@ class SaturatingSub final : public UnrollTwice {
 
     ScalarType result;
     return __builtin_sub_overflow(src_a, src_b, &result)
-               ? std::numeric_limits<ScalarType>::min()
+               ? std::numeric_limits<ScalarType>::lowest()
                : result;
   }
 };  // end of class SaturatingSub<ScalarType>

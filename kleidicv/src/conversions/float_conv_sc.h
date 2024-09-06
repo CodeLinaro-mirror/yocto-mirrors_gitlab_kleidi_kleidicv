@@ -119,7 +119,7 @@ class float_conversion_operation<float, OutputType> {
       std::enable_if_t<std::is_integral_v<O> && std::is_signed_v<O>, int> = 0>
   IntermediateVectorType remaining_path(svbool_t& pg, SrcVectorType src)
       KLEIDICV_STREAMING_COMPATIBLE {
-    constexpr float min_val = std::numeric_limits<O>::min();
+    constexpr float min_val = std::numeric_limits<O>::lowest();
     constexpr float max_val = std::numeric_limits<O>::max();
 
     src = svrinti_f32_x(pg, src);

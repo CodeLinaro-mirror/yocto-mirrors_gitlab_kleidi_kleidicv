@@ -43,8 +43,8 @@ class float_conversion_operation<float, OutputType> {
             float f = std::nearbyint(src[ptrdiff_t(index)]);
             if (f > std::numeric_limits<OutputType>::max()) {
               f = std::numeric_limits<OutputType>::max();
-            } else if (f < std::numeric_limits<OutputType>::min()) {
-              f = std::numeric_limits<OutputType>::min();
+            } else if (f < std::numeric_limits<OutputType>::lowest()) {
+              f = std::numeric_limits<OutputType>::lowest();
             }
             dst[index] = static_cast<OutputType>(f);
           }

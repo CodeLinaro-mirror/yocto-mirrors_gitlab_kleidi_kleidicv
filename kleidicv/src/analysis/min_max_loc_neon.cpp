@@ -112,10 +112,10 @@ class MinMaxLoc final : public UnrollTwice {
         vdupq_n(ScalarType{0});
     vrunning_offset_ = vdupq_n(ScalarType{1});
     vmin_ = vmin_new_ = vdupq_n(std::numeric_limits<ScalarType>::max());
-    vmax_ = vmax_new_ = vdupq_n(std::numeric_limits<ScalarType>::min());
+    vmax_ = vmax_new_ = vdupq_n(std::numeric_limits<ScalarType>::lowest());
     min_block_index_ = max_block_index_ = 0;
     min_vector_ = min_scalar_ = std::numeric_limits<ScalarType>::max();
-    max_vector_ = max_scalar_ = std::numeric_limits<ScalarType>::min();
+    max_vector_ = max_scalar_ = std::numeric_limits<ScalarType>::lowest();
     min_scalar_index_ = max_scalar_index_ = 0;
     running_index_ = 0;
   }
