@@ -13,6 +13,7 @@
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/remap/remap.h"
 #include "kleidicv/resize/resize_linear.h"
 
 typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;
@@ -586,4 +587,24 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
         dst_height);
   };
   return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
+}
+
+kleidicv_error_t kleidicv_thread_remap_s16_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    size_t channels, const int16_t *mapxy, size_t mapxy_stride,
+    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values,
+    kleidicv_thread_multithreading mt) {
+  if (!kleidicv::remap_s16_is_implemented<uint8_t>(dst_width, border_type,
+                                                   channels)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_remap_s16_u8(src, src_stride, src_width, src_height,
+                                 dst + begin * dst_stride / sizeof(uint8_t),
+                                 dst_stride, dst_width, end - begin, channels,
+                                 mapxy + begin * mapxy_stride / sizeof(int16_t),
+                                 mapxy_stride, border_type, border_values);
+  };
+  return parallel_batches(callback, mt, dst_height);
 }

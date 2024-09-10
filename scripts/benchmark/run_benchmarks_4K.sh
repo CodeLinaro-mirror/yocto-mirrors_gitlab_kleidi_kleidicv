@@ -92,6 +92,8 @@ benchmarks=(
 
     "InRange_U8:  opencv_perf_core '*inRangeScalar/*' '(3840x2160,  8UC1, 1, 2)'"
     "InRange_F32: opencv_perf_core '*inRangeScalar/*' '(3840x2160, 32FC1, 1, 2)'"
+
+    "Remap_S16_U8: opencv_perf_imgproc '*Remap/*' '(3840x2160, 8UC1, 16SC2, INTER_NEAREST)'"
 )
 
 for idx in "${!benchmarks[@]}"; do

@@ -13,6 +13,11 @@ KleidiCV uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.3.0 - not yet released
+
+### Added
+- Remap implementation for 2-channel s16 coordinates and 1-channel u8 input.
+
 ## 0.2.0 - 2024-09-30
 
 ### Added

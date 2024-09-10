@@ -190,3 +190,11 @@ Currently only scalar bounds are supported.
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` and `CV_32F` depths and 1 channel.
 * `src`, `lowerb` and `upperb` need to have the same type.
+
+### [`cv::remap()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4)
+Geometrically transforms the `src` image by taking the pixels specified by the coordinates from the `map` image.
+Notes on parameters:
+* `src.depth()` - only supports `CV_8U` depth and 1 channel.
+* `map1` shall be 16SC2 and `map2` shall be empty
+* `interpolation` shall be `INTER_NEAREST`
+* `borderMode` shall be `BORDER_REPLICATE`

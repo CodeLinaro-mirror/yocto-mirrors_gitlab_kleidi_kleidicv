@@ -1631,7 +1631,7 @@ KLEIDICV_API_DECLARATION(kleidicv_float_conversion_u8_f32, const uint8_t *src,
 ///                     start of the next row for the source data. Must
 ///                     not be less than width * sizeof(type), except for
 ///                     single-row images.
-/// @param dst          Pointer to the first destination data. Must be non-null.
+/// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data. Must
 ///                     not be less than width * sizeof(type), except for
@@ -1650,6 +1650,49 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, float lower_bound,
                          float upper_bound);
+
+/// Transforms the `src` image by taking the pixels specified by the coordinates
+/// from the `mapxy` image.
+///
+/// Width and height are the same for `mapxy` and for `dst`. `src` dimensions
+/// may be different, but due to the 16-bit signed format, its width and height
+/// must not be bigger than 32767. Coordinates outside of `src` dimensions are
+/// considered border. In case of @ref KLEIDICV_BORDER_TYPE_REPLICATE, that
+/// means that negative coordinates map to the first row/column (zero), and
+/// those bigger than height/width - 1 map to the last row/column.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data. Must
+///                     not be less than width * sizeof(type), except for
+///                     single-row images.
+/// @param src_width    Number of elements in the source row.
+/// @param src_height   Number of rows in the source data.
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(type) and no less than
+///                     width * sizeof(type), except for single-row images.
+/// @param dst_width    Number of elements in the destination row.
+/// @param dst_height   Number of rows in the destination data.
+/// @param mapxy        Pointer to the mapping data. Must be non-null.
+/// @param mapxy_stride Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must be a multiple of sizeof(int16_t) and no less than
+///                     width * sizeof(int16_t), except for single-row images.
+/// @param channels      Number of channels in the data. Must be 1.
+/// @param border_type   Way of handling the border. The supported border types
+///                      are: \n
+///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
+/// @param border_values Border values if the border_type is
+///                      @ref KLEIDICV_BORDER_TYPE_CONSTANT.
+KLEIDICV_API_DECLARATION(kleidicv_remap_s16_u8, const uint8_t *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         uint8_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height, size_t channels,
+                         const int16_t *mapxy, size_t mapxy_stride,
+                         kleidicv_border_type_t border_type,
+                         kleidicv_border_values_t border_values);
 
 #ifdef __cplusplus
 }  // extern "C"

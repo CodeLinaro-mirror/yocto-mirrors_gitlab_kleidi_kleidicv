@@ -1213,4 +1213,30 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
       static_cast<float>(lower_bound), static_cast<float>(upper_bound)));
 }
 
+int remap_s16(int src_type, const uchar *src_data, size_t src_step,
+              int src_width, int src_height, uchar *dst_data, size_t dst_step,
+              int dst_width, int dst_height, const int16_t *mapxy,
+              size_t mapxy_step, int border_type,
+              [[maybe_unused]] const double border_value[4]) {
+  kleidicv_border_type_t kleidicv_border_type;
+  if (from_opencv(border_type, kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  // This will be used when constant borders are implemented
+  kleidicv_border_values_t border_values = {};
+  auto mt = get_multithreading();
+
+  if (src_type == CV_8UC1) {
+    return convert_error(kleidicv_thread_remap_s16_u8(
+        src_data, src_step, static_cast<size_t>(src_width),
+        static_cast<size_t>(src_height), dst_data, dst_step,
+        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
+        CV_MAT_CN(src_type), mapxy, mapxy_step, kleidicv_border_type,
+        border_values, mt));
+  }
+
+  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+}
+
 }  // namespace kleidicv::hal

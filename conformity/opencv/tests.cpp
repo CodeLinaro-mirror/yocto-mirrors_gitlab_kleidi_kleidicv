@@ -39,6 +39,7 @@ std::vector<test> all_tests = merge_tests({
     scale_tests_get,
     min_max_tests_get,
     in_range_tests_get,
+    remap_tests_get,
   // clang-format on
 });
 
