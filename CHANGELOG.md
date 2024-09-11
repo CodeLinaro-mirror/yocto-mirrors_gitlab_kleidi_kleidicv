@@ -48,6 +48,7 @@ This changelog aims to follow the guiding principles of
   * GaussianBlur
   * Sobel
   * sepFilter2D
+  * resize
 - Improved performance of Compare Equal and Greater SC API.
 
 ### Removed
