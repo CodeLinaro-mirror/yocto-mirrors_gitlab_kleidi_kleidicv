@@ -234,8 +234,78 @@ TEST_P(Thread, SobelVertical3Channels) {
                                    3, 3);
 }
 
-INSTANTIATE_TEST_SUITE_P(, Thread,
-                         testing::Values(P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2},
-                                         P{2, 1, 2}, P{2, 2, 1}, P{1, 3, 2},
-                                         P{2, 3, 1}, P{6, 4, 1}, P{4, 5, 2},
-                                         P{2, 6, 3}, P{1, 7, 4}, P{12, 34, 5}));
+INSTANTIATE_TEST_SUITE_P(
+    , Thread,
+    testing::Values(P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2}, P{2, 1, 2}, P{2, 2, 1},
+                    P{1, 3, 2}, P{2, 3, 1}, P{6, 4, 1}, P{4, 5, 2}, P{2, 6, 3},
+                    P{1, 7, 4}, P{12, 34, 5}, P{1, 16, 1}, P{1, 32, 1},
+                    P{1, 32, 2}, P{2, 16, 2}, P{2, 32, 1}, P{1, 48, 2},
+                    P{2, 48, 1}, P{6, 64, 1}, P{4, 80, 2}, P{2, 96, 3},
+                    P{1, 112, 4}, P{12, 34, 5}));
+
+// Operations in the Neon backend have both a vector path and a scalar path.
+// The vector path is used to process most data and the scalar path is used to
+// process the parts of the data that don't fit into the vector width.
+// For floating point operations in particular, the results may be very slightly
+// different between vector and scalar paths.
+// When using multithreading, images are divided into parts to be processed by
+// each thread, and this can change which parts of the data end up being
+// processed by the vector and scalar paths. Since the threading may be
+// non-deterministic in how it divides up the image, this non-determinism could
+// leak through in the values of the output. This could cause subtle bugs and
+// must be avoided.
+// Prior to the fix, these tests were found to trigger the bug when run via
+// qemu-aarch64 8.0.4 on an x86 machine, but passed in other environments.
+class SingleMultiThreadInconsistency : public testing::TestWithParam<P> {};
+
+TEST_P(SingleMultiThreadInconsistency, ScaleF32) {
+  const auto [width, height, thread_count] = GetParam();
+
+  const float src_val = -407.727905F, scale = 0.123F, shift = 45.6789F;
+  test::Array2D<float> src(size_t{width}, height),
+      dst_single(size_t{width}, height), dst_multi(size_t{width}, height);
+
+  src.fill(src_val);
+
+  kleidicv_error_t single_result =
+      kleidicv_scale_f32(src.data(), src.stride(), dst_single.data(),
+                         dst_single.stride(), width, height, scale, shift);
+
+  kleidicv_error_t multi_result = kleidicv_thread_scale_f32(
+      src.data(), src.stride(), dst_multi.data(), dst_multi.stride(), width,
+      height, scale, shift, get_multithreading_fake(thread_count));
+
+  EXPECT_EQ(KLEIDICV_OK, multi_result);
+  EXPECT_EQ(KLEIDICV_OK, single_result);
+  EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+}
+
+TEST_P(SingleMultiThreadInconsistency, ExpF32) {
+  const auto [width, height, thread_count] = GetParam();
+
+  test::Array2D<float> src(size_t{width}, height),
+      dst_single(size_t{width}, height), dst_multi(size_t{width}, height);
+
+  // Approximately -1.900039
+  unsigned value_bits = 0xBFF3347D;
+  float value = 0;
+  memcpy(&value, &value_bits, sizeof(value));
+
+  src.fill(value);
+
+  kleidicv_error_t single_result =
+      kleidicv_exp_f32(src.data(), src.stride(), dst_single.data(),
+                       dst_single.stride(), width, height);
+
+  kleidicv_error_t multi_result = kleidicv_thread_exp_f32(
+      src.data(), src.stride(), dst_multi.data(), dst_multi.stride(), width,
+      height, get_multithreading_fake(thread_count));
+
+  EXPECT_EQ(KLEIDICV_OK, multi_result);
+  EXPECT_EQ(KLEIDICV_OK, single_result);
+  EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+}
+
+INSTANTIATE_TEST_SUITE_P(, SingleMultiThreadInconsistency,
+                         testing::Values(P{1, 7, 4}, P{1, 17, 17}, P{1, 33, 33},
+                                         P{2, 2, 2}, P{6, 3, 2}));

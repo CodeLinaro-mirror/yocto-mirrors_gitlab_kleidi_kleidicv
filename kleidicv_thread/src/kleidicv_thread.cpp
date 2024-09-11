@@ -23,17 +23,57 @@ static kleidicv_error_t kleidicv_thread_std_function_callback(
   return (*callback)(task_begin, task_end);
 }
 
+// Operations in the Neon backend have both a vector path and a scalar path.
+// The vector path is used to process most data and the scalar path is used to
+// process the parts of the data that don't fit into the vector width.
+// For floating point operations in particular, the results may be very slightly
+// different between vector and scalar paths.
+// When using multithreading, images are divided into parts to be processed by
+// each thread, and this could change which parts of the data end up being
+// processed by the vector and scalar paths. Since the threading may be
+// non-deterministic in how it divides up the image, this non-determinism could
+// leak through in the values of the output. This could cause subtle bugs.
+//
+// To avoid this problem, this function passes data to each thread in batches
+// that are a multiple of the Neon vector width in size (16 bytes). The
+// exception is the last batch, which may be longer in order to extend to the
+// end of the data. No batch can be shorter than vector length as this could
+// cause different behaviour for operations that try to avoid the tail loop (see
+// the TryToAvoidTailLoop class) - this technique only works if the data is
+// longer than vector length.
+//
+// Typically with how this function is used, batches will be 16 image rows or
+// row pairs, which is likely to be far coarser alignment than is needed.
+// However it's unlikely that threading on a finer-grained level would provide a
+// performance benefit.
+template <typename Callback>
+inline kleidicv_error_t parallel_batches(Callback callback,
+                                         kleidicv_thread_multithreading mt,
+                                         unsigned count) {
+  const unsigned min_batch_size = 16;
+  const unsigned task_count = std::max(1U, (count) / min_batch_size);
+  FunctionCallback f = [=](unsigned task_begin, unsigned task_end) {
+    unsigned begin = task_begin * min_batch_size,
+             end = task_end * min_batch_size;
+    if (task_end == task_count) {
+      end = count;
+    }
+    return callback(begin, end);
+  };
+  return mt.parallel(kleidicv_thread_std_function_callback, &f,
+                     mt.parallel_data, task_count);
+}
+
 template <typename SrcT, typename DstT, typename F, typename... Args>
 inline kleidicv_error_t kleidicv_thread_unary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src, size_t src_stride,
     DstT *dst, size_t dst_stride, size_t width, size_t height, Args... args) {
-  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
-    return f(src + task_begin * src_stride / sizeof(SrcT), src_stride,
-             dst + task_begin * dst_stride / sizeof(DstT), dst_stride, width,
-             task_end - task_begin, args...);
+  auto callback = [=](unsigned begin, unsigned end) {
+    return f(src + begin * src_stride / sizeof(SrcT), src_stride,
+             dst + begin * dst_stride / sizeof(DstT), dst_stride, width,
+             end - begin, args...);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, height);
+  return parallel_batches(callback, mt, height);
 }
 
 template <typename SrcT, typename DstT, typename F, typename... Args>
@@ -41,14 +81,13 @@ inline kleidicv_error_t kleidicv_thread_binary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src_a,
     size_t src_a_stride, const SrcT *src_b, size_t src_b_stride, DstT *dst,
     size_t dst_stride, size_t width, size_t height, Args... args) {
-  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
-    return f(src_a + task_begin * src_a_stride / sizeof(SrcT), src_a_stride,
-             src_b + task_begin * src_b_stride / sizeof(SrcT), src_b_stride,
-             dst + task_begin * dst_stride / sizeof(DstT), dst_stride, width,
-             task_end - task_begin, args...);
+  auto callback = [=](unsigned begin, unsigned end) {
+    return f(src_a + begin * src_a_stride / sizeof(SrcT), src_a_stride,
+             src_b + begin * src_b_stride / sizeof(SrcT), src_b_stride,
+             dst + begin * dst_stride / sizeof(DstT), dst_stride, width,
+             end - begin, args...);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, height);
+  return parallel_batches(callback, mt, height);
 }
 
 #define KLEIDICV_THREAD_UNARY_OP_IMPL(suffix, src_type, dst_type)            \
@@ -176,17 +215,16 @@ inline kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8_impl(
     F f, const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, bool is_nv21, kleidicv_thread_multithreading mt) {
-  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
-    size_t row_begin = size_t{task_begin} * 2;
-    size_t row_end = std::min<size_t>(height, size_t{task_end} * 2);
-    size_t row_uv = task_begin;
+  auto callback = [=](unsigned begin, unsigned end) {
+    size_t row_begin = size_t{begin} * 2;
+    size_t row_end = std::min<size_t>(height, size_t{end} * 2);
+    size_t row_uv = begin;
     return f(src_y + row_begin * src_y_stride, src_y_stride,
              src_uv + row_uv * src_uv_stride, src_uv_stride,
              dst + row_begin * dst_stride, dst_stride, width,
              row_end - row_begin, is_nv21);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, (height + 1) / 2);
+  return parallel_batches(callback, mt, (height + 1) / 2);
 }
 
 #define YUV_SP_TO_RGB(suffix)                                               \
@@ -216,15 +254,14 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
   std::vector<ScalarType> max_values(height,
                                      std::numeric_limits<ScalarType>::lowest());
 
-  FunctionCallback callback = [&](unsigned task_begin, unsigned task_end) {
-    return min_max_func(src + task_begin * (src_stride / sizeof(ScalarType)),
-                        src_stride, width, task_end - task_begin,
-                        p_min_value ? min_values.data() + task_begin : nullptr,
-                        p_max_value ? max_values.data() + task_begin : nullptr);
+  auto callback = [&](unsigned begin, unsigned end) {
+    return min_max_func(src + begin * (src_stride / sizeof(ScalarType)),
+                        src_stride, width, end - begin,
+                        p_min_value ? min_values.data() + begin : nullptr,
+                        p_max_value ? max_values.data() + begin : nullptr);
   };
 
-  auto return_val = mt.parallel(kleidicv_thread_std_function_callback,
-                                &callback, mt.parallel_data, height);
+  auto return_val = parallel_batches(callback, mt, height);
 
   if (p_min_value) {
     *p_min_value = std::numeric_limits<ScalarType>::max();
@@ -271,16 +308,13 @@ kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
   std::vector<size_t> min_offsets(height, 0);
   std::vector<size_t> max_offsets(height, 0);
 
-  FunctionCallback callback = [&](unsigned task_begin, unsigned task_end) {
+  auto callback = [&](unsigned begin, unsigned end) {
     return min_max_loc_func(
-        src + task_begin * (src_stride / sizeof(ScalarType)), src_stride, width,
-        task_end - task_begin,
-        p_min_offset ? min_offsets.data() + task_begin : nullptr,
-        p_max_offset ? max_offsets.data() + task_begin : nullptr);
+        src + begin * (src_stride / sizeof(ScalarType)), src_stride, width,
+        end - begin, p_min_offset ? min_offsets.data() + begin : nullptr,
+        p_max_offset ? max_offsets.data() + begin : nullptr);
   };
-
-  auto return_val = mt.parallel(kleidicv_thread_std_function_callback,
-                                &callback, mt.parallel_data, height);
+  auto return_val = parallel_batches(callback, mt, height);
 
   if (p_min_offset) {
     *p_min_offset = 0;
@@ -323,7 +357,7 @@ kleidicv_error_t kleidicv_thread_filter(F filter, size_t width, size_t height,
                                         size_t kernel_height,
                                         kleidicv_filter_context_t *context,
                                         kleidicv_thread_multithreading mt) {
-  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
     // The context contains a buffer that can only fit a single row, so can't be
     // shared between threads. Since we don't know how many threads there are,
     // create and destroy a context every time this callback is called. Only use
@@ -354,8 +388,7 @@ kleidicv_error_t kleidicv_thread_filter(F filter, size_t width, size_t height,
     }
     return result;
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, height);
+  return parallel_batches(callback, mt, height);
 }
 
 kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
@@ -430,37 +463,35 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     kleidicv_thread_multithreading mt) {
-  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, height);
+  return parallel_batches(callback, mt, height);
 }
 
 kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     kleidicv_thread_multithreading mt) {
-  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_sobel_3x3_vertical_stripe_s16_u8(src, src_stride, dst,
                                                      dst_stride, width, height,
                                                      y_begin, y_end, channels);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, height);
+  return parallel_batches(callback, mt, height);
 }
 
 kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
-  FunctionCallback callback = [=](unsigned task_begin, unsigned task_end) {
-    size_t src_begin = size_t{task_begin} * 2;
-    size_t src_end = std::min<size_t>(src_height, size_t{task_end} * 2);
-    size_t dst_begin = task_begin;
-    size_t dst_end = std::min<size_t>(dst_height, task_end);
+  auto callback = [=](unsigned begin, unsigned end) {
+    size_t src_begin = size_t{begin} * 2;
+    size_t src_end = std::min<size_t>(src_height, size_t{end} * 2);
+    size_t dst_begin = begin;
+    size_t dst_end = std::min<size_t>(dst_height, end);
 
     // half of odd height is rounded towards zero?
     if (dst_begin == dst_end) {
@@ -472,34 +503,31 @@ kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(
         src_end - src_begin, dst + dst_begin * dst_stride, dst_stride,
         dst_width, dst_end - dst_begin);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, (src_height + 1) / 2);
+  return parallel_batches(callback, mt, (src_height + 1) / 2);
 }
 
 kleidicv_error_t kleidicv_thread_resize_linear_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
-  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_resize_linear_stripe_u8(
         src, src_stride, src_width, src_height, y_begin,
         std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
         dst_height);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, std::max<size_t>(1, src_height - 1));
+  return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
 }
 
 kleidicv_error_t kleidicv_thread_resize_linear_f32(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     float *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
-  FunctionCallback callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_resize_linear_stripe_f32(
         src, src_stride, src_width, src_height, y_begin,
         std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
         dst_height);
   };
-  return mt.parallel(kleidicv_thread_std_function_callback, &callback,
-                     mt.parallel_data, std::max<size_t>(1, src_height - 1));
+  return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
 }
