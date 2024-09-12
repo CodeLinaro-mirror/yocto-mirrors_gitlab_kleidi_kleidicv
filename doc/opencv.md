@@ -59,7 +59,7 @@ Notes on parameters:
 * `src.channels()` - supports 3 for RGB and 4 for RGBA.
 * `dst.channels()` - supports 3 for RGB and 4 for RGBA.
 
-#### [`COLOR_YUV2RGB_I420)`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9),[`COLOR_YUV2BGR_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a305e5da3816c78b3d1ffa0498424e94f),[`COLOR_YUV2RGBA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a18346327c937bca2aa2856914ff11507),[`COLOR_YUV2BGRA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a0ffa81c19231ddd2e9cee8616a3a4673)
+#### [`COLOR_YUV2RGB_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9),[`COLOR_YUV2BGR_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a305e5da3816c78b3d1ffa0498424e94f),[`COLOR_YUV2RGBA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a18346327c937bca2aa2856914ff11507),[`COLOR_YUV2BGRA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a0ffa81c19231ddd2e9cee8616a3a4673)
 YUV420 to RGB/RGBA image conversion (semi-planar). Function accepts Y plane and UV planes separately.\
 All supported permutations listed in the table below.
 |   | RGB | BGR | RGBA | BGRA |
@@ -69,14 +69,14 @@ All supported permutations listed in the table below.
 Notes on parameters:
 * `dst.channels()` - supports 3 for RGB and 4 for RGBA.
 
-#### [`COLOR_YUV2RGB)`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab09d8186a9e5aaac83acd157a1be43b0),[`COLOR_YUV2BGR`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab053f0cf23ae1b0bfee1964fd9a182c9)
+#### [`COLOR_YUV2RGB`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab09d8186a9e5aaac83acd157a1be43b0),[`COLOR_YUV2BGR`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab053f0cf23ae1b0bfee1964fd9a182c9)
 YUV to RGB image conversion, 3 channels to 3 channels, no subsampling.\
 All supported permutations listed in the table below.
 |   | RGB | BGR |
 |---|-----|-----|
 |YUV|  x  |  x  |
 
-#### [`COLOR_RGB2YUV)`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0adc0f8a1354c98d1701caad4b384e0d18),[`COLOR_BGR2YUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a611d58d4a431fdbc294b4c79701f3d1a)
+#### [`COLOR_RGB2YUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0adc0f8a1354c98d1701caad4b384e0d18),[`COLOR_BGR2YUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a611d58d4a431fdbc294b4c79701f3d1a)
 RGB/RGBA to YUV image conversion, 3 or 4 channels to 3 channels, no subsampling.\
 All supported permutations listed in the table below.
 |    | YUV |
@@ -142,21 +142,16 @@ Notes on parameters:
 In-place operation not supported.
 
 Notes on parameters:
-* `src.type()` - only supports `CV_8UC1` and `CV_32FC1`. Relative sizes can be:
-  + 0.5x0.5 (`CV_8UC1` only)
-  + 2x2, 4x4 and 8x8 (`CV_32FC1` only).
-* `dst.width()`,`dst.height()` - must be the same multiple of both `src.width()` and `src.height()` respectively, and that multiple must be either 0.5, 2, 4 or 8.
+* `src.type()` - only supports certain values in combination with other parameters as shown in the table below.
+* `dst.width()`,`dst.height()` - must be a multiple of `src.width()` and `src.height()` respectively, in combination with other parameters as shown in the table below.
 * `fx`,`fy` - must be 0 or `dst.width() / src.width()`.
-* `interpolation` - supported [`InterpolationFlags`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga5bb5a1fea74ea38e1a5445ca803ff121) are:
-  + `INTER_LINEAR`
-  + `INTER_AREA` with scaling factor 0.5x0.5 only.
+* `interpolation` - supported [`InterpolationFlags`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga5bb5a1fea74ea38e1a5445ca803ff121) are as shown in the table below.
 
-|src.type()|interpolation |   fx x fy   |
-|----------|--------------|-------------|
-| CV_8UC1  | INTER_AREA   |   0.5x0.5   |
-|          | INTER_LINEAR |   0.5x0.5   |
-| CV_32FC1 | INTER_AREA   |   0.5x0.5   |
-|          | INTER_LINEAR |2x2, 4x4, 8x8|
+|`src.type()`|`interpolation`|src:dst dimensions ratio|
+|------------|---------------|------------------------|
+| `CV_8UC1`  | `INTER_AREA`  |        0.5x0.5         |
+| `CV_8UC1`  |`INTER_LINEAR` |   0.5x0.5, 2x2, 4x4    |
+| `CV_32FC1` |`INTER_LINEAR` |     2x2, 4x4, 8x8      |
 
 ### [`cv::Sobel()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gacea54f142e81b6758cb6f375ce782c8d)
 Applies Sobel gradient filter to a given image.\
@@ -199,12 +194,12 @@ Supported depths:
 
 Additionally, it is able to convert between data types as follows:
 
-| src.depth() | dst.depth() |
+|`src.depth()`|`dst.depth()`|
 |-------------|-------------|
-|    CV_32F   |    CV_8S    |
-|    CV_32F   |    CV_8U    |
-|    CV_8S    |    CV_32F   |
-|    CV_8U    |    CV_32F   |
+|   `CV_32F`  |   `CV_8S`   |
+|   `CV_32F`  |   `CV_8U`   |
+|   `CV_8S`   |   `CV_32F`  |
+|   `CV_8U`   |   `CV_32F`  |
 
 ### [`cv::exp()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga3e10108e2162c338f1b848af619f39e5)
 Exponential function. Currently only `CV_32F` type is supported.
