@@ -564,7 +564,7 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
 /// `| R,G,B | R,G,B | R,G,B | ...`
 /// Where each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
-/// If 4-byte alignment is required then kleidicv_yuv_sp_to_rgba_u8 can be
+/// If 4-byte alignment is required then @ref kleidicv_yuv_sp_to_rgba_u8 can be
 /// used.
 ///
 /// Width and height are the same for the source and for the destination. Number
@@ -605,7 +605,7 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
 /// `| B,G,R | B,G,R | B,G,R | ...`
 /// Where each letter represents one byte of data, and one pixel is represented
 /// by 3 bytes. There is no padding between the pixels.
-/// If 4-byte alignment is required then kleidicv_yuv_sp_to_bgra_u8 can be
+/// If 4-byte alignment is required then @ref kleidicv_yuv_sp_to_bgra_u8 can be
 /// used.
 ///
 /// Width and height are the same for the source and for the destination. Number
@@ -953,7 +953,7 @@ kleidicv_error_t kleidicv_morphology_release(
 /// @ref kleidicv_morphology_create, and after finished, it has to be
 /// released using @ref kleidicv_morphology_release.
 /// The context must be created with the same image dimensions as `width` and
-/// `height` parameters, with `sizeof(uint8)` as `size_type`, and with the
+/// `height` parameters, with `sizeof(uint8)` as `type_size`, and with the
 /// channel number of the data as `channels`.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
@@ -1050,7 +1050,7 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 /// Resize image using linear interpolation.
 /// In-place operation not supported.
 ///
-/// At present only 2*2 and 4*4 upsizing is supported, and 8x8 for float data.
+/// At present only 2x2 and 4x4 upsizing is supported, and 8x8 for float data.
 /// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED
 /// will be returned.
 /// The total number of pixels in the destination is limited to
@@ -1069,9 +1069,11 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 ///                     Must be a multiple of `sizeof(type)` and no less than
 ///                     `width * sizeof(type)`, except for single-row images.
 /// @param dst_width    Number of elements in the destination row.
-///                     Must be `src_width * 2`.
+///                     Must be inline with the choosen upsizing operation, for
+///                     example `src_width * 2` in case of 2x2.
 /// @param dst_height   Number of rows in the destination data.
-///                     Must be `src_height * 2`.
+///                     Must be inline with the choosen upsizing operation, for
+///                     example `src_height * 2` in case of 2x2.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_resize_linear_u8, const uint8_t *src,
                          size_t src_stride, size_t src_width, size_t src_height,
@@ -1237,10 +1239,10 @@ kleidicv_error_t kleidicv_filter_context_release(
 /// Usage:
 ///
 /// Before using this function, a context must be created using
-/// kleidicv_filter_context_create, and when finished, it has to be released
-/// using kleidicv_filter_context_release. Please ensure that your filter
-/// context parameters are large enough, otherwise this API will return with an
-/// error.
+/// @ref kleidicv_filter_context_create, and when finished, it has to be
+/// released using @ref kleidicv_filter_context_release. Please ensure that your
+/// filter context parameters are large enough, otherwise this API will return
+/// with an error.
 ///
 /// Note, from the border types only KLEIDICV_BORDER_TYPE_REPLICATE is
 /// supported.
@@ -1295,10 +1297,10 @@ kleidicv_error_t kleidicv_separable_filter_2d_s16(
 /// Usage:
 ///
 /// Before using this function, a context must be created using
-/// kleidicv_filter_context_create, and when finished, it has to be released
-/// using kleidicv_filter_context_release. Please ensure that your filter
-/// context parameters are large enough, otherwise this API will return with an
-/// error.
+/// @ref kleidicv_filter_context_create, and when finished, it has to be
+/// released using @ref kleidicv_filter_context_release. Please ensure that your
+/// filter context parameters are large enough, otherwise this API will return
+/// with an error.
 ///
 /// Note, from the border types only these are supported:
 ///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE
