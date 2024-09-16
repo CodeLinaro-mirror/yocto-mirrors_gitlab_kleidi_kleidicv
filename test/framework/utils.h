@@ -123,6 +123,9 @@ std::array<test::ArrayLayout, 7> small_array_layouts(size_t min_width,
 std::array<test::ArrayLayout, 14> default_array_layouts(size_t min_width,
                                                         size_t min_height);
 
+std::array<test::ArrayLayout, 6> default_1channel_array_layouts(
+    size_t min_width, size_t min_height);
+
 namespace internal {
 template <typename Function, typename Tuple>
 class NullPointerTester {

@@ -23,5 +23,6 @@ std::vector<test>& scale_tests_get();
 std::vector<test>& min_max_tests_get();
 std::vector<test>& in_range_tests_get();
 std::vector<test>& remap_tests_get();
+std::vector<test>& blur_and_downsample_tests_get();
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TESTS_H_

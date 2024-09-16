@@ -193,6 +193,7 @@ Notes on parameters:
 
 ### [`cv::remap()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4)
 Geometrically transforms the `src` image by taking the pixels specified by the coordinates from the `map` image.
+
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth and 1 channel.
 * `borderMode` - only supports `BORDER_REPLICATE`
@@ -201,3 +202,10 @@ Supported map configurations:
   * supported `interpolation`: `INTER_NEAREST` only
 * `map1` is 16SC2 and `map2` is 16UC1: `map1` is as above, `map2` contains combined 5+5 bits of x (low) and y (high) fractions, i.e. x = x1 + x2 / 2^5
   * supported `interpolation`: `INTER_LINEAR` only
+
+### [`cv::pyrDown()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaf9bba239dfca11654cb7f50f889fc2ff)
+Blurs and downsamples an image.
+
+Notes on parameters:
+* `src.depth()` - only supports `CV_8U` and 1 channel.
+* if `dstsize` is specified it must be equal to `Size((src.cols + 1) / 2, (src.rows + 1) / 2)`

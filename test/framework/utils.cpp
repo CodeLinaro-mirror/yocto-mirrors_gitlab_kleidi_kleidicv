@@ -111,4 +111,23 @@ std::array<test::ArrayLayout, 14> default_array_layouts(size_t min_width,
   }};
 }
 
+std::array<test::ArrayLayout, 6> default_1channel_array_layouts(
+    size_t min_width, size_t min_height) {
+  size_t vl = test::Options::vector_length();
+  size_t width = std::max(min_width, vl);
+  size_t height = std::max(min_height, vl);
+
+  return {{
+      // clang-format off
+      //         width,         height,  padding, channels
+      {      min_width,         height,        0,        1},
+      {      min_width,         height,       vl,        1},
+      {       width + 1,     min_height,        0,        1},
+      {       2 * width,     min_height,       vl,        1},
+      {  2 * width + 1, min_height + 1,        0,        1},
+      {  4 * width + 1, min_height + 1,       vl,        1},
+      // clang-format on
+  }};
+}
+
 }  // namespace test

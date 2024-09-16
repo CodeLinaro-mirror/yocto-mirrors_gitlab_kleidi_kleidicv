@@ -116,6 +116,10 @@ int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
           double highThreshold, int ksize, bool L2gradient);
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
+int pyrdown(const uchar *src_data, size_t src_step, int src_width,
+            int src_height, uchar *dst_data, size_t dst_step, int dst_width,
+            int dst_height, int depth, int cn, int border_type);
+
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height, int element_size);
 
@@ -376,7 +380,6 @@ static inline int kleidicv_remap_s16_with_fallback(
       src_height, dst_data, dst_step, dst_width, dst_height, mapxy, mapxy_step,
       border_type, border_value);
 }
-
 #undef cv_hal_remap16s
 #define cv_hal_remap16s kleidicv_remap_s16_with_fallback
 #endif  // cv_hal_remap16s
@@ -399,6 +402,18 @@ static inline int kleidicv_remap_s16point5_with_fallback(
 #undef cv_hal_remap16s16u
 #define cv_hal_remap16s16u kleidicv_remap_s16point5_with_fallback
 #endif  // cv_hal_remap16s16u
+
+// pyrdown
+static inline int kleidicv_pyrdown_with_fallback(
+    const uchar *src_data, size_t src_step, int src_width, int src_height,
+    uchar *dst_data, size_t dst_step, int dst_width, int dst_height, int depth,
+    int cn, int border_type) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      pyrdown, cv_hal_pyrdown, src_data, src_step, src_width, src_height,
+      dst_data, dst_step, dst_width, dst_height, depth, cn, border_type);
+}
+#undef cv_hal_pyrdown
+#define cv_hal_pyrdown kleidicv_pyrdown_with_fallback
 
 #endif  // OPENCV_IMGPROC_HAL_REPLACEMENT_HPP
 

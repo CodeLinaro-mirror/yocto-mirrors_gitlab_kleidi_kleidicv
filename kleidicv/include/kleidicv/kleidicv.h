@@ -1342,6 +1342,60 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
     size_t kernel_height, float sigma_x, float sigma_y,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
 
+#ifndef DOXYGEN
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Applies 5x5 binomial Gaussian blur to the source image and downsaples the
+/// result by keeping odd rows and columns only.
+/// This function can be used to generate an Image Pyramid.
+/// In-place operation is not supported.
+///
+/// The number of elements in the source is limited to @ref
+/// KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// Width and height of the destination is calculated as:
+///   - `dst_width = (src_width + 1) / 2`
+///   - `dst_height = (src_height + 1) / 2`
+///
+/// Usage:
+///
+/// Before using this function, a context must be created using @ref
+/// kleidicv_filter_context_create, and when finished, it has to be released
+/// using @ref kleidicv_filter_context_release. Please ensure that your filter
+/// context parameters are large enough (max_kernel_width and max_kernel_height
+/// must be at least 5), otherwise this API will return with an error.
+///
+/// Note, from the border types only these are supported:
+///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE
+///                       - @ref KLEIDICV_BORDER_TYPE_REFLECT
+///                       - @ref KLEIDICV_BORDER_TYPE_WRAP
+///                       - @ref KLEIDICV_BORDER_TYPE_REVERSE
+///
+/// @param src           Pointer to the source data. Must be non-null.
+/// @param src_stride    Distance in bytes from the start of one row to the
+///                      start of the next row in the source data. Must be a
+///                      multiple of `sizeof(type)` and no less than `src_width
+///                      * sizeof(type) * channels`, except for single-row
+///                      images.
+/// @param src_width     Number of columns in the source data. (One column
+///                      consists of `channels` number of elements.)
+/// @param src_height    Number of rows in the source data.
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row in the destination data. Must be
+///                      a multiple of `sizeof(type)` and no less than
+///                      `dst_width * sizeof(type) * channels`, except for
+///                      single-row images.
+/// @param channels      Number of channels in the data. Must be equal to 1.
+/// @param border_type   Way of handling the border.
+/// @param context       Pointer to filter context.
+///
+kleidicv_error_t kleidicv_blur_and_downsample_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t channels,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
+#endif
+
 /// Splits a multi channel source stream into separate 1-channel streams. Width
 /// and height are the same for the source stream and for all the destination
 /// streams. Number of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.

@@ -95,6 +95,8 @@ benchmarks=(
 
     "Remap_S16_U8: opencv_perf_imgproc '*Remap/*' '(3840x2160, 8UC1, 16SC2, INTER_NEAREST, BORDER_REPLICATE)'"
     "Remap_S16Point5_U8: opencv_perf_imgproc '*Remap/*' '(3840x2160, 8UC1, 16SC2, INTER_LINEAR, BORDER_REPLICATE)'"
+
+    "BlurAndDownsample: opencv_perf_imgproc '*pyrDown/*' '(3840x2160, 8UC1)'"
 )
 
 for idx in "${!benchmarks[@]}"; do

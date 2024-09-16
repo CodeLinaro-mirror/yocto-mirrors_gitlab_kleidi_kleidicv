@@ -40,6 +40,7 @@ std::vector<test> all_tests = merge_tests({
     min_max_tests_get,
     in_range_tests_get,
     remap_tests_get,
+    blur_and_downsample_tests_get,
   // clang-format on
 });
 

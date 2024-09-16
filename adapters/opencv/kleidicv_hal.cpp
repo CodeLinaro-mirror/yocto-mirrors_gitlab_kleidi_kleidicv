@@ -12,6 +12,7 @@
 #include <limits>
 #include <memory>
 
+#include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv_thread/kleidicv_thread.h"
@@ -1274,6 +1275,55 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
+}
+
+int pyrdown(const uchar *src_data, size_t src_step, int src_width,
+            int src_height, uchar *dst_data, size_t dst_step, int dst_width,
+            int dst_height, int depth, int cn, int border_type) {
+  if (src_data == dst_data) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  switch (depth) {
+    case CV_8U:
+      break;
+
+    default:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if ((dst_width != (src_width + 1) / 2) ||
+      (dst_height != (src_height + 1) / 2)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  kleidicv_border_type_t kleidicv_border_type;
+  if (from_opencv(border_type, kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  // Check for not-implemented before allocating a context
+  if (!kleidicv::blur_and_downsample_is_implemented(src_width, src_height,
+                                                    cn) ||
+      !kleidicv::get_fixed_border_type(kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  kleidicv_filter_context_t *context;
+  if (kleidicv_error_t create_err = kleidicv_filter_context_create(
+          &context, cn, 5, 5, static_cast<size_t>(src_width),
+          static_cast<size_t>(src_height))) {
+    return convert_error(create_err);
+  }
+
+  kleidicv_error_t blur_err = kleidicv_blur_and_downsample_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step, src_width,
+      src_height, reinterpret_cast<uint8_t *>(dst_data), dst_step, cn,
+      kleidicv_border_type, context);
+
+  kleidicv_error_t release_err = kleidicv_filter_context_release(context);
+
+  return convert_error(blur_err ? blur_err : release_err);
 }
 
 }  // namespace kleidicv::hal
