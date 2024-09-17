@@ -506,6 +506,9 @@ KLEIDICV_HAL_MUL(mul16s, kleidicv_saturating_multiply_s16, int16_t);
 #define cv_hal_mul16s kleidicv_mul16s_with_fallback
 
 // inRange
+// This condition can be removed if this HAL macro is defined in all supported
+// versions
+#ifdef cv_hal_inRange8u
 static inline int kleidicv_in_range_u8_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
     int dst_depth, size_t width, size_t height, int cn, uchar lower_bound,
@@ -516,7 +519,11 @@ static inline int kleidicv_in_range_u8_with_fallback(
 }
 #undef cv_hal_inRange8u
 #define cv_hal_inRange8u kleidicv_in_range_u8_with_fallback
+#endif  // cv_hal_inRange8u
 
+// This condition can be removed if this HAL macro is defined in all supported
+// versions
+#ifdef cv_hal_inRange32f
 static inline int kleidicv_in_range_f32_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
     int dst_depth, size_t width, size_t height, int cn, double lower_bound,
@@ -527,6 +534,7 @@ static inline int kleidicv_in_range_f32_with_fallback(
 }
 #undef cv_hal_inRange32f
 #define cv_hal_inRange32f kleidicv_in_range_f32_with_fallback
+#endif  // cv_hal_inRange32f
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 
