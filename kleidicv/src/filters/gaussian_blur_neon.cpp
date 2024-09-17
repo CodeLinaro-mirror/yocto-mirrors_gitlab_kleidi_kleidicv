@@ -14,6 +14,7 @@
 #include "kleidicv/separable_filter_5x5_neon.h"
 #include "kleidicv/separable_filter_7x7_neon.h"
 #include "kleidicv/sigma.h"
+#include "kleidicv/workspace/separable.h"
 
 namespace kleidicv::neon {
 

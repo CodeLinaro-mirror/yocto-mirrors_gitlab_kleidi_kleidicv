@@ -4,9 +4,9 @@
 
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/morphology/workspace.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/separable_filter_3x3_neon.h"
+#include "kleidicv/workspace/separable.h"
 
 namespace kleidicv::neon {
 

@@ -11,7 +11,6 @@
 
 #include "kleidicv/operations.h"
 #include "kleidicv/utils.h"
-#include "kleidicv/workspace/separable.h"
 
 // It is used by SVE2 and SME2, the actual namespace will reflect it.
 namespace KLEIDICV_TARGET_NAMESPACE {

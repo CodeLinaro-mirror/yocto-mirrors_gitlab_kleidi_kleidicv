@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -10,7 +10,6 @@
 #include "kleidicv/neon_intrinsics.h"
 #include "kleidicv/operations.h"
 #include "kleidicv/utils.h"
-#include "kleidicv/workspace/separable.h"
 
 namespace kleidicv::neon {
 
