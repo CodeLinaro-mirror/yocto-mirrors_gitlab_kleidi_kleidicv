@@ -514,6 +514,15 @@ TEST_P(Thread, remap_s16point5_u8_not_implemented) {
       kleidicv_border_values_t{});
 }
 
+TEST_P(Thread, remap16s16u_u8_not_implemented) {
+  check_remap_s16u16_not_implemented<uint8_t>(kleidicv_thread_remap_s16u16_u8,
+                                              2, KLEIDICV_BORDER_TYPE_REPLICATE,
+                                              kleidicv_border_values_t{});
+  check_remap_s16u16_not_implemented<uint8_t>(kleidicv_thread_remap_s16u16_u8,
+                                              1, KLEIDICV_BORDER_TYPE_CONSTANT,
+                                              kleidicv_border_values_t{});
+}
+
 TEST_P(Thread, SobelHorizontal1Channel) {
   check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_horizontal_s16_u8,
                                    kleidicv_thread_sobel_3x3_horizontal_s16_u8,
