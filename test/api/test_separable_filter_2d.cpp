@@ -46,9 +46,6 @@ struct SeparableFilter2DKernelTestParams<int16_t, KernelSize> {
   static constexpr size_t kKernelSize = KernelSize;
 };  // end of struct SeparableFilter2DKernelTestParams<int16_t, KernelSize>
 
-static constexpr std::array<kleidicv_border_type_t, 1> kDefaultBorder = {
-    KLEIDICV_BORDER_TYPE_REPLICATE};
-
 static constexpr std::array<kleidicv_border_type_t, 4> kAllBorders = {
     KLEIDICV_BORDER_TYPE_REPLICATE,
     KLEIDICV_BORDER_TYPE_REFLECT,
@@ -56,66 +53,42 @@ static constexpr std::array<kleidicv_border_type_t, 4> kAllBorders = {
     KLEIDICV_BORDER_TYPE_REVERSE,
 };
 
-template <typename IterableType>
-std::unique_ptr<test::Generator<typename IterableType::value_type>>
-make_generator_ptr(IterableType &elements) {
-  test::Generator<typename IterableType::value_type> *pg =
-      new test::SequenceGenerator(elements);
-  return std::unique_ptr<test::Generator<typename IterableType::value_type>>(
-      pg);
-}
-
 // Test for SeparableFilter2D operator.
-template <class KernelTestParams>
+template <class KernelTestParams, typename ArrayLayoutsGetterType,
+          typename BorderTcontainerType, typename KernelType>
 class SeparableFilter2DTest : public test::KernelTest<KernelTestParams> {
   using Base = test::KernelTest<KernelTestParams>;
   using typename test::KernelTest<KernelTestParams>::InputType;
   using typename test::KernelTest<KernelTestParams>::IntermediateType;
   using typename test::KernelTest<KernelTestParams>::OutputType;
+  using ArrayContainerType =
+      std::invoke_result_t<ArrayLayoutsGetterType, size_t, size_t>;
 
  public:
-  explicit SeparableFilter2DTest(const InputType *kernel_x,
-                                 const InputType *kernel_y)
-      : kernel_x_(kernel_x),
-        kernel_y_(kernel_y),
-        small_array_layouts_{test::small_array_layouts(
-            KernelTestParams::kKernelSize, KernelTestParams::kKernelSize)} {
-    array_layout_generator_ = make_generator_ptr(small_array_layouts_);
-    border_type_generator_ = make_generator_ptr(kDefaultBorder);
-  }
-
-  SeparableFilter2DTest &with_array_layouts(
-      std::unique_ptr<test::Generator<test::ArrayLayout>> g) {
-    array_layout_generator_ = std::move(g);
-    return *this;
-  }
-
-  SeparableFilter2DTest &with_border_types(
-      std::unique_ptr<test::Generator<kleidicv_border_type_t>> g) {
-    border_type_generator_ = std::move(g);
-    return *this;
-  }
+  explicit SeparableFilter2DTest(KernelTestParams,
+                                 ArrayLayoutsGetterType array_layouts_getter,
+                                 BorderTcontainerType border_types,
+                                 const KernelType &kernel_x,
+                                 const KernelType &kernel_y)
+      : array_layouts_{array_layouts_getter(KernelTestParams::kKernelSize - 1,
+                                            KernelTestParams::kKernelSize - 1)},
+        border_types_{border_types},
+        array_layout_generator_{array_layouts_},
+        border_type_generator_{border_types_},
+        kernel_x_(kernel_x),
+        kernel_y_(kernel_y) {}
 
   void test(const test::Array2D<IntermediateType> &mask, InputType max_value) {
     test::Kernel kernel{mask};
-    // Use the default border values for testing.
-    auto kSupportedBorderValues = test::default_border_values();
     // Create generators and execute test.
-    test::SequenceGenerator tested_border_values{kSupportedBorderValues};
+    test::SequenceGenerator tested_border_values{test::default_border_values()};
     test::PseudoRandomNumberGeneratorIntRange<InputType> element_generator{
         0, max_value};
-    Base::test(kernel, *array_layout_generator_, *border_type_generator_,
+    Base::test(kernel, array_layout_generator_, border_type_generator_,
                tested_border_values, element_generator);
   }
 
- protected:
-  const InputType *kernel_x_;
-  const InputType *kernel_y_;
-  std::array<test::ArrayLayout, 7> small_array_layouts_;
-  std::unique_ptr<test::Generator<test::ArrayLayout>> array_layout_generator_;
-  std::unique_ptr<test::Generator<kleidicv_border_type_t>>
-      border_type_generator_;
-
+ private:
   kleidicv_error_t call_api(const test::Array2D<InputType> *input,
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t border_type,
@@ -132,7 +105,7 @@ class SeparableFilter2DTest : public test::KernelTest<KernelTestParams> {
     ret = separable_filter_2d<InputType>()(
         input->data(), input->stride(), output->data(), output->stride(),
         input->width() / input->channels(), input->height(), input->channels(),
-        kernel_x_, KernelTestParams::kKernelSize, kernel_y_,
+        kernel_x_.data(), KernelTestParams::kKernelSize, kernel_y_.data(),
         KernelTestParams::kKernelSize, border_type, context);
     auto releaseRet = kleidicv_filter_context_release(context);
     if (releaseRet != KLEIDICV_OK) {
@@ -141,7 +114,15 @@ class SeparableFilter2DTest : public test::KernelTest<KernelTestParams> {
 
     return ret;
   }
-};  // end of class SeparableFilter2DTest<KernelTestParams>
+
+  const ArrayContainerType array_layouts_;
+  const BorderTcontainerType border_types_;
+  test::SequenceGenerator<ArrayContainerType> array_layout_generator_;
+  test::SequenceGenerator<BorderTcontainerType> border_type_generator_;
+  const KernelType &kernel_x_;
+  const KernelType &kernel_y_;
+};  // end of class SeparableFilter2DTest<KernelTestParams,
+    // ArrayLayoutsGetterType, BorderTcontainerType, KernelType>
 
 using ElementTypes = ::testing::Types<uint8_t, uint16_t, int16_t>;
 
@@ -154,8 +135,8 @@ TYPED_TEST_SUITE(SeparableFilter2D, ElementTypes);
 TYPED_TEST(SeparableFilter2D, 5x5) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
 
-  const TypeParam kernel_x[5] = {5, 0, 1, 2, 2};
-  const TypeParam kernel_y[5] = {1, 4, 3, 1, 0};
+  const std::array<TypeParam, 5> kernel_x = {5, 0, 1, 2, 2};
+  const std::array<TypeParam, 5> kernel_y = {1, 4, 3, 1, 0};
 
   // Mask is created by 'kernel_y (outer product) kernel_x'
   test::Array2D<typename KernelTestParams::IntermediateType> mask{5, 5};
@@ -163,8 +144,8 @@ TYPED_TEST(SeparableFilter2D, 5x5) {
     return kernel_y[row] * kernel_x[column];
   });
 
-  SeparableFilter2DTest<KernelTestParams>{kernel_x, kernel_y}
-      .with_border_types(make_generator_ptr(kAllBorders))
+  SeparableFilter2DTest{KernelTestParams{}, test::small_array_layouts,
+                        kAllBorders, kernel_x, kernel_y}
       .test(mask, 5);
 }
 

@@ -59,10 +59,10 @@ template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
 template void dump<float>(const TwoDimensional<float> *);
 template void dump<double>(const TwoDimensional<double> *);
 
-std::array<kleidicv_border_values_t, 1> default_border_values() {
-  return {{
-      {0, 0, 0, 0},  // default
-  }};
+const std::array<kleidicv_border_values_t, 1> &default_border_values() {
+  static const std::array<kleidicv_border_values_t, 1> kDefaultBorderValues{
+      {{0, 0, 0, 0}}};
+  return kDefaultBorderValues;
 }
 
 std::array<test::ArrayLayout, 7> small_array_layouts(size_t min_width,

@@ -65,13 +65,11 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
     test::Kernel kernel{mask};
     // Use the default array layouts for testing.
     auto array_layouts =
-        test::default_array_layouts(mask.width(), mask.height());
-    // Use the default border values for testing.
-    auto kSupportedBorderValues = test::default_border_values();
+        test::default_array_layouts(mask.width() - 1, mask.height() - 1);
     // Create generators and execute test.
     test::SequenceGenerator tested_array_layouts{array_layouts};
     test::SequenceGenerator tested_borders{kSupportedBorders};
-    test::SequenceGenerator tested_border_values{kSupportedBorderValues};
+    test::SequenceGenerator tested_border_values{test::default_border_values()};
     test::PseudoRandomNumberGenerator<InputType> element_generator;
     Base::test(kernel, tested_array_layouts, tested_borders,
                tested_border_values, element_generator);
