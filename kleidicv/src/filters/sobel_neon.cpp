@@ -136,12 +136,6 @@ kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8(
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
-  const size_t KernelSize = 3;
-
-  if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
     return KLEIDICV_ERROR_RANGE;
   }
@@ -171,12 +165,6 @@ kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8(
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
-
-  const size_t KernelSize = 3;
-
-  if (width < KernelSize - 1 || height < KernelSize - 1) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
     return KLEIDICV_ERROR_RANGE;

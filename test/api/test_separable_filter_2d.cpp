@@ -729,7 +729,7 @@ TYPED_TEST(SeparableFilter2D, OversizeImage) {
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1, kernel, 5, kernel, 5,
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 5, 1, kernel, 5, kernel, 5,
                 KLEIDICV_BORDER_TYPE_REPLICATE, context));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             separable_filter_2d<TypeParam>()(

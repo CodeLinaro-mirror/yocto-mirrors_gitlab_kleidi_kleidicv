@@ -109,3 +109,20 @@ INSTANTIATE_TEST_SUITE_P(, ResizeThread,
                                          P{2, 1, 2}, P{2, 2, 1}, P{1, 3, 2},
                                          P{2, 3, 1}, P{6, 4, 1}, P{4, 5, 2},
                                          P{2, 6, 3}, P{1, 7, 4}, P{12, 34, 5}));
+
+TEST(ResizeThreadTest, NotImplemented) {
+  {
+    uint8_t src[1] = {}, dst[1] = {};
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              kleidicv_thread_resize_linear_u8(src, sizeof(src), 2, 2, dst,
+                                               sizeof(dst), 3, 7,
+                                               get_multithreading_fake(2)));
+  }
+  {
+    float src[1] = {}, dst[1] = {};
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              kleidicv_thread_resize_linear_f32(src, sizeof(src), 2, 2, dst,
+                                                sizeof(dst), 3, 7,
+                                                get_multithreading_fake(2)));
+  }
+}

@@ -397,12 +397,22 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
     size_t kernel_height, float sigma_x, float sigma_y,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::gaussian_blur_is_implemented(
+          width, height, kernel_width, kernel_height, sigma_x, sigma_y)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   auto callback = [=](size_t y_begin, size_t y_end,
                       kleidicv_filter_context_t *thread_context) {
     return kleidicv_gaussian_blur_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_width, kernel_height, sigma_x, sigma_y, border_type,
-        thread_context);
+        channels, kernel_width, kernel_height, sigma_x, sigma_y,
+        *fixed_border_type, thread_context);
   };
   return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
                                 kernel_height, context, mt);
@@ -414,12 +424,22 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
     size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
+                                                    kernel_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   auto callback = [=](size_t y_begin, size_t y_end,
                       kleidicv_filter_context_t *thread_context) {
     return kleidicv_separable_filter_2d_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_x, kernel_width, kernel_y, kernel_height, border_type,
-        thread_context);
+        channels, kernel_x, kernel_width, kernel_y, kernel_height,
+        *fixed_border_type, thread_context);
   };
   return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
                                 kernel_height, context, mt);
@@ -431,12 +451,22 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
+                                                    kernel_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   auto callback = [=](size_t y_begin, size_t y_end,
                       kleidicv_filter_context_t *thread_context) {
     return kleidicv_separable_filter_2d_stripe_u16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_x, kernel_width, kernel_y, kernel_height, border_type,
-        thread_context);
+        channels, kernel_x, kernel_width, kernel_y, kernel_height,
+        *fixed_border_type, thread_context);
   };
   return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
                                 kernel_height, context, mt);
@@ -448,12 +478,22 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
     size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
+                                                    kernel_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   auto callback = [=](size_t y_begin, size_t y_end,
                       kleidicv_filter_context_t *thread_context) {
     return kleidicv_separable_filter_2d_stripe_s16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_x, kernel_width, kernel_y, kernel_height, border_type,
-        thread_context);
+        channels, kernel_x, kernel_width, kernel_y, kernel_height,
+        *fixed_border_type, thread_context);
   };
   return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
                                 kernel_height, context, mt);
@@ -463,6 +503,10 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::sobel_is_implemented(width, height, 3)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -475,6 +519,10 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::sobel_is_implemented(width, height, 3)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_sobel_3x3_vertical_stripe_s16_u8(src, src_stride, dst,
                                                      dst_stride, width, height,
@@ -510,6 +558,10 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::resize_linear_u8_is_implemented(src_width, src_height,
+                                                 dst_width, dst_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_resize_linear_stripe_u8(
         src, src_stride, src_width, src_height, y_begin,
@@ -523,6 +575,10 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     float *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
+  if (!kleidicv::resize_linear_f32_is_implemented(src_width, src_height,
+                                                  dst_width, dst_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_resize_linear_stripe_f32(
         src, src_stride, src_width, src_height, y_begin,

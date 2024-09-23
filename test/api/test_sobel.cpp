@@ -97,7 +97,7 @@ TYPED_TEST(Sobel, Horizontal3x3) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
   test::test_null_args(sobel_3x3_horizontal<TypeParam>(), src, sizeof(src), dst,
-                       sizeof(dst), 1, 1, 1);
+                       sizeof(dst), 3, 3, 1);
 }
 
 // Tests sobel_3x3_vertical_<output_type>_<input_type> API.
@@ -115,7 +115,7 @@ TYPED_TEST(Sobel, Vertical3x3) {
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
   test::test_null_args(sobel_3x3_vertical<TypeParam>(), src, sizeof(src), dst,
-                       sizeof(dst), 1, 1, 1);
+                       sizeof(dst), 3, 3, 1);
 }
 
 TYPED_TEST(Sobel, MisalignmentHorizontal) {
@@ -125,12 +125,12 @@ TYPED_TEST(Sobel, MisalignmentHorizontal) {
   if (sizeof(typename KernelTestParams::InputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_horizontal<TypeParam>()(src, sizeof(src) + 1, dst,
-                                                sizeof(dst), 1, 2, 1));
+                                                sizeof(dst), 3, 3, 1));
   }
   if (sizeof(typename KernelTestParams::OutputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_horizontal<TypeParam>()(src, sizeof(src), dst,
-                                                sizeof(dst) + 1, 1, 2, 1));
+                                                sizeof(dst) + 1, 3, 3, 1));
   }
 }
 
@@ -141,12 +141,12 @@ TYPED_TEST(Sobel, MisalignmentVertical) {
   if (sizeof(typename KernelTestParams::InputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_vertical<TypeParam>()(src, sizeof(src) + 1, dst,
-                                              sizeof(dst), 1, 2, 1));
+                                              sizeof(dst), 3, 3, 1));
   }
   if (sizeof(typename KernelTestParams::OutputType) != 1) {
     EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
               sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst,
-                                              sizeof(dst) + 1, 1, 2, 1));
+                                              sizeof(dst) + 1, 3, 3, 1));
   }
 }
 
@@ -253,7 +253,7 @@ TYPED_TEST(Sobel, OversizeImageHorizontal) {
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE, sobel_3x3_horizontal<TypeParam>()(
                                       src, sizeof(src), dst, sizeof(dst),
-                                      KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1));
+                                      KLEIDICV_MAX_IMAGE_PIXELS + 1, 3, 1));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), KLEIDICV_MAX_IMAGE_PIXELS,
@@ -267,7 +267,7 @@ TYPED_TEST(Sobel, OversizeImageVertical) {
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE, sobel_3x3_vertical<TypeParam>()(
                                       src, sizeof(src), dst, sizeof(dst),
-                                      KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1));
+                                      KLEIDICV_MAX_IMAGE_PIXELS + 1, 3, 1));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
                                             KLEIDICV_MAX_IMAGE_PIXELS,

@@ -9,6 +9,37 @@
 
 namespace kleidicv {
 
+inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
+                                            size_t dst_width,
+                                            size_t dst_height) {
+  if (src_width == 0 || src_height == 0) {
+    return true;
+  }
+  const size_t implemented_ratios[] = {2, 4};
+  for (size_t ratio : implemented_ratios) {
+    if (src_width * ratio == dst_width && src_height * ratio == dst_height) {
+      return true;
+    }
+  }
+  return false;
+}
+
+inline bool resize_linear_f32_is_implemented(size_t src_width,
+                                             size_t src_height,
+                                             size_t dst_width,
+                                             size_t dst_height) {
+  if (src_width == 0 || src_height == 0) {
+    return true;
+  }
+  const size_t implemented_ratios[] = {2, 4, 8};
+  for (size_t ratio : implemented_ratios) {
+    if (src_width * ratio == dst_width && src_height * ratio == dst_height) {
+      return true;
+    }
+  }
+  return false;
+}
+
 namespace neon {
 kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
                                          size_t src_width, size_t src_height,

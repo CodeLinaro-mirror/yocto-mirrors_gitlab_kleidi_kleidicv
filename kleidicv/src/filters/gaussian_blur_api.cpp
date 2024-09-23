@@ -18,9 +18,20 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
-  return kleidicv_gaussian_blur_stripe_u8(
-      src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-      kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
+  if (!kleidicv::gaussian_blur_is_implemented(
+          width, height, kernel_width, kernel_height, sigma_x, sigma_y)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return kleidicv_gaussian_blur_stripe_u8(src, src_stride, dst, dst_stride,
+                                          width, height, 0, height, channels,
+                                          kernel_width, kernel_height, sigma_x,
+                                          sigma_y, *fixed_border_type, context);
 }
 
 }  // extern "C"

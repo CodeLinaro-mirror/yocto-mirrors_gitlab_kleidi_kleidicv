@@ -26,6 +26,14 @@ KLEIDICV_API_DECLARATION(kleidicv_sobel_3x3_vertical_stripe_s16_u8,
 
 namespace kleidicv {
 
+inline bool sobel_is_implemented(size_t width, size_t height,
+                                 size_t kernel_size) {
+  if (width < kernel_size - 1 || height < kernel_size - 1) {
+    return false;
+  }
+  return true;
+}
+
 namespace neon {
 kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,

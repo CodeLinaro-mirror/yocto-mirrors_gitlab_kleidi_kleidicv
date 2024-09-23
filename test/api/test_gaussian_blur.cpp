@@ -1054,13 +1054,13 @@ TYPED_TEST(GaussianBlur, OversizeImage) {
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             gaussian_blur<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1, 15, 15, 0.0, 0.0,
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 15, 1, 15, 15, 0.0, 0.0,
                 KLEIDICV_BORDER_TYPE_REFLECT, context));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             gaussian_blur<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, 1, 15, 15,
-                0.0, 0.0, KLEIDICV_BORDER_TYPE_REFLECT, context));
+                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, 15, 15,
+                15, 0.0, 0.0, KLEIDICV_BORDER_TYPE_REFLECT, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
 

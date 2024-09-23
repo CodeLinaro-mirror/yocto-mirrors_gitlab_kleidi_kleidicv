@@ -7,6 +7,8 @@
 
 #include <arm_sve.h>
 
+#include <cassert>
+
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 
@@ -1126,7 +1128,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_u8_sc(
     return resize_4x4_u8_sc(src, src_stride, src_width, src_height, y_begin,
                             y_end, dst, dst_stride);
   }
+  // resize_linear_f32_is_implemented checked the kernel size already.
+  // GCOVR_EXCL_START
+  assert(!"resize ratio not implemented");
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  // GCOVR_EXCL_STOP
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_f32_sc(
@@ -1157,7 +1163,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_f32_sc(
     return resize_8x8_f32_sve128_sc(src, src_stride, src_width, src_height,
                                     y_begin, y_end, dst, dst_stride);
   }
+  // resize_linear_f32_is_implemented checked the kernel size already.
+  // GCOVR_EXCL_START
+  assert(!"resize ratio not implemented");
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  // GCOVR_EXCL_STOP
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE

@@ -241,15 +241,18 @@ TYPED_TEST(ResizeLinear, InvalidImageSize) {
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_resize_linear(
-                src, sizeof(TypeParam), 1, 1, dst,
+                src, sizeof(TypeParam) * ((KLEIDICV_MAX_IMAGE_PIXELS + 1) / 2),
+                (KLEIDICV_MAX_IMAGE_PIXELS + 1) / 2, 1, dst,
                 sizeof(TypeParam) * (KLEIDICV_MAX_IMAGE_PIXELS + 1),
-                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1));
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 2));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_resize_linear(
-                src, sizeof(TypeParam), 1, 1, dst,
-                sizeof(TypeParam) * KLEIDICV_MAX_IMAGE_PIXELS,
-                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS));
+                src, sizeof(TypeParam) * ((KLEIDICV_MAX_IMAGE_PIXELS - 1) / 2),
+                (KLEIDICV_MAX_IMAGE_PIXELS - 1) / 2,
+                (KLEIDICV_MAX_IMAGE_PIXELS - 1) / 2, dst,
+                sizeof(TypeParam) * (KLEIDICV_MAX_IMAGE_PIXELS - 1),
+                KLEIDICV_MAX_IMAGE_PIXELS - 1, KLEIDICV_MAX_IMAGE_PIXELS - 1));
 }
 
 TYPED_TEST(ResizeLinear, ZeroImageSize) {

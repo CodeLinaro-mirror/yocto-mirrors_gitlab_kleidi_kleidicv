@@ -9,7 +9,7 @@
 
 #include "kleidicv/kleidicv.h"
 
-namespace KLEIDICV_TARGET_NAMESPACE {
+namespace kleidicv {
 
 enum class FixedBorderType {
   REPLICATE,
@@ -19,7 +19,7 @@ enum class FixedBorderType {
 };
 
 inline std::optional<FixedBorderType> get_fixed_border_type(
-    kleidicv_border_type_t border_type) KLEIDICV_STREAMING_COMPATIBLE {
+    kleidicv_border_type_t border_type) {
   switch (border_type) {
     case KLEIDICV_BORDER_TYPE_REPLICATE:
       return FixedBorderType::REPLICATE;
@@ -34,6 +34,6 @@ inline std::optional<FixedBorderType> get_fixed_border_type(
   }
 }
 
-}  // namespace KLEIDICV_TARGET_NAMESPACE
+}  // namespace kleidicv
 
 #endif  // KLEIDICV_WORKSPACE_BORDER_TYPES_H

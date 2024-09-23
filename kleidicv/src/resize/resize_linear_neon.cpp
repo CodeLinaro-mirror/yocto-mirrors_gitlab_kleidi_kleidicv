@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <cassert>
+
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/resize/resize_linear.h"
@@ -437,7 +439,11 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
     return resize_4x4_u8(src, src_stride, src_width, src_height, y_begin, y_end,
                          dst, dst_stride);
   }
+  // resize_linear_u8_is_implemented checked the kernel size already.
+  // GCOVR_EXCL_START
+  assert(!"resize ratio not implemented");
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  // GCOVR_EXCL_STOP
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32(
@@ -981,7 +987,11 @@ kleidicv_error_t resize_linear_stripe_f32(const float *src, size_t src_stride,
     return resize_8x8_f32(src, src_stride, src_width, src_height, y_begin,
                           y_end, dst, dst_stride);
   }
+  // resize_linear_f32_is_implemented checked the kernel size already.
+  // GCOVR_EXCL_START
+  assert(!"resize ratio not implemented");
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  // GCOVR_EXCL_STOP
 }
 
 }  // namespace kleidicv::neon

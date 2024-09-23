@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <array>
+#include <cassert>
 
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
@@ -676,33 +677,26 @@ static kleidicv_error_t gaussian_blur(size_t kernel_size, const ScalarType *src,
       return gaussian_blur_fixed_kernel_size<15, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
           sigma, border_type, workspace);
+    // gaussian_blur_is_implemented checked the kernel size already.
+    // GCOVR_EXCL_START
     default:
+      assert(!"kernel size not implemented");
       return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+      // GCOVR_EXCL_STOP
   }
 }
 
+// Does not include checks for whether the operation is implemented.
+// This must be done earlier, by gaussian_blur_is_implemented.
 template <typename T>
 static kleidicv_error_t gaussian_blur_checks(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, size_t channels, size_t kernel_width, size_t kernel_height,
-    float sigma_x, float sigma_y, SeparableFilterWorkspace *workspace) {
+    size_t height, size_t channels, SeparableFilterWorkspace *workspace) {
   CHECK_POINTERS(workspace);
-
-  if (kernel_width != kernel_height) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if (sigma_x != sigma_y) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
 
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
-
-  if (width < kernel_width - 1 || height < kernel_width - 1) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
     return KLEIDICV_ERROR_RANGE;
@@ -725,20 +719,15 @@ KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t gaussian_blur_stripe_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
-    size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+    size_t kernel_width, size_t /*kernel_height*/, float sigma_x,
+    float /*sigma_y*/, FixedBorderType fixed_border_type,
+    kleidicv_filter_context_t *context) {
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
   kleidicv_error_t checks_result = gaussian_blur_checks(
-      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
-      kernel_height, sigma_x, sigma_y, workspace);
+      src, src_stride, dst, dst_stride, width, height, channels, workspace);
 
   if (checks_result != KLEIDICV_OK) {
     return checks_result;
-  }
-
-  auto fixed_border_type = get_fixed_border_type(border_type);
-  if (!fixed_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rectangle rect{width, height};
@@ -746,12 +735,12 @@ kleidicv_error_t gaussian_blur_stripe_u8(
   if (sigma_x == 0.0) {
     return gaussian_blur<true>(kernel_width, src, src_stride, dst, dst_stride,
                                rect, y_begin, y_end, channels, sigma_x,
-                               *fixed_border_type, workspace);
+                               fixed_border_type, workspace);
   }
 
   return gaussian_blur<false>(kernel_width, src, src_stride, dst, dst_stride,
                               rect, y_begin, y_end, channels, sigma_x,
-                              *fixed_border_type, workspace);
+                              fixed_border_type, workspace);
 }
 
 }  // namespace kleidicv::neon

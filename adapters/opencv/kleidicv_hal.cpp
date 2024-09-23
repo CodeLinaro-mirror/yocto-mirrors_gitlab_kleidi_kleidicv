@@ -12,6 +12,7 @@
 #include <limits>
 #include <memory>
 
+#include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv_thread/kleidicv_thread.h"
 #include "opencv2/core/base.hpp"
@@ -524,6 +525,13 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  // Check for not-implemented before allocating a context
+  if (!kleidicv::gaussian_blur_is_implemented(width, height, kernel_size,
+                                              kernel_size, 0, 0) ||
+      !kleidicv::get_fixed_border_type(kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
   kleidicv_filter_context_t *context;
   if (kleidicv_error_t create_err = kleidicv_filter_context_create(
           &context, cn, kernel_size, kernel_size, static_cast<size_t>(width),
@@ -567,6 +575,13 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
 
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  // Check for not-implemented before allocating a context
+  if (!kleidicv::gaussian_blur_is_implemented(
+          width, height, kernel_width, kernel_height, sigma_x, sigma_y) ||
+      !kleidicv::get_fixed_border_type(kleidicv_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 

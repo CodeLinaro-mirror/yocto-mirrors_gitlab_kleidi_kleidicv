@@ -437,22 +437,13 @@ class SeparableFilter2D<int16_t, 5> {
 template <typename T>
 static kleidicv_error_t separable_filter_2d_checks(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, size_t channels, const T *kernel_x, size_t kernel_width,
-    const T *kernel_y, size_t kernel_height,
+    size_t height, size_t channels, const T *kernel_x, const T *kernel_y,
     SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
   CHECK_POINTERS(workspace, kernel_x, kernel_y);
-
-  if (kernel_width != 5 || kernel_height != 5) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
 
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
-
-  if (width < kernel_width - 1 || height < kernel_width - 1) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
     return KLEIDICV_ERROR_RANGE;
@@ -474,23 +465,16 @@ template <typename T>
 kleidicv_error_t separable_filter_2d_stripe_sc(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, size_t y_begin, size_t y_end, size_t channels,
-    const T *kernel_x, size_t kernel_width, const T *kernel_y,
-    size_t kernel_height, kleidicv_border_type_t border_type,
+    const T *kernel_x, size_t /*kernel_width*/, const T *kernel_y,
+    size_t /*kernel_height*/, FixedBorderType fixed_border_type,
     kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
   kleidicv_error_t checks_result = separable_filter_2d_checks(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_x,
-      kernel_width, kernel_y, kernel_height, workspace);
+      kernel_y, workspace);
 
   if (checks_result != KLEIDICV_OK) {
     return checks_result;
-  }
-
-  auto fixed_border_type = get_fixed_border_type(border_type);
-  // if the std::optional is empty, that means that the border type is not
-  // supported, so there's no need to check for specific types
-  if (!fixed_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rectangle rect{width, height};
@@ -523,7 +507,7 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     *fixed_border_type, filter);
+                     fixed_border_type, filter);
 
   return KLEIDICV_OK;
 }

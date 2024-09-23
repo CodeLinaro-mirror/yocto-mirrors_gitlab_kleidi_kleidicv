@@ -16,7 +16,7 @@ kleidicv_error_t separable_filter_2d_stripe(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, size_t y_begin, size_t y_end, size_t channels,
     const T *kernel_x, size_t kernel_width, const T *kernel_y,
-    size_t kernel_height, kleidicv_border_type_t border_type,
+    size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
 
 }  // namespace neon
@@ -28,7 +28,7 @@ kleidicv_error_t separable_filter_2d_stripe(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, size_t y_begin, size_t y_end, size_t channels,
     const T *kernel_x, size_t kernel_width, const T *kernel_y,
-    size_t kernel_height, kleidicv_border_type_t border_type,
+    size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
 
 }  // namespace sve2
@@ -40,7 +40,7 @@ kleidicv_error_t separable_filter_2d_stripe(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, size_t y_begin, size_t y_end, size_t channels,
     const T *kernel_x, size_t kernel_width, const T *kernel_y,
-    size_t kernel_height, kleidicv_border_type_t border_type,
+    size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
 
 }  // namespace sme2
@@ -111,9 +111,19 @@ kleidicv_error_t kleidicv_separable_filter_2d_u8(
     size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
     size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
+                                                    kernel_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   return kleidicv_separable_filter_2d_stripe_u8(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-      kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
+      kernel_x, kernel_width, kernel_y, kernel_height, *fixed_border_type,
+      context);
 }
 
 kleidicv_error_t kleidicv_separable_filter_2d_u16(
@@ -121,9 +131,19 @@ kleidicv_error_t kleidicv_separable_filter_2d_u16(
     size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
+                                                    kernel_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   return kleidicv_separable_filter_2d_stripe_u16(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-      kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
+      kernel_x, kernel_width, kernel_y, kernel_height, *fixed_border_type,
+      context);
 }
 
 kleidicv_error_t kleidicv_separable_filter_2d_s16(
@@ -131,9 +151,19 @@ kleidicv_error_t kleidicv_separable_filter_2d_s16(
     size_t width, size_t height, size_t channels, const int16_t *kernel_x,
     size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
+                                                    kernel_height)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
   return kleidicv_separable_filter_2d_stripe_s16(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-      kernel_x, kernel_width, kernel_y, kernel_height, border_type, context);
+      kernel_x, kernel_width, kernel_y, kernel_height, *fixed_border_type,
+      context);
 }
 
 }  // extern "C"
