@@ -11,7 +11,7 @@
 // specified InputType and KernelType. An exception should be thrown in case the
 // constraint in the HAL has not been met.
 // Returns a 1x1-sized boolean matrix.
-template <size_t KernelSize, int InputType, int KernelType>
+template <int KernelSize, int InputType, int KernelType>
 cv::Mat exec_separable_filter_2d_channel_check(cv::Mat& input) {
   cv::Mat kernel(KernelSize, 1, KernelType);
   cv::Mat result;
@@ -24,7 +24,7 @@ cv::Mat exec_separable_filter_2d_channel_check(cv::Mat& input) {
   return cv::Mat(1, 1, CV_8UC1, cv::Scalar(0));
 }
 
-template <typename TypeParam, size_t KernelSize, size_t BorderType>
+template <typename TypeParam, int KernelSize, size_t BorderType>
 cv::Mat exec_separable_filter_2d(cv::Mat& input) {
   uint32_t kernel_seed =
       *reinterpret_cast<uint32_t*>(&input.at<TypeParam>(input.rows - 1, 0));
@@ -51,7 +51,7 @@ cv::Mat exec_separable_filter_2d(cv::Mat& input) {
 #if MANAGER
 // The purpose of this test is to check one of the initial constraints of the
 // Separable Filter 2D HAL, that the kernel can only have one channel.
-template <size_t KernelSize, int InputType, int KernelType>
+template <int KernelSize, int InputType, int KernelType>
 bool test_separable_filter_2d_channel_check(
     int index, RecreatedMessageQueue& request_queue,
     RecreatedMessageQueue& reply_queue) {
@@ -81,53 +81,51 @@ bool test_separable_filter_2d_channel_check(
   return false;
 }
 
-template <typename TypeParam, size_t KernelSize, size_t BorderType,
+template <typename TypeParam, int KernelSize, size_t BorderType,
           size_t Channels>
 bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
                               RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
-  for (size_t y = 5; y <= 16; ++y) {
-    for (size_t x = 5; x <= 16; ++x) {
-      // One extra line allocated to be sure the kernel seed can be placed next
-      // to the real input
-      cv::Mat input(y + 1, x, get_opencv_matrix_type<TypeParam, Channels>());
-      // use the minimum value 1 for the input in order to properly work around
-      // the potential OpenCV bug (mentioned lower)
-      rng.fill(input, cv::RNG::UNIFORM, 1,
-               std::numeric_limits<TypeParam>::max());
+  // Minimal width is sizeof(uint32_t) and one more row is allcated to place
+  // the kernel seed next to the real input
+  for (auto size : typical_test_sizes(
+           std::max(KernelSize - 1, static_cast<int>(sizeof(uint32_t))),
+           KernelSize - 1)) {
+    cv::Mat input(size.height + 1, size.width,
+                  get_opencv_matrix_type<TypeParam, Channels>());
+    // use the minimum value 1 for the input in order to properly work around
+    // the potential OpenCV bug (mentioned lower)
+    rng.fill(input, cv::RNG::UNIFORM, 1, std::numeric_limits<TypeParam>::max());
 
-      uint32_t kernel_seed = rng.next();
+    uint32_t kernel_seed = rng.next();
 
-      // kernel seed is embedded into the input matrix
-      *reinterpret_cast<uint32_t*>(&input.at<TypeParam>(input.rows - 1, 0)) =
-          kernel_seed;
+    // kernel seed is embedded into the input matrix
+    *reinterpret_cast<uint32_t*>(&input.at<TypeParam>(input.rows - 1, 0)) =
+        kernel_seed;
 
-      cv::Mat actual =
-          exec_separable_filter_2d<TypeParam, KernelSize, BorderType>(input);
-      cv::Mat expected = get_expected_from_subordinate(index, request_queue,
-                                                       reply_queue, input);
+    cv::Mat actual =
+        exec_separable_filter_2d<TypeParam, KernelSize, BorderType>(input);
+    cv::Mat expected =
+        get_expected_from_subordinate(index, request_queue, reply_queue, input);
 
-      // bypass OpenCV bug/inconsistency where the output matrix contains 0's
-      // (or also the smallest negative value for signed types), whereas this
-      // should not be possible mathematically
-      for (size_t i = 0; i < (y * Channels); ++i) {
-        for (size_t j = 0; j < (x * Channels); ++j) {
-          if (expected.at<TypeParam>(i, j) ==
-              std::numeric_limits<TypeParam>::lowest()) {
-            expected.at<TypeParam>(i, j) =
-                std::numeric_limits<TypeParam>::max();
-          } else if (expected.at<TypeParam>(i, j) == 0) {
-            expected.at<TypeParam>(i, j) =
-                std::numeric_limits<TypeParam>::max();
-          }
+    // bypass OpenCV bug/inconsistency where the output matrix contains 0's
+    // (or also the smallest negative value for signed types), whereas this
+    // should not be possible mathematically
+    for (size_t i = 0; i < static_cast<size_t>(size.height); ++i) {
+      for (size_t j = 0; j < (size.width * Channels); ++j) {
+        if (expected.at<TypeParam>(i, j) ==
+            std::numeric_limits<TypeParam>::lowest()) {
+          expected.at<TypeParam>(i, j) = std::numeric_limits<TypeParam>::max();
+        } else if (expected.at<TypeParam>(i, j) == 0) {
+          expected.at<TypeParam>(i, j) = std::numeric_limits<TypeParam>::max();
         }
       }
+    }
 
-      if (are_matrices_different<TypeParam>(0, actual, expected)) {
-        fail_print_matrices(y, x, input, actual, expected);
-        return true;
-      }
+    if (are_matrices_different<TypeParam>(0, actual, expected)) {
+      fail_print_matrices(size.height, size.width, input, actual, expected);
+      return true;
     }
   }
 

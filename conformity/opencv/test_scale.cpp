@@ -22,24 +22,23 @@ bool test_scale(int index, RecreatedMessageQueue& request_queue,
                 RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
-  for (size_t x = 5; x <= 16; ++x) {
-    for (size_t y = 5; y <= 16; ++y) {
-      cv::Mat input_mat(x, y, Format);
-      rng.fill(input_mat, cv::RNG::NORMAL, 0.0, 1.0e10);
-      cv::Mat actual_mat = exec_scale<Scale, Shift>(input_mat);
-      cv::Mat expected_mat = get_expected_from_subordinate(
-          index, request_queue, reply_queue, input_mat);
+  for (auto size : typical_test_sizes(1, 1)) {
+    cv::Mat input_mat(size.height, size.width, Format);
+    rng.fill(input_mat, cv::RNG::NORMAL, 0.0, 1.0e10);
+    cv::Mat actual_mat = exec_scale<Scale, Shift>(input_mat);
+    cv::Mat expected_mat = get_expected_from_subordinate(
+        index, request_queue, reply_queue, input_mat);
 
-      bool success =
-          (CV_MAT_DEPTH(Format) == CV_32F &&
-           !are_float_matrices_different<float>(1e-5, actual_mat,
-                                                expected_mat)) ||
-          (CV_MAT_DEPTH(Format) == CV_8U &&
-           !are_matrices_different<uint8_t>(0, actual_mat, expected_mat));
-      if (!success) {
-        fail_print_matrices(x, y, input_mat, actual_mat, expected_mat);
-        return true;
-      }
+    bool success =
+        (CV_MAT_DEPTH(Format) == CV_32F &&
+         !are_float_matrices_different<float>(1e-5, actual_mat,
+                                              expected_mat)) ||
+        (CV_MAT_DEPTH(Format) == CV_8U &&
+         !are_matrices_different<uint8_t>(0, actual_mat, expected_mat));
+    if (!success) {
+      fail_print_matrices(size.height, size.width, input_mat, actual_mat,
+                          expected_mat);
+      return true;
     }
   }
 

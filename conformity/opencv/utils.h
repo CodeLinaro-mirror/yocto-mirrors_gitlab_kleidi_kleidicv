@@ -23,6 +23,8 @@ constexpr int get_opencv_matrix_type() {
 }
 
 #if MANAGER
+std::array<cv::Size, 4> typical_test_sizes(int min_width, int min_height);
+
 template <typename T>
 static auto abs_diff(T a, T b) {
   return a > b ? a - b : b - a;

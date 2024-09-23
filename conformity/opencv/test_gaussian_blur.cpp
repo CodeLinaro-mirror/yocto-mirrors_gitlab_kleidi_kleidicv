@@ -6,13 +6,13 @@
 
 #include "tests.h"
 
-template <size_t KernelSize, size_t BorderType>
+template <int KernelSize, size_t BorderType>
 cv::Mat exec_gaussian_blur(cv::Mat& input) {
   double sigma =
-      *reinterpret_cast<double*>(&input.at<uint8_t>(input.rows - 2, 0));
+      *reinterpret_cast<double*>(&input.at<uint8_t>(input.rows - 1, 0));
   // clone is required, otherwise the result matrix is treated as part of a
   // bigger image, and it would have impact on what border types are supported
-  cv::Mat input_mat = input.rowRange(0, input.rows - 2).clone();
+  cv::Mat input_mat = input.rowRange(0, input.rows - 1).clone();
   cv::Size kernel(KernelSize, KernelSize);
   cv::Mat result;
   cv::GaussianBlur(input_mat, result, kernel, sigma, sigma, BorderType);
@@ -20,54 +20,47 @@ cv::Mat exec_gaussian_blur(cv::Mat& input) {
 }
 
 #if MANAGER
-template <size_t KernelSize, size_t BorderType, size_t Channels,
+template <int KernelSize, size_t BorderType, size_t Channels,
           bool Binomial = true>
 bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
                         RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
-  size_t size_min = 5;
-  size_t size_max = 16;
-  if constexpr (KernelSize == 15) {
-    size_min = 14;
-    size_max = 32;
-  }
+  // Minimal width is sizeof(double) and one more row is allcated to place the
+  // value of sigma next to the real input
+  for (auto size : typical_test_sizes(
+           std::max(KernelSize - 1, static_cast<int>(sizeof(double))),
+           KernelSize - 1)) {
+    cv::Mat input(size.height + 1, size.width, CV_8UC(Channels));
+    rng.fill(input, cv::RNG::UNIFORM, 0, 255);
 
-  for (size_t y = size_min; y <= size_max; ++y) {
-    for (size_t x = size_min; x <= size_max; ++x) {
-      // Two extra lines allocated to be sure sigma can be placed next to the
-      // real input
-      cv::Mat input(y + 2, x, CV_8UC(Channels));
-      rng.fill(input, cv::RNG::UNIFORM, 0, 255);
+    double sigma = 0.0;
 
-      double sigma = 0.0;
+    if constexpr (!Binomial) {
+      // cv::rng returns [0,1) range in case of float or double, so it is
+      // multiplied by 10
+      sigma = static_cast<double>(rng) * 10;
+    }
 
-      if constexpr (!Binomial) {
-        // cv::rng returns [0,1) range in case of float or double, so it is
-        // multiplied by 10
-        sigma = static_cast<double>(rng) * 10;
-      }
+    // sigma is embedded into the input matrix
+    *reinterpret_cast<double*>(&input.at<uint8_t>(input.rows - 1, 0)) = sigma;
 
-      // sigma is embedded into the input matrix
-      *reinterpret_cast<double*>(&input.at<uint8_t>(input.rows - 2, 0)) = sigma;
+    cv::Mat actual = exec_gaussian_blur<KernelSize, BorderType>(input);
+    cv::Mat expected =
+        get_expected_from_subordinate(index, request_queue, reply_queue, input);
 
-      cv::Mat actual = exec_gaussian_blur<KernelSize, BorderType>(input);
-      cv::Mat expected = get_expected_from_subordinate(index, request_queue,
-                                                       reply_queue, input);
+    uint8_t threshold = 0;
+    // There are currently rounding differences sometimes
+    // between the OpenCV and KleidiCV implementations that use
+    // the 15x15 kernel size, so we ignore any non-matching
+    // values that fall within the specified threshold.
+    if constexpr (KernelSize == 15) {
+      threshold = 2;
+    }
 
-      uint8_t threshold = 0;
-      // There are currently rounding differences sometimes
-      // between the OpenCV and KleidiCV implementations that use
-      // the 15x15 kernel size, so we ignore any non-matching
-      // values that fall within the specified threshold.
-      if constexpr (KernelSize == 15) {
-        threshold = 2;
-      }
-
-      if (are_matrices_different<uint8_t>(threshold, actual, expected)) {
-        fail_print_matrices(y, x, input, actual, expected);
-        return true;
-      }
+    if (are_matrices_different<uint8_t>(threshold, actual, expected)) {
+      fail_print_matrices(size.height, size.width, input, actual, expected);
+      return true;
     }
   }
 

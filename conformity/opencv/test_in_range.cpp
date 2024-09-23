@@ -19,18 +19,16 @@ bool test_in_range(int index, RecreatedMessageQueue& request_queue,
                    RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
-  for (size_t x = 5; x <= 16; ++x) {
-    for (size_t y = 5; y <= 16; ++y) {
-      cv::Mat input(x, y, Format);
-      rng.fill(input, cv::RNG::UNIFORM, 0, 255);
-      cv::Mat actual = exec_in_range<LowerBound, UpperBound>(input);
-      cv::Mat expected = get_expected_from_subordinate(index, request_queue,
-                                                       reply_queue, input);
+  for (auto size : typical_test_sizes(1, 1)) {
+    cv::Mat input(size.height, size.width, Format);
+    rng.fill(input, cv::RNG::UNIFORM, 0, 255);
+    cv::Mat actual = exec_in_range<LowerBound, UpperBound>(input);
+    cv::Mat expected =
+        get_expected_from_subordinate(index, request_queue, reply_queue, input);
 
-      if (are_matrices_different<uint8_t>(0, actual, expected)) {
-        fail_print_matrices(x, y, input, actual, expected);
-        return true;
-      }
+    if (are_matrices_different<uint8_t>(0, actual, expected)) {
+      fail_print_matrices(size.height, size.width, input, actual, expected);
+      return true;
     }
   }
 

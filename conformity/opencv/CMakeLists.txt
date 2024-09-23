@@ -32,6 +32,7 @@ add_executable(
   manager
   manager.cpp
   tests.cpp
+  utils.cpp
   ${conformity_test_sources}
 )
 
@@ -67,6 +68,7 @@ add_executable(
   subordinate
   subordinate.cpp
   tests.cpp
+  utils.cpp
   ${conformity_test_sources}
 )
 
