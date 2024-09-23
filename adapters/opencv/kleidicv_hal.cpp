@@ -630,6 +630,13 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
   size_t kernel_height_sz = static_cast<size_t>(kernel_height);
   size_t kernel_area = kernel_width_sz * kernel_height_sz;
 
+#if !KLEIDICV_ENABLE_ALL_OPENCV_HAL
+  // KleidiCV is not that fast on smaller kernels
+  if (kernel_width_sz < 5 || kernel_height < 5) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+#endif
+
   switch (CV_MAT_DEPTH(kernel_type)) {
     case CV_8U: {
       size_t nonzero_count = 0;
