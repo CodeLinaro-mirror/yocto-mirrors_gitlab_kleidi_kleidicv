@@ -46,7 +46,7 @@ Notes on parameters:
 * `dstCn` - supports 3 for RGB, 4 for RGBA.
 
 #### [`COLOR_RGB2BGR`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a01a06e50cd3689f5e34e26daf3faaa39), [`COLOR_BGR2RGB`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ad3db9ff253b87d02efe4887b2f5d77ee),[`COLOR_RGBA2BGRA`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a488919a903d6434cacc6a47cf058d803), [`COLOR_BGRA2RGBA`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a06d2c61b23b77b9a3075388146ba5180)
-RGB to RGB/RGBA image conversion. All supported permutations listed in the table below.
+RGB to RGB/RGBA image conversion. All supported permutations are listed in the table below.
 |     | RGB | BGR | RGBA | BGRA |
 |-----|-----|-----|------|------|
 | RGB |     |  x  |      |      |
@@ -61,7 +61,7 @@ Notes on parameters:
 
 #### [`COLOR_YUV2RGB_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9),[`COLOR_YUV2BGR_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a305e5da3816c78b3d1ffa0498424e94f),[`COLOR_YUV2RGBA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a18346327c937bca2aa2856914ff11507),[`COLOR_YUV2BGRA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a0ffa81c19231ddd2e9cee8616a3a4673)
 YUV420 to RGB/RGBA image conversion (semi-planar). Function accepts Y plane and UV planes separately.\
-All supported permutations listed in the table below.
+All supported permutations are listed in the table below.
 |   | RGB | BGR | RGBA | BGRA |
 |---|-----|-----|------|------|
 |YUV|  x  |  x  |   x  |  x   |
@@ -71,14 +71,14 @@ Notes on parameters:
 
 #### [`COLOR_YUV2RGB`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab09d8186a9e5aaac83acd157a1be43b0),[`COLOR_YUV2BGR`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab053f0cf23ae1b0bfee1964fd9a182c9)
 YUV to RGB image conversion, 3 channels to 3 channels, no subsampling.\
-All supported permutations listed in the table below.
+All supported permutations are listed in the table below.
 |   | RGB | BGR |
 |---|-----|-----|
 |YUV|  x  |  x  |
 
 #### [`COLOR_RGB2YUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0adc0f8a1354c98d1701caad4b384e0d18),[`COLOR_BGR2YUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a611d58d4a431fdbc294b4c79701f3d1a)
 RGB/RGBA to YUV image conversion, 3 or 4 channels to 3 channels, no subsampling.\
-All supported permutations listed in the table below.
+All supported permutations are listed in the table below.
 |    | YUV |
 |----|-----|
 |RGB |  x  |
@@ -100,7 +100,7 @@ Notes on parameters:
 ### [`cv::sepFilter2D()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d)
 Applies a separable linear filter to an image.\
 Currently only the 5x5 kernel size is supported with `CV_8U`, `CV_16U` or `CV_16S` depths for the source, destination and kernels.\
-In-place filtering not supported.
+In-place filtering is not supported.
 
 Notes on parameters:
 * `src`, `dst`, `kernelX`, `kernelY` - the number of channels must match between source and destination. The types must match between source, destination and kernels. However, the kernels must have 1 channel.
@@ -116,7 +116,7 @@ Supported [OpenCV border types](https://docs.opencv.org/4.10.0/d2/de8/group__cor
 ### [`cv::GaussianBlur()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaabe8c836e97159a9193fb0b11ac52cf1)
 Blurs an image using a Gaussian filter.\
 The filter's standard deviation must be the same in horizontal and vertical directions (`sigmaX == sigmaY`).\
-In-place filtering not supported.
+In-place filtering is not supported.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
@@ -155,7 +155,7 @@ Notes on parameters:
 
 ### [`cv::Sobel()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gacea54f142e81b6758cb6f375ce782c8d)
 Applies Sobel gradient filter to a given image.\
-In-place filtering not supported.
+In-place filtering is not supported.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
@@ -215,7 +215,7 @@ Supported [OpenCV cmp types](https://docs.opencv.org/4.10.0/d2/de8/group__core__
   + `cv::CMP_GT`
 
 ### [`cv::inRange()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga48af0ab51e36436c5d04340e036ce981)
-Checks whether array elements fall between user set lower and upper bounds.\
+Checks whether array elements fall between the lower and upper bounds set by the user.\
 Currently only scalar bounds are supported.
 
 Notes on parameters:
