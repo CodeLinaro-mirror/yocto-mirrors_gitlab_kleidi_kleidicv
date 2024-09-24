@@ -25,20 +25,20 @@ class FixedBorderInfo<T, 7UL> final {
     Offsets() = default;
     // NOLINTEND(hicpp-member-init)
 
-    Offsets(size_t o0, size_t o1, size_t o2, size_t o3, size_t o4, size_t o5,
-            size_t o6)
+    Offsets(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2, ptrdiff_t o3,
+            ptrdiff_t o4, ptrdiff_t o5, ptrdiff_t o6)
         : offsets_{o0, o1, o2, o3, o4, o5, o6} {}
 
-    size_t c0() const { return offsets_[0]; }
-    size_t c1() const { return offsets_[1]; }
-    size_t c2() const { return offsets_[2]; }
-    size_t c3() const { return offsets_[3]; }
-    size_t c4() const { return offsets_[4]; }
-    size_t c5() const { return offsets_[5]; }
-    size_t c6() const { return offsets_[6]; }
+    ptrdiff_t c0() const { return offsets_[0]; }
+    ptrdiff_t c1() const { return offsets_[1]; }
+    ptrdiff_t c2() const { return offsets_[2]; }
+    ptrdiff_t c3() const { return offsets_[3]; }
+    ptrdiff_t c4() const { return offsets_[4]; }
+    ptrdiff_t c5() const { return offsets_[5]; }
+    ptrdiff_t c6() const { return offsets_[6]; }
 
    private:
-    size_t offsets_[7];
+    ptrdiff_t offsets_[7];
   };
 
   FixedBorderInfo(size_t height, FixedBorderType border_type)
@@ -163,8 +163,9 @@ class FixedBorderInfo<T, 7UL> final {
 
  private:
   // Takes care of static signed to unsigned casts.
-  Offsets get(size_t o0, size_t o1, size_t o2, size_t o3, size_t o4, size_t o5,
-              size_t o6) const KLEIDICV_STREAMING_COMPATIBLE {
+  Offsets get(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2, ptrdiff_t o3,
+              ptrdiff_t o4, ptrdiff_t o5,
+              ptrdiff_t o6) const KLEIDICV_STREAMING_COMPATIBLE {
     return Offsets{o0, o1, o2, o3, o4, o5, o6};
   }
 

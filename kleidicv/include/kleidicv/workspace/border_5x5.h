@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -25,17 +25,18 @@ class FixedBorderInfo<T, 5UL> final {
     Offsets() = default;
     // NOLINTEND(hicpp-member-init)
 
-    Offsets(size_t o0, size_t o1, size_t o2, size_t o3, size_t o4)
+    Offsets(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2, ptrdiff_t o3,
+            ptrdiff_t o4)
         : offsets_{o0, o1, o2, o3, o4} {}
 
-    size_t c0() const { return offsets_[0]; }
-    size_t c1() const { return offsets_[1]; }
-    size_t c2() const { return offsets_[2]; }
-    size_t c3() const { return offsets_[3]; }
-    size_t c4() const { return offsets_[4]; }
+    ptrdiff_t c0() const { return offsets_[0]; }
+    ptrdiff_t c1() const { return offsets_[1]; }
+    ptrdiff_t c2() const { return offsets_[2]; }
+    ptrdiff_t c3() const { return offsets_[3]; }
+    ptrdiff_t c4() const { return offsets_[4]; }
 
    private:
-    size_t offsets_[5];
+    ptrdiff_t offsets_[5];
   };
 
   FixedBorderInfo(size_t height, FixedBorderType border_type)
@@ -144,8 +145,8 @@ class FixedBorderInfo<T, 5UL> final {
 
  private:
   // Takes care of static signed to unsigned casts.
-  Offsets get(size_t o0, size_t o1, size_t o2, size_t o3,
-              size_t o4) const KLEIDICV_STREAMING_COMPATIBLE {
+  Offsets get(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2, ptrdiff_t o3,
+              ptrdiff_t o4) const KLEIDICV_STREAMING_COMPATIBLE {
     return Offsets{o0, o1, o2, o3, o4};
   }
 

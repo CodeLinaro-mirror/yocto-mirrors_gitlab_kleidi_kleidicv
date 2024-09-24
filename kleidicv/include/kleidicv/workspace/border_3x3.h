@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,14 +23,14 @@ class FixedBorderInfo<T, 3UL> final {
    public:
     Offsets() = default;
 
-    Offsets(size_t o0, size_t o1, size_t o2) : offsets_{o0, o1, o2} {}
+    Offsets(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2) : offsets_{o0, o1, o2} {}
 
-    size_t c0() const { return offsets_[0]; }
-    size_t c1() const { return offsets_[1]; }
-    size_t c2() const { return offsets_[2]; }
+    ptrdiff_t c0() const { return offsets_[0]; }
+    ptrdiff_t c1() const { return offsets_[1]; }
+    ptrdiff_t c2() const { return offsets_[2]; }
 
    private:
-    size_t offsets_[3];
+    ptrdiff_t offsets_[3];
   };
 
   FixedBorderInfo(size_t height, FixedBorderType border_type)
@@ -99,7 +99,7 @@ class FixedBorderInfo<T, 3UL> final {
 
  private:
   // Takes care of static signed to unsigned casts.
-  Offsets get(size_t o0, size_t o1, size_t o2) const {
+  Offsets get(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2) const {
     return Offsets{o0, o1, o2};
   }
 

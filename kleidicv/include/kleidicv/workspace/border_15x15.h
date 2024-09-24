@@ -25,30 +25,31 @@ class FixedBorderInfo<T, 15UL> final {
     Offsets() = default;
     // NOLINTEND(hicpp-member-init)
 
-    Offsets(size_t o0, size_t o1, size_t o2, size_t o3, size_t o4, size_t o5,
-            size_t o6, size_t o7, size_t o8, size_t o9, size_t o10, size_t o11,
-            size_t o12, size_t o13, size_t o14)
+    Offsets(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2, ptrdiff_t o3,
+            ptrdiff_t o4, ptrdiff_t o5, ptrdiff_t o6, ptrdiff_t o7,
+            ptrdiff_t o8, ptrdiff_t o9, ptrdiff_t o10, ptrdiff_t o11,
+            ptrdiff_t o12, ptrdiff_t o13, ptrdiff_t o14)
         : offsets_{o0, o1, o2,  o3,  o4,  o5,  o6, o7,
                    o8, o9, o10, o11, o12, o13, o14} {}
 
-    size_t c0() const { return offsets_[0]; }
-    size_t c1() const { return offsets_[1]; }
-    size_t c2() const { return offsets_[2]; }
-    size_t c3() const { return offsets_[3]; }
-    size_t c4() const { return offsets_[4]; }
-    size_t c5() const { return offsets_[5]; }
-    size_t c6() const { return offsets_[6]; }
-    size_t c7() const { return offsets_[7]; }
-    size_t c8() const { return offsets_[8]; }
-    size_t c9() const { return offsets_[9]; }
-    size_t c10() const { return offsets_[10]; }
-    size_t c11() const { return offsets_[11]; }
-    size_t c12() const { return offsets_[12]; }
-    size_t c13() const { return offsets_[13]; }
-    size_t c14() const { return offsets_[14]; }
+    ptrdiff_t c0() const { return offsets_[0]; }
+    ptrdiff_t c1() const { return offsets_[1]; }
+    ptrdiff_t c2() const { return offsets_[2]; }
+    ptrdiff_t c3() const { return offsets_[3]; }
+    ptrdiff_t c4() const { return offsets_[4]; }
+    ptrdiff_t c5() const { return offsets_[5]; }
+    ptrdiff_t c6() const { return offsets_[6]; }
+    ptrdiff_t c7() const { return offsets_[7]; }
+    ptrdiff_t c8() const { return offsets_[8]; }
+    ptrdiff_t c9() const { return offsets_[9]; }
+    ptrdiff_t c10() const { return offsets_[10]; }
+    ptrdiff_t c11() const { return offsets_[11]; }
+    ptrdiff_t c12() const { return offsets_[12]; }
+    ptrdiff_t c13() const { return offsets_[13]; }
+    ptrdiff_t c14() const { return offsets_[14]; }
 
    private:
-    size_t offsets_[15];
+    ptrdiff_t offsets_[15];
   };
 
   FixedBorderInfo(size_t height, FixedBorderType border_type)
@@ -255,10 +256,11 @@ class FixedBorderInfo<T, 15UL> final {
 
  private:
   // Takes care of static signed to unsigned casts.
-  Offsets get(size_t o0, size_t o1, size_t o2, size_t o3, size_t o4, size_t o5,
-              size_t o6, size_t o7, size_t o8, size_t o9, size_t o10,
-              size_t o11, size_t o12, size_t o13,
-              size_t o14) const KLEIDICV_STREAMING_COMPATIBLE {
+  Offsets get(ptrdiff_t o0, ptrdiff_t o1, ptrdiff_t o2, ptrdiff_t o3,
+              ptrdiff_t o4, ptrdiff_t o5, ptrdiff_t o6, ptrdiff_t o7,
+              ptrdiff_t o8, ptrdiff_t o9, ptrdiff_t o10, ptrdiff_t o11,
+              ptrdiff_t o12, ptrdiff_t o13,
+              ptrdiff_t o14) const KLEIDICV_STREAMING_COMPATIBLE {
     return Offsets{o0, o1, o2,  o3,  o4,  o5,  o6, o7,
                    o8, o9, o10, o11, o12, o13, o14};
   }
