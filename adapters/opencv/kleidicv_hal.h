@@ -237,40 +237,22 @@ static inline int kleidicv_threshold_with_fallback(
 #define cv_hal_threshold kleidicv_threshold_with_fallback
 
 // separable_filter_2d_init
-static inline int kleidicv_separable_filter_2d_init_with_fallback(
-    cvhalFilter2D **context, int src_type, int dst_type, int kernel_type,
-    uchar *kernelx_data, int kernelx_length, uchar *kernely_data,
-    int kernely_length, int anchor_x, int anchor_y, double delta,
-    int borderType) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      separable_filter_2d_init, cv_hal_sepFilterInit, context, src_type,
-      dst_type, kernel_type, kernelx_data, kernelx_length, kernely_data,
-      kernely_length, anchor_x, anchor_y, delta, borderType);
-}
+// no fallback, because it cannot be made sure that
+// separable_filter_2d_operation also uses the fallback
 #undef cv_hal_sepFilterInit
-#define cv_hal_sepFilterInit kleidicv_separable_filter_2d_init_with_fallback
+#define cv_hal_sepFilterInit kleidicv::hal::separable_filter_2d_init
 
 // separable_filter_2d_operation
-static inline int kleidicv_separable_filter_2d_operation_with_fallback(
-    cvhalFilter2D *context, uchar *src_data, size_t src_step, uchar *dst_data,
-    size_t dst_step, int width, int height, int full_width, int full_height,
-    int offset_x, int offset_y) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      separable_filter_2d_operation, cv_hal_sepFilter, context, src_data,
-      src_step, dst_data, dst_step, width, height, full_width, full_height,
-      offset_x, offset_y);
-}
+// no fallback, because it cannot be made sure that separable_filter_2d_init
+// also uses the fallback
 #undef cv_hal_sepFilter
-#define cv_hal_sepFilter kleidicv_separable_filter_2d_operation_with_fallback
+#define cv_hal_sepFilter kleidicv::hal::separable_filter_2d_operation
 
 // separable_filter_2d_free
-static inline int kleidicv_separable_filter_2d_free_with_fallback(
-    cvhalFilter2D *context) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(separable_filter_2d_free,
-                                       cv_hal_sepFilterFree, context);
-}
+// no fallback, because it cannot be made sure that separable_filter_2d_init
+// also uses the fallback
 #undef cv_hal_sepFilterFree
-#define cv_hal_sepFilterFree kleidicv_separable_filter_2d_free_with_fallback
+#define cv_hal_sepFilterFree kleidicv::hal::separable_filter_2d_free
 
 // gaussian_blur_binomial
 static inline int kleidicv_gaussian_blur_binomial_with_fallback(
@@ -304,43 +286,22 @@ static inline int kleidicv_gaussian_blur_with_fallback(
 #define cv_hal_gaussianBlur kleidicv_gaussian_blur_with_fallback
 
 // morphology_init
-static inline int kleidicv_morphology_init_with_fallback(
-    cvhalFilter2D **context, int operation, int src_type, int dst_type,
-    int max_width, int max_height, int kernel_type, uchar *kernel_data,
-    size_t kernel_step, int kernel_width, int kernel_height, int anchor_x,
-    int anchor_y, int border_type, const double border_values[4],
-    int iterations, bool allow_submatrix, bool allow_in_place) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      morphology_init, cv_hal_morphInit, context, operation, src_type, dst_type,
-      max_width, max_height, kernel_type, kernel_data, kernel_step,
-      kernel_width, kernel_height, anchor_x, anchor_y, border_type,
-      border_values, iterations, allow_submatrix, allow_in_place);
-}
+// no fallback, because it cannot be made sure that morphology_operation also
+// uses the fallback
 #undef cv_hal_morphInit
-#define cv_hal_morphInit kleidicv_morphology_init_with_fallback
+#define cv_hal_morphInit kleidicv::hal::morphology_init
 
 // morphology_operation
-static inline int kleidicv_morphology_operation_with_fallback(
-    cvhalFilter2D *context, uchar *src_data, size_t src_step, uchar *dst_data,
-    size_t dst_step, int width, int height, int src_full_width,
-    int src_full_height, int src_roi_x, int src_roi_y, int dst_full_width,
-    int dst_full_height, int dst_roi_x, int dst_roi_y) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      morphology_operation, cv_hal_morph, context, src_data, src_step, dst_data,
-      dst_step, width, height, src_full_width, src_full_height, src_roi_x,
-      src_roi_y, dst_full_width, dst_full_height, dst_roi_x, dst_roi_y);
-}
+// no fallback, because it cannot be made sure that morphology_init also uses
+// the fallback
 #undef cv_hal_morph
-#define cv_hal_morph kleidicv_morphology_operation_with_fallback
+#define cv_hal_morph kleidicv::hal::morphology_operation
 
 // morphology_free
-static inline int kleidicv_morphology_free_with_fallback(
-    cvhalFilter2D *context) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(morphology_free, cv_hal_morphFree,
-                                       context);
-}
+// no fallback, because it cannot be made sure that morphology_init also uses
+// the fallback
 #undef cv_hal_morphFree
-#define cv_hal_morphFree kleidicv_morphology_free_with_fallback
+#define cv_hal_morphFree kleidicv::hal::morphology_free
 
 // resize
 static inline int kleidicv_resize_with_fallback(

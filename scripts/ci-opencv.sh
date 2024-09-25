@@ -47,6 +47,8 @@ IMGPROC_TEST_PATTERNS=(
   '*Imgproc_Sobel*'
   '*Imgproc_Canny*'
   '*Imgproc_Resize*'
+  '*Imgproc_Dilate*'
+  '*Imgproc_Erode*'
 )
 IMGPROC_TEST_PATTERNS_STR="$(join_strings_with_colon "${IMGPROC_TEST_PATTERNS[*]}")"
 ../../../conformity/opencv_kleidicv/bin/opencv_test_imgproc \
