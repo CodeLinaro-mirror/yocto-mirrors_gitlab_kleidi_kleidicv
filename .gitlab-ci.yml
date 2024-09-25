@@ -5,6 +5,10 @@
 # If changing this image ID, please also change it in .devcontainer/Dockerfile
 image: registry.gitlab.arm.com/kleidi/kleidicv:12
 
+variables:
+  KUBERNETES_CPU_REQUEST: "16"
+  KUBERNETES_MEMORY_REQUEST: "16Gi"
+
 # Only run CI for main branch & merge requests
 workflow:
   rules:
