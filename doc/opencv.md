@@ -97,22 +97,6 @@ Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `type` - currently only binary threshold operation is supported ([`cv::THRESH_BINARY`](https://docs.opencv.org/4.10.0/d7/d1b/group__imgproc__misc.html#ggaa9e58d2860d4afa658ef70a9b1115576a147222a96556ebc1d948b372bcd7ac59)).
 
-### [`cv::sepFilter2D()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d)
-Applies a separable linear filter to an image.\
-Currently only the 5x5 kernel size is supported with `CV_8U`, `CV_16U` or `CV_16S` depths for the source, destination and kernels.\
-In-place filtering is not supported.
-
-Notes on parameters:
-* `src`, `dst`, `kernelX`, `kernelY` - the number of channels must match between source and destination. The types must match between source, destination and kernels. However, the kernels must have 1 channel.
-* `anchor` - values other than `(-1, -1)` or the midpoints of the X and Y kernels respectively are not supported.
-* `delta` - values other than `0.0` are not supported.
-* `borderType` - pixel extrapolation method.
-Supported [OpenCV border types](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
-  + `cv::BORDER_REPLICATE`
-  + `cv::BORDER_REFLECT`
-  + `cv::BORDER_WRAP`
-  + `cv::BORDER_REFLECT_101`
-
 ### [`cv::GaussianBlur()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaabe8c836e97159a9193fb0b11ac52cf1)
 Blurs an image using a Gaussian filter.\
 The filter's standard deviation must be the same in horizontal and vertical directions (`sigmaX == sigmaY`).\

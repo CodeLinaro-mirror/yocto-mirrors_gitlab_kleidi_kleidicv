@@ -647,7 +647,7 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
 
 #if !KLEIDICV_ENABLE_ALL_OPENCV_HAL
   // KleidiCV is not that fast on smaller kernels
-  if (kernel_width_sz < 5 || kernel_height < 5) {
+  if (kernel_width_sz < 5 || kernel_height_sz < 5) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 #endif

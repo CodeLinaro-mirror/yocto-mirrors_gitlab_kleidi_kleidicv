@@ -236,6 +236,9 @@ static inline int kleidicv_threshold_with_fallback(
 #undef cv_hal_threshold
 #define cv_hal_threshold kleidicv_threshold_with_fallback
 
+// TODO: implement 3x3 kernels and 8UC1 -> 16SC1 data type
+#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
+
 // separable_filter_2d_init
 // no fallback, because it cannot be made sure that
 // separable_filter_2d_operation also uses the fallback
@@ -253,6 +256,8 @@ static inline int kleidicv_threshold_with_fallback(
 // also uses the fallback
 #undef cv_hal_sepFilterFree
 #define cv_hal_sepFilterFree kleidicv::hal::separable_filter_2d_free
+
+#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
 // gaussian_blur_binomial
 static inline int kleidicv_gaussian_blur_binomial_with_fallback(
