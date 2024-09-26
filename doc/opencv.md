@@ -115,11 +115,13 @@ Notes on parameters:
 ### [`cv::dilate()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c)
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
+* `kernel` - only support kernels where all values equal to 1, and having width and height of at least 5.
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
 ### [`cv::erode()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaeb1e0c1033e3f6b891a25d0511362aeb)
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
+* `kernel` - only support kernels where all values equal to 1, and having width and height of at least 5.
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
 ### [`cv::resize()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga47a974309e9102f5f08231edc7e7529d)

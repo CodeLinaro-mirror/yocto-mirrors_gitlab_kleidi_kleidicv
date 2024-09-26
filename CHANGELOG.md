@@ -20,7 +20,7 @@ This changelog aims to follow the guiding principles of
 - Bitwise and.
 - Gaussian Blur for 7x7 kernels.
 - Gaussian Blur for 15x15 kernels.
-- Separable Filter 2D for 5x5 kernels.
+- Separable Filter 2D for 5x5 kernels (not exposed to OpenCV).
 - Enable specifying standard deviation for Gaussian blur.
 - Scale function for float.
 - Add, subtract, multiply & absdiff enabled in OpenCV HAL.
@@ -50,6 +50,7 @@ This changelog aims to follow the guiding principles of
   * sepFilter2D
   * resize
 - Improved performance of Compare Equal and Greater SC API.
+  (Only Compare Greater is exposed to OpenCV.)
 
 ### Removed
 - Support for OpenCV 4.9.
