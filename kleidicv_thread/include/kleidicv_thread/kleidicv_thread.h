@@ -313,6 +313,16 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
+/// Multithreaded implementation of kleidicv_blur_and_downsample_u8 - see
+/// the documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_blur_and_downsample_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t channels,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
+    kleidicv_thread_multithreading mt);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
 /// Multithreaded implementation of kleidicv_sobel_3x3_horizontal_s16_u8 - see
 /// the documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(

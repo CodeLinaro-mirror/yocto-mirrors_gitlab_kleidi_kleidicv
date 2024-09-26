@@ -362,6 +362,69 @@ TEST(ThreadGaussianBlur, NotImplemented) {
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
 
+TEST_P(Thread, blur_and_downsample_u8) {
+  unsigned src_width = 0, src_height = 0, thread_count = 0;
+  std::tie(src_width, src_height, thread_count) = GetParam();
+  size_t channels = 1;
+  size_t kernel_width = 5;
+  size_t kernel_height = kernel_width;
+  kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
+                             &context, channels, kernel_width, kernel_height,
+                             src_width, src_height));
+
+  test::Array2D<uint8_t> src(size_t{src_width} * channels, src_height);
+  test::Array2D<uint8_t> dst_single(size_t{(src_width + 1) / 2} * channels,
+                                    (src_height + 1) / 2),
+      dst_multi(size_t{(src_width + 1) / 2} * channels, (src_height + 1) / 2);
+
+  test::PseudoRandomNumberGenerator<uint8_t> generator;
+  src.fill(generator);
+
+  kleidicv_error_t single_result = kleidicv_blur_and_downsample_u8(
+      src.data(), src.stride(), src_width, src_height, dst_single.data(),
+      dst_single.stride(), channels, border_type, context);
+
+  kleidicv_error_t multi_result = kleidicv_thread_blur_and_downsample_u8(
+      src.data(), src.stride(), src_width, src_height, dst_multi.data(),
+      dst_multi.stride(), channels, border_type, context,
+      get_multithreading_fake(thread_count));
+
+  EXPECT_EQ(single_result, multi_result);
+  if (KLEIDICV_OK == single_result) {
+    EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+  }
+
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
+
+TEST(ThreadBlurAndDownsample, NotImplemented) {
+  unsigned max_width = 10, max_height = 10;
+  size_t channels = 1;
+  size_t kernel_width = 5;
+  size_t kernel_height = kernel_width;
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
+                             &context, channels, kernel_width, kernel_height,
+                             max_width, max_height));
+
+  uint8_t src[1] = {}, dst[1] = {};
+  // Image too small
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_thread_blur_and_downsample_u8(
+                src, 1, 1, 1, dst, 1, channels, KLEIDICV_BORDER_TYPE_REPLICATE,
+                context, get_multithreading_fake(2)));
+  // Border not supported
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_thread_blur_and_downsample_u8(
+                src, 1, max_width, max_height, dst, 1, channels,
+                KLEIDICV_BORDER_TYPE_TRANSPARENT, context,
+                get_multithreading_fake(2)));
+
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
+
 TEST_P(Thread, separable_filter_2d_u8) {
   check_separable_filter_2d<uint8_t>(kleidicv_separable_filter_2d_u8,
                                      kleidicv_thread_separable_filter_2d_u8);

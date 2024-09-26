@@ -9,6 +9,7 @@
 #include <limits>
 #include <vector>
 
+#include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/filters/sobel.h"
@@ -498,6 +499,31 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
   };
   return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
                                 kernel_height, context, mt);
+}
+
+kleidicv_error_t kleidicv_thread_blur_and_downsample_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t channels,
+    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
+    kleidicv_thread_multithreading mt) {
+  if (!kleidicv::blur_and_downsample_is_implemented(src_width, src_height,
+                                                    channels)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto callback = [=](unsigned y_begin, unsigned y_end,
+                      kleidicv_filter_context_t *thread_context) {
+    return kleidicv_blur_and_downsample_stripe_u8(
+        src, src_stride, src_width, src_height, dst, dst_stride, y_begin, y_end,
+        channels, *fixed_border_type, thread_context);
+  };
+  return kleidicv_thread_filter(callback, src_width, src_height, channels, 5, 5,
+                                context, mt);
 }
 
 kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
