@@ -789,9 +789,7 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
        interpolation == CV_HAL_INTER_AREA)) {
     if (src_width * src_height <
         MULTITHREAD_MIN_ELEMENTS_RESIZE_TO_QUARTER_U8) {
-      return convert_error(kleidicv_resize_to_quarter_u8(
-          src_data, src_step, src_width, src_height, dst_data, dst_step,
-          dst_width, dst_height));
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
     } else {
       return convert_error(kleidicv_thread_resize_to_quarter_u8(
           src_data, src_step, src_width, src_height, dst_data, dst_step,
