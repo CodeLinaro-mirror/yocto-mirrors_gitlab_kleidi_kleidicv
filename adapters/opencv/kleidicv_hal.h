@@ -224,6 +224,7 @@ static inline int kleidicv_bgr_to_yuv_with_fallback(
 #undef cv_hal_cvtBGRtoYUV
 #define cv_hal_cvtBGRtoYUV kleidicv_bgr_to_yuv_with_fallback
 
+#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
 // threshold
 static inline int kleidicv_threshold_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
@@ -235,6 +236,7 @@ static inline int kleidicv_threshold_with_fallback(
 }
 #undef cv_hal_threshold
 #define cv_hal_threshold kleidicv_threshold_with_fallback
+#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
 // TODO: implement 3x3 kernels and 8UC1 -> 16SC1 data type
 #if KLEIDICV_ENABLE_ALL_OPENCV_HAL
@@ -397,6 +399,7 @@ static inline int kleidicv_exp32f_with_fallback(const float *src, float *dst,
 #undef cv_hal_exp32f
 #define cv_hal_exp32f kleidicv_exp32f_with_fallback
 
+#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
 // compare
 static inline int kleidicv_compare_u8_with_fallback(
     const uchar *src1_data, size_t src1_step, const uchar *src2_data,
@@ -408,6 +411,7 @@ static inline int kleidicv_compare_u8_with_fallback(
 }
 #undef cv_hal_cmp8u
 #define cv_hal_cmp8u kleidicv_compare_u8_with_fallback
+#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
 // clang-format off
 #undef cv_hal_add8s

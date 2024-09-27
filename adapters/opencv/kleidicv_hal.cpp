@@ -23,6 +23,21 @@
 
 namespace kleidicv::hal {
 
+// Images with fewer elements than this tend to perform better with KleidiCV's
+// single-threaded implementation than its multi-threaded implementation.
+enum {
+  MULTITHREAD_MIN_ELEMENTS_MIN_MAX_LOC_U8 = 100000,
+  MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S8 = 180000,
+  MULTITHREAD_MIN_ELEMENTS_MIN_MAX_U8 = 180000,
+  MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S16 = 100000,
+  MULTITHREAD_MIN_ELEMENTS_MIN_MAX_U16 = 100000,
+  MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S32 = 40000,
+  MULTITHREAD_MIN_ELEMENTS_MIN_MAX_F32 = 40000,
+  MULTITHREAD_MIN_ELEMENTS_RESIZE_TO_QUARTER_U8 = 150000,
+  MULTITHREAD_MIN_ELEMENTS_SCALE_U8 = 5000,
+  MULTITHREAD_MIN_ELEMENTS_SCALE_F32 = 20000,
+};
+
 static int convert_error(kleidicv_error_t e) {
   switch (e) {
     case KLEIDICV_OK:
@@ -80,17 +95,15 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  auto mt = get_multithreading();
-
   if (depth == CV_8U) {
     if (dcn == 3) {
-      return convert_error(kleidicv_thread_gray_to_rgb_u8(
+      return convert_error(kleidicv_gray_to_rgb_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
-    return convert_error(kleidicv_thread_gray_to_rgba_u8(
+    return convert_error(kleidicv_gray_to_rgba_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -104,19 +117,16 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  auto mt = get_multithreading();
-
   if (depth == CV_8U) {
     if (scn == 3 && dcn == 3) {
       if (swapBlue) {
-        return convert_error(kleidicv_thread_rgb_to_bgr_u8(
+        return convert_error(kleidicv_rgb_to_bgr_u8(
             reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-            mt));
+            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
       }
-      return convert_error(kleidicv_thread_rgb_to_rgb_u8(
+      return convert_error(kleidicv_rgb_to_rgb_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, mt));
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
     }
 
     if (scn == 4 && dcn == 4) {
@@ -777,9 +787,16 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
       inv_scale_y == 0.5 &&
       (interpolation == CV_HAL_INTER_LINEAR ||
        interpolation == CV_HAL_INTER_AREA)) {
-    return convert_error(kleidicv_thread_resize_to_quarter_u8(
-        src_data, src_step, src_width, src_height, dst_data, dst_step,
-        dst_width, dst_height, get_multithreading()));
+    if (src_width * src_height <
+        MULTITHREAD_MIN_ELEMENTS_RESIZE_TO_QUARTER_U8) {
+      return convert_error(kleidicv_resize_to_quarter_u8(
+          src_data, src_step, src_width, src_height, dst_data, dst_step,
+          dst_width, dst_height));
+    } else {
+      return convert_error(kleidicv_thread_resize_to_quarter_u8(
+          src_data, src_step, src_width, src_height, dst_data, dst_step,
+          dst_width, dst_height, get_multithreading()));
+    }
   }
 
   if (interpolation != CV_HAL_INTER_LINEAR) {
@@ -930,18 +947,27 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
       static_cast<size_t>(element_size)));
 }
 
-template <typename T, typename FunctionType>
-kleidicv_error_t call_min_max(FunctionType min_max_func, const uchar *src_data,
-                              size_t src_stride, int width, int height,
-                              double *min_value, double *max_value,
+template <typename T, typename SingleThreadFunc, typename MultithreadFunc>
+kleidicv_error_t call_min_max(SingleThreadFunc min_max_func_st,
+                              MultithreadFunc min_max_func_mt,
+                              int multithread_min_elements,
+                              const uchar *src_data, size_t src_stride,
+                              int width, int height, double *min_value,
+                              double *max_value,
                               kleidicv_thread_multithreading mt) {
   T tmp_min_value, tmp_max_value;
   T *p_min_value = min_value ? &tmp_min_value : nullptr;
   T *p_max_value = max_value ? &tmp_max_value : nullptr;
   kleidicv_error_t err =
-      min_max_func(reinterpret_cast<const T *>(src_data), src_stride,
-                   static_cast<size_t>(width), static_cast<size_t>(height),
-                   p_min_value, p_max_value, mt);
+      width * height < multithread_min_elements
+          ? min_max_func_st(reinterpret_cast<const T *>(src_data), src_stride,
+                            static_cast<size_t>(width),
+                            static_cast<size_t>(height), p_min_value,
+                            p_max_value)
+          : min_max_func_mt(reinterpret_cast<const T *>(src_data), src_stride,
+                            static_cast<size_t>(width),
+                            static_cast<size_t>(height), p_min_value,
+                            p_max_value, mt);
   if (min_value) {
     *min_value = static_cast<double>(tmp_min_value);
   }
@@ -951,21 +977,26 @@ kleidicv_error_t call_min_max(FunctionType min_max_func, const uchar *src_data,
   return err;
 }
 
-template <typename T, typename FunctionType>
-kleidicv_error_t call_min_max_loc(FunctionType min_max_loc_func,
-                                  const uchar *src_data, size_t src_stride,
-                                  int width, int height, double *min_value,
-                                  double *max_value, int *min_index,
-                                  int *max_index,
-                                  kleidicv_thread_multithreading mt) {
+template <typename T, typename SingleThreadFunc, typename MultithreadFunc>
+kleidicv_error_t call_min_max_loc(
+    SingleThreadFunc min_max_loc_func_st, MultithreadFunc min_max_loc_func_mt,
+    int multithread_min_elements, const uchar *src_data, size_t src_stride,
+    int width, int height, double *min_value, double *max_value, int *min_index,
+    int *max_index, kleidicv_thread_multithreading mt) {
   size_t tmp_min_offset = 0, tmp_max_offset = 0;
   size_t *p_min_offset = (min_value || min_index) ? &tmp_min_offset : nullptr;
   size_t *p_max_offset = (max_value || max_index) ? &tmp_max_offset : nullptr;
 
   kleidicv_error_t err =
-      min_max_loc_func(reinterpret_cast<const T *>(src_data), src_stride,
-                       static_cast<size_t>(width), static_cast<size_t>(height),
-                       p_min_offset, p_max_offset, mt);
+      width * height < multithread_min_elements
+          ? min_max_loc_func_st(reinterpret_cast<const T *>(src_data),
+                                src_stride, static_cast<size_t>(width),
+                                static_cast<size_t>(height), p_min_offset,
+                                p_max_offset)
+          : min_max_loc_func_mt(reinterpret_cast<const T *>(src_data),
+                                src_stride, static_cast<size_t>(width),
+                                static_cast<size_t>(height), p_min_offset,
+                                p_max_offset, mt);
   if (min_value) {
     *min_value = static_cast<double>(src_data[tmp_min_offset]);
   }
@@ -1000,8 +1031,9 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
   if (minIdx || maxIdx) {
     if (depth == CV_8U) {
       return convert_error(call_min_max_loc<uint8_t>(
-          kleidicv_thread_min_max_loc_u8, src_data, src_step, width, height,
-          minVal, maxVal, minIdx, maxIdx, get_multithreading()));
+          kleidicv_min_max_loc_u8, kleidicv_thread_min_max_loc_u8,
+          MULTITHREAD_MIN_ELEMENTS_MIN_MAX_LOC_U8, src_data, src_step, width,
+          height, minVal, maxVal, minIdx, maxIdx, get_multithreading()));
     }
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -1009,28 +1041,34 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
   switch (depth) {
     case CV_8S:
       return convert_error(call_min_max<int8_t>(
-          kleidicv_thread_min_max_s8, src_data, src_step, width, height, minVal,
-          maxVal, get_multithreading()));
+          kleidicv_min_max_s8, kleidicv_thread_min_max_s8,
+          MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S8, src_data, src_step, width,
+          height, minVal, maxVal, get_multithreading()));
     case CV_8U:
       return convert_error(call_min_max<uint8_t>(
-          kleidicv_thread_min_max_u8, src_data, src_step, width, height, minVal,
-          maxVal, get_multithreading()));
+          kleidicv_min_max_u8, kleidicv_thread_min_max_u8,
+          MULTITHREAD_MIN_ELEMENTS_MIN_MAX_U8, src_data, src_step, width,
+          height, minVal, maxVal, get_multithreading()));
     case CV_16S:
       return convert_error(call_min_max<int16_t>(
-          kleidicv_thread_min_max_s16, src_data, src_step, width, height,
-          minVal, maxVal, get_multithreading()));
+          kleidicv_min_max_s16, kleidicv_thread_min_max_s16,
+          MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S16, src_data, src_step, width,
+          height, minVal, maxVal, get_multithreading()));
     case CV_16U:
       return convert_error(call_min_max<uint16_t>(
-          kleidicv_thread_min_max_u16, src_data, src_step, width, height,
-          minVal, maxVal, get_multithreading()));
+          kleidicv_min_max_u16, kleidicv_thread_min_max_u16,
+          MULTITHREAD_MIN_ELEMENTS_MIN_MAX_U16, src_data, src_step, width,
+          height, minVal, maxVal, get_multithreading()));
     case CV_32S:
       return convert_error(call_min_max<int32_t>(
-          kleidicv_thread_min_max_s32, src_data, src_step, width, height,
-          minVal, maxVal, get_multithreading()));
+          kleidicv_min_max_s32, kleidicv_thread_min_max_s32,
+          MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S32, src_data, src_step, width,
+          height, minVal, maxVal, get_multithreading()));
     case CV_32F:
       return convert_error(call_min_max<float>(
-          kleidicv_thread_min_max_f32, src_data, src_step, width, height,
-          minVal, maxVal, get_multithreading()));
+          kleidicv_min_max_f32, kleidicv_thread_min_max_f32,
+          MULTITHREAD_MIN_ELEMENTS_MIN_MAX_F32, src_data, src_step, width,
+          height, minVal, maxVal, get_multithreading()));
     default:
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -1051,15 +1089,31 @@ int convertTo(const uchar *src_data, size_t src_step, int src_depth,
 
     switch (src_depth) {
       case CV_8U:
-        return convert_error(kleidicv_thread_scale_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-            static_cast<float>(scale), static_cast<float>(shift), mt));
+        return convert_error(
+            width * height < MULTITHREAD_MIN_ELEMENTS_SCALE_U8
+                ? kleidicv_scale_u8(
+                      reinterpret_cast<const uint8_t *>(src_data), src_step,
+                      reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                      height, static_cast<float>(scale),
+                      static_cast<float>(shift))
+                : kleidicv_thread_scale_u8(
+                      reinterpret_cast<const uint8_t *>(src_data), src_step,
+                      reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                      height, static_cast<float>(scale),
+                      static_cast<float>(shift), mt));
       case CV_32F:
-        return convert_error(kleidicv_thread_scale_f32(
-            reinterpret_cast<const float *>(src_data), src_step,
-            reinterpret_cast<float *>(dst_data), dst_step, width, height,
-            static_cast<float>(scale), static_cast<float>(shift), mt));
+        return convert_error(
+            width * height < MULTITHREAD_MIN_ELEMENTS_SCALE_F32
+                ? kleidicv_scale_f32(
+                      reinterpret_cast<const float *>(src_data), src_step,
+                      reinterpret_cast<float *>(dst_data), dst_step, width,
+                      height, static_cast<float>(scale),
+                      static_cast<float>(shift))
+                : kleidicv_thread_scale_f32(
+                      reinterpret_cast<const float *>(src_data), src_step,
+                      reinterpret_cast<float *>(dst_data), dst_step, width,
+                      height, static_cast<float>(scale),
+                      static_cast<float>(shift), mt));
       default:
         break;
     }
@@ -1108,12 +1162,10 @@ int compare_u8(const uchar *src1_data, size_t src1_step, const uchar *src2_data,
   auto mt = get_multithreading();
 
   switch (operation) {
-#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
     case cv::CMP_EQ:
       return convert_error(kleidicv_thread_compare_equal_u8(
           src1_data, src1_step, src2_data, src2_step, dst_data, dst_step, width,
           height, mt));
-#endif
     case cv::CMP_GT:
       return convert_error(kleidicv_thread_compare_greater_u8(
           src1_data, src1_step, src2_data, src2_step, dst_data, dst_step, width,
