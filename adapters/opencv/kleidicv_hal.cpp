@@ -26,6 +26,7 @@ namespace kleidicv::hal {
 // Images with fewer elements than this tend to perform better with KleidiCV's
 // single-threaded implementation than its multi-threaded implementation.
 enum {
+  MULTITHREAD_MIN_ELEMENTS_GRAY_TO_RGB_U8 = 180000,
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_LOC_U8 = 100000,
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S8 = 180000,
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_U8 = 180000,
@@ -34,6 +35,7 @@ enum {
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S32 = 40000,
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_F32 = 40000,
   MULTITHREAD_MIN_ELEMENTS_RESIZE_TO_QUARTER_U8 = 150000,
+  MULTITHREAD_MIN_ELEMENTS_RGB_TO_BGR_U8 = 180000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8 = 5000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_F32 = 20000,
 };
@@ -97,9 +99,16 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 
   if (depth == CV_8U) {
     if (dcn == 3) {
-      return convert_error(kleidicv_gray_to_rgb_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+      return convert_error(
+          width * height < MULTITHREAD_MIN_ELEMENTS_GRAY_TO_RGB_U8
+              ? kleidicv_gray_to_rgb_u8(
+                    reinterpret_cast<const uint8_t *>(src_data), src_step,
+                    reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                    height)
+              : kleidicv_thread_gray_to_rgb_u8(
+                    reinterpret_cast<const uint8_t *>(src_data), src_step,
+                    reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                    height, get_multithreading()));
     }
     return convert_error(kleidicv_gray_to_rgba_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
@@ -120,9 +129,16 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
   if (depth == CV_8U) {
     if (scn == 3 && dcn == 3) {
       if (swapBlue) {
-        return convert_error(kleidicv_rgb_to_bgr_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+        return convert_error(
+            width * height < MULTITHREAD_MIN_ELEMENTS_RGB_TO_BGR_U8
+                ? kleidicv_rgb_to_bgr_u8(
+                      reinterpret_cast<const uint8_t *>(src_data), src_step,
+                      reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                      height)
+                : kleidicv_thread_rgb_to_bgr_u8(
+                      reinterpret_cast<const uint8_t *>(src_data), src_step,
+                      reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                      height, get_multithreading()));
       }
       return convert_error(kleidicv_rgb_to_rgb_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
