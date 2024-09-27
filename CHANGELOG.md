@@ -40,20 +40,16 @@ This changelog aims to follow the guiding principles of
 - Gaussian Blur API specification.
 - In the OpenCV HAL, the following operations are multithreaded:
   * cvtColor
-  * threshold
   * convertTo
   * exp
-  * compare
   * minMaxIdx
   * GaussianBlur
   * Sobel
-  * sepFilter2D
   * resize
-- Improved performance of Compare Equal and Greater SC API.
-  (Only Compare Greater is exposed to OpenCV.)
 
 ### Removed
 - Support for OpenCV 4.9.
+- threshold from OpenCV HAL.
 
 ## 0.1.0 - 2024-05-21
 

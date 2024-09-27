@@ -90,13 +90,6 @@ Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.channels()` - supports 3 for RGB/BGR and 4 for RGBA/BGRA.
 
-### [`cv::threshold()`](https://docs.opencv.org/4.10.0/d7/d1b/group__imgproc__misc.html#gae8a4a146d1ca78c626a53577199e9c57)
-Threshold operation that would apply `maxValue` to any element above threshold, and set the rest to zero.
-
-Notes on parameters:
-* `src.depth()` - only supports `CV_8U` depth.
-* `type` - currently only binary threshold operation is supported ([`cv::THRESH_BINARY`](https://docs.opencv.org/4.10.0/d7/d1b/group__imgproc__misc.html#ggaa9e58d2860d4afa658ef70a9b1115576a147222a96556ebc1d948b372bcd7ac59)).
-
 ### [`cv::GaussianBlur()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaabe8c836e97159a9193fb0b11ac52cf1)
 Blurs an image using a Gaussian filter.\
 The filter's standard deviation must be the same in horizontal and vertical directions (`sigmaX == sigmaY`).\
@@ -189,16 +182,6 @@ Additionally, it is able to convert between data types as follows:
 
 ### [`cv::exp()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga3e10108e2162c338f1b848af619f39e5)
 Exponential function. Currently only `CV_32F` type is supported.
-
-### [`cv::compare()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga303cfb72acf8cbb36d884650c09a3a97)
-Performs element-wise comparison of two arrays.\
-Currently comparing an array and scalar value is not supported (the HAL only allows for matching sizes of the sources).
-
-Notes on parameters:
-* `src1.depth()` == `src2.depth()` - only support `CV_8U`.
-* `cmpop` - flag specifying correspondence between the arrays.
-Supported [OpenCV cmp types](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga0cc47ff833d40b58ecbe1d609a53d784) are:
-  + `cv::CMP_GT`
 
 ### [`cv::inRange()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga48af0ab51e36436c5d04340e036ce981)
 Checks whether array elements fall between the lower and upper bounds set by the user.\
