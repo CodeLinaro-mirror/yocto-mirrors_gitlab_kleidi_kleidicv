@@ -13,7 +13,7 @@ KleidiCV uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 0.2.0 - not yet released
+## 0.2.0 - 2024-09-30
 
 ### Added
 - Exponential function for float.
@@ -32,8 +32,6 @@ This changelog aims to follow the guiding principles of
 - KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS configuration option.
 - Conversion from non-subsampled, interleaved YUV to RGB/BGR.
 - InRange single channel, scalar bounds for uint8_t and float.
-
-### Fixed
 
 ### Changed
 - Filter context creation API specification.
