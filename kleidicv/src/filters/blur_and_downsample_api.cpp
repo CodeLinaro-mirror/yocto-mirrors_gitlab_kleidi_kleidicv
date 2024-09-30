@@ -8,7 +8,9 @@
 
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_blur_and_downsample_stripe_u8,
-    &kleidicv::neon::kleidicv_blur_and_downsample_stripe_u8, nullptr, nullptr);
+    &kleidicv::neon::kleidicv_blur_and_downsample_stripe_u8,
+    &kleidicv::sve2::kleidicv_blur_and_downsample_stripe_u8,
+    &kleidicv::sme2::kleidicv_blur_and_downsample_stripe_u8);
 
 extern "C" {
 
