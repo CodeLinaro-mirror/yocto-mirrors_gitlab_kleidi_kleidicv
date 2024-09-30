@@ -60,6 +60,12 @@ def parse_args():
     )
     parser.add_argument("--adb", default="adb", help="Path to adb")
     parser.add_argument(
+        "--su",
+        default="su -c",
+        help="Command to run as super-user on the device. "
+        'Typically "su -c" or "su 0"',
+    )
+    parser.add_argument(
         "--taskset_masks",
         type=int_hex,
         nargs="+",
@@ -93,7 +99,8 @@ def parse_args():
         "--tmpdir",
         default="/data/local/tmp",
         help="Temporary directory on the device. "
-        "Executables and output files will be stored here",
+        "Executables and output files will be stored here, and it will be used"
+        " as the current working directory when running the executables.",
     )
     parser.add_argument(
         "--tsv_columns",
@@ -122,9 +129,10 @@ def parse_args():
 
 
 class ADBRunner:
-    def __init__(self, *, adb_command, serial_number, verbose):
+    def __init__(self, *, adb_command, serial_number, su, verbose):
         self.adb_command = adb_command
         self.serial_number = serial_number
+        self.su = su.split() if su else []
         self.verbose = verbose
 
     def _make_adb_command(self):
@@ -138,14 +146,19 @@ class ADBRunner:
             print("+" + shlex.join(command))
 
     def check_output(self, args):
-        command = self._make_adb_command() + ["shell"] + args
+        command = (
+            self._make_adb_command() + ["shell"] + self.su + [shlex.join(args)]
+        )
         self._print_command(command)
         try:
             return subprocess.check_output(
                 command, stderr=subprocess.STDOUT
             ).decode()
         except subprocess.CalledProcessError as e:
-            print(e.stdout.decode(), file=sys.stderr)
+            out = e.stdout.decode()
+            print(out, file=sys.stderr)
+            if "su: invalid uid/gid '-c'" in out:
+                print('\nTry using --su "su 0"\n', file=sys.stderr)
             raise
 
     def push(self, filenames, dst):
@@ -179,13 +192,17 @@ def wait_for_cooldown(runner, thermal_zone):
 
 
 def get_run_name(rep, executable, taskset_mask):
-    return f"{os.path.basename(executable)}-{taskset_mask:x}-#{rep}"
+    return f"{executable}-{taskset_mask:x}-#{rep}"
+
+
+def host_filename_to_device_filename(args, host_filename):
+    return os.path.join(args.tmpdir, host_filename.replace(os.sep, "-"))
 
 
 def run_executable_tests(
     runner, args, host_executable, taskset_mask, thermal_zone
 ):
-    executable = os.path.join(args.tmpdir, os.path.basename(host_executable))
+    executable = host_filename_to_device_filename(args, host_executable)
 
     output_file = f"{os.path.splitext(executable)[0]}-{taskset_mask:x}.json"
 
@@ -210,7 +227,11 @@ def run_executable_tests(
             test_name = test["name"]
             test_list.append(f"{testsuite_name}.{test_name}")
 
-    results = None
+    if not test_list:
+        print("Error: No tests found")
+        sys.exit(1)
+
+    results = {}
     testsuites = collections.OrderedDict()
 
     for test_name in test_list:
@@ -218,6 +239,9 @@ def run_executable_tests(
         try:
             runner.check_output(
                 [
+                    "cd",
+                    args.tmpdir,
+                    "&&",
                     "taskset",
                     f"{taskset_mask:x}",
                     executable,
@@ -342,11 +366,18 @@ def main():
     args = parse_args()
 
     runner = ADBRunner(
-        adb_command=args.adb, serial_number=args.serial, verbose=args.verbose
+        adb_command=args.adb,
+        serial_number=args.serial,
+        su=args.su,
+        verbose=args.verbose,
     )
 
     # Copy executables to device
-    runner.push(args.executables, args.tmpdir)
+    for host_filename in args.executables:
+        runner.push(
+            [host_filename],
+            host_filename_to_device_filename(args, host_filename),
+        )
 
     results = {}
 
