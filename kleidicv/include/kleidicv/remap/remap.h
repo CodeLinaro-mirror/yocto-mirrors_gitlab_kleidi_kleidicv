@@ -12,9 +12,9 @@
 namespace kleidicv {
 
 template <typename T>
-inline bool remap_s16_is_implemented(size_t dst_width,
-                                     kleidicv_border_type_t border_type,
-                                     size_t channels) {
+inline bool remap_s16_is_implemented(
+    size_t dst_width, kleidicv_border_type_t border_type,
+    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
   if constexpr (std::is_same<T, uint8_t>::value) {
     return (dst_width >= 8 &&
             border_type ==
@@ -26,9 +26,9 @@ inline bool remap_s16_is_implemented(size_t dst_width,
 }
 
 template <typename T>
-inline bool remap_s16point5_is_implemented(size_t dst_width,
-                                           kleidicv_border_type_t border_type,
-                                           size_t channels) {
+inline bool remap_s16point5_is_implemented(
+    size_t dst_width, kleidicv_border_type_t border_type,
+    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
   if constexpr (std::is_same<T, uint8_t>::value) {
     return (dst_width >= 8 &&
             border_type ==
@@ -59,6 +59,18 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
                                  kleidicv_border_type_t border_type,
                                  kleidicv_border_values_t border_values);
 }  // namespace neon
+
+namespace sve2 {
+
+template <typename T>
+kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
+                           size_t src_height, T *dst, size_t dst_stride,
+                           size_t dst_width, size_t dst_height, size_t channels,
+                           const int16_t *mapxy, size_t mapxy_stride,
+                           kleidicv_border_type_t border_type,
+                           kleidicv_border_values_t border_values);
+
+}  // namespace sve2
 
 }  // namespace kleidicv
 

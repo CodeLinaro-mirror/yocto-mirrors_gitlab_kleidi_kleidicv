@@ -6,9 +6,10 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/remap/remap.h"
 
-#define KLEIDICV_DEFINE_C_API(outer_name, inner_name, type)                  \
-  KLEIDICV_MULTIVERSION_C_API(outer_name, &kleidicv::neon::inner_name<type>, \
-                              nullptr, nullptr)
+KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16_u8,
+                            &kleidicv::neon::remap_s16<uint8_t>,
+                            &kleidicv::sve2::remap_s16<uint8_t>, nullptr);
 
-KLEIDICV_DEFINE_C_API(kleidicv_remap_s16_u8, remap_s16, uint8_t);
-KLEIDICV_DEFINE_C_API(kleidicv_remap_s16point5_u8, remap_s16point5, uint8_t);
+KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16point5_u8,
+                            &kleidicv::neon::remap_s16point5<uint8_t>, nullptr,
+                            nullptr);
