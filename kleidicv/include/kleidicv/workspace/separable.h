@@ -83,14 +83,16 @@ class SeparableFilterWorkspace final {
   static Pointer create(Rectangle rect, size_t channels,
                         size_t intermediate_size)
       KLEIDICV_STREAMING_COMPATIBLE {
-    size_t buffer_rows_width = intermediate_size * rect.width();
+    size_t buffer_rows_number_of_elements = rect.width() * channels;
     // Adding more elements because of SVE, where interleaving stores are
     // governed by one predicate. For example, if a predicate requires 7 uint8_t
     // elements and an algorithm performs widening to 16 bits, the resulting
     // interleaving store will still be governed by the same predicate, thus
-    // saving 8 elements. Choosing '3' to account for svst4().
-    buffer_rows_width += 3;
-    size_t buffer_rows_stride = buffer_rows_width * channels;
+    // storing 8 elements. Choosing '3' to account for svst4().
+    buffer_rows_number_of_elements += 3;
+
+    size_t buffer_rows_stride =
+        buffer_rows_number_of_elements * intermediate_size;
     size_t buffer_rows_size = buffer_rows_stride;
     buffer_rows_size += kAlignment - 1;
 
