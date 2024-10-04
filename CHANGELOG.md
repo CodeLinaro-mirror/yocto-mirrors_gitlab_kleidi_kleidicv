@@ -16,7 +16,9 @@ This changelog aims to follow the guiding principles of
 ## 0.3.0 - not yet released
 
 ### Added
-- Remap implementation for 2-channel s16 coordinates and 1-channel u8 input.
+- Remap implementation
+  - 2-channel s16 and s16+u16 fixed-point coordinates and 1-channel u8 input.
+  - 2-channel s16 + 5+5 bits' fractions fixed-point coordinates and 1-channel u8 input.
 
 ## 0.2.0 - 2024-09-30
 

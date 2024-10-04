@@ -195,6 +195,9 @@ Notes on parameters:
 Geometrically transforms the `src` image by taking the pixels specified by the coordinates from the `map` image.
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth and 1 channel.
-* `map1` shall be 16SC2 and `map2` shall be empty
-* `interpolation` shall be `INTER_NEAREST`
-* `borderMode` shall be `BORDER_REPLICATE`
+* `borderMode` - only supports `BORDER_REPLICATE`
+Supported map configurations:
+* `map1` is 16SC2: channel #1 is x coordinate (column) and channel #2 is y (row)
+  * supported `interpolation`: `INTER_NEAREST` only
+* `map1` is 16SC2 and `map2` is 16UC1: `map1` is as above, `map2` contains combined 5+5 bits of x (low) and y (high) fractions, i.e. x = x1 + x2 / 2^5
+  * supported `interpolation`: `INTER_LINEAR` only

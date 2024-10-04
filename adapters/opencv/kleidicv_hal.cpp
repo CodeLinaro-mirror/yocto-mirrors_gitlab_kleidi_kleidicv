@@ -1217,14 +1217,19 @@ int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
               int dst_width, int dst_height, const int16_t *mapxy,
               size_t mapxy_step, int border_type,
-              [[maybe_unused]] const double border_value[4]) {
+              const double border_value[4]) {
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  // This will be used when constant borders are implemented
   kleidicv_border_values_t border_values = {};
+  if (border_type == kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT) {
+    border_values.top = border_value[0];
+    border_values.left = border_value[1];
+    border_values.bottom = border_value[2];
+    border_values.right = border_value[3];
+  }
   auto mt = get_multithreading();
 
   if (src_type == CV_8UC1) {
@@ -1233,6 +1238,38 @@ int remap_s16(int src_type, const uchar *src_data, size_t src_step,
         static_cast<size_t>(src_height), dst_data, dst_step,
         static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
         CV_MAT_CN(src_type), mapxy, mapxy_step, kleidicv_border_type,
+        border_values, mt));
+  }
+
+  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+}
+
+int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
+                    int src_width, int src_height, uchar *dst_data,
+                    size_t dst_step, int dst_width, int dst_height,
+                    const int16_t *mapxy, size_t mapxy_step,
+                    const uint16_t *mapfrac, size_t mapfrac_step,
+                    int border_type, const double border_value[4]) {
+  kleidicv_border_type_t kleidicv_border_type;
+  if (from_opencv(border_type, kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  kleidicv_border_values_t border_values = {};
+  if (border_type == kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT) {
+    border_values.top = border_value[0];
+    border_values.left = border_value[1];
+    border_values.bottom = border_value[2];
+    border_values.right = border_value[3];
+  }
+  auto mt = get_multithreading();
+
+  if (src_type == CV_8UC1) {
+    return convert_error(kleidicv_thread_remap_s16point5_u8(
+        src_data, src_step, static_cast<size_t>(src_width),
+        static_cast<size_t>(src_height), dst_data, dst_step,
+        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height), 1,
+        mapxy, mapxy_step, mapfrac, mapfrac_step, kleidicv_border_type,
         border_values, mt));
   }
 

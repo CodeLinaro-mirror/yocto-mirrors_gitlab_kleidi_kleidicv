@@ -107,9 +107,9 @@ class Thread : public testing::TestWithParam<P> {
 
   template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc,
             typename... Args>
-  void check_remap16s(SingleThreadedFunc single_threaded_func,
-                      MultithreadedFunc multithreaded_func, size_t channels,
-                      Args... args) {
+  void check_remap_s16(SingleThreadedFunc single_threaded_func,
+                       MultithreadedFunc multithreaded_func, size_t channels,
+                       Args... args) {
     unsigned test_width = 0, height = 0, thread_count = 0;
     std::tie(test_width, height, thread_count) = GetParam();
     const unsigned src_width = 300, src_height = 300;
@@ -143,8 +143,8 @@ class Thread : public testing::TestWithParam<P> {
   }
 
   template <typename T, typename MultithreadedFunc, typename... Args>
-  void check_remap16s_not_implemented(MultithreadedFunc multithreaded_func,
-                                      size_t channels, Args... args) {
+  void check_remap_s16_not_implemented(MultithreadedFunc multithreaded_func,
+                                       size_t channels, Args... args) {
     unsigned test_width = 0, height = 0, thread_count = 0;
     std::tie(test_width, height, thread_count) = GetParam();
     const unsigned src_width = 300, src_height = 300;
@@ -166,6 +166,79 @@ class Thread : public testing::TestWithParam<P> {
         src.data(), src.stride(), src_width, src_height, dst_small.data(),
         dst_small.stride(), test_width, height, channels, mapxy.data(),
         mapxy.stride(), args..., get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
+  }
+
+  template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc,
+            typename... Args>
+  void check_remap_s16point5(SingleThreadedFunc single_threaded_func,
+                             MultithreadedFunc multithreaded_func,
+                             size_t channels, Args... args) {
+    unsigned test_width = 0, height = 0, thread_count = 0;
+    std::tie(test_width, height, thread_count) = GetParam();
+    const unsigned src_width = 300, src_height = 300;
+    // width < 8 are not supported, that's not tested here
+    size_t width = test_width + 8;
+    test::Array2D<T> src(size_t{src_width} * channels, src_height);
+    test::Array2D<int16_t> mapxy(width * 2, height);
+    test::Array2D<uint16_t> mapfrac(width, height);
+    test::Array2D<T> dst_single(width * channels, height),
+        dst_multi(width * channels, height);
+
+    test::PseudoRandomNumberGenerator<T> src_generator;
+    src.fill(src_generator);
+    test::PseudoRandomNumberGeneratorIntRange<int16_t> coord_generator{
+        0, std::min(static_cast<int16_t>(src_height - 1),
+                    static_cast<int16_t>(src_width - 1))};
+    mapxy.fill(coord_generator);
+    test::PseudoRandomNumberGeneratorIntRange<uint16_t> coordfrac_generator{
+        0, (1 << 10) - 1};
+    mapfrac.fill(coordfrac_generator);
+
+    kleidicv_error_t single_result = single_threaded_func(
+        src.data(), src.stride(), src_width, src_height, dst_single.data(),
+        dst_single.stride(), width, height, channels, mapxy.data(),
+        mapxy.stride(), mapfrac.data(), mapfrac.stride(), args...);
+
+    kleidicv_error_t multi_result = multithreaded_func(
+        src.data(), src.stride(), src_width, src_height, dst_multi.data(),
+        dst_multi.stride(), width, height, channels, mapxy.data(),
+        mapxy.stride(), mapfrac.data(), mapfrac.stride(), args...,
+        get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_OK, single_result);
+    EXPECT_EQ(KLEIDICV_OK, multi_result);
+    EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+  }
+
+  template <typename T, typename MultithreadedFunc, typename... Args>
+  void check_remap_s16point5_not_implemented(
+      MultithreadedFunc multithreaded_func, size_t channels, Args... args) {
+    unsigned test_width = 0, height = 0, thread_count = 0;
+    std::tie(test_width, height, thread_count) = GetParam();
+    const unsigned src_width = 300, src_height = 300;
+    // width < 8 are not supported!
+    size_t width = test_width + 8;
+    test::Array2D<T> src(size_t{src_width} * channels, src_height);
+    test::Array2D<int16_t> mapxy(width * 2, height);
+    test::Array2D<uint16_t> mapfrac(width, height);
+    test::Array2D<T> dst_small(test_width * channels, height),
+        dst(width * channels, height);
+
+    kleidicv_error_t result = multithreaded_func(
+        src.data(), src.stride(), src_width, src_height, dst.data(),
+        dst.stride(), width, height, channels, mapxy.data(), mapxy.stride(),
+        mapfrac.data(), mapfrac.stride(), args...,
+        get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
+
+    result = multithreaded_func(
+        src.data(), src.stride(), src_width, src_height, dst_small.data(),
+        dst_small.stride(), test_width, height, channels, mapxy.data(),
+        mapxy.stride(), mapfrac.data(), mapfrac.stride(), args...,
+        get_multithreading_fake(thread_count));
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
   }
@@ -347,19 +420,35 @@ TEST(ThreadSeparableFilter2D, NotImplemented) {
       kleidicv_thread_separable_filter_2d_u16);
 }
 
-TEST_P(Thread, remap16s_u8_border_replicate) {
-  check_remap16s<uint8_t>(kleidicv_remap_s16_u8, kleidicv_thread_remap_s16_u8,
-                          1, KLEIDICV_BORDER_TYPE_REPLICATE,
-                          kleidicv_border_values_t{});
+TEST_P(Thread, remap_s16_u8_border_replicate) {
+  check_remap_s16<uint8_t>(kleidicv_remap_s16_u8, kleidicv_thread_remap_s16_u8,
+                           1, KLEIDICV_BORDER_TYPE_REPLICATE,
+                           kleidicv_border_values_t{});
 }
 
-TEST_P(Thread, remap16s_u8_not_implemented) {
-  check_remap16s_not_implemented<uint8_t>(kleidicv_thread_remap_s16_u8, 2,
-                                          KLEIDICV_BORDER_TYPE_REPLICATE,
-                                          kleidicv_border_values_t{});
-  check_remap16s_not_implemented<uint8_t>(kleidicv_thread_remap_s16_u8, 1,
-                                          KLEIDICV_BORDER_TYPE_CONSTANT,
-                                          kleidicv_border_values_t{});
+TEST_P(Thread, remap_s16_u8_not_implemented) {
+  check_remap_s16_not_implemented<uint8_t>(kleidicv_thread_remap_s16_u8, 2,
+                                           KLEIDICV_BORDER_TYPE_REPLICATE,
+                                           kleidicv_border_values_t{});
+  check_remap_s16_not_implemented<uint8_t>(kleidicv_thread_remap_s16_u8, 1,
+                                           KLEIDICV_BORDER_TYPE_CONSTANT,
+                                           kleidicv_border_values_t{});
+}
+
+TEST_P(Thread, remap_s16point5_u8_border_replicate) {
+  kleidicv_border_values_t border_values = {};
+  check_remap_s16point5<uint8_t>(kleidicv_remap_s16point5_u8,
+                                 kleidicv_thread_remap_s16point5_u8, 1,
+                                 KLEIDICV_BORDER_TYPE_REPLICATE, border_values);
+}
+
+TEST_P(Thread, remap_s16point5_u8_not_implemented) {
+  check_remap_s16point5_not_implemented<uint8_t>(
+      kleidicv_thread_remap_s16point5_u8, 2, KLEIDICV_BORDER_TYPE_REPLICATE,
+      kleidicv_border_values_t{});
+  check_remap_s16point5_not_implemented<uint8_t>(
+      kleidicv_thread_remap_s16point5_u8, 1, KLEIDICV_BORDER_TYPE_CONSTANT,
+      kleidicv_border_values_t{});
 }
 
 TEST_P(Thread, SobelHorizontal1Channel) {

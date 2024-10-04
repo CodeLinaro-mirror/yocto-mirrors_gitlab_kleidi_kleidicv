@@ -91,6 +91,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | 8x8         |     |  x  |
 
 # Remap
-|                                |  u8 | u16 |
-|--------------------------------|-----|-----|
-| Remap int16 coordinates        |  x  |     |
+|                                            |  u8 | u16 |
+|--------------------------------------------|-----|-----|
+| Remap int16 coordinates                    |  x  |     |
+| Remap int16+uint16 fixed-point coordinates |  x  |     |

@@ -11,3 +11,4 @@
                               nullptr, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_remap_s16_u8, remap_s16, uint8_t);
+KLEIDICV_DEFINE_C_API(kleidicv_remap_s16point5_u8, remap_s16point5, uint8_t);

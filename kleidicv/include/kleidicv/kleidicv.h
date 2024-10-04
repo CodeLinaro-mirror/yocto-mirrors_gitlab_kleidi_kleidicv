@@ -1698,6 +1698,20 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16_u8, const uint8_t *src,
                          kleidicv_border_type_t border_type,
                          kleidicv_border_values_t border_values);
 
+#ifndef DOXYGEN
+/// Internal - not part of the public API and its direct use is not supported.
+/// Functionality is similar to @ref kleidicv_remap_s16_u8 , the difference is
+/// in the data format: it contains a fractional part with 5+5 bits (`mapfrac`).
+KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u8, const uint8_t *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         uint8_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height, size_t channels,
+                         const int16_t *mapxy, size_t mapxy_stride,
+                         const uint16_t *mapfrac, size_t mapfrac_stride,
+                         kleidicv_border_type_t border_type,
+                         kleidicv_border_values_t border_values);
+#endif  // DOXYGEN
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus
