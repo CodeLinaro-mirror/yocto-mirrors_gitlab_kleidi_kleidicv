@@ -37,6 +37,4 @@ if [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/openc
   "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_imgproc "${DEV_DIR}"/opencv_perf_imgproc_kleidicv_"${CUSTOM_BUILD_SUFFIX}"
 fi
 
-"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/perf_test_op.sh       "${DEV_DIR}"/
-"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_FHD.sh "${DEV_DIR}"/
-"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_4K.sh  "${DEV_DIR}"/
+"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/perf_test_op.sh "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks.sh "${BENCHMARK_SCRIPT_PATH}"/benchmarks*.txt "${DEV_DIR}"/

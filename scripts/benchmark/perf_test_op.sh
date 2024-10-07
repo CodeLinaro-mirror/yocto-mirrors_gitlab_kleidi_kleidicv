@@ -7,7 +7,7 @@
 set -eu
 
 CUSTOM_BUILD_SUFFIX=$1
-CPU_NUMBER=$2
+CPU=$2
 THERMAL_ZONE_ID=$3
 DISP_NAME=$4
 PERF_TEST_BINARY_BASENAME=$5
@@ -16,9 +16,9 @@ GTEST_PARAM_FILTER=$7
 
 : "${DEV_DIR:=/data/local/tmp}"
 
-CPU_MASK=$(echo "obase=16;2^${CPU_NUMBER}" | bc)
+CPU_MASK=$(echo "obase=16;2^${CPU}" | bc)
 
-FREQ_GOVERNOR_FILE="/sys/devices/system/cpu/cpu${CPU_NUMBER}/cpufreq/scaling_governor"
+FREQ_GOVERNOR_FILE="/sys/devices/system/cpu/cpu${CPU}/cpufreq/scaling_governor"
 
 PREV_FREQ_GOVERNOR=$(cat "${FREQ_GOVERNOR_FILE}")
 echo performance > "${FREQ_GOVERNOR_FILE}"
