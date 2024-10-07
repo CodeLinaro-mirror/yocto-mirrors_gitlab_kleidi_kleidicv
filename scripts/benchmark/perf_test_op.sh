@@ -31,13 +31,15 @@ START_CDEV_TRANSITION_COUNT=$(cat "${CDEV_TRANSITION_COUNT_FILE}")
 THERMAL_ZONE_TEMPERATURE_FILE="${THERMAL_ZONE_DIR}/temp"
 
 wait_for_cooldown() {
+  # shellcheck disable=SC3043
+  # Many shells support 'local', therefore this warning is ignored.
   local cur_tmp
   cur_tmp=$(cat "${THERMAL_ZONE_TEMPERATURE_FILE}")
-  if [[ "${cur_tmp}" > 40000 ]]; then
+  if [ "${cur_tmp}" -gt 40000 ]; then
     >&2 echo "Too hot (${cur_tmp})! Cooling..."
   fi
 
-  while [[ $(cat "${THERMAL_ZONE_TEMPERATURE_FILE}") > 40000 ]]; do
+  while [ "$(cat "${THERMAL_ZONE_TEMPERATURE_FILE}")" -gt 40000 ]; do
     sleep 0.2
   done
 }
@@ -46,7 +48,7 @@ FNAME=$$
 
 run_test() {
   wait_for_cooldown
-  >&2 taskset ${CPU_MASK} \
+  >&2 taskset "${CPU_MASK}" \
     "${DEV_DIR}/${PERF_TEST_BINARY_BASENAME}_$1" \
       --perf_min_samples=100 \
       --gtest_output=json:"${DEV_DIR}/${FNAME}_$1" \
@@ -56,13 +58,13 @@ run_test() {
 
 run_test vanilla
 run_test kleidicv
-if [[ -f "${DEV_DIR}/${PERF_TEST_BINARY_BASENAME}_kleidicv_${CUSTOM_BUILD_SUFFIX}" ]]; then
+if [ -f "${DEV_DIR}/${PERF_TEST_BINARY_BASENAME}_kleidicv_${CUSTOM_BUILD_SUFFIX}" ]; then
   run_test "kleidicv_${CUSTOM_BUILD_SUFFIX}"
 fi
 
 echo "${PREV_FREQ_GOVERNOR}" > "${FREQ_GOVERNOR_FILE}"
 
-if [[ "${START_CDEV_TRANSITION_COUNT}" != $(cat "${CDEV_TRANSITION_COUNT_FILE}") ]]; then
+if [ "${START_CDEV_TRANSITION_COUNT}" != "$(cat "${CDEV_TRANSITION_COUNT_FILE}")" ]; then
   >&2 echo "BENCHMARK ERROR: CPU throttling happened, exiting..."
   exit 1
 fi
@@ -87,13 +89,13 @@ get_gstddev() {
 RES="${DISP_NAME}"
 
 collect_run_results() {
-  RES+="\t$(get_mean "${DEV_DIR}/${FNAME}_${1}")\t$(get_gstddev "${DEV_DIR}/${FNAME}_$1")"
+  RES="${RES}\t$(get_mean "${DEV_DIR}/${FNAME}_${1}")\t$(get_gstddev "${DEV_DIR}/${FNAME}_$1")"
   rm "${DEV_DIR}/${FNAME}_$1"
 }
 
 collect_run_results vanilla
 collect_run_results kleidicv
-if [[ -f "${DEV_DIR}/${FNAME}_kleidicv_${CUSTOM_BUILD_SUFFIX}" ]]; then
+if [ -f "${DEV_DIR}/${FNAME}_kleidicv_${CUSTOM_BUILD_SUFFIX}" ]; then
   collect_run_results "kleidicv_${CUSTOM_BUILD_SUFFIX}"
 fi
 
