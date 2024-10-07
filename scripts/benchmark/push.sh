@@ -25,18 +25,18 @@ CUSTOM_BUILD_SUFFIX="${CUSTOM_BUILD_SUFFIX:-custom}"
 
 : "${DEV_DIR:=/data/local/tmp}"
 
-"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_vanilla
-"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_vanilla
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_core    "${DEV_DIR}"/opencv_perf_core_vanilla
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_imgproc "${DEV_DIR}"/opencv_perf_imgproc_vanilla
 
-"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_kleidicv
-"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_kleidicv
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_core    "${DEV_DIR}"/opencv_perf_core_kleidicv
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_imgproc "${DEV_DIR}"/opencv_perf_imgproc_kleidicv
 
-if [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_core ]] && \
-   [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_imgproc ]]; then
-  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_kleidicv_${CUSTOM_BUILD_SUFFIX}
-  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-${CUSTOM_BUILD_SUFFIX}/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_kleidicv_${CUSTOM_BUILD_SUFFIX}
+if [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_core ]] && \
+   [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_imgproc ]]; then
+  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_core    "${DEV_DIR}"/opencv_perf_core_kleidicv_"${CUSTOM_BUILD_SUFFIX}"
+  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_imgproc "${DEV_DIR}"/opencv_perf_imgproc_kleidicv_"${CUSTOM_BUILD_SUFFIX}"
 fi
 
-"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/perf_test_op.sh       ${DEV_DIR}/
-"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_FHD.sh ${DEV_DIR}/
-"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_4K.sh  ${DEV_DIR}/
+"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/perf_test_op.sh       "${DEV_DIR}"/
+"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_FHD.sh "${DEV_DIR}"/
+"${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks_4K.sh  "${DEV_DIR}"/
