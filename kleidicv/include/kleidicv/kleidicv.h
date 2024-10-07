@@ -1668,22 +1668,22 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data. Must
-///                     not be less than width * sizeof(type), except for
+///                     not be less than `width * sizeof(type)`, except for
 ///                     single-row images.
 /// @param src_width    Number of elements in the source row.
 /// @param src_height   Number of rows in the source data.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(type) and no less than
-///                     width * sizeof(type), except for single-row images.
+///                     Must be a multiple of `sizeof(type)` and no less than
+///                     `width * sizeof(type)`, except for single-row images.
 /// @param dst_width    Number of elements in the destination row.
 /// @param dst_height   Number of rows in the destination data.
 /// @param mapxy        Pointer to the mapping data. Must be non-null.
 /// @param mapxy_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
-///                     Must be a multiple of sizeof(int16_t) and no less than
-///                     width * sizeof(int16_t), except for single-row images.
+///                     Must be a multiple of `sizeof(int16_t)` and no less than
+///                     `width * sizeof(int16_t)`, except for single-row images.
 /// @param channels      Number of channels in the data. Must be 1.
 /// @param border_type   Way of handling the border. The supported border types
 ///                      are: \n
