@@ -68,7 +68,7 @@ CORE_TEST_PATTERNS=(
   '*Core_MinMaxIdx*'
   '*Core_minMaxIdx*'
   '*Core_Array*'
-  '*Compare*'
+  'Compare*'
   '*Core_InRange/*'
 )
 CORE_TEST_PATTERNS_STR="$(join_strings_with_colon "${CORE_TEST_PATTERNS[*]}")"
