@@ -23,7 +23,7 @@ BENCHMARK_SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BUILD_ROOT_PATH="${BUILD_ROOT_PATH:-"${BENCHMARK_SCRIPT_PATH}/../../build"}"
 CUSTOM_BUILD_SUFFIX="${CUSTOM_BUILD_SUFFIX:-custom}"
 
-DEV_DIR=/data/local/tmp
+: "${DEV_DIR:=/data/local/tmp}"
 
 "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_core    ${DEV_DIR}/opencv_perf_core_vanilla
 "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_imgproc ${DEV_DIR}/opencv_perf_imgproc_vanilla

@@ -14,7 +14,7 @@ PERF_TEST_BINARY_BASENAME=$5
 GTEST_FILTER=$6
 GTEST_PARAM_FILTER=$7
 
-DEV_DIR=/data/local/tmp
+: "${DEV_DIR:=/data/local/tmp}"
 
 CPU_MASK=$(echo "obase=16;2^${CPU_NUMBER}" | bc)
 

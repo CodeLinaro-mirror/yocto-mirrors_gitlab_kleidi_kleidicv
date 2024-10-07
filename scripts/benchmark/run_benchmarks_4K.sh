@@ -6,7 +6,7 @@
 
 set -eu
 
-DEV_DIR=/data/local/tmp
+: "${DEV_DIR:=/data/local/tmp}"
 CPU=7
 THERMAL=0
 CUSTOM_BUILD_SUFFIX="${CUSTOM_BUILD_SUFFIX:-custom}"
