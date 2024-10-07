@@ -23,7 +23,9 @@ CHECK_ONLY=ON VERBOSE=ON scripts/format.sh
 scripts/cpplint.sh
 
 # Check format of shell scripts
-shellcheck scripts/*.sh
+# shellcheck disable=SC2046
+# Word splitting is essential here.
+shellcheck $(find scripts -name '*.sh' | tr '\n' ' ')
 
 # Check license headers
 reuse lint
