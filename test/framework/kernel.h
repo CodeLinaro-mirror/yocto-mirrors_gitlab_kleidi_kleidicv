@@ -202,8 +202,8 @@ class KernelTest {
   }
 
   // Creates arrays for a given layout.
-  void create_arrays(const Kernel<IntermediateType>& kernel,
-                     const ArrayLayout& array_layout) {
+  virtual void create_arrays(const Kernel<IntermediateType>& kernel,
+                             const ArrayLayout& array_layout) {
     input_ = Array2D<InputType>{array_layout};
     ASSERT_TRUE(input_.valid());
 
