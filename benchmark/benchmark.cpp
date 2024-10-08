@@ -144,6 +144,16 @@ static void min_max_loc_u8(benchmark::State& state) {
 }
 BENCHMARK(min_max_loc_u8);
 
+static void sum_f32(benchmark::State& state) {
+  bench_functor(state, []() {
+    float total;
+    (void)kleidicv_sum_f32(get_source_buffer_a<float>(),
+                           image_width * sizeof(float), image_width,
+                           image_height, &total);
+  });
+}
+BENCHMARK(sum_f32);
+
 template <typename T, typename Function>
 static void scale(Function f, float factor, float shift,
                   benchmark::State& state) {

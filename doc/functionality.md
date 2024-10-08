@@ -58,6 +58,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 ## Aggregate operations
 |                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 | f32 |
 |-----------------|-----|-----|-----|-----|-----|-----|-----|-----|
+| Sum             |     |     |     |     |     |     |     |  x  |
 | Minmax          |  x  |  x  |  x  |  x  |  x  |     |     |  x  |
 | Minmax loc      |     |  x  |     |     |     |     |     |     |
 | Count non-zeros |     |  x  |     |     |     |     |     |     |

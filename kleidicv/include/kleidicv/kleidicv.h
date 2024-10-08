@@ -1560,6 +1560,20 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_loc_u8, const uint8_t *src,
                          size_t src_stride, size_t width, size_t height,
                          size_t *min_offset, size_t *max_offset);
 
+/// Returns the sum of element values across the source data.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must be a
+///                     multiple of `sizeof(type)` and no less than `width *
+///                     sizeof(type)`, except for single-row images.
+/// @param width        Number of elements in a row. Must be greater than 0.
+/// @param height       Number of rows in the data. Must be greater than 0.
+/// @param sum          Pointer to save result offset of sum value to.
+///
+KLEIDICV_API_DECLARATION(kleidicv_sum_f32, const float *src, size_t src_stride,
+                         size_t width, size_t height, float *sum);
+
 /// Multiplies the elements in `src` by `scale`, then adds `shift` to the
 /// result and stores it in `dst`.
 ///

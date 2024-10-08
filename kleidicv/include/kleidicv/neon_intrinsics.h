@@ -67,7 +67,26 @@ NEON_BINARY_OP_Q_B8_B16_B32_B64(vzip2q);
 
 #undef NEON_BINARY_OP_Q_B8_B16_B32_B64
 
+static inline float32x4_t vaddq(float32x4_t lhs, float32x4_t rhs) {
+  return vaddq_f32(lhs, rhs);
+}
+
 // clang-format off
+
+// -----------------------------------------------------------------------------
+// vaddv*
+// -----------------------------------------------------------------------------
+
+static inline int8_t vaddvq(int8x16_t vec) { return vaddvq_s8(vec); }
+static inline uint8_t vaddvq(uint8x16_t vec) { return vaddvq_u8(vec); }
+static inline int16_t vaddvq(int16x8_t vec) { return vaddvq_s16(vec); }
+static inline uint16_t vaddvq(uint16x8_t vec) { return vaddvq_u16(vec); }
+static inline int32_t vaddvq(int32x4_t vec) { return vaddvq_s32(vec); }
+static inline uint32_t vaddvq(uint32x4_t vec) { return vaddvq_u32(vec); }
+static inline int64_t vaddvq(int64x2_t vec) { return vaddvq_s64(vec); }
+static inline uint64_t vaddvq(uint64x2_t vec) { return vaddvq_u64(vec); }
+static inline float32_t vaddvq(float32x4_t vec) { return vaddvq_f32(vec); }
+static inline float64_t vaddvq(float64x2_t vec) { return vaddvq_f64(vec); }
 
 // -----------------------------------------------------------------------------
 // vabd*
