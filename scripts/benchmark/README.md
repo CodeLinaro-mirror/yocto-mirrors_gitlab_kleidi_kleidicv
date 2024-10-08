@@ -40,11 +40,12 @@ Then push the test binaries to the phone (replace 9A9A9A9A with your actual devi
 ```
 ADB=adb ANDROID_SERIAL=9A9A9A9A ./push.sh
 ```
-Now you can run the benchmark set:
+Now you can run the benchmark set for a given resolution:
 ```
-adb -s 9A9A9A9A shell /data/local/tmp/run_benchmarks_FHD.sh >your_phone_benchmarks_FHD.tsv
-adb -s 9A9A9A9A shell /data/local/tmp/run_benchmarks_4K.sh >your_phone_benchmarks_4K.tsv
+adb -s 9A9A9A9A shell 'RESOLUTION=FHD /data/local/tmp/run_benchmarks.sh' > your_phone_benchmarks_FHD.tsv
 ```
-To run on another core than BIG (CPU=7), set CPU and THERMAL to the desired value.
-To find the correct thermal zone id, it's best to log /sys/devices/virtual/thermal/thermal_zone0/type and see what's dumped.
-E.g. it can be BIG for 0, MID for 1 and LITTLE for 2, but it can be different for another phone.
+To run on another core, set CPU and THERMAL_ZONE_ID to the desired values. THERMAL_ZONE_ID is important
+to set correctly because benchmarks scripts check for changes of the temperature associated with selected CPU.
+To find the correct thermal zone id, it's best to cat /sys/devices/virtual/thermal/thermal_zone${id}/type to find
+the appropriate thermal zone identifier. E.g. it can be BIG for 0, MID for 1 and LITTLE for 2,
+but it can be different for another device.
