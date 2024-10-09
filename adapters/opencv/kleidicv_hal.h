@@ -355,6 +355,9 @@ static inline int kleidicv_canny_with_fallback(
 #define cv_hal_canny kleidicv_canny_with_fallback
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
+// This condition can be removed if this HAL macro is defined in all supported
+// versions
+#ifdef cv_hal_remap16s
 // remap
 static inline int kleidicv_remap_s16_with_fallback(
     int src_type, const uchar *src_data, size_t src_step, int src_width,
@@ -369,6 +372,7 @@ static inline int kleidicv_remap_s16_with_fallback(
 
 #undef cv_hal_remap16s
 #define cv_hal_remap16s kleidicv_remap_s16_with_fallback
+#endif  // cv_hal_remap16s
 
 #endif  // OPENCV_IMGPROC_HAL_REPLACEMENT_HPP
 
