@@ -38,7 +38,8 @@ class SeparableFilterWorkspaceDeleter {
 // Limitations
 //
 //  1. In-place operations are not supported.
-//  2. The input has to be at least filter-sized.
+//  2. The input's width and height have to be at least `filter's width - 1` and
+//  `filter's height - 1`, respectively.
 //
 // Example
 //
@@ -67,7 +68,7 @@ class SeparableFilterWorkspaceDeleter {
 //
 // Handling of borders is calculated based on offsets rather than setting up
 // suitably-sized buffers which could hold both borders and data.
-class SeparableFilterWorkspace final {
+class SeparableFilterWorkspace {
  public:
   // To avoid load/store penalties.
   static constexpr size_t kAlignment = 16UL;
@@ -154,7 +155,7 @@ class SeparableFilterWorkspace final {
     }
   }
 
- private:
+ protected:
   template <typename FilterType>
   void process_horizontal(size_t width,
                           Rows<typename FilterType::BufferType> buffer_rows,
