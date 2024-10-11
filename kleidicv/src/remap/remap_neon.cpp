@@ -110,10 +110,6 @@ class RemapS16Point5<uint8_t> {
   using FracVecTraits = neon::VecTraits<uint16_t>;
   using FracVectorType = typename FracVecTraits::VectorType;
 
-  static const uint16_t FRAC_BITS = 5;
-  static const uint16_t FRAC_MAX = 1 << FRAC_BITS;
-  static const uint16_t FRAC_MAX_SQUARE = FRAC_MAX * FRAC_MAX;
-
   RemapS16Point5(Rows<const ScalarType> src_rows, size_t src_width,
                  size_t src_height)
       : src_rows_{src_rows},
@@ -128,12 +124,13 @@ class RemapS16Point5<uint8_t> {
       FracVectorType frac = vld1q_u16(&mapfrac[0]);
       uint16x8_t xfrac =
           vbslq_u16(vcltq_s16(xy.val[0], vdupq_n_s16(0)), vdupq_n_u16(0),
-                    vandq_u16(frac, vdupq_n_u16(FRAC_MAX - 1)));
-      uint16x8_t yfrac = vbslq_u16(
-          vcltq_s16(xy.val[1], vdupq_n_s16(0)), vdupq_n_u16(0),
-          vandq_u16(vshrq_n_u16(frac, FRAC_BITS), vdupq_n_u16(FRAC_MAX - 1)));
-      uint16x8_t nxfrac = vsubq_u16(vdupq_n_u16(FRAC_MAX), xfrac);
-      uint16x8_t nyfrac = vsubq_u16(vdupq_n_u16(FRAC_MAX), yfrac);
+                    vandq_u16(frac, vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
+      uint16x8_t yfrac =
+          vbslq_u16(vcltq_s16(xy.val[1], vdupq_n_s16(0)), vdupq_n_u16(0),
+                    vandq_u16(vshrq_n_u16(frac, REMAP16POINT5_FRAC_BITS),
+                              vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
+      uint16x8_t nxfrac = vsubq_u16(vdupq_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
+      uint16x8_t nyfrac = vsubq_u16(vdupq_n_u16(REMAP16POINT5_FRAC_MAX), yfrac);
 
       // Clamp coordinates to within the dimensions of the source image
       uint16x8_t x0 = vreinterpretq_u16_s16(
@@ -203,8 +200,8 @@ class RemapS16Point5<uint8_t> {
           (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 3)]) << 48);
     uint16x4_t c = vreinterpret_u16_u64(vset_lane_u64(acc, vdup_n_u64(0), 0));
 
-    uint32x4_t line0_lerpd =
-        vmlal_u16(vdupq_n_u32(FRAC_MAX_SQUARE / 2), line0, nyfrac);
+    uint32x4_t line0_lerpd = vmlal_u16(
+        vdupq_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2), line0, nyfrac);
 
     offset = vmlal_u16(x1, y1, vget_low_u16(v_src_stride_));
 
@@ -215,7 +212,8 @@ class RemapS16Point5<uint8_t> {
     uint16x4_t d = vreinterpret_u16_u64(vset_lane_u64(acc, vdup_n_u64(0), 0));
 
     uint16x4_t line1 = vmla_u16(vmul_u16(xfrac, d), nxfrac, c);
-    return vshrn_n_u32(vmlal_u16(line0_lerpd, line1, yfrac), 2 * FRAC_BITS);
+    return vshrn_n_u32(vmlal_u16(line0_lerpd, line1, yfrac),
+                       2 * REMAP16POINT5_FRAC_BITS);
   }
 
   Rows<const ScalarType> src_rows_;

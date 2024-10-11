@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <limits>
 #include <type_traits>
-#include <utility>
 
 #include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
+#include "kleidicv/kleidicv.h"
 #include "kleidicv/traits.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
