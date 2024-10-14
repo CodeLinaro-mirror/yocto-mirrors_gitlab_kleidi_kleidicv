@@ -198,7 +198,7 @@ class ExpTestAll<float> final : public ExpTestCustomBase<float> {
     float last_value_;
     float value_;
   };  // end of class LinearFloatGenerator
-};    // end of class ExpTestAll<float>
+};  // end of class ExpTestAll<float>
 
 template <typename ElementType>
 class Exp : public testing::Test {};

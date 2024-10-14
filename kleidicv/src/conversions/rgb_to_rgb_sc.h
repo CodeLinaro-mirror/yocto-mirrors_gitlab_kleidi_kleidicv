@@ -96,7 +96,7 @@ class RGBToBGR final :
   svuint8x4_t &indices_;
 #endif  // !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE ||
         // !KLEIDICV_ASSUME_128BIT_SVE2
-};      // end of class RGBToBGR<ScalarType>
+};  // end of class RGBToBGR<ScalarType>
 
 template <typename ScalarType>
 class RGBAToBGRA final : public UnrollTwice {

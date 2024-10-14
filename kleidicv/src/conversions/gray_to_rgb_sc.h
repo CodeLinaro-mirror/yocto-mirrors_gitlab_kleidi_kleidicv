@@ -100,7 +100,7 @@ class GrayToRGB final :
 
   svuint8x3_t &indices_;
 #endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-};      // end of class GrayToRGB<ScalarType>
+};  // end of class GrayToRGB<ScalarType>
 
 template <typename ScalarType>
 class GrayToRGBAWithInterleaving final : public UnrollTwice {
@@ -198,7 +198,7 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
   }
 
   svuint8x4_t &indices_;
-};      // end of class GrayToRGBAWithLookUpTable<ScalarType>
+};  // end of class GrayToRGBAWithLookUpTable<ScalarType>
 #endif  // !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgb_u8_sc(

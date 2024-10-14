@@ -96,16 +96,14 @@ int run_tests(RecreatedMessageQueue& request_queue,
 typedef bool (*test_function)(int index, RecreatedMessageQueue& request_queue,
                               RecreatedMessageQueue& reply_queue);
 using test = std::pair<std::string, test_function>;
-#define TEST(name, test_func, x) \
-  { name, test_func }
+#define TEST(name, test_func, x) {name, test_func}
 #else
 void wait_for_requests(OpenedMessageQueue& request_queue,
                        OpenedMessageQueue& reply_queue);
 
 typedef cv::Mat (*exec_function)(cv::Mat& input);
 using test = std::pair<std::string, exec_function>;
-#define TEST(name, x, exec_func) \
-  { name, exec_func }
+#define TEST(name, x, exec_func) {name, exec_func}
 #endif
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_UTILS_H_

@@ -23,7 +23,7 @@ static std::vector<test> merge_tests(
 }
 
 std::vector<test> all_tests = merge_tests({
-  // clang-format off
+    // clang-format off
     binary_op_tests_get,
     cvtcolor_tests_get,
 #if KLEIDICV_ENABLE_ALL_OPENCV_HAL
@@ -41,7 +41,7 @@ std::vector<test> all_tests = merge_tests({
     in_range_tests_get,
     remap_tests_get,
     blur_and_downsample_tests_get,
-  // clang-format on
+    // clang-format on
 });
 
 #if MANAGER
