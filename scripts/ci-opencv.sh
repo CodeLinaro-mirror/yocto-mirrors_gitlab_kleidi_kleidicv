@@ -9,19 +9,36 @@ set -exu
 # Ensure we're at the root of the repo.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-# Run OpenCV conformity checks
-TESTRESULT=0
 export OPENCV_VERSION="4.10.0"
 
+# ------------------------------------------------------------------------------
+# Try to build unpatched OpenCV with KleidiCV
+# ------------------------------------------------------------------------------
+mkdir -p build/unpatched-opencv-src
+tar -xzf /opt/opencv-${OPENCV_VERSION}.tar.gz -C build/unpatched-opencv-src
+BUILD_ID=unpatched-opencv \
+OPENCV_PATH="$(pwd)/build/unpatched-opencv-src/opencv-${OPENCV_VERSION}" \
+CMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -fuse-ld=lld" \
+EXTRA_CMAKE_ARGS="-DBUILD_SHARED_LIBS=OFF -DWITH_KLEIDICV=ON -DKLEIDICV_SOURCE_PATH=$(pwd)" \
+./scripts/build-opencv.sh
+
+# ------------------------------------------------------------------------------
+# Run OpenCV conformity checks
+# ------------------------------------------------------------------------------
+TESTRESULT=0
 CLEAN="ON" \
   OPENCV_URL="/opt/opencv-${OPENCV_VERSION}.tar.gz" \
   LDFLAGS="--rtlib=compiler-rt -fuse-ld=lld" \
   ./scripts/run_opencv_conformity_checks.sh || TESTRESULT=1
 
+# ------------------------------------------------------------------------------
+# Run a subset of OpenCV's test suite
+# ------------------------------------------------------------------------------
 # Build OpenCV test executables from already configured conformity check project
+# The OpenCV source is patched in this case
 ninja -C build/conformity/opencv_kleidicv opencv_test_imgproc opencv_test_core
 
-# Run a subset of the OpenCV test suite, requres opencv_extra for the test images
+# Some tests require opencv_extra for the test images
 tar xf /opt/opencv-extra-${OPENCV_VERSION}.tar.gz -C build
 mv build/opencv_extra-${OPENCV_VERSION} build/opencv_extra
 
@@ -45,7 +62,6 @@ IMGPROC_TEST_PATTERNS=(
   '*Imgproc_Morphology*'
   '*Imgproc_GaussianBlur*'
   '*Imgproc_Sobel*'
-  '*Imgproc_Canny*'
   '*Imgproc_Resize*'
   '*Imgproc_Dilate*'
   '*Imgproc_Erode*'

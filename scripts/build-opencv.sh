@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#
+
 # SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Builds a given target for OpenCV.
 #
 # The build artifacts are placed in the `build` directory.
@@ -97,6 +97,35 @@ cmake_config_args=(
     "-DCMAKE_SHARED_LINKER_FLAGS=${CMAKE_SHARED_LINKER_FLAGS}"
     "-DCMAKE_CXX_STANDARD=14"
     "-DOPENCV_DISABLE_THREAD_SUPPORT=ON"
+
+    "-DCV_TRACE=OFF"
+    "-DBUILD_EXAMPLES=OFF"
+    "-DBUILD_opencv_apps=OFF"
+    "-DBUILD_ANDROID_EXAMPLES=OFF"
+    "-DBUILD_ANDROID_PROJECTS=OFF"
+    "-DBUILD_JAVA=OFF"
+    "-DWITH_QT=OFF"
+    "-DBUILD_OPENCV_PYTHON=NO"
+    "-DBUILD_OPENCV_PYTHON2=NO"
+    "-DBUILD_OPENCV_PYTHON3=NO"
+    "-DWITH_VTK=OFF"
+    "-DWITH_JASPER=OFF"
+    "-DWITH_OPENJPEG=OFF"
+    "-DWITH_JPEG=OFF"
+    "-DWITH_WEBP=OFF"
+    "-DWITH_PNG=OFF"
+    "-DWITH_TIFF=OFF"
+    "-DWITH_V4L=OFF"
+    "-DWITH_OPENCL=OFF"
+    "-DWITH_FLATBUFFERS=OFF"
+    "-DWITH_PROTOBUF=OFF"
+    "-DWITH_IMGCODEC_HDR=OFF"
+    "-DWITH_IMGCODEC_SUNRASTER=OFF"
+    "-DWITH_IMGCODEC_PXM=OFF"
+    "-DWITH_IMGCODEC_PFM=OFF"
+    "-DWITH_ADE=OFF"
+    "-DWITH_LAPACK=OFF"
+    "-DOPENCV_PYTHON_SKIP_DETECTION=ON"
 )
 
 if [[ -n "${CMAKE_CROSSCOMPILING_EMULATOR}" ]]; then

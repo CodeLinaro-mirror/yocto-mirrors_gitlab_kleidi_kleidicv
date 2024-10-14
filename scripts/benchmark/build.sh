@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Builds the perf benchmarks for OpenCV with Android target.
 #
 # The following builds will be created:
@@ -39,13 +39,6 @@ KLEIDICV_SOURCE_PATH="$(realpath "${SCRIPT_PATH}/..")"
 
 export COMMON_EXTRA_CMAKE_ARGS="\
   -DANDROID_ABI=arm64-v8a \
-  -DBUILD_ANDROID_EXAMPLES=OFF \
-  -DBUILD_ANDROID_PROJECTS=OFF \
-  -DBUILD_JAVA=OFF \
-  -DWITH_QT=OFF \
-  -DBUILD_OPENCV_PYTHON=NO \
-  -DBUILD_OPENCV_PYTHON2=NO \
-  -DBUILD_OPENCV_PYTHON3=NO \
   -DBUILD_TESTS=OFF \
   -DBUILD_PERF_TESTS=ON \
   -DBENCHMARK_DOWNLOAD_DEPENDENCIES=ON \

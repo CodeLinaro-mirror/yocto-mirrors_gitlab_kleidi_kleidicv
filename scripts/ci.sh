@@ -17,6 +17,9 @@ if ! command -v qemu-aarch64; then
   apt-get -y --no-install-recommends install qemu-user
 fi
 
+# Force ccache for all CMake builds
+export CMAKE_CXX_COMPILER_LAUNCHER=ccache
+
 # Check format of C++ files
 CHECK_ONLY=ON VERBOSE=ON scripts/format.sh
 
