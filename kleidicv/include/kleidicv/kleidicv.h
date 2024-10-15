@@ -1567,9 +1567,9 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_loc_u8, const uint8_t *src,
 ///                     start of the next row in the source data. Must be a
 ///                     multiple of `sizeof(type)` and no less than `width *
 ///                     sizeof(type)`, except for single-row images.
-/// @param width        Number of elements in a row. Must be greater than 0.
-/// @param height       Number of rows in the data. Must be greater than 0.
-/// @param sum          Pointer to save result offset of sum value to.
+/// @param width        Number of elements in a row.
+/// @param height       Number of rows in the data.
+/// @param sum          Pointer to save the sum value to. Must be non-null.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_sum_f32, const float *src, size_t src_stride,
                          size_t width, size_t height, float *sum);
