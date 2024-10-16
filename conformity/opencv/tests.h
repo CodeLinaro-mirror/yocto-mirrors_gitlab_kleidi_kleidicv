@@ -16,6 +16,7 @@ std::vector<test>& gaussian_blur_tests_get();
 std::vector<test>& rgb2yuv_tests_get();
 std::vector<test>& yuv2rgb_tests_get();
 std::vector<test>& sobel_tests_get();
+std::vector<test>& sum_tests_get();
 std::vector<test>& exp_tests_get();
 std::vector<test>& float_conversion_tests_get();
 std::vector<test>& resize_tests_get();

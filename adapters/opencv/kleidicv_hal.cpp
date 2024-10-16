@@ -962,6 +962,27 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
       static_cast<size_t>(element_size)));
 }
 
+int sum(const uchar *src_data, size_t src_step, int src_type, size_t width,
+        size_t height, double *result) {
+  size_t channels = (src_type >> CV_CN_SHIFT) + 1;
+
+  if (channels != 1) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  switch (CV_MAT_DEPTH(src_type)) {
+    case CV_32F:
+      float result_float = 0;
+      kleidicv_error_t err =
+          kleidicv_sum_f32(reinterpret_cast<const float *>(src_data), src_step,
+                           width, height, &result_float);
+      *result = result_float;
+      return convert_error(err);
+  }
+
+  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+}
+
 template <typename T, typename SingleThreadFunc, typename MultithreadFunc>
 kleidicv_error_t call_min_max(SingleThreadFunc min_max_func_st,
                               MultithreadFunc min_max_func_mt,
