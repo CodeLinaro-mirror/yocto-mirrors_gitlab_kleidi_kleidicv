@@ -1835,6 +1835,46 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
     size_t src_channels, int16_t *dst, size_t dst_stride);
 #endif  // DOXYGEN
 
+/// Transforms the `src` image perspectively, using a linear transformation
+/// matrix, i.e. for each pixel in `dst` take a pixel from `src` specified by
+/// the transformed x and y coordinates, and optionally doing a bilinear
+/// interpolation.
+///
+/// `src` and `dst` dimensions may be different. Number of elements is limited
+/// to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src            Pointer to the source data. Must be non-null.
+/// @param src_stride     Distance in bytes from the start of one row to the
+///                       start of the next row for the source data. Must
+///                       not be less than `width * sizeof(type)`, except for
+///                       single-row images. Must be less than 2^32.
+/// @param src_width      Number of elements in the source row.
+/// @param src_height     Number of rows in the source data. Must be less than
+///                       2^32.
+/// @param dst            Pointer to the destination data. Must be non-null.
+/// @param dst_stride     Distance in bytes from the start of one row to the
+///                       start of the next row for the destination data.
+///                       Must be a multiple of `sizeof(type)` and no less than
+///                       `width * sizeof(type)`, except for single-row images.
+/// @param dst_width      Number of elements in the destination row. Must be at
+///                       least 8.
+/// @param dst_height     Number of rows in the destination data.
+/// @param transformation Pointer to the transformation matrix of 9 values.
+/// @param channels       Number of channels in the data. Must be 1.
+/// @param interpolation  Interpolation algorithm. Supported types: \n
+///                         - @ref KLEIDICV_INTERPOLATION_NEAREST
+/// @param border_type    Way of handling the border. The supported border types
+///                       are: \n
+///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
+/// @param border_values  Border values if the border_type is
+///                       @ref KLEIDICV_BORDER_TYPE_CONSTANT.
+kleidicv_error_t kleidicv_warp_perspective_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    const float transformation[9], size_t channels,
+    kleidicv_interpolation_type_t interpolation,
+    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

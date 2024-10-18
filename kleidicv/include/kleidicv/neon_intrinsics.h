@@ -67,9 +67,18 @@ NEON_BINARY_OP_Q_B8_B16_B32_B64(vzip2q);
 
 #undef NEON_BINARY_OP_Q_B8_B16_B32_B64
 
-static inline float32x4_t vaddq(float32x4_t lhs, float32x4_t rhs) {
-  return vaddq_f32(lhs, rhs);
-}
+#define NEON_BINARY_OP_Q_F32_F64(name)                               \
+  static inline float32x4_t name(float32x4_t lhs, float32x4_t rhs) { \
+    return name##_f32(lhs, rhs);                                     \
+  }                                                                  \
+                                                                     \
+  static inline float64x2_t name(float64x2_t lhs, float64x2_t rhs) { \
+    return name##_f64(lhs, rhs);                                     \
+  }
+
+NEON_BINARY_OP_Q_F32_F64(vaddq);
+
+#undef NEON_BINARY_OP_Q_F32_F64
 
 // clang-format off
 

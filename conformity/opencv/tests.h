@@ -23,6 +23,7 @@ std::vector<test>& scale_tests_get();
 std::vector<test>& min_max_tests_get();
 std::vector<test>& in_range_tests_get();
 std::vector<test>& remap_tests_get();
+std::vector<test>& warp_perspective_tests_get();
 std::vector<test>& blur_and_downsample_tests_get();
 std::vector<test>& scharr_interleaved_tests_get();
 

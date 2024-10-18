@@ -242,6 +242,74 @@ class Thread : public testing::TestWithParam<P> {
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
   }
+
+  template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc,
+            typename... Args>
+  void check_warp_perspective(SingleThreadedFunc single_threaded_func,
+                              MultithreadedFunc multithreaded_func,
+                              size_t channels, Args... args) {
+    unsigned test_width = 0, height = 0, thread_count = 0;
+    std::tie(test_width, height, thread_count) = GetParam();
+    const unsigned src_width = 300, src_height = 300;
+    // width < 8 are not supported, that's not tested here
+    size_t width = test_width + 8;
+    test::Array2D<T> src(size_t{src_width} * channels, src_height);
+    test::Array2D<T> dst_single(width * channels, height),
+        dst_multi(width * channels, height);
+    // clang-format off
+    const float transform[] = {
+      0.8, 0.1, 2,
+      0.1, 0.8, -2,
+      0.001, 0.001, 1.0
+    };
+    // clang-format on
+    kleidicv_error_t single_result = single_threaded_func(
+        src.data(), src.stride(), src_width, src_height, dst_single.data(),
+        dst_single.stride(), width, height, transform, channels, args...);
+
+    kleidicv_error_t multi_result = multithreaded_func(
+        src.data(), src.stride(), src_width, src_height, dst_multi.data(),
+        dst_multi.stride(), width, height, transform, channels, args...,
+        get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_OK, single_result);
+    EXPECT_EQ(KLEIDICV_OK, multi_result);
+    EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+  }
+
+  template <typename T, typename MultithreadedFunc, typename... Args>
+  void check_warp_perspective_not_implemented(
+      MultithreadedFunc multithreaded_func, size_t channels, Args... args) {
+    unsigned test_width = 0, height = 0, thread_count = 0;
+    std::tie(test_width, height, thread_count) = GetParam();
+    const unsigned src_width = 300, src_height = 300;
+    // width < 8 are not supported!
+    size_t width = test_width + 8;
+    test::Array2D<T> src(size_t{src_width} * channels, src_height);
+    test::Array2D<T> dst_small(test_width * channels, height),
+        dst(width * channels, height);
+    // clang-format off
+    const float transform[] = {
+      0.8, 0.1, 2,
+      0.1, 0.8, -2,
+      0.001, 0.001, 1.0
+    };
+    // clang-format on
+
+    kleidicv_error_t result = multithreaded_func(
+        src.data(), src.stride(), src_width, src_height, dst.data(),
+        dst.stride(), width, height, transform, channels, args...,
+        get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
+
+    result = multithreaded_func(src.data(), src.stride(), src_width, src_height,
+                                dst_small.data(), dst_small.stride(),
+                                test_width, height, transform, channels,
+                                args..., get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
+  }
 };
 
 #define TEST_UNARY_OP(suffix, SrcT, DstT, ...)                              \
@@ -555,6 +623,25 @@ TEST_P(Thread, remap_s16point5_u8_not_implemented) {
   check_remap_s16point5_not_implemented<uint8_t>(
       kleidicv_thread_remap_s16point5_u8, 1, KLEIDICV_BORDER_TYPE_CONSTANT,
       kleidicv_border_values_t{});
+}
+
+TEST_P(Thread, warp_perspective_u8_border_replicate) {
+  check_warp_perspective<uint8_t>(
+      kleidicv_warp_perspective_u8, kleidicv_thread_warp_perspective_u8, 1,
+      KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
+      kleidicv_border_values_t{});
+}
+
+TEST_P(Thread, warp_perspective_u8_not_implemented) {
+  check_warp_perspective_not_implemented<uint8_t>(
+      kleidicv_thread_warp_perspective_u8, 1, KLEIDICV_INTERPOLATION_LINEAR,
+      KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{});
+  check_warp_perspective_not_implemented<uint8_t>(
+      kleidicv_thread_warp_perspective_u8, 2, KLEIDICV_INTERPOLATION_NEAREST,
+      KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{});
+  check_warp_perspective_not_implemented<uint8_t>(
+      kleidicv_thread_warp_perspective_u8, 1, KLEIDICV_INTERPOLATION_NEAREST,
+      KLEIDICV_BORDER_TYPE_CONSTANT, kleidicv_border_values_t{});
 }
 
 TEST_P(Thread, SobelHorizontal1Channel) {

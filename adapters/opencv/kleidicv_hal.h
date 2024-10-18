@@ -153,8 +153,15 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
                     const uint16_t *mapfrac, size_t mapfrac_step,
                     int border_type, const double border_value[4]);
 
+int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
+                     int src_width, int src_height, uchar *dst_data,
+                     size_t dst_step, int dst_width, int dst_height,
+                     const double transformation[9], int interpolation,
+                     int borderType, const double borderValue[4]);
+
 int scharr_deriv(const uchar *src_data, size_t src_step, int16_t *dst_data,
                  size_t dst_step, int width, int height, int cn);
+
 }  // namespace hal
 }  // namespace kleidicv
 
@@ -417,6 +424,20 @@ static inline int kleidicv_pyrdown_with_fallback(
 }
 #undef cv_hal_pyrdown
 #define cv_hal_pyrdown kleidicv_pyrdown_with_fallback
+
+static inline int kleidicv_warp_perspective_with_fallback(
+    int src_type, const uchar *src_data, size_t src_step, int src_width,
+    int src_height, uchar *dst_data, size_t dst_step, int dst_width,
+    int dst_height, const double transformation[9], int interpolation,
+    int borderType, const double borderValue[4]) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      warp_perspective, cv_hal_warpPerspective, src_type, src_data, src_step,
+      src_width, src_height, dst_data, dst_step, dst_width, dst_height,
+      transformation, interpolation, borderType, borderValue);
+}
+
+#undef cv_hal_warpPerspective
+#define cv_hal_warpPerspective kleidicv_warp_perspective_with_fallback
 
 #endif  // OPENCV_IMGPROC_HAL_REPLACEMENT_HPP
 

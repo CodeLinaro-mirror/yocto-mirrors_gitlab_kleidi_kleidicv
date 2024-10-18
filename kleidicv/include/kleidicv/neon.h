@@ -134,14 +134,24 @@ class VectorTypes<uint64_t> {
 };  // end of class VectorTypes<uint64_t>
 
 template <>
-class VectorTypes<float32_t> {
+class VectorTypes<float> {
  public:
-  using ScalarType = float32_t;
+  using ScalarType = float;
   using VectorType = float32x4_t;
   using Vector2Type = float32x4x2_t;
   using Vector3Type = float32x4x3_t;
   using Vector4Type = float32x4x4_t;
-};  // end of class VectorTypes<float32_t>
+};  // end of class VectorTypes<float>
+
+template <>
+class VectorTypes<double> {
+ public:
+  using ScalarType = double;
+  using VectorType = float64x2_t;
+  using Vector2Type = float64x2x2_t;
+  using Vector3Type = float64x2x3_t;
+  using Vector4Type = float64x2x4_t;
+};  // end of class VectorTypes<double>
 
 // Base class for all NEON vector traits.
 template <typename ScalarType>

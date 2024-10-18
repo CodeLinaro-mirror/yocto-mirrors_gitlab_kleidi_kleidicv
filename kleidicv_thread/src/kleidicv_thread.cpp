@@ -17,6 +17,7 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/remap/remap.h"
 #include "kleidicv/resize/resize_linear.h"
+#include "kleidicv/transform/warp_perspective.h"
 
 typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;
 
@@ -673,6 +674,27 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
         end - begin, channels, mapxy + begin * mapxy_stride / sizeof(int16_t),
         mapxy_stride, mapfrac + begin * mapfrac_stride / sizeof(uint16_t),
         mapfrac_stride, border_type, border_values);
+  };
+  return parallel_batches(callback, mt, dst_height);
+}
+
+kleidicv_error_t kleidicv_thread_warp_perspective_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    const float transformation[9], size_t channels,
+    kleidicv_interpolation_type_t interpolation,
+    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values,
+    kleidicv_thread_multithreading mt) {
+  if (!kleidicv::warp_perspective_is_implemented<uint8_t>(
+          dst_width, interpolation, border_type, channels)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_warp_perspective_stripe_u8(
+        src, src_stride, src_width, src_height, dst, dst_stride, dst_width,
+        dst_height, y_begin, std::min<size_t>(dst_height, y_end + 1),
+        transformation, channels, interpolation, border_type, border_values);
   };
   return parallel_batches(callback, mt, dst_height);
 }

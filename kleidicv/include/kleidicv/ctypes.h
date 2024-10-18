@@ -87,6 +87,14 @@ typedef enum {
   KLEIDICV_BORDER_TYPE_NONE,
 } kleidicv_border_type_t;
 
+/// KleidiCV interpolation types
+typedef enum {
+  /** Nearest neighbour interpolation */
+  KLEIDICV_INTERPOLATION_NEAREST,
+  /** Bilinear interpolation */
+  KLEIDICV_INTERPOLATION_LINEAR,
+} kleidicv_interpolation_type_t;
+
 /// Internal structure where morphology operations store their state
 typedef struct kleidicv_morphology_context_t_ kleidicv_morphology_context_t;
 
