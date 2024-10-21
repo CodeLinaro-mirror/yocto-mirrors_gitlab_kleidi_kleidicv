@@ -7,7 +7,7 @@
 set -eu
 
 CUSTOM_BUILD_SUFFIX=$1
-CPU=$2
+CPU_MASK=$2
 THERMAL_ZONE_ID=$3
 DISP_NAME=$4
 PERF_TEST_BINARY_BASENAME=$5
@@ -16,12 +16,27 @@ GTEST_PARAM_FILTER=$7
 
 : "${DEV_DIR:=/data/local/tmp}"
 
-CPU_MASK=$(echo "obase=16;2^${CPU}" | bc)
+get_freq_governor() {
+  cat "/sys/devices/system/cpu/cpu${1}/cpufreq/scaling_governor"
+}
+set_freq_governor() {
+  echo "${2}" >"/sys/devices/system/cpu/cpu${1}/cpufreq/scaling_governor"
+}
 
-FREQ_GOVERNOR_FILE="/sys/devices/system/cpu/cpu${CPU}/cpufreq/scaling_governor"
-
-PREV_FREQ_GOVERNOR=$(cat "${FREQ_GOVERNOR_FILE}")
-echo performance > "${FREQ_GOVERNOR_FILE}"
+i=0
+x=1
+c=$((0x${CPU_MASK}))
+CPUS=''
+PREV_GOVERNORS=''
+while [ "$c" -ge "$i" ]; do
+  if [ 0 -ne $(( c & x )) ]; then
+    CPUS="$i $CPUS"
+    PREV_GOVERNORS="$(get_freq_governor "$i") $PREV_GOVERNORS"
+    set_freq_governor "$i" performance
+  fi
+  i=$((i + 1))
+  x=$((x * 2))
+done
 
 THERMAL_ZONE_DIR="/sys/devices/virtual/thermal/thermal_zone${THERMAL_ZONE_ID}"
 
@@ -62,7 +77,13 @@ if [ -f "${DEV_DIR}/${PERF_TEST_BINARY_BASENAME}_kleidicv_${CUSTOM_BUILD_SUFFIX}
   run_test "kleidicv_${CUSTOM_BUILD_SUFFIX}"
 fi
 
-echo "${PREV_FREQ_GOVERNOR}" > "${FREQ_GOVERNOR_FILE}"
+while [ -n "${CPUS}" ]; do
+  c=$(echo "${CPUS}" | cut -d ' ' -f1)
+  CPUS=$(echo "${CPUS}" | cut -d ' ' -f2- -s)
+  g=$(echo "${PREV_GOVERNORS}" | cut -d ' ' -f1)
+  PREV_GOVERNORS=$(echo "${PREV_GOVERNORS}" | cut -d ' ' -f2- -s)
+  set_freq_governor "$c" "$g"
+done
 
 if [ "${START_CDEV_TRANSITION_COUNT}" != "$(cat "${CDEV_TRANSITION_COUNT_FILE}")" ]; then
   >&2 echo "BENCHMARK ERROR: CPU throttling happened, exiting..."

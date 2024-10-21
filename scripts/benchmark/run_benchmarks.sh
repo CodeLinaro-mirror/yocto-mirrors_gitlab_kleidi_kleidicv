@@ -24,20 +24,24 @@ set -eu
 # Environment:
 #   DEV_DIR: Directory on the devicewhere all relevant files are stored.
 #       Defaults to '/data/local/tmp'.
-#   CPU: Identifier of the core to run benchmarks on.
-#       Defaults to '4', which is most often a mid core.
+#   CPU_MASK: CPU mask to pass to 'taskset' to filter the cores to run benchmarks on.
+#       Defaults to '30', which most often specifies two mid cores.
 #   CUSTOM_BUILD_SUFFIX: Build name suffix for the extra build.
 #       Defaults to 'custom'.
 #   RESOLUTION: Sets the resolution to bechmark. See select_resolution() below for
 #       supported formats. Defaults to 4K.
 #   THERMAL_ZONE_ID: Identifier of the thermal zone to watch for changes.
 #       Defaults to '1', which is most often the zone associated with mid cores.
+#   BENCHMARK_FILTER: An optional filter (substring of the name) to restrict benchmark running.
+#       Defaults to '' (empty string), which means no filtering, run all benchmarks.
 # ------------------------------------------------------------------------------
 
 : "${DEV_DIR:=/data/local/tmp}"
-: "${CPU:=4}"
+: "${CPU_MASK:=30}"
 : "${CUSTOM_BUILD_SUFFIX:=custom}"
 : "${THERMAL_ZONE_ID:=1}"
+: "${BENCHMARK_FILTER:=}"
+: "${OPENCV_FOR_THREADS_NUM:=1}"
 
 # ------------------------------------------------------------------------------
 
@@ -66,6 +70,12 @@ select_resolution() {
     fi
 
     case "${RESOLUTION:-}" in
+        VGA)
+            PIXEL_FORMAT="640x480"
+            ;;
+        720p)
+            PIXEL_FORMAT="1280x720"
+            ;;
         FHD | 1080p)
             PIXEL_FORMAT="1920x1080"
             ;;
@@ -92,6 +102,8 @@ foreach_benchmark() {
         [ -z "${line}" ] && continue
         # Skip lines starting with '#'
         [ -z "${line%\#*}" ] && continue
+        # Skip benchmarks not matching the filter
+        [ 0 -eq "$(expr "$line" : "\w*${BENCHMARK_FILTER}\w*")" ] && continue
 
         "${2}" "${line}"
     done < "${1}"
@@ -127,9 +139,10 @@ run_benchmark() {
     # Many shells support 'local', therefore this warning is ignored.
     local -r disp_name="${spec%%:*}"
 
+    export OPENCV_FOR_THREADS_NUM
     # shellcheck disable=SC2086
     # Word splitting at the end is required here to produce PERF_TEST_BINARY_BASENAME, GTEST_FILTER and GTEST_PARAM_FILTER.
-    eval "${DEV_DIR}"/perf_test_op.sh "${CUSTOM_BUILD_SUFFIX}" "${CPU}" "${THERMAL_ZONE_ID}" "${disp_name}" ${spec#*:}
+    eval "${DEV_DIR}"/perf_test_op.sh "${CUSTOM_BUILD_SUFFIX}" "${CPU_MASK}" "${THERMAL_ZONE_ID}" "${disp_name}" ${spec#*:}
     >&2 echo
 }
 
