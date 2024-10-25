@@ -1114,7 +1114,7 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_linear_f32, const float *src,
 ///                     multiple of `sizeof(dst type)` and no less than `width *
 ///                     sizeof(dst type) * channels`, except for single-row
 ///                     images.
-/// @param width        Number of pixels in the data. (One pixel consists of
+/// @param width        Number of columns in the data. (One column consists of
 ///                     `channels` number of elements.)
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the data. Must be not more than
@@ -1152,7 +1152,7 @@ kleidicv_error_t kleidicv_sobel_3x3_vertical_s16_u8(
 ///                     multiple of `sizeof(dst type)` and no less than `width *
 ///                     sizeof(dst type) * channels`, except for single-row
 ///                     images.
-/// @param width        Number of pixels in the data. (One pixel consists of
+/// @param width        Number of columns in the data. (One column consists of
 ///                     `channels` number of elements.)
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the data. Must be not more than
