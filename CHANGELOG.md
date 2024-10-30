@@ -22,6 +22,12 @@ This changelog aims to follow the guiding principles of
 - Implementation for cv::pyrDown in the OpenCV HAL.
 - Sum implementation for 1-channel f32 input (not exposed to OpenCV)
 
+### Changed
+- Build options `KLEIDICV_ENABLE_SVE2` and `KLEIDICV_ENABLE_SME2` take effect directly.
+  Previously the build scripts had additional checks that attempted to identify whether the compiler supported SVE2/SME2 - these checks have been removed.
+- The default setting for `KLEIDICV_ENABLE_SVE2` is on for some popular compilers known to support SVE2, otherwise off.
+- `KLEIDICV_ENABLE_SME2` defaults to off. This is because the ACLE SME specification has not yet been finalized.
+
 ## 0.2.0 - 2024-09-30
 
 ### Added

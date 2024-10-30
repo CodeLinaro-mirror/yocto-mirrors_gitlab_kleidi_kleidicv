@@ -19,7 +19,7 @@ tar -xzf /opt/opencv-${OPENCV_VERSION}.tar.gz -C build/unpatched-opencv-src
 BUILD_ID=unpatched-opencv \
 OPENCV_PATH="$(pwd)/build/unpatched-opencv-src/opencv-${OPENCV_VERSION}" \
 CMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -fuse-ld=lld" \
-EXTRA_CMAKE_ARGS="-DBUILD_SHARED_LIBS=OFF -DWITH_KLEIDICV=ON -DKLEIDICV_SOURCE_PATH=$(pwd)" \
+EXTRA_CMAKE_ARGS="-DBUILD_SHARED_LIBS=OFF -DWITH_KLEIDICV=ON -DKLEIDICV_SOURCE_PATH=$(pwd) -DKLEIDICV_ENABLE_SME2=ON" \
 ./scripts/build-opencv.sh
 
 # ------------------------------------------------------------------------------

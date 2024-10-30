@@ -81,7 +81,8 @@ ninja -C "${OPENCV_DEFAULT_PATH}" subordinate
 cmake "${common_cmake_args[@]}" \
       -B "${OPENCV_KLEIDICV_PATH}" \
       -DWITH_KLEIDICV=ON \
-      -DKLEIDICV_SOURCE_PATH="${KLEIDICV_SOURCE_PATH}"
+      -DKLEIDICV_SOURCE_PATH="${KLEIDICV_SOURCE_PATH}" \
+      -DKLEIDICV_ENABLE_SME2=ON
 ninja -C "${OPENCV_KLEIDICV_PATH}" manager
 
 TESTRESULT=0

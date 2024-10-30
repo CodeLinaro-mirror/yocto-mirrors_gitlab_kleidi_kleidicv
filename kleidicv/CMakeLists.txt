@@ -6,15 +6,29 @@ cmake_minimum_required(VERSION 3.16)
 
 project("KleidiCV")
 
-include(CheckCXXCompilerFlag)
-
-if (CMAKE_SYSTEM_NAME MATCHES "^(Linux|Android)$")
-  option(KLEIDICV_ENABLE_SVE2 "Enable SVE2 code paths" ON)
-  option(KLEIDICV_ENABLE_SME2 "Enable SME2 code paths" ON)
+# Choose the default value for the KLEIDICV_ENABLE_SVE2 option
+# according to the compiler version. The list of compiler versions
+# recognised as supporting SVE may be extended in future.
+# check_cxx_compiler_flag is not used to test whether the compiler
+# supports +sve2 since this may succeed for compilers that have only
+# partial SVE support.
+if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
+    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12) OR
+    (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
+)
+  set(KLEIDICV_ENABLE_SVE2_DEFAULT ON)
 else()
-  set(KLEIDICV_ENABLE_SVE2 OFF)
-  set(KLEIDICV_ENABLE_SME2 OFF)
+  set(KLEIDICV_ENABLE_SVE2_DEFAULT OFF)
 endif()
+
+option(KLEIDICV_ENABLE_SVE2 "Enable SVE2 code paths" ${KLEIDICV_ENABLE_SVE2_DEFAULT})
+
+# KleidiCV's SME2 support is known to be compatible with Clang 19.1 but
+# it is disabled by default while the ACLE SME specification is in beta.
+# https://github.com/ARM-software/acle/blob/main/main/acle.md#sme-language-extensions-and-intrinsics
+option(KLEIDICV_ENABLE_SME2 "Enable SME2 code paths" OFF)
+
 option(
   KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS
   "Limits SME2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SME2 is false."
@@ -37,45 +51,11 @@ option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interlea
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
 
-# Compiler feature check for SVE2.
-set(KLEIDICV_BUILD_SVE2 OFF)
-if (KLEIDICV_ENABLE_SVE2)
-  check_cxx_compiler_flag("-march=armv8-a+sve2" KLEIDICV_COMPILER_SUPPORTS_SVE2)
-
-  # SVE2 support is incomplete in earlier versions of Clang.
-  if (CMAKE_CXX_COMPILER_ID MATCHES ".*Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12)
-    set(KLEIDICV_COMPILER_SUPPORTS_SVE2 OFF)
-  endif()
-
-  if (KLEIDICV_COMPILER_SUPPORTS_SVE2)
-    set(KLEIDICV_BUILD_SVE2 ON)
-  else()
-    message(STATUS "[KleidiCV] Compiler does not support SVE2")
-  endif()
-endif()
-
-# Compiler feature check for SME2.
-set(KLEIDICV_BUILD_SME2 OFF)
-if (KLEIDICV_ENABLE_SME2)
-  # Assuming only clang >= 19 supports SME2
-  if ((NOT CMAKE_CXX_COMPILER_ID MATCHES ".*Clang") OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19)
-    set(KLEIDICV_COMPILER_SUPPORTS_SME2 OFF)
-  else()
-    check_cxx_compiler_flag("-march=armv9-a+sme2" KLEIDICV_COMPILER_SUPPORTS_SME2)
-  endif()
-
-  if (KLEIDICV_COMPILER_SUPPORTS_SME2)
-    set(KLEIDICV_BUILD_SME2 ON)
-  else()
-    message(STATUS "[KleidiCV] Compiler does not support SME2")
-  endif()
-endif()
-
-if(KLEIDICV_BUILD_SME2 AND NOT KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS)
+if(KLEIDICV_ENABLE_SME2 AND NOT KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS)
   set(KLEIDICV_ALWAYS_ENABLE_SME2 ON)
 endif()
 
-if(KLEIDICV_BUILD_SVE2 AND NOT KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS)
+if(KLEIDICV_ENABLE_SVE2 AND NOT KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS)
   set(KLEIDICV_ALWAYS_ENABLE_SVE2 ON)
 endif()
 
@@ -158,7 +138,7 @@ target_compile_options(kleidicv_neon PRIVATE
   "-DKLEIDICV_TARGET_NEON=1"
 )
 
-if(KLEIDICV_BUILD_SVE2)
+if(KLEIDICV_ENABLE_SVE2)
   add_library(kleidicv_sve2 OBJECT ${KLEIDICV_SVE2_SOURCES})
   target_include_directories(kleidicv_sve2 PRIVATE ${KLEIDICV_INCLUDE_DIRS})
   set_target_properties(kleidicv_sve2 PROPERTIES CXX_STANDARD 17)
@@ -169,7 +149,7 @@ if(KLEIDICV_BUILD_SVE2)
   )
 endif()
 
-if(KLEIDICV_BUILD_SME2)
+if(KLEIDICV_ENABLE_SME2)
   add_library(kleidicv_sme2 OBJECT ${KLEIDICV_SME2_SOURCES})
   target_include_directories(kleidicv_sme2 PRIVATE ${KLEIDICV_INCLUDE_DIRS})
   set_target_properties(kleidicv_sme2 PROPERTIES CXX_STANDARD 17)
@@ -186,12 +166,12 @@ set_target_properties(kleidicv PROPERTIES CXX_STANDARD 17)
 target_compile_options(kleidicv PRIVATE ${KLEIDICV_CXX_FLAGS})
 target_link_libraries(kleidicv PRIVATE kleidicv_neon)
 
-if(KLEIDICV_BUILD_SVE2)
+if(KLEIDICV_ENABLE_SVE2)
   target_compile_definitions(kleidicv PRIVATE KLEIDICV_HAVE_SVE2)
   target_link_libraries(kleidicv PRIVATE kleidicv_sve2)
 endif()
 
-if(KLEIDICV_BUILD_SME2)
+if(KLEIDICV_ENABLE_SME2)
   target_compile_definitions(kleidicv PRIVATE KLEIDICV_HAVE_SME2)
   target_link_libraries(kleidicv PRIVATE kleidicv_sme2)
 endif()

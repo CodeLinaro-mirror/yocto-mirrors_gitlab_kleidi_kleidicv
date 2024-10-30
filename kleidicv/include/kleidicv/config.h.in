@@ -21,8 +21,6 @@
 
 #cmakedefine01 KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV
 
-#cmakedefine01 KLEIDICV_COMPILER_SUPPORTS_SME2
-
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
 #ifndef KLEIDICV_TARGET_NEON
 #define KLEIDICV_TARGET_NEON 0
