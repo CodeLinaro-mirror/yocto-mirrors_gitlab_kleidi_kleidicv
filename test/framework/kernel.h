@@ -30,10 +30,10 @@ class Kernel : protected Array2D<ElementType>, public Bordered {
   using Array2D<ElementType>::height;
   using Array2D<ElementType>::width;
 
-  explicit Kernel(Array2D<ElementType> mask)
+  explicit Kernel(const Array2D<ElementType>& mask)
       : Kernel(mask, {mask.width() / 2, mask.height() / 2}) {}
 
-  explicit Kernel(Array2D<ElementType> mask, Point anchor)
+  explicit Kernel(const Array2D<ElementType>& mask, Point anchor)
       : Array2D<ElementType>(mask), anchor_{anchor} {}
 
   // Returns the anchor point of the kernel.
@@ -97,7 +97,7 @@ class KernelTest {
     }
   }
 
-  void test(Kernel<IntermediateType> kernel,
+  void test(const Kernel<IntermediateType>& kernel,
             Generator<ArrayLayout>& array_layout_generator,
             Generator<kleidicv_border_type_t>& border_type_generator,
             Generator<kleidicv_border_values_t>& border_values_generator,
@@ -116,7 +116,7 @@ class KernelTest {
     }
   }
 
-  void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
+  void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
             Generator<kleidicv_border_type_t>& border_type_generator,
             Generator<kleidicv_border_values_t>& border_values_generator,
             Generator<InputType>& element_generator) {
@@ -130,7 +130,7 @@ class KernelTest {
     }
   }
 
-  void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
+  void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
             kleidicv_border_type_t border_type,
             Generator<kleidicv_border_values_t>& border_values_generator,
             Generator<InputType>& element_generator) {
@@ -144,7 +144,7 @@ class KernelTest {
     }
   }
 
-  void test(Kernel<IntermediateType> kernel, ArrayLayout array_layout,
+  void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
             kleidicv_border_type_t border_type,
             kleidicv_border_values_t border_values,
             Generator<InputType>& element_generator) {

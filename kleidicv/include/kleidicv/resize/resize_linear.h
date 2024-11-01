@@ -5,6 +5,9 @@
 #ifndef KLEIDICV_RESIZE_RESIZE_LINEAR_H
 #define KLEIDICV_RESIZE_RESIZE_LINEAR_H
 
+#include <algorithm>
+#include <array>
+
 #include "kleidicv/kleidicv.h"
 
 namespace kleidicv {
@@ -15,13 +18,12 @@ inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
   if (src_width == 0 || src_height == 0) {
     return true;
   }
-  const size_t implemented_ratios[] = {2, 4};
-  for (size_t ratio : implemented_ratios) {
-    if (src_width * ratio == dst_width && src_height * ratio == dst_height) {
-      return true;
-    }
-  }
-  return false;
+  const std::array<size_t, 2> implemented_ratios = {2, 4};
+  return std::any_of(implemented_ratios.begin(), implemented_ratios.end(),
+                     [&](size_t ratio) {
+                       return src_width * ratio == dst_width &&
+                              src_height * ratio == dst_height;
+                     });
 }
 
 inline bool resize_linear_f32_is_implemented(size_t src_width,
@@ -31,13 +33,12 @@ inline bool resize_linear_f32_is_implemented(size_t src_width,
   if (src_width == 0 || src_height == 0) {
     return true;
   }
-  const size_t implemented_ratios[] = {2, 4, 8};
-  for (size_t ratio : implemented_ratios) {
-    if (src_width * ratio == dst_width && src_height * ratio == dst_height) {
-      return true;
-    }
-  }
-  return false;
+  const std::array<size_t, 3> implemented_ratios = {2, 4, 8};
+  return std::any_of(implemented_ratios.begin(), implemented_ratios.end(),
+                     [&](size_t ratio) {
+                       return src_width * ratio == dst_width &&
+                              src_height * ratio == dst_height;
+                     });
 }
 
 namespace neon {

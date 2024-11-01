@@ -71,19 +71,19 @@ class BlurAndDownsample {
 
     loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       horizontal_vector_path_2x(pg_all, pg_all, src_rows, pg_all, dst_rows,
-                                border_offsets, index);
+                                border_offsets, static_cast<ptrdiff_t>(index));
     });
 
-    loop.remaining(
-        [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
-          svbool_t pg_src_0 = BufferVecTraits::svwhilelt(index, length);
-          svbool_t pg_src_1 = BufferVecTraits::svwhilelt(
-              index + BufferVecTraits::num_lanes(), length);
-          svbool_t pg_dst =
-              BufferVecTraits::svwhilelt((index + 1) / 2, (length + 1) / 2);
-          horizontal_vector_path_2x(pg_src_0, pg_src_1, src_rows, pg_dst,
-                                    dst_rows, border_offsets, index);
-        });
+    loop.remaining([&](size_t index,
+                       size_t length) KLEIDICV_STREAMING_COMPATIBLE {
+      svbool_t pg_src_0 = BufferVecTraits::svwhilelt(index, length);
+      svbool_t pg_src_1 = BufferVecTraits::svwhilelt(
+          index + BufferVecTraits::num_lanes(), length);
+      svbool_t pg_dst =
+          BufferVecTraits::svwhilelt((index + 1) / 2, (length + 1) / 2);
+      horizontal_vector_path_2x(pg_src_0, pg_src_1, src_rows, pg_dst, dst_rows,
+                                border_offsets, static_cast<ptrdiff_t>(index));
+    });
   }
 
   void process_horizontal_borders(
@@ -98,15 +98,15 @@ class BlurAndDownsample {
   }
 
  private:
-  void vertical_vector_path_2x(svbool_t pg, Rows<const SourceType> src_rows,
-                               Rows<BufferType> dst_rows,
-                               BorderOffsets border_offsets, size_t index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    auto src_row_0 = &src_rows.at(border_offsets.c0())[index];
-    auto src_row_1 = &src_rows.at(border_offsets.c1())[index];
-    auto src_row_2 = &src_rows.at(border_offsets.c2())[index];
-    auto src_row_3 = &src_rows.at(border_offsets.c3())[index];
-    auto src_row_4 = &src_rows.at(border_offsets.c4())[index];
+  void vertical_vector_path_2x(
+      svbool_t pg, Rows<const SourceType> src_rows, Rows<BufferType> dst_rows,
+      BorderOffsets border_offsets,
+      ptrdiff_t index) const KLEIDICV_STREAMING_COMPATIBLE {
+    const auto *src_row_0 = &src_rows.at(border_offsets.c0())[index];
+    const auto *src_row_1 = &src_rows.at(border_offsets.c1())[index];
+    const auto *src_row_2 = &src_rows.at(border_offsets.c2())[index];
+    const auto *src_row_3 = &src_rows.at(border_offsets.c3())[index];
+    const auto *src_row_4 = &src_rows.at(border_offsets.c4())[index];
 
     SourceVector2Type src_0;
     SourceVector2Type src_1;
@@ -130,13 +130,14 @@ class BlurAndDownsample {
                          &dst_rows[index]);
     vertical_vector_path(pg, svget2(src_0, 1), svget2(src_1, 1),
                          svget2(src_2, 1), svget2(src_3, 1), svget2(src_4, 1),
-                         &dst_rows[index + SourceVecTraits::num_lanes()]);
+                         &dst_rows[index + static_cast<ptrdiff_t>(
+                                               SourceVecTraits::num_lanes())]);
   }
 
-  void vertical_vector_path_1x(svbool_t pg, Rows<const SourceType> src_rows,
-                               Rows<BufferType> dst_rows,
-                               BorderOffsets border_offsets, size_t index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path_1x(
+      svbool_t pg, Rows<const SourceType> src_rows, Rows<BufferType> dst_rows,
+      BorderOffsets border_offsets,
+      ptrdiff_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     SourceVectorType src_0 =
         svld1(pg, &src_rows.at(border_offsets.c0())[index]);
     SourceVectorType src_1 =
@@ -176,12 +177,12 @@ class BlurAndDownsample {
       svbool_t pg_src_0, svbool_t pg_src_1, Rows<const BufferType> src_rows,
       svbool_t pg_dst, Rows<DestinationType> dst_rows,
       BorderOffsets border_offsets,
-      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
-    auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
-    auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
-    auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
-    auto src_3 = &src_rows.at(0, border_offsets.c3())[index];
-    auto src_4 = &src_rows.at(0, border_offsets.c4())[index];
+      ptrdiff_t index) const KLEIDICV_STREAMING_COMPATIBLE {
+    const auto *src_0 = &src_rows.at(0, border_offsets.c0())[index];
+    const auto *src_1 = &src_rows.at(0, border_offsets.c1())[index];
+    const auto *src_2 = &src_rows.at(0, border_offsets.c2())[index];
+    const auto *src_3 = &src_rows.at(0, border_offsets.c3())[index];
+    const auto *src_4 = &src_rows.at(0, border_offsets.c4())[index];
 
     BufferVectorType src_0_0 = svld1(pg_src_0, &src_0[0]);
     BufferVectorType src_1_0 = svld1_vnum(pg_src_1, &src_0[0], 1);
@@ -220,10 +221,10 @@ class BlurAndDownsample {
   // Applies horizontal filtering for the borders using SIMD operations.
   //
   // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void horizontal_border_path(svbool_t pg, Rows<const BufferType> src_rows,
-                              Rows<DestinationType> dst_rows,
-                              BorderOffsets border_offsets, size_t index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_border_path(
+      svbool_t pg, Rows<const BufferType> src_rows,
+      Rows<DestinationType> dst_rows, BorderOffsets border_offsets,
+      ptrdiff_t index) const KLEIDICV_STREAMING_COMPATIBLE {
     BufferVectorType src_0 =
         svld1(pg, &src_rows.at(0, border_offsets.c0())[index]);
     BufferVectorType src_1 =

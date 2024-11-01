@@ -28,10 +28,7 @@ namespace kleidicv {
 
 inline bool sobel_is_implemented(size_t width, size_t height,
                                  size_t kernel_size) {
-  if (width < kernel_size - 1 || height < kernel_size - 1) {
-    return false;
-  }
-  return true;
+  return width >= kernel_size - 1 && height >= kernel_size - 1;
 }
 
 namespace neon {

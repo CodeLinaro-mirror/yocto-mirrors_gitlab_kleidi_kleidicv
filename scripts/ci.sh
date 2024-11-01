@@ -47,8 +47,8 @@ cmake -S . -B build -G Ninja \
   -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_CHECK_BANNED_FUNCTIONS=ON
 
-# Workaround to avoid applying clang-tidy to files in build directory
-echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/.clang-tidy
+# Workaround to avoid applying clang-tidy to files in external projects.
+echo '{"Checks": "-*,cppcoreguidelines-avoid-goto"}'>build/_deps/.clang-tidy
 
 ninja -C build
 

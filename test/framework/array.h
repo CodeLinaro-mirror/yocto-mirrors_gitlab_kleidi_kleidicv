@@ -127,8 +127,8 @@ class Array2D : public TwoDimensional<ElementType> {
 
   // Fills the underlying memory range with the output of a caller provided
   // callable object skipping padding bytes.
-  void fill(
-      std::function<std::optional<ElementType>(size_t, size_t)> value_at) {
+  void fill(const std::function<std::optional<ElementType>(size_t, size_t)>
+                &value_at) {
     ASSERT_EQ(valid(), true);
 
     ElementType *ptr = data();

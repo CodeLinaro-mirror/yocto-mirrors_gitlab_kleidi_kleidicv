@@ -49,6 +49,6 @@ Checks: >-
   -readability-named-parameter,
   -readability-redundant-inline-specifier
 WarningsAsErrors: '*'
-HeaderFilterRegex: '(kleidicv|test)/.*'
+HeaderFilterRegex: '.*'
 FormatStyle: google
 ...

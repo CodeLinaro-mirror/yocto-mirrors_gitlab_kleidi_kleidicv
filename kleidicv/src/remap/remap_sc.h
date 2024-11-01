@@ -268,8 +268,9 @@ class RemapS16Point5SVE2<uint8_t> {
     acc_b = svmlalb_u32(acc_b, line1, yfrac);
     acc_t = svmlalt_u32(acc_t, line1, yfrac);
 
-    svuint16_t result = svshrnt(svshrnb(acc_b, 2 * REMAP16POINT5_FRAC_BITS),
-                                acc_t, 2 * REMAP16POINT5_FRAC_BITS);
+    svuint16_t result = svshrnt(
+        svshrnb(acc_b, static_cast<uint64_t>(2 * REMAP16POINT5_FRAC_BITS)),
+        acc_t, static_cast<uint64_t>(2 * REMAP16POINT5_FRAC_BITS));
     svst1b_u16(pg, &dst[0], result);
     mapfrac += step;
     dst += step;
