@@ -86,8 +86,8 @@ cmake "${common_cmake_args[@]}" \
 ninja -C "${OPENCV_KLEIDICV_PATH}" manager
 
 TESTRESULT=0
-qemu-aarch64 -cpu cortex-a35 "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
-qemu-aarch64 -cpu max,sve128=on,sme=off "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
-qemu-aarch64 -cpu max,sve128=on,sme512=on "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a35 "${OPENCV_KLEIDICV_PATH}/bin/manager" "$(which qemu-aarch64)" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu max,sve128=on,sme=off "${OPENCV_KLEIDICV_PATH}/bin/manager" "$(which qemu-aarch64)" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+qemu-aarch64 -cpu max,sve128=on,sme512=on "${OPENCV_KLEIDICV_PATH}/bin/manager" "$(which qemu-aarch64)" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
 
 exit $TESTRESULT

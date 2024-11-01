@@ -13,8 +13,9 @@
 #include "utils.h"
 
 int main(int argc, char** argv) {
-  if (argc < 2) {
-    std::cerr << "Error! Subordinate task is not defined as the first argument!"
+  if (argc < 3) {
+    std::cerr << "Error! The emulator for and the binary of the Subordinate "
+                 "task are not defined as the first and second arguments!"
               << std::endl;
     return -1;
   }
@@ -36,7 +37,7 @@ int main(int argc, char** argv) {
       return -2;
     }
     // Starting subordinate task
-    execl(argv[1], argv[1], static_cast<char*>(NULL));
+    execl(argv[1], argv[1], argv[2], static_cast<char*>(NULL));
     throw ExceptionWithErrno("Cannot start subordinate executable");
   }
 
