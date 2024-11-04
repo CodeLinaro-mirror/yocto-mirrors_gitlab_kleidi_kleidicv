@@ -17,6 +17,8 @@
 # variables should be set as well.
 #
 # Options:
+#   CMAKE_TARGETS:                Optional space separated list for CMake build targets.
+#   COMMON_EXTRA_CMAKE_ARGS:      Optional commmon CMake options for all the opencv builds.
 #   VANILLA_EXTRA_CMAKE_OPTIONS:  Optional extra CMake options for the opencv-vanilla build.
 #   KLEIDICV_EXTRA_CMAKE_OPTIONS: Optional extra CMake options for the opencv-kleidicv build.
 #   CUSTOM_CMAKE_OPTIONS:         If provided, an extra build will be created with KleidiCV.
@@ -37,36 +39,36 @@ BENCHMARK_SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SCRIPT_PATH="${BENCHMARK_SCRIPT_PATH}/.."
 KLEIDICV_SOURCE_PATH="$(realpath "${SCRIPT_PATH}/..")"
 
-export COMMON_EXTRA_CMAKE_ARGS="\
+export COMMON_CMAKE_ARGS="\
   -DANDROID_ABI=arm64-v8a \
-  -DBUILD_TESTS=OFF \
   -DBUILD_PERF_TESTS=ON \
-  -DBENCHMARK_DOWNLOAD_DEPENDENCIES=ON \
 "
 
 # ------------------------------------------------------------------------------
 
 export BUILD_ID="opencv-vanilla"
 export EXTRA_CMAKE_ARGS="\
-    ${COMMON_EXTRA_CMAKE_ARGS} \
+    ${COMMON_CMAKE_ARGS} \
+    ${COMMON_EXTRA_CMAKE_ARGS:-} \
     -DWITH_KLEIDICV=OFF \
     ${VANILLA_EXTRA_CMAKE_OPTIONS:-} \
 "
 
-"${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
+"${SCRIPT_PATH}"/build-opencv.sh "${CMAKE_TARGETS:-}"
 
 # ------------------------------------------------------------------------------
 
 export BUILD_ID="opencv-kleidicv"
 export EXTRA_CMAKE_ARGS="\
-    ${COMMON_EXTRA_CMAKE_ARGS} \
+    ${COMMON_CMAKE_ARGS} \
+    ${COMMON_EXTRA_CMAKE_ARGS:-} \
     -DWITH_KLEIDICV=ON \
     -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
     -DKLEIDICV_ENABLE_SME2=ON \
     ${KLEIDICV_EXTRA_CMAKE_OPTIONS:-} \
 "
 
-"${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
+"${SCRIPT_PATH}"/build-opencv.sh "${CMAKE_TARGETS:-}"
 
 # ------------------------------------------------------------------------------
 
@@ -76,14 +78,15 @@ fi
 
 export BUILD_ID="opencv-kleidicv-${CUSTOM_BUILD_SUFFIX:-custom}"
 export EXTRA_CMAKE_ARGS="\
-    ${COMMON_EXTRA_CMAKE_ARGS} \
+    ${COMMON_CMAKE_ARGS} \
+    ${COMMON_EXTRA_CMAKE_ARGS:-} \
     -DWITH_KLEIDICV=ON \
     -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
     -DKLEIDICV_ENABLE_SME2=ON \
     ${CUSTOM_CMAKE_OPTIONS} \
 "
 
-"${SCRIPT_PATH}"/build-opencv.sh "opencv_perf_imgproc opencv_perf_core"
+"${SCRIPT_PATH}"/build-opencv.sh "${CMAKE_TARGETS:-}"
 
 # ------------------------------------------------------------------------------
 # End of script
