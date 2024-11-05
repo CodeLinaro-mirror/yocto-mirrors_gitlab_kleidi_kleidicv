@@ -60,12 +60,6 @@ def parse_args():
     )
     parser.add_argument("--adb", default="adb", help="Path to adb")
     parser.add_argument(
-        "--su",
-        default="su -c",
-        help="Command to run as super-user on the device. "
-        'Typically "su -c" or "su 0"',
-    )
-    parser.add_argument(
         "--taskset_masks",
         type=int_hex,
         nargs="+",
@@ -129,10 +123,9 @@ def parse_args():
 
 
 class ADBRunner:
-    def __init__(self, *, adb_command, serial_number, su, verbose):
+    def __init__(self, *, adb_command, serial_number, verbose):
         self.adb_command = adb_command
         self.serial_number = serial_number
-        self.su = su.split() if su else []
         self.verbose = verbose
 
     def _make_adb_command(self):
@@ -145,20 +138,20 @@ class ADBRunner:
         if self.verbose:
             print("+" + shlex.join(command))
 
-    def check_output(self, args):
-        command = (
-            self._make_adb_command() + ["shell"] + self.su + [shlex.join(args)]
-        )
+    def check_output(self, script):
+        command = self._make_adb_command() + ["shell", "su"]
         self._print_command(command)
+        if self.verbose:
+            print("+" + script)
         try:
             return subprocess.check_output(
-                command, stderr=subprocess.STDOUT
+                command,
+                stderr=subprocess.STDOUT,
+                input=script.encode(),
             ).decode()
         except subprocess.CalledProcessError as e:
             out = e.stdout.decode()
             print(out, file=sys.stderr)
-            if "su: invalid uid/gid '-c'" in out:
-                print('\nTry using --su "su 0"\n', file=sys.stderr)
             raise
 
     def push(self, filenames, dst):
@@ -184,7 +177,7 @@ def wait_for_cooldown(runner, thermal_zone):
         f"/sys/devices/virtual/thermal/thermal_zone{thermal_zone}/temp"
     )
     while True:
-        temp = int(runner.check_output(["cat", temp_filename]))
+        temp = int(runner.check_output(f"cat {shlex.quote(temp_filename)}"))
         if temp < 40000:
             return
         print(f"Temperature {temp} - waiting to cool down")
@@ -216,7 +209,7 @@ def run_executable_tests(
     if args.gtest_param_filter:
         command_args.append(f"--gtest_param_filter={args.gtest_param_filter}")
 
-    runner.check_output(command_args)
+    runner.check_output(shlex.join(command_args))
     testsuite_dict = runner.read_json(output_file)
 
     test_list = []
@@ -238,17 +231,17 @@ def run_executable_tests(
         wait_for_cooldown(runner, thermal_zone)
         try:
             runner.check_output(
-                [
-                    "cd",
-                    args.tmpdir,
-                    "&&",
-                    "taskset",
-                    f"{taskset_mask:x}",
-                    executable,
-                    f"--gtest_output=json:{output_file}",
-                    f"--gtest_filter={test_name}",
-                    f"--perf_min_samples={args.perf_min_samples}",
-                ]
+                f"cd {shlex.quote(args.tmpdir)} && "
+                + shlex.join(
+                    [
+                        "taskset",
+                        f"{taskset_mask:x}",
+                        executable,
+                        f"--gtest_output=json:{output_file}",
+                        f"--gtest_filter={test_name}",
+                        f"--perf_min_samples={args.perf_min_samples}",
+                    ]
+                )
             )
         except subprocess.CalledProcessError:
             continue
@@ -290,15 +283,15 @@ def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone):
         if (1 << cpu) & taskset_mask == 0:
             continue
 
-        scaling_governor_filename = (
+        scaling_governor_filename_quoted = shlex.quote(
             f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
         )
         prev_scaling_governor = runner.check_output(
-            ["cat", scaling_governor_filename]
+            f"cat {scaling_governor_filename_quoted}"
         ).strip()
         try:
             runner.check_output(
-                ["echo", "performance", "~>", scaling_governor_filename]
+                f"echo performance ~> {scaling_governor_filename_quoted}"
             )
             return {
                 get_run_name(
@@ -310,12 +303,7 @@ def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone):
             }
         finally:
             runner.check_output(
-                [
-                    "echo",
-                    prev_scaling_governor,
-                    "~>",
-                    scaling_governor_filename,
-                ]
+                f"echo {shlex.quote(prev_scaling_governor)} ~> {scaling_governor_filename_quoted}"
             )
 
 
@@ -368,7 +356,6 @@ def main():
     runner = ADBRunner(
         adb_command=args.adb,
         serial_number=args.serial,
-        su=args.su,
         verbose=args.verbose,
     )
 
