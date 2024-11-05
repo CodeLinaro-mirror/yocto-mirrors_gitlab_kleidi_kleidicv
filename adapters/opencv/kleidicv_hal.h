@@ -146,6 +146,15 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
                 size_t dst_step, int dst_depth, int width, int height, int cn,
                 double lower_bound, double upper_bound);
 
+int optical_flow_u8(const uchar *prev_data, size_t prev_data_step,
+                    const int16_t *prev_deriv_data, size_t prev_deriv_step,
+                    const uchar *next_data, size_t next_step, int width,
+                    int height, int cn, const float *prev_points,
+                    float *next_points, size_t point_count, uchar *status,
+                    float *err, const int win_width, const int win_height,
+                    int termination_count, double termination_epsilon,
+                    bool get_min_eigen_vals, float min_eigen_vals_threshold);
+
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
               int dst_width, int dst_height, const int16_t *mapxy,
@@ -631,6 +640,26 @@ static inline int kleidicv_in_range_f32_with_fallback(
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 
 #ifdef OPENCV_VIDEO_HAL_REPLACEMENT_HPP
+
+#ifdef cv_hal_LKOpticalFlowLevel
+static inline int kleidicv_opencv_optical_flow_u8_with_fallback(
+    const uchar *prev_data, size_t prev_data_step,
+    const int16_t *prev_deriv_data, size_t prev_deriv_step,
+    const uchar *next_data, size_t next_step, int width, int height, int cn,
+    const float *prev_points, float *next_points, size_t point_count,
+    uchar *status, float *err, const int win_width, const int win_height,
+    int termination_count, double termination_epsilon, bool get_min_eigen_vals,
+    float min_eigen_vals_threshold) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      optical_flow_u8, cv_hal_LKOpticalFlowLevel, prev_data, prev_data_step,
+      prev_deriv_data, prev_deriv_step, next_data, next_step, width, height, cn,
+      prev_points, next_points, point_count, status, err, win_width, win_height,
+      termination_count, termination_epsilon, get_min_eigen_vals,
+      min_eigen_vals_threshold);
+}
+#undef cv_hal_LKOpticalFlowLevel
+#define cv_hal_LKOpticalFlowLevel kleidicv_opencv_optical_flow_u8_with_fallback
+#endif  // cv_hal_LKOpticalFlowLevel
 
 // ScharrDeriv
 // This condition can be removed if this HAL macro is defined in all supported

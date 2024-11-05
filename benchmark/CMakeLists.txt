@@ -22,13 +22,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(benchmark)
 
-
-set(KLEIDICV_INCLUDE_DIR
-  ${CMAKE_CURRENT_SOURCE_DIR}/../kleidicv/include
-  ${CMAKE_CURRENT_BINARY_DIR}/../kleidicv/include
-)
-set(KLEIDICV_BENCHMARK_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
 set(KLEIDICV_BENCHMARK_CXX_FLAGS
   "-Wall"
   "-Wextra"
@@ -60,13 +53,16 @@ set_target_properties(
 
 target_include_directories(
   kleidicv-benchmark
-  PRIVATE ${KLEIDICV_INCLUDE_DIR}
-  PRIVATE ${KLEIDICV_BENCHMARK_INCLUDE_DIR}
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../kleidicv/include
+  ${CMAKE_CURRENT_BINARY_DIR}/../kleidicv/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../kleidicv_opencv/include
 )
 
 target_link_libraries(
   kleidicv-benchmark
   kleidicv
+  kleidicv_opencv
   benchmark::benchmark
 )
 

@@ -14,7 +14,7 @@
 
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
-#include "kleidicv/kleidicv.h"
+#include "kleidicv_opencv/kleidicv_opencv.h"
 #include "kleidicv_thread/kleidicv_thread.h"
 #include "opencv2/core/base.hpp"
 #include "opencv2/core/cvdef.h"
@@ -1304,6 +1304,21 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
       reinterpret_cast<const float *>(src_data), src_step,
       reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
       static_cast<float>(lower_bound), static_cast<float>(upper_bound)));
+}
+
+int optical_flow_u8(const uchar *prev_data, size_t prev_data_step,
+                    const int16_t *prev_deriv_data, size_t prev_deriv_step,
+                    const uchar *next_data, size_t next_step, int width,
+                    int height, int cn, const float *prev_points,
+                    float *next_points, size_t point_count, uchar *status,
+                    float *err, const int win_width, const int win_height,
+                    int termination_count, double termination_epsilon,
+                    bool get_min_eigen_vals, float min_eigen_vals_threshold) {
+  return convert_error(kleidicv_opencv_optical_flow_u8(
+      prev_data, prev_data_step, prev_deriv_data, prev_deriv_step, next_data,
+      next_step, width, height, cn, prev_points, next_points, point_count,
+      status, err, win_width, win_height, termination_count,
+      termination_epsilon, get_min_eigen_vals, min_eigen_vals_threshold));
 }
 
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,

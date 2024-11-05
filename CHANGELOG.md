@@ -22,6 +22,7 @@ This changelog aims to follow the guiding principles of
   - Fixed-point interpolation, for replicated borders with 1-channel u8 input.
 - WarpPerspective implementation
   - Nearest and Linear interpolation method, for 1-channel u8 input.
+- Implementation of cv::calcOpticalFlowPyrLK in the OpenCV HAL.
 
 ### Changed
 - Increased precision of sum for 32 bit floats and expose it to OpenCV HAL.

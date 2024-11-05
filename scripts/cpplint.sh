@@ -34,5 +34,5 @@ cpplint \
     --recursive \
     --exclude=build \
     --counting=detailed \
-    --filter=-build/c++11,-build/header_guard,-build/include_subdir,-readability/todo,-runtime/references,-whitespace/indent,-whitespace/line_length \
+    --filter=-build/c++11,-build/header_guard,-build/include_subdir,-build/namespaces_headers,-readability/todo,-runtime/references,-whitespace/indent,-whitespace/line_length \
     .

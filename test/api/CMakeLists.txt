@@ -25,6 +25,7 @@ target_include_directories(
   kleidicv-api-test
   PRIVATE ${KLEIDICV_INCLUDE_DIR}
   PRIVATE ${KLEIDICV_TEST_INCLUDE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../kleidicv_opencv/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../kleidicv_thread/include
 )
 
@@ -39,6 +40,7 @@ endif()
 target_link_libraries(
   kleidicv-api-test
   kleidicv
+  kleidicv_opencv
   kleidicv_thread
   gtest
   gmock

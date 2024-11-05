@@ -8,7 +8,8 @@
 #include <cstdint>
 #include <random>
 
-#include "kleidicv/kleidicv.h"
+#include "kleidicv/filters/scharr.h"
+#include "kleidicv_opencv/kleidicv_opencv.h"
 
 // These variables can be set runtime, from command line
 extern size_t image_width, image_height;
@@ -462,6 +463,139 @@ static void in_range(Function f, T lower_bound, T upper_bound,
 
 BENCH_IN_RANGE(in_range_u8, in_range_u8, 1, 2, uint8_t);
 BENCH_IN_RANGE(in_range_f32, in_range_f32, 1.111, 1.112, float);
+
+// Like kleidicv_scharr_interleaved_s16_u8 but handles edge pixels.
+// Edge pixels are handled using KLEIDICV_BORDER_TYPE_REVERSE (or in OpenCV
+// terminology REFLECT_101).
+static void scharr_xy_border_reverse(const uint8_t* src, size_t src_stride,
+                                     int16_t* dst, size_t dst_stride,
+                                     size_t width, size_t height) {
+  for (size_t y = 0; y < height; y++) {
+    const uint8_t* src_0 = src;
+    if (y > 0) {
+      src_0 += src_stride * (y - 1);
+    } else if (height > 1) {
+      src_0 += src_stride;
+    }
+
+    const uint8_t* src_1 = src + src_stride * y;
+
+    const uint8_t* src_2 = src;
+    if (y + 1 < height) {
+      src_2 += src_stride * (y + 1);
+    } else if (height > 1) {
+      src_2 += src_stride * (height - 2);
+    }
+
+    int16_t* dst_row = dst + y * dst_stride / sizeof(int16_t);
+    for (size_t x = 0; x < width; ++x) {
+      size_t x0 = 0;
+      if (x > 0) {
+        x0 = x - 1;
+      } else if (width > 1) {
+        x0 = 1;
+      }
+
+      size_t x2 = 0;
+      if (x + 1 < width) {
+        x2 = x + 1;
+      } else if (width > 1) {
+        x2 = width - 2;
+      }
+      dst_row[x * 2] = static_cast<int16_t>(
+          (src_0[x2] + src_2[x2] - src_0[x0] - src_2[x0]) * 3 +
+          (src_1[x2] - src_1[x0]) * 10);
+      dst_row[x * 2 + 1] = static_cast<int16_t>(
+          (src_2[x0] + src_2[x2] - src_0[x0] - src_0[x2]) * 3 +
+          (src_2[x] - src_0[x]) * 10);
+    }
+  }
+}
+
+static void optical_flow_u8(benchmark::State& state) {
+  const size_t max_window_width = 40;
+  const size_t padded_image_width = image_width + max_window_width * 2;
+  const size_t padded_image_height = image_height + max_window_width * 2;
+  std::minstd_rand generator;
+
+  auto make_prev_image = [&]() {
+    std::vector<uint8_t> prev_image(padded_image_width * padded_image_height);
+    std::generate(prev_image.begin(), prev_image.end(), generator);
+    return prev_image;
+  };
+  static const std::vector<uint8_t> prev_image = make_prev_image();
+
+  auto make_next_image = [&]() {
+    std::vector<uint8_t> next_image(prev_image.size());
+    for (size_t i = 0; i != prev_image.size(); ++i) {
+      // Make the next image the same as the previous image but with some noise
+      // added.
+      next_image[i] = prev_image[i] + (generator() & 0xF);
+    }
+    return next_image;
+  };
+  static const std::vector<uint8_t> next_image = make_next_image();
+
+  auto make_deriv = [&]() {
+    std::vector<int16_t> deriv(prev_image.size() * 2);
+    scharr_xy_border_reverse(prev_image.data(), padded_image_width,
+                             deriv.data(),
+                             padded_image_width * 2 * sizeof(int16_t),
+                             padded_image_width, padded_image_height);
+    return deriv;
+  };
+  static const std::vector<int16_t> deriv = make_deriv();
+
+  const size_t point_count_x =
+      std::max<size_t>(1, image_width / max_window_width);
+  const size_t point_count_y =
+      std::max<size_t>(1, image_height / max_window_width);
+  const size_t point_count = point_count_x * point_count_y;
+
+  auto make_prev_points = [&]() {
+    std::vector<float> prev_points;
+    prev_points.reserve(point_count * 2);
+
+    // Generate regularly spaced but jittered points to sample
+    std::uniform_real_distribution<float> point_jitter{0.0F, 1.0F};
+    for (size_t j = 0; j != point_count_y; ++j) {
+      for (size_t i = 0; i != point_count_x; ++i) {
+        float x = (i + point_jitter(generator)) * image_width / point_count_x;
+        float y = (j + point_jitter(generator)) * image_height / point_count_y;
+        prev_points.push_back(x);
+        prev_points.push_back(y);
+      }
+    }
+    return prev_points;
+  };
+  static const std::vector<float> prev_points = make_prev_points();
+  std::vector<float> next_points(point_count * 2);
+
+  std::vector<uint8_t> status(point_count);
+
+  const size_t window_width = state.range(0);
+  const size_t window_height = window_width;
+
+  bench_functor(state, [&]() {
+    (void)kleidicv_opencv_optical_flow_u8(
+        prev_image.data() + padded_image_width * window_height + window_width,
+        padded_image_width,
+        deriv.data() + (padded_image_width * window_height + window_width) * 2,
+        padded_image_width * 2 * sizeof(int16_t),
+        next_image.data() + padded_image_width * window_height + window_width,
+        padded_image_width, image_width, image_height, 1 /*channels*/,
+        prev_points.data(), next_points.data(), point_count, status.data(),
+        nullptr /*err*/, window_width, window_height, 30 /*termination_count*/,
+        0.0001 /*termination_epsilon*/, true /*get_min_eigen_vals*/,
+        0.0001 /*min_eigen_vals_threshold*/);
+  });
+}
+BENCHMARK(optical_flow_u8)
+    ->ArgName("window_width")
+    ->Arg(7)
+    ->Arg(9)
+    ->Arg(11)
+    ->Arg(21);
 
 static void blur_and_downsample_u8(benchmark::State& state) {
   kleidicv_filter_context_t* context;

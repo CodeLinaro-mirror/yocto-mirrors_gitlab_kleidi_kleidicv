@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.16)
 project("KleidiCV" CXX)
 
 add_subdirectory(kleidicv)
+add_subdirectory(kleidicv_opencv)
 add_subdirectory(kleidicv_thread)
 add_subdirectory(test)
 add_subdirectory(benchmark)

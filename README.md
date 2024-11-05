@@ -18,3 +18,7 @@ It is designed to be simple to integrate into a wide variety of projects.
 * [C API documentation](https://kleidi.sites.arm.com/kleidicv/)
 * [Benchmarking](doc/benchmark.md)
 * [Testing](doc/test.md)
+
+## Copyright and Licensing
+
+This project follows the [REUSE specification 3.0](https://reuse.software/spec-3.0/).

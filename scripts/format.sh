@@ -32,6 +32,7 @@ SOURCES="$(find \
     "${KLEIDICV_ROOT_PATH}/adapters" \
     "${KLEIDICV_ROOT_PATH}/benchmark" \
     "${KLEIDICV_ROOT_PATH}/kleidicv" \
+    "${KLEIDICV_ROOT_PATH}/kleidicv_opencv" \
     "${KLEIDICV_ROOT_PATH}/kleidicv_thread" \
     "${KLEIDICV_ROOT_PATH}/test" \
     "${KLEIDICV_ROOT_PATH}/conformity/opencv" \

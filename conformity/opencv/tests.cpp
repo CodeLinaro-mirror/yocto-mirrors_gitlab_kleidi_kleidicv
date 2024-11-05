@@ -26,6 +26,7 @@ std::vector<test> all_tests = merge_tests({
     binary_op_tests_get,
     cvtcolor_tests_get,
     morphology_tests_get,
+    optical_flow_tests_get,
 #if KLEIDICV_ENABLE_ALL_OPENCV_HAL
     separable_filter_2d_tests_get,
 #endif

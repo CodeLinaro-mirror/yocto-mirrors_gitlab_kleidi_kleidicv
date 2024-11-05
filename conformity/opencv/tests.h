@@ -12,6 +12,7 @@
 std::vector<test>& binary_op_tests_get();
 std::vector<test>& cvtcolor_tests_get();
 std::vector<test>& morphology_tests_get();
+std::vector<test>& optical_flow_tests_get();
 std::vector<test>& separable_filter_2d_tests_get();
 std::vector<test>& gaussian_blur_tests_get();
 std::vector<test>& rgb2yuv_tests_get();
