@@ -136,13 +136,13 @@ class ADBRunner:
 
     def _print_command(self, command):
         if self.verbose:
-            print("+" + shlex.join(command))
+            print("+ " + shlex.join(command))
 
     def check_output(self, script):
         command = self._make_adb_command() + ["shell", "su"]
         self._print_command(command)
         if self.verbose:
-            print("+" + script)
+            print("+ " + script)
         try:
             return subprocess.check_output(
                 command,
@@ -189,7 +189,7 @@ def get_run_name(rep, executable, taskset_mask):
 
 
 def host_filename_to_device_filename(args, host_filename):
-    return os.path.join(args.tmpdir, host_filename.replace(os.sep, "-"))
+    return os.path.join(args.tmpdir, host_filename.lstrip(os.sep).replace(os.sep, "-"))
 
 
 def run_executable_tests(
