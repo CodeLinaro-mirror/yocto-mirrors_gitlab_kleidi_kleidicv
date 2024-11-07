@@ -209,3 +209,6 @@ Blurs and downsamples an image.
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` and 1 channel.
 * if `dstsize` is specified it must be equal to `Size((src.cols + 1) / 2, (src.rows + 1) / 2)`
+
+### [`cv::buildOpticalFlowPyramid()`](https://docs.opencv.org/4.10.0/dc/d6b/group__video__track.html#ga86640c1c470f87b2660c096d2b22b2ce)
+Constructs an image pyramid which can be passed to `cv::calcOpticalFlowPyrLK`.

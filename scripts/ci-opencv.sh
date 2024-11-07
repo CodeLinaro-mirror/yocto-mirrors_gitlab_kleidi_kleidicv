@@ -69,7 +69,10 @@ CLEAN="ON" \
 # ------------------------------------------------------------------------------
 # Build OpenCV test executables from already configured conformity check project
 # The OpenCV source is patched in this case
-ninja -C build/conformity/opencv_kleidicv opencv_test_imgproc opencv_test_core
+ninja -C build/conformity/opencv_kleidicv \
+  opencv_test_imgproc \
+  opencv_test_core \
+  opencv_test_video
 
 # Some tests require opencv_extra for the test images
 tar xf /opt/opencv-extra-${OPENCV_VERSION}.tar.gz -C build
@@ -124,6 +127,13 @@ CORE_TEST_PATTERNS=(
 CORE_TEST_PATTERNS_STR="$(join_strings_with_colon "${CORE_TEST_PATTERNS[*]}")"
 ../../../conformity/opencv_kleidicv/bin/opencv_test_core \
   --gtest_filter="${CORE_TEST_PATTERNS_STR}" || TESTRESULT=1
+
+VIDEO_TEST_PATTERNS=(
+  'Video_OpticalFlowPyrLK.accuracy'
+)
+VIDEO_TEST_PATTERNS_STR="$(join_strings_with_colon "${VIDEO_TEST_PATTERNS[*]}")"
+../../../conformity/opencv_kleidicv/bin/opencv_test_video \
+  --gtest_filter="${VIDEO_TEST_PATTERNS_STR}" || TESTRESULT=1
 
 popd
 

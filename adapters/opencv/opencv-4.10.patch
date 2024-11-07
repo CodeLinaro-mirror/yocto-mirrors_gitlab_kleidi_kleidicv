@@ -19,7 +19,7 @@ index 2b4035285f..729cd1dd43 100644
 @@ -281,6 +281,11 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
      dst.create(dims, size, dtype);
      Mat dstMat = dst.getMat();
-
+ 
 +    if( dims <= 2 ) {
 +        int width_in_elements = src.cols * cn;
 +        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dstMat.data, dstMat.step, dstMat.depth(), width_in_elements, src.rows, alpha, beta);
@@ -35,7 +35,7 @@ index f78608dbad..299b5e54bd 100644
 @@ -953,6 +953,41 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
  #define cv_hal_transpose2d hal_ni_transpose2d
  //! @endcond
-
+ 
 +/**
 +   @brief convertTo
 +   @param src_data,src_step,src_depth Source image
@@ -72,8 +72,8 @@ index f78608dbad..299b5e54bd 100644
 +//! @endcond
 +
  //! @}
-
-
+ 
+ 
 diff --git a/modules/core/src/minmax.cpp b/modules/core/src/minmax.cpp
 index 8c6d8ad9a9..47eb6fdb66 100644
 --- a/modules/core/src/minmax.cpp
@@ -91,13 +91,13 @@ index 8c6d8ad9a9..47eb6fdb66 100644
          }
          else if (res != CV_HAL_ERROR_NOT_IMPLEMENTED)
 diff --git a/modules/imgproc/src/hal_replacement.hpp b/modules/imgproc/src/hal_replacement.hpp
-index 773fed9b48..145d653f5d 100644
+index 773fed9b48..b74ff70f99 100644
 --- a/modules/imgproc/src/hal_replacement.hpp
 +++ b/modules/imgproc/src/hal_replacement.hpp
 @@ -328,6 +328,60 @@ inline int hal_ni_remap32f(int src_type, const uchar *src_data, size_t src_step,
  #define cv_hal_remap32f hal_ni_remap32f
  //! @endcond
-
+ 
 +/**
 +   @brief hal_remap with a short integer map
 +   @param src_type source and destination image type
@@ -172,7 +172,7 @@ index d7c9c64c3c..348208b72d 100644
 +        CALL_HAL(remap16s16u, cv_hal_remap16s16u, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
 +                 map1.ptr<short>(), map1.step, map2.ptr<unsigned short>(), map2.step, borderType, borderValue.val);
      }
-
+ 
      interpolation &= ~WARP_RELATIVE_MAP;
 diff --git a/modules/imgproc/src/smooth.dispatch.cpp b/modules/imgproc/src/smooth.dispatch.cpp
 index d0f50a73bb..1c308887dc 100644
@@ -181,7 +181,7 @@ index d0f50a73bb..1c308887dc 100644
 @@ -654,6 +654,25 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
              ocl_GaussianBlur_8UC1(_src, _dst, ksize, CV_MAT_DEPTH(type), kx, ky, borderType)
      );
-
+ 
 +    {
 +        Mat src = _src.getMat();
 +        Mat dst = _dst.getMat();
@@ -204,3 +204,104 @@ index d0f50a73bb..1c308887dc 100644
      if(sdepth == CV_8U && ((borderType & BORDER_ISOLATED) || !_src.isSubmatrix()))
      {
          std::vector<ufixedpoint16> fkx, fky;
+diff --git a/modules/video/src/hal_replacement.hpp b/modules/video/src/hal_replacement.hpp
+new file mode 100644
+index 0000000000..e413dd3894
+--- /dev/null
++++ b/modules/video/src/hal_replacement.hpp
+@@ -0,0 +1,73 @@
++// This file is part of OpenCV project.
++// It is subject to the license terms in the LICENSE file found in the top-level directory
++// of this distribution and at http://opencv.org/license.html.
++
++#ifndef OPENCV_VIDEO_HAL_REPLACEMENT_HPP
++#define OPENCV_VIDEO_HAL_REPLACEMENT_HPP
++
++#include "opencv2/core/hal/interface.h"
++
++#if defined(__clang__)  // clang or MSVC clang
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wunused-parameter"
++#elif defined(_MSC_VER)
++#pragma warning(push)
++#pragma warning(disable : 4100)
++#elif defined(__GNUC__)
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wunused-parameter"
++#endif
++
++/**
++@brief Computes Schaar derivatives with inteleaved layout xyxy...
++@param src_data source image data
++@param src_step source image step
++@param dst_data destination buffer data
++@param dst_step destination buffer step
++@param width image width
++@param height image height
++@param cn source image channels
++**/
++inline int hal_ni_ScharrDeriv(const uchar* src_data, size_t src_step,
++                              short* dst_data, size_t dst_step,
++                              int width, int height, int cn)
++{
++    return CV_HAL_ERROR_NOT_IMPLEMENTED;
++}
++
++//! @cond IGNORED
++#define cv_hal_ScharrDeriv hal_ni_ScharrDeriv
++//! @endcond
++
++//! @}
++
++#if defined(__clang__)
++#pragma clang diagnostic pop
++#elif defined(_MSC_VER)
++#pragma warning(pop)
++#elif defined(__GNUC__)
++#pragma GCC diagnostic pop
++#endif
++
++#include "custom_hal.hpp"
++
++//! @cond IGNORED
++#define CALL_HAL_RET(name, fun, retval, ...) \
++    int res = __CV_EXPAND(fun(__VA_ARGS__, &retval)); \
++    if (res == CV_HAL_ERROR_OK) \
++        return retval; \
++    else if (res != CV_HAL_ERROR_NOT_IMPLEMENTED) \
++        CV_Error_(cv::Error::StsInternal, \
++            ("HAL implementation " CVAUX_STR(name) " ==> " CVAUX_STR(fun) " returned %d (0x%08x)", res, res));
++
++
++#define CALL_HAL(name, fun, ...) \
++    int res = __CV_EXPAND(fun(__VA_ARGS__)); \
++    if (res == CV_HAL_ERROR_OK) \
++        return; \
++    else if (res != CV_HAL_ERROR_NOT_IMPLEMENTED) \
++        CV_Error_(cv::Error::StsInternal, \
++            ("HAL implementation " CVAUX_STR(name) " ==> " CVAUX_STR(fun) " returned %d (0x%08x)", res, res));
++//! @endcond
++
++#endif
+diff --git a/modules/video/src/lkpyramid.cpp b/modules/video/src/lkpyramid.cpp
+index 6d51c0cf1a..0e6f6a324e 100644
+--- a/modules/video/src/lkpyramid.cpp
++++ b/modules/video/src/lkpyramid.cpp
+@@ -50,6 +50,7 @@
+ #endif
+ 
+ #include "opencv2/core/openvx/ovx_defs.hpp"
++#include "hal_replacement.hpp"
+ 
+ #define  CV_DESCALE(x,n)     (((x) + (1 << ((n)-1))) >> (n))
+ 
+@@ -62,6 +63,9 @@ static void calcScharrDeriv(const cv::Mat& src, cv::Mat& dst)
+     int rows = src.rows, cols = src.cols, cn = src.channels(), depth = src.depth();
+     CV_Assert(depth == CV_8U);
+     dst.create(rows, cols, CV_MAKETYPE(DataType<deriv_type>::depth, cn*2));
++
++    CALL_HAL(ScharrDeriv, cv_hal_ScharrDeriv, src.data, src.step, (short*)dst.data, dst.step, cols, rows, cn);
++
+     parallel_for_(Range(0, rows), cv::detail::ScharrDerivInvoker(src, dst), cv::getNumThreads());
+ }
+ 

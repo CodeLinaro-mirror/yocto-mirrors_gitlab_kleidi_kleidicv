@@ -1780,6 +1780,61 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u8, const uint8_t *src,
                          kleidicv_border_values_t border_values);
 #endif  // DOXYGEN
 
+#ifndef DOXYGEN
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Calculates horizontal and vertical derivative approximation with Scharr
+/// filter and store the results interleaved.
+///
+/// The horizontal convolution kernel is:
+/// ```
+/// [  3   0  -3 ]
+/// [ 10   0 -10 ]
+/// [  3   0  -3 ]
+/// ```
+///
+/// The vertical convolution kernel is:
+/// ```
+/// [  3  10   3 ]
+/// [  0   0   0 ]
+/// [ -3 -10  -3 ]
+/// ```
+///
+/// Note, that the kernels are mirrored both vertically and horizontally during
+/// the convolution.
+///
+/// This API does not handle borders, so the result's width and height is `width
+/// - 2` and `height - 2`, respectively. Number of pixels in the source is
+/// limited to @ref KLEIDICV_MAX_IMAGE_PIXELS. Result's channel count is the
+/// double of the source' channel count, as the calculated derivative
+/// approximations are stored interleaved:
+/// ```
+/// | dx,dy | dx,dy | dx,dy | ...
+/// ```
+/// Where `dx` is the horizontal derivative approximation and `dy` is the
+/// vertical derivative approximation.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the source data. Must be a
+///                     multiple of `sizeof(src type)` and no less than `width *
+///                     sizeof(src type) * channels`.
+/// @param src_width    Number of columns in the source. Must be more than 2.
+///                     (One column consists of `channels` number of elements.)
+/// @param src_height   Number of rows in the source. Must be more than 2.
+/// @param src_channels Number of channels in the source data. Must be equal
+///                     to 1.
+/// @param dst          Pointer to the destination data. Must be non-null.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row in the destination data. Must be a
+///                     multiple of `sizeof(dst type)` and no less than `(width
+///                     - 2) * sizeof(dst type) * channels`.
+///
+kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    size_t src_channels, int16_t *dst, size_t dst_stride);
+#endif  // DOXYGEN
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

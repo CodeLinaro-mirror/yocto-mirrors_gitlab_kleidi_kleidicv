@@ -41,6 +41,7 @@ std::vector<test> all_tests = merge_tests({
     in_range_tests_get,
     remap_tests_get,
     blur_and_downsample_tests_get,
+    scharr_interleaved_tests_get,
     // clang-format on
 });
 

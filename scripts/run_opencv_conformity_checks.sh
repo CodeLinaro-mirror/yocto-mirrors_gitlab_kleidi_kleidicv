@@ -29,7 +29,7 @@ common_cmake_args=(
     "-DBUILD_SHARED_LIBS=OFF"
     "-DBUILD_TESTS=ON"
     "-DBUILD_PERF_TESTS=OFF"
-    "-DBUILD_LIST=imgproc,core,ts"
+    "-DBUILD_LIST=imgproc,core,video,ts"
 
     "-DCV_TRACE=OFF"
     "-DBUILD_EXAMPLES=OFF"

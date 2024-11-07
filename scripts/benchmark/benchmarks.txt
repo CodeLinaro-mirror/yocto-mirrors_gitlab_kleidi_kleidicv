@@ -80,3 +80,5 @@ Remap_S16_U8: opencv_perf_imgproc '*Remap/*' '($PIXEL_FORMAT, 8UC1, 16SC2, INTER
 Remap_S16Point5_U8: opencv_perf_imgproc '*Remap/*' '($PIXEL_FORMAT, 8UC1, 16SC2, INTER_LINEAR, BORDER_REPLICATE)'
 
 BlurAndDownsample: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC1)'
+
+ScharrInterleaved: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT)'

@@ -39,6 +39,7 @@ target_link_libraries(
   manager
   opencv_core
   opencv_imgproc
+  opencv_video
 )
 
 target_include_directories(
@@ -47,6 +48,7 @@ target_include_directories(
     ${CMAKE_BINARY_DIR}
     ${OpenCV_SOURCE_DIR}/modules/core/include
     ${OpenCV_SOURCE_DIR}/modules/imgproc/include
+    ${OpenCV_SOURCE_DIR}/modules/video/include
 )
 
 target_compile_definitions(
@@ -74,6 +76,7 @@ target_link_libraries(
   subordinate
   opencv_core
   opencv_imgproc
+  opencv_video
 )
 
 target_include_directories(
@@ -82,6 +85,7 @@ target_include_directories(
     ${CMAKE_BINARY_DIR}
     ${OpenCV_SOURCE_DIR}/modules/core/include
     ${OpenCV_SOURCE_DIR}/modules/imgproc/include
+    ${OpenCV_SOURCE_DIR}/modules/video/include
 )
 
 target_compile_definitions(

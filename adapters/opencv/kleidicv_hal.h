@@ -152,6 +152,9 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
                     const int16_t *mapxy, size_t mapxy_step,
                     const uint16_t *mapfrac, size_t mapfrac_step,
                     int border_type, const double border_value[4]);
+
+int scharr_deriv(const uchar *src_data, size_t src_step, int16_t *dst_data,
+                 size_t dst_step, int width, int height, int cn);
 }  // namespace hal
 }  // namespace kleidicv
 
@@ -571,6 +574,27 @@ static inline int kleidicv_in_range_f32_with_fallback(
 #endif  // cv_hal_inRange32f
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
+
+#ifdef OPENCV_VIDEO_HAL_REPLACEMENT_HPP
+
+// ScharrDeriv
+// This condition can be removed if this HAL macro is defined in all supported
+// versions
+#ifdef cv_hal_ScharrDeriv
+static inline int kleidicv_ScharrDeriv_with_fallback(const uchar *src_data,
+                                                     size_t src_step,
+                                                     int16_t *dst_data,
+                                                     size_t dst_step, int width,
+                                                     int height, int cn) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(scharr_deriv, cv_hal_ScharrDeriv,
+                                       src_data, src_step, dst_data, dst_step,
+                                       width, height, cn);
+}
+#undef cv_hal_ScharrDeriv
+#define cv_hal_ScharrDeriv kleidicv_ScharrDeriv_with_fallback
+#endif  // cv_hal_ScharrDeriv
+
+#endif  // OPENCV_VIDEO_HAL_REPLACEMENT_HPP
 
 // Remove no longer needed macro definitions.
 #undef KLEIDICV_HAL_FALLBACK_FORWARD

@@ -1341,4 +1341,17 @@ int pyrdown(const uchar *src_data, size_t src_step, int src_width,
   return convert_error(blur_err ? blur_err : release_err);
 }
 
+int scharr_deriv(const uchar *src_data, size_t src_step, int16_t *dst_data,
+                 size_t dst_step, int width, int height, int cn) {
+  // OpenCV provides the source pointer in a way that out-of-bounds reads are
+  // possible to handle borders. On the other hand, KleidiCV expects that the
+  // source pointer points to the top left pixel to be read by the algorithm.
+  const uint8_t *src =
+      reinterpret_cast<const uint8_t *>(src_data - src_step) - cn;
+
+  auto mt = get_multithreading();
+  return convert_error(kleidicv_thread_scharr_interleaved_s16_u8(
+      src, src_step, width + 2, height + 2, cn, dst_data, dst_step, mt));
+}
+
 }  // namespace kleidicv::hal

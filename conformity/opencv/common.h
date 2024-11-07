@@ -21,6 +21,7 @@
 
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
+#include "opencv2/video.hpp"
 
 #define KLEIDICV_CONFORMITY_SHM_ID "/opencv_kleidicv_conformity_check_shm"
 #define KLEIDICV_CONFORMITY_SHM_SIZE (1024 * 1024)
