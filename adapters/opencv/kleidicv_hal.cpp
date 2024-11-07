@@ -111,9 +111,16 @@ int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                     reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
                     height, get_multithreading()));
     }
-    return convert_error(kleidicv_gray_to_rgba_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+    return convert_error(
+        width * height < MULTITHREAD_MIN_ELEMENTS_GRAY_TO_RGB_U8
+            ? kleidicv_gray_to_rgba_u8(
+                  reinterpret_cast<const uint8_t *>(src_data), src_step,
+                  reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                  height)
+            : kleidicv_thread_gray_to_rgba_u8(
+                  reinterpret_cast<const uint8_t *>(src_data), src_step,
+                  reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                  height, get_multithreading()));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -148,9 +155,16 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 
     if (scn == 4 && dcn == 4) {
       if (swapBlue) {
-        return convert_error(kleidicv_rgba_to_bgra_u8(
-            reinterpret_cast<const uint8_t *>(src_data), src_step,
-            reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height));
+        return convert_error(
+            width * height < MULTITHREAD_MIN_ELEMENTS_RGB_TO_BGR_U8
+                ? kleidicv_rgba_to_bgra_u8(
+                      reinterpret_cast<const uint8_t *>(src_data), src_step,
+                      reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                      height)
+                : kleidicv_thread_rgba_to_bgra_u8(
+                      reinterpret_cast<const uint8_t *>(src_data), src_step,
+                      reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
+                      height, get_multithreading()));
       }
       return convert_error(kleidicv_rgba_to_rgba_u8(
           reinterpret_cast<const uint8_t *>(src_data), src_step,
