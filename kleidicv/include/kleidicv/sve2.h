@@ -146,6 +146,11 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
     return static_cast<size_t>(svcnt());
   }
 
+  // Maximum number of lanes in a vector.
+  static constexpr size_t max_num_lanes() KLEIDICV_STREAMING_COMPATIBLE {
+    return 256 / sizeof(ScalarType);
+  }
+
   // Loads a single vector from 'src'.
   static inline void load(Context ctx, const ScalarType *src,
                           VectorType &vec) KLEIDICV_STREAMING_COMPATIBLE {

@@ -170,6 +170,9 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
     return kVectorLength / sizeof(ScalarType);
   }
 
+  // Maximum number of lanes in a vector.
+  static constexpr size_t max_num_lanes() { return num_lanes(); }
+
   // Loads a single vector from 'src'.
   static inline void load(const ScalarType *src, VectorType &vec) {
     vec = vld1q(&src[0]);
