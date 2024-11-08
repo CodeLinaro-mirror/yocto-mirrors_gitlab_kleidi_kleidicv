@@ -485,6 +485,16 @@ static void blur_and_downsample_u8(benchmark::State& state) {
 }
 BENCHMARK(blur_and_downsample_u8);
 
+static void scharr_interleaved_s16_u8(benchmark::State& state) {
+  bench_functor(state, []() {
+    (void)kleidicv_scharr_interleaved_s16_u8(
+        get_source_buffer_a<uint8_t>(), image_width * sizeof(uint8_t),
+        image_width, image_height, 1, get_destination_buffer<int16_t>(),
+        (image_width - 2) * sizeof(int16_t));
+  });
+}
+BENCHMARK(scharr_interleaved_s16_u8);
+
 template <class ScalarType>
 static const ScalarType* get_random_mapxy() {
   auto generate_mapxy = [&]() {
