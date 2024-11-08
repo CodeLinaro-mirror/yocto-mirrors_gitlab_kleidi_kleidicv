@@ -28,11 +28,9 @@ class Sum final : public UnrollTwice {
 template <typename ScalarType>
 kleidicv_error_t sum(const ScalarType *src, size_t src_stride, size_t width,
                      size_t height, ScalarType *sum) {
+  CHECK_POINTERS(sum);
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_IMAGE_SIZE(width, height);
-  if (sum == nullptr) {
-    return KLEIDICV_ERROR_NULL_POINTER;
-  }
 
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride};
