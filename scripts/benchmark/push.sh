@@ -27,14 +27,17 @@ CUSTOM_BUILD_SUFFIX="${CUSTOM_BUILD_SUFFIX:-custom}"
 
 "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_core    "${DEV_DIR}"/opencv_perf_core_vanilla
 "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_imgproc "${DEV_DIR}"/opencv_perf_imgproc_vanilla
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-vanilla/bin/opencv_perf_video "${DEV_DIR}"/opencv_perf_video_vanilla
 
 "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_core    "${DEV_DIR}"/opencv_perf_core_kleidicv
 "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_imgproc "${DEV_DIR}"/opencv_perf_imgproc_kleidicv
+"${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv/bin/opencv_perf_video "${DEV_DIR}"/opencv_perf_video_kleidicv
 
 if [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_core ]] && \
    [[ -f "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_imgproc ]]; then
   "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_core    "${DEV_DIR}"/opencv_perf_core_kleidicv_"${CUSTOM_BUILD_SUFFIX}"
   "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_imgproc "${DEV_DIR}"/opencv_perf_imgproc_kleidicv_"${CUSTOM_BUILD_SUFFIX}"
+  "${ADB}" push "${BUILD_ROOT_PATH}"/opencv-kleidicv-"${CUSTOM_BUILD_SUFFIX}"/bin/opencv_perf_video "${DEV_DIR}"/opencv_perf_video_kleidicv_"${CUSTOM_BUILD_SUFFIX}"
 fi
 
 "${ADB}" push "${BENCHMARK_SCRIPT_PATH}"/perf_test_op.sh "${BENCHMARK_SCRIPT_PATH}"/run_benchmarks.sh "${BENCHMARK_SCRIPT_PATH}"/benchmarks*.txt "${DEV_DIR}"/
