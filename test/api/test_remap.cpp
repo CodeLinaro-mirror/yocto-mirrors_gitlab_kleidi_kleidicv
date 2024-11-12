@@ -49,6 +49,38 @@ class RemapS16 : public testing::Test {
     execute_test(mapxy, src_w, src_h, dst_w, dst_h, channels, padding);
   }
 
+  // Test coordinates with edge values that may easily overflow
+  static void test_corner_cases(size_t src_w, size_t src_h, size_t dst_w,
+                                size_t dst_h, size_t channels, size_t padding) {
+    test::Array2D<int16_t> mapxy{2 * dst_w, dst_h, padding, 2};
+    // One more y than x so we'll see many combinations
+    const int16_t corner_x_values[] = {-32768,
+                                       -1,
+                                       0,
+                                       static_cast<int16_t>(src_w - 2),
+                                       static_cast<int16_t>(src_w - 1),
+                                       static_cast<int16_t>(src_w),
+                                       32767};
+    const int16_t corner_y_values[] = {-32768,
+                                       -1,
+                                       0,
+                                       1,
+                                       static_cast<int16_t>(src_h - 2),
+                                       static_cast<int16_t>(src_h - 1),
+                                       static_cast<int16_t>(src_h),
+                                       32767};
+    static const size_t nx = sizeof(corner_x_values) / sizeof(int16_t);
+    static const size_t ny = sizeof(corner_y_values) / sizeof(int16_t);
+    size_t counter = 0;
+    for (size_t row = 0; row < dst_h; ++row) {
+      for (size_t column = 0; column < dst_w; ++column) {
+        *mapxy.at(row, column * 2) = corner_x_values[counter % nx];
+        *mapxy.at(row, column * 2 + 1) = corner_y_values[counter % ny];
+      }
+    }
+    execute_test(mapxy, src_w, src_h, dst_w, dst_h, channels, padding);
+  }
+
  private:
   static void execute_test(test::Array2D<int16_t> &mapxy, size_t src_w,
                            size_t src_h, size_t dst_w, size_t dst_h,
@@ -122,6 +154,14 @@ TYPED_TEST(RemapS16, BlendPadding) {
   size_t dst_w = src_w;
   size_t dst_h = src_h;
   TestFixture::test_blend(src_w, src_h, dst_w, dst_h, 1, 13);
+}
+
+TYPED_TEST(RemapS16, CornerCases) {
+  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t src_h = 4;
+  size_t dst_w = src_w;
+  size_t dst_h = src_h;
+  TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, 1, 17);
 }
 
 TYPED_TEST(RemapS16, NullPointer) {
@@ -269,6 +309,42 @@ class RemapS16Point5 : public testing::Test {
     execute_test(mapxy, mapfrac, src_w, src_h, dst_w, dst_h, channels, padding);
   }
 
+  // Test coordinates with edge values that may easily overflow
+  static void test_corner_cases(size_t src_w, size_t src_h, size_t dst_w,
+                                size_t dst_h, size_t channels, size_t padding) {
+    test::Array2D<int16_t> mapxy{2 * dst_w, dst_h, padding, 2};
+    test::Array2D<uint16_t> mapfrac(dst_w, dst_h, padding);
+    // One more y than x so we'll see many combinations
+    const int16_t corner_x_values[] = {-32768,
+                                       -1,
+                                       0,
+                                       static_cast<int16_t>(src_w - 2),
+                                       static_cast<int16_t>(src_w - 1),
+                                       static_cast<int16_t>(src_w),
+                                       32767};
+    const int16_t corner_y_values[] = {-32768,
+                                       -1,
+                                       0,
+                                       1,
+                                       static_cast<int16_t>(src_h - 2),
+                                       static_cast<int16_t>(src_h - 1),
+                                       static_cast<int16_t>(src_h),
+                                       32767};
+    static const size_t nx = sizeof(corner_x_values) / sizeof(int16_t);
+    static const size_t ny = sizeof(corner_y_values) / sizeof(int16_t);
+    size_t counter = 0;
+    for (size_t row = 0; row < dst_h; ++row) {
+      for (size_t column = 0; column < dst_w; ++column) {
+        *mapxy.at(row, column * 2) = corner_x_values[counter % nx];
+        *mapxy.at(row, column * 2 + 1) = corner_y_values[counter % ny];
+        *mapfrac.at(row, column) =
+            static_cast<uint16_t>((counter * 3) % FRAC_MAX) |
+            (static_cast<uint16_t>((counter * 5) % FRAC_MAX) << FRAC_BITS);
+      }
+    }
+    execute_test(mapxy, mapfrac, src_w, src_h, dst_w, dst_h, channels, padding);
+  }
+
  private:
   static void execute_test(test::Array2D<int16_t> &mapxy,
                            test::Array2D<uint16_t> &mapfrac, size_t src_w,
@@ -294,6 +370,19 @@ class RemapS16Point5 : public testing::Test {
             actual.data(), actual.stride(), actual.width(), actual.height(),
             channels, mapxy.data(), mapxy.stride(), mapfrac.data(),
             mapfrac.stride(), KLEIDICV_BORDER_TYPE_REPLICATE, {}));
+
+    if (expected.compare_to(actual)) {
+      std::cout << "source:\n";
+      dump(&source);
+      std::cout << "mapxy:\n";
+      dump(&mapxy);
+      std::cout << "mapfrac:\n";
+      dump(&mapfrac);
+      std::cout << "expected:\n";
+      dump(&expected);
+      std::cout << "actual:\n";
+      dump(&actual);
+    }
 
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
@@ -373,6 +462,14 @@ TYPED_TEST(RemapS16Point5, OutsideRandomPadding) {
   size_t dst_w = src_w;
   size_t dst_h = src_h;
   TestFixture::test_outside_random(src_w, src_h, dst_w, dst_h, 1, 13);
+}
+
+TYPED_TEST(RemapS16Point5, CornerCases) {
+  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t src_h = 4;
+  size_t dst_w = src_w;
+  size_t dst_h = src_h;
+  TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, 1, 17);
 }
 
 TYPED_TEST(RemapS16Point5, NullPointer) {

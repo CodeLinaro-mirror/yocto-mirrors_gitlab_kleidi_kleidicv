@@ -215,14 +215,13 @@ class RemapS16Point5SVE2<uint8_t> {
         svmax_x(pg, svdup_n_s16(0), svmin_x(pg, svget2(xy, 1), v_ymax_)));
 
     // x1 = x0 + 1, and clamp it too
-    svuint16_t x1 = svreinterpret_u16_s16(svmax_x(
-        pg, svdup_n_s16(0),
-        svmin_x(pg, svadd_x(pg, svget2(xy, 0), svdup_n_s16(1)), v_xmax_)));
+    svuint16_t x1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 0), 1), v_xmax_)));
 
-    svuint16_t y1 = svreinterpret_u16_s16(svmax_x(
-        pg, svdup_n_s16(0),
-        svmin_x(pg, svadd_x(pg, svget2(xy, 1), svdup_n_s16(1)), v_ymax_)));
-
+    svuint16_t y1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 1), 1), v_ymax_)));
     svbool_t pg_b = svwhilelt_b32(int64_t{0}, (step + 1) / 2);
     svbool_t pg_t = svwhilelt_b32(int64_t{0}, step / 2);
 
