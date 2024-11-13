@@ -83,4 +83,4 @@ WarpPerspectiveNear: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXEL_FORMA
 
 BlurAndDownsample: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC1)'
 
-ScharrInterleaved: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT)'
+ScharrInterleaved: opencv_perf_video '*calcScharrDeriv/*' '$PIXEL_FORMAT'
