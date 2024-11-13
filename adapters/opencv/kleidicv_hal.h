@@ -123,6 +123,9 @@ int pyrdown(const uchar *src_data, size_t src_step, int src_width,
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height, int element_size);
 
+int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
+           int src_height, uchar *dst_data, size_t dst_step, int angle);
+
 int min_max_idx(const uchar *src_data, size_t src_stride, int width, int height,
                 int depth, double *min_value, double *max_value, int *min_index,
                 int *max_index, uchar *mask);
@@ -464,6 +467,19 @@ static inline int kleidicv_transpose_with_fallback(
 }
 #undef cv_hal_transpose2d
 #define cv_hal_transpose2d kleidicv_transpose_with_fallback
+
+// rotate
+static inline int kleidicv_rotate_with_fallback(int src_type,
+                                                const uchar *src_data,
+                                                size_t src_step, int src_width,
+                                                int src_height, uchar *dst_data,
+                                                size_t dst_step, int angle) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(rotate, cv_hal_rotate90, src_type,
+                                       src_data, src_step, src_width,
+                                       src_height, dst_data, dst_step, angle);
+}
+#undef cv_hal_rotate90
+#define cv_hal_rotate90 kleidicv_rotate_with_fallback
 
 // min_max_idx
 static inline int kleidicv_min_max_idx_with_fallback(

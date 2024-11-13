@@ -152,6 +152,13 @@ Transposes a matrix.
 Notes on parameters:
 * In-place `transpose` is only supported for square matrices. (`src.cols == src.rows`)
 
+### [`cv::rotate()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga4ad01c0978b0ce64baa246811deeac24)
+Rotates a 2D array in multiples of 90 degrees.
+
+Notes on parameters:
+* In-place `rotate` is not supported. (`src == dst`)
+* `rotateCode` - only `ROTATE_90_CLOCKWISE` is supported.
+
 ### [`cv::minMaxIdx()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga7622c466c628a75d9ed008b42250a73f)
 Finds the minimum and maximum element values and their positions.
 

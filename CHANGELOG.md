@@ -15,6 +15,9 @@ This changelog aims to follow the guiding principles of
 
 ## 0.4.0 - not yet released
 
+### Added
+- Implementation of Rotate 90 degrees clockwise.
+
 ## 0.3.0 - 2024-12-12
 
 ### Added

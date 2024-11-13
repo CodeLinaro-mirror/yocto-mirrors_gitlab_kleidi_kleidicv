@@ -9,6 +9,7 @@
 #include <limits>
 #include <vector>
 
+#include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/scharr.h"
@@ -53,8 +54,8 @@ static kleidicv_error_t kleidicv_thread_std_function_callback(
 template <typename Callback>
 inline kleidicv_error_t parallel_batches(Callback callback,
                                          kleidicv_thread_multithreading mt,
-                                         unsigned count) {
-  const unsigned min_batch_size = 16;
+                                         unsigned count,
+                                         unsigned min_batch_size = 16) {
   const unsigned task_count = std::max(1U, (count) / min_batch_size);
   FunctionCallback f = [=](unsigned task_begin, unsigned task_end) {
     unsigned begin = task_begin * min_batch_size,
@@ -212,6 +213,24 @@ kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
   return kleidicv_thread_binary_op_impl(
       kleidicv_saturating_add_abs_with_threshold_s16, mt, src_a, src_a_stride,
       src_b, src_b_stride, dst, dst_stride, width, height, threshold);
+}
+
+kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,
+                                        size_t width, size_t height, void *dst,
+                                        size_t dst_stride, int angle,
+                                        size_t element_size,
+                                        kleidicv_thread_multithreading mt) {
+  if (!kleidicv::rotate_is_implemented(src, dst, angle, element_size)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  // reading in columns and writing out rows tends to perform better
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_rotate(
+        static_cast<const uint8_t *>(src) + begin * element_size, src_stride,
+        end - begin, height, static_cast<uint8_t *>(dst) + begin * dst_stride,
+        dst_stride, angle, element_size);
+  };
+  return parallel_batches(callback, mt, width, 64);
 }
 
 template <typename F>

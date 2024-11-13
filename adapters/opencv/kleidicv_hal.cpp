@@ -17,6 +17,7 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv_thread/kleidicv_thread.h"
 #include "opencv2/core/base.hpp"
+#include "opencv2/core/cvdef.h"
 #include "opencv2/core/hal/interface.h"
 #include "opencv2/core/types.hpp"
 #include "opencv2/core/utility.hpp"
@@ -40,6 +41,8 @@ enum {
   MULTITHREAD_MIN_ELEMENTS_RGBA_TO_BGRA_U8 = 11000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8 = 5000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_F32 = 20000,
+  MULTITHREAD_MIN_ELEMENTS_ROTATE_U8 = 40000,
+  MULTITHREAD_MIN_ELEMENTS_ROTATE_U16 = 30000,
 };
 
 static int convert_error(kleidicv_error_t e) {
@@ -994,6 +997,34 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
       reinterpret_cast<void *>(dst_data), dst_step,
       static_cast<size_t>(src_width), static_cast<size_t>(src_height),
       static_cast<size_t>(element_size)));
+}
+
+int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
+           int src_height, uchar *dst_data, size_t dst_step, int angle) {
+  int element_size = CV_ELEM_SIZE(src_type);
+
+  size_t multithread_min_elements = 0;
+  switch (element_size) {
+    case sizeof(uint8_t):
+      multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_ROTATE_U8;
+      break;
+    case sizeof(uint16_t):
+      multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_ROTATE_U16;
+      break;
+  }
+
+  return convert_error(
+      src_width * src_height < multithread_min_elements
+          ? kleidicv_rotate(reinterpret_cast<const void *>(src_data), src_step,
+                            static_cast<size_t>(src_width),
+                            static_cast<size_t>(src_height),
+                            reinterpret_cast<void *>(dst_data), dst_step, angle,
+                            static_cast<size_t>(element_size))
+          : kleidicv_thread_rotate(
+                reinterpret_cast<const void *>(src_data), src_step,
+                static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+                reinterpret_cast<void *>(dst_data), dst_step, angle,
+                static_cast<size_t>(element_size), get_multithreading()));
 }
 
 template <typename T, typename SingleThreadFunc, typename MultithreadFunc>

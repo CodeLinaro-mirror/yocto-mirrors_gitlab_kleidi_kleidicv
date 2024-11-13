@@ -505,6 +505,19 @@ static inline uint32x4_t vcombine(uint32x2_t lhs, uint32x2_t rhs) { return vcomb
 static inline int64x2_t  vcombine(int64x1_t  lhs, int64x1_t  rhs) { return vcombine_s64(lhs, rhs); }
 static inline uint64x2_t vcombine(uint64x1_t lhs, uint64x1_t rhs) { return vcombine_u64(lhs, rhs); }
 
+// -----------------------------------------------------------------------------
+// vrev*
+// -----------------------------------------------------------------------------
+
+static inline int8x16_t  vrev64q(int8x16_t  src) { return vrev64q_s8(src); }
+static inline uint8x16_t vrev64q(uint8x16_t src) { return vrev64q_u8(src); }
+static inline int16x8_t  vrev64q(int16x8_t  src) { return vrev64q_s16(src); }
+static inline uint16x8_t vrev64q(uint16x8_t src) { return vrev64q_u16(src); }
+static inline int32x4_t  vrev64q(int32x4_t  src) { return vrev64q_s32(src); }
+static inline uint32x4_t vrev64q(uint32x4_t src) { return vrev64q_u32(src); }
+static inline int64x2_t  vrev64q(int64x2_t  src) { return src; }
+static inline uint64x2_t vrev64q(uint64x2_t src) { return src; }
+
 // clang-format on
 
 }  // namespace kleidicv::neon

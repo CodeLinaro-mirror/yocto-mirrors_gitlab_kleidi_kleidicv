@@ -1466,6 +1466,39 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
                          void *dst, size_t dst_stride, size_t src_width,
                          size_t src_height, size_t element_size);
 
+/// Matrix rotate operation.
+/// In-place operation is not supported.
+/// Only supports 90 degrees clockwise rotate
+/// Example for `src[3,2]` to `dst[2,3]`:
+/// ```
+/// | 0 | 1 | 2 |    | 4 | 0 |
+/// | 4 | 5 | 6 | -> | 5 | 1 |
+///                  | 6 | 2 |
+/// ```
+/// Number of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+/// @param src          Pointer to the source data. Must be non-null.
+///                     Must be aligned to `element_size`.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must be a multiple of `element_size` and no less than
+///                     `width * element_size`, except for single-row images.
+/// @param width        Number of columns in the source data.
+/// @param height       Number of rows in the source data.
+/// @param dst          Pointer to the destination data. Must be non-null.
+///                     Can be the same as source data for in-place operation.
+///                     Must be aligned to `element_size`.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must be a multiple of `element_size` and no less than
+///                     `height * element_size`, except for single-column
+///                     images.
+/// @param angle        Degrees to rotate clockwise. Must be 90.
+/// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
+///
+KLEIDICV_API_DECLARATION(kleidicv_rotate, const void *src, size_t src_stride,
+                         size_t width, size_t height, void *dst,
+                         size_t dst_stride, int angle, size_t element_size);
+
 /// Merges separate 1-channel source streams to one multi channel stream. Width
 /// and height are the same for all the source streams and for the destination.
 /// Number of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.

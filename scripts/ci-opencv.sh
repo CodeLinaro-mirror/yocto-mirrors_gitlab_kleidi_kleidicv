@@ -115,6 +115,7 @@ CORE_TEST_PATTERNS=(
   '*Core_And*'
   '*Core_Mul*'
   '*Core_Sub*'
+  '*Core_Rotate*'
   '*Core_Transpose*'
   '*Core_MinMaxLoc*'
   '*MinMaxLoc*'

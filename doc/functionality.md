@@ -64,11 +64,12 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Count non-zeros |     |  x  |     |     |     |     |     |     |
 
 ## Matrix transformation functions
-|                 | 8-bit | 16-bit | 32-bit | 64-bit |
-|-----------------|-------|--------|--------|--------|
-| Merge           |   x   |    x   |    x   |    x   |
-| Split           |   x   |    x   |    x   |    x   |
-| Transpose       |   x   |    x   |    x   |    x   |
+|                               | 8-bit | 16-bit | 32-bit | 64-bit |
+|-------------------------------|-------|--------|--------|--------|
+| Merge                         |   x   |    x   |    x   |    x   |
+| Split                         |   x   |    x   |    x   |    x   |
+| Transpose                     |   x   |    x   |    x   |    x   |
+| Rotate (90 degrees clockwise) |   x   |    x   |    x   |    x   |
 
 ## Image filters
 |                                      | u8  | s16 | u16 |
