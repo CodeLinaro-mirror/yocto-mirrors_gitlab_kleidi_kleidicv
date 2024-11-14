@@ -30,6 +30,7 @@ This changelog aims to follow the guiding principles of
 - The default setting for `KLEIDICV_ENABLE_SVE2` is on for some popular compilers known to support SVE2, otherwise off.
 - `KLEIDICV_ENABLE_SME2` defaults to off. This is because the ACLE SME specification has not yet been finalized.
 - In the OpenCV HAL, cvtColor for gray-RGBA & BGRA-RGBA are multithreaded.
+- Improved performance of 8-bit int to 32-bit float conversion.
 
 ## 0.2.0 - 2024-09-30
 

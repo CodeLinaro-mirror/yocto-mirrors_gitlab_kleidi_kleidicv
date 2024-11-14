@@ -74,68 +74,90 @@ class float_conversion_operation<InputType, float> {
  public:
   using SrcVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<InputType>;
   using SrcVectorType = typename SrcVecTraits::VectorType;
-  using DstVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
-  using DstVectorType = typename DstVecTraits::VectorType;
-  using DstVector4Type = typename DstVecTraits::Vector4Type;
+
+  float_conversion_operation() : index_{initialize_indexes()} {}
 
   void process_row(size_t width, Columns<const InputType> src,
                    Columns<float> dst) {
     LoopUnroll{width, SrcVecTraits::num_lanes()}
         .unroll_twice([&](size_t step) {
-          DstVector4Type result_vector1 =
-              vector_path<InputType>(vld1q(&src[0]));
-          DstVector4Type result_vector2 =
-              vector_path<InputType>(vld1q(&src[SrcVecTraits::num_lanes()]));
-          vst1q_f32_x4(&dst[0], result_vector1);
-          vst1q_f32_x4(&dst[DstVecTraits::num_lanes() * 4], result_vector2);
+          SrcVectorType src0 = vld1q(&src[0]);
+          SrcVectorType src1 = vld1q(&src[SrcVecTraits::num_lanes()]);
+
+          vector_path<InputType>(src0, &dst[0]);
+          vector_path<InputType>(src1, &dst[SrcVecTraits::num_lanes()]);
+
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
         })
         .remaining([&](size_t length, size_t) {
           for (size_t index = 0; index < length; ++index) {
             disable_loop_vectorization();
-            InputType n = src[ptrdiff_t(index)];
-            dst[ptrdiff_t(index)] = static_cast<float>(n);
+            dst[ptrdiff_t(index)] = src[ptrdiff_t(index)];
           }
         });
   }
 
  private:
+  static uint8x16x4_t initialize_indexes() {
+    if constexpr (std::is_signed_v<InputType>) {
+      const uint8x16_t index0 = vcombine_u8(vcreate_u8(0x01ffffff00ffffffULL),
+                                            vcreate_u8(0x03ffffff02ffffffULL));
+      const uint8x16_t index1 = vcombine_u8(vcreate_u8(0x05ffffff04ffffffULL),
+                                            vcreate_u8(0x07ffffff06ffffffULL));
+      const uint8x16_t index2 = vcombine_u8(vcreate_u8(0x09ffffff08ffffffULL),
+                                            vcreate_u8(0x0bffffff0affffffULL));
+      const uint8x16_t index3 = vcombine_u8(vcreate_u8(0x0dffffff0cffffffULL),
+                                            vcreate_u8(0x0fffffff0effffffULL));
+      return {index0, index1, index2, index3};
+    } else {
+      const uint8x16_t index0 = vcombine_u8(vcreate_u8(0xffffff01ffffff00ULL),
+                                            vcreate_u8(0xffffff03ffffff02ULL));
+      const uint8x16_t index1 = vcombine_u8(vcreate_u8(0xffffff05ffffff04ULL),
+                                            vcreate_u8(0xffffff07ffffff06ULL));
+      const uint8x16_t index2 = vcombine_u8(vcreate_u8(0xffffff09ffffff08ULL),
+                                            vcreate_u8(0xffffff0bffffff0aULL));
+      const uint8x16_t index3 = vcombine_u8(vcreate_u8(0xffffff0dffffff0cULL),
+                                            vcreate_u8(0xffffff0fffffff0eULL));
+      return {index0, index1, index2, index3};
+    }
+  }
+
   template <
       typename I,
       std::enable_if_t<std::is_integral_v<I> && std::is_signed_v<I>, int> = 0>
-  DstVector4Type vector_path(const SrcVectorType src) {
-    DstVector4Type dst_vect;
-    int16x8_t low = vmovl_s8(vget_low_s8(src));
-    int16x8_t hi = vmovl_high_s8(src);
-    int32x4_t lowlow = vmovl_s16(vget_low_s16(low));
-    int32x4_t lowhi = vmovl_high_s16(low);
-    int32x4_t hilow = vmovl_s16(vget_low_s16(hi));
-    int32x4_t hihi = vmovl_high_s16(hi);
-    dst_vect.val[0] = vcvtq_f32_s32(lowlow);
-    dst_vect.val[1] = vcvtq_f32_s32(lowhi);
-    dst_vect.val[2] = vcvtq_f32_s32(hilow);
-    dst_vect.val[3] = vcvtq_f32_s32(hihi);
-    return dst_vect;
+  void vector_path(SrcVectorType src, float* dst) {
+    int32x4_t a = vreinterpretq_s32_u8(vqtbl1q_u8(src, index_.val[0]));
+    int32x4_t b = vreinterpretq_s32_u8(vqtbl1q_u8(src, index_.val[1]));
+    int32x4_t c = vreinterpretq_s32_u8(vqtbl1q_u8(src, index_.val[2]));
+    int32x4_t d = vreinterpretq_s32_u8(vqtbl1q_u8(src, index_.val[3]));
+    float32x4x4_t output = {
+        vcvtq_n_f32_s32(a, 24),
+        vcvtq_n_f32_s32(b, 24),
+        vcvtq_n_f32_s32(c, 24),
+        vcvtq_n_f32_s32(d, 24),
+    };
+    vst1q_f32_x4(dst, output);
   }
 
   template <
       typename I,
       std::enable_if_t<std::is_integral_v<I> && !std::is_signed_v<I>, int> = 0>
-  DstVector4Type vector_path(const SrcVectorType src) {
-    DstVector4Type dst_vect;
-    uint16x8_t low = vmovl_u8(vget_low_u8(src));
-    uint16x8_t hi = vmovl_high_u8(src);
-    uint32x4_t lowlow = vmovl_u16(vget_low_u16(low));
-    uint32x4_t lowhi = vmovl_high_u16(low);
-    uint32x4_t hilow = vmovl_u16(vget_low_u16(hi));
-    uint32x4_t hihi = vmovl_high_u16(hi);
-    dst_vect.val[0] = vcvtq_f32_u32(lowlow);
-    dst_vect.val[1] = vcvtq_f32_u32(lowhi);
-    dst_vect.val[2] = vcvtq_f32_u32(hilow);
-    dst_vect.val[3] = vcvtq_f32_u32(hihi);
-    return dst_vect;
+  void vector_path(SrcVectorType src, float* dst) {
+    uint32x4_t a = vreinterpretq_u32_u8(vqtbl1q_u8(src, index_.val[0]));
+    uint32x4_t b = vreinterpretq_u32_u8(vqtbl1q_u8(src, index_.val[1]));
+    uint32x4_t c = vreinterpretq_u32_u8(vqtbl1q_u8(src, index_.val[2]));
+    uint32x4_t d = vreinterpretq_u32_u8(vqtbl1q_u8(src, index_.val[3]));
+    float32x4x4_t output = {
+        vcvtq_f32_u32(a),
+        vcvtq_f32_u32(b),
+        vcvtq_f32_u32(c),
+        vcvtq_f32_u32(d),
+    };
+    vst1q_f32_x4(dst, output);
   }
+
+  const uint8x16x4_t index_;
 };  // end of class float_conversion_operation<InputType, float>
 
 template <typename InputType, typename OutputType>
