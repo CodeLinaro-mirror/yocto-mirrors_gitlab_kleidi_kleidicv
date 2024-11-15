@@ -37,6 +37,7 @@ enum {
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_F32 = 40000,
   MULTITHREAD_MIN_ELEMENTS_RESIZE_TO_QUARTER_U8 = 150000,
   MULTITHREAD_MIN_ELEMENTS_RGB_TO_BGR_U8 = 180000,
+  MULTITHREAD_MIN_ELEMENTS_RGBA_TO_BGRA_U8 = 11000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8 = 5000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_F32 = 20000,
 };
@@ -156,7 +157,7 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
     if (scn == 4 && dcn == 4) {
       if (swapBlue) {
         return convert_error(
-            width * height < MULTITHREAD_MIN_ELEMENTS_RGB_TO_BGR_U8
+            width * height < MULTITHREAD_MIN_ELEMENTS_RGBA_TO_BGRA_U8
                 ? kleidicv_rgba_to_bgra_u8(
                       reinterpret_cast<const uint8_t *>(src_data), src_step,
                       reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
