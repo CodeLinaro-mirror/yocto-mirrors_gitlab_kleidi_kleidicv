@@ -8,15 +8,6 @@
 #include "kleidicv/traits.h"
 #include "kleidicv/transform/warp_perspective.h"
 
-static inline uint32_t GetFPCR() {
-  uint64_t r = 0;
-  asm("mrs %0, fpcr" : "=r"(r));
-  return r;
-}
-static inline void SetFPCR(uint32_t r) {
-  asm volatile("msr fpcr, %0" : : "r"(static_cast<uint64_t>(r)));
-}
-
 namespace kleidicv::neon {
 
 // Template for WarpPerspective transformation.
@@ -36,11 +27,11 @@ namespace kleidicv::neon {
 //      xt = (T0*x + T1*y + T2) / (T6*x + T7*y + T8)
 //      yt = (T3*x + T4*y + T5) / (T6*x + T7*y + T8)
 //
-template <typename ScalarType>
+template <typename ScalarType, bool IsLarge>
 class WarpPerspective;
 
-template <>
-class WarpPerspective<uint8_t> {
+template <bool IsLarge>
+class WarpPerspective<uint8_t, IsLarge> {
  public:
   using ScalarType = uint8_t;
   using CoordVecTraits = VecTraits<float>;
@@ -49,7 +40,9 @@ class WarpPerspective<uint8_t> {
   WarpPerspective(Rows<const ScalarType> src_rows, size_t src_width,
                   size_t src_height)
       : src_rows_{src_rows},
+        src_height_{src_height},
         v_src_stride_{vdup_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
+        vq_src_stride_{vdupq_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
         x0123_{vld1q(first_few_x)},
         v_xmax_{vdupq_n_f32(static_cast<float>(src_width - 1))},
         v_ymax_{vdupq_n_f32(static_cast<float>(src_height - 1))} {}
@@ -72,7 +65,10 @@ class WarpPerspective<uint8_t> {
     CoordVector tw0 =
         vmlaq_f32(vdupq_n_f32(w0), x0123_, vdupq_n_f32(transform[6]));
 
-    auto vector_path = [&](size_t x) {
+    // (Nearest) integer part of transformed coordinates
+    uint32x4_t xi, yi;
+
+    auto calculate_coordinates = [&](size_t x) {
       float fx = static_cast<float>(x);
       // Calculate half-transformed values from the first few pixel values, plus
       // Tn*x, similarly to the one above
@@ -87,10 +83,14 @@ class WarpPerspective<uint8_t> {
           vmaxq_f32(vdupq_n_f32(0.F), vminq_f32(vmulq_f32(tx, iw), v_xmax_));
       CoordVector yf =
           vmaxq_f32(vdupq_n_f32(0.F), vminq_f32(vmulq_f32(ty, iw), v_ymax_));
+      // Rounding convert to int
+      xi = vcvtaq_u32_f32(xf);
+      yi = vcvtaq_u32_f32(yf);
+    };
 
+    auto large_vector_path = [&](size_t x) {
+      calculate_coordinates(x);
       // Calculate offsets from coordinates (y * stride + x)
-      uint32x4_t xi = vcvtnq_u32_f32(xf);
-      uint32x4_t yi = vcvtnq_u32_f32(yf);
       // To avoid losing precision, the final indices should be in 64 bits
       uint64x2_t indices_low = vmlal_u32(vmovl_u32(vget_low_u32(xi)),
                                          vget_low_u32(yi), v_src_stride_);
@@ -104,17 +104,38 @@ class WarpPerspective<uint8_t> {
       dst[ix + 3] = src_rows_[vgetq_lane_u64(indices_high, 1)];
     };
 
+    auto small_vector_path = [&](size_t x) {
+      calculate_coordinates(x);
+      // Calculate offsets from coordinates (y * stride + x)
+      // Use this path only when the final indices fit into 32 bits
+      uint32x4_t indices = vmlaq_u32(xi, yi, vq_src_stride_);
+      // Copy pixels from source
+      ptrdiff_t ix = static_cast<ptrdiff_t>(x);
+      dst[ix] = src_rows_[vgetq_lane_u32(indices, 0)];
+      dst[ix + 1] = src_rows_[vgetq_lane_u32(indices, 1)];
+      dst[ix + 2] = src_rows_[vgetq_lane_u32(indices, 2)];
+      dst[ix + 3] = src_rows_[vgetq_lane_u32(indices, 3)];
+    };
+
     LoopUnroll2<TryToAvoidTailLoop> loop{width, CoordVecTraits::num_lanes()};
-    loop.unroll_once(vector_path);
+    if constexpr (IsLarge) {
+      loop.unroll_once(large_vector_path);
+    } else {
+      loop.unroll_once(small_vector_path);
+    }
   }
 
  private:
   static constexpr float first_few_x[] = {0.F, 1.F, 2.F, 3.F};
   Rows<const ScalarType> src_rows_;
+  size_t src_height_;
   uint32x2_t v_src_stride_;
+  uint32x4_t vq_src_stride_;
   CoordVector x0123_, v_xmax_, v_ymax_;
 };  // end of class WarpPerspective<uint8_t>
 
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename T>
 kleidicv_error_t warp_perspective_stripe(
     const T *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -128,30 +149,37 @@ kleidicv_error_t warp_perspective_stripe(
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
-  // Calculating in float32_t will only be precise until 24 bits
-  if (src_stride >= (1 << 24) || src_height >= (1 << 24)) {
+  // Calculating in float32_t will only be precise until 24 bits, and
+  // multiplication can only be done with 32x32 bits
+  if (src_stride >= (1ULL << 32) || src_width >= (1ULL << 24) ||
+      src_height >= (1ULL << 24)) {
     return KLEIDICV_ERROR_RANGE;
   }
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
-  WarpPerspective<T> operation{src_rows, src_width, src_height};
   Rectangle rect{dst_width, dst_height};
-
-  auto original_fpcr = GetFPCR();
-  SetFPCR(original_fpcr & ~(1U << 17U));  // disable DZE, div by zero exception
-
   dst_rows += y_begin;
-  for (size_t y = y_begin; y < y_end; ++y) {
-    operation.process_row(y, rect.width(), transformation,
-                          dst_rows.as_columns());
-    ++dst_rows;
-  }
 
-  SetFPCR(original_fpcr);
+  if (KLEIDICV_LIKELY(src_stride * src_height < (1ULL << 32))) {
+    WarpPerspective<T, false> operation{src_rows, src_width, src_height};
+    for (size_t y = y_begin; y < y_end; ++y) {
+      operation.process_row(y, rect.width(), transformation,
+                            dst_rows.as_columns());
+      ++dst_rows;
+    }
+  } else {
+    WarpPerspective<T, true> operation{src_rows, src_width, src_height};
+    for (size_t y = y_begin; y < y_end; ++y) {
+      operation.process_row(y, rect.width(), transformation,
+                            dst_rows.as_columns());
+      ++dst_rows;
+    }
+  }
 
   return KLEIDICV_OK;
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 #define KLEIDICV_INSTANTIATE_WARP_PERSPECTIVE(type)                            \
   template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t                           \

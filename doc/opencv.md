@@ -211,6 +211,7 @@ Notes on parameters:
 * `borderMode` - only supports `BORDER_REPLICATE`
 * `interpolation` - only supports `INTER_NEAREST`
 * `dst_width` - must be at least 8
+* `src_width`, `src_height` - must be less than 2^24
 * `src_stride` - must fit into uint32
 
 ### [`cv::pyrDown()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaf9bba239dfca11654cb7f50f889fc2ff)

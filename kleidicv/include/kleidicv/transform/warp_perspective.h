@@ -55,6 +55,17 @@ kleidicv_error_t warp_perspective_stripe(
     kleidicv_border_type_t border_type, kleidicv_border_values_t border_values);
 }  // namespace neon
 
+namespace sve2 {
+
+template <typename T>
+kleidicv_error_t warp_perspective_stripe(
+    const T *src, size_t src_stride, size_t src_width, size_t src_height,
+    T *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    size_t y_begin, size_t y_end, const float transformation[9],
+    size_t channels, kleidicv_interpolation_type_t interpolation,
+    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values);
+}  // namespace sve2
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_TRANSFORM_WARP_PERSPECTIVE_H

@@ -1848,9 +1848,10 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
 ///                       start of the next row for the source data. Must
 ///                       not be less than `width * sizeof(type)`, except for
 ///                       single-row images. Must be less than 2^32.
-/// @param src_width      Number of elements in the source row.
+/// @param src_width      Number of elements in the source row. Must be less
+///                       than 2^24.
 /// @param src_height     Number of rows in the source data. Must be less than
-///                       2^32.
+///                       2^24.
 /// @param dst            Pointer to the destination data. Must be non-null.
 /// @param dst_stride     Distance in bytes from the start of one row to the
 ///                       start of the next row for the destination data.

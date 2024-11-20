@@ -676,3 +676,78 @@ BENCH_REMAP_S16POINT5(remap_s16point5_u8_flip, remap_s16point5_u8,
 BENCH_REMAP_S16POINT5(remap_s16point5_u8_identity, remap_s16point5_u8,
                       get_identity_mapxy<int16_t>, 1,
                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+// clang-format off
+static const float transform_identity[] = {
+  1.0, 0, 0,
+  0, 1.0, 0,
+  0, 0, 1.0
+};
+
+static const float transform_small[] = {
+  0.8, 0.1, 2,
+  0.1, 0.8, -2,
+  0.001, 0.001, 1.1
+};
+
+static const float transform_bend[] = {
+  200, 0, 0,
+  0, 200, -2,
+  0.01, 0.01, 10
+};
+
+// designed for source 512 x 512 (rotate center is at [256,256])
+// rotate by 30 degrees and upscale to 2.2
+static const float transform_rotate[] = {
+ 0.3685617397559249, -0.2421336247796208, 201.2709623094595,
+ 0.2158651377567587, 0.3868901230951353, 91.52518789972362,
+ -0.0001175503101026296, -6.963609976572184e-05, 0.9431277488336682};
+
+// a near transformation made by OpenCV getPerspectiveTransform
+static const float transform_near[] = {
+  1.015917119306434, -0.03848938238648505, 2.925193061372864,
+ 0.04162265799405287, 1.030708451905362, -78.33384234480749,
+ -2.763770366739386e-06, -4.019862712379178e-05, 1.003055095661408};
+// clang-format on
+
+template <typename T, typename Function>
+static void warp_perspective(Function f, const float transform[9],
+                             size_t channels,
+                             kleidicv_interpolation_type_t interpolation,
+                             kleidicv_border_type_t border_type,
+                             benchmark::State& state) {
+  bench_functor(state, [f, transform, channels, interpolation, border_type]() {
+    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
+            image_height, get_destination_buffer<T>(), image_width * sizeof(T),
+            image_width, image_height, transform, channels, interpolation,
+            border_type, kleidicv_border_values_t{});
+  });
+}
+
+#define BENCH_WARP_PERSPECTIVE(benchname, name, transform, channels, \
+                               interpolation, border_type, type)     \
+  static void benchname(benchmark::State& state) {                   \
+    warp_perspective<type>(kleidicv_##name, transform, channels,     \
+                           interpolation, border_type, state);       \
+  }                                                                  \
+  BENCHMARK(benchname)
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_identity, warp_perspective_u8,
+                       transform_identity, 1, KLEIDICV_INTERPOLATION_NEAREST,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_small, warp_perspective_u8,
+                       transform_small, 1, KLEIDICV_INTERPOLATION_NEAREST,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_bend, warp_perspective_u8,
+                       transform_bend, 1, KLEIDICV_INTERPOLATION_NEAREST,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_rotate, warp_perspective_u8,
+                       transform_rotate, 1, KLEIDICV_INTERPOLATION_NEAREST,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_near, warp_perspective_u8,
+                       transform_near, 1, KLEIDICV_INTERPOLATION_NEAREST,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);

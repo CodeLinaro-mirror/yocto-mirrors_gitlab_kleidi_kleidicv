@@ -8,7 +8,8 @@
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_warp_perspective_stripe_u8,
                             &kleidicv::neon::warp_perspective_stripe<uint8_t>,
-                            nullptr, nullptr);
+                            &kleidicv::sve2::warp_perspective_stripe<uint8_t>,
+                            nullptr);
 
 extern "C" {
 
