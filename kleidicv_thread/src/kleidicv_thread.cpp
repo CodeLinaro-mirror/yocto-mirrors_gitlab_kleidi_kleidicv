@@ -214,6 +214,40 @@ kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
       src_b, src_b_stride, dst, dst_stride, width, height, threshold);
 }
 
+template <typename ScalarType, typename FunctionType>
+kleidicv_error_t parallel_sum(FunctionType sum_func, const ScalarType *src,
+                              size_t src_stride, size_t width, size_t height,
+                              ScalarType *sum,
+                              kleidicv_thread_multithreading mt) {
+  std::vector<ScalarType> sums(height, 0);
+
+  auto callback = [&](unsigned begin, unsigned end) {
+    return sum_func(src + begin * (src_stride / sizeof(ScalarType)), src_stride,
+                    width, end - begin, sums.data() + begin);
+  };
+
+  auto return_val = parallel_batches(callback, mt, height);
+
+  if (return_val == KLEIDICV_OK) {
+    *sum = 0;
+    for (ScalarType s : sums) {
+      *sum += s;
+    }
+  }
+
+  return return_val;
+}
+
+#define DEFINE_SUM(suffix, type)                                               \
+  kleidicv_error_t kleidicv_thread_sum_##suffix(                               \
+      const type *src, size_t src_stride, size_t width, size_t height,         \
+      type *sum, kleidicv_thread_multithreading mt) {                          \
+    return parallel_sum(kleidicv_sum_##suffix, src, src_stride, width, height, \
+                        sum, mt);                                              \
+  }
+
+DEFINE_SUM(f32, float);
+
 template <typename F>
 inline kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8_impl(
     F f, const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,

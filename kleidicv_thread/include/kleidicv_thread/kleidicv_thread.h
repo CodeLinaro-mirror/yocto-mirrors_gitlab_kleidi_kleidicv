@@ -111,6 +111,15 @@ kleidicv_error_t kleidicv_thread_yuv_sp_to_rgba_u8(
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
+/// Multithreaded implementation of kleidicv_sum_f32 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_sum_f32(const float *src, size_t src_stride,
+                                         size_t width, size_t height,
+                                         float *sum,
+                                         kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
 /// Multithreaded implementation of kleidicv_min_max_u8 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_min_max_u8(const uint8_t *src,
