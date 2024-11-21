@@ -27,35 +27,24 @@ kleidicv_error_t float_conversion(const InputType* src, size_t src_stride,
 
 }  // namespace sme2
 
-#ifdef KLEIDICV_HAVE_SVE2
-#define SVE2_FUNC_POINTER(itype, otype)                      \
-  [[maybe_unused]] static auto sve2_func_##itype##_##otype = \
-      kleidicv::sve2::float_conversion<itype, otype>;
-#else
-#define SVE2_FUNC_POINTER(itype, otype)
-#endif  // KLEIDICV_HAVE_SVE2
-
-#ifdef KLEIDICV_HAVE_SME2
-#define SME2_FUNC_POINTER(itype, otype)     \
-  static auto sme2_func_##itype##_##otype = \
-      kleidicv::sme2::float_conversion<itype, otype>;
-#else
-#define SME2_FUNC_POINTER(itype, otype)
-#endif  // KLEIDICV_HAVE_SME2
-
-// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
-#define KLEIDICV_DEFINE_C_API(partialname, itype, otype)    \
-  SVE2_FUNC_POINTER(itype, otype);                          \
-  SME2_FUNC_POINTER(itype, otype);                          \
-  KLEIDICV_MULTIVERSION_C_API(                              \
-      kleidicv_##partialname, &kleidicv::neon::partialname, \
-      KLEIDICV_SVE2_IMPL_IF(sve2_func_##itype##_##otype),   \
-      sme2_func_##itype##_##otype)
-// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
-
-KLEIDICV_DEFINE_C_API(float_conversion_f32_s8, float, int8_t);
-KLEIDICV_DEFINE_C_API(float_conversion_f32_u8, float, uint8_t);
-KLEIDICV_DEFINE_C_API(float_conversion_s8_f32, int8_t, float);
-KLEIDICV_DEFINE_C_API(float_conversion_u8_f32, uint8_t, float);
-
 }  // namespace kleidicv
+
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_float_conversion_f32_s8, &kleidicv::neon::float_conversion_f32_s8,
+    KLEIDICV_SVE2_IMPL_IF((&kleidicv::sve2::float_conversion<float, int8_t>)),
+    (&kleidicv::sme2::float_conversion<float, int8_t>));
+
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_float_conversion_f32_u8, &kleidicv::neon::float_conversion_f32_u8,
+    KLEIDICV_SVE2_IMPL_IF((&kleidicv::sve2::float_conversion<float, uint8_t>)),
+    (&kleidicv::sme2::float_conversion<float, uint8_t>));
+
+KLEIDICV_MULTIVERSION_C_API(kleidicv_float_conversion_s8_f32,
+                            &kleidicv::neon::float_conversion_s8_f32,
+                            (&kleidicv::sve2::float_conversion<int8_t, float>),
+                            (&kleidicv::sme2::float_conversion<int8_t, float>));
+
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_float_conversion_u8_f32, &kleidicv::neon::float_conversion_u8_f32,
+    (&kleidicv::sve2::float_conversion<uint8_t, float>),
+    (&kleidicv::sme2::float_conversion<uint8_t, float>));
