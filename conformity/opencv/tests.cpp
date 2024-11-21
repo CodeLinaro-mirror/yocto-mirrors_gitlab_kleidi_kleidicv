@@ -37,6 +37,7 @@ std::vector<test> all_tests = merge_tests({
     float_conversion_tests_get,
     resize_tests_get,
     scale_tests_get,
+    sum_tests_get,
     min_max_tests_get,
     in_range_tests_get,
     remap_tests_get,

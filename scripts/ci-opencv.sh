@@ -121,6 +121,7 @@ CORE_TEST_PATTERNS=(
   '*MinMaxLoc*'
   '*Core_ConvertScale*'
   '*Core_Exp*'
+  '*Core_Sum*'
   '*Core_MinMaxIdx*'
   '*Core_minMaxIdx*'
   '*Core_Array*'

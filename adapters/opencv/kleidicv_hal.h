@@ -122,6 +122,9 @@ int pyrdown(const uchar *src_data, size_t src_step, int src_width,
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height, int element_size);
 
+int sum(const uchar *src_data, size_t src_step, int src_type, size_t width,
+        size_t height, double *result);
+
 int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int angle);
 
@@ -466,6 +469,21 @@ static inline int kleidicv_transpose_with_fallback(
 }
 #undef cv_hal_transpose2d
 #define cv_hal_transpose2d kleidicv_transpose_with_fallback
+
+#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
+// sum
+#ifdef cv_hal_sum
+static inline int kleidicv_sum_with_fallback(const uchar *src_data,
+                                             size_t src_step, int src_type,
+                                             size_t width, size_t height,
+                                             double *result) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(sum, cv_hal_sum, src_data, src_step,
+                                       src_type, width, height, result);
+}
+#undef cv_hal_sum
+#define cv_hal_sum kleidicv_sum_with_fallback
+#endif  // cv_hal_sum
+#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
 // rotate
 static inline int kleidicv_rotate_with_fallback(int src_type,
