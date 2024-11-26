@@ -6,7 +6,7 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/remap/remap.h"
+#include "kleidicv/transform/remap.h"
 
 namespace kleidicv::neon {
 

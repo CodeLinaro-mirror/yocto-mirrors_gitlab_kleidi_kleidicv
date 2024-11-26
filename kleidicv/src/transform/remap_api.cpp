@@ -4,7 +4,7 @@
 
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/remap/remap.h"
+#include "kleidicv/transform/remap.h"
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16_u8,
                             &kleidicv::neon::remap_s16<uint8_t>,

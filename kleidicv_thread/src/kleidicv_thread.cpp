@@ -15,8 +15,8 @@
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/remap/remap.h"
 #include "kleidicv/resize/resize_linear.h"
+#include "kleidicv/transform/remap.h"
 #include "kleidicv/transform/warp_perspective.h"
 
 typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;

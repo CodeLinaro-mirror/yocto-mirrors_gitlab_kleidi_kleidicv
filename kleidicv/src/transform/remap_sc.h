@@ -12,8 +12,8 @@
 #include <limits>
 #include <memory>
 
-#include "kleidicv/remap/remap.h"
 #include "kleidicv/sve2.h"
+#include "kleidicv/transform/remap.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
