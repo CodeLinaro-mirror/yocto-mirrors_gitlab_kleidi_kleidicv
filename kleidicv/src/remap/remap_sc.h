@@ -267,9 +267,8 @@ class RemapS16Point5SVE2<uint8_t> {
     acc_b = svmlalb_u32(acc_b, line1, yfrac);
     acc_t = svmlalt_u32(acc_t, line1, yfrac);
 
-    svuint16_t result = svshrnt(
-        svshrnb(acc_b, static_cast<uint64_t>(2 * REMAP16POINT5_FRAC_BITS)),
-        acc_t, static_cast<uint64_t>(2 * REMAP16POINT5_FRAC_BITS));
+    svuint16_t result = svshrnt(svshrnb(acc_b, 2ULL * REMAP16POINT5_FRAC_BITS),
+                                acc_t, 2ULL * REMAP16POINT5_FRAC_BITS);
     svst1b_u16(pg, &dst[0], result);
     mapfrac += step;
     dst += step;
@@ -357,10 +356,9 @@ class RemapS16Point5SME2<uint8_t> : public RemapS16Point5SVE2<uint8_t> {
 
     svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
 
-    auto vector_path = [&](svbool_t pg,
+    auto vector_path = [&](svbool_t pg16, svbool_t pg8,
                            ptrdiff_t step) KLEIDICV_STREAMING_COMPATIBLE {
       // Deinterleave abcd into two vectors, ac and bd
-      svbool_t pg8 = svwhilelt_b8(int64_t{0}, 2 * step);
       svuint8x2_t src = svld2_u8(pg8, &demapped_src[0]);
 
       svuint16_t src_a = svmovlb_u16(svget2(src, 0));
@@ -368,20 +366,22 @@ class RemapS16Point5SME2<uint8_t> : public RemapS16Point5SVE2<uint8_t> {
       svuint16_t src_c = svmovlt_u16(svget2(src, 0));
       svuint16_t src_d = svmovlt_u16(svget2(src, 1));
 
-      interpolate_and_store(pg, step, mapfrac, dst, src_a, src_b, src_c, src_d,
-                            bias);
+      interpolate_and_store(pg16, step, mapfrac, dst, src_a, src_b, src_c,
+                            src_d, bias);
       demapped_src += step;
     };
 
+    svbool_t ptrue_16 = FracVecTraits::svptrue();
+    svbool_t ptrue_8 = svptrue_b8();
     LoopUnroll loop{rowbuffer_width_, FracVecTraits::num_lanes()};
     loop.unroll_once([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
-      vector_path(FracVecTraits::svptrue(), static_cast<ptrdiff_t>(step));
+      vector_path(ptrue_16, ptrue_8, static_cast<ptrdiff_t>(step));
     });
-    loop.remaining(
-        [&](size_t length, size_t step) KLEIDICV_STREAMING_COMPATIBLE {
-          svbool_t pg = FracVecTraits::svwhilelt(step - length, step);
-          vector_path(pg, static_cast<ptrdiff_t>(length));
-        });
+    loop.remaining([&](size_t length, size_t) KLEIDICV_STREAMING_COMPATIBLE {
+      svbool_t pg16 = FracVecTraits::svwhilelt(size_t{0}, length);
+      svbool_t pg8 = svwhilelt_b8(size_t{0}, 2 * length);
+      vector_path(pg16, pg8, static_cast<ptrdiff_t>(length));
+    });
   }
 
   size_t rowbuffer_width_;

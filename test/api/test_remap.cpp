@@ -371,19 +371,6 @@ class RemapS16Point5 : public testing::Test {
             channels, mapxy.data(), mapxy.stride(), mapfrac.data(),
             mapfrac.stride(), KLEIDICV_BORDER_TYPE_REPLICATE, {}));
 
-    if (expected.compare_to(actual)) {
-      std::cout << "source:\n";
-      dump(&source);
-      std::cout << "mapxy:\n";
-      dump(&mapxy);
-      std::cout << "mapfrac:\n";
-      dump(&mapfrac);
-      std::cout << "expected:\n";
-      dump(&expected);
-      std::cout << "actual:\n";
-      dump(&actual);
-    }
-
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
 

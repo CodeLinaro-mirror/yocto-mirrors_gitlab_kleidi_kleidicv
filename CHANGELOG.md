@@ -17,8 +17,8 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Remap implementation
-  - 2-channel s16 and s16+u16 fixed-point coordinates and 1-channel u8 input.
-  - 2-channel s16 + 5+5 bits' fractions fixed-point coordinates and 1-channel u8 input.
+  - 2-channel s16 and s16+u16 fixed-point coordinates and 1-channel u8 input, replicated borders.
+  - 2-channel s16 + 5+5 bits' fractions fixed-point coordinates and 1-channel u8 input, replicated borders.
 - WarpPerspective implementation
   - Nearest neighbour implementation for replicated borders and 1-channel u8 input.
 - Implementation for cv::pyrDown in the OpenCV HAL.
