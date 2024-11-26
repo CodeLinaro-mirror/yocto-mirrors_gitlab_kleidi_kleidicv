@@ -470,10 +470,10 @@ TYPED_TEST(WarpPerspectiveNearest, UnsupportedBorderTypeConst) {
   TypeParam dst[8];
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_warp_perspective_u8(src, 1, 1, 1, dst, 8, 8, 1,
-                                         transform_identity, 1,
-                                         KLEIDICV_INTERPOLATION_NEAREST,
-                                         KLEIDICV_BORDER_TYPE_CONSTANT, src));
+            kleidicv_warp_perspective_u8(
+                src, 1, 1, 1, dst, 8, 8, 1, transform_identity, 1,
+                KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_CONSTANT,
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspectiveNearest, UnsupportedTooSmallImage) {

@@ -8,7 +8,9 @@
 #include <arm_sve.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
 
@@ -20,12 +22,8 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 #if !KLEIDICV_TARGET_SME2
 
 template <typename ScalarType>
-class RemapS16;
-
-template <>
-class RemapS16<uint8_t> {
+class RemapS16 {
  public:
-  using ScalarType = uint8_t;
   using MapVecTraits = VecTraits<int16_t>;
   using MapVectorType = typename MapVecTraits::VectorType;
   using MapVector2Type = typename MapVecTraits::Vector2Type;
@@ -34,13 +32,17 @@ class RemapS16<uint8_t> {
            svuint16_t& v_src_stride, MapVectorType& v_x_max,
            MapVectorType& v_y_max)
       : src_rows_{src_rows},
-        v_src_stride_{v_src_stride},
+        v_src_element_stride{v_src_stride},
         v_xmax_{v_x_max},
         v_ymax_{v_y_max} {
-    v_src_stride_ = svdup_u16(src_rows.stride());
+    v_src_element_stride = svdup_u16(src_rows.stride() / sizeof(ScalarType));
     v_xmax_ = svdup_s16(static_cast<int16_t>(src_width - 1));
     v_ymax_ = svdup_s16(static_cast<int16_t>(src_height - 1));
   }
+
+  void transform_pixels(svuint32_t offsets_b, svbool_t pg_b,
+                        svuint32_t offsets_t, svbool_t pg_t,
+                        Columns<ScalarType> dst, svbool_t pg_dst);
 
   void process_row(size_t width, Columns<const int16_t> mapxy,
                    Columns<ScalarType> dst) {
@@ -53,9 +55,14 @@ class RemapS16<uint8_t> {
           svmax_x(pg, svzero, svmin_x(pg, svget2(xy, 0), v_xmax_)));
       svuint16_t y = svreinterpret_u16_s16(
           svmax_x(pg, svzero, svmin_x(pg, svget2(xy, 1), v_ymax_)));
-      // Calculate offsets from coordinates (y * stride + x)
-      offsets_b = svmlalb_u32(svmovlb_u32(x), y, v_src_stride_);
-      offsets_t = svmlalt_u32(svmovlt_u32(x), y, v_src_stride_);
+      // Calculate offsets from coordinates (y * stride/sizeof(ScalarType) + x)
+      offsets_b = svmlalb_u32(svmovlb_u32(x), y, v_src_element_stride);
+      offsets_t = svmlalt_u32(svmovlt_u32(x), y, v_src_element_stride);
+      // Account for the size of the source type when calculating offset
+      if constexpr (std::is_same<ScalarType, uint16_t>::value) {
+        offsets_b = svlsl_n_u32_x(pg, offsets_b, 1);
+        offsets_t = svlsl_n_u32_x(pg, offsets_t, 1);
+      }
     };
 
     svbool_t pg_all16 = MapVecTraits::svptrue();
@@ -65,14 +72,7 @@ class RemapS16<uint8_t> {
       load_offsets(pg);
       svbool_t pg_b = svwhilelt_b32(int64_t{0}, (step + 1) / 2);
       svbool_t pg_t = svwhilelt_b32(int64_t{0}, step / 2);
-      // Copy pixels from source
-      svuint32_t result_b =
-          svldnt1ub_gather_u32offset_u32(pg_b, &src_rows_[0], offsets_b);
-      svuint32_t result_t =
-          svldnt1ub_gather_u32offset_u32(pg_t, &src_rows_[0], offsets_t);
-      svuint16_t result = svtrn1_u16(svreinterpret_u16_u32(result_b),
-                                     svreinterpret_u16_u32(result_t));
-      svst1b_u16(pg, &dst[0], result);
+      transform_pixels(offsets_b, pg_b, offsets_t, pg_t, dst, pg);
       mapxy += step;
       dst += step;
     };
@@ -80,14 +80,7 @@ class RemapS16<uint8_t> {
     // NOTE: gather load is not available in streaming mode
     auto gather_load_full_vector_path = [&](ptrdiff_t step) {
       load_offsets(pg_all16);
-      // Copy pixels from source
-      svuint32_t result_b =
-          svldnt1ub_gather_u32offset_u32(pg_all32, &src_rows_[0], offsets_b);
-      svuint32_t result_t =
-          svldnt1ub_gather_u32offset_u32(pg_all32, &src_rows_[0], offsets_t);
-      svuint16_t result = svtrn1_u16(svreinterpret_u16_u32(result_b),
-                                     svreinterpret_u16_u32(result_t));
-      svst1b_u16(pg_all16, &dst[0], result);
+      transform_pixels(offsets_b, pg_all32, offsets_t, pg_all32, dst, pg_all16);
       mapxy += step;
       dst += step;
     };
@@ -104,10 +97,40 @@ class RemapS16<uint8_t> {
 
  private:
   Rows<const ScalarType> src_rows_;
-  svuint16_t& v_src_stride_;
+  svuint16_t& v_src_element_stride;
   MapVectorType& v_xmax_;
   MapVectorType& v_ymax_;
-};  // end of class RemapS16<uint8_t>
+};  // end of class RemapS16<ScalarType>
+
+template <>
+void RemapS16<uint8_t>::transform_pixels(svuint32_t offsets_b, svbool_t pg_b,
+                                         svuint32_t offsets_t, svbool_t pg_t,
+                                         Columns<uint8_t> dst,
+                                         svbool_t pg_dst) {
+  // Copy pixels from source
+  svuint32_t result_b =
+      svld1ub_gather_u32offset_u32(pg_b, &src_rows_[0], offsets_b);
+  svuint32_t result_t =
+      svld1ub_gather_u32offset_u32(pg_t, &src_rows_[0], offsets_t);
+  svuint16_t result = svtrn1_u16(svreinterpret_u16_u32(result_b),
+                                 svreinterpret_u16_u32(result_t));
+  svst1b_u16(pg_dst, &dst[0], result);
+}
+
+template <>
+void RemapS16<uint16_t>::transform_pixels(svuint32_t offsets_b, svbool_t pg_b,
+                                          svuint32_t offsets_t, svbool_t pg_t,
+                                          Columns<uint16_t> dst,
+                                          svbool_t pg_dst) {
+  // Copy pixels from source
+  svuint32_t result_b =
+      svld1uh_gather_u32offset_u32(pg_b, &src_rows_[0], offsets_b);
+  svuint32_t result_t =
+      svld1uh_gather_u32offset_u32(pg_t, &src_rows_[0], offsets_t);
+  svuint16_t result = svtrn1_u16(svreinterpret_u16_u32(result_b),
+                                 svreinterpret_u16_u32(result_t));
+  svst1_u16(pg_dst, &dst[0], result);
+}
 
 template <typename T>
 kleidicv_error_t remap_s16_sc(const T* src, size_t src_stride, size_t src_width,

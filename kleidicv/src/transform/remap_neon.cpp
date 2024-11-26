@@ -11,19 +11,16 @@
 namespace kleidicv::neon {
 
 template <typename ScalarType>
-class RemapS16;
-
-template <>
-class RemapS16<uint8_t> {
+class RemapS16 {
  public:
-  using ScalarType = uint8_t;
   using MapVecTraits = neon::VecTraits<int16_t>;
   using MapVectorType = typename MapVecTraits::VectorType;
   using MapVector2Type = typename MapVecTraits::Vector2Type;
 
   RemapS16(Rows<const ScalarType> src_rows, size_t src_width, size_t src_height)
       : src_rows_{src_rows},
-        v_src_stride_{vdupq_n_u16(static_cast<uint16_t>(src_rows_.stride()))},
+        v_src_element_stride{vdupq_n_u16(
+            static_cast<uint16_t>(src_rows_.stride() / sizeof(ScalarType)))},
         v_xmax_{vdupq_n_s16(static_cast<int16_t>(src_width - 1))},
         v_ymax_{vdupq_n_s16(static_cast<int16_t>(src_height - 1))} {}
 
@@ -36,17 +33,17 @@ class RemapS16<uint8_t> {
           vmaxq_s16(vdupq_n_s16(0), vminq_s16(xy.val[0], v_xmax_)));
       uint16x8_t y = vreinterpretq_u16_s16(
           vmaxq_s16(vdupq_n_s16(0), vminq_s16(xy.val[1], v_ymax_)));
-      // Calculate offsets from coordinates (y * stride + x)
+      // Calculate offsets from coordinates (y * stride/sizeof(ScalarType) + x)
       uint32x4_t indices_low =
           vmlal_u16(vmovl_u16(vget_low_u16(x)), vget_low_u16(y),
-                    vget_low_u16(v_src_stride_));
+                    vget_low_u16(v_src_element_stride));
       // Copy pixels from source
       dst[0] = src_rows_[vgetq_lane_u32(indices_low, 0)];
       dst[1] = src_rows_[vgetq_lane_u32(indices_low, 1)];
       dst[2] = src_rows_[vgetq_lane_u32(indices_low, 2)];
       dst[3] = src_rows_[vgetq_lane_u32(indices_low, 3)];
       uint32x4_t indices_high =
-          vmlal_high_u16(vmovl_high_u16(x), y, v_src_stride_);
+          vmlal_high_u16(vmovl_high_u16(x), y, v_src_element_stride);
       dst[4] = src_rows_[vgetq_lane_u32(indices_high, 0)];
       dst[5] = src_rows_[vgetq_lane_u32(indices_high, 1)];
       dst[6] = src_rows_[vgetq_lane_u32(indices_high, 2)];
@@ -66,10 +63,10 @@ class RemapS16<uint8_t> {
 
  private:
   Rows<const ScalarType> src_rows_;
-  uint16x8_t v_src_stride_;
+  uint16x8_t v_src_element_stride;
   int16x8_t v_xmax_;
   int16x8_t v_ymax_;
-};  // end of class RemapS16<uint8_t>
+};  // end of class RemapS16<ScalarType>
 
 template <typename T>
 kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
@@ -261,6 +258,7 @@ kleidicv_error_t remap_s16point5(
       kleidicv_border_type_t border_type, const type *border_value)
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint16_t);
 
 #define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(type)                    \
   template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t remap_s16point5<type>(    \

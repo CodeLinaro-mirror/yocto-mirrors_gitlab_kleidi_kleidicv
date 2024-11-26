@@ -395,6 +395,17 @@ kleidicv_error_t kleidicv_thread_remap_s16_u8(
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
+/// Multithreaded implementation of kleidicv_remap_s16_u16 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_remap_s16_u16(
+    const uint16_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint16_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    size_t channels, const int16_t *mapxy, size_t mapxy_stride,
+    kleidicv_border_type_t border_type, const uint16_t *border_value,
+    kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
 /// Multithreaded implementation of kleidicv_remap_s16point5_u8 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_remap_s16point5_u8(

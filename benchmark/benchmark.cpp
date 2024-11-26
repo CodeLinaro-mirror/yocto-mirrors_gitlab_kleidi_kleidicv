@@ -639,6 +639,19 @@ BENCH_REMAP_S16(remap_s16_u8_identity, remap_s16_u8,
                 get_identity_mapxy<int16_t>, 1, KLEIDICV_BORDER_TYPE_REPLICATE,
                 uint8_t);
 
+BENCH_REMAP_S16(remap_s16_u16_random, remap_s16_u16, get_random_mapxy<int16_t>,
+                1, KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_S16(remap_s16_u16_blend, remap_s16_u16, get_blend_mapxy<int16_t>, 1,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_S16(remap_s16_u16_flip, remap_s16_u16, get_flip_mapxy<int16_t>, 1,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_S16(remap_s16_u16_identity, remap_s16_u16,
+                get_identity_mapxy<int16_t>, 1, KLEIDICV_BORDER_TYPE_REPLICATE,
+                uint16_t);
+
 template <typename T, typename Function, typename MapFunc>
 static void remap_s16point5(Function f, MapFunc mf, size_t channels,
                             kleidicv_border_type_t border_type,

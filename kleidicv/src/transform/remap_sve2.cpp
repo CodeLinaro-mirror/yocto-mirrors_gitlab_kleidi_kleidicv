@@ -13,9 +13,9 @@ kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
                            const int16_t *mapxy, size_t mapxy_stride,
                            kleidicv_border_type_t border_type,
                            const T *border_value) {
-  return remap_s16_sc<uint8_t>(src, src_stride, src_width, src_height, dst,
-                               dst_stride, dst_width, dst_height, channels,
-                               mapxy, mapxy_stride, border_type, border_value);
+  return remap_s16_sc<T>(src, src_stride, src_width, src_height, dst,
+                         dst_stride, dst_width, dst_height, channels, mapxy,
+                         mapxy_stride, border_type, border_value);
 }
 
 template <typename T>
@@ -41,6 +41,7 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
       kleidicv_border_type_t border_type, const type *border_value)
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint16_t);
 
 #define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(type)                    \
   template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t remap_s16point5<type>(    \

@@ -135,6 +135,7 @@ std::vector<test>& remap_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
     TEST("RemapS16 uint8", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapS16 uint16", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint8", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
   };
   // clang-format on

@@ -1800,6 +1800,15 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16_u8, const uint8_t *src,
                          kleidicv_border_type_t border_type,
                          const uint8_t *border_value);
 
+/// @copydoc kleidicv_remap_s16_u8
+KLEIDICV_API_DECLARATION(kleidicv_remap_s16_u16, const uint16_t *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         uint16_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height, size_t channels,
+                         const int16_t *mapxy, size_t mapxy_stride,
+                         kleidicv_border_type_t border_type,
+                         const uint16_t *border_value);
+
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.
 /// Functionality is similar to @ref kleidicv_remap_s16_u8 , the difference is

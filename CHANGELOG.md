@@ -17,7 +17,9 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Implementation of Rotate 90 degrees clockwise.
-- Remap function with nearest neighbour and fixed-point interpolation for 8-bit inputs.
+- Remap implementations
+  - Nearest neighbour, for replicated borders with 1-channel u8 and u16 inputs.
+  - Fixed-point interpolation, for replicated borders with 1-channel u8 input.
 - WarpPerspective implementation
   - Nearest and Linear interpolation method, for replicated borders and 1-channel u8 input.
 
