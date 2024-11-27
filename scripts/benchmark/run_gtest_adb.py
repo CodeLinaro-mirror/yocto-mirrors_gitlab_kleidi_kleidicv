@@ -181,7 +181,7 @@ def wait_for_cooldown(runner, thermal_zone):
         if temp < 40000:
             return
         print(f"Temperature {temp} - waiting to cool down")
-        time.sleep(1)
+        time.sleep(3)
 
 
 def get_run_name(rep, executable, taskset_mask):
