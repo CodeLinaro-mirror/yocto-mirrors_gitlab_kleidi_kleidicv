@@ -264,7 +264,7 @@ def run_executable_tests(
         try:
             output = (
                 f"{executable}-{taskset_mask:x}\t{test_name}"
-                f"\t{test_result['value_param']}"
+                f"\t{test_result.get('value_param', '')}"
             )
             for key in args.tsv_columns:
                 output += f"\t{test_result[key]}"
@@ -328,7 +328,7 @@ def get_results_table(args, results):
         testsuite_name = testsuite["name"]
         for test_index, test in enumerate(testsuite["testsuite"]):
             test_name = test["name"]
-            value_param = test["value_param"]
+            value_param = test.get("value_param", "")
             row = [f"{testsuite_name}.{test_name}", value_param]
 
             try:
