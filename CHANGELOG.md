@@ -32,6 +32,11 @@ This changelog aims to follow the guiding principles of
 - `KLEIDICV_ENABLE_SME2` defaults to off. This is because the ACLE SME specification has not yet been finalized.
 - In the OpenCV HAL, cvtColor for gray-RGBA & BGRA-RGBA are multithreaded.
 - Improved performance of 8-bit int to 32-bit float conversion.
+- Renamed functions:
+  - kleidicv_float_conversion_f32_s8 to kleidicv_f32_to_s8
+  - kleidicv_float_conversion_f32_u8 to kleidicv_f32_to_u8
+  - kleidicv_float_conversion_s8_f32 to kleidicv_s8_to_f32
+  - kleidicv_float_conversion_u8_f32 to kleidicv_u8_to_f32
 
 ## 0.2.0 - 2024-09-30
 

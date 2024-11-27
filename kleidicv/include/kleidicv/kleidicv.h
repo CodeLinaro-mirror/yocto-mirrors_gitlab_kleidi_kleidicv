@@ -1653,11 +1653,11 @@ KLEIDICV_API_DECLARATION(kleidicv_exp_f32, const float *src, size_t src_stride,
 /// @param width        Number of elements in a row.
 /// @param height       Number of rows in the data.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_f32_s8, const float *src,
+KLEIDICV_API_DECLARATION(kleidicv_f32_to_s8, const float *src,
                          size_t src_stride, int8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
-/// @copydoc kleidicv_float_conversion_f32_s8
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_f32_u8, const float *src,
+/// @copydoc kleidicv_f32_to_s8
+KLEIDICV_API_DECLARATION(kleidicv_f32_to_u8, const float *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -1683,11 +1683,11 @@ KLEIDICV_API_DECLARATION(kleidicv_float_conversion_f32_u8, const float *src,
 /// @param width        Number of pixels in a row.
 /// @param height       Number of rows in the data.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_s8_f32, const int8_t *src,
+KLEIDICV_API_DECLARATION(kleidicv_s8_to_f32, const int8_t *src,
                          size_t src_stride, float *dst, size_t dst_stride,
                          size_t width, size_t height);
-/// @copydoc kleidicv_float_conversion_s8_f32
-KLEIDICV_API_DECLARATION(kleidicv_float_conversion_u8_f32, const uint8_t *src,
+/// @copydoc kleidicv_s8_to_f32
+KLEIDICV_API_DECLARATION(kleidicv_u8_to_f32, const uint8_t *src,
                          size_t src_stride, float *dst, size_t dst_stride,
                          size_t width, size_t height);
 

@@ -11,10 +11,9 @@
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
-#define KLEIDICV_FLOAT_CONVERSION(itype, itype_name, otype, otype_name)        \
-  KLEIDICV_API_DIFFERENT_IO_TYPES(                                             \
-      float_conversion, kleidicv_float_conversion_##itype_name##_##otype_name, \
-      itype, otype)
+#define KLEIDICV_FLOAT_CONVERSION(itype, itype_name, otype, otype_name) \
+  KLEIDICV_API_DIFFERENT_IO_TYPES(                                      \
+      float_conversion, kleidicv_##itype_name##_to_##otype_name, itype, otype)
 
 KLEIDICV_FLOAT_CONVERSION(float, f32, int8_t, s8);
 KLEIDICV_FLOAT_CONVERSION(float, f32, uint8_t, u8);

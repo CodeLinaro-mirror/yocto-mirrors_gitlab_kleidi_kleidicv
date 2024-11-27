@@ -68,14 +68,10 @@ KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgb_to_yuv_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_bgra_to_yuv_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_rgba_to_yuv_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_exp_f32, float, float);
-KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_f32_s8, float,
-                         int8_t);
-KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_f32_u8, float,
-                         uint8_t);
-KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_s8_f32, int8_t,
-                         float);
-KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_float_conversion_u8_f32, uint8_t,
-                         float);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_f32_to_s8, float, int8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_f32_to_u8, float, uint8_t);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_s8_to_f32, int8_t, float);
+KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_u8_to_f32, uint8_t, float);
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///

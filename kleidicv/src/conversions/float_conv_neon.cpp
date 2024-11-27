@@ -86,21 +86,19 @@ kleidicv_error_t float_conversion(const InputType* src, size_t src_stride,
   return KLEIDICV_OK;
 }
 
-kleidicv_error_t float_conversion_f32_s8(const float* src, size_t src_stride,
-                                         int8_t* dst, size_t dst_stride,
-                                         size_t width, size_t height) {
+kleidicv_error_t f32_to_s8(const float* src, size_t src_stride, int8_t* dst,
+                           size_t dst_stride, size_t width, size_t height) {
   return float_conversion(src, src_stride, dst, dst_stride, width, height);
 }
 
-kleidicv_error_t float_conversion_f32_u8(const float* src, size_t src_stride,
-                                         uint8_t* dst, size_t dst_stride,
-                                         size_t width, size_t height) {
+kleidicv_error_t f32_to_u8(const float* src, size_t src_stride, uint8_t* dst,
+                           size_t dst_stride, size_t width, size_t height) {
   return float_conversion(src, src_stride, dst, dst_stride, width, height);
 }
 
 KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
-float_conversion_s8_f32(const int8_t* src, size_t src_stride, float* dst,
-                        size_t dst_stride, size_t width, size_t height) {
+s8_to_f32(const int8_t* src, size_t src_stride, float* dst, size_t dst_stride,
+          size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -146,8 +144,8 @@ float_conversion_s8_f32(const int8_t* src, size_t src_stride, float* dst,
 }
 
 KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
-float_conversion_u8_f32(const uint8_t* src, size_t src_stride, float* dst,
-                        size_t dst_stride, size_t width, size_t height) {
+u8_to_f32(const uint8_t* src, size_t src_stride, float* dst, size_t dst_stride,
+          size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
