@@ -5,9 +5,9 @@
 #ifndef KLEIDICV_SOBEL_SC_H
 #define KLEIDICV_SOBEL_SC_H
 
+#include "kleidicv/filters/separable_filter_3x3_sc.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/separable_filter_3x3_sc.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/separable.h"
 

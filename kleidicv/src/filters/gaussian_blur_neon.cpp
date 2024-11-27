@@ -7,13 +7,13 @@
 
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
+#include "kleidicv/filters/separable_filter_15x15_neon.h"
+#include "kleidicv/filters/separable_filter_3x3_neon.h"
+#include "kleidicv/filters/separable_filter_5x5_neon.h"
+#include "kleidicv/filters/separable_filter_7x7_neon.h"
+#include "kleidicv/filters/sigma.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/separable_filter_15x15_neon.h"
-#include "kleidicv/separable_filter_3x3_neon.h"
-#include "kleidicv/separable_filter_5x5_neon.h"
-#include "kleidicv/separable_filter_7x7_neon.h"
-#include "kleidicv/sigma.h"
 #include "kleidicv/workspace/separable.h"
 
 namespace kleidicv::neon {

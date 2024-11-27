@@ -8,8 +8,8 @@
 #include "framework/generator.h"
 #include "framework/kernel.h"
 #include "framework/utils.h"
+#include "kleidicv/filters/sigma.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sigma.h"
 #include "test_config.h"
 
 #define KLEIDICV_GAUSSIAN_BLUR(type, type_suffix) \

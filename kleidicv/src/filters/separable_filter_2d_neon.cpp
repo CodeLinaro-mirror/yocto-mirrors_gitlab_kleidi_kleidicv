@@ -6,9 +6,9 @@
 
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/separable_filter_2d.h"
+#include "kleidicv/filters/separable_filter_5x5_neon.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/separable_filter_5x5_neon.h"
 #include "kleidicv/workspace/separable.h"
 
 namespace kleidicv::neon {
