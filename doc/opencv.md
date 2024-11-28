@@ -97,7 +97,7 @@ In-place filtering is not supported.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
-* `src.width()`,`src.height()` - should be greater than or equal to the size of the kernel in the given direction.
+* `src.cols`,`src.rows` - should be greater than or equal to the size of the kernel in the given direction.
 * `ksize` - supported kernel sizes are 3x3, 5x5, 7x7 and 15x15.
 * `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
   + `cv::BORDER_REPLICATE`
@@ -122,8 +122,8 @@ In-place operation not supported.
 
 Notes on parameters:
 * `src.type()` - only supports certain values in combination with other parameters as shown in the table below.
-* `dst.width()`,`dst.height()` - must be a multiple of `src.width()` and `src.height()` respectively, in combination with other parameters as shown in the table below.
-* `fx`,`fy` - must be 0 or `dst.width() / src.width()`.
+* `dst.cols`,`dst.rows` - must be a multiple of `src.cols` and `src.rows` respectively, in combination with other parameters as shown in the table below.
+* `fx`,`fy` - must be 0 or `dst.cols / src.cols`.
 * `interpolation` - supported [`InterpolationFlags`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga5bb5a1fea74ea38e1a5445ca803ff121) are as shown in the table below.
 
 |`src.type()`|`interpolation`|src:dst dimensions ratio|
@@ -138,7 +138,7 @@ In-place filtering is not supported.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
-* `src.width()`,`src.height()` - image width and height should be `>=3`.
+* `src.cols`,`src.rows` - image width and height should be `>=3`.
 * `ddepth` - only supports `CV_16S` depth.
 * `dx`,`dy` - either vertical `{dx,dy} == {0,1}` or horizontal `{dx,dy} == {1,0}` operation is supported.
 * `ksize` - only supports 3x3 kernel size.
@@ -150,7 +150,7 @@ Notes on parameters:
 Transposes a matrix.
 
 Notes on parameters:
-* In-place `transpose` is only supported for square matrixes. (`src.width() == src.height()`)
+* In-place `transpose` is only supported for square matrices. (`src.cols == src.rows`)
 
 ### [`cv::minMaxIdx()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga7622c466c628a75d9ed008b42250a73f)
 Finds the minimum and maximum element values and their positions.
@@ -204,15 +204,15 @@ Supported map configurations:
   * supported `interpolation`: `INTER_LINEAR` only
 
 ### [`cv::warpPerspective()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gaf73673a7e8e18ec6963e3774e6a94b87)
-Perspectively transforms the `src` image, using a 3x3 linear transformation matrix on the coordinates.
+Performs a perspective transformation on an image.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth and 1 channel.
+* `src.cols`, `src.rows` - must be less than 2^24
+* `src.step` - must be less than 2^32
+* `dst.cols` - must be at least 8
 * `borderMode` - only supports `BORDER_REPLICATE`
 * `interpolation` - only supports `INTER_NEAREST`
-* `dst_width` - must be at least 8
-* `src_width`, `src_height` - must be less than 2^24
-* `src_stride` - must fit into uint32
 
 ### [`cv::pyrDown()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaf9bba239dfca11654cb7f50f889fc2ff)
 Blurs and downsamples an image.

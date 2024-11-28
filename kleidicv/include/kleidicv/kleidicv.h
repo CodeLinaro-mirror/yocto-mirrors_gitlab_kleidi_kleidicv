@@ -1835,8 +1835,8 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
     size_t src_channels, int16_t *dst, size_t dst_stride);
 #endif  // DOXYGEN
 
-/// Transforms the `src` image perspectively, using a linear transformation
-/// matrix, i.e. for each pixel in `dst` take a pixel from `src` specified by
+/// Performs a perspective transformation on an image.
+/// For each pixel in `dst` take a pixel from `src` specified by
 /// the transformed x and y coordinates, and optionally doing a bilinear
 /// interpolation.
 ///
