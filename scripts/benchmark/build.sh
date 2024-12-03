@@ -29,7 +29,7 @@
 set -exu
 
 if [[ ! -f "${CMAKE_TOOLCHAIN_FILE:-}" ]]; then
-  echo "Please specify the path of the Android NDK toolchain file (e.g. android-ndk-r26d/build/cmake/android.toolchain.cmake) in the CMAKE_TOOLCHAIN_FILE env variable"
+  echo "Please specify the path of the Android NDK toolchain file (e.g. android-ndk-r27c/build/cmake/android.toolchain.cmake) in the CMAKE_TOOLCHAIN_FILE env variable"
   exit 1
 fi
 

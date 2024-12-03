@@ -14,7 +14,7 @@ A released version of KleidiCV shall be tested for correctness and performance o
 
 At present the only Tier 1 platform is Android on Samsung Galaxy S22
 with an up-to-date operating system, where applications are built with
-Android NDK r26d.
+Android NDK r27c.
 
 ## Tier 2
 
