@@ -18,6 +18,9 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Implementation of Rotate 90 degrees clockwise.
 
+### Changed
+- Increased precision of sum for 32 bit floats.
+
 ### Fixed
 - Handling of cv::erode and cv::dilate non-default constant borders.
 

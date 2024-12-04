@@ -160,6 +160,9 @@ static inline int32x2_t  vget_high(int32x4_t  vec) { return vget_high_s32(vec); 
 static inline uint32x2_t vget_high(uint32x4_t vec) { return vget_high_u32(vec); }
 static inline int64x1_t  vget_high(int64x2_t  vec) { return vget_high_s64(vec); }
 static inline uint64x1_t vget_high(uint64x2_t vec) { return vget_high_u64(vec); }
+static inline float16x4_t vget_high(float16x8_t vec) { return vget_high_f16(vec); }
+static inline float32x2_t vget_high(float32x4_t vec) { return vget_high_f32(vec); }
+static inline float64x1_t vget_high(float64x2_t vec) { return vget_high_f64(vec); }
 
 // -----------------------------------------------------------------------------
 // vcgeq*
@@ -179,6 +182,9 @@ static inline int32x2_t  vget_low(int32x4_t  vec) { return vget_low_s32(vec); }
 static inline uint32x2_t vget_low(uint32x4_t vec) { return vget_low_u32(vec); }
 static inline int64x1_t  vget_low(int64x2_t  vec) { return vget_low_s64(vec); }
 static inline uint64x1_t vget_low(uint64x2_t vec) { return vget_low_u64(vec); }
+static inline float16x4_t vget_low(float16x8_t vec) { return vget_low_f16(vec); }
+static inline float32x2_t vget_low(float32x4_t vec) { return vget_low_f32(vec); }
+static inline float64x1_t vget_low(float64x2_t vec) { return vget_low_f64(vec); }
 
 // -----------------------------------------------------------------------------
 // vminq*
@@ -335,7 +341,9 @@ static inline int32x4_t   vld1q(const int32_t   *src) { return vld1q_s32(src); }
 static inline uint32x4_t  vld1q(const uint32_t  *src) { return vld1q_u32(src); }
 static inline int64x2_t   vld1q(const int64_t   *src) { return vld1q_s64(src); }
 static inline uint64x2_t  vld1q(const uint64_t  *src) { return vld1q_u64(src); }
+static inline float16x8_t vld1q(const float16_t *src) { return vld1q_f16(src); }
 static inline float32x4_t vld1q(const float32_t *src) { return vld1q_f32(src); }
+static inline float64x2_t vld1q(const float64_t *src) { return vld1q_f64(src); }
 
 static inline int8x16x2_t   vld2q(const int8_t    *src) { return  vld2q_s8(src); }
 static inline uint8x16x2_t  vld2q(const uint8_t   *src) { return  vld2q_u8(src); }
@@ -517,6 +525,12 @@ static inline int32x4_t  vrev64q(int32x4_t  src) { return vrev64q_s32(src); }
 static inline uint32x4_t vrev64q(uint32x4_t src) { return vrev64q_u32(src); }
 static inline int64x2_t  vrev64q(int64x2_t  src) { return src; }
 static inline uint64x2_t vrev64q(uint64x2_t src) { return src; }
+
+// -----------------------------------------------------------------------------
+// vcvt*
+// -----------------------------------------------------------------------------
+
+static inline float64x2_t vcvt_f64(float32x2_t vec) { return vcvt_f64_f32(vec); }
 
 // clang-format on
 

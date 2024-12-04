@@ -8,6 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <random>
+#include <type_traits>
 
 #include "framework/abstract.h"
 #include "framework/utils.h"
@@ -82,6 +83,23 @@ class PseudoRandomNumberGeneratorIntRange
  protected:
   std::uniform_int_distribution<ElementType> dist_;
 };  // end of class PseudoRandomNumberGeneratorIntRange<ElementType>
+
+template <typename ElementType,
+          std::enable_if_t<std::is_floating_point_v<ElementType>, bool> = true>
+class PseudoRandomNumberGeneratorFloatRange
+    : public PseudoRandomNumberGenerator<ElementType> {
+ public:
+  PseudoRandomNumberGeneratorFloatRange(ElementType min, ElementType max)
+      : PseudoRandomNumberGenerator<ElementType>(), dist_(min, max) {}
+
+  // Yields the next value or std::nullopt.
+  std::optional<ElementType> next() override {
+    return static_cast<ElementType>(dist_(this->rng_));
+  }
+
+ protected:
+  std::uniform_real_distribution<ElementType> dist_;
+};  // end of class PseudoRandomNumberGeneratorFloatRange<ElementType>
 
 // Generator which yields values of an iterable container.
 template <typename IterableType>

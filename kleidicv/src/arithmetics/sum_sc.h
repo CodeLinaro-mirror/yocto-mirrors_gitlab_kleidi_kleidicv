@@ -11,54 +11,68 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-template <typename ScalarType>
-class Sum final : public UnrollTwice {
+template <typename ScalarType, typename ScalarTypeInternal>
+class Sum;
+
+template <>
+class Sum<float, double> final : public UnrollTwice {
  public:
+  using ScalarType = float;
+  using ScalarTypeInternal = double;
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using VecTraitsInternal =
+      KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarTypeInternal>;
+  using VectorTypeInternal = typename VecTraitsInternal::VectorType;
 
-  explicit Sum(VectorType &accumulator) KLEIDICV_STREAMING_COMPATIBLE
+  explicit Sum(VectorTypeInternal &accumulator) KLEIDICV_STREAMING_COMPATIBLE
       : accumulator_{accumulator} {
-    accumulator_ = VecTraits::svdup(0);
+    accumulator_ = VecTraitsInternal::svdup(0);
   }
 
   void vector_path(ContextType ctx,
                    VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
-    accumulator_ = svadd_m(ctx.predicate(), accumulator_, src);
+    VectorTypeInternal src_widened_evens =
+        svcvt_f64_f32_x(VecTraits::svptrue(), src);
+    VectorTypeInternal src_widened_odds =
+        svcvtlt_f64_f32_x(VecTraits::svptrue(), src);
+    accumulator_ =
+        svadd_m(ctx.predicate(), accumulator_,
+                svadd_m(ctx.predicate(), src_widened_evens, src_widened_odds));
   }
 
-  ScalarType get_sum() KLEIDICV_STREAMING_COMPATIBLE {
-    ScalarType accumulator_final[VecTraits::max_num_lanes()] = {0};
-    svst1(VecTraits::svptrue(), accumulator_final, accumulator_);
+  ScalarType get_sum() const KLEIDICV_STREAMING_COMPATIBLE {
+    ScalarTypeInternal accumulator_final[VecTraitsInternal::max_num_lanes()] = {
+        0};
+    svst1(VecTraitsInternal::svptrue(), accumulator_final, accumulator_);
 
-    ScalarType sum = 0;
-    for (size_t i = 0; i != VecTraits::num_lanes(); ++i) {
+    ScalarTypeInternal sum = 0;
+    for (size_t i = 0; i != VecTraitsInternal::num_lanes(); ++i) {
       sum += accumulator_final[i];
     }
-    return sum;
+    return static_cast<ScalarType>(sum);
   }
 
  private:
-  VectorType &accumulator_;
+  VectorTypeInternal &accumulator_;
 };
 
-template <typename ScalarType>
-kleidicv_error_t sum_sc(const ScalarType *src, size_t src_stride, size_t width,
-                        size_t height,
-                        ScalarType *sum) KLEIDICV_STREAMING_COMPATIBLE {
-  using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
-  using VectorType = typename VecTraits::VectorType;
+template <typename T, typename TInternal>
+kleidicv_error_t sum_sc(const T *src, size_t src_stride, size_t width,
+                        size_t height, T *sum) KLEIDICV_STREAMING_COMPATIBLE {
+  using VecTraitsInternal = KLEIDICV_TARGET_NAMESPACE::VecTraits<TInternal>;
+  using VectorTypeInternal = typename VecTraitsInternal::VectorType;
 
   CHECK_POINTERS(sum);
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
   Rectangle rect{width, height};
-  Rows<const ScalarType> src_rows{src, src_stride};
+  Rows<const T> src_rows{src, src_stride};
 
-  VectorType accumulator;
-  Sum<ScalarType> operation{accumulator};
+  VectorTypeInternal accumulator;
+  Sum<T, TInternal> operation{accumulator};
 
   apply_operation_by_rows(operation, rect, src_rows);
 

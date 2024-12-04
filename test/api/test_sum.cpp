@@ -6,6 +6,8 @@
 
 #include <limits>
 
+#include "framework/array.h"
+#include "framework/generator.h"
 #include "kleidicv/kleidicv.h"
 
 TEST(Sum, Ones) {
@@ -54,6 +56,29 @@ TEST(Sum, Zeroes) {
 
   EXPECT_EQ(KLEIDICV_OK, kleidicv_sum_f32(src, 4 * sizeof(float), 4, 4, &sum));
   EXPECT_FLOAT_EQ(0, sum);
+}
+
+TEST(Sum, Random) {
+  test::PseudoRandomNumberGeneratorFloatRange<float> random_generator{-99999,
+                                                                      99999};
+  test::Array2D<float> src(32, 32, 0, 1);
+  src.fill(random_generator);
+
+  float sum = std::numeric_limits<float>::max();
+
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_sum_f32(src.data(), src.stride(), src.width(),
+                                          src.height(), &sum));
+
+  double expected_sum = 0;
+  for (size_t row = 0; row < src.height(); ++row) {
+    for (size_t column = 0; column < src.width() / src.channels(); ++column) {
+      for (size_t ch = 0; ch < src.channels(); ++ch) {
+        expected_sum += *src.at(row, column * src.channels() + ch);
+      }
+    }
+  }
+
+  EXPECT_FLOAT_EQ(expected_sum, sum);
 }
 
 TEST(Sum, Single) {
