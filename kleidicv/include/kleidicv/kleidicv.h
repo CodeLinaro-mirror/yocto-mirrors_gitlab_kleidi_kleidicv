@@ -1723,6 +1723,7 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
                          size_t width, size_t height, float lower_bound,
                          float upper_bound);
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 /// Transforms the `src` image by taking the pixels specified by the coordinates
 /// from the `mapxy` image.
 ///
@@ -1779,6 +1780,7 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u8, const uint8_t *src,
                          kleidicv_border_type_t border_type,
                          kleidicv_border_values_t border_values);
 #endif  // DOXYGEN
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.
@@ -1835,6 +1837,7 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
     size_t src_channels, int16_t *dst, size_t dst_stride);
 #endif  // DOXYGEN
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 /// Performs a perspective transformation on an image.
 /// For each pixel in `dst` take a pixel from `src` specified by
 /// the transformed x and y coordinates, and optionally doing a bilinear
@@ -1875,6 +1878,7 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
     const float transformation[9], size_t channels,
     kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, kleidicv_border_values_t border_values);
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 
 #ifdef __cplusplus
 }  // extern "C"

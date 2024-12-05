@@ -191,29 +191,6 @@ Notes on parameters:
 * `src.depth()` - only supports `CV_8U` and `CV_32F` depths and 1 channel.
 * `src`, `lowerb` and `upperb` need to have the same type.
 
-### [`cv::remap()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4)
-Geometrically transforms the `src` image by taking the pixels specified by the coordinates from the `map` image.
-
-Notes on parameters:
-* `src.depth()` - only supports `CV_8U` depth and 1 channel.
-* `borderMode` - only supports `BORDER_REPLICATE`
-Supported map configurations:
-* `map1` is 16SC2: channel #1 is x coordinate (column) and channel #2 is y (row)
-  * supported `interpolation`: `INTER_NEAREST` only
-* `map1` is 16SC2 and `map2` is 16UC1: `map1` is as above, `map2` contains combined 5+5 bits of x (low) and y (high) fractions, i.e. x = x1 + x2 / 2^5
-  * supported `interpolation`: `INTER_LINEAR` only
-
-### [`cv::warpPerspective()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gaf73673a7e8e18ec6963e3774e6a94b87)
-Performs a perspective transformation on an image.
-
-Notes on parameters:
-* `src.depth()` - only supports `CV_8U` depth and 1 channel.
-* `src.cols`, `src.rows` - must be less than 2^24
-* `src.step` - must be less than 2^32
-* `dst.cols` - must be at least 8
-* `borderMode` - only supports `BORDER_REPLICATE`
-* `interpolation` - only supports `INTER_NEAREST`
-
 ### [`cv::pyrDown()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaf9bba239dfca11654cb7f50f889fc2ff)
 Blurs and downsamples an image.
 

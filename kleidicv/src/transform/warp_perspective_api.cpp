@@ -6,6 +6,8 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/transform/warp_perspective.h"
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
+
 KLEIDICV_MULTIVERSION_C_API(kleidicv_warp_perspective_stripe_u8,
                             &kleidicv::neon::warp_perspective_stripe<uint8_t>,
                             &kleidicv::sve2::warp_perspective_stripe<uint8_t>,
@@ -32,3 +34,4 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
 }
 
 }  // extern "C"
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

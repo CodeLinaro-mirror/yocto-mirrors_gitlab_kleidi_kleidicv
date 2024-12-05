@@ -12,6 +12,7 @@
 #include "kleidicv/traits.h"
 #include "kleidicv/transform/warp_perspective.h"
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Gather load is not available in streaming mode, and in general random access
@@ -232,3 +233,4 @@ KLEIDICV_INSTANTIATE_WARP_PERSPECTIVE_SC(uint8_t);
 #endif
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

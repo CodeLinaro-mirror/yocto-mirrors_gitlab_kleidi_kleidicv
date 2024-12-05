@@ -8,6 +8,7 @@
 #include "kleidicv/neon.h"
 #include "kleidicv/transform/remap.h"
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 namespace kleidicv::neon {
 
 template <typename ScalarType>
@@ -273,3 +274,4 @@ KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint8_t);
 
 }  // namespace kleidicv::neon
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP

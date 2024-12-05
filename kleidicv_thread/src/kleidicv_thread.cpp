@@ -636,6 +636,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
   return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
 }
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 kleidicv_error_t kleidicv_thread_remap_s16_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
@@ -677,7 +678,9 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
   };
   return parallel_batches(callback, mt, dst_height);
 }
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 kleidicv_error_t kleidicv_thread_warp_perspective_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
@@ -698,3 +701,4 @@ kleidicv_error_t kleidicv_thread_warp_perspective_u8(
   };
   return parallel_batches(callback, mt, dst_height);
 }
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

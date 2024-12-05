@@ -90,14 +90,3 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | 2x2         |  x  |  x  |
 | 4x4         |  x  |  x  |
 | 8x8         |     |  x  |
-
-# Remap
-|                                            |  u8 | u16 |
-|--------------------------------------------|-----|-----|
-| Remap int16 coordinates                    |  x  |     |
-| Remap int16+uint16 fixed-point coordinates |  x  |     |
-
-# WarpPerspective
-|                                       |  u8 | u16 |
-|---------------------------------------|-----|-----|
-| Nearest neighbour, replicated borders |  x  |     |

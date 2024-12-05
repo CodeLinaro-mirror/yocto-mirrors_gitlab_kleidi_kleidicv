@@ -10,6 +10,8 @@
 #include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
+
 // clang-format off
 static const float transform_identity[] = {
   1.0, 0, 0,
@@ -413,3 +415,4 @@ TYPED_TEST(WarpPerspective, UnsupportedBigWidth) {
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
                 kleidicv_border_values_t{}));
 }
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

@@ -8,6 +8,8 @@
 #include "kleidicv/traits.h"
 #include "kleidicv/transform/warp_perspective.h"
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
+
 namespace kleidicv::neon {
 
 // Template for WarpPerspective transformation.
@@ -194,3 +196,4 @@ kleidicv_error_t warp_perspective_stripe(
 KLEIDICV_INSTANTIATE_WARP_PERSPECTIVE(uint8_t);
 
 }  // namespace kleidicv::neon
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

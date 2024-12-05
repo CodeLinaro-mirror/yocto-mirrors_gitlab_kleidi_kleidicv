@@ -50,6 +50,8 @@ option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector 
 option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
+option(KLEIDICV_EXPERIMENTAL_FEATURE_REMAP "Internal - Enable experimental Remap algorithm" OFF)
+option(KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE "Internal - Enable experimental WarpPerspective algorithm" OFF)
 
 if(KLEIDICV_ENABLE_SME2 AND NOT KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS)
   set(KLEIDICV_ALWAYS_ENABLE_SME2 ON)
