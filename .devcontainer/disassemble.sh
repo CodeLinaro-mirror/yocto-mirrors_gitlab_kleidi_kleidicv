@@ -26,6 +26,6 @@ else
   exit 1
 fi
 
-OBJECT_PATH="build/kleidicv/kleidicv/CMakeFiles/${SIMD_BUILD_DIRECTORY}/${FILE_PATH#kleidicv/}.o"
+OBJECT_PATH="build/kleidicv-release/kleidicv/CMakeFiles/${SIMD_BUILD_DIRECTORY}/${FILE_PATH#kleidicv/}.o"
 
 llvm-objdump -d -r --mattr=+sme2 "${OBJECT_PATH}"

@@ -32,7 +32,7 @@ set -x
 # NOLINT(category) comment to the affected line.
 cpplint \
     --recursive \
-    --exclude=build \
+    --exclude=build --exclude=public \
     --counting=detailed \
     --filter=-build/c++11,-build/header_guard,-build/include_subdir,-readability/todo,-runtime/references,-whitespace/indent,-whitespace/line_length \
     .
