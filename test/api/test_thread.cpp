@@ -597,54 +597,56 @@ TEST(ThreadSeparableFilter2D, NotImplemented) {
 #if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 TEST_P(Thread, remap_s16_u8_border_replicate) {
   check_remap_s16<uint8_t>(kleidicv_remap_s16_u8, kleidicv_thread_remap_s16_u8,
-                           1, KLEIDICV_BORDER_TYPE_REPLICATE,
-                           kleidicv_border_values_t{});
+                           1, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
 }
 
 TEST_P(Thread, remap_s16_u8_not_implemented) {
+  const uint8_t border_value[4] = {};
   check_remap_s16_not_implemented<uint8_t>(kleidicv_thread_remap_s16_u8, 2,
                                            KLEIDICV_BORDER_TYPE_REPLICATE,
-                                           kleidicv_border_values_t{});
+                                           border_value);
   check_remap_s16_not_implemented<uint8_t>(kleidicv_thread_remap_s16_u8, 1,
                                            KLEIDICV_BORDER_TYPE_CONSTANT,
-                                           kleidicv_border_values_t{});
+                                           border_value);
 }
 
 TEST_P(Thread, remap_s16point5_u8_border_replicate) {
-  kleidicv_border_values_t border_values = {};
   check_remap_s16point5<uint8_t>(kleidicv_remap_s16point5_u8,
                                  kleidicv_thread_remap_s16point5_u8, 1,
-                                 KLEIDICV_BORDER_TYPE_REPLICATE, border_values);
+                                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
 }
 
 TEST_P(Thread, remap_s16point5_u8_not_implemented) {
+  const uint8_t border_value[4] = {};
   check_remap_s16point5_not_implemented<uint8_t>(
       kleidicv_thread_remap_s16point5_u8, 2, KLEIDICV_BORDER_TYPE_REPLICATE,
-      kleidicv_border_values_t{});
+      border_value);
   check_remap_s16point5_not_implemented<uint8_t>(
       kleidicv_thread_remap_s16point5_u8, 1, KLEIDICV_BORDER_TYPE_CONSTANT,
-      kleidicv_border_values_t{});
+      border_value);
 }
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 #if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 TEST_P(Thread, warp_perspective_u8_border_replicate) {
-  check_warp_perspective<uint8_t>(
-      kleidicv_warp_perspective_u8, kleidicv_thread_warp_perspective_u8, 1,
-      KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-      kleidicv_border_values_t{});
+  const uint8_t border_value[4] = {};
+  check_warp_perspective<uint8_t>(kleidicv_warp_perspective_u8,
+                                  kleidicv_thread_warp_perspective_u8, 1,
+                                  KLEIDICV_INTERPOLATION_NEAREST,
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
 }
 
 TEST_P(Thread, warp_perspective_u8_not_implemented) {
+  const uint8_t border_value[4] = {};
   check_warp_perspective_not_implemented<uint8_t>(
       kleidicv_thread_warp_perspective_u8, 1, KLEIDICV_INTERPOLATION_LINEAR,
-      KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{});
+      KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
   check_warp_perspective_not_implemented<uint8_t>(
       kleidicv_thread_warp_perspective_u8, 2, KLEIDICV_INTERPOLATION_NEAREST,
-      KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{});
+      KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
   check_warp_perspective_not_implemented<uint8_t>(
       kleidicv_thread_warp_perspective_u8, 1, KLEIDICV_INTERPOLATION_NEAREST,
-      KLEIDICV_BORDER_TYPE_CONSTANT, kleidicv_border_values_t{});
+      KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
 }
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 

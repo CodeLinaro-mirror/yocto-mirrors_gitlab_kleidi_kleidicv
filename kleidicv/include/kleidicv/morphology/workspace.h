@@ -6,6 +6,7 @@
 #define KLEIDICV_MORPHOLOGY_WORKSPACE_H
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <memory>
 #include <optional>
@@ -69,8 +70,8 @@ class MorphologyWorkspace final {
   // Creates a workspace on the heap.
   static kleidicv_error_t create(
       Pointer &workspace, kleidicv_rectangle_t kernel, kleidicv_point_t anchor,
-      BorderType border_type, kleidicv_border_values_t border_values,
-      size_t channels, size_t iterations, size_t type_size,
+      BorderType border_type, const uint8_t *border_value, size_t channels,
+      size_t iterations, size_t type_size,
       kleidicv_rectangle_t image) KLEIDICV_STREAMING_COMPATIBLE {
     // These values are arbitrarily choosen.
     const size_t rows_per_iteration = std::max(2 * kernel.height, 32UL);
@@ -140,7 +141,14 @@ class MorphologyWorkspace final {
     workspace->kernel_ = kernel;
     workspace->anchor_ = anchor;
     workspace->border_type_ = border_type;
-    workspace->border_values_ = border_values;
+    if (border_type == BorderType::CONSTANT) {
+      if (border_value == nullptr) {
+        return KLEIDICV_ERROR_NULL_POINTER;
+      }
+      for (size_t i = 0; i < channels; ++i) {
+        workspace->border_value_[i] = border_value[i];
+      }
+    }
     workspace->channels_ = channels;
     workspace->iterations_ = iterations;
     workspace->type_size_ = type_size;
@@ -152,7 +160,6 @@ class MorphologyWorkspace final {
   kleidicv_rectangle_t kernel() const { return kernel_; }
   kleidicv_point_t anchor() const { return anchor_; }
   BorderType border_type() const { return border_type_; }
-  kleidicv_border_values_t border_values() const { return border_values_; }
   size_t channels() const { return channels_; }
   size_t iterations() const { return iterations_; }
   size_t type_size() const { return type_size_; }
@@ -163,7 +170,7 @@ class MorphologyWorkspace final {
   template <typename O>
   void process(Rectangle rect, Rows<const typename O::SourceType> src_rows,
                Rows<typename O::DestinationType> dst_rows, Margin margin,
-               Border<typename O::SourceType> border, BorderType border_type,
+               BorderType border_type,
                O operation) KLEIDICV_STREAMING_COMPATIBLE {
     using S = typename O::SourceType;
     using B = typename O::BufferType;
@@ -188,12 +195,6 @@ class MorphologyWorkspace final {
     vertical_height_ = rect.height();
     row_index_ = 0;
 
-    // Constant border values.
-    auto left_border_value = saturating_cast<double, S>(border.left());
-    auto top_border_value = saturating_cast<double, S>(border.top());
-    auto right_border_value = saturating_cast<double, S>(border.right());
-    auto bottom_border_value = saturating_cast<double, S>(border.bottom());
-
     // Used by replicate border type.
     auto first_src_rows = src_rows;
     auto last_src_rows = src_rows.at(rect.height() - 1);
@@ -202,23 +203,21 @@ class MorphologyWorkspace final {
     for (size_t index = 0; index < horizontal_height; ++index) {
       switch (border_type) {
         case BorderType::CONSTANT: {
-          make_constant_border(wide_rows, 0, margin.left(), left_border_value);
+          make_constant_border(wide_rows, 0, margin.left());
 
-          if (row_index_ < margin.top()) {
-            make_constant_border(wide_rows, margin.left(), wide_rows_src_width_,
-                                 top_border_value);
-          } else if (row_index_ < (margin.top() + rect.height())) {
+          if (row_index_ < margin.top() ||
+              row_index_ >= margin.top() + rect.height()) {
+            make_constant_border(wide_rows, margin.left(),
+                                 wide_rows_src_width_);
+          } else {
             copy_data(src_rows, wide_rows.at(0, margin.left()),
                       wide_rows_src_width_);
             // Advance source rows.
             ++src_rows;
-          } else {
-            make_constant_border(wide_rows, margin.left(), wide_rows_src_width_,
-                                 bottom_border_value);
           }
 
           make_constant_border(wide_rows, margin.left() + wide_rows_src_width_,
-                               margin.right(), right_border_value);
+                               margin.right());
 
           // Advance counters.
           ++row_index_;
@@ -270,7 +269,7 @@ class MorphologyWorkspace final {
               ++src_rows;
             } else {
               make_constant_border(wide_rows, margin.left(),
-                                   wide_rows_src_width_, bottom_border_value);
+                                   wide_rows_src_width_);
             }
 
             // Advance row counter.
@@ -331,12 +330,14 @@ class MorphologyWorkspace final {
     return height;
   }
 
-  template <typename T, typename BorderType>
-  void make_constant_border(Rows<T> dst_rows, size_t dst_index, size_t count,
-                            BorderType value) KLEIDICV_STREAMING_COMPATIBLE {
+  template <typename T>
+  void make_constant_border(Rows<T> dst_rows, size_t dst_index,
+                            size_t count) KLEIDICV_STREAMING_COMPATIBLE {
     auto dst = &dst_rows.at(0, dst_index)[0];
-    for (size_t index = 0; index < count * dst_rows.channels(); ++index) {
-      dst[index] = value;
+    for (size_t index = 0; index < count; ++index) {
+      for (size_t channel = 0; channel < dst_rows.channels(); ++channel) {
+        dst[index * dst_rows.channels() + channel] = border_value_[channel];
+      }
     }
   }
 
@@ -360,7 +361,7 @@ class MorphologyWorkspace final {
   kleidicv_rectangle_t kernel_;
   kleidicv_point_t anchor_;
   BorderType border_type_;
-  kleidicv_border_values_t border_values_;
+  std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT> border_value_;
   size_t iterations_;
   size_t type_size_;
   Rectangle image_size_;

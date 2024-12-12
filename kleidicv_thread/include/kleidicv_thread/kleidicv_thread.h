@@ -389,7 +389,7 @@ kleidicv_error_t kleidicv_thread_remap_s16_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     size_t channels, const int16_t *mapxy, size_t mapxy_stride,
-    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values,
+    kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
@@ -401,7 +401,7 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     size_t channels, const int16_t *mapxy, size_t mapxy_stride,
     const uint16_t *mapfrac, size_t mapfrac_stride,
-    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values,
+    kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
@@ -413,7 +413,7 @@ kleidicv_error_t kleidicv_thread_warp_perspective_u8(
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     const float transformation[9], size_t channels,
     kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values,
+    kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading);
 
 #ifdef __cplusplus

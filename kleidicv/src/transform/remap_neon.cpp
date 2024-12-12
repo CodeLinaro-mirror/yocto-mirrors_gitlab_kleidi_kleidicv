@@ -73,12 +73,12 @@ class RemapS16<uint8_t> {
 };  // end of class RemapS16<uint8_t>
 
 template <typename T>
-kleidicv_error_t remap_s16(
-    const T *src, size_t src_stride, size_t src_width, size_t src_height,
-    T *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
-    size_t channels, const int16_t *mapxy, size_t mapxy_stride,
-    kleidicv_border_type_t border_type,
-    [[maybe_unused]] kleidicv_border_values_t border_values) {
+kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
+                           size_t src_height, T *dst, size_t dst_stride,
+                           size_t dst_width, size_t dst_height, size_t channels,
+                           const int16_t *mapxy, size_t mapxy_stride,
+                           kleidicv_border_type_t border_type,
+                           [[maybe_unused]] const T *border_value) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
@@ -230,7 +230,7 @@ kleidicv_error_t remap_s16point5(
     size_t channels, const int16_t *mapxy, size_t mapxy_stride,
     const uint16_t *mapfrac, size_t mapfrac_stride,
     [[maybe_unused]] kleidicv_border_type_t border_type,
-    [[maybe_unused]] kleidicv_border_values_t border_values) {
+    [[maybe_unused]] const T *border_value) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
@@ -257,8 +257,7 @@ kleidicv_error_t remap_s16point5(
       const type *src, size_t src_stride, size_t src_width, size_t src_height, \
       type *dst, size_t dst_stride, size_t dst_width, size_t dst_height,       \
       size_t channels, const int16_t *mapxy, size_t mapxy_stride,              \
-      kleidicv_border_type_t border_type,                                      \
-      kleidicv_border_values_t border_values)
+      kleidicv_border_type_t border_type, const type *border_value)
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint8_t);
 
@@ -268,8 +267,7 @@ KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint8_t);
       type *dst, size_t dst_stride, size_t dst_width, size_t dst_height,       \
       size_t channels, const int16_t *mapxy, size_t mapxy_stride,              \
       const uint16_t *mapfrac, size_t mapfrac_stride,                          \
-      kleidicv_border_type_t border_type,                                      \
-      kleidicv_border_values_t border_values)
+      kleidicv_border_type_t border_type, const type *border_value)
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint8_t);
 

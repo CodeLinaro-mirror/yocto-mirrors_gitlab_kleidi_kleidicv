@@ -20,8 +20,7 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     const float transformation[9], size_t channels,
     kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type,
-    kleidicv_border_values_t border_values) {
+    kleidicv_border_type_t border_type, const uint8_t *border_value) {
   if (!kleidicv::warp_perspective_is_implemented<uint8_t>(
           dst_width, interpolation, border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -30,7 +29,7 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
   return kleidicv_warp_perspective_stripe_u8(
       src, src_stride, src_width, src_height, dst, dst_stride, dst_width,
       dst_height, 0, dst_height, transformation, 1, interpolation, border_type,
-      border_values);
+      border_value);
 }
 
 }  // extern "C"

@@ -502,13 +502,12 @@ static kleidicv_error_t dilate_sc(
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
   Margin margin{workspace->kernel(), workspace->anchor()};
-  Border<T> border{workspace->border_values()};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
   for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
     DilateOperation<T, CopyOperation> operation{kernel};
-    workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
+    workspace->process(rect, current_src_rows, current_dst_rows, margin,
                        workspace->border_type(), operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
@@ -575,13 +574,12 @@ static kleidicv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
   Margin margin{workspace->kernel(), workspace->anchor()};
-  Border<T> border{workspace->border_values()};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
   for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
     ErodeOperation<T, CopyOperation> operation{kernel};
-    workspace->process(rect, current_src_rows, current_dst_rows, margin, border,
+    workspace->process(rect, current_src_rows, current_dst_rows, margin,
                        workspace->border_type(), operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;

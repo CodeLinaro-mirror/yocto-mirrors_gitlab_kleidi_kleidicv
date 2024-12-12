@@ -18,6 +18,9 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Implementation of Rotate 90 degrees clockwise.
 
+### Fixed
+- Handling of cv::erode and cv::dilate non-default constant borders.
+
 ## 0.3.0 - 2024-12-12
 
 ### Added

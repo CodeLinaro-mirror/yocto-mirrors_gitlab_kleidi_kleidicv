@@ -412,11 +412,11 @@ BENCHMARK(yuv_sp_to_bgra);
 template <typename T, size_t KernelSize, typename Function>
 static void morphology(Function f, benchmark::State& state) {
   kleidicv_morphology_context_t* context = nullptr;
+  const T border_value[4] = {};
   kleidicv_error_t err = kleidicv_morphology_create(
       &context, kleidicv_rectangle_t{KernelSize, KernelSize},
-      kleidicv_point_t{0, 0}, KLEIDICV_BORDER_TYPE_REPLICATE,
-      kleidicv_border_values_t{0, 0, 0, 0}, 1, 1, sizeof(T),
-      kleidicv_rectangle_t{image_width, image_height});
+      kleidicv_point_t{0, 0}, KLEIDICV_BORDER_TYPE_REPLICATE, border_value, 1,
+      1, sizeof(T), kleidicv_rectangle_t{image_width, image_height});
   if (err != KLEIDICV_OK) {
     state.SkipWithError("Could not initialize morphology context.");
     return;
@@ -612,12 +612,12 @@ template <typename T, typename Function, typename MapFunc>
 static void remap_s16(Function f, MapFunc mf, size_t channels,
                       kleidicv_border_type_t border_type,
                       benchmark::State& state) {
-  bench_functor(state, [f, mf, channels, border_type]() {
+  const T border_value[4] = {};
+  bench_functor(state, [f, mf, channels, border_type, border_value]() {
     (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
             image_height, get_destination_buffer<T>(), image_width * sizeof(T),
             image_width, image_height, channels, mf(),
-            image_width * 2 * sizeof(int16_t), border_type,
-            kleidicv_border_values_t{});
+            image_width * 2 * sizeof(int16_t), border_type, border_value);
   });
 }
 
@@ -644,13 +644,13 @@ template <typename T, typename Function, typename MapFunc>
 static void remap_s16point5(Function f, MapFunc mf, size_t channels,
                             kleidicv_border_type_t border_type,
                             benchmark::State& state) {
-  bench_functor(state, [f, mf, channels, border_type]() {
+  const T border_value[4] = {};
+  bench_functor(state, [f, mf, channels, border_type, border_value]() {
     (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
             image_height, get_destination_buffer<T>(), image_width * sizeof(T),
             image_width, image_height, channels, mf(),
             image_width * 2 * sizeof(int16_t), get_random_mapfrac(),
-            image_width * sizeof(uint16_t), border_type,
-            kleidicv_border_values_t{});
+            image_width * sizeof(uint16_t), border_type, border_value);
   });
 }
 
@@ -719,11 +719,13 @@ static void warp_perspective(Function f, const float transform[9],
                              kleidicv_interpolation_type_t interpolation,
                              kleidicv_border_type_t border_type,
                              benchmark::State& state) {
-  bench_functor(state, [f, transform, channels, interpolation, border_type]() {
+  const T border_value[4] = {};
+  bench_functor(state, [f, transform, channels, interpolation, border_type,
+                        border_value]() {
     (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
             image_height, get_destination_buffer<T>(), image_width * sizeof(T),
             image_width, image_height, transform, channels, interpolation,
-            border_type, kleidicv_border_values_t{});
+            border_type, border_value);
   });
 }
 

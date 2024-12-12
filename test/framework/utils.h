@@ -114,7 +114,12 @@ template <typename ElementType>
 void dump(const TwoDimensional<ElementType> *elements);
 
 // Returns default border values.
-const std::array<kleidicv_border_values_t, 1> &default_border_values();
+template <typename ElementType>
+const std::array<std::array<ElementType, 4>, 1> &default_border_values() {
+  static std::array<std::array<ElementType, 4>, 1> result{
+      std::array<ElementType, 4>{0, 0, 0, 0}};
+  return result;
+}
 
 // Returns an array of just a few small layouts.
 std::array<test::ArrayLayout, 7> small_array_layouts(size_t min_width,
@@ -131,11 +136,15 @@ template <typename Function, typename Tuple>
 class NullPointerTester {
   // Set the given argument to null and test that the function diagnoses the
   // error correctly.
+  // If the given argument is *already* set to null then this signals that it is
+  // valid for the argument to be null and the function is not called.
   template <typename ArgType, size_t ArgIndex>
   static typename std::enable_if<std::is_pointer_v<ArgType>>::type
   test_with_null_arg(Function f, Tuple t) {
-    std::get<ArgIndex>(t) = nullptr;
-    EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER, std::apply(f, t));
+    if (nullptr != std::get<ArgIndex>(t)) {
+      std::get<ArgIndex>(t) = nullptr;
+      EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER, std::apply(f, t));
+    }
   }
 
   // Skip arguments that aren't pointers.

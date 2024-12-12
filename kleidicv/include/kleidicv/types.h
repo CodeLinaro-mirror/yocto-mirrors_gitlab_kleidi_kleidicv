@@ -103,36 +103,6 @@ class Margin final {
   size_t bottom_;
 };  // end of class Margin
 
-// Represents constant border values around a two dimensional area.
-template <typename T>
-class Border final {
- public:
-  Border() KLEIDICV_STREAMING_COMPATIBLE = default;
-
-  Border(double left, double top, double right,
-         double bottom) KLEIDICV_STREAMING_COMPATIBLE
-      : left_{saturating_cast<double, T>(left)},
-        top_{saturating_cast<double, T>(top)},
-        right_{saturating_cast<double, T>(right)},
-        bottom_{saturating_cast<double, T>(bottom)} {}
-
-  explicit Border(kleidicv_border_values_t border_values)
-      KLEIDICV_STREAMING_COMPATIBLE
-      : Border(border_values.left, border_values.top, border_values.right,
-               border_values.bottom) {}
-
-  T left() const KLEIDICV_STREAMING_COMPATIBLE { return left_; }
-  T top() const KLEIDICV_STREAMING_COMPATIBLE { return top_; }
-  T right() const KLEIDICV_STREAMING_COMPATIBLE { return right_; }
-  T bottom() const KLEIDICV_STREAMING_COMPATIBLE { return bottom_; }
-
- private:
-  T left_;
-  T top_;
-  T right_;
-  T bottom_;
-};  // end of class Border<T>
-
 // Describes the layout of one row given by a base pointer and channel count.
 template <typename T>
 class Columns final {

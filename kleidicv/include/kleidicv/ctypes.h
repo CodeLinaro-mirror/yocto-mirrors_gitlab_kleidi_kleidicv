@@ -53,18 +53,6 @@ typedef struct {
   size_t height;
 } kleidicv_rectangle_t;
 
-/// Struct to store border values
-typedef struct {
-  /// Top border value
-  double top;
-  /// Left border value
-  double left;
-  /// Bottom border value
-  double bottom;
-  /// Right border value
-  double right;
-} kleidicv_border_values_t;
-
 /// KleidiCV border types
 typedef enum {
   /// The border is a constant value.

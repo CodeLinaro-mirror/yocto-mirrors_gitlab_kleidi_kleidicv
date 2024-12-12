@@ -10,6 +10,7 @@
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "framework/kernel.h"
+#include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
@@ -56,9 +57,9 @@ static constexpr std::array<kleidicv_border_type_t, 1> kConstantBorder = {
     KLEIDICV_BORDER_TYPE_CONSTANT};
 
 template <typename ElementType>
-static const std::array<kleidicv_border_values_t, 4> &more_border_values() {
+static const std::array<std::array<uint8_t, 4>, 4> &more_border_values() {
   using limit = std::numeric_limits<ElementType>;
-  static const std::array<kleidicv_border_values_t, 4> values = {
+  static const std::array<std::array<uint8_t, 4>, 4> values = {
       {{0, 0, 0, 0},  // default
        {7, 42, 99, 9},
        {limit::min(), limit::max(), limit::min(), limit::max()},
@@ -70,7 +71,7 @@ template <class MorphologyKernelTestParams,
           typename ArrayLayoutsGetterType = decltype(test::small_array_layouts),
           typename BorderContainerType = decltype(kDefaultBorder),
           typename BorderValuesContainerType =
-              std::array<kleidicv_border_values_t, 1>>
+              std::array<std::array<uint8_t, 4>, 1>>
 class MorphologyTest : public test::KernelTest<MorphologyKernelTestParams> {
   using Base = test::KernelTest<MorphologyKernelTestParams>;
   using typename Base::InputType;
@@ -84,7 +85,8 @@ class MorphologyTest : public test::KernelTest<MorphologyKernelTestParams> {
       MorphologyKernelTestParams, size_t kernel_width, size_t kernel_height,
       ArrayLayoutsGetterType array_layouts_getter = test::small_array_layouts,
       BorderContainerType border_types = kDefaultBorder,
-      BorderValuesContainerType border_values = test::default_border_values())
+      BorderValuesContainerType border_values =
+          test::default_border_values<InputType>())
       : kernel_width_{kernel_width},
         kernel_height_{kernel_height},
         mask_{kernel_width, kernel_height},
@@ -119,12 +121,12 @@ class MorphologyTest : public test::KernelTest<MorphologyKernelTestParams> {
   kleidicv_error_t call_api(const test::Array2D<InputType> *input,
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t border_type,
-                            kleidicv_border_values_t border_values) override {
+                            const InputType *border_value) override {
     kleidicv_morphology_context_t *context = nullptr;
     auto kernelRect = kleidicv_rectangle_t{kernel_width_, kernel_height_};
     kleidicv_point_t anchor{kernel_.anchor().x, kernel_.anchor().y};
     auto ret = kleidicv_morphology_create(
-        &context, kernelRect, anchor, border_type, border_values,
+        &context, kernelRect, anchor, border_type, border_value,
         input->channels(), iterations_, sizeof(InputType),
         kleidicv_rectangle_t{input->width() / input->channels(),
                              input->height()});
@@ -146,14 +148,13 @@ class MorphologyTest : public test::KernelTest<MorphologyKernelTestParams> {
   void prepare_expected(const test::Kernel<IntermediateType> &kernel,
                         const test::ArrayLayout &array_layout,
                         kleidicv_border_type_t border_type,
-                        kleidicv_border_values_t border_values) override {
-    Base::prepare_expected(kernel, array_layout, border_type, border_values);
+                        const InputType *border_value) override {
+    Base::prepare_expected(kernel, array_layout, border_type, border_value);
     if (iterations_ > 1) {
       test::Array2D<InputType> saved_input = this->input_;
       for (size_t i = 1; i < iterations_; ++i) {
         this->input_ = this->expected_;
-        Base::prepare_expected(kernel, array_layout, border_type,
-                               border_values);
+        Base::prepare_expected(kernel, array_layout, border_type, border_value);
       }
       this->input_ = saved_input;
     }
@@ -215,8 +216,8 @@ std::array<test::ArrayLayout, 4> get_large_array_layouts(size_t min_width,
   return {{
       // clang-format off
       //         width,         height,  padding, channels
-      {  min_width * 8,     min_height,        0,        8},
-      {  min_width * 8,     min_height,       vl,        8},
+      {  min_width * 4,     min_height,        0,        4},
+      {  min_width * 4,     min_height,       vl,        4},
       {  min_width * 2,     big_height,        0,        1},
       {  min_width * 2,     big_height,       vl,        1},
       // clang-format on
@@ -300,10 +301,10 @@ TYPED_TEST(Morphology, Anchors) {
 static kleidicv_error_t make_minimal_context(
     kleidicv_morphology_context_t **context, size_t type_size,
     kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE) {
-  return kleidicv_morphology_create(context, kleidicv_rectangle_t{1, 1},
-                                    kleidicv_point_t{0, 0}, border,
-                                    kleidicv_border_values_t{0, 0, 1, 1}, 1, 1,
-                                    type_size, kleidicv_rectangle_t{1, 1});
+  const uint8_t border_value[] = {0, 0, 1, 1};
+  return kleidicv_morphology_create(
+      context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0}, border,
+      border_value, 1, 1, type_size, kleidicv_rectangle_t{1, 1});
 }
 
 template <typename ElementType>
@@ -311,7 +312,7 @@ static void test_valid_image_size(kleidicv_rectangle_t kernel,
                                   test::Array2D<ElementType> src) {
   size_t validSize = kernel.width - 1;
   kleidicv_rectangle_t image{validSize, validSize};
-  kleidicv_border_values_t border_values{0, 0, 1, 1};
+  const uint8_t border_value[] = {0, 0, 1, 1};
 
   test::Array2D<ElementType> dst{validSize, validSize,
                                  test::Options::vector_length()};
@@ -326,7 +327,7 @@ static void test_valid_image_size(kleidicv_rectangle_t kernel,
         kleidicv_morphology_context_t *context = nullptr;
         ASSERT_EQ(KLEIDICV_OK,
                   kleidicv_morphology_create(&context, kernel, anchor, border,
-                                             border_values, 1, 1,
+                                             border_value, 1, 1,
                                              sizeof(ElementType), image));
         EXPECT_EQ(KLEIDICV_OK,
                   ErodeParams<ElementType>::api()(
@@ -352,11 +353,11 @@ static void test_undersize_image(kleidicv_rectangle_t kernel) {
   kleidicv_rectangle_t imageW{underSize, validHeight};
   kleidicv_rectangle_t imageH{validWidth, underSize};
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_border_values_t border_values{0, 0, 1, 1};
+  const uint8_t border_value[] = {0, 0, 1, 1};
   kleidicv_point_t anchor{1, 1};
   ElementType src[1], dst[1];
   ASSERT_EQ(KLEIDICV_OK, kleidicv_morphology_create(
-                             &context, kernel, anchor, border, border_values, 1,
+                             &context, kernel, anchor, border, border_value, 1,
                              1, sizeof(ElementType), image));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             ErodeParams<ElementType>::api()(src, sizeof(ElementType), dst,
@@ -368,7 +369,7 @@ static void test_undersize_image(kleidicv_rectangle_t kernel) {
                                              underSize, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_release(context));
   ASSERT_EQ(KLEIDICV_OK, kleidicv_morphology_create(
-                             &context, kernel, anchor, border, border_values, 1,
+                             &context, kernel, anchor, border, border_value, 1,
                              1, sizeof(ElementType), imageW));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             ErodeParams<ElementType>::api()(src, sizeof(ElementType), dst,
@@ -380,7 +381,7 @@ static void test_undersize_image(kleidicv_rectangle_t kernel) {
                                              validHeight, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_release(context));
   ASSERT_EQ(KLEIDICV_OK, kleidicv_morphology_create(
-                             &context, kernel, anchor, border, border_values, 1,
+                             &context, kernel, anchor, border, border_value, 1,
                              1, sizeof(ElementType), imageH));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             ErodeParams<ElementType>::api()(src, sizeof(ElementType), dst,
@@ -413,7 +414,7 @@ TYPED_TEST(Morphology, UnsupportedSize) {
   kleidicv_rectangle_t small_rect{1, 1};
   kleidicv_point_t anchor{0, 0};
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_border_values_t border_values{0, 0, 1, 1};
+  const uint8_t border_value[] = {0, 0, 1, 1};
 
   for (kleidicv_rectangle_t bad_rect : {
            kleidicv_rectangle_t{KLEIDICV_MAX_IMAGE_PIXELS + 1, 1},
@@ -422,16 +423,30 @@ TYPED_TEST(Morphology, UnsupportedSize) {
        }) {
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               kleidicv_morphology_create(&context, bad_rect, anchor, border,
-                                         border_values, 1, 1, sizeof(TypeParam),
+                                         border_value, 1, 1, sizeof(TypeParam),
                                          small_rect));
     ASSERT_EQ(nullptr, context);
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               kleidicv_morphology_create(&context, small_rect, anchor, border,
-                                         border_values, 1, 1, sizeof(TypeParam),
+                                         border_value, 1, 1, sizeof(TypeParam),
                                          bad_rect));
     ASSERT_EQ(nullptr, context);
   }
+}
+
+TYPED_TEST(Morphology, UnsupportedChannels) {
+  kleidicv_morphology_context_t *context = nullptr;
+  kleidicv_rectangle_t small_rect{1, 1};
+  kleidicv_point_t anchor{0, 0};
+  kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
+  const uint8_t border_value[] = {0, 0, 1, 1};
+
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            kleidicv_morphology_create(&context, small_rect, anchor, border,
+                                       border_value, 5, 1, sizeof(TypeParam),
+                                       small_rect));
+  ASSERT_EQ(nullptr, context);
 }
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
@@ -440,13 +455,13 @@ TYPED_TEST(Morphology, CannotAllocateImage) {
   kleidicv_morphology_context_t *context = nullptr;
   kleidicv_rectangle_t kernel{3, 3}, image{3072, 2048};
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_border_values_t border_values{0, 0, 1, 1};
+  const uint8_t border_value[] = {0, 0, 1, 1};
   kleidicv_point_t anchor{1, 1};
 
-  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
-            kleidicv_morphology_create(&context, kernel, anchor, border,
-                                       border_values, 1, 1, sizeof(TypeParam),
-                                       image));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_ALLOCATION,
+      kleidicv_morphology_create(&context, kernel, anchor, border, border_value,
+                                 1, 1, sizeof(TypeParam), image));
   MockMallocToFail::disable();
 }
 #endif
@@ -455,61 +470,61 @@ TYPED_TEST(Morphology, OversizeImage) {
   kleidicv_morphology_context_t *context = nullptr;
   kleidicv_rectangle_t kernel{3, 1UL << 33}, image{1UL << 33, 100};
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_border_values_t border_values{0, 0, 1, 1};
+  const uint8_t border_value[] = {0, 0, 1, 1};
   kleidicv_point_t anchor{1, 1};
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_morphology_create(&context, kernel, anchor, border,
-                                       border_values, 1, 1, sizeof(TypeParam),
-                                       image));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      kleidicv_morphology_create(&context, kernel, anchor, border, border_value,
+                                 1, 1, sizeof(TypeParam), image));
 }
 
 TYPED_TEST(Morphology, InvalidAnchors) {
   kleidicv_morphology_context_t *context = nullptr;
   kleidicv_rectangle_t kernel1{1, 1}, kernel2{6, 4}, image{20, 20};
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_border_values_t border_values{0, 0, 1, 1};
+  const uint8_t border_value[] = {0, 0, 1, 1};
   kleidicv_point_t anchor1{1, 0}, anchor2{6, 3}, anchor3{5, 4};
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_morphology_create(&context, kernel1, anchor1, border,
-                                       border_values, 1, 1, sizeof(TypeParam),
-                                       image));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      kleidicv_morphology_create(&context, kernel1, anchor1, border,
+                                 border_value, 1, 1, sizeof(TypeParam), image));
   ASSERT_EQ(nullptr, context);
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_morphology_create(&context, kernel2, anchor2, border,
-                                       border_values, 1, 1, sizeof(TypeParam),
-                                       image));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      kleidicv_morphology_create(&context, kernel2, anchor2, border,
+                                 border_value, 1, 1, sizeof(TypeParam), image));
   ASSERT_EQ(nullptr, context);
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_morphology_create(&context, kernel2, anchor3, border,
-                                       border_values, 1, 1, sizeof(TypeParam),
-                                       image));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      kleidicv_morphology_create(&context, kernel2, anchor3, border,
+                                 border_value, 1, 1, sizeof(TypeParam), image));
   ASSERT_EQ(nullptr, context);
 }
 
 TYPED_TEST(Morphology, InvalidTypeSize) {
   kleidicv_morphology_context_t *context = nullptr;
+  const uint8_t border_value[] = {};
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
-      kleidicv_morphology_create(
-          &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
-          KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{0, 0, 1, 1},
-          1, 1, KLEIDICV_MAXIMUM_TYPE_SIZE + 1, kleidicv_rectangle_t{1, 1}));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            kleidicv_morphology_create(
+                &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
+                KLEIDICV_BORDER_TYPE_REPLICATE, border_value, 1, 1,
+                KLEIDICV_MAXIMUM_TYPE_SIZE + 1, kleidicv_rectangle_t{1, 1}));
   ASSERT_EQ(nullptr, context);
 }
 
 TYPED_TEST(Morphology, InvalidChannelNumber) {
   kleidicv_morphology_context_t *context = nullptr;
+  const uint8_t border_value[] = {};
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_morphology_create(&context, kleidicv_rectangle_t{1, 1},
-                                       kleidicv_point_t{0, 0},
-                                       KLEIDICV_BORDER_TYPE_REPLICATE,
-                                       kleidicv_border_values_t{0, 0, 1, 1},
-                                       KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 1, 1,
-                                       kleidicv_rectangle_t{1, 1}));
+            kleidicv_morphology_create(
+                &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
+                KLEIDICV_BORDER_TYPE_REPLICATE, border_value,
+                KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 1, 1,
+                kleidicv_rectangle_t{1, 1}));
   ASSERT_EQ(nullptr, context);
 }
 
@@ -517,11 +532,11 @@ TYPED_TEST(Morphology, ImageBiggerThanContext) {
   kleidicv_morphology_context_t *context = nullptr;
   kleidicv_rectangle_t kernel{3, 3}, image{5, 5};
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_border_values_t border_values{0, 0, 1, 1};
+  const uint8_t border_value[] = {0, 0, 1, 1};
   kleidicv_point_t anchor{1, 1};
 
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_create(&context, kernel, anchor,
-                                                    border, border_values, 1, 1,
+                                                    border, border_value, 1, 1,
                                                     sizeof(TypeParam), image));
   const size_t w = 7, h = 7;
   TypeParam src[w * h], dst[w * h];
@@ -534,6 +549,19 @@ TYPED_TEST(Morphology, ImageBiggerThanContext) {
       DilateParams<TypeParam>::api()(src, sizeof(TypeParam) * w, dst,
                                      sizeof(TypeParam) * w, w, h, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_release(context));
+}
+
+TYPED_TEST(Morphology, CreateNullPointer) {
+  kleidicv_morphology_context_t *context = nullptr;
+  kleidicv_rectangle_t small_rect{1, 1};
+  kleidicv_point_t anchor{0, 0};
+  kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_CONSTANT;
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NULL_POINTER,
+      kleidicv_morphology_create(&context, small_rect, anchor, border, nullptr,
+                                 4, 1, sizeof(TypeParam), small_rect));
+  ASSERT_EQ(nullptr, context);
 }
 
 TYPED_TEST(Morphology, DilateNullPointer) {
@@ -593,23 +621,21 @@ TYPED_TEST(Morphology, ErodeMisalignment) {
 TYPED_TEST(Morphology, DilateZeroImageSize) {
   kleidicv_morphology_context_t *context = nullptr;
   TypeParam src[1], dst[1];
-  ASSERT_EQ(
-      KLEIDICV_OK,
-      kleidicv_morphology_create(
-          &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
-          KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{0, 0, 1, 1},
-          1, 1, sizeof(TypeParam), kleidicv_rectangle_t{0, 1}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_morphology_create(
+                &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr, 1, 1,
+                sizeof(TypeParam), kleidicv_rectangle_t{0, 1}));
   EXPECT_EQ(KLEIDICV_OK,
             DilateParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
                                            sizeof(TypeParam), 0, 1, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_release(context));
 
-  ASSERT_EQ(
-      KLEIDICV_OK,
-      kleidicv_morphology_create(
-          &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
-          KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{0, 0, 1, 1},
-          1, 1, sizeof(TypeParam), kleidicv_rectangle_t{1, 0}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_morphology_create(
+                &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr, 1, 1,
+                sizeof(TypeParam), kleidicv_rectangle_t{1, 0}));
   EXPECT_EQ(KLEIDICV_OK,
             DilateParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
                                            sizeof(TypeParam), 1, 0, context));
@@ -619,23 +645,21 @@ TYPED_TEST(Morphology, DilateZeroImageSize) {
 TYPED_TEST(Morphology, ErodeZeroImageSize) {
   kleidicv_morphology_context_t *context = nullptr;
   TypeParam src[1], dst[1];
-  ASSERT_EQ(
-      KLEIDICV_OK,
-      kleidicv_morphology_create(
-          &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
-          KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{0, 0, 1, 1},
-          1, 1, sizeof(TypeParam), kleidicv_rectangle_t{0, 1}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_morphology_create(
+                &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr, 1, 1,
+                sizeof(TypeParam), kleidicv_rectangle_t{0, 1}));
   EXPECT_EQ(KLEIDICV_OK,
             ErodeParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
                                           sizeof(TypeParam), 0, 1, context));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_morphology_release(context));
 
-  ASSERT_EQ(
-      KLEIDICV_OK,
-      kleidicv_morphology_create(
-          &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
-          KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{0, 0, 1, 1},
-          1, 1, sizeof(TypeParam), kleidicv_rectangle_t{1, 0}));
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_morphology_create(
+                &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr, 1, 1,
+                sizeof(TypeParam), kleidicv_rectangle_t{1, 0}));
   EXPECT_EQ(KLEIDICV_OK,
             ErodeParams<TypeParam>::api()(src, sizeof(TypeParam), dst,
                                           sizeof(TypeParam), 1, 0, context));
@@ -737,12 +761,12 @@ TYPED_TEST(Morphology, ErodeOversizeImage) {
 }
 
 TEST(MorphologyCreate, NullPointer) {
+  const uint8_t border_value[4] = {};
   EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
-            kleidicv_morphology_create(nullptr, kleidicv_rectangle_t{1, 1},
-                                       kleidicv_point_t{0, 0},
-                                       KLEIDICV_BORDER_TYPE_REPLICATE,
-                                       kleidicv_border_values_t{0, 0, 1, 1}, 1,
-                                       1, 1, kleidicv_rectangle_t{1, 1}));
+            kleidicv_morphology_create(
+                nullptr, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
+                KLEIDICV_BORDER_TYPE_REPLICATE, border_value, 1, 1, 1,
+                kleidicv_rectangle_t{1, 1}));
 }
 TEST(MorphologyRelease, NullPointer) {
   EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER, kleidicv_morphology_release(nullptr));

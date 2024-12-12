@@ -22,7 +22,7 @@ KLEIDICV_API_DECLARATION(kleidicv_warp_perspective_stripe_u8,
                          const float transformation[9], size_t channels,
                          kleidicv_interpolation_type_t interpolation,
                          kleidicv_border_type_t border_type,
-                         kleidicv_border_values_t border_values);
+                         const uint8_t *border_value);
 }
 
 namespace kleidicv {
@@ -52,7 +52,7 @@ kleidicv_error_t warp_perspective_stripe(
     T *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     size_t y_begin, size_t y_end, const float transformation[9],
     size_t channels, kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values);
+    kleidicv_border_type_t border_type, const T *border_value);
 }  // namespace neon
 
 namespace sve2 {
@@ -63,7 +63,7 @@ kleidicv_error_t warp_perspective_stripe(
     T *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     size_t y_begin, size_t y_end, const float transformation[9],
     size_t channels, kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values);
+    kleidicv_border_type_t border_type, const T *border_value);
 }  // namespace sve2
 
 }  // namespace kleidicv

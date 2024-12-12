@@ -21,6 +21,7 @@
 #include "opencv2/core/hal/interface.h"
 #include "opencv2/core/types.hpp"
 #include "opencv2/core/utility.hpp"
+#include "opencv2/imgproc.hpp"
 #include "opencv2/imgproc/hal/interface.h"
 
 namespace kleidicv::hal {
@@ -74,6 +75,16 @@ static size_t get_type_size(int depth) {
     default:
       return SIZE_MAX;
   }
+}
+
+template <typename T>
+static std::array<T, KLEIDICV_MAXIMUM_CHANNEL_COUNT> get_border_value(
+    const double border_f64[4]) {
+  std::array<T, KLEIDICV_MAXIMUM_CHANNEL_COUNT> result = {};
+  for (int i = 0; i < 4; ++i) {
+    result[i] = cv::saturate_cast<T>(border_f64[i]);
+  }
+  return result;
 }
 
 static kleidicv_error_t parallel(kleidicv_thread_callback callback,
@@ -678,7 +689,7 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
                     int kernel_type, uchar *kernel_data, size_t kernel_step,
                     int kernel_width, int kernel_height, int anchor_x,
                     int anchor_y, int cvborder_type,
-                    const double cvborder_values[4], int iterations,
+                    const double border_value_f64[4], int iterations,
                     bool allow_submatrix, bool allow_in_place) {
   // Some parameters are unused.
   (void)allow_in_place;
@@ -745,25 +756,17 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  kleidicv_border_values_t border_values = {};
-  if (border_type == kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT) {
-    border_values.top = cvborder_values[0];
-    border_values.left = cvborder_values[1];
-    border_values.bottom = cvborder_values[2];
-    border_values.right = cvborder_values[3];
+  std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT> border_value;
 
-    // In case of default border values for dilate() '0' should be used.
-    auto border_max_value =
-        std::numeric_limits<decltype(border_values.top)>::max();
-    if ((operation == CV_HAL_MORPH_DILATE) &&
-        (border_values.top == border_max_value) &&
-        (border_values.left == border_max_value) &&
-        (border_values.bottom == border_max_value) &&
-        (border_values.right == border_max_value)) {
-      border_values.top = 0;
-      border_values.left = 0;
-      border_values.bottom = 0;
-      border_values.right = 0;
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    cv::Scalar default_border_value = cv::morphologyDefaultBorderValue();
+    if (border_value_f64[0] == default_border_value[0] &&
+        border_value_f64[1] == default_border_value[1] &&
+        border_value_f64[2] == default_border_value[2] &&
+        border_value_f64[3] == default_border_value[3]) {
+      border_value.fill(operation == CV_HAL_MORPH_DILATE ? 0 : 255);
+    } else {
+      border_value = get_border_value<uint8_t>(border_value_f64);
     }
   }
 
@@ -784,7 +787,7 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
                                static_cast<size_t>(kernel_height)},
           kleidicv_point_t{static_cast<size_t>(anchor_x),
                            static_cast<size_t>(anchor_y)},
-          border_type, border_values, channels, iterations, type_size,
+          border_type, border_value.data(), channels, iterations, type_size,
           kleidicv_rectangle_t{static_cast<size_t>(max_width),
                                static_cast<size_t>(max_height)})) {
     return convert_error(err);
@@ -1285,19 +1288,14 @@ int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
               int dst_width, int dst_height, const int16_t *mapxy,
               size_t mapxy_step, int border_type,
-              const double border_value[4]) {
+              const double border_value_f64[4]) {
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  kleidicv_border_values_t border_values = {};
-  if (border_type == kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT) {
-    border_values.top = border_value[0];
-    border_values.left = border_value[1];
-    border_values.bottom = border_value[2];
-    border_values.right = border_value[3];
-  }
+  auto border_value = get_border_value<uint8_t>(border_value_f64);
+
   auto mt = get_multithreading();
 
   if (src_type == CV_8UC1) {
@@ -1306,7 +1304,7 @@ int remap_s16(int src_type, const uchar *src_data, size_t src_step,
         static_cast<size_t>(src_height), dst_data, dst_step,
         static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
         CV_MAT_CN(src_type), mapxy, mapxy_step, kleidicv_border_type,
-        border_values, mt));
+        border_value.data(), mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -1317,19 +1315,14 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
                     size_t dst_step, int dst_width, int dst_height,
                     const int16_t *mapxy, size_t mapxy_step,
                     const uint16_t *mapfrac, size_t mapfrac_step,
-                    int border_type, const double border_value[4]) {
+                    int border_type, const double border_value_f64[4]) {
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  kleidicv_border_values_t border_values = {};
-  if (border_type == kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT) {
-    border_values.top = border_value[0];
-    border_values.left = border_value[1];
-    border_values.bottom = border_value[2];
-    border_values.right = border_value[3];
-  }
+  auto border_value = get_border_value<uint8_t>(border_value_f64);
+
   auto mt = get_multithreading();
 
   if (src_type == CV_8UC1) {
@@ -1338,7 +1331,7 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
         static_cast<size_t>(src_height), dst_data, dst_step,
         static_cast<size_t>(dst_width), static_cast<size_t>(dst_height), 1,
         mapxy, mapxy_step, mapfrac, mapfrac_step, kleidicv_border_type,
-        border_values, mt));
+        border_value.data(), mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -1414,7 +1407,7 @@ int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
                      int src_width, int src_height, uchar *dst_data,
                      size_t dst_step, int dst_width, int dst_height,
                      const double transformation[9], int interpolation,
-                     int border_type, const double border_value[4]) {
+                     int border_type, const double border_value_f64[4]) {
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -1430,14 +1423,8 @@ int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  kleidicv_border_values_t border_values = {};
-  if (kleidicv_border_type ==
-      kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_CONSTANT) {
-    border_values.top = border_value[0];
-    border_values.left = border_value[1];
-    border_values.bottom = border_value[2];
-    border_values.right = border_value[3];
-  }
+  auto border_value = get_border_value<uint8_t>(border_value_f64);
+
   auto mt = get_multithreading();
 
   if (src_type == CV_8UC1) {
@@ -1446,7 +1433,7 @@ int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
         static_cast<size_t>(src_height), dst_data, dst_step,
         static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
         float_transformation, 1, kleidicv_interpolation_type,
-        kleidicv_border_type, border_values, mt));
+        kleidicv_border_type, border_value.data(), mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;

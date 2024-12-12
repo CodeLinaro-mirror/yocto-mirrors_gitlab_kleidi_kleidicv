@@ -171,8 +171,7 @@ TYPED_TEST(RemapS16, NullPointer) {
   TypeParam dst[1];
   int16_t mapxy[2] = {};
   test::test_null_args(kleidicv_remap_s16_u8, src, 2, 2, 2, dst, 1, 1, 1, 1,
-                       mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE,
-                       kleidicv_border_values_t{});
+                       mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
 }
 
 TYPED_TEST(RemapS16, ZeroImageSize) {
@@ -182,12 +181,10 @@ TYPED_TEST(RemapS16, ZeroImageSize) {
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16_u8(src, 1, 0, 1, dst, 1, 0, 1, 1, mapxy, 4,
-                                  KLEIDICV_BORDER_TYPE_REPLICATE,
-                                  kleidicv_border_values_t{}));
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16_u8(src, 1, 1, 0, dst, 1, 1, 0, 1, mapxy, 4,
-                                  KLEIDICV_BORDER_TYPE_REPLICATE,
-                                  kleidicv_border_values_t{}));
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16, InvalidImageSize) {
@@ -195,29 +192,27 @@ TYPED_TEST(RemapS16, InvalidImageSize) {
   TypeParam dst[8];
   int16_t mapxy[16] = {};
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
-      kleidicv_remap_s16_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst, 8, 8,
-                            1, 1, mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE,
-                            kleidicv_border_values_t{}));
-
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_remap_s16_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS,
-                                  KLEIDICV_MAX_IMAGE_PIXELS, dst, 8, 8, 1, 1,
-                                  mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE,
-                                  kleidicv_border_values_t{}));
+            kleidicv_remap_s16_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst,
+                                  8, 8, 1, 1, mapxy, 4,
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(
       KLEIDICV_ERROR_RANGE,
-      kleidicv_remap_s16_u8(src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1,
-                            1, 1, mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE,
-                            kleidicv_border_values_t{}));
+      kleidicv_remap_s16_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS,
+                            KLEIDICV_MAX_IMAGE_PIXELS, dst, 8, 8, 1, 1, mapxy,
+                            4, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_remap_s16_u8(
-                src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS,
-                KLEIDICV_MAX_IMAGE_PIXELS, 1, mapxy, 4,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+            kleidicv_remap_s16_u8(src, 1, 1, 1, dst, 1,
+                                  KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1, mapxy, 4,
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      kleidicv_remap_s16_u8(src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS,
+                            KLEIDICV_MAX_IMAGE_PIXELS, 1, mapxy, 4,
+                            KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16, UnsupportedTwoChannels) {
@@ -227,8 +222,7 @@ TYPED_TEST(RemapS16, UnsupportedTwoChannels) {
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16_u8(src, 1, 1, 1, dst, 8, 8, 1, 2, mapxy, 4,
-                                  KLEIDICV_BORDER_TYPE_REPLICATE,
-                                  kleidicv_border_values_t{}));
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16, UnsupportedBorderTypeConst) {
@@ -238,8 +232,7 @@ TYPED_TEST(RemapS16, UnsupportedBorderTypeConst) {
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16_u8(src, 1, 1, 1, dst, 8, 8, 1, 1, mapxy, 4,
-                                  KLEIDICV_BORDER_TYPE_CONSTANT,
-                                  kleidicv_border_values_t{}));
+                                  KLEIDICV_BORDER_TYPE_CONSTANT, src));
 }
 
 TYPED_TEST(RemapS16, UnsupportedTooSmallImage) {
@@ -249,8 +242,7 @@ TYPED_TEST(RemapS16, UnsupportedTooSmallImage) {
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16_u8(src, 1, 1, 1, dst, 8, 7, 1, 1, mapxy, 4,
-                                  KLEIDICV_BORDER_TYPE_REPLICATE,
-                                  kleidicv_border_values_t{}));
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 template <class ScalarType>
@@ -468,7 +460,7 @@ TYPED_TEST(RemapS16Point5, NullPointer) {
   uint16_t mapfrac[1] = {};
   test::test_null_args(kleidicv_remap_s16point5_u8, src, 2, 2, 2, dst, 1, 1, 1,
                        1, mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE,
-                       kleidicv_border_values_t{});
+                       nullptr);
 }
 
 TYPED_TEST(RemapS16Point5, ZeroImageSize) {
@@ -480,11 +472,11 @@ TYPED_TEST(RemapS16Point5, ZeroImageSize) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16point5_u8(
                 src, 1, 0, 1, dst, 1, 0, 1, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16point5_u8(
                 src, 1, 1, 0, dst, 1, 1, 0, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16Point5, InvalidImageSize) {
@@ -494,28 +486,26 @@ TYPED_TEST(RemapS16Point5, InvalidImageSize) {
   uint16_t mapfrac[1] = {};
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_remap_s16point5_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1,
-                                        1, dst, 1, 1, 1, 1, mapxy, 4, mapfrac,
-                                        2, KLEIDICV_BORDER_TYPE_REPLICATE,
-                                        kleidicv_border_values_t{}));
+            kleidicv_remap_s16point5_u8(
+                src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst, 1, 1, 1, 1,
+                mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_remap_s16point5_u8(
                 src, 1, KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
                 dst, 1, 1, 1, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_remap_s16point5_u8(
                 src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1,
-                mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_remap_s16point5_u8(
                 src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS,
                 KLEIDICV_MAX_IMAGE_PIXELS, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedTwoChannels) {
@@ -527,7 +517,7 @@ TYPED_TEST(RemapS16Point5, UnsupportedTwoChannels) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16point5_u8(
                 src, 1, 1, 1, dst, 8, 8, 1, 2, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedBorderTypeConst) {
@@ -537,9 +527,9 @@ TYPED_TEST(RemapS16Point5, UnsupportedBorderTypeConst) {
   uint16_t mapfrac[8] = {};
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_remap_s16point5_u8(
-                src, 1, 1, 1, dst, 8, 8, 1, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_CONSTANT, kleidicv_border_values_t{}));
+            kleidicv_remap_s16point5_u8(src, 1, 1, 1, dst, 8, 8, 1, 1, mapxy, 4,
+                                        mapfrac, 2,
+                                        KLEIDICV_BORDER_TYPE_CONSTANT, src));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedTooSmallImage) {
@@ -551,6 +541,6 @@ TYPED_TEST(RemapS16Point5, UnsupportedTooSmallImage) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_remap_s16point5_u8(
                 src, 1, 1, 1, dst, 8, 7, 1, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP

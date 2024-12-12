@@ -67,8 +67,7 @@ static void replicate(const Bordered *bordered,
 // | left border | elements  | right border |
 // |         X X | A B C D E | Y Y          |
 template <typename ElementType>
-static void constant(const Bordered *bordered,
-                     kleidicv_border_values_t border_values,
+static void constant(const Bordered *bordered, const ElementType *border_value,
                      TwoDimensional<ElementType> *elements) {
   ASSERT_LE((bordered->left() + bordered->right()) * elements->channels(),
             elements->width());
@@ -80,7 +79,7 @@ static void constant(const Bordered *bordered,
       // Prepare left border columns.
       for (size_t column = 0; column < bordered->left(); ++column) {
         size_t dst_column = column * elements->channels() + channel;
-        elements->at(row, dst_column)[0] = border_values.left;
+        elements->at(row, dst_column)[0] = border_value[channel];
       }
 
       // Prepare right border columns.
@@ -88,23 +87,29 @@ static void constant(const Bordered *bordered,
         size_t dst_column =
             elements->width() +
             (column - bordered->right()) * elements->channels() + channel;
-        elements->at(row, dst_column)[0] = border_values.right;
+        elements->at(row, dst_column)[0] = border_value[channel];
       }
     }
   }
 
   // Constant top border rows.
   for (size_t row = 0; row < bordered->top(); ++row) {
-    for (size_t column = 0; column < elements->width(); ++column) {
-      elements->at(row, column)[0] = border_values.top;
+    for (size_t column = 0; column < elements->width();) {
+      for (size_t channel = 0; channel < elements->channels();
+           ++channel, ++column) {
+        elements->at(row, column)[0] = border_value[channel];
+      }
     }
   }
 
   // Constant bottom border rows.
   for (size_t row = elements->height() - bordered->bottom();
        row < elements->height(); ++row) {
-    for (size_t column = 0; column < elements->width(); ++column) {
-      elements->at(row, column)[0] = border_values.bottom;
+    for (size_t column = 0; column < elements->width();) {
+      for (size_t channel = 0; channel < elements->channels();
+           ++channel, ++column) {
+        elements->at(row, column)[0] = border_value[channel];
+      }
     }
   }
 }
@@ -281,8 +286,7 @@ static void reverse(const Bordered *bordered,
 
 template <typename ElementType>
 void prepare_borders(kleidicv_border_type_t border_type,
-                     kleidicv_border_values_t border_values,
-                     const Bordered *bordered,
+                     const ElementType *border_value, const Bordered *bordered,
                      TwoDimensional<ElementType> *elements) {
   ASSERT_NE(bordered, nullptr);
   ASSERT_NE(elements, nullptr);
@@ -295,7 +299,7 @@ void prepare_borders(kleidicv_border_type_t border_type,
       return replicate(bordered, elements);
 
     case KLEIDICV_BORDER_TYPE_CONSTANT:
-      return constant(bordered, border_values, elements);
+      return constant(bordered, border_value, elements);
 
     case KLEIDICV_BORDER_TYPE_REFLECT:
       return reflect(bordered, elements);
@@ -308,18 +312,15 @@ void prepare_borders(kleidicv_border_type_t border_type,
   }
 }
 
-template void prepare_borders<uint8_t>(kleidicv_border_type_t,
-                                       kleidicv_border_values_t,
+template void prepare_borders<uint8_t>(kleidicv_border_type_t, const uint8_t *,
                                        const Bordered *,
                                        TwoDimensional<uint8_t> *);
 
 template void prepare_borders<uint16_t>(kleidicv_border_type_t,
-                                        kleidicv_border_values_t,
-                                        const Bordered *,
+                                        const uint16_t *, const Bordered *,
                                         TwoDimensional<uint16_t> *);
 
-template void prepare_borders<int16_t>(kleidicv_border_type_t,
-                                       kleidicv_border_values_t,
+template void prepare_borders<int16_t>(kleidicv_border_type_t, const int16_t *,
                                        const Bordered *,
                                        TwoDimensional<int16_t> *);
 

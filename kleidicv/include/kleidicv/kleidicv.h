@@ -42,7 +42,7 @@
 #define KLEIDICV_MAXIMUM_TYPE_SIZE (8)
 
 /// Maximum number of channels
-#define KLEIDICV_MAXIMUM_CHANNEL_COUNT (8)
+#define KLEIDICV_MAXIMUM_CHANNEL_COUNT (4)
 
 #ifdef __cplusplus
 extern "C" {
@@ -905,7 +905,7 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_greater_u8, const uint8_t *src_a,
 ///                      are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
-/// @param border_values Border values if the border_type is
+/// @param border_value  Border value if the border_type is
 ///                      @ref KLEIDICV_BORDER_TYPE_CONSTANT.
 /// @param channels      Number of channels in the data. Must be not more than
 ///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
@@ -918,7 +918,7 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_greater_u8, const uint8_t *src_a,
 kleidicv_error_t kleidicv_morphology_create(
     kleidicv_morphology_context_t **context, kleidicv_rectangle_t kernel,
     kleidicv_point_t anchor, kleidicv_border_type_t border_type,
-    kleidicv_border_values_t border_values, size_t channels, size_t iterations,
+    const uint8_t *border_value, size_t channels, size_t iterations,
     size_t type_size, kleidicv_rectangle_t image);
 
 /// Releases a morphology context that was previously created using @ref
@@ -1790,7 +1790,7 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
 /// @param border_type   Way of handling the border. The supported border types
 ///                      are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
-/// @param border_values Border values if the border_type is
+/// @param border_value Border value if the border_type is
 ///                      @ref KLEIDICV_BORDER_TYPE_CONSTANT.
 KLEIDICV_API_DECLARATION(kleidicv_remap_s16_u8, const uint8_t *src,
                          size_t src_stride, size_t src_width, size_t src_height,
@@ -1798,7 +1798,7 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16_u8, const uint8_t *src,
                          size_t dst_height, size_t channels,
                          const int16_t *mapxy, size_t mapxy_stride,
                          kleidicv_border_type_t border_type,
-                         kleidicv_border_values_t border_values);
+                         const uint8_t *border_value);
 
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.
@@ -1811,7 +1811,7 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u8, const uint8_t *src,
                          const int16_t *mapxy, size_t mapxy_stride,
                          const uint16_t *mapfrac, size_t mapfrac_stride,
                          kleidicv_border_type_t border_type,
-                         kleidicv_border_values_t border_values);
+                         const uint8_t *border_value);
 #endif  // DOXYGEN
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
@@ -1903,14 +1903,14 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
 /// @param border_type    Way of handling the border. The supported border types
 ///                       are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
-/// @param border_values  Border values if the border_type is
+/// @param border_value   Border value if the border_type is
 ///                       @ref KLEIDICV_BORDER_TYPE_CONSTANT.
 kleidicv_error_t kleidicv_warp_perspective_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     const float transformation[9], size_t channels,
     kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type, kleidicv_border_values_t border_values);
+    kleidicv_border_type_t border_type, const uint8_t *border_value);
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 
 #ifdef __cplusplus

@@ -59,7 +59,7 @@ using KLEIDICV_TARGET_NAMESPACE::MorphologyWorkspace;
 kleidicv_error_t kleidicv_morphology_create(
     kleidicv_morphology_context_t **context, kleidicv_rectangle_t kernel,
     kleidicv_point_t anchor, kleidicv_border_type_t border_type,
-    kleidicv_border_values_t border_values, size_t channels, size_t iterations,
+    const uint8_t *border_value, size_t channels, size_t iterations,
     size_t type_size, kleidicv_rectangle_t image) {
   CHECK_POINTERS(context);
   *context = nullptr;
@@ -83,7 +83,7 @@ kleidicv_error_t kleidicv_morphology_create(
 
   MorphologyWorkspace::Pointer workspace;
   if (kleidicv_error_t error = MorphologyWorkspace::create(
-          workspace, kernel, anchor, *morphology_border_type, border_values,
+          workspace, kernel, anchor, *morphology_border_type, border_value,
           channels, iterations, type_size, image)) {
     return error;
   }

@@ -13,12 +13,11 @@ kleidicv_error_t warp_perspective_stripe(
     T *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     size_t y_begin, size_t y_end, const float transformation[9],
     size_t channels, kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type,
-    kleidicv_border_values_t border_values) {
+    kleidicv_border_type_t border_type, const T *border_value) {
   return warp_perspective_stripe_sc<T>(
       src, src_stride, src_width, src_height, dst, dst_stride, dst_width,
       dst_height, y_begin, y_end, transformation, channels, interpolation,
-      border_type, border_values);
+      border_type, border_value);
 }
 
 #define KLEIDICV_INSTANTIATE_WARP_PERSPECTIVE(type)                            \
@@ -28,8 +27,7 @@ kleidicv_error_t warp_perspective_stripe(
       type *dst, size_t dst_stride, size_t dst_width, size_t dst_height,       \
       size_t y_begin, size_t y_end, const float transformation[9],             \
       size_t channels, kleidicv_interpolation_type_t interpolation,            \
-      kleidicv_border_type_t border_type,                                      \
-      kleidicv_border_values_t border_values)
+      kleidicv_border_type_t border_type, const type *border_value)
 
 KLEIDICV_INSTANTIATE_WARP_PERSPECTIVE(uint8_t);
 

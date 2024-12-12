@@ -96,16 +96,15 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   kleidicv_error_t call_api(const test::Array2D<InputType> *input,
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t border_type,
-                            kleidicv_border_values_t border_values) override {
+                            const InputType *border_value) override {
     // Check the expected border type.
     EXPECT_EQ(border_type, kBorders[border_count_ % kBorders.size()]);
     // Check the expected border value.
-    auto act = border_values;
-    auto exp = kBorderValues[border_value_count_ % kBorderValues.size()];
-    EXPECT_EQ(act.top, exp.top);
-    EXPECT_EQ(act.right, exp.right);
-    EXPECT_EQ(act.bottom, exp.bottom);
-    EXPECT_EQ(act.left, exp.left);
+    auto actual = border_value;
+    auto expected = kBorderValues[border_value_count_ % kBorderValues.size()];
+    for (size_t i = 0; i < kBorderValues.size(); ++i) {
+      EXPECT_EQ(actual[i], expected[i]);
+    }
 
     // Check the expected layout.
     const test::ArrayLayout &expected_array_layout =
@@ -152,7 +151,7 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   static constexpr std::array<kleidicv_border_type_t, 2> kBorders = {
       KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_CONSTANT};
 
-  static constexpr std::array<kleidicv_border_values_t, 2> kBorderValues = {
+  static constexpr std::array<std::array<InputType, 4>, 2> kBorderValues = {
       {{0, 0, 0, 0}, {1, 2, 3, 4}}};
 
   size_t api_calls_{0};

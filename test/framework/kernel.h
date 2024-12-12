@@ -85,7 +85,7 @@ class KernelTest {
   void test(Generator<Kernel<IntermediateType>>& kernel_generator,
             Generator<ArrayLayout>& array_layout_generator,
             Generator<kleidicv_border_type_t>& border_type_generator,
-            Generator<kleidicv_border_values_t>& border_values_generator,
+            Generator<std::array<InputType, 4>>& border_values_generator,
             Generator<InputType>& element_generator) {
     kernel_generator.reset();
 
@@ -100,7 +100,7 @@ class KernelTest {
   void test(const Kernel<IntermediateType>& kernel,
             Generator<ArrayLayout>& array_layout_generator,
             Generator<kleidicv_border_type_t>& border_type_generator,
-            Generator<kleidicv_border_values_t>& border_values_generator,
+            Generator<std::array<InputType, 4>>& border_values_generator,
             Generator<InputType>& element_generator) {
     array_layout_generator.reset();
 
@@ -118,7 +118,7 @@ class KernelTest {
 
   void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
             Generator<kleidicv_border_type_t>& border_type_generator,
-            Generator<kleidicv_border_values_t>& border_values_generator,
+            Generator<std::array<InputType, 4>>& border_values_generator,
             Generator<InputType>& element_generator) {
     border_type_generator.reset();
 
@@ -132,27 +132,25 @@ class KernelTest {
 
   void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
             kleidicv_border_type_t border_type,
-            Generator<kleidicv_border_values_t>& border_values_generator,
+            Generator<std::array<InputType, 4>>& border_values_generator,
             Generator<InputType>& element_generator) {
     border_values_generator.reset();
-    std::optional<kleidicv_border_values_t> maybe_border_values;
+    std::optional<std::array<InputType, 4>> maybe_border_values;
     while ((maybe_border_values = border_values_generator.next()) !=
            std::nullopt) {
-      test(kernel, array_layout, border_type, *maybe_border_values,
+      test(kernel, array_layout, border_type, maybe_border_values->data(),
            element_generator);
       ASSERT_NO_FAILURES();
     }
   }
 
   void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
-            kleidicv_border_type_t border_type,
-            kleidicv_border_values_t border_values,
+            kleidicv_border_type_t border_type, const InputType* border_value,
             Generator<InputType>& element_generator) {
     prepare_source(element_generator);
-    prepare_expected(kernel, array_layout, border_type, border_values);
+    prepare_expected(kernel, array_layout, border_type, border_value);
     prepare_actual();
-    check_results(
-        this->call_api(&input_, &actual_, border_type, border_values));
+    check_results(this->call_api(&input_, &actual_, border_type, border_value));
   }
 
  protected:
@@ -162,7 +160,7 @@ class KernelTest {
   virtual kleidicv_error_t call_api(const Array2D<InputType>* input,
                                     Array2D<OutputType>* output,
                                     kleidicv_border_type_t border_type,
-                                    kleidicv_border_values_t border_values) = 0;
+                                    const InputType* border_value) = 0;
 
   // Calculates the expected output.
   virtual void calculate_expected(const Kernel<IntermediateType>& kernel,
@@ -236,7 +234,7 @@ class KernelTest {
   virtual void prepare_expected(const Kernel<IntermediateType>& kernel,
                                 const ArrayLayout& array_layout,
                                 kleidicv_border_type_t border_type,
-                                kleidicv_border_values_t border_values) {
+                                const InputType* border_value) {
     input_with_borders_.set(kernel.anchor().y,
                             kernel.anchor().x * array_layout.channels, &input_);
 
@@ -245,7 +243,7 @@ class KernelTest {
       dump(&input_with_borders_);
     }
 
-    prepare_borders<InputType>(border_type, border_values, &kernel,
+    prepare_borders<InputType>(border_type, border_value, &kernel,
                                &input_with_borders_);
 
     if (debug_) {

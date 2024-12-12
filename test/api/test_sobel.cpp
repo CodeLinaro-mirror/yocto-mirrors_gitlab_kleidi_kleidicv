@@ -51,7 +51,7 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
   kleidicv_error_t call_api(const test::Array2D<InputType> *input,
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t,
-                            kleidicv_border_values_t) override {
+                            const InputType *) override {
     auto api = KernelTestParams::kIsHorizontal
                    ? sobel_3x3_horizontal<InputType>()
                    : sobel_3x3_vertical<InputType>();
@@ -69,7 +69,8 @@ class Sobel3x3Test : public test::KernelTest<KernelTestParams> {
     // Create generators and execute test.
     test::SequenceGenerator tested_array_layouts{array_layouts};
     test::SequenceGenerator tested_borders{kSupportedBorders};
-    test::SequenceGenerator tested_border_values{test::default_border_values()};
+    test::SequenceGenerator tested_border_values{
+        test::default_border_values<InputType>()};
     test::PseudoRandomNumberGenerator<InputType> element_generator;
     Base::test(kernel, tested_array_layouts, tested_borders,
                tested_border_values, element_generator);

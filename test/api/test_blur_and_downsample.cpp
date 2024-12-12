@@ -62,7 +62,8 @@ class BlurAndDownsampleTest : public test::KernelTest<KernelTestParams> {
   void test(const test::Array2D<IntermediateType> &mask) {
     test::Kernel kernel{mask};
     // Create generators and execute test.
-    test::SequenceGenerator tested_border_values{test::default_border_values()};
+    test::SequenceGenerator tested_border_values{
+        test::default_border_values<InputType>()};
     test::PseudoRandomNumberGenerator<InputType> element_generator;
     Base::test(kernel, array_layout_generator_, border_type_generator_,
                tested_border_values, element_generator);
@@ -72,7 +73,7 @@ class BlurAndDownsampleTest : public test::KernelTest<KernelTestParams> {
   kleidicv_error_t call_api(const test::Array2D<InputType> *input,
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t border_type,
-                            kleidicv_border_values_t) override {
+                            const InputType *) override {
     kleidicv_filter_context_t *context = nullptr;
     auto ret = kleidicv_filter_context_create(
         &context, input->channels(), kKernelSize, kKernelSize,

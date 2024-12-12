@@ -53,7 +53,7 @@ kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
                            size_t dst_width, size_t dst_height, size_t channels,
                            const int16_t *mapxy, size_t mapxy_stride,
                            kleidicv_border_type_t border_type,
-                           kleidicv_border_values_t border_values);
+                           const T *border_value);
 
 template <typename T>
 kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
@@ -63,7 +63,7 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
                                  const int16_t *mapxy, size_t mapxy_stride,
                                  const uint16_t *mapfrac, size_t mapfrac_stride,
                                  kleidicv_border_type_t border_type,
-                                 kleidicv_border_values_t border_values);
+                                 const T *border_value);
 
 }  // namespace neon
 
@@ -75,7 +75,7 @@ kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
                            size_t dst_width, size_t dst_height, size_t channels,
                            const int16_t *mapxy, size_t mapxy_stride,
                            kleidicv_border_type_t border_type,
-                           kleidicv_border_values_t border_values);
+                           const T *border_value);
 
 template <typename T>
 kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
@@ -85,7 +85,7 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
                                  const int16_t *mapxy, size_t mapxy_stride,
                                  const uint16_t *mapfrac, size_t mapfrac_stride,
                                  kleidicv_border_type_t border_type,
-                                 kleidicv_border_values_t border_values);
+                                 const T *border_value);
 
 }  // namespace sve2
 
@@ -99,7 +99,7 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
                                  const int16_t *mapxy, size_t mapxy_stride,
                                  const uint16_t *mapfrac, size_t mapfrac_stride,
                                  kleidicv_border_type_t border_type,
-                                 kleidicv_border_values_t border_values);
+                                 const T *border_value);
 
 }  // namespace sme2
 

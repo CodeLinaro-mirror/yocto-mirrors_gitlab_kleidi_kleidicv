@@ -118,8 +118,7 @@ kleidicv_error_t remap_s16_sc(const T* src, size_t src_stride, size_t src_width,
                               size_t dst_width, size_t dst_height,
                               size_t channels, const int16_t* mapxy,
                               size_t mapxy_stride,
-                              kleidicv_border_type_t border_type,
-                              kleidicv_border_values_t) {
+                              kleidicv_border_type_t border_type, const T*) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
@@ -396,7 +395,7 @@ kleidicv_error_t remap_s16point5_sc(
     T* dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     size_t channels, const int16_t* mapxy, size_t mapxy_stride,
     const uint16_t* mapfrac, size_t mapfrac_stride,
-    kleidicv_border_type_t border_type, kleidicv_border_values_t) {
+    kleidicv_border_type_t border_type, const T*) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);

@@ -82,9 +82,8 @@ int morphology_init(cvhalFilter2D **context, int operation, int src_type,
                     int dst_type, int max_width, int max_height,
                     int kernel_type, uchar *kernel_data, size_t kernel_step,
                     int kernel_width, int kernel_height, int anchor_x,
-                    int anchor_y, int border_type,
-                    const double border_values[4], int iterations,
-                    bool allow_submatrix, bool allow_in_place);
+                    int anchor_y, int border_type, const double border_value[4],
+                    int iterations, bool allow_submatrix, bool allow_in_place);
 
 int morphology_operation(cvhalFilter2D *context, uchar *src_data,
                          size_t src_step, uchar *dst_data, size_t dst_step,

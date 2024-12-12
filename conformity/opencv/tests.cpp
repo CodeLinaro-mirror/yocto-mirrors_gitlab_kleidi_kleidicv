@@ -23,9 +23,9 @@ static std::vector<test> merge_tests(
 }
 
 std::vector<test> all_tests = merge_tests({
-    // clang-format off
     binary_op_tests_get,
     cvtcolor_tests_get,
+    morphology_tests_get,
 #if KLEIDICV_ENABLE_ALL_OPENCV_HAL
     separable_filter_2d_tests_get,
 #endif
@@ -43,7 +43,6 @@ std::vector<test> all_tests = merge_tests({
     warp_perspective_tests_get,
     blur_and_downsample_tests_get,
     scharr_interleaved_tests_get,
-    // clang-format on
 });
 
 #if MANAGER

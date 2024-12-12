@@ -288,8 +288,7 @@ TYPED_TEST(WarpPerspective, NullPointer) {
   TypeParam dst[8];
   test::test_null_args(kleidicv_warp_perspective_u8, src, 2, 2, 2, dst, 8, 8, 1,
                        transform_identity, 1, KLEIDICV_INTERPOLATION_NEAREST,
-                       KLEIDICV_BORDER_TYPE_REPLICATE,
-                       kleidicv_border_values_t{});
+                       KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
 }
 
 TYPED_TEST(WarpPerspective, ZeroImageSize) {
@@ -300,12 +299,12 @@ TYPED_TEST(WarpPerspective, ZeroImageSize) {
             kleidicv_warp_perspective_u8(
                 src, 1, 0, 1, dst, 1, 0, 1, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 0, dst, 1, 1, 0, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspective, InvalidImageSize) {
@@ -316,27 +315,27 @@ TYPED_TEST(WarpPerspective, InvalidImageSize) {
             kleidicv_warp_perspective_u8(
                 src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst, 8, 8, 1,
                 transform_identity, 1, KLEIDICV_INTERPOLATION_NEAREST,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(
       KLEIDICV_ERROR_RANGE,
       kleidicv_warp_perspective_u8(
           src, 1, KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, dst, 8,
           8, 1, transform_identity, 1, KLEIDICV_INTERPOLATION_NEAREST,
-          KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+          KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1,
                 transform_identity, 1, KLEIDICV_INTERPOLATION_NEAREST,
-                KLEIDICV_BORDER_TYPE_REPLICATE, kleidicv_border_values_t{}));
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS,
                 KLEIDICV_MAX_IMAGE_PIXELS, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspective, UnsupportedTwoChannels) {
@@ -347,7 +346,7 @@ TYPED_TEST(WarpPerspective, UnsupportedTwoChannels) {
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 1, dst, 8, 8, 1, transform_identity, 2,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspective, UnsupportedBorderTypeConst) {
@@ -355,10 +354,10 @@ TYPED_TEST(WarpPerspective, UnsupportedBorderTypeConst) {
   TypeParam dst[8];
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_warp_perspective_u8(
-                src, 1, 1, 1, dst, 8, 8, 1, transform_identity, 1,
-                KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_CONSTANT,
-                kleidicv_border_values_t{}));
+            kleidicv_warp_perspective_u8(src, 1, 1, 1, dst, 8, 8, 1,
+                                         transform_identity, 1,
+                                         KLEIDICV_INTERPOLATION_NEAREST,
+                                         KLEIDICV_BORDER_TYPE_CONSTANT, src));
 }
 
 TYPED_TEST(WarpPerspective, UnsupportedTooSmallImage) {
@@ -369,7 +368,7 @@ TYPED_TEST(WarpPerspective, UnsupportedTooSmallImage) {
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 1, dst, 8, 7, 1, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspective, UnsupportedInterpolation) {
@@ -380,7 +379,7 @@ TYPED_TEST(WarpPerspective, UnsupportedInterpolation) {
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 1, dst, 8, 8, 1, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspective, UnsupportedBigStride) {
@@ -391,7 +390,7 @@ TYPED_TEST(WarpPerspective, UnsupportedBigStride) {
             kleidicv_warp_perspective_u8(
                 src, 1UL << 32, 1, 1, dst, 8, 8, 1, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspective, UnsupportedBigHeight) {
@@ -402,7 +401,7 @@ TYPED_TEST(WarpPerspective, UnsupportedBigHeight) {
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 1UL << 24, dst, 8, 8, 1, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 
 TYPED_TEST(WarpPerspective, UnsupportedBigWidth) {
@@ -413,6 +412,6 @@ TYPED_TEST(WarpPerspective, UnsupportedBigWidth) {
             kleidicv_warp_perspective_u8(
                 src, 1, 1UL << 24, 1, dst, 8, 8, 1, transform_identity, 1,
                 KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
-                kleidicv_border_values_t{}));
+                nullptr));
 }
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
