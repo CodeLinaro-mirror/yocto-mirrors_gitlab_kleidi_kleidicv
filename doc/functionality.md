@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -97,6 +97,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 |--------------------------------------------|-----|-----|
 | Remap int16 coordinates                    |  x  |  x  |
 | Remap int16+uint16 fixed-point coordinates |  x  |  x  |
+| Remap float coordinates                    |  x  |     |
 
 # WarpPerspective
 |                      |  u8 |

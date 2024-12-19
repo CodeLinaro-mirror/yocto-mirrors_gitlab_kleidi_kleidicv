@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -240,6 +240,80 @@ class Thread : public testing::TestWithParam<P> {
         dst_small.stride(), test_width, height, channels, mapxy.data(),
         mapxy.stride(), mapfrac.data(), mapfrac.stride(), args...,
         get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
+  }
+
+  template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc,
+            typename... Args>
+  void check_remap_f32(SingleThreadedFunc single_threaded_func,
+                       MultithreadedFunc multithreaded_func, size_t channels,
+                       Args... args) {
+    unsigned test_width = 0, height = 0, thread_count = 0;
+    std::tie(test_width, height, thread_count) = GetParam();
+    const unsigned src_width = 300, src_height = 300;
+    // width < 4 are not supported, that's not tested here
+    size_t width = test_width + 4;
+    test::Array2D<T> src(size_t{src_width} * channels, src_height);
+    test::Array2D<float> mapx(width * 2, height);
+    test::Array2D<float> mapy(width, height);
+    test::Array2D<T> dst_single(width * channels, height),
+        dst_multi(width * channels, height);
+
+    test::PseudoRandomNumberGenerator<T> src_generator;
+    src.fill(src_generator);
+    test::PseudoRandomNumberGeneratorFloatRange<float> xcoord_generator{
+        0, std::min(static_cast<float>(src_height - 1),
+                    static_cast<float>(src_width - 1))};
+    mapx.fill(xcoord_generator);
+    test::PseudoRandomNumberGeneratorFloatRange<float> ycoord_generator{
+        0, std::min(static_cast<float>(src_height - 1),
+                    static_cast<float>(src_width - 1))};
+    mapy.fill(ycoord_generator);
+
+    kleidicv_error_t single_result = single_threaded_func(
+        src.data(), src.stride(), src_width, src_height, dst_single.data(),
+        dst_single.stride(), width, height, channels, mapx.data(),
+        mapx.stride(), mapy.data(), mapy.stride(), args...);
+
+    kleidicv_error_t multi_result = multithreaded_func(
+        src.data(), src.stride(), src_width, src_height, dst_multi.data(),
+        dst_multi.stride(), width, height, channels, mapx.data(), mapx.stride(),
+        mapy.data(), mapy.stride(), args...,
+        get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_OK, single_result);
+    EXPECT_EQ(KLEIDICV_OK, multi_result);
+    EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+  }
+
+  template <typename T, typename MultithreadedFunc, typename... Args>
+  void check_remap_f32_not_implemented(MultithreadedFunc multithreaded_func,
+                                       size_t channels, Args... args) {
+    unsigned test_width = 0, height = 0, thread_count = 0;
+    std::tie(test_width, height, thread_count) = GetParam();
+    const unsigned src_width = 300, src_height = 300;
+    // width < 4 are not supported, that's not tested here
+    size_t width = test_width + 4;
+    test::Array2D<T> src(size_t{src_width} * channels, src_height);
+    test::Array2D<float> mapx(width * 2, height);
+    test::Array2D<float> mapy(width, height);
+    test::Array2D<T> dst_small(test_width * channels, height),
+        dst(width * channels, height);
+
+    kleidicv_error_t result = multithreaded_func(
+        src.data(), src.stride(), src_width, src_height, dst.data(),
+        dst.stride(), width, height, channels, mapx.data(), mapx.stride(),
+        mapy.data(), mapy.stride(), args...,
+        get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
+
+    result = multithreaded_func(src.data(), src.stride(), src_width, src_height,
+                                dst_small.data(), dst_small.stride(),
+                                test_width, height, channels, mapx.data(),
+                                mapx.stride(), mapy.data(), mapy.stride(),
+                                args..., get_multithreading_fake(thread_count));
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, result);
   }
@@ -686,6 +760,25 @@ TEST_P(Thread, remap_s16point5_u16_not_implemented) {
   check_remap_s16point5_not_implemented<uint16_t>(
       kleidicv_thread_remap_s16point5_u16, 1, KLEIDICV_BORDER_TYPE_REFLECT,
       &border_value);
+}
+
+TEST_P(Thread, remap_f32_u8_border_replicate) {
+  check_remap_f32<uint8_t>(kleidicv_remap_f32_u8, kleidicv_thread_remap_f32_u8,
+                           1, KLEIDICV_INTERPOLATION_LINEAR,
+                           KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
+}
+
+TEST_P(Thread, remap_f32_u8_not_implemented) {
+  const uint8_t border_value[4] = {};
+  check_remap_f32_not_implemented<uint8_t>(
+      kleidicv_thread_remap_f32_u8, 2, KLEIDICV_INTERPOLATION_LINEAR,
+      KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
+  check_remap_f32_not_implemented<uint8_t>(
+      kleidicv_thread_remap_f32_u8, 1, KLEIDICV_INTERPOLATION_LINEAR,
+      KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
+  check_remap_f32_not_implemented<uint8_t>(
+      kleidicv_thread_remap_f32_u8, 1, KLEIDICV_INTERPOLATION_NEAREST,
+      KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
 }
 
 TEST_P(Thread, warp_perspective_u8_border_replicate) {

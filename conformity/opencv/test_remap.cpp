@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -18,8 +18,14 @@ static cv::Mat get_source_mat(int format) {
     cv::Mat m(kMaxHeight, kMaxWidth, format);
     for (size_t row = 0; row < kMaxHeight; ++row) {
       for (size_t column = 0; column < kMaxWidth; ++column) {
-        m.at<ScalarType>(row, column) =
-            (row * kMaxWidth + column) % std::numeric_limits<ScalarType>::max();
+        // Referring to the conformity check in test_warp_perspective
+        // Remap calculation in float greatly amplifies any small errors
+        // coming from precision innaccuracies, but ensuring that neighbouring
+        // pixels have neighbouring values decreases this effect, so it can be
+        // expected that the error won't be bigger than 1.
+        const int kMaxValue = std::numeric_limits<ScalarType>::max();
+        m.at<ScalarType>(row, column) = abs(
+            static_cast<int>(row + column) % (2 * kMaxValue + 1) - kMaxValue);
       }
     }
     return m;
@@ -131,6 +137,60 @@ bool test_remap_s16point5(int index, RecreatedMessageQueue& request_queue,
 }
 #endif
 
+// BorderValue is interpreted as 1/1000, i.e. 500 for 0.5
+template <class ScalarType, int Format, int Interpolation, int BorderMode,
+          int BorderValue>
+cv::Mat exec_remap_f32(cv::Mat& mapxy_mat) {
+  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::Mat result(mapxy_mat.rows, mapxy_mat.cols, Format);
+
+  cv::Mat mapx_mat = mapxy_mat.rowRange(0, mapxy_mat.rows / 2);
+  cv::Mat mapy_mat = mapxy_mat.rowRange(mapxy_mat.rows / 2, mapxy_mat.rows);
+
+  remap(source_mat, result, mapx_mat, mapy_mat, Interpolation, BorderMode,
+        BorderValue / 1000.0);
+  return result;
+}
+
+#if MANAGER
+template <class ScalarType, int Format, int Interpolation, int BorderMode,
+          int BorderValue>
+bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
+                    RecreatedMessageQueue& reply_queue) {
+  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::RNG rng(0);
+
+  for (size_t w = 5; w <= kMaxWidth; w += 3) {
+    for (size_t h = 5; h <= kMaxHeight; h += 2) {
+      cv::Mat map_mat(h * 2, w, CV_32FC1);
+      cv::Mat mapx_mat = map_mat.rowRange(0, h);
+      rng.fill(mapx_mat, cv::RNG::UNIFORM, -3, kMaxWidth + 3);
+
+      cv::Mat mapy_mat = map_mat.rowRange(h, map_mat.rows);
+      rng.fill(mapy_mat, cv::RNG::UNIFORM, -3, kMaxHeight + 3);
+
+      cv::Mat actual_mat = exec_remap_f32<ScalarType, Format, Interpolation,
+                                          BorderMode, BorderValue>(map_mat);
+
+      cv::Mat expected_mat = get_expected_from_subordinate(
+          index, request_queue, reply_queue, map_mat);
+
+      bool success =
+          (CV_MAT_DEPTH(Format) == CV_8U &&
+           !are_matrices_different<uint8_t>(1, actual_mat, expected_mat)) ||
+          (CV_MAT_DEPTH(Format) == CV_16U &&
+           !are_matrices_different<uint16_t>(1, actual_mat, expected_mat));
+      if (!success) {
+        fail_print_matrices(w, h, source_mat, actual_mat, expected_mat);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+#endif
+
 std::vector<test>& remap_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
@@ -138,6 +198,7 @@ std::vector<test>& remap_tests_get() {
     TEST("RemapS16 uint16 Replicate", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint8 Replicate", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint8 Replicate", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
 
     TEST("RemapS16 uint8 Constant", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>)),
     TEST("RemapS16 uint16 Constant", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>)),

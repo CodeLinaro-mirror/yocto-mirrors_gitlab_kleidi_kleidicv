@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -170,3 +170,20 @@ index 83a5e23781..75df962fb7 100644
 -        return 1.0f;
 +        return 4.0f;    // Reference algorithm uses integer interpolation with 5 bits fractional part, and this greater tolerance allows better precision algorithms to pass the test
  }
+diff --git a/modules/imgproc/test/test_imgwarp.cpp b/modules/imgproc/test/test_imgwarp.cpp
+index aded7bb74e..adf6a67e2b 100644
+--- a/modules/imgproc/test/test_imgwarp.cpp
++++ b/modules/imgproc/test/test_imgwarp.cpp
+@@ -811,7 +811,11 @@ TEST_P(Imgproc_RemapRelative, validity)
+         cv::remap(src, dstRelative, mapRelativeX32F, mapRelativeY32F, interpolation | WARP_RELATIVE_MAP, borderType);
+     }
+
+-    EXPECT_EQ(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 0);
++    if (interpolation != INTER_LINEAR) {
++        EXPECT_EQ(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 0);
++    } else {
++        EXPECT_LT(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 4); // Reference algorithm uses integer interpolation with 5 bits fractional part, and this greater tolerance allows better precision algorithms to pass the test
++    }
+ };
+
+ INSTANTIATE_TEST_CASE_P(ImgProc, Imgproc_RemapRelative, testing::Combine(

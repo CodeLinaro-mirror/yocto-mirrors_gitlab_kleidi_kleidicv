@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -157,6 +157,12 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
                     const int16_t *mapxy, size_t mapxy_step,
                     const uint16_t *mapfrac, size_t mapfrac_step,
                     int border_type, const double border_value[4]);
+
+int remap_f32(int src_type, const uchar *src_data, size_t src_step,
+              int src_width, int src_height, uchar *dst_data, size_t dst_step,
+              int dst_width, int dst_height, float *mapx, size_t mapx_step,
+              float *mapy, size_t mapy_step, int interpolation, int border_type,
+              const double border_value[4]);
 
 int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
                      int src_width, int src_height, uchar *dst_data,
@@ -417,6 +423,20 @@ static inline int kleidicv_remap_s16point5_with_fallback(
 #undef cv_hal_remap16s16u
 #define cv_hal_remap16s16u kleidicv_remap_s16point5_with_fallback
 #endif  // cv_hal_remap16s16u
+
+static inline int kleidicv_remap_f32_with_fallback(
+    int src_type, const uchar *src_data, size_t src_step, int src_width,
+    int src_height, uchar *dst_data, size_t dst_step, int dst_width,
+    int dst_height, float *mapx, size_t mapx_step, float *mapy,
+    size_t mapy_step, int interpolation, int border_type,
+    const double border_value[4]) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      remap_f32, cv_hal_remap32f, src_type, src_data, src_step, src_width,
+      src_height, dst_data, dst_step, dst_width, dst_height, mapx, mapx_step,
+      mapy, mapy_step, interpolation, border_type, border_value);
+}
+#undef cv_hal_remap32f
+#define cv_hal_remap32f kleidicv_remap_f32_with_fallback
 
 // pyrdown
 static inline int kleidicv_pyrdown_with_fallback(

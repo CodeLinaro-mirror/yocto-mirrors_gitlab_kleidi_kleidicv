@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -259,9 +259,11 @@ class RemapS16Point5Replicate<uint8_t> {
       FracVectorType frac = vld1q_u16(&mapfrac[0]);
       uint16x8_t xfrac =
           vbslq_u16(vcltq_s16(xy.val[0], vdupq_n_s16(0)), vdupq_n_u16(0),
+                    // extract xfrac = frac[0:4]
                     vandq_u16(frac, vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
       uint16x8_t yfrac =
           vbslq_u16(vcltq_s16(xy.val[1], vdupq_n_s16(0)), vdupq_n_u16(0),
+                    // extract yfrac = frac[5:9]
                     vandq_u16(vshrq_n_u16(frac, REMAP16POINT5_FRAC_BITS),
                               vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
       uint16x8_t nxfrac = vsubq_u16(vdupq_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
@@ -887,6 +889,206 @@ kleidicv_error_t remap_s16point5(
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
+template <typename ScalarType, bool IsLarge>
+class RemapF32;
+
+template <bool IsLarge>
+class RemapF32<uint8_t, IsLarge> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = neon::VecTraits<float>;
+  using MapVectorType = typename MapVecTraits::VectorType;  // float32x4_t
+
+  RemapF32(Rows<const ScalarType> src_rows, size_t src_width, size_t src_height)
+      : src_rows_{src_rows},
+        v_src_stride_{vdup_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
+        vq_src_stride_{vdupq_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
+        v_xmax_{vdupq_n_u32(static_cast<uint32_t>(src_width - 1))},
+        v_ymax_{vdupq_n_u32(static_cast<uint32_t>(src_height - 1))} {}
+
+  void process_row(size_t width, Columns<const float> mapx,
+                   Columns<const float> mapy, Columns<ScalarType> dst) {
+    const size_t kStep = VecTraits<float>::num_lanes();
+
+    auto load_src_into_floats_small = [&](uint32x4_t x, uint32x4_t y) {
+      uint32x4_t offset = vmlaq_u32(x, y, vq_src_stride_);
+      uint64_t acc =
+          static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 0)]) |
+          (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 1)]) << 32);
+      uint64x2_t rawsrc = vdupq_n_u64(acc);
+      acc = static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 2)]) |
+            (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 3)]) << 32);
+      rawsrc = vsetq_lane_u64(acc, rawsrc, 1);
+      return vcvtq_f32_u32(vreinterpretq_u32_u64(rawsrc));
+    };
+
+    auto load_src_into_floats_large = [&](uint32x4_t x, uint32x4_t y) {
+      uint64x2_t offset_low =
+          vmlal_u32(vmovl_u32(vget_low_u32(x)), vget_low_u32(y), v_src_stride_);
+      uint64x2_t offset_high =
+          vmlal_u32(vmovl_high_u32(x), vget_high_u32(y), v_src_stride_);
+      uint64_t acc =
+          static_cast<uint64_t>(src_rows_[vgetq_lane_u64(offset_low, 0)]) |
+          (static_cast<uint64_t>(src_rows_[vgetq_lane_u64(offset_low, 1)])
+           << 32);
+      uint64x2_t rawsrc = vdupq_n_u64(acc);
+      acc = static_cast<uint64_t>(src_rows_[vgetq_lane_u64(offset_high, 0)]) |
+            (static_cast<uint64_t>(src_rows_[vgetq_lane_u64(offset_high, 1)])
+             << 32);
+      rawsrc = vsetq_lane_u64(acc, rawsrc, 1);
+      return vcvtq_f32_u32(vreinterpretq_u32_u64(rawsrc));
+    };
+
+    auto load = [&](uint32x4_t x, uint32x4_t y) {
+      if constexpr (IsLarge) {
+        return load_src_into_floats_large(x, y);
+      } else {
+        return load_src_into_floats_small(x, y);
+      }
+    };
+
+    auto vector_path_1 = [&](const float *ptr_mapx, const float *ptr_mapy) {
+      MapVectorType x = vld1q_f32(ptr_mapx);
+      MapVectorType y = vld1q_f32(ptr_mapy);
+      // Truncating convert to int
+      uint32x4_t x0 = vminq_u32(vcvtmq_u32_f32(x), v_xmax_);
+      uint32x4_t y0 = vminq_u32(vcvtmq_u32_f32(y), v_ymax_);
+
+      // Get fractional part, or 0 if out of range
+      float32x4_t zero = vdupq_n_f32(0.F);
+      uint32x4_t x_in_range =
+          vandq_u32(vcgeq_f32(x, zero), vcltq_u32(x0, v_xmax_));
+      uint32x4_t y_in_range =
+          vandq_u32(vcgeq_f32(y, zero), vcltq_u32(y0, v_ymax_));
+      float32x4_t xfrac =
+          vbslq_f32(x_in_range, vsubq_f32(x, vrndmq_f32(x)), zero);
+      float32x4_t yfrac =
+          vbslq_f32(y_in_range, vsubq_f32(y, vrndmq_f32(y)), zero);
+
+      // x1 = x0 + 1, except if it's already xmax or out of range
+      uint32x4_t x1 = vsubq_u32(x0, x_in_range);
+      uint32x4_t y1 = vsubq_u32(y0, y_in_range);
+
+      // Calculate offsets from coordinates (y * stride + x)
+      // a: top left, b: top right, c: bottom left, d: bottom right
+      float32x4_t a = load(x0, y0);
+      float32x4_t b = load(x1, y0);
+      float32x4_t line0 = vmlaq_f32(a, vsubq_f32(b, a), xfrac);
+      float32x4_t c = load(x0, y1);
+      float32x4_t d = load(x1, y1);
+      float32x4_t line1 = vmlaq_f32(c, vsubq_f32(d, c), xfrac);
+      float32x4_t result = vmlaq_f32(line0, vsubq_f32(line1, line0), yfrac);
+      return vminq_u32(vdupq_n_u32(0xFF), vcvtaq_u32_f32(result));
+    };
+
+    auto vector_path_4 = [&](size_t step) {  // step = 4*4 = 16
+      const float *ptr_mapx = &mapx[0];
+      const float *ptr_mapy = &mapy[0];
+      uint32x4_t res0 = vector_path_1(ptr_mapx, ptr_mapy);
+
+      ptr_mapx += kStep;
+      ptr_mapy += kStep;
+      uint32x4_t res1 = vector_path_1(ptr_mapx, ptr_mapy);
+      uint16x8_t result16_0 = vuzp1q_u16(res0, res1);
+
+      ptr_mapx += kStep;
+      ptr_mapy += kStep;
+      res0 = vector_path_1(ptr_mapx, ptr_mapy);
+
+      ptr_mapx += kStep;
+      ptr_mapy += kStep;
+      res1 = vector_path_1(ptr_mapx, ptr_mapy);
+      uint16x8_t result16_1 = vuzp1q_u16(res0, res1);
+      vst1q_u8(&dst[0], vuzp1q_u8(result16_0, result16_1));
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, kStep};
+    loop.unroll_four_times(vector_path_4);
+    loop.unroll_once([&](size_t step) {
+      const float *ptr_mapx = &mapx[0];
+      const float *ptr_mapy = &mapy[0];
+      uint32x4_t result = vector_path_1(ptr_mapx, ptr_mapy);
+      dst[0] = vgetq_lane_u32(result, 0);
+      dst[1] = vgetq_lane_u32(result, 1);
+      dst[2] = vgetq_lane_u32(result, 2);
+      dst[3] = vgetq_lane_u32(result, 3);
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    });
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapx -= back_step;
+    mapy -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t) {
+      const float *ptr_mapx = &mapx[0];
+      const float *ptr_mapy = &mapy[0];
+      uint32x4_t result = vector_path_1(ptr_mapx, ptr_mapy);
+      dst[0] = vgetq_lane_u32(result, 0);
+      dst[1] = vgetq_lane_u32(result, 1);
+      dst[2] = vgetq_lane_u32(result, 2);
+      dst[3] = vgetq_lane_u32(result, 3);
+    });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint32x2_t v_src_stride_;   // load_large
+  uint32x4_t vq_src_stride_;  // load_small
+  uint32x4_t v_xmax_;
+  uint32x4_t v_ymax_;
+};  // end of class RemapF32<uint8_t>
+
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+template <typename T>
+kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
+                           size_t src_height, T *dst, size_t dst_stride,
+                           size_t dst_width, size_t dst_height, size_t channels,
+                           float *mapx, size_t mapx_stride, float *mapy,
+                           size_t mapy_stride,
+                           kleidicv_interpolation_type_t interpolation,
+                           kleidicv_border_type_t border_type,
+                           [[maybe_unused]] const T *border_value) {
+  // may need to remove the maybe_unused
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapx, mapx_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapy, mapy_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
+  if (!remap_f32_is_implemented<T>(src_stride, src_width, src_height, dst_width,
+                                   border_type, channels, interpolation)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  // Calculating in float32_t will only be precise until 24 bits
+  if (src_width >= (1ULL << 24) || src_height >= (1ULL << 24) ||
+      dst_width >= (1ULL << 24) || dst_height >= (1ULL << 24)) {
+    return KLEIDICV_ERROR_RANGE;
+  }
+
+  Rows<const T> src_rows{src, src_stride, channels};
+  Rows<const float> mapx_rows{mapx, mapx_stride, 1};
+  Rows<const float> mapy_rows{mapy, mapy_stride, 1};
+  Rows<T> dst_rows{dst, dst_stride, channels};
+  Rectangle rect{dst_width, dst_height};
+  if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+    RemapF32<T, true> operation{src_rows, src_width, src_height};
+    zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+  } else {
+    RemapF32<T, false> operation{src_rows, src_width, src_height};
+    zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+  }
+  return KLEIDICV_OK;
+}
+// NOLINTEND(readability-function-cognitive-complexity)
+
 #define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(type)                          \
   template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t remap_s16<type>(          \
       const type *src, size_t src_stride, size_t src_width, size_t src_height, \
@@ -907,5 +1109,15 @@ KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint16_t);
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint16_t);
+
+#define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_F32(type)                          \
+  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t remap_f32<type>(          \
+      const type *src, size_t src_stride, size_t src_width, size_t src_height, \
+      type *dst, size_t dst_stride, size_t dst_width, size_t dst_height,       \
+      size_t channels, float *mapx, size_t mapx_stride, float *mapy,           \
+      size_t mapy_stride, kleidicv_interpolation_type_t interpolation,         \
+      kleidicv_border_type_t border_type, const type *border_value)
+
+KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_F32(uint8_t);
 
 }  // namespace kleidicv::neon

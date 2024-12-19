@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -33,6 +33,21 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
                                border_type, border_value);
 }
 
+template <typename T>
+kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
+                           size_t src_height, T *dst, size_t dst_stride,
+                           size_t dst_width, size_t dst_height, size_t channels,
+                           float *mapx, size_t mapx_stride, float *mapy,
+                           size_t mapy_stride,
+                           kleidicv_interpolation_type_t interpolation,
+                           kleidicv_border_type_t border_type,
+                           const T *border_value) {
+  return remap_f32_sc<uint8_t>(src, src_stride, src_width, src_height, dst,
+                               dst_stride, dst_width, dst_height, channels,
+                               mapx, mapx_stride, mapy, mapy_stride,
+                               interpolation, border_type, border_value);
+}
+
 #define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(type)                          \
   template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t remap_s16<type>(          \
       const type *src, size_t src_stride, size_t src_width, size_t src_height, \
@@ -53,5 +68,15 @@ KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint16_t);
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint16_t);
+
+#define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_F32(type)                          \
+  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t remap_f32<type>(          \
+      const type *src, size_t src_stride, size_t src_width, size_t src_height, \
+      type *dst, size_t dst_stride, size_t dst_width, size_t dst_height,       \
+      size_t channels, float *mapx, size_t mapx_stride, float *mapy,           \
+      size_t mapy_stride, kleidicv_interpolation_type_t interpolation,         \
+      kleidicv_border_type_t border_type, const type *border_value)
+
+KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_F32(uint8_t);
 
 }  // namespace kleidicv::sve2

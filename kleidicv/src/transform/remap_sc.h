@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -818,6 +818,229 @@ kleidicv_error_t remap_s16point5_sc(
                                          sv_src_stride, sv_xmax,   sv_ymax};
     zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
   }
+  return KLEIDICV_OK;
+}
+// NOLINTEND(readability-function-cognitive-complexity)
+
+template <typename ScalarType, bool IsLarge>
+class RemapF32Replicate;
+
+template <bool IsLarge>
+class RemapF32Replicate<uint8_t, IsLarge> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = VecTraits<float>;
+  using MapVectorType = typename MapVecTraits::VectorType;  // svfloat32_t
+
+  RemapF32Replicate(Rows<const ScalarType> src_rows, size_t src_width,
+                    size_t src_height, svuint32_t& v_src_element_stride,
+                    svuint32_t& v_xmax, svuint32_t& v_ymax,
+                    svfloat32_t& v_xmaxf, svfloat32_t& v_ymaxf)
+      : src_rows_{src_rows},
+        v_src_element_stride_{v_src_element_stride},
+        v_xmax_{v_xmax},
+        v_ymax_{v_ymax},
+        v_xmaxf_{v_xmaxf},
+        v_ymaxf_{v_ymaxf} {
+    v_src_element_stride_ = svdup_n_u32(src_rows.stride());
+    v_xmax_ = svdup_n_u32(static_cast<uint32_t>(src_width - 1));
+    v_ymax_ = svdup_n_u32(static_cast<uint32_t>(src_height - 1));
+    v_xmaxf_ = svdup_n_f32(static_cast<float>(src_width - 1));
+    v_ymaxf_ = svdup_n_f32(static_cast<float>(src_height - 1));
+  }
+
+  void process_row(size_t width, Columns<const float> mapx,
+                   Columns<const float> mapy, Columns<ScalarType> dst) {
+    const size_t step = VecTraits<float>::num_lanes();
+
+    auto load_src_into_floats_small = [&](svbool_t pg, svuint32_t x,
+                                          svuint32_t y) {
+      svuint32_t offsets = svmla_x(pg, x, y, v_src_element_stride_);
+      return svcvt_f32_u32_x(
+          pg, svld1ub_gather_offset_u32(pg, &src_rows_[0], offsets));
+    };
+
+    auto load_src_into_floats_large = [&](svbool_t pg, svuint32_t x,
+                                          svuint32_t y) {
+      svbool_t pg_b = pg;
+      svbool_t pg_t = svtrn2_b32(pg, svpfalse());
+
+      // Calculate offsets from coordinates (y * stride + x)
+      // To avoid losing precision, the final offsets should be in 64 bits
+      svuint64_t offsets_b = svmlalb(svmovlb(x), y, v_src_element_stride_);
+      svuint64_t offsets_t = svmlalt(svmovlt(x), y, v_src_element_stride_);
+      // Copy pixels from source
+      svuint64_t result_b =
+          svld1ub_gather_offset_u64(pg_b, &src_rows_[0], offsets_b);
+      svuint64_t result_t =
+          svld1ub_gather_offset_u64(pg_t, &src_rows_[0], offsets_t);
+      return svcvt_f32_u32_x(pg, svtrn1_u32(svreinterpret_u32_u64(result_b),
+                                            svreinterpret_u32_u64(result_t)));
+    };
+
+    auto load = [&](svbool_t pg, svuint32_t x, svuint32_t y) {
+      if constexpr (IsLarge) {
+        return load_src_into_floats_large(pg, x, y);
+      } else {
+        return load_src_into_floats_small(pg, x, y);
+      }
+    };
+
+    auto vector_path_1 = [&](svbool_t pg, const float* ptr_mapx,
+                             const float* ptr_mapy) {
+      MapVectorType x = svld1_f32(pg, ptr_mapx);
+      MapVectorType y = svld1_f32(pg, ptr_mapy);
+      // Truncating convert to int
+      svuint32_t x0 = svmin_x(pg, svcvt_u32_f32_x(pg, x), v_xmax_);
+      svuint32_t y0 = svmin_x(pg, svcvt_u32_f32_x(pg, y), v_ymax_);
+
+      // Get fractional part, or 0 if out of range
+      svbool_t x_in_range =
+          svand_z(pg, svcmpge_n_f32(pg, x, 0.F), svcmplt_f32(pg, x, v_xmaxf_));
+      svbool_t y_in_range =
+          svand_z(pg, svcmpge_n_f32(pg, y, 0.F), svcmplt_f32(pg, y, v_ymaxf_));
+      svfloat32_t xfrac = svsel_f32(
+          x_in_range, svsub_f32_x(pg, x, svrintm_x(pg, x)), svdup_n_f32(0.F));
+      svfloat32_t yfrac = svsel_f32(
+          y_in_range, svsub_f32_x(pg, y, svrintm_x(pg, y)), svdup_n_f32(0.F));
+
+      // x1 = x0 + 1, except if it's already xmax or out of range
+      svuint32_t x1 = svsel_u32(x_in_range, svadd_n_u32_x(pg, x0, 1), x0);
+      svuint32_t y1 = svsel_u32(y_in_range, svadd_n_u32_x(pg, y0, 1), y0);
+
+      // Calculate offsets from coordinates (y * stride + x)
+      // a: top left, b: top right, c: bottom left, d: bottom right
+      svfloat32_t a = load(pg, x0, y0);
+      svfloat32_t b = load(pg, x1, y0);
+      svfloat32_t line0 = svmla_f32_x(pg, a, svsub_f32_x(pg, b, a), xfrac);
+      svfloat32_t c = load(pg, x0, y1);
+      svfloat32_t d = load(pg, x1, y1);
+      svfloat32_t line1 = svmla_f32_x(pg, c, svsub_f32_x(pg, d, c), xfrac);
+      svfloat32_t result =
+          svmla_f32_x(pg, line0, svsub_f32_x(pg, line1, line0), yfrac);
+      return svmin_u32_x(pg, svdup_n_u32(0xFF),
+                         svcvt_u32_f32_x(pg, svadd_n_f32_x(pg, result, 0.5F)));
+    };
+
+    auto vector_path_4 = [&](size_t step_4_times) {
+      svbool_t pg_all32 = svptrue_b32();
+      const float* ptr_mapx = &mapx[0];
+      const float* ptr_mapy = &mapy[0];
+      svuint32_t res0 = vector_path_1(pg_all32, ptr_mapx, ptr_mapy);
+
+      ptr_mapx += step;
+      ptr_mapy += step;
+      svuint32_t res1 = vector_path_1(pg_all32, ptr_mapx, ptr_mapy);
+      svuint16_t result16_0 =
+          svuzp1_u16(svreinterpret_u16_u32(res0), svreinterpret_u16_u32(res1));
+
+      ptr_mapx += step;
+      ptr_mapy += step;
+      res0 = vector_path_1(pg_all32, ptr_mapx, ptr_mapy);
+
+      ptr_mapx += step;
+      ptr_mapy += step;
+      res1 = vector_path_1(pg_all32, ptr_mapx, ptr_mapy);
+      svuint16_t result16_1 =
+          svuzp1_u16(svreinterpret_u16_u32(res0), svreinterpret_u16_u32(res1));
+      svst1_u8(svptrue_b8(), &dst[0],
+               svuzp1_u8(svreinterpret_u8_u16(result16_0),
+                         svreinterpret_u8_u16(result16_1)));
+      mapx += ptrdiff_t(step_4_times);
+      mapy += ptrdiff_t(step_4_times);
+      dst += ptrdiff_t(step_4_times);
+    };
+
+    LoopUnroll loop{width, step};
+    loop.unroll_four_times(vector_path_4);
+    loop.unroll_once([&](size_t step) {
+      svbool_t pg_all32 = svptrue_b32();
+      const float* ptr_mapx = &mapx[0];
+      const float* ptr_mapy = &mapy[0];
+      svuint32_t result = vector_path_1(pg_all32, ptr_mapx, ptr_mapy);
+      svst1b_u32(pg_all32, &dst[0], result);
+
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    });
+    loop.remaining([&](size_t length, size_t) {
+      const float* ptr_mapx = &mapx[0];
+      const float* ptr_mapy = &mapy[0];
+      svbool_t pg32 = svwhilelt_b32(static_cast<size_t>(0), length);
+      svuint32_t result = vector_path_1(pg32, ptr_mapx, ptr_mapy);
+      svst1b_u32(pg32, &dst[0], result);
+    });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  svuint32_t& v_src_element_stride_;
+  svuint32_t& v_xmax_;
+  svuint32_t& v_ymax_;
+  svfloat32_t& v_xmaxf_;
+  svfloat32_t& v_ymaxf_;
+};  // end of class RemapF32Replicate<uint8_t>
+
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+template <typename T>
+kleidicv_error_t remap_f32_sc(const T* src, size_t src_stride, size_t src_width,
+                              size_t src_height, T* dst, size_t dst_stride,
+                              size_t dst_width, size_t dst_height,
+                              size_t channels, float* mapx, size_t mapx_stride,
+                              float* mapy, size_t mapy_stride,
+                              kleidicv_interpolation_type_t interpolation,
+                              kleidicv_border_type_t border_type,
+                              [[maybe_unused]] const T* border_value) {
+  // may need to remove the maybe_unused
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapx, mapx_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapy, mapy_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
+  if (!remap_f32_is_implemented<T>(src_stride, src_width, src_height, dst_width,
+                                   border_type, channels, interpolation)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  // Calculating in float32_t will only be precise until 24 bits
+  if (src_width >= (1ULL << 24) || src_height >= (1ULL << 24) ||
+      dst_width >= (1ULL << 24) || dst_height >= (1ULL << 24)) {
+    return KLEIDICV_ERROR_RANGE;
+  }
+
+  Rows<const T> src_rows{src, src_stride, channels};
+  Rows<const float> mapx_rows{mapx, mapx_stride, 1};
+  Rows<const float> mapy_rows{mapy, mapy_stride, 1};
+  Rows<T> dst_rows{dst, dst_stride, channels};
+  Rectangle rect{dst_width, dst_height};
+  svuint32_t sv_src_element_stride;
+
+  // GCOVR_EXCL_START
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    assert(!"border_type not implemented");  // Will be implemented later
+    // GCOVR_EXCL_STOP
+  } else {
+    assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
+    svuint32_t sv_xmax, sv_ymax;
+    svfloat32_t sv_xmaxf, sv_ymaxf;
+
+    if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+      RemapF32Replicate<T, true> operation{
+          src_rows, src_width, src_height, sv_src_element_stride,
+          sv_xmax,  sv_ymax,   sv_xmaxf,   sv_ymaxf};
+      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    } else {
+      RemapF32Replicate<T, false> operation{
+          src_rows, src_width, src_height, sv_src_element_stride,
+          sv_xmax,  sv_ymax,   sv_xmaxf,   sv_ymaxf};
+      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    }
+  }
+
   return KLEIDICV_OK;
 }
 // NOLINTEND(readability-function-cognitive-complexity)
