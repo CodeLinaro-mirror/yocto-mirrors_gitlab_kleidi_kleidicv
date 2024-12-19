@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "kleidicv/arithmetics/rotate.h"
+#include "kleidicv/ctypes.h"
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/scharr.h"
@@ -697,7 +698,6 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
   return parallel_batches(callback, mt, dst_height);
 }
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 kleidicv_error_t kleidicv_thread_warp_perspective_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
@@ -706,7 +706,7 @@ kleidicv_error_t kleidicv_thread_warp_perspective_u8(
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
   if (!kleidicv::warp_perspective_is_implemented<uint8_t>(
-          dst_width, interpolation, border_type, channels)) {
+          dst_width, channels, interpolation, border_type)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -718,4 +718,3 @@ kleidicv_error_t kleidicv_thread_warp_perspective_u8(
   };
   return parallel_batches(callback, mt, dst_height);
 }
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

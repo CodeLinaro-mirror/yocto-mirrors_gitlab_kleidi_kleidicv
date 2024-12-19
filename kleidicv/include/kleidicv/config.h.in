@@ -21,8 +21,6 @@
 
 #cmakedefine01 KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV
 
-#cmakedefine01 KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
-
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
 #ifndef KLEIDICV_TARGET_NEON
 #define KLEIDICV_TARGET_NEON 0

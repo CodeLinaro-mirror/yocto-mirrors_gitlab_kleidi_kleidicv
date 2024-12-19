@@ -24,18 +24,17 @@ KLEIDICV_API_DECLARATION(kleidicv_warp_perspective_stripe_u8,
                          kleidicv_border_type_t border_type,
                          const uint8_t *border_value);
 }
-
 namespace kleidicv {
 
 template <typename T>
 inline bool warp_perspective_is_implemented(
-    size_t dst_width, kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type,
-    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_width, size_t channels,
+    kleidicv_interpolation_type_t interpolation,
+    kleidicv_border_type_t border_type) KLEIDICV_STREAMING_COMPATIBLE {
   if constexpr (std::is_same<T, uint8_t>::value) {
     return (dst_width >= 8 &&
-            interpolation ==
-                kleidicv_interpolation_type_t::KLEIDICV_INTERPOLATION_NEAREST &&
+            (interpolation == KLEIDICV_INTERPOLATION_NEAREST ||
+             interpolation == KLEIDICV_INTERPOLATION_LINEAR) &&
             border_type ==
                 kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE &&
             channels == 1);

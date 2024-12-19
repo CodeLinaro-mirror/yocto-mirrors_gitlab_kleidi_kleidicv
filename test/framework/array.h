@@ -197,20 +197,29 @@ class Array2D : public TwoDimensional<ElementType> {
     }
   }
 
-  // Compares two instances for equality considering only element bytes.
-  // Returns the location of the first mismatch, if any.
+  // Compares two instances for (near) equality considering its content
+  // (elements). Returns the location of the first mismatch, if any.
   std::optional<std::tuple<size_t, size_t>> compare_to(
-      const Array2D<ElementType> &other) const {
+      const Array2D<ElementType> &other, ElementType threshold = 0) const {
     for (size_t row = 0; row < height(); ++row) {
       for (size_t column = 0; column < width(); ++column) {
         const ElementType *lhs = at(row, column);
         const ElementType *rhs = other.at(row, column);
-        if (!lhs || !rhs || (lhs[0] != rhs[0])) {
+        if (!lhs || !rhs) {
+          return std::make_tuple(row, column);
+        }
+        ElementType error;
+        if constexpr (std::is_integral<ElementType>::value) {
+          error = static_cast<ElementType>(
+              abs(static_cast<int64_t>(lhs[0]) - static_cast<int64_t>(rhs[0])));
+        } else {
+          error = std::abs(lhs[0] - rhs[0]);
+        }
+        if (error > threshold) {
           return std::make_tuple(row, column);
         }
       }
     }
-
     return std::nullopt;
   }
 
@@ -235,8 +244,8 @@ class Array2D : public TwoDimensional<ElementType> {
   // Returns true if this object holds actual memory, otherwise false.
   bool valid() const { return data() != nullptr; }
 
-  // Returns a pointer to a data element at a given row and column position, or
-  // nullptr if the requested position is invalid.
+  // Returns a pointer to a data element at a given row and column position,
+  // or nullptr if the requested position is invalid.
   ElementType *at(size_t row, size_t column) override {
     return const_cast<ElementType *>(
         const_cast<const Array2D<ElementType> *>(this)->at(row, column));
@@ -255,8 +264,8 @@ class Array2D : public TwoDimensional<ElementType> {
   }
 
  private:
-  // Returns the number of elements between the end of one row and the start of
-  // the next row.
+  // Returns the number of elements between the end of one row and the start
+  // of the next row.
   size_t padding() { return stride() / sizeof(ElementType) - width(); }
 
   // Returns the offset to the first padding byte within a row.
@@ -336,9 +345,9 @@ class Array2D : public TwoDimensional<ElementType> {
       buffer_ =
           std::unique_ptr<ElementType[]>(new ElementType[allocation_count]);
       // Weaken alignment to flush out potential alignment issues.
-      // buffer_.get() will contain a pointer that is at least 16-byte aligned.
-      // By adding a small offset to that we get a pointer that is only aligned
-      // to sizeof(ElementType).
+      // buffer_.get() will contain a pointer that is at least 16-byte
+      // aligned. By adding a small offset to that we get a pointer that is
+      // only aligned to sizeof(ElementType).
       data_ = buffer_.get() + 1;
     } catch (...) {
       reset();
@@ -352,8 +361,8 @@ class Array2D : public TwoDimensional<ElementType> {
 
   // Smart pointer to the managed memory.
   std::unique_ptr<ElementType[]> buffer_;
-  // Pointer to the start of the data. This is offset from the start of buffer_
-  // to flush out potential alignment issues.
+  // Pointer to the start of the data. This is offset from the start of
+  // buffer_ to flush out potential alignment issues.
   ElementType *data_{nullptr};
   // Width a row in the array.
   size_t width_{0};
@@ -365,9 +374,9 @@ class Array2D : public TwoDimensional<ElementType> {
   size_t stride_{0};
 };  // end of class Array2D<ElementType>
 
-// Compares two Array2D objects for equality.
+// Compares two Array2D objects for (near-)equality.
 // Unary + is used to ensure values are printed as integers, not chars
-#define EXPECT_EQ_ARRAY2D(lhs, rhs)                                 \
+#define EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(threshold, lhs, rhs)       \
   do {                                                              \
     ASSERT_EQ((lhs).width(), (rhs).width())                         \
         << "Mismatch in width." << std::endl;                       \
@@ -375,7 +384,7 @@ class Array2D : public TwoDimensional<ElementType> {
         << "Mismatch in height." << std::endl;                      \
     ASSERT_EQ((lhs).channels(), (rhs).channels())                   \
         << "Mismatch in channels." << std::endl;                    \
-    auto mismatch = (lhs).compare_to((rhs));                        \
+    auto mismatch = (lhs).compare_to((rhs), (threshold));           \
     if (mismatch) {                                                 \
       auto [row, col] = *mismatch;                                  \
       GTEST_FAIL() << "Mismatch at (row=" << row << ", col=" << col \
@@ -384,6 +393,10 @@ class Array2D : public TwoDimensional<ElementType> {
                    << +(rhs).at(row, col)[0] << "." << std::endl;   \
     }                                                               \
   } while (0 != 0)
+
+// Compares two Array2D objects for equality.
+#define EXPECT_EQ_ARRAY2D(lhs, rhs) \
+  EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(0, (lhs), (rhs))
 
 // Compares two Array2D objects for inequality.
 #define EXPECT_NE_ARRAY2D(lhs, rhs)                                \

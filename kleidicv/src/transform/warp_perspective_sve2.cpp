@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include "kleidicv/ctypes.h"
 #include "warp_perspective_sc.h"
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 namespace kleidicv::sve2 {
 
 template <typename T>
@@ -32,4 +32,3 @@ kleidicv_error_t warp_perspective_stripe(
 KLEIDICV_INSTANTIATE_WARP_PERSPECTIVE(uint8_t);
 
 }  // namespace kleidicv::sve2
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

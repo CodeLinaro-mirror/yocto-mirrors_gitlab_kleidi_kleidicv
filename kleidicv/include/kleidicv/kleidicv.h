@@ -1870,7 +1870,6 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
     size_t src_channels, int16_t *dst, size_t dst_stride);
 #endif  // DOXYGEN
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 /// Performs a perspective transformation on an image.
 /// For each pixel in `dst` take a pixel from `src` specified by
 /// the transformed x and y coordinates, and optionally doing a bilinear
@@ -1894,12 +1893,14 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
 ///                       Must be a multiple of `sizeof(type)` and no less than
 ///                       `width * sizeof(type)`, except for single-row images.
 /// @param dst_width      Number of elements in the destination row. Must be at
-///                       least 8.
-/// @param dst_height     Number of rows in the destination data.
+///                       least 8. Must be less than 2^24.
+/// @param dst_height     Number of rows in the destination data. Must be less
+///                       than 2^24.
 /// @param transformation Pointer to the transformation matrix of 9 values.
 /// @param channels       Number of channels in the data. Must be 1.
 /// @param interpolation  Interpolation algorithm. Supported types: \n
 ///                         - @ref KLEIDICV_INTERPOLATION_NEAREST
+///                         - @ref KLEIDICV_INTERPOLATION_LINEAR
 /// @param border_type    Way of handling the border. The supported border types
 ///                       are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
@@ -1911,7 +1912,6 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
     const float transformation[9], size_t channels,
     kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const uint8_t *border_value);
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 
 #ifdef __cplusplus
 }  // extern "C"

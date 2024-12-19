@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include "kleidicv/ctypes.h"
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/transform/warp_perspective.h"
-
-#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_warp_perspective_stripe_u8,
                             &kleidicv::neon::warp_perspective_stripe<uint8_t>,
@@ -22,7 +21,7 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
     kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const uint8_t *border_value) {
   if (!kleidicv::warp_perspective_is_implemented<uint8_t>(
-          dst_width, interpolation, border_type, channels)) {
+          dst_width, channels, interpolation, border_type)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -33,4 +32,3 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
 }
 
 }  // extern "C"
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE

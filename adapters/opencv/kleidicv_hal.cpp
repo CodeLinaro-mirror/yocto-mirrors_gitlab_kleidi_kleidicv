@@ -353,7 +353,6 @@ static int from_opencv(int opencv_border_type,
   return 0;
 }
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 // Converts an OpenCV interpolation type to a KleidiCV interpolation type.
 static int from_opencv(int opencv_interpolation,
                        kleidicv_interpolation_type_t &interpolation_type) {
@@ -361,19 +360,15 @@ static int from_opencv(int opencv_interpolation,
     default:
       return 1;
     case CV_HAL_INTER_NEAREST:
-      interpolation_type =
-          kleidicv_interpolation_type_t::KLEIDICV_INTERPOLATION_NEAREST;
+      interpolation_type = KLEIDICV_INTERPOLATION_NEAREST;
       break;
     case CV_HAL_INTER_LINEAR:
-      interpolation_type =
-          kleidicv_interpolation_type_t::KLEIDICV_INTERPOLATION_LINEAR;
+      interpolation_type = KLEIDICV_INTERPOLATION_LINEAR;
       break;
   }
 
   return 0;
 }
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
-
 struct SeparableFilter2DParams {
   size_t channels;
   kleidicv_border_type_t border_type;
@@ -1421,24 +1416,23 @@ int scharr_deriv(const uchar *src_data, size_t src_step, int16_t *dst_data,
       src, src_step, width + 2, height + 2, cn, dst_data, dst_step, mt));
 }
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
                      int src_width, int src_height, uchar *dst_data,
                      size_t dst_step, int dst_width, int dst_height,
-                     const double transformation[9], int interpolation,
+                     const double transformation_f64[9], int interpolation,
                      int border_type, const double border_value_f64[4]) {
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  float float_transformation[9];
+  float transformation[9];
   for (size_t i = 0; i < 9; ++i) {
-    float_transformation[i] = static_cast<float>(transformation[i]);
+    transformation[i] = static_cast<float>(transformation_f64[i]);
   }
 
-  kleidicv_interpolation_type_t kleidicv_interpolation_type;
-  if (from_opencv(interpolation, kleidicv_interpolation_type)) {
+  kleidicv_interpolation_type_t kleidicv_interpolation;
+  if (from_opencv(interpolation, kleidicv_interpolation)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -1451,12 +1445,10 @@ int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
         src_data, src_step, static_cast<size_t>(src_width),
         static_cast<size_t>(src_height), dst_data, dst_step,
         static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
-        float_transformation, 1, kleidicv_interpolation_type,
-        kleidicv_border_type, border_value.data(), mt));
+        transformation, 1, kleidicv_interpolation, kleidicv_border_type,
+        border_value.data(), mt));
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
-
 }  // namespace kleidicv::hal

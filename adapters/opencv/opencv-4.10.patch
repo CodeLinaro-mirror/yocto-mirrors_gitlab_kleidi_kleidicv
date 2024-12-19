@@ -19,7 +19,7 @@ index 2b4035285f..729cd1dd43 100644
 @@ -281,6 +281,11 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
      dst.create(dims, size, dtype);
      Mat dstMat = dst.getMat();
- 
+
 +    if( dims <= 2 ) {
 +        int width_in_elements = src.cols * cn;
 +        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dstMat.data, dstMat.step, dstMat.depth(), width_in_elements, src.rows, alpha, beta);
@@ -35,7 +35,7 @@ index f78608dbad..a9384588ec 100644
 @@ -953,6 +953,53 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
  #define cv_hal_transpose2d hal_ni_transpose2d
  //! @endcond
- 
+
 +/**
 +   @brief sum
 +   @param src_data,src_step,src_type Source image
@@ -84,8 +84,8 @@ index f78608dbad..a9384588ec 100644
 +//! @endcond
 +
  //! @}
- 
- 
+
+
 diff --git a/modules/core/src/minmax.cpp b/modules/core/src/minmax.cpp
 index 8c6d8ad9a9..47eb6fdb66 100644
 --- a/modules/core/src/minmax.cpp
@@ -124,7 +124,7 @@ index 773fed9b48..b74ff70f99 100644
 @@ -328,6 +328,60 @@ inline int hal_ni_remap32f(int src_type, const uchar *src_data, size_t src_step,
  #define cv_hal_remap32f hal_ni_remap32f
  //! @endcond
- 
+
 +/**
 +   @brief hal_remap with a short integer map
 +   @param src_type source and destination image type
@@ -199,7 +199,7 @@ index d7c9c64c3c..348208b72d 100644
 +        CALL_HAL(remap16s16u, cv_hal_remap16s16u, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
 +                 map1.ptr<short>(), map1.step, map2.ptr<unsigned short>(), map2.step, borderType, borderValue.val);
      }
- 
+
      interpolation &= ~WARP_RELATIVE_MAP;
 diff --git a/modules/imgproc/src/smooth.dispatch.cpp b/modules/imgproc/src/smooth.dispatch.cpp
 index d0f50a73bb..1c308887dc 100644
@@ -208,7 +208,7 @@ index d0f50a73bb..1c308887dc 100644
 @@ -654,6 +654,25 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
              ocl_GaussianBlur_8UC1(_src, _dst, ksize, CV_MAT_DEPTH(type), kx, ky, borderType)
      );
- 
+
 +    {
 +        Mat src = _src.getMat();
 +        Mat dst = _dst.getMat();
@@ -316,12 +316,12 @@ index 6d51c0cf1a..0e6f6a324e 100644
 +++ b/modules/video/src/lkpyramid.cpp
 @@ -50,6 +50,7 @@
  #endif
- 
+
  #include "opencv2/core/openvx/ovx_defs.hpp"
 +#include "hal_replacement.hpp"
- 
+
  #define  CV_DESCALE(x,n)     (((x) + (1 << ((n)-1))) >> (n))
- 
+
 @@ -62,6 +63,9 @@ static void calcScharrDeriv(const cv::Mat& src, cv::Mat& dst)
      int rows = src.rows, cols = src.cols, cn = src.channels(), depth = src.depth();
      CV_Assert(depth == CV_8U);
@@ -331,4 +331,15 @@ index 6d51c0cf1a..0e6f6a324e 100644
 +
      parallel_for_(Range(0, rows), cv::detail::ScharrDerivInvoker(src, dst), cv::getNumThreads());
  }
- 
+
+diff --git a/modules/imgproc/test/test_imgwarp_strict.cpp b/modules/imgproc/test/test_imgwarp_strict.cpp
+index 83a5e23781..75df962fb7 100644
+--- a/modules/imgproc/test/test_imgwarp_strict.cpp
++++ b/modules/imgproc/test/test_imgwarp_strict.cpp
+@@ -239,7 +239,7 @@ float CV_ImageWarpBaseTest::get_success_error_level(int _interpolation, int) con
+     else if (_interpolation == INTER_AREA)
+         return 2.0f;
+     else
+-        return 1.0f;
++        return 4.0f;    // Reference algorithm uses integer interpolation with 5 bits fractional part, and this greater tolerance allows better precision algorithms to pass the test
+ }

@@ -677,7 +677,6 @@ BENCH_REMAP_S16POINT5(remap_s16point5_u8_identity, remap_s16point5_u8,
                       get_identity_mapxy<int16_t>, 1,
                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 // clang-format off
 static const float transform_identity[] = {
   1.0, 0, 0,
@@ -735,23 +734,45 @@ static void warp_perspective(Function f, const float transform[9],
   }                                                                  \
   BENCHMARK(benchname)
 
-BENCH_WARP_PERSPECTIVE(warp_perspective_u8_identity, warp_perspective_u8,
-                       transform_identity, 1, KLEIDICV_INTERPOLATION_NEAREST,
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_nearest_identity,
+                       warp_perspective_u8, transform_identity, 1,
+                       KLEIDICV_INTERPOLATION_NEAREST,
                        KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
-BENCH_WARP_PERSPECTIVE(warp_perspective_u8_small, warp_perspective_u8,
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_nearest_small, warp_perspective_u8,
                        transform_small, 1, KLEIDICV_INTERPOLATION_NEAREST,
                        KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
-BENCH_WARP_PERSPECTIVE(warp_perspective_u8_bend, warp_perspective_u8,
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_nearest_bend, warp_perspective_u8,
                        transform_bend, 1, KLEIDICV_INTERPOLATION_NEAREST,
                        KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
-BENCH_WARP_PERSPECTIVE(warp_perspective_u8_rotate, warp_perspective_u8,
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_nearest_rotate, warp_perspective_u8,
                        transform_rotate, 1, KLEIDICV_INTERPOLATION_NEAREST,
                        KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
-BENCH_WARP_PERSPECTIVE(warp_perspective_u8_near, warp_perspective_u8,
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_nearest_near, warp_perspective_u8,
                        transform_near, 1, KLEIDICV_INTERPOLATION_NEAREST,
                        KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
+
+// WarpPerspective Linear
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_linear_identity, warp_perspective_u8,
+                       transform_identity, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_linear_small, warp_perspective_u8,
+                       transform_small, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_linear_bend, warp_perspective_u8,
+                       transform_bend, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_linear_rotate, warp_perspective_u8,
+                       transform_rotate, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_WARP_PERSPECTIVE(warp_perspective_u8_linear_near, warp_perspective_u8,
+                       transform_near, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);

@@ -5,6 +5,7 @@
 #ifndef KLEIDICV_THREAD_H
 #define KLEIDICV_THREAD_H
 
+#include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
 
 #ifdef __cplusplus

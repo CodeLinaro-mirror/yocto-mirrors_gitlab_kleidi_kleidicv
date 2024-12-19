@@ -301,16 +301,27 @@ class LoopUnroll2 final {
     const size_t n_step = UnrollFactor * step();
     size_t max_index = index_ + (remaining_length() / n_step) * n_step;
 
+    // A tail mechanism is built into the single vector processing loop, if
+    // enabled. The single vector path is executed iteratively, and at the end
+    // it rewinds the loop to one vector before the end of the data, and
+    // executes one final vector path, so the scalar path can be omitted.
     if constexpr (try_to_avoid_tail_loop<Tail> && (UnrollFactor == 1)) {
-      while (index_ < max_index) {
-        while (index_ < max_index) {
-          callback(index_);
-          index_ += n_step;
-        }
-
-        if (remaining_length()) {
-          index_ = length_ - n_step;
-          max_index = length_;
+      // Enter this loop only if there's enough data for a full vector
+      if (length_ >= n_step) {
+        // External loop only ends when all data has been processed
+        while (index_ < length_) {
+          // Internal loop checks if the vector path can be executed
+          while (index_ < max_index) {
+            callback(index_);
+            index_ += n_step;
+          }
+          // Check if a final iteration is needed. The double loop is needed to
+          // avoid the repetition of the callback function, which is usually
+          // inlined into the binary. (Save some code space)
+          if (remaining_length()) {
+            index_ = length_ - n_step;
+            max_index = length_;
+          }
         }
       }
     } else {

@@ -27,7 +27,7 @@ index 56767f2ec7..5ade43b063 100644
 @@ -949,6 +951,13 @@ if(NOT DEFINED OpenCV_HAL)
    set(OpenCV_HAL "OpenCV_HAL")
  endif()
- 
+
 +if(WITH_KLEIDICV)
 +  ocv_debug_message(STATUS "Enable KleidiCV acceleration")
 +  if(NOT ";${OpenCV_HAL};" MATCHES ";kleidicv;")
@@ -55,7 +55,7 @@ index 3c61ae1c9a..f44e7d8dc2 100644
 +++ b/doc/tutorials/introduction/config_reference/config_reference.markdown
 @@ -621,6 +621,7 @@ Following build options are utilized in `opencv_contrib` modules, as stated [pre
  `CMAKE_TOOLCHAIN_FILE`
- 
+
  `WITH_CAROTENE`
 +`WITH_KLEIDICV`
  `WITH_CPUFEATURES`
@@ -66,14 +66,14 @@ index c7445a4de4..49a459597b 100644
 --- a/modules/core/include/opencv2/core/hal/interface.h
 +++ b/modules/core/include/opencv2/core/hal/interface.h
 @@ -90,6 +90,8 @@ typedef short cv_hal_bf16;
- 
+
  #define CV_MAT_DEPTH_MASK       (CV_DEPTH_MAX - 1)
  #define CV_MAT_DEPTH(flags)     ((flags) & CV_MAT_DEPTH_MASK)
 +#define CV_MAT_CN_MASK          ((CV_CN_MAX - 1) << CV_CN_SHIFT)
 +#define CV_MAT_CN(flags)        ((((flags) & CV_MAT_CN_MASK) >> CV_CN_SHIFT) + 1)
  #define CV_IS_INT_TYPE(flags)   (((1 << CV_MAT_DEPTH(flags)) & 0x1e1f) != 0)
  #define CV_IS_FLOAT_TYPE(flags) (((1 << CV_MAT_DEPTH(flags)) & 0x1e0) != 0)
- 
+
 diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
 index 4a8432fb0e..82cecf90c0 100644
 --- a/modules/core/src/convert.dispatch.cpp
@@ -81,7 +81,7 @@ index 4a8432fb0e..82cecf90c0 100644
 @@ -195,6 +195,11 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
      dst.create( dims, size, dtype, -1, allowTransposed );
      Mat dstMat = dst.getMat();
- 
+
 +    if( dims <= 2 ) {
 +        int width_in_elements = src.cols * cn;
 +        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dstMat.data, dstMat.step, dstMat.depth(), width_in_elements, src.rows, alpha, beta);
@@ -97,7 +97,7 @@ index dc65a25684..5be57f0923 100644
 @@ -968,6 +968,21 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
  #define cv_hal_transpose2d hal_ni_transpose2d
  //! @endcond
- 
+
 +/**
 +   @brief convertTo
 +   @param src_data,src_step,src_depth Source image
@@ -114,8 +114,8 @@ index dc65a25684..5be57f0923 100644
 +//! @endcond
 +
  //! @}
- 
- 
+
+
 diff --git a/modules/imgproc/src/hal_replacement.hpp b/modules/imgproc/src/hal_replacement.hpp
 index 5c6497bd80..43e89d5b9c 100644
 --- a/modules/imgproc/src/hal_replacement.hpp
@@ -123,7 +123,7 @@ index 5c6497bd80..43e89d5b9c 100644
 @@ -880,6 +880,12 @@ inline int hal_ni_gaussianBlur(const uchar* src_data, size_t src_step, uchar* ds
  #define cv_hal_gaussianBlur hal_ni_gaussianBlur
  //! @endcond
- 
+
 +inline int hal_ni_gaussianBlurBinomial(const uchar*, size_t, uchar*, size_t, int, int, int, int, size_t, size_t, size_t, size_t, size_t, int) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
 +
 +//! @cond IGNORED
@@ -140,7 +140,7 @@ index 3e23187de2..45737b1ee3 100644
 @@ -570,6 +570,20 @@ void GaussianBlur(InputArray _src, OutputArray _dst, Size ksize,
              ocl_GaussianBlur_8UC1(_src, _dst, ksize, CV_MAT_DEPTH(type), kx, ky, borderType)
      );
- 
+
 +    if (sigma1 == 0.0 && sigma2 == 0.0 && ksize.height == ksize.width)
 +    {
 +        Mat src = _src.getMat();
@@ -158,3 +158,15 @@ index 3e23187de2..45737b1ee3 100644
      if(sdepth == CV_8U && ((borderType & BORDER_ISOLATED) || !_src.isSubmatrix()))
      {
          std::vector<ufixedpoint16> fkx, fky;
+
+diff --git a/modules/imgproc/test/test_imgwarp_strict.cpp b/modules/imgproc/test/test_imgwarp_strict.cpp
+index 83a5e23781..75df962fb7 100644
+--- a/modules/imgproc/test/test_imgwarp_strict.cpp
++++ b/modules/imgproc/test/test_imgwarp_strict.cpp
+@@ -239,7 +239,7 @@ float CV_ImageWarpBaseTest::get_success_error_level(int _interpolation, int) con
+     else if (_interpolation == INTER_AREA)
+         return 2.0f;
+     else
+-        return 1.0f;
++        return 4.0f;    // Reference algorithm uses integer interpolation with 5 bits fractional part, and this greater tolerance allows better precision algorithms to pass the test
+ }

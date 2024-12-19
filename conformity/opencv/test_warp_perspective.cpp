@@ -30,7 +30,7 @@ cv::Mat exec_warp_perspective(cv::Mat& source_mat) {
 }
 
 #if MANAGER
-const int kMaxHeight = 42, kMaxWidth = 42;
+const int kMaxHeight = 16, kMaxWidth = 65;
 
 template <class ScalarType, int Format, int Interpolation, int BorderMode,
           int BorderValue>
@@ -39,11 +39,20 @@ bool test_warp_perspective(int index, RecreatedMessageQueue& request_queue,
   for (size_t w = 8; w <= kMaxWidth; w += 3) {
     for (size_t h = 8; h <= kMaxHeight; h += 4) {
       cv::Mat source_mat(h, w, Format);
+      // Perspective calculation in float greatly amplifies any small errors
+      // coming from precision innaccuracies, let it be Fused-Multiply-Add or
+      // just the limitation of the single precision float. Taking the
+      // fractional part of a value in the thousands' range decreases the
+      // precision by 3 decimal digits, and the single precision float only has
+      // 7 decimal digits. Doing a linear interpolation between 0 and 255 would
+      // decrease it even more, but ensuring that neighbouring pixels have
+      // neighbouring values decreases this effect by more than 2 decimal digits
+      // so it can be expected that the error won't be bigger than 1.
       for (size_t row = 0; row < h; ++row) {
         for (size_t column = 0; column < w; ++column) {
+          const int kMaxVal = std::numeric_limits<ScalarType>::max();
           source_mat.at<ScalarType>(row, column) =
-              (row * (w + 12) + column) %
-              std::numeric_limits<ScalarType>::max();
+              abs(static_cast<int>(row + column) % (2 * kMaxVal + 1) - kMaxVal);
         }
       }
 
@@ -56,7 +65,7 @@ bool test_warp_perspective(int index, RecreatedMessageQueue& request_queue,
       bool success =
           !are_matrices_different<ScalarType>(1, actual_mat, expected_mat);
       if (!success) {
-        fail_print_matrices(w, h, source_mat, actual_mat, expected_mat);
+        fail_print_matrices(h, w, source_mat, actual_mat, expected_mat);
         return true;
       }
     }
@@ -68,7 +77,8 @@ bool test_warp_perspective(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& warp_perspective_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
-    TEST("WarpPerspective uint8", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
+    TEST("WarpPerspectiveNearest uint8", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
+    TEST("WarpPerspectiveLinear uint8", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
   };
   // clang-format on
   return tests;
