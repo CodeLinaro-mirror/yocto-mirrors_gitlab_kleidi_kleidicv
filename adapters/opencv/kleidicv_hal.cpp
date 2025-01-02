@@ -353,6 +353,7 @@ static int from_opencv(int opencv_border_type,
   return 0;
 }
 
+#if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 // Converts an OpenCV interpolation type to a KleidiCV interpolation type.
 static int from_opencv(int opencv_interpolation,
                        kleidicv_interpolation_type_t &interpolation_type) {
@@ -371,6 +372,7 @@ static int from_opencv(int opencv_interpolation,
 
   return 0;
 }
+#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 
 struct SeparableFilter2DParams {
   size_t channels;
@@ -1006,7 +1008,7 @@ int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int angle) {
   int element_size = CV_ELEM_SIZE(src_type);
 
-  size_t multithread_min_elements = 0;
+  int multithread_min_elements = 0;
   switch (element_size) {
     case sizeof(uint8_t):
       multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_ROTATE_U8;
