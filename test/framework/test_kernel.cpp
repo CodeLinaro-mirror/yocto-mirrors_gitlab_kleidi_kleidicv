@@ -151,8 +151,9 @@ class ExampleKernelTest : public test::KernelTest<KernelTestParams> {
   static constexpr std::array<kleidicv_border_type_t, 2> kBorders = {
       KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_CONSTANT};
 
-  static constexpr std::array<std::array<InputType, 4>, 2> kBorderValues = {
-      {{0, 0, 0, 0}, {1, 2, 3, 4}}};
+  static constexpr std::array<
+      std::array<InputType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>, 2>
+      kBorderValues = {{{0, 0, 0, 0}, {1, 2, 3, 4}}};
 
   size_t api_calls_{0};
   size_t array_layouts_{0};

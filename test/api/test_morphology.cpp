@@ -57,21 +57,24 @@ static constexpr std::array<kleidicv_border_type_t, 1> kConstantBorder = {
     KLEIDICV_BORDER_TYPE_CONSTANT};
 
 template <typename ElementType>
-static const std::array<std::array<uint8_t, 4>, 4> &more_border_values() {
+static const std::array<std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT>,
+                        4> &
+more_border_values() {
   using limit = std::numeric_limits<ElementType>;
-  static const std::array<std::array<uint8_t, 4>, 4> values = {
-      {{0, 0, 0, 0},  // default
-       {7, 42, 99, 9},
-       {limit::min(), limit::max(), limit::min(), limit::max()},
-       {0, limit::min(), limit::max(), 0}}};
+  static const std::array<std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT>,
+                          4>
+      values = {{{0, 0, 0, 0},  // default
+                 {7, 42, 99, 9},
+                 {limit::min(), limit::max(), limit::min(), limit::max()},
+                 {0, limit::min(), limit::max(), 0}}};
   return values;
 }
 
 template <class MorphologyKernelTestParams,
           typename ArrayLayoutsGetterType = decltype(test::small_array_layouts),
           typename BorderContainerType = decltype(kDefaultBorder),
-          typename BorderValuesContainerType =
-              std::array<std::array<uint8_t, 4>, 1>>
+          typename BorderValuesContainerType = std::array<
+              std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT>, 1>>
 class MorphologyTest : public test::KernelTest<MorphologyKernelTestParams> {
   using Base = test::KernelTest<MorphologyKernelTestParams>;
   using typename Base::InputType;

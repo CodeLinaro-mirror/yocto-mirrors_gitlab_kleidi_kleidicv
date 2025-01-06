@@ -85,7 +85,8 @@ class KernelTest {
   void test(Generator<Kernel<IntermediateType>>& kernel_generator,
             Generator<ArrayLayout>& array_layout_generator,
             Generator<kleidicv_border_type_t>& border_type_generator,
-            Generator<std::array<InputType, 4>>& border_values_generator,
+            Generator<std::array<InputType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>>&
+                border_values_generator,
             Generator<InputType>& element_generator) {
     kernel_generator.reset();
 
@@ -100,7 +101,8 @@ class KernelTest {
   void test(const Kernel<IntermediateType>& kernel,
             Generator<ArrayLayout>& array_layout_generator,
             Generator<kleidicv_border_type_t>& border_type_generator,
-            Generator<std::array<InputType, 4>>& border_values_generator,
+            Generator<std::array<InputType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>>&
+                border_values_generator,
             Generator<InputType>& element_generator) {
     array_layout_generator.reset();
 
@@ -118,7 +120,8 @@ class KernelTest {
 
   void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
             Generator<kleidicv_border_type_t>& border_type_generator,
-            Generator<std::array<InputType, 4>>& border_values_generator,
+            Generator<std::array<InputType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>>&
+                border_values_generator,
             Generator<InputType>& element_generator) {
     border_type_generator.reset();
 
@@ -132,10 +135,12 @@ class KernelTest {
 
   void test(const Kernel<IntermediateType>& kernel, ArrayLayout array_layout,
             kleidicv_border_type_t border_type,
-            Generator<std::array<InputType, 4>>& border_values_generator,
+            Generator<std::array<InputType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>>&
+                border_values_generator,
             Generator<InputType>& element_generator) {
     border_values_generator.reset();
-    std::optional<std::array<InputType, 4>> maybe_border_values;
+    std::optional<std::array<InputType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>>
+        maybe_border_values;
     while ((maybe_border_values = border_values_generator.next()) !=
            std::nullopt) {
       test(kernel, array_layout, border_type, maybe_border_values->data(),

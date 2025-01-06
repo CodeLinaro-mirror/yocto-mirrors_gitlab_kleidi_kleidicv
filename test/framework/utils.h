@@ -16,7 +16,7 @@
 
 #include "framework/abstract.h"
 #include "framework/types.h"
-#include "kleidicv/ctypes.h"
+#include "kleidicv/kleidicv.h"
 
 #define KLEIDICV_API(name, impl, type)                                        \
   template <typename ElementType,                                             \
@@ -115,9 +115,11 @@ void dump(const TwoDimensional<ElementType> *elements);
 
 // Returns default border values.
 template <typename ElementType>
-const std::array<std::array<ElementType, 4>, 1> &default_border_values() {
-  static std::array<std::array<ElementType, 4>, 1> result{
-      std::array<ElementType, 4>{0, 0, 0, 0}};
+const std::array<std::array<ElementType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>, 1> &
+default_border_values() {
+  static std::array<std::array<ElementType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>, 1>
+      result{
+          std::array<ElementType, KLEIDICV_MAXIMUM_CHANNEL_COUNT>{0, 0, 0, 0}};
   return result;
 }
 
