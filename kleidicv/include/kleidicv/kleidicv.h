@@ -1789,6 +1789,7 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
 /// @param channels      Number of channels in the data. Must be 1.
 /// @param border_type   Way of handling the border. The supported border types
 ///                      are: \n
+///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
 /// @param border_value Border value if the border_type is
 ///                      @ref KLEIDICV_BORDER_TYPE_CONSTANT.

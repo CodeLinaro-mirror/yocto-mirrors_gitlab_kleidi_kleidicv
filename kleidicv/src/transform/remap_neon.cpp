@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <cassert>
 #include <type_traits>
 
 #include "kleidicv/kleidicv.h"
@@ -11,18 +12,33 @@
 namespace kleidicv::neon {
 
 template <typename ScalarType>
-class RemapS16 {
+class RemapS16Replicate {
  public:
   using MapVecTraits = neon::VecTraits<int16_t>;
   using MapVectorType = typename MapVecTraits::VectorType;
   using MapVector2Type = typename MapVecTraits::Vector2Type;
 
-  RemapS16(Rows<const ScalarType> src_rows, size_t src_width, size_t src_height)
+  RemapS16Replicate(Rows<const ScalarType> src_rows, size_t src_width,
+                    size_t src_height)
       : src_rows_{src_rows},
-        v_src_element_stride{vdupq_n_u16(
+        v_src_element_stride_{vdupq_n_u16(
             static_cast<uint16_t>(src_rows_.stride() / sizeof(ScalarType)))},
         v_xmax_{vdupq_n_s16(static_cast<int16_t>(src_width - 1))},
         v_ymax_{vdupq_n_s16(static_cast<int16_t>(src_height - 1))} {}
+
+  void transform_pixels(uint32x4_t indices_low, uint32x4_t indices_high,
+                        Columns<ScalarType> dst) {
+    // Copy pixels from source
+    dst[0] = src_rows_[vgetq_lane_u32(indices_low, 0)];
+    dst[1] = src_rows_[vgetq_lane_u32(indices_low, 1)];
+    dst[2] = src_rows_[vgetq_lane_u32(indices_low, 2)];
+    dst[3] = src_rows_[vgetq_lane_u32(indices_low, 3)];
+
+    dst[4] = src_rows_[vgetq_lane_u32(indices_high, 0)];
+    dst[5] = src_rows_[vgetq_lane_u32(indices_high, 1)];
+    dst[6] = src_rows_[vgetq_lane_u32(indices_high, 2)];
+    dst[7] = src_rows_[vgetq_lane_u32(indices_high, 3)];
+  }
 
   void process_row(size_t width, Columns<const int16_t> mapxy,
                    Columns<ScalarType> dst) {
@@ -36,18 +52,12 @@ class RemapS16 {
       // Calculate offsets from coordinates (y * stride/sizeof(ScalarType) + x)
       uint32x4_t indices_low =
           vmlal_u16(vmovl_u16(vget_low_u16(x)), vget_low_u16(y),
-                    vget_low_u16(v_src_element_stride));
-      // Copy pixels from source
-      dst[0] = src_rows_[vgetq_lane_u32(indices_low, 0)];
-      dst[1] = src_rows_[vgetq_lane_u32(indices_low, 1)];
-      dst[2] = src_rows_[vgetq_lane_u32(indices_low, 2)];
-      dst[3] = src_rows_[vgetq_lane_u32(indices_low, 3)];
+                    vget_low_u16(v_src_element_stride_));
       uint32x4_t indices_high =
-          vmlal_high_u16(vmovl_high_u16(x), y, v_src_element_stride);
-      dst[4] = src_rows_[vgetq_lane_u32(indices_high, 0)];
-      dst[5] = src_rows_[vgetq_lane_u32(indices_high, 1)];
-      dst[6] = src_rows_[vgetq_lane_u32(indices_high, 2)];
-      dst[7] = src_rows_[vgetq_lane_u32(indices_high, 3)];
+          vmlal_high_u16(vmovl_high_u16(x), y, v_src_element_stride_);
+
+      transform_pixels(indices_low, indices_high, dst);
+
       mapxy += ptrdiff_t(step);
       dst += ptrdiff_t(step);
     };
@@ -63,11 +73,127 @@ class RemapS16 {
 
  private:
   Rows<const ScalarType> src_rows_;
-  uint16x8_t v_src_element_stride;
+  uint16x8_t v_src_element_stride_;
   int16x8_t v_xmax_;
   int16x8_t v_ymax_;
-};  // end of class RemapS16<ScalarType>
+};  // end of class RemapS16Replicate<ScalarType>
 
+template <typename ScalarType>
+class RemapS16ConstantBorder {
+ public:
+  using SrcVecTraits = neon::VecTraits<ScalarType>;
+  using SrcVecType = typename SrcVecTraits::VectorType;
+
+  using MapVecTraits = neon::VecTraits<int16_t>;
+  using MapVectorType = typename MapVecTraits::VectorType;
+  using MapVector2Type = typename MapVecTraits::Vector2Type;
+
+  RemapS16ConstantBorder(Rows<const ScalarType> src_rows, size_t src_width,
+                         size_t src_height, const ScalarType *border_value)
+      : src_rows_{src_rows},
+        v_src_element_stride_{vdupq_n_u16(
+            static_cast<uint16_t>(src_rows_.stride() / sizeof(ScalarType)))},
+        v_width_{vdupq_n_u16(static_cast<uint16_t>(src_width))},
+        v_height_{vdupq_n_u16(static_cast<uint16_t>(src_height))},
+        v_border_{vdupq_n_u16(*border_value)} {}
+
+  void transform_pixels(uint32x4_t indices_low, uint32x4_t indices_high,
+                        uint16x8_t in_range, Columns<ScalarType> dst);
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<ScalarType> dst) {
+    auto vector_path = [&](size_t step) {
+      MapVector2Type xy = vld2q_s16(&mapxy[0]);
+
+      uint16x8_t x = vreinterpretq_u16_s16(xy.val[0]);
+      uint16x8_t y = vreinterpretq_u16_s16(xy.val[1]);
+
+      // Find whether coordinates are within the image dimensions.
+      // Negative coordinates are interpreted as large values due to the
+      // s16->u16 reinterpretation.
+      uint16x8_t in_range =
+          vandq_u16(vcltq_u16(x, v_width_), vcltq_u16(y, v_height_));
+
+      // Zero out-of-range coordinates.
+      x = vandq_u16(in_range, x);
+      y = vandq_u16(in_range, y);
+
+      // Calculate offsets from coordinates (y * stride/sizeof(ScalarType) + x)
+      uint32x4_t indices_low =
+          vmlal_u16(vmovl_u16(vget_low_u16(x)), vget_low_u16(y),
+                    vget_low_u16(v_src_element_stride_));
+      uint32x4_t indices_high =
+          vmlal_high_u16(vmovl_high_u16(x), y, v_src_element_stride_);
+
+      transform_pixels(indices_low, indices_high, in_range, dst);
+
+      mapxy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, MapVecTraits::num_lanes()};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapxy -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint16x8_t v_src_element_stride_;
+  uint16x8_t v_width_;
+  uint16x8_t v_height_;
+  uint16x8_t v_border_;
+};  // end of class RemapS16ConstantBorder<ScalarType>
+
+template <>
+void RemapS16ConstantBorder<uint8_t>::transform_pixels(uint32x4_t indices_low,
+                                                       uint32x4_t indices_high,
+                                                       uint16x8_t in_range,
+                                                       Columns<uint8_t> dst) {
+  uint8x8_t pixels = {
+      src_rows_[vgetq_lane_u32(indices_low, 0)],
+      src_rows_[vgetq_lane_u32(indices_low, 1)],
+      src_rows_[vgetq_lane_u32(indices_low, 2)],
+      src_rows_[vgetq_lane_u32(indices_low, 3)],
+      src_rows_[vgetq_lane_u32(indices_high, 0)],
+      src_rows_[vgetq_lane_u32(indices_high, 1)],
+      src_rows_[vgetq_lane_u32(indices_high, 2)],
+      src_rows_[vgetq_lane_u32(indices_high, 3)],
+  };
+  // Select between source pixels and border colour
+  uint8x8_t pixels_or_border =
+      vbsl_u8(vmovn_u16(in_range), pixels, vmovn_u16(v_border_));
+
+  vst1_u8(&dst[0], pixels_or_border);
+}
+
+template <>
+void RemapS16ConstantBorder<uint16_t>::transform_pixels(uint32x4_t indices_low,
+                                                        uint32x4_t indices_high,
+                                                        uint16x8_t in_range,
+                                                        Columns<uint16_t> dst) {
+  uint16x8_t pixels = {
+      src_rows_[vgetq_lane_u32(indices_low, 0)],
+      src_rows_[vgetq_lane_u32(indices_low, 1)],
+      src_rows_[vgetq_lane_u32(indices_low, 2)],
+      src_rows_[vgetq_lane_u32(indices_low, 3)],
+      src_rows_[vgetq_lane_u32(indices_high, 0)],
+      src_rows_[vgetq_lane_u32(indices_high, 1)],
+      src_rows_[vgetq_lane_u32(indices_high, 2)],
+      src_rows_[vgetq_lane_u32(indices_high, 3)],
+  };
+
+  // Select between source pixels and border colour
+  uint16x8_t pixels_or_border = vbslq_u16(in_range, pixels, v_border_);
+
+  vst1q_u16(&dst[0], pixels_or_border);
+}
+
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename T>
 kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
                            size_t src_height, T *dst, size_t dst_stride,
@@ -80,6 +206,9 @@ kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
   CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT && nullptr == border_value) {
+    return KLEIDICV_ERROR_NULL_POINTER;
+  }
 
   if (!remap_s16_is_implemented<T>(src_stride, src_width, src_height, dst_width,
                                    border_type, channels)) {
@@ -89,17 +218,25 @@ kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<const int16_t> mapxy_rows{mapxy, mapxy_stride, 2};
   Rows<T> dst_rows{dst, dst_stride, channels};
-  RemapS16<T> operation{src_rows, src_width, src_height};
   Rectangle rect{dst_width, dst_height};
-  zip_rows(operation, rect, mapxy_rows, dst_rows);
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    RemapS16ConstantBorder<T> operation{src_rows, src_width, src_height,
+                                        border_value};
+    zip_rows(operation, rect, mapxy_rows, dst_rows);
+  } else {
+    assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
+    RemapS16Replicate<T> operation{src_rows, src_width, src_height};
+    zip_rows(operation, rect, mapxy_rows, dst_rows);
+  }
   return KLEIDICV_OK;
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 template <typename ScalarType>
-class RemapS16Point5;
+class RemapS16Point5Replicate;
 
 template <>
-class RemapS16Point5<uint8_t> {
+class RemapS16Point5Replicate<uint8_t> {
  public:
   using ScalarType = uint8_t;
   using MapVecTraits = neon::VecTraits<int16_t>;
@@ -108,8 +245,8 @@ class RemapS16Point5<uint8_t> {
   using FracVecTraits = neon::VecTraits<uint16_t>;
   using FracVectorType = typename FracVecTraits::VectorType;
 
-  RemapS16Point5(Rows<const ScalarType> src_rows, size_t src_width,
-                 size_t src_height)
+  RemapS16Point5Replicate(Rows<const ScalarType> src_rows, size_t src_width,
+                          size_t src_height)
       : src_rows_{src_rows},
         v_src_stride_{vdup_n_u16(static_cast<uint16_t>(src_rows_.stride()))},
         v_xmax_{vdupq_n_s16(static_cast<int16_t>(src_width - 1))},
@@ -218,8 +355,152 @@ class RemapS16Point5<uint8_t> {
   uint16x4_t v_src_stride_;
   int16x8_t v_xmax_;
   int16x8_t v_ymax_;
-};  // end of class RemapS16Point5<uint8_t>
+};  // end of class RemapS16Point5Replicate<uint8_t>
 
+template <typename ScalarType>
+class RemapS16Point5ConstantBorder;
+
+template <>
+class RemapS16Point5ConstantBorder<uint8_t> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = neon::VecTraits<int16_t>;
+
+  RemapS16Point5ConstantBorder(Rows<const ScalarType> src_rows,
+                               size_t src_width, size_t src_height,
+                               const ScalarType *border_value)
+      : src_rows_{src_rows},
+        v_src_stride_{vdupq_n_u16(static_cast<uint16_t>(src_rows_.stride()))},
+        v_width_{vdupq_n_u16(static_cast<uint16_t>(src_width))},
+        v_height_{vdupq_n_u16(static_cast<uint16_t>(src_height))},
+        v_border_{vdup_n_u8(*border_value)} {}
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
+    auto vector_path = [&](size_t step) {
+      int16x8x2_t xy = vld2q_s16(&mapxy[0]);
+      uint16x8_t frac = vld1q_u16(&mapfrac[0]);
+      uint8x8_t frac_max = vdup_n_u8(REMAP16POINT5_FRAC_MAX);
+      uint8x8_t frac_mask = vdup_n_u8(REMAP16POINT5_FRAC_MAX - 1);
+      uint8x8_t xfrac = vand_u8(vmovn_u16(frac), frac_mask);
+      uint8x8_t yfrac =
+          vand_u8(vshrn_n_u16(frac, REMAP16POINT5_FRAC_BITS), frac_mask);
+      uint8x8_t nxfrac = vsub_u8(frac_max, xfrac);
+      uint8x8_t nyfrac = vsub_u8(frac_max, yfrac);
+
+      uint16x8_t one = vdupq_n_u16(1);
+      uint16x8_t x0 = vreinterpretq_u16_s16(xy.val[0]);
+      uint16x8_t y0 = vreinterpretq_u16_s16(xy.val[1]);
+      uint16x8_t x1 = vaddq_u16(x0, one);
+      uint16x8_t y1 = vaddq_u16(y0, one);
+
+      uint8x8_t v00 = load_pixels_or_constant_border(
+          src_rows_, v_src_stride_, v_width_, v_height_, v_border_, x0, y0);
+      uint8x8_t v01 = load_pixels_or_constant_border(
+          src_rows_, v_src_stride_, v_width_, v_height_, v_border_, x0, y1);
+      uint8x8_t v10 = load_pixels_or_constant_border(
+          src_rows_, v_src_stride_, v_width_, v_height_, v_border_, x1, y0);
+      uint8x8_t v11 = load_pixels_or_constant_border(
+          src_rows_, v_src_stride_, v_width_, v_height_, v_border_, x1, y1);
+
+      uint8x8_t result = interpolate(v00, v01, v10, v11, xfrac, vmovl_u8(yfrac),
+                                     nxfrac, vmovl_u8(nyfrac));
+
+      vst1_u8(&dst[0], result);
+      mapxy += ptrdiff_t(step);
+      mapfrac += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+    LoopUnroll loop{width, MapVecTraits::num_lanes()};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapxy -= back_step;
+    mapfrac -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  uint8x8_t load_pixels_or_constant_border(Rows<const uint8_t> &src_rows_,
+                                           uint16x8_t v_src_element_stride_,
+                                           uint16x8_t v_width_,
+                                           uint16x8_t v_height_,
+                                           uint8x8_t v_border_, uint16x8_t x,
+                                           uint16x8_t y) {
+    // Find whether coordinates are within the image dimensions.
+    // Negative coordinates are interpreted as large values due to the s16->u16
+    // reinterpretation.
+    uint16x8_t in_range =
+        vandq_u16(vcltq_u16(vreinterpretq_u16_s16(x), v_width_),
+                  vcltq_u16(vreinterpretq_u16_s16(y), v_height_));
+
+    // Zero out-of-range coordinates.
+    x = vandq_u16(in_range, x);
+    y = vandq_u16(in_range, y);
+
+    // Calculate offsets from coordinates (y * stride/sizeof(ScalarType) + x)
+    uint32x4_t indices_low =
+        vmlal_u16(vmovl_u16(vget_low_u16(x)), vget_low_u16(y),
+                  vget_low_u16(v_src_element_stride_));
+    uint32x4_t indices_high =
+        vmlal_high_u16(vmovl_high_u16(x), y, v_src_element_stride_);
+
+    // Read pixels from source
+    uint8x8_t pixels = {
+        src_rows_[vgetq_lane_u32(indices_low, 0)],
+        src_rows_[vgetq_lane_u32(indices_low, 1)],
+        src_rows_[vgetq_lane_u32(indices_low, 2)],
+        src_rows_[vgetq_lane_u32(indices_low, 3)],
+        src_rows_[vgetq_lane_u32(indices_high, 0)],
+        src_rows_[vgetq_lane_u32(indices_high, 1)],
+        src_rows_[vgetq_lane_u32(indices_high, 2)],
+        src_rows_[vgetq_lane_u32(indices_high, 3)],
+    };
+    // Select between source pixels and border colour
+    return vbsl_u8(vmovn_u16(in_range), pixels, v_border_);
+  }
+
+  uint8x8_t interpolate(uint8x8_t v00, uint8x8_t v01, uint8x8_t v10,
+                        uint8x8_t v11, uint8x8_t xfrac, uint16x8_t yfrac,
+                        uint8x8_t nxfrac, uint16x8_t nyfrac) {
+    auto interpolate_horizontal = [&](uint8x8_t left, uint8x8_t right) {
+      return vmlal_u8(vmull_u8(nxfrac, left), xfrac, right);
+    };
+
+    // Offset pixel values from [0,255] to [0.5,255.5] before rounding down.
+    const uint32x4_t bias = vdupq_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
+
+    auto interpolate_vertical = [&](uint16x4_t a, uint16x4_t b, uint16x4_t frac,
+                                    uint16x4_t nfrac) {
+      uint32x4_t res32 = vmlal_u16(vmlal_u16(bias, a, nfrac), b, frac);
+      return vshrn_n_u32(res32, 2 * REMAP16POINT5_FRAC_BITS);
+    };
+
+    uint16x8_t line0 = interpolate_horizontal(v00, v10);
+    uint16x8_t line1 = interpolate_horizontal(v01, v11);
+
+    uint16x4_t lo =
+        interpolate_vertical(vget_low_u16(line0), vget_low_u16(line1),
+                             vget_low_u16(yfrac), vget_low_u16(nyfrac));
+    uint16x4_t hi =
+        interpolate_vertical(vget_high_u16(line0), vget_high_u16(line1),
+                             vget_high_u16(yfrac), vget_high_u16(nyfrac));
+
+    // Discard upper 8 bits of each element and combine low and high parts into
+    // a single register.
+    return vuzp1_u8(vreinterpret_u8_u16(lo), vreinterpret_u8_u16(hi));
+  }
+
+  Rows<const ScalarType> src_rows_;
+  uint16x8_t v_src_stride_;
+  uint16x8_t v_width_;
+  uint16x8_t v_height_;
+  uint8x8_t v_border_;
+};  // end of class RemapS16Point5ConstantBorder<uint8_t>
+
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename T>
 kleidicv_error_t remap_s16point5(
     const T *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -234,6 +515,9 @@ kleidicv_error_t remap_s16point5(
   CHECK_POINTER_AND_STRIDE(mapfrac, mapfrac_stride, dst_height);
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT && nullptr == border_value) {
+    return KLEIDICV_ERROR_NULL_POINTER;
+  }
 
   if (!remap_s16point5_is_implemented<T>(src_stride, src_width, src_height,
                                          dst_width, border_type, channels)) {
@@ -244,11 +528,19 @@ kleidicv_error_t remap_s16point5(
   Rows<const int16_t> mapxy_rows{mapxy, mapxy_stride, 2};
   Rows<const uint16_t> mapfrac_rows{mapfrac, mapfrac_stride, 1};
   Rows<T> dst_rows{dst, dst_stride, channels};
-  RemapS16Point5<T> operation{src_rows, src_width, src_height};
   Rectangle rect{dst_width, dst_height};
-  zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    RemapS16Point5ConstantBorder<T> operation{src_rows, src_width, src_height,
+                                              border_value};
+    zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+  } else {
+    assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
+    RemapS16Point5Replicate<T> operation{src_rows, src_width, src_height};
+    zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+  }
   return KLEIDICV_OK;
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 #define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(type)                          \
   template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t remap_s16<type>(          \

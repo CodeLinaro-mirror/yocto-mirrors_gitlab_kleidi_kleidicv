@@ -23,7 +23,10 @@ inline bool remap_s16_is_implemented(
             dst_width >= 8 &&
             src_width <= std::numeric_limits<int16_t>::max() + 1 &&
             src_height <= std::numeric_limits<int16_t>::max() + 1 &&
-            border_type == KLEIDICV_BORDER_TYPE_REPLICATE && channels == 1);
+            dst_width >= 8 &&
+            (border_type == KLEIDICV_BORDER_TYPE_REPLICATE ||
+             border_type == KLEIDICV_BORDER_TYPE_CONSTANT) &&
+            channels == 1);
   } else {
     return false;
   }
@@ -39,7 +42,9 @@ inline bool remap_s16point5_is_implemented(
             dst_width >= 8 &&
             src_width <= std::numeric_limits<int16_t>::max() + 1 &&
             src_height <= std::numeric_limits<int16_t>::max() + 1 &&
-            border_type == KLEIDICV_BORDER_TYPE_REPLICATE && channels == 1);
+            (border_type == KLEIDICV_BORDER_TYPE_REPLICATE ||
+             border_type == KLEIDICV_BORDER_TYPE_CONSTANT) &&
+            channels == 1);
   } else {
     return false;
   }

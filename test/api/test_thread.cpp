@@ -615,16 +615,18 @@ TEST_P(Thread, remap_s16_u8_not_implemented) {
                                            KLEIDICV_BORDER_TYPE_REPLICATE,
                                            border_value);
   check_remap_s16_not_implemented<uint8_t>(kleidicv_thread_remap_s16_u8, 1,
-                                           KLEIDICV_BORDER_TYPE_CONSTANT,
+                                           KLEIDICV_BORDER_TYPE_REFLECT,
                                            border_value);
 }
 
 TEST_P(Thread, remap_s16_u16_not_implemented) {
+  const uint16_t border_value[4] = {};
   check_remap_s16_not_implemented<uint16_t>(kleidicv_thread_remap_s16_u16, 2,
                                             KLEIDICV_BORDER_TYPE_REPLICATE,
-                                            nullptr);
-  check_remap_s16_not_implemented<uint16_t>(
-      kleidicv_thread_remap_s16_u16, 1, KLEIDICV_BORDER_TYPE_CONSTANT, nullptr);
+                                            border_value);
+  check_remap_s16_not_implemented<uint16_t>(kleidicv_thread_remap_s16_u16, 1,
+                                            KLEIDICV_BORDER_TYPE_REFLECT,
+                                            border_value);
 }
 
 TEST_P(Thread, remap_s16point5_u8_border_replicate) {
@@ -639,7 +641,7 @@ TEST_P(Thread, remap_s16point5_u8_not_implemented) {
       kleidicv_thread_remap_s16point5_u8, 2, KLEIDICV_BORDER_TYPE_REPLICATE,
       border_value);
   check_remap_s16point5_not_implemented<uint8_t>(
-      kleidicv_thread_remap_s16point5_u8, 1, KLEIDICV_BORDER_TYPE_CONSTANT,
+      kleidicv_thread_remap_s16point5_u8, 1, KLEIDICV_BORDER_TYPE_REFLECT,
       border_value);
 }
 
