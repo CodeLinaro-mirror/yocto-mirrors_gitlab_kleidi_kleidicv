@@ -23,7 +23,7 @@ class RemapS16<uint8_t> {
 
   RemapS16(Rows<const ScalarType> src_rows, size_t src_width, size_t src_height)
       : src_rows_{src_rows},
-        v_src_stride_{vdupq_n_s16(static_cast<int16_t>(src_rows_.stride()))},
+        v_src_stride_{vdupq_n_u16(static_cast<uint16_t>(src_rows_.stride()))},
         v_xmax_{vdupq_n_s16(static_cast<int16_t>(src_width - 1))},
         v_ymax_{vdupq_n_s16(static_cast<int16_t>(src_height - 1))} {}
 
@@ -66,7 +66,7 @@ class RemapS16<uint8_t> {
 
  private:
   Rows<const ScalarType> src_rows_;
-  int16x8_t v_src_stride_;
+  uint16x8_t v_src_stride_;
   int16x8_t v_xmax_;
   int16x8_t v_ymax_;
 };  // end of class RemapS16<uint8_t>
@@ -84,7 +84,8 @@ kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
-  if (!remap_s16_is_implemented<T>(dst_width, border_type, channels)) {
+  if (!remap_s16_is_implemented<T>(src_stride, dst_width, border_type,
+                                   channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -113,7 +114,7 @@ class RemapS16Point5<uint8_t> {
   RemapS16Point5(Rows<const ScalarType> src_rows, size_t src_width,
                  size_t src_height)
       : src_rows_{src_rows},
-        v_src_stride_{vdupq_n_s16(static_cast<int16_t>(src_rows_.stride()))},
+        v_src_stride_{vdup_n_u16(static_cast<uint16_t>(src_rows_.stride()))},
         v_xmax_{vdupq_n_s16(static_cast<int16_t>(src_width - 1))},
         v_ymax_{vdupq_n_s16(static_cast<int16_t>(src_height - 1))} {}
 
@@ -174,7 +175,7 @@ class RemapS16Point5<uint8_t> {
                                   uint16x4_t nyfrac) {
     // Calculate offsets from coordinates (y * stride + x)
     // a: top left, b: top right, c: bottom left, d: bottom right
-    uint32x4_t offset = vmlal_u16(x0, y0, vget_low_u16(v_src_stride_));
+    uint32x4_t offset = vmlal_u16(x0, y0, v_src_stride_);
     uint64_t acc =
         static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 0)]) |
         (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 1)]) << 16) |
@@ -182,7 +183,7 @@ class RemapS16Point5<uint8_t> {
         (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 3)]) << 48);
     uint16x4_t a = vreinterpret_u16_u64(vset_lane_u64(acc, vdup_n_u64(0), 0));
 
-    offset = vmlal_u16(x1, y0, vget_low_u16(v_src_stride_));
+    offset = vmlal_u16(x1, y0, v_src_stride_);
 
     acc = static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 0)]) |
           (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 1)]) << 16) |
@@ -192,7 +193,7 @@ class RemapS16Point5<uint8_t> {
 
     uint16x4_t line0 = vmla_u16(vmul_u16(xfrac, b), nxfrac, a);
 
-    offset = vmlal_u16(x0, y1, vget_low_u16(v_src_stride_));
+    offset = vmlal_u16(x0, y1, v_src_stride_);
 
     acc = static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 0)]) |
           (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 1)]) << 16) |
@@ -203,7 +204,7 @@ class RemapS16Point5<uint8_t> {
     uint32x4_t line0_lerpd = vmlal_u16(
         vdupq_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2), line0, nyfrac);
 
-    offset = vmlal_u16(x1, y1, vget_low_u16(v_src_stride_));
+    offset = vmlal_u16(x1, y1, v_src_stride_);
 
     acc = static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 0)]) |
           (static_cast<uint64_t>(src_rows_[vgetq_lane_u32(offset, 1)]) << 16) |
@@ -217,7 +218,7 @@ class RemapS16Point5<uint8_t> {
   }
 
   Rows<const ScalarType> src_rows_;
-  int16x8_t v_src_stride_;
+  uint16x4_t v_src_stride_;
   int16x8_t v_xmax_;
   int16x8_t v_ymax_;
 };  // end of class RemapS16Point5<uint8_t>
@@ -237,7 +238,8 @@ kleidicv_error_t remap_s16point5(
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
-  if (!remap_s16point5_is_implemented<T>(dst_width, border_type, channels)) {
+  if (!remap_s16point5_is_implemented<T>(src_stride, dst_width, border_type,
+                                         channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 

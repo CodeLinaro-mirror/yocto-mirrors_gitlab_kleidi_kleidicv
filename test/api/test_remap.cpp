@@ -9,7 +9,6 @@
 #include "framework/utils.h"
 #include "kleidicv/kleidicv.h"
 
-
 template <class ScalarType>
 class RemapS16 : public testing::Test {
  public:
@@ -157,6 +156,14 @@ TYPED_TEST(RemapS16, BlendPadding) {
   TestFixture::test_blend(src_w, src_h, dst_w, dst_h, 1, 13);
 }
 
+TYPED_TEST(RemapS16, BlendBigStride) {
+  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t src_h = 16;
+  size_t dst_w = src_w;
+  size_t dst_h = src_h;
+  TestFixture::test_blend(src_w, src_h, dst_w, dst_h, 1, (1 << 16) - src_w - 1);
+}
+
 TYPED_TEST(RemapS16, CornerCases) {
   size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
   size_t src_h = 4;
@@ -211,6 +218,17 @@ TYPED_TEST(RemapS16, InvalidImageSize) {
       KLEIDICV_ERROR_RANGE,
       kleidicv_remap_s16_u8(src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS,
                             KLEIDICV_MAX_IMAGE_PIXELS, 1, mapxy, 4,
+                            KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+}
+
+TYPED_TEST(RemapS16, UnsupportedBigStride) {
+  const TypeParam src[1] = {};
+  TypeParam dst[8];
+  int16_t mapxy[16] = {};
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_remap_s16_u8(src, 2 << 16, 1, 1, dst, 2 << 16, 8, 1, 2, mapxy, 4,
                             KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
@@ -333,6 +351,7 @@ class RemapS16Point5 : public testing::Test {
         *mapfrac.at(row, column) =
             static_cast<uint16_t>((counter * 3) % FRAC_MAX) |
             (static_cast<uint16_t>((counter * 5) % FRAC_MAX) << FRAC_BITS);
+        ++counter;
       }
     }
     execute_test(mapxy, mapfrac, src_w, src_h, dst_w, dst_h, channels, padding);
@@ -442,6 +461,14 @@ TYPED_TEST(RemapS16Point5, OutsideRandomPadding) {
   size_t dst_w = src_w;
   size_t dst_h = src_h;
   TestFixture::test_outside_random(src_w, src_h, dst_w, dst_h, 1, 13);
+}
+
+TYPED_TEST(RemapS16Point5, BlendBigStride) {
+  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t src_h = 16;
+  size_t dst_w = src_w;
+  size_t dst_h = src_h;
+  TestFixture::test_blend(src_w, src_h, dst_w, dst_h, 1, (1 << 16) - src_w - 1);
 }
 
 TYPED_TEST(RemapS16Point5, CornerCases) {
