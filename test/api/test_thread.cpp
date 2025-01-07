@@ -594,7 +594,6 @@ TEST(ThreadSeparableFilter2D, NotImplemented) {
       kleidicv_thread_separable_filter_2d_u16);
 }
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 TEST_P(Thread, remap_s16_u8_border_replicate) {
   check_remap_s16<uint8_t>(kleidicv_remap_s16_u8, kleidicv_thread_remap_s16_u8,
                            1, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
@@ -625,7 +624,6 @@ TEST_P(Thread, remap_s16point5_u8_not_implemented) {
       kleidicv_thread_remap_s16point5_u8, 1, KLEIDICV_BORDER_TYPE_CONSTANT,
       border_value);
 }
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 #if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 TEST_P(Thread, warp_perspective_u8_border_replicate) {

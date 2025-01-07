@@ -9,7 +9,6 @@
 #include "framework/utils.h"
 #include "kleidicv/kleidicv.h"
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 template <class ScalarType>
 class RemapS16 : public testing::Test {
@@ -543,4 +542,3 @@ TYPED_TEST(RemapS16Point5, UnsupportedTooSmallImage) {
                 src, 1, 1, 1, dst, 8, 7, 1, 1, mapxy, 4, mapfrac, 2,
                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP

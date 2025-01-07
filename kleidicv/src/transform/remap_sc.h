@@ -15,7 +15,6 @@
 #include "kleidicv/sve2.h"
 #include "kleidicv/transform/remap.h"
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 #if !KLEIDICV_TARGET_SME2
@@ -427,6 +426,5 @@ kleidicv_error_t remap_s16point5_sc(
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 #endif  // KLEIDICV_REMAP_SC_H

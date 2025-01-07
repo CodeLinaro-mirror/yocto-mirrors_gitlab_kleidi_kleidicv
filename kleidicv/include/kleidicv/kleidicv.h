@@ -1756,7 +1756,6 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
                          size_t width, size_t height, float lower_bound,
                          float upper_bound);
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 /// Transforms the `src` image by taking the pixels specified by the coordinates
 /// from the `mapxy` image.
 ///
@@ -1813,7 +1812,6 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u8, const uint8_t *src,
                          kleidicv_border_type_t border_type,
                          const uint8_t *border_value);
 #endif  // DOXYGEN
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.

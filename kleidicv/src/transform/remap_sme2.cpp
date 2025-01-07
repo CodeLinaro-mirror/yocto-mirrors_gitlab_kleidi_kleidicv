@@ -4,7 +4,6 @@
 
 #include "remap_sc.h"
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 namespace kleidicv::sme2 {
 
 template <typename T>
@@ -33,4 +32,3 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint8_t);
 
 }  // namespace kleidicv::sme2
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP

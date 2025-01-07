@@ -1305,8 +1305,6 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
       static_cast<float>(lower_bound), static_cast<float>(upper_bound)));
 }
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
-
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
               int dst_width, int dst_height, const int16_t *mapxy,
@@ -1359,8 +1357,6 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
-
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 int pyrdown(const uchar *src_data, size_t src_step, int src_width,
             int src_height, uchar *dst_data, size_t dst_step, int dst_width,

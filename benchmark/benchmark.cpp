@@ -495,7 +495,6 @@ static void scharr_interleaved_s16_u8(benchmark::State& state) {
 }
 BENCHMARK(scharr_interleaved_s16_u8);
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 template <class ScalarType>
 static const ScalarType* get_random_mapxy() {
   auto generate_mapxy = [&]() {
@@ -677,7 +676,6 @@ BENCH_REMAP_S16POINT5(remap_s16point5_u8_flip, remap_s16point5_u8,
 BENCH_REMAP_S16POINT5(remap_s16point5_u8_identity, remap_s16point5_u8,
                       get_identity_mapxy<int16_t>, 1,
                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 #if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 // clang-format off

@@ -146,7 +146,6 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
                 size_t dst_step, int dst_depth, int width, int height, int cn,
                 double lower_bound, double upper_bound);
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
               int dst_width, int dst_height, const int16_t *mapxy,
@@ -158,7 +157,6 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
                     const int16_t *mapxy, size_t mapxy_step,
                     const uint16_t *mapfrac, size_t mapfrac_step,
                     int border_type, const double border_value[4]);
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 #if KLEIDICV_EXPERIMENTAL_FEATURE_WARP_PERSPECTIVE
 int warp_perspective(int src_type, const uchar *src_data, size_t src_step,
@@ -385,7 +383,6 @@ static inline int kleidicv_canny_with_fallback(
 #define cv_hal_canny kleidicv_canny_with_fallback
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 // remap
 // This condition can be removed if this HAL macro is defined in all supported
 // versions
@@ -422,8 +419,6 @@ static inline int kleidicv_remap_s16point5_with_fallback(
 #undef cv_hal_remap16s16u
 #define cv_hal_remap16s16u kleidicv_remap_s16point5_with_fallback
 #endif  // cv_hal_remap16s16u
-
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_REMAP
 
 // pyrdown
 static inline int kleidicv_pyrdown_with_fallback(
