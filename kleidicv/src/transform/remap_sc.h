@@ -19,8 +19,6 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-#if !KLEIDICV_TARGET_SME2
-
 template <typename ScalarType>
 class RemapS16 {
  public:
@@ -162,13 +160,11 @@ kleidicv_error_t remap_s16_sc(const T* src, size_t src_stride, size_t src_width,
   return KLEIDICV_OK;
 }
 
-#endif  // KLEIDICV_TARGET_SME2
-
 template <typename ScalarType>
-class RemapS16Point5SVE2;
+class RemapS16Point5;
 
 template <>
-class RemapS16Point5SVE2<uint8_t> {
+class RemapS16Point5<uint8_t> {
  public:
   using ScalarType = uint8_t;
   using MapVecTraits = VecTraits<int16_t>;
@@ -177,9 +173,9 @@ class RemapS16Point5SVE2<uint8_t> {
   using FracVecTraits = VecTraits<uint16_t>;
   using FracVectorType = typename FracVecTraits::VectorType;
 
-  RemapS16Point5SVE2(Rows<const ScalarType> src_rows, size_t src_width,
-                     size_t src_height, svuint16_t& v_src_stride,
-                     MapVectorType& v_x_max, MapVectorType& v_y_max)
+  RemapS16Point5(Rows<const ScalarType> src_rows, size_t src_width,
+                 size_t src_height, svuint16_t& v_src_stride,
+                 MapVectorType& v_x_max, MapVectorType& v_y_max)
       : src_rows_{src_rows},
         v_src_stride_{v_src_stride},
         v_xmax_{v_x_max},
@@ -301,114 +297,7 @@ class RemapS16Point5SVE2<uint8_t> {
   svuint16_t& v_src_stride_;
   MapVectorType& v_xmax_;
   MapVectorType& v_ymax_;
-};  // end of class RemapS16Point5SVE2<uint8_t>
-
-#if KLEIDICV_TARGET_SME2
-
-template <typename ScalarType>
-class RemapS16Point5SME2;
-
-template <>
-class RemapS16Point5SME2<uint8_t> : public RemapS16Point5SVE2<uint8_t> {
- public:
-  using ScalarType = uint8_t;
-  using MapVecTraits = VecTraits<int16_t>;
-  using MapVectorType = typename MapVecTraits::VectorType;
-  using MapVector2Type = typename MapVecTraits::Vector2Type;
-  using FracVecTraits = VecTraits<uint16_t>;
-  using FracVectorType = typename FracVecTraits::VectorType;
-
-  RemapS16Point5SME2(Rows<const ScalarType> src_rows, size_t src_width,
-                     size_t src_height, svuint16_t& v_src_stride,
-                     MapVectorType& v_x_max, MapVectorType& v_y_max)
-      : RemapS16Point5SVE2<uint8_t>(src_rows, src_width, src_height,
-                                    v_src_stride, v_x_max, v_y_max),
-        rowbuffer_width_{0} {}
-
-  void process_row(size_t width, Columns<const int16_t> mapxy,
-                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
-    if (KLEIDICV_UNLIKELY(width != rowbuffer_width_)) {
-      if (width > rowbuffer_width_) {
-        rowbuffer_.reset(new ScalarType[4 * (width + 3)]);
-        rowbuffer_width_ = width;
-      }
-    }
-
-    Columns<ScalarType> demapped_src{rowbuffer_.get(),
-                                     4 * src_rows_.channels()};
-
-    svuint16_t src_a, src_b, src_c, src_d;
-
-    auto vector_path = [&](svbool_t pg, ptrdiff_t step) {
-      load_source(pg, step, mapxy, src_a, src_b, src_c, src_d);
-
-      // Keep only the 8-bit data
-      svuint8_t src_ab =
-          svtrn1_u8(svreinterpret_u8_u16(src_a), svreinterpret_u8_u16(src_b));
-      svuint8_t src_cd =
-          svtrn1_u8(svreinterpret_u8_u16(src_c), svreinterpret_u8_u16(src_d));
-
-      // Store them to rowbuffer
-      // Interleaved store makes it abcdabcd
-      svst2_u16(pg, reinterpret_cast<uint16_t*>(&demapped_src[0]),
-                svcreate2(svreinterpret_u16_u8(src_ab),
-                          svreinterpret_u16_u8(src_cd)));
-      demapped_src += step;
-    };
-
-    LoopUnroll loop{width, MapVecTraits::num_lanes()};
-    loop.unroll_once([&](size_t step) {
-      svbool_t pg = MapVecTraits::svptrue();
-      vector_path(pg, static_cast<ptrdiff_t>(step));
-    });
-    loop.remaining([&](size_t length, size_t step) {
-      svbool_t pg = MapVecTraits::svwhilelt(step - length, step);
-      vector_path(pg, static_cast<ptrdiff_t>(length));
-    });
-
-    process_demapped_row(mapfrac, dst);
-  }
-
- private:
-  KLEIDICV_LOCALLY_STREAMING void process_demapped_row(
-      Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
-    Columns<ScalarType> demapped_src{rowbuffer_.get(),
-                                     4 * src_rows_.channels()};
-
-    svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
-
-    auto vector_path = [&](svbool_t pg16, svbool_t pg8,
-                           ptrdiff_t step) KLEIDICV_STREAMING_COMPATIBLE {
-      // Deinterleave abcd into two vectors, ac and bd
-      svuint8x2_t src = svld2_u8(pg8, &demapped_src[0]);
-
-      svuint16_t src_a = svmovlb_u16(svget2(src, 0));
-      svuint16_t src_b = svmovlb_u16(svget2(src, 1));
-      svuint16_t src_c = svmovlt_u16(svget2(src, 0));
-      svuint16_t src_d = svmovlt_u16(svget2(src, 1));
-
-      interpolate_and_store(pg16, step, mapfrac, dst, src_a, src_b, src_c,
-                            src_d, bias);
-      demapped_src += step;
-    };
-
-    svbool_t ptrue_16 = FracVecTraits::svptrue();
-    svbool_t ptrue_8 = svptrue_b8();
-    LoopUnroll loop{rowbuffer_width_, FracVecTraits::num_lanes()};
-    loop.unroll_once([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
-      vector_path(ptrue_16, ptrue_8, static_cast<ptrdiff_t>(step));
-    });
-    loop.remaining([&](size_t length, size_t) KLEIDICV_STREAMING_COMPATIBLE {
-      svbool_t pg16 = FracVecTraits::svwhilelt(size_t{0}, length);
-      svbool_t pg8 = svwhilelt_b8(size_t{0}, 2 * length);
-      vector_path(pg16, pg8, static_cast<ptrdiff_t>(length));
-    });
-  }
-
-  size_t rowbuffer_width_;
-  std::unique_ptr<ScalarType> rowbuffer_;
-};  // end of class RemapS16Point5SME2<uint8_t>
-#endif  // KLEIDICV_TARGET_SME2
+};  // end of class RemapS16Point5<uint8_t>
 
 template <typename T>
 kleidicv_error_t remap_s16point5_sc(
@@ -436,13 +325,8 @@ kleidicv_error_t remap_s16point5_sc(
   svuint16_t sv_src_stride;
   svint16_t sv_xmax, sv_ymax;
 
-#if KLEIDICV_TARGET_SME2
-  RemapS16Point5SME2<T> operation{src_rows,      src_width, src_height,
-                                  sv_src_stride, sv_xmax,   sv_ymax};
-#else
-  RemapS16Point5SVE2<T> operation{src_rows,      src_width, src_height,
-                                  sv_src_stride, sv_xmax,   sv_ymax};
-#endif  // KLEIDICV_TARGET_SME2
+  RemapS16Point5<T> operation{src_rows,      src_width, src_height,
+                              sv_src_stride, sv_xmax,   sv_ymax};
   Rectangle rect{dst_width, dst_height};
   zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
   return KLEIDICV_OK;
