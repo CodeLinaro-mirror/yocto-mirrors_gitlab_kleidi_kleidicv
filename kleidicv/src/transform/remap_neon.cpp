@@ -84,8 +84,8 @@ kleidicv_error_t remap_s16(const T *src, size_t src_stride, size_t src_width,
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
-  if (!remap_s16_is_implemented<T>(src_stride, dst_width, border_type,
-                                   channels)) {
+  if (!remap_s16_is_implemented<T>(src_stride, src_width, src_height, dst_width,
+                                   border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -238,8 +238,8 @@ kleidicv_error_t remap_s16point5(
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
-  if (!remap_s16point5_is_implemented<T>(src_stride, dst_width, border_type,
-                                         channels)) {
+  if (!remap_s16point5_is_implemented<T>(src_stride, src_width, src_height,
+                                         dst_width, border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 

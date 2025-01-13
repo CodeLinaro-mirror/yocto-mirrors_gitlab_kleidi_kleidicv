@@ -1760,20 +1760,19 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
 /// from the `mapxy` image.
 ///
 /// Width and height must be the same for `mapxy` and for `dst`. `src`
-/// dimensions may be different, but due to the 16-bit signed format, elements
-/// with any coordinates outside of [0, 2^16) cannot be used. Coordinates
-/// outside of `src` dimensions are considered border. In case of @ref
-/// KLEIDICV_BORDER_TYPE_REPLICATE, that means that negative coordinates map to
-/// the first row/column (zero), and those bigger than height/width - 1 map to
-/// the last row/column.
+/// dimensions may be different. Coordinates outside of `src` dimensions are
+/// considered border.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data. Must
 ///                     not be less than `width * sizeof(type)`, except for
-///                     single-row images. Must be less than 2^16.
-/// @param src_width    Number of elements in the source row.
-/// @param src_height   Number of rows in the source data.
+///                     single-row images. Must be less than `2^16 *
+///                     sizeof(type)`.
+/// @param src_width    Number of elements in the source row. Must not be bigger
+///                     than 2^15.
+/// @param src_height   Number of rows in the source data. Must not be bigger
+///                     than 2^15.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.

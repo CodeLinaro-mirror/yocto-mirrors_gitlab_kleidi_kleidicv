@@ -662,7 +662,8 @@ kleidicv_error_t kleidicv_thread_remap_s16_u8(
     size_t channels, const int16_t *mapxy, size_t mapxy_stride,
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
-  if (!kleidicv::remap_s16_is_implemented<uint8_t>(src_stride, dst_width,
+  if (!kleidicv::remap_s16_is_implemented<uint8_t>(src_stride, src_width,
+                                                   src_height, dst_width,
                                                    border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
@@ -684,7 +685,8 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
   if (!kleidicv::remap_s16point5_is_implemented<uint8_t>(
-          src_stride, dst_width, border_type, channels)) {
+          src_stride, src_width, src_height, dst_width, border_type,
+          channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
   auto callback = [=](unsigned begin, unsigned end) {

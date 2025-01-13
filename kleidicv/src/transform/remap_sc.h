@@ -38,10 +38,8 @@ class RemapS16<uint8_t> {
         v_xmax_{v_x_max},
         v_ymax_{v_y_max} {
     v_src_stride_ = svdup_u16(src_rows.stride());
-    v_xmax_ = svdup_s16(static_cast<int16_t>(
-        std::min<size_t>(std::numeric_limits<int16_t>::max(), src_width - 1)));
-    v_ymax_ = svdup_s16(static_cast<int16_t>(
-        std::min<size_t>(std::numeric_limits<int16_t>::max(), src_height - 1)));
+    v_xmax_ = svdup_s16(static_cast<int16_t>(src_width - 1));
+    v_ymax_ = svdup_s16(static_cast<int16_t>(src_height - 1));
   }
 
   void process_row(size_t width, Columns<const int16_t> mapxy,
@@ -124,8 +122,8 @@ kleidicv_error_t remap_s16_sc(const T* src, size_t src_stride, size_t src_width,
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
-  if (!remap_s16_is_implemented<T>(src_stride, dst_width, border_type,
-                                   channels)) {
+  if (!remap_s16_is_implemented<T>(src_stride, src_width, src_height, dst_width,
+                                   border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -403,8 +401,8 @@ kleidicv_error_t remap_s16point5_sc(
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
 
-  if (!remap_s16point5_is_implemented<T>(src_stride, dst_width, border_type,
-                                         channels)) {
+  if (!remap_s16point5_is_implemented<T>(src_stride, src_width, src_height,
+                                         dst_width, border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 

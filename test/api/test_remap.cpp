@@ -7,6 +7,7 @@
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "framework/utils.h"
+#include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
 
 template <class ScalarType>
@@ -78,7 +79,30 @@ class RemapS16 : public testing::Test {
         *mapxy.at(row, column * 2 + 1) = corner_y_values[counter % ny];
       }
     }
-    execute_test(mapxy, src_w, src_h, dst_w, dst_h, channels, padding);
+
+    // This part is the same as execute_test() but without initializing source.
+    // Corner Cases use the biggest possible source.
+    size_t src_total_width = channels * src_w;
+    size_t dst_total_width = channels * dst_w;
+
+    test::Array2D<ScalarType> source{src_total_width, src_h, padding, channels};
+    test::Array2D<ScalarType> actual{dst_total_width, dst_h, padding, channels};
+    test::Array2D<ScalarType> expected{dst_total_width, dst_h, padding,
+                                       channels};
+
+    test::PseudoRandomNumberGenerator<ScalarType> generator;
+    actual.fill(42);
+
+    calculate_expected(source, mapxy, expected);
+
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_remap_s16_u8(
+                  source.data(), source.stride(), source.width(),
+                  source.height(), actual.data(), actual.stride(),
+                  actual.width(), actual.height(), channels, mapxy.data(),
+                  mapxy.stride(), KLEIDICV_BORDER_TYPE_REPLICATE, {}));
+
+    EXPECT_EQ_ARRAY2D(actual, expected);
   }
 
  private:
@@ -165,10 +189,10 @@ TYPED_TEST(RemapS16, BlendBigStride) {
 }
 
 TYPED_TEST(RemapS16, CornerCases) {
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 4;
-  size_t dst_w = src_w;
-  size_t dst_h = src_h;
+  size_t src_w = std::numeric_limits<int16_t>::max() + 1;
+  size_t src_h = std::numeric_limits<int16_t>::max() + 1;
+  size_t dst_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t dst_h = 4;
   TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, 1, 17);
 }
 
@@ -198,11 +222,20 @@ TYPED_TEST(RemapS16, InvalidImageSize) {
   TypeParam dst[8];
   int16_t mapxy[16] = {};
 
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_remap_s16_u8(
+                src, 1, std::numeric_limits<int16_t>::max() + 2, 1, dst, 8, 8,
+                1, 1, mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_remap_s16_u8(
+                src, 1, 1, std::numeric_limits<int16_t>::max() + 2, dst, 8, 8,
+                1, 1, mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_remap_s16_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst,
                                   8, 8, 1, 1, mapxy, 4,
                                   KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
-
   EXPECT_EQ(
       KLEIDICV_ERROR_RANGE,
       kleidicv_remap_s16_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS,
@@ -354,7 +387,31 @@ class RemapS16Point5 : public testing::Test {
         ++counter;
       }
     }
-    execute_test(mapxy, mapfrac, src_w, src_h, dst_w, dst_h, channels, padding);
+
+    // This part is the same as execute_test() but without initializing source.
+    // Corner Cases use the biggest possible source.
+    size_t src_total_width = channels * src_w;
+    size_t dst_total_width = channels * dst_w;
+
+    test::Array2D<ScalarType> source{src_total_width, src_h, padding, channels};
+    test::Array2D<ScalarType> actual{dst_total_width, dst_h, padding, channels};
+    test::Array2D<ScalarType> expected{dst_total_width, dst_h, padding,
+                                       channels};
+
+    test::PseudoRandomNumberGenerator<ScalarType> generator;
+    actual.fill(42);
+
+    calculate_expected(source, mapxy, mapfrac, expected);
+
+    ASSERT_EQ(
+        KLEIDICV_OK,
+        kleidicv_remap_s16point5_u8(
+            source.data(), source.stride(), source.width(), source.height(),
+            actual.data(), actual.stride(), actual.width(), actual.height(),
+            channels, mapxy.data(), mapxy.stride(), mapfrac.data(),
+            mapfrac.stride(), KLEIDICV_BORDER_TYPE_REPLICATE, {}));
+
+    EXPECT_EQ_ARRAY2D(actual, expected);
   }
 
  private:
@@ -472,10 +529,10 @@ TYPED_TEST(RemapS16Point5, BlendBigStride) {
 }
 
 TYPED_TEST(RemapS16Point5, CornerCases) {
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 4;
-  size_t dst_w = src_w;
-  size_t dst_h = src_h;
+  size_t src_w = std::numeric_limits<int16_t>::max() + 1;
+  size_t src_h = std::numeric_limits<int16_t>::max() + 1;
+  size_t dst_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t dst_h = 4;
   TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, 1, 17);
 }
 
@@ -510,6 +567,18 @@ TYPED_TEST(RemapS16Point5, InvalidImageSize) {
   TypeParam dst[1];
   int16_t mapxy[2] = {};
   uint16_t mapfrac[1] = {};
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_remap_s16point5_u8(
+          src, 1, std::numeric_limits<int16_t>::max() + 2, 1, dst, 1, 1, 1, 1,
+          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_remap_s16point5_u8(
+          src, 1, 1, std::numeric_limits<int16_t>::max() + 2, dst, 1, 1, 1, 1,
+          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_remap_s16point5_u8(

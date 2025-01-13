@@ -209,9 +209,10 @@ Notes on parameters:
 Geometrically transforms the `src` image by taking the pixels specified by the coordinates from the `map` image.
 
 Notes on parameters:
-* `src.step` - must be less than 2^16
+* `src.step` - must be less than 2^16 * `element size`
+* `src.width`, `src_height` - must not be bigger than 2^15
 * `src.depth()` - only supports `CV_8U` depth and 1 channel.
-* `borderMode` - only supports `BORDER_REPLICATE`
+* `borderMode` - only supports `BORDER_REPLICATE`.
 Supported map configurations:
 * `map1` is 16SC2: channel #1 is x coordinate (column) and channel #2 is y (row)
   * supported `interpolation`: `INTER_NEAREST` only

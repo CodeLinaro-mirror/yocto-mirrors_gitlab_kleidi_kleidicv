@@ -14,13 +14,15 @@ namespace kleidicv {
 
 template <typename T>
 inline bool remap_s16_is_implemented(
-    size_t src_stride, size_t dst_width, kleidicv_border_type_t border_type,
+    size_t src_stride, size_t src_width, size_t src_height, size_t dst_width,
+    kleidicv_border_type_t border_type,
     size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
   if constexpr (std::is_same<T, uint8_t>::value) {
-    return (
-        src_stride <= std::numeric_limits<uint16_t>::max() && dst_width >= 8 &&
-        border_type == kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE &&
-        channels == 1);
+    return (src_stride <= std::numeric_limits<uint16_t>::max() &&
+            src_width <= std::numeric_limits<int16_t>::max() + 1 &&
+            src_height <= std::numeric_limits<int16_t>::max() + 1 &&
+            dst_width >= 8 && border_type == KLEIDICV_BORDER_TYPE_REPLICATE &&
+            channels == 1);
   } else {
     return false;
   }
@@ -28,13 +30,15 @@ inline bool remap_s16_is_implemented(
 
 template <typename T>
 inline bool remap_s16point5_is_implemented(
-    size_t src_stride, size_t dst_width, kleidicv_border_type_t border_type,
+    size_t src_stride, size_t src_width, size_t src_height, size_t dst_width,
+    kleidicv_border_type_t border_type,
     size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
   if constexpr (std::is_same<T, uint8_t>::value) {
-    return (
-        src_stride <= std::numeric_limits<uint16_t>::max() && dst_width >= 8 &&
-        border_type == kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE &&
-        channels == 1);
+    return (src_stride <= std::numeric_limits<uint16_t>::max() &&
+            dst_width >= 8 &&
+            src_width <= std::numeric_limits<int16_t>::max() + 1 &&
+            src_height <= std::numeric_limits<int16_t>::max() + 1 &&
+            border_type == KLEIDICV_BORDER_TYPE_REPLICATE && channels == 1);
   } else {
     return false;
   }
