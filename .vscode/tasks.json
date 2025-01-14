@@ -84,6 +84,117 @@
       }
     },
     {
+      "label": "Build OpenCV standalone release",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-opencv.sh",
+      "problemMatcher": "$gcc",
+      "options": {
+        "env": {
+          "BUILD_ID": "opencv-standalone-release",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_EXE_LINKER_FLAGS": "-static",
+          "OPENCV_PATH": "${workspaceFolder}/build/deps/opencv",
+          "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/deps/opencv/platforms/linux/aarch64-gnu.toolchain.cmake",
+          "EXTRA_CMAKE_ARGS": "-DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 -DBUILD_SHARED_LIBS=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build OpenCV with KleidiCV release Neon",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-opencv.sh",
+      "problemMatcher": "$gcc",
+      "options": {
+        "env": {
+          "BUILD_ID": "opencv-kleidicv-release-neon",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_EXE_LINKER_FLAGS": "-static",
+          "OPENCV_PATH": "${workspaceFolder}/build/deps/opencv",
+          "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/deps/opencv/platforms/linux/aarch64-gnu.toolchain.cmake",
+          "EXTRA_CMAKE_ARGS": "-DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 -DBUILD_SHARED_LIBS=OFF -DWITH_KLEIDICV=ON -DKLEIDICV_SOURCE_PATH=${workspaceFolder} -DKLEIDICV_ENABLE_SME2=OFF -DKLEIDICV_ENABLE_SVE2=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build OpenCV with KleidiCV release SVE2",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-opencv.sh",
+      "problemMatcher": "$gcc",
+      "options": {
+        "env": {
+          "BUILD_ID": "opencv-kleidicv-release-neon",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_EXE_LINKER_FLAGS": "-static",
+          "OPENCV_PATH": "${workspaceFolder}/build/deps/opencv",
+          "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/deps/opencv/platforms/linux/aarch64-gnu.toolchain.cmake",
+          "EXTRA_CMAKE_ARGS": "-DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 -DBUILD_SHARED_LIBS=OFF -DWITH_KLEIDICV=ON -DKLEIDICV_SOURCE_PATH=${workspaceFolder} -DKLEIDICV_ENABLE_SME2=OFF -DKLEIDICV_ENABLE_SVE2=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build OpenCV standalone release (Android)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-opencv.sh",
+      "problemMatcher": "$gcc",
+      "options": {
+        "env": {
+          "BUILD_ID": "opencv-standalone-release-android",
+          "CMAKE_BUILD_TYPE": "Release",
+          "OPENCV_PATH": "${workspaceFolder}/build/deps/opencv",
+          "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/deps/android-ndk/build/cmake/android.toolchain.cmake",
+          "EXTRA_CMAKE_ARGS": "-DANDROID_ABI=arm64-v8a -DBUILD_ANDROID_PROJECTS=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build OpenCV with KleidiCV release Neon (Android)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-opencv.sh",
+      "problemMatcher": "$gcc",
+      "options": {
+        "env": {
+          "BUILD_ID": "opencv-kleidicv-release-neon-android",
+          "CMAKE_BUILD_TYPE": "Release",
+          "OPENCV_PATH": "${workspaceFolder}/build/deps/opencv",
+          "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/deps/android-ndk/build/cmake/android.toolchain.cmake",
+          "EXTRA_CMAKE_ARGS": "-DANDROID_ABI=arm64-v8a -DBUILD_ANDROID_PROJECTS=OFF -DWITH_KLEIDICV=ON -DKLEIDICV_SOURCE_PATH=${workspaceFolder} -DKLEIDICV_ENABLE_SME2=OFF -DKLEIDICV_ENABLE_SVE2=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build OpenCV with KleidiCV release SVE2 (Android)",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-opencv.sh",
+      "problemMatcher": "$gcc",
+      "options": {
+        "env": {
+          "BUILD_ID": "opencv-kleidicv-release-sve2-android",
+          "CMAKE_BUILD_TYPE": "Release",
+          "OPENCV_PATH": "${workspaceFolder}/build/deps/opencv",
+          "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/deps/android-ndk/build/cmake/android.toolchain.cmake",
+          "EXTRA_CMAKE_ARGS": "-DANDROID_ABI=arm64-v8a -DBUILD_ANDROID_PROJECTS=OFF -DWITH_KLEIDICV=ON -DKLEIDICV_SOURCE_PATH=${workspaceFolder} -DKLEIDICV_ENABLE_SME2=OFF -DKLEIDICV_ENABLE_SVE2=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
       "label": "Clean build directory",
       "type": "shell",
       "command": "rm -rf ${workspaceFolder}/build",

@@ -19,11 +19,11 @@
 #     scripts/build-opencv.sh
 #
 # To target Android devices with KleidiCV the following command can be used:
-#   BUILD_ID=opencv-android-kleidicv \
+#   BUILD_ID=opencv-kleidicv-android \
 #     OPENCV_PATH=/path/to/opencv \
 #     CMAKE_TOOLCHAIN_FILE=/path/to/android-ndk/build/cmake/android.toolchain.cmake \
 #     EXTRA_CMAKE_ARGS="-DANDROID_ABI=arm64-v8a -DWITH_KLEIDICV=ON" \
-#     scripts/benchmark/build-opencv.sh
+#     scripts/build-opencv.sh
 #
 # Options:
 #   BUILD_ID:                      Identifier of the build, defaults to 'opencv'.
