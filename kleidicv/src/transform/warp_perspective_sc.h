@@ -47,7 +47,6 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
                                 const ScalarType *border_value,
                                 Rows<ScalarType> dst_rows, size_t dst_width,
                                 size_t y_begin, size_t y_end) {
-  svbool_t pg_all64 = svptrue_b64();
   svbool_t pg_all32 = svptrue_b32();
   svfloat32_t sv_0123 = svcvt_f32_u32_z(pg_all32, svindex_u32(0, 1));
   svuint32_t sv_xmax = svdup_n_u32(src_width - 1);
@@ -65,13 +64,8 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
   svfloat32_t T3 = svdup_n_f32(transform[3]);
   svfloat32_t T6 = svdup_n_f32(transform[6]);
   svfloat32_t tx0, ty0, tw0;
-  svfloat32_t xf, yf;
   svfloat32_t xmaxf = svdup_n_f32(static_cast<float>(src_width - 1));
   svfloat32_t ymaxf = svdup_n_f32(static_cast<float>(src_height - 1));
-  svuint32_t xi, yi;
-
-  svbool_t pg32 = pg_all32;
-  svbool_t pg64_b = pg_all64, pg64_t = pg_all64;
 
   const size_t kStep = VecTraits<float>::num_lanes();
 
@@ -86,13 +80,16 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     svfloat32_t ty = svmla_x(pg_all32, ty0, vx, T3);
 
     // Calculate coordinates into the source image
-    xf = svmul_f32_x(pg_all32, tx, iw);
-    yf = svmul_f32_x(pg_all32, ty, iw);
+    return svcreate2(svmul_f32_x(pg_all32, tx, iw),
+                     svmul_f32_x(pg_all32, ty, iw));
   };
 
   auto calculate_nearest_coordinates = [&](size_t x) {
-    calculate_coordinates(x);
+    svfloat32x2_t coords = calculate_coordinates(x);
+    svfloat32_t xf = svget2(coords, 0);
+    svfloat32_t yf = svget2(coords, 1);
 
+    svuint32_t xi, yi;
     if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
       // Round to the nearest integer
       xi = svreinterpret_u32_s32(
@@ -109,69 +106,59 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
                    svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, yf, 0.5F)),
                    sv_ymax);
     }
+    return svcreate2(xi, yi);
   };
 
-  auto load_small = [&](svbool_t pg, svuint32_t x, svuint32_t y) {
-    svuint32_t offsets = svmla_x(pg, x, y, sv_src_stride);
-    return svld1ub_gather_offset_u32(pg, &src_rows[0], offsets);
-  };
-
-  auto load_large = [&](svbool_t pg_b, svbool_t pg_t, svuint32_t x,
-                        svuint32_t y) {
-    // Calculate offsets from coordinates (y * stride + x)
-    // To avoid losing precision, the final offsets should be in 64 bits
-    svuint64_t offsets_b = svmlalb(svmovlb(x), y, sv_src_stride);
-    svuint64_t offsets_t = svmlalt(svmovlt(x), y, sv_src_stride);
-    // Copy pixels from source
-    svuint64_t result_b =
-        svld1ub_gather_offset_u64(pg_b, &src_rows[0], offsets_b);
-    svuint64_t result_t =
-        svld1ub_gather_offset_u64(pg_t, &src_rows[0], offsets_t);
-    return svtrn1_u32(svreinterpret_u32_u64(result_b),
-                      svreinterpret_u32_u64(result_t));
-  };
-
-  auto get_pixels_or_border = [&](svuint32_t x, svuint32_t y) {
-    svbool_t in_range = svand_b_z(pg32, svcmple_u32(pg32, x, sv_xmax),
-                                  svcmple_u32(pg32, y, sv_ymax));
-
-    svuint32_t result;
+  auto load = [&](svbool_t pg, svuint32_t x, svuint32_t y) {
     if constexpr (IsLarge) {
-      svbool_t pg_b = in_range;
-      svbool_t pg_t = svtrn2_b32(in_range, svpfalse());
-      result = load_large(pg_b, pg_t, x, y);
-    } else {
-      result = load_small(in_range, x, y);
-    }
+      svbool_t pg_b = pg;
+      svbool_t pg_t = svtrn2_b32(pg, svpfalse());
 
+      // Calculate offsets from coordinates (y * stride + x)
+      // To avoid losing precision, the final offsets should be in 64 bits
+      svuint64_t offsets_b = svmlalb(svmovlb(x), y, sv_src_stride);
+      svuint64_t offsets_t = svmlalt(svmovlt(x), y, sv_src_stride);
+      // Copy pixels from source
+      svuint64_t result_b =
+          svld1ub_gather_offset_u64(pg_b, &src_rows[0], offsets_b);
+      svuint64_t result_t =
+          svld1ub_gather_offset_u64(pg_t, &src_rows[0], offsets_t);
+      return svtrn1_u32(svreinterpret_u32_u64(result_b),
+                        svreinterpret_u32_u64(result_t));
+    } else {
+      svuint32_t offsets = svmla_x(pg, x, y, sv_src_stride);
+      return svld1ub_gather_offset_u32(pg, &src_rows[0], offsets);
+    }
+  };
+
+  auto get_pixels_or_border = [&](svbool_t pg, svuint32_t x, svuint32_t y) {
+    svbool_t in_range =
+        svand_b_z(pg, svcmple_u32(pg, x, sv_xmax), svcmple_u32(pg, y, sv_ymax));
+    svuint32_t result = load(in_range, x, y);
     // Select between source pixels and border colour
     return svsel_u32(in_range, result, sv_border);
   };
 
   auto vector_path_nearest_4x = [&](size_t x, Columns<ScalarType> dst) {
-    auto load_source = [&](svuint32_t x, svuint32_t y) {
+    auto load_source = [&](svuint32x2_t coords) {
+      svuint32_t x = svget2(coords, 0);
+      svuint32_t y = svget2(coords, 1);
       if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
-        return get_pixels_or_border(x, y);
-      } else if constexpr (IsLarge) {
-        return load_large(pg_all64, pg_all64, x, y);
+        return get_pixels_or_border(pg_all32, x, y);
       } else {
-        return load_small(pg_all32, x, y);
+        return load(pg_all32, x, y);
       }
     };
     ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
-    calculate_nearest_coordinates(x);
-    svuint32_t res32_0 = load_source(xi, yi);
+    svuint32_t res32_0 = load_source(calculate_nearest_coordinates(x));
     x += kStep;
-    calculate_nearest_coordinates(x);
-    svuint32_t res32_1 = load_source(xi, yi);
+    svuint32_t res32_1 = load_source(calculate_nearest_coordinates(x));
     svuint16_t result0 = svuzp1_u16(svreinterpret_u16_u32(res32_0),
                                     svreinterpret_u16_u32(res32_1));
     x += kStep;
-    calculate_nearest_coordinates(x);
-    res32_0 = load_source(xi, yi);
+    res32_0 = load_source(calculate_nearest_coordinates(x));
     x += kStep;
-    calculate_nearest_coordinates(x);
-    res32_1 = load_source(xi, yi);
+    res32_1 = load_source(calculate_nearest_coordinates(x));
     svuint16_t result1 = svuzp1_u16(svreinterpret_u16_u32(res32_0),
                                     svreinterpret_u16_u32(res32_1));
     svuint8_t result =
@@ -182,31 +169,29 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
   auto vector_path_nearest_tail = [&](size_t x, size_t x_max,
                                       Columns<ScalarType> dst) {
     size_t length = x_max - x;
-    pg64_b = svwhilelt_b64(0ULL, (length + 1) / 2);
-    pg64_t = svwhilelt_b64(0ULL, length / 2);
-    pg32 = svwhilelt_b32(0ULL, length);
-    calculate_nearest_coordinates(x);
-    svuint32_t result;
+    svbool_t pg32 = svwhilelt_b32(0ULL, length);
 
+    svuint32x2_t coords = calculate_nearest_coordinates(x);
+    svuint32_t xi = svget2(coords, 0);
+    svuint32_t yi = svget2(coords, 1);
+
+    svuint32_t result;
     if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
-      result = get_pixels_or_border(xi, yi);
+      result = get_pixels_or_border(pg32, xi, yi);
     } else {
-      // To avoid losing precision, the final indices use 64 bits
-      result = load_large(pg64_b, pg64_t, xi, yi);
+      result = load(pg32, xi, yi);
     }
     svst1b_u32(pg32, &dst[static_cast<ptrdiff_t>(x)], result);
   };
 
-  auto calculate_linear_replicate = [&](uint32_t x) {
+  auto calculate_linear_replicate = [&](svbool_t pg, uint32_t x) {
     auto load_source = [&](svuint32_t x, svuint32_t y) {
-      if constexpr (IsLarge) {
-        return load_large(pg64_b, pg64_t, x, y);
-      } else {
-        return load_small(pg32, x, y);
-      }
+      return load(pg, x, y);
     };
 
-    calculate_coordinates(x);
+    svfloat32x2_t coords = calculate_coordinates(x);
+    svfloat32_t xf = svget2(coords, 0);
+    svfloat32_t yf = svget2(coords, 1);
     // Take the integer part, clamp it to within the dimensions of the
     // source image (negative values are already saturated to 0)
     svuint32_t x0 = svcvt_u32_f32_x(pg_all32, svmin_x(pg_all32, xf, xmaxf));
@@ -245,56 +230,54 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
         svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, result, 0.5F)));
   };
 
-  auto calculate_linear_constant_border = [&](uint32_t x) {
-    calculate_coordinates(x);
+  auto calculate_linear_constant_border = [&](svbool_t pg, uint32_t x) {
+    svfloat32x2_t coords = calculate_coordinates(x);
+    svfloat32_t xf = svget2(coords, 0);
+    svfloat32_t yf = svget2(coords, 1);
 
     // Convert obviously out-of-range coordinates to values that are just beyond
     // the largest permitted image width & height. This avoids the need for
     // special case handling elsewhere.
     svfloat32_t big = svdup_n_f32(1 << 24);
-    xf = svsel_f32(svcmple_f32(pg_all32, svabs_f32_x(pg_all32, xf), big), xf,
-                   big);
-    yf = svsel_f32(svcmple_f32(pg_all32, svabs_f32_x(pg_all32, yf), big), yf,
-                   big);
+    xf = svsel_f32(svcmple_f32(pg, svabs_f32_x(pg, xf), big), xf, big);
+    yf = svsel_f32(svcmple_f32(pg, svabs_f32_x(pg, yf), big), yf, big);
 
-    svfloat32_t xf0 = svrintm_f32_x(pg_all32, xf);
-    svfloat32_t yf0 = svrintm_f32_x(pg_all32, yf);
+    svfloat32_t xf0 = svrintm_f32_x(pg, xf);
+    svfloat32_t yf0 = svrintm_f32_x(pg, yf);
 
-    svint32_t x0 = svcvt_s32_x(pg_all32, xf0);
-    svint32_t y0 = svcvt_s32_x(pg_all32, yf0);
-    svint32_t x1 = svadd_s32_x(pg_all32, x0, svdup_n_s32(1));
-    svint32_t y1 = svadd_s32_x(pg_all32, y0, svdup_n_s32(1));
+    svint32_t x0 = svcvt_s32_x(pg, xf0);
+    svint32_t y0 = svcvt_s32_x(pg, yf0);
+    svint32_t x1 = svadd_s32_x(pg, x0, svdup_n_s32(1));
+    svint32_t y1 = svadd_s32_x(pg, y0, svdup_n_s32(1));
 
-    svfloat32_t xfrac = svsub_f32_x(pg_all32, xf, xf0);
-    svfloat32_t yfrac = svsub_f32_x(pg_all32, yf, yf0);
+    svfloat32_t xfrac = svsub_f32_x(pg, xf, xf0);
+    svfloat32_t yfrac = svsub_f32_x(pg, yf, yf0);
 
-    svfloat32_t a = svcvt_f32_u32_x(
-        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x0),
-                                       svreinterpret_u32_s32(y0)));
-    svfloat32_t b = svcvt_f32_u32_x(
-        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x1),
-                                       svreinterpret_u32_s32(y0)));
-    svfloat32_t line0 =
-        svmla_f32_x(pg_all32, a, svsub_f32_x(pg_all32, b, a), xfrac);
-    svfloat32_t c = svcvt_f32_u32_x(
-        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x0),
-                                       svreinterpret_u32_s32(y1)));
-    svfloat32_t d = svcvt_f32_u32_x(
-        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x1),
-                                       svreinterpret_u32_s32(y1)));
-    svfloat32_t line1 =
-        svmla_f32_x(pg_all32, c, svsub_f32_x(pg_all32, d, c), xfrac);
-    svfloat32_t result = svmla_f32_x(
-        pg_all32, line0, svsub_f32_x(pg_all32, line1, line0), yfrac);
-    return svcvt_u32_f32_x(pg_all32, svrinta_f32_x(pg_all32, result));
+    svfloat32_t a =
+        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x0),
+                                                 svreinterpret_u32_s32(y0)));
+    svfloat32_t b =
+        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x1),
+                                                 svreinterpret_u32_s32(y0)));
+    svfloat32_t line0 = svmla_f32_x(pg, a, svsub_f32_x(pg, b, a), xfrac);
+    svfloat32_t c =
+        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x0),
+                                                 svreinterpret_u32_s32(y1)));
+    svfloat32_t d =
+        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x1),
+                                                 svreinterpret_u32_s32(y1)));
+    svfloat32_t line1 = svmla_f32_x(pg, c, svsub_f32_x(pg, d, c), xfrac);
+    svfloat32_t result =
+        svmla_f32_x(pg, line0, svsub_f32_x(pg, line1, line0), yfrac);
+    return svcvt_u32_f32_x(pg, svrinta_f32_x(pg, result));
   };
 
-  auto calculate_linear = [&](uint32_t x) {
+  auto calculate_linear = [&](svbool_t pg, uint32_t x) {
     if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
-      return calculate_linear_replicate(x);
+      return calculate_linear_replicate(pg, x);
     } else {
       static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
-      return calculate_linear_constant_border(x);
+      return calculate_linear_constant_border(pg, x);
     }
   };
 
@@ -308,9 +291,6 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     ty0 = svdup_n_f32(fmaf(transform[4], fy, transform[5]));
     tw0 = svdup_n_f32(fmaf(transform[7], fy, transform[8]));
 
-    pg32 = pg_all32;
-    pg64_b = pg64_t = pg_all64;
-
     LoopUnroll2 loop{dst_width, kStep};
     if constexpr (Inter == KLEIDICV_INTERPOLATION_NEAREST) {
       loop.unroll_four_times([&](size_t x) { vector_path_nearest_4x(x, dst); });
@@ -322,15 +302,15 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     } else if constexpr (Inter == KLEIDICV_INTERPOLATION_LINEAR) {
       loop.unroll_four_times([&](size_t x) {
         ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
-        svuint32_t res0 = calculate_linear(x);
+        svuint32_t res0 = calculate_linear(pg_all32, x);
         x += kStep;
-        svuint32_t res1 = calculate_linear(x);
+        svuint32_t res1 = calculate_linear(pg_all32, x);
         svuint16_t result16_0 = svuzp1_u16(svreinterpret_u16_u32(res0),
                                            svreinterpret_u16_u32(res1));
         x += kStep;
-        res0 = calculate_linear(x);
+        res0 = calculate_linear(pg_all32, x);
         x += kStep;
-        res1 = calculate_linear(x);
+        res1 = calculate_linear(pg_all32, x);
         svuint16_t result16_1 = svuzp1_u16(svreinterpret_u16_u32(res0),
                                            svreinterpret_u16_u32(res1));
         svst1_u8(svptrue_b8(), p_dst,
@@ -339,18 +319,13 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
       });
       loop.unroll_once([&](size_t x) {
         ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
-        svuint32_t result = calculate_linear(x);
+        svuint32_t result = calculate_linear(pg_all32, x);
         svst1b_u32(pg_all32, p_dst, result);
       });
       loop.remaining([&](size_t x, size_t x_max) {
         ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
-        size_t length = x_max - x;
-        pg32 = svwhilelt_b32(0ULL, length);
-        if constexpr (IsLarge) {
-          pg64_b = svwhilelt_b64(0ULL, (length + 1) / 2);
-          pg64_t = svwhilelt_b64(0ULL, length / 2);
-        }
-        svuint32_t result = calculate_linear(x);
+        svbool_t pg32 = svwhilelt_b32(x, x_max);
+        svuint32_t result = calculate_linear(pg32, x);
         svst1b_u32(pg32, p_dst, result);
       });
     } else {
