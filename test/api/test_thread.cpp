@@ -666,13 +666,13 @@ TEST_P(Thread, warp_perspective_u8_not_implemented) {
       KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
   check_warp_perspective_not_implemented<uint8_t>(
       kleidicv_thread_warp_perspective_u8, 1, KLEIDICV_INTERPOLATION_NEAREST,
-      KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
+      KLEIDICV_BORDER_TYPE_REFLECT, border_value);
   check_warp_perspective_not_implemented<uint8_t>(
       kleidicv_thread_warp_perspective_u8, 2, KLEIDICV_INTERPOLATION_LINEAR,
       KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
   check_warp_perspective_not_implemented<uint8_t>(
       kleidicv_thread_warp_perspective_u8, 1, KLEIDICV_INTERPOLATION_LINEAR,
-      KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
+      KLEIDICV_BORDER_TYPE_REFLECT, border_value);
 }
 
 TEST_P(Thread, SobelHorizontal1Channel) {

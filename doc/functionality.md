@@ -99,7 +99,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Remap int16+uint16 fixed-point coordinates |  x  |     |
 
 # WarpPerspective
-|                                          |  u8 | u16 |
-|------------------------------------------|-----|-----|
-| Nearest neighbour, replicated borders    |  x  |     |
-| Linear interpolation, replicated borders |  x  |     |
+|                      |  u8 |
+|----------------------|-----|
+| Nearest neighbour    |  x  |
+| Linear interpolation |  x  |

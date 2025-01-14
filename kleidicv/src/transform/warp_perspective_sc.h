@@ -4,7 +4,9 @@
 
 #include <arm_sve.h>
 
+#include <cassert>
 #include <cmath>
+#include <utility>
 
 #include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
@@ -37,11 +39,12 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 //      yt = (T3*x + T4*y + T5) / (T6*x + T7*y + T8)
 //
 
-template <typename ScalarType, kleidicv_interpolation_type_t Inter,
-          bool IsLarge>
+template <typename ScalarType, bool IsLarge,
+          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
 void warp_perspective_operation(Rows<const ScalarType> src_rows,
                                 size_t src_width, size_t src_height,
                                 const float transform[9],
+                                const ScalarType *border_value,
                                 Rows<ScalarType> dst_rows, size_t dst_width,
                                 size_t y_begin, size_t y_end) {
   svbool_t pg_all64 = svptrue_b64();
@@ -50,6 +53,13 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
   svuint32_t sv_xmax = svdup_n_u32(src_width - 1);
   svuint32_t sv_ymax = svdup_n_u32(src_height - 1);
   svuint32_t sv_src_stride = svdup_n_u32(src_rows.stride());
+  svuint32_t sv_border;
+  // sv_border is only used if the border type is constant.
+  // If the border type is not constant then border_value is permitted to be
+  // null and must not be read.
+  if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    sv_border = svdup_n_u32(border_value[0]);
+  }
 
   svfloat32_t T0 = svdup_n_f32(transform[0]);
   svfloat32_t T3 = svdup_n_f32(transform[3]);
@@ -82,14 +92,23 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
 
   auto calculate_nearest_coordinates = [&](size_t x) {
     calculate_coordinates(x);
-    // Round to the nearest integer, clamp it to within the dimensions of the
-    // source image (negative values are already saturated to 0)
-    xi = svmin_x(pg_all32,
-                 svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, xf, 0.5F)),
-                 sv_xmax);
-    yi = svmin_x(pg_all32,
-                 svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, yf, 0.5F)),
-                 sv_ymax);
+
+    if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+      // Round to the nearest integer
+      xi = svreinterpret_u32_s32(
+          svcvt_s32_f32_x(pg_all32, svrinta_f32_x(pg_all32, xf)));
+      yi = svreinterpret_u32_s32(
+          svcvt_s32_f32_x(pg_all32, svrinta_f32_x(pg_all32, yf)));
+    } else {
+      // Round to the nearest integer, clamp it to within the dimensions of the
+      // source image (negative values are already saturated to 0)
+      xi = svmin_x(pg_all32,
+                   svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, xf, 0.5F)),
+                   sv_xmax);
+      yi = svmin_x(pg_all32,
+                   svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, yf, 0.5F)),
+                   sv_ymax);
+    }
   };
 
   auto load_small = [&](svbool_t pg, svuint32_t x, svuint32_t y) {
@@ -112,9 +131,28 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
                       svreinterpret_u32_u64(result_t));
   };
 
+  auto get_pixels_or_border = [&](svuint32_t x, svuint32_t y) {
+    svbool_t in_range = svand_b_z(pg32, svcmple_u32(pg32, x, sv_xmax),
+                                  svcmple_u32(pg32, y, sv_ymax));
+
+    svuint32_t result;
+    if constexpr (IsLarge) {
+      svbool_t pg_b = in_range;
+      svbool_t pg_t = svtrn2_b32(in_range, svpfalse());
+      result = load_large(pg_b, pg_t, x, y);
+    } else {
+      result = load_small(in_range, x, y);
+    }
+
+    // Select between source pixels and border colour
+    return svsel_u32(in_range, result, sv_border);
+  };
+
   auto vector_path_nearest_4x = [&](size_t x, Columns<ScalarType> dst) {
     auto load_source = [&](svuint32_t x, svuint32_t y) {
-      if constexpr (IsLarge) {
+      if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+        return get_pixels_or_border(x, y);
+      } else if constexpr (IsLarge) {
         return load_large(pg_all64, pg_all64, x, y);
       } else {
         return load_small(pg_all32, x, y);
@@ -144,16 +182,22 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
   auto vector_path_nearest_tail = [&](size_t x, size_t x_max,
                                       Columns<ScalarType> dst) {
     size_t length = x_max - x;
-    svbool_t pg_b = svwhilelt_b64(0ULL, (length + 1) / 2);
-    svbool_t pg_t = svwhilelt_b64(0ULL, length / 2);
-    svbool_t pg = svwhilelt_b32(0ULL, length);
-    // To avoid losing precision, the final indices use 64 bits
+    pg64_b = svwhilelt_b64(0ULL, (length + 1) / 2);
+    pg64_t = svwhilelt_b64(0ULL, length / 2);
+    pg32 = svwhilelt_b32(0ULL, length);
     calculate_nearest_coordinates(x);
-    svuint32_t result = load_large(pg_b, pg_t, xi, yi);
-    svst1b_u32(pg, &dst[static_cast<ptrdiff_t>(x)], result);
+    svuint32_t result;
+
+    if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+      result = get_pixels_or_border(xi, yi);
+    } else {
+      // To avoid losing precision, the final indices use 64 bits
+      result = load_large(pg64_b, pg64_t, xi, yi);
+    }
+    svst1b_u32(pg32, &dst[static_cast<ptrdiff_t>(x)], result);
   };
 
-  auto calculate_linear = [&](size_t x) {
+  auto calculate_linear_replicate = [&](uint32_t x) {
     auto load_source = [&](svuint32_t x, svuint32_t y) {
       if constexpr (IsLarge) {
         return load_large(pg64_b, pg64_t, x, y);
@@ -199,6 +243,59 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     return svmin_u32_x(
         pg_all32, svdup_n_u32(0xFF),
         svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, result, 0.5F)));
+  };
+
+  auto calculate_linear_constant_border = [&](uint32_t x) {
+    calculate_coordinates(x);
+
+    // Convert obviously out-of-range coordinates to values that are just beyond
+    // the largest permitted image width & height. This avoids the need for
+    // special case handling elsewhere.
+    svfloat32_t big = svdup_n_f32(1 << 24);
+    xf = svsel_f32(svcmple_f32(pg_all32, svabs_f32_x(pg_all32, xf), big), xf,
+                   big);
+    yf = svsel_f32(svcmple_f32(pg_all32, svabs_f32_x(pg_all32, yf), big), yf,
+                   big);
+
+    svfloat32_t xf0 = svrintm_f32_x(pg_all32, xf);
+    svfloat32_t yf0 = svrintm_f32_x(pg_all32, yf);
+
+    svint32_t x0 = svcvt_s32_x(pg_all32, xf0);
+    svint32_t y0 = svcvt_s32_x(pg_all32, yf0);
+    svint32_t x1 = svadd_s32_x(pg_all32, x0, svdup_n_s32(1));
+    svint32_t y1 = svadd_s32_x(pg_all32, y0, svdup_n_s32(1));
+
+    svfloat32_t xfrac = svsub_f32_x(pg_all32, xf, xf0);
+    svfloat32_t yfrac = svsub_f32_x(pg_all32, yf, yf0);
+
+    svfloat32_t a = svcvt_f32_u32_x(
+        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x0),
+                                       svreinterpret_u32_s32(y0)));
+    svfloat32_t b = svcvt_f32_u32_x(
+        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x1),
+                                       svreinterpret_u32_s32(y0)));
+    svfloat32_t line0 =
+        svmla_f32_x(pg_all32, a, svsub_f32_x(pg_all32, b, a), xfrac);
+    svfloat32_t c = svcvt_f32_u32_x(
+        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x0),
+                                       svreinterpret_u32_s32(y1)));
+    svfloat32_t d = svcvt_f32_u32_x(
+        pg_all32, get_pixels_or_border(svreinterpret_u32_s32(x1),
+                                       svreinterpret_u32_s32(y1)));
+    svfloat32_t line1 =
+        svmla_f32_x(pg_all32, c, svsub_f32_x(pg_all32, d, c), xfrac);
+    svfloat32_t result = svmla_f32_x(
+        pg_all32, line0, svsub_f32_x(pg_all32, line1, line0), yfrac);
+    return svcvt_u32_f32_x(pg_all32, svrinta_f32_x(pg_all32, result));
+  };
+
+  auto calculate_linear = [&](uint32_t x) {
+    if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
+      return calculate_linear_replicate(x);
+    } else {
+      static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
+      return calculate_linear_constant_border(x);
+    }
   };
 
   auto process_row = [&](size_t y, Columns<ScalarType> dst) {
@@ -269,6 +366,37 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
   }
 }
 
+// Convert border_type to a template argument.
+template <typename ScalarType, bool IsLarge,
+          kleidicv_interpolation_type_t Inter, typename... Args>
+void warp_perspective_operation(kleidicv_border_type_t border_type,
+                                Args &&...args) {
+  if (border_type == KLEIDICV_BORDER_TYPE_REPLICATE) {
+    warp_perspective_operation<ScalarType, IsLarge, Inter,
+                               KLEIDICV_BORDER_TYPE_REPLICATE>(
+        std::forward<Args>(args)...);
+  } else {
+    warp_perspective_operation<ScalarType, IsLarge, Inter,
+                               KLEIDICV_BORDER_TYPE_CONSTANT>(
+        std::forward<Args>(args)...);
+  }
+}
+
+// Convert interpolation_type to a template argument.
+template <typename ScalarType, bool IsLarge, typename... Args>
+void warp_perspective_operation(
+    kleidicv_interpolation_type_t interpolation_type, Args &&...args) {
+  if (interpolation_type == KLEIDICV_INTERPOLATION_NEAREST) {
+    warp_perspective_operation<ScalarType, IsLarge,
+                               KLEIDICV_INTERPOLATION_NEAREST>(
+        std::forward<Args>(args)...);
+  } else {
+    warp_perspective_operation<ScalarType, IsLarge,
+                               KLEIDICV_INTERPOLATION_LINEAR>(
+        std::forward<Args>(args)...);
+  }
+}
+
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename T>
@@ -277,12 +405,15 @@ KLEIDICV_LOCALLY_STREAMING kleidicv_error_t warp_perspective_stripe_sc(
     T *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     size_t y_begin, size_t y_end, const float transformation[9],
     size_t channels, kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t, const T *) {
+    kleidicv_border_type_t border_type, const T *border_value) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_POINTERS(transformation);
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT && nullptr == border_value) {
+    return KLEIDICV_ERROR_NULL_POINTER;
+  }
 
   // Calculating in float32_t will only be precise until 24 bits, and
   // multiplication can only be done with 32x32 bits
@@ -299,35 +430,13 @@ KLEIDICV_LOCALLY_STREAMING kleidicv_error_t warp_perspective_stripe_sc(
   dst_rows += y_begin;
 
   if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
-    switch (interpolation) {
-      case KLEIDICV_INTERPOLATION_NEAREST:
-        warp_perspective_operation<T, KLEIDICV_INTERPOLATION_NEAREST, true>(
-            src_rows, src_width, src_height, transformation, dst_rows,
-            dst_width, y_begin, y_end);
-        break;
-      case KLEIDICV_INTERPOLATION_LINEAR:
-        warp_perspective_operation<T, KLEIDICV_INTERPOLATION_LINEAR, true>(
-            src_rows, src_width, src_height, transformation, dst_rows,
-            dst_width, y_begin, y_end);
-        break;
-      default:
-        break;  // GCOVR_EXCL_LINE
-    }
+    warp_perspective_operation<T, true>(
+        interpolation, border_type, src_rows, src_width, src_height,
+        transformation, border_value, dst_rows, dst_width, y_begin, y_end);
   } else {
-    switch (interpolation) {
-      case KLEIDICV_INTERPOLATION_NEAREST:
-        warp_perspective_operation<T, KLEIDICV_INTERPOLATION_NEAREST, false>(
-            src_rows, src_width, src_height, transformation, dst_rows,
-            dst_width, y_begin, y_end);
-        break;
-      case KLEIDICV_INTERPOLATION_LINEAR:
-        warp_perspective_operation<T, KLEIDICV_INTERPOLATION_LINEAR, false>(
-            src_rows, src_width, src_height, transformation, dst_rows,
-            dst_width, y_begin, y_end);
-        break;
-      default:
-        break;  // GCOVR_EXCL_LINE
-    }
+    warp_perspective_operation<T, false>(
+        interpolation, border_type, src_rows, src_width, src_height,
+        transformation, border_value, dst_rows, dst_width, y_begin, y_end);
   }
 
   return KLEIDICV_OK;

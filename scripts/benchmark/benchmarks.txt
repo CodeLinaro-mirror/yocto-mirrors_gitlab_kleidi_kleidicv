@@ -85,6 +85,10 @@ WarpPerspective_Nearest: opencv_perf_imgproc '*WarpPerspective/*' '($PIXEL_FORMA
 WarpPerspectiveNear_Nearest: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXEL_FORMAT, INTER_NEAREST, BORDER_REPLICATE, 8UC1)'
 WarpPerspective_Linear: opencv_perf_imgproc '*WarpPerspective/*' '($PIXEL_FORMAT, INTER_LINEAR, BORDER_REPLICATE, 8UC1)'
 WarpPerspectiveNear_Linear: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXEL_FORMAT, INTER_LINEAR, BORDER_REPLICATE, 8UC1)'
+WarpPerspective_Nearest_Constant: opencv_perf_imgproc '*WarpPerspective/*' '($PIXEL_FORMAT, INTER_NEAREST, BORDER_CONSTANT, 8UC1)'
+WarpPerspectiveNear_Nearest_Constant: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXEL_FORMAT, INTER_NEAREST, BORDER_CONSTANT, 8UC1)'
+WarpPerspective_Linear_Constant: opencv_perf_imgproc '*WarpPerspective/*' '($PIXEL_FORMAT, INTER_LINEAR, BORDER_CONSTANT, 8UC1)'
+WarpPerspectiveNear_Linear_Constant: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXEL_FORMAT, INTER_LINEAR, BORDER_CONSTANT, 8UC1)'
 
 BlurAndDownsample: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC1)'
 

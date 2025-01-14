@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include <climits>
 #include <cmath>
 #include <limits>
 
@@ -53,13 +54,43 @@ static void sequential_initializer(test::Array2D<ScalarType> &source) {
   }
 }
 
+template <typename ScalarType>
+static const ScalarType *get_array2d_element_or_border(
+    const test::Array2D<ScalarType> &src, ptrdiff_t x, ptrdiff_t y,
+    kleidicv_border_type_t border_type, const ScalarType *border_value) {
+  if (border_type == KLEIDICV_BORDER_TYPE_REPLICATE) {
+    x = std::clamp<ptrdiff_t>(x, 0, static_cast<ptrdiff_t>(src.width()) - 1);
+    y = std::clamp<ptrdiff_t>(y, 0, static_cast<ptrdiff_t>(src.height()) - 1);
+  } else {
+    assert(border_type == KLEIDICV_BORDER_TYPE_CONSTANT);
+    if (x >= static_cast<ptrdiff_t>(src.width()) ||
+        y >= static_cast<ptrdiff_t>(src.height()) || x < 0 || y < 0) {
+      return border_value;
+    }
+  }
+  return src.at(y, x * src.channels());
+}
+
+template <typename T>
+static const auto &get_borders() {
+  using P = std::pair<kleidicv_border_type_t, const T *>;
+  static const T border_value[KLEIDICV_MAXIMUM_CHANNEL_COUNT] = {4, 3, 2, 1};
+  static const std::array borders{
+      P{KLEIDICV_BORDER_TYPE_REPLICATE, nullptr},
+      P{KLEIDICV_BORDER_TYPE_REPLICATE, border_value},
+      P{KLEIDICV_BORDER_TYPE_CONSTANT, border_value},
+  };
+  return borders;
+}
+
 template <class ScalarType>
 class WarpPerspectiveNearest : public testing::Test {
  public:
   static void test_stripe(size_t src_w, size_t src_h, size_t dst_w,
                           size_t dst_h, size_t y_begin, size_t y_end,
                           const float transform[9], size_t channels,
-                          size_t padding,
+                          kleidicv_border_type_t border_type,
+                          const ScalarType *border_value, size_t padding,
                           void (*initializer)(test::Array2D<ScalarType> &) =
                               sequential_initializer) {
     size_t src_total_width = channels * src_w;
@@ -77,7 +108,8 @@ class WarpPerspectiveNearest : public testing::Test {
       }
     }
 
-    calculate_expected(source, y_begin, y_end, transform, expected);
+    calculate_expected(source, y_begin, y_end, transform, border_type,
+                       border_value, expected);
 
     ASSERT_EQ(
         KLEIDICV_OK,
@@ -85,7 +117,7 @@ class WarpPerspectiveNearest : public testing::Test {
             source.data(), source.stride(), source.width(), source.height(),
             actual.data(), actual.stride(), actual.width(), actual.height(),
             y_begin, y_end, transform, channels, KLEIDICV_INTERPOLATION_NEAREST,
-            KLEIDICV_BORDER_TYPE_REPLICATE, {}));
+            border_type, border_value));
 
     ScalarType threshold = 1;
     for (size_t row = y_begin; row < y_end; ++row) {
@@ -114,16 +146,19 @@ class WarpPerspectiveNearest : public testing::Test {
   }
 
   static void test(size_t src_w, size_t src_h, size_t dst_w, size_t dst_h,
-                   const float transform[9], size_t channels, size_t padding,
+                   const float transform[9], size_t channels,
+                   kleidicv_border_type_t border_type,
+                   const ScalarType *border_value, size_t padding,
                    void (*initializer)(test::Array2D<ScalarType> &) =
                        sequential_initializer) {
     test_stripe(src_w, src_h, dst_w, dst_h, 0, dst_h, transform, channels,
-                padding, initializer);
+                border_type, border_value, padding, initializer);
   }
 
   static void test_special_source(
       size_t src_w, size_t src_h, size_t src_stride, size_t dst_w, size_t dst_h,
       const float transform[9], size_t channels,
+      kleidicv_border_type_t border_type, const ScalarType *border_value,
       void (*initializer)(test::Array2D<ScalarType> &) =
           sequential_initializer) {
     size_t src_total_width = channels * src_w;
@@ -142,14 +177,15 @@ class WarpPerspectiveNearest : public testing::Test {
 
     actual.fill(42);
 
-    calculate_expected(source, 0, expected.height(), transform, expected);
+    calculate_expected(source, 0, expected.height(), transform, border_type,
+                       border_value, expected);
 
     ASSERT_EQ(KLEIDICV_OK,
               kleidicv_warp_perspective_u8(
                   source.data(), src_stride, src_w, src_h, actual.data(),
                   actual.stride(), actual.width(), actual.height(), transform,
-                  channels, KLEIDICV_INTERPOLATION_NEAREST,
-                  KLEIDICV_BORDER_TYPE_REPLICATE, {}));
+                  channels, KLEIDICV_INTERPOLATION_NEAREST, border_type,
+                  border_value));
 
     EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, actual, expected);
   }
@@ -157,7 +193,14 @@ class WarpPerspectiveNearest : public testing::Test {
  private:
   static void calculate_expected(test::Array2D<ScalarType> &src, size_t y_begin,
                                  size_t y_end, const float transform[9],
+                                 kleidicv_border_type_t border_type,
+                                 const ScalarType *border_value,
                                  test::Array2D<ScalarType> &expected) {
+    auto get_src = [&](ptrdiff_t x, ptrdiff_t y) {
+      return get_array2d_element_or_border(src, x, y, border_type,
+                                           border_value);
+    };
+
     for (size_t y = y_begin; y < y_end; ++y) {
       for (size_t x = 0; x < expected.width() / src.channels(); ++x) {
         float dx = static_cast<float>(x), dy = static_cast<float>(y);
@@ -168,13 +211,14 @@ class WarpPerspectiveNearest : public testing::Test {
             inv_w * (transform[0] * dx + transform[1] * dy + transform[2]);
         float fy =
             inv_w * (transform[3] * dx + transform[4] * dy + transform[5]);
-        ptrdiff_t ix = static_cast<ptrdiff_t>(
-            std::max<double>(0, std::min(fx + 0.5, src.width() - 1.0)));
-        ptrdiff_t iy = static_cast<ptrdiff_t>(
-            std::max<double>(0, std::min(fy + 0.5, src.height() - 1.0)));
+        ptrdiff_t ix = static_cast<ptrdiff_t>(std::max<double>(
+            INT_MIN,
+            std::min<double>(std::round(fx), KLEIDICV_MAX_IMAGE_PIXELS)));
+        ptrdiff_t iy = static_cast<ptrdiff_t>(std::max<double>(
+            INT_MIN,
+            std::min<double>(std::round(fy), KLEIDICV_MAX_IMAGE_PIXELS)));
         for (size_t ch = 0; ch < src.channels(); ++ch) {
-          *expected.at(y, x * src.channels() + ch) =
-              *src.at(iy, ix * src.channels() + ch);
+          *expected.at(y, x * src.channels() + ch) = get_src(ix, iy)[ch];
         }
       }
     }
@@ -189,7 +233,10 @@ TYPED_TEST(WarpPerspectiveNearest, IdentityNoPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_identity, 1, 0);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_identity, 1,
+                      border_type, border_value, 0);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, TransposeNoPadding) {
@@ -197,7 +244,10 @@ TYPED_TEST(WarpPerspectiveNearest, TransposeNoPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_transpose, 1, 0);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_transpose, 1,
+                      border_type, border_value, 0);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, SmallPadding) {
@@ -205,7 +255,10 @@ TYPED_TEST(WarpPerspectiveNearest, SmallPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_small, 1, 13);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_small, 1,
+                      border_type, border_value, 13);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, Upscale) {
@@ -221,7 +274,10 @@ TYPED_TEST(WarpPerspectiveNearest, Upscale) {
   size_t src_h = 4;
   size_t dst_w = src_w * 3;
   size_t dst_h = src_h * 2;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1, 3);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1,
+                      border_type, border_value, 3);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, RandomTransform) {
@@ -235,7 +291,10 @@ TYPED_TEST(WarpPerspectiveNearest, RandomTransform) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform, 1, 19);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform, 1, border_type,
+                      border_value, 19);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, DivisionByZero) {
@@ -251,7 +310,10 @@ TYPED_TEST(WarpPerspectiveNearest, DivisionByZero) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1, 3);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1,
+                      border_type, border_value, 3);
+  }
 }
 
 static const size_t kBigWidth = 1ULL << 17, kBigHeight = 1ULL << 17;
@@ -270,8 +332,8 @@ static void part_initializer(test::Array2D<ScalarType> &source) {
 TYPED_TEST(WarpPerspectiveNearest, BigSourceImage) {
   // clang-format off
   const float transform_cut[] = {
-    1, 0, kBigWidth,
-    0, 1, kBigHeight,
+    1, 0, kBigWidth + kPartWidth * 0.5F,
+    0, 1, kBigHeight + kPartHeight * 0.5F,
     0, 0, 1
   };
   // clang-format on
@@ -281,9 +343,10 @@ TYPED_TEST(WarpPerspectiveNearest, BigSourceImage) {
   size_t dst_h = kPartHeight;
   size_t src_w = kBigWidth + kPartWidth;
   size_t src_h = kBigHeight + kPartHeight;
-
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_cut, 1, 0,
-                    part_initializer);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_cut, 1, border_type,
+                      border_value, 0, part_initializer);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, BigWidthDestination) {
@@ -299,7 +362,10 @@ TYPED_TEST(WarpPerspectiveNearest, BigWidthDestination) {
   size_t dst_h = 1;
   size_t src_w = dst_w / 1000;
   size_t src_h = dst_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1, 3);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1,
+                      border_type, border_value, 3);
+  }
 }
 
 static const size_t kHugeHeight = (1ULL << 24) - 1;
@@ -316,8 +382,11 @@ TYPED_TEST(WarpPerspectiveNearest, BigHeightDestination) {
   size_t dst_h = kHugeHeight;
   size_t src_w = dst_w;
   size_t src_h = dst_h / 10000;
-  TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - kPartHeight,
-                           dst_h, transform_upscale, 1, 0);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - kPartHeight,
+                             dst_h, transform_upscale, 1, border_type,
+                             border_value, 0);
+  }
 }
 
 template <class ScalarType>
@@ -343,9 +412,11 @@ TYPED_TEST(WarpPerspectiveNearest, HugeHeightSourceAndDestination) {
   size_t dst_h = (1ULL << 24) - 1;
   size_t src_w = dst_w;
   size_t src_h = dst_h;
-  TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - 16, dst_h,
-                           transform, 1, 0,
-                           huge_height_part_initializer<TypeParam>);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - 16, dst_h,
+                             transform, 1, border_type, border_value, 0,
+                             huge_height_part_initializer<TypeParam>);
+  }
 }
 
 static const size_t oneline_big_width = 1ULL << 23;
@@ -375,11 +446,15 @@ TYPED_TEST(WarpPerspectiveNearest, OneLineBigSourceImage) {
   size_t src_w = oneline_big_width + oneline_part_width;
   size_t src_h = 1;
 
-  TestFixture::test_special_source(src_w, src_h, 0, dst_w, dst_h, tr, 1,
-                                   oneline_part_initializer);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_special_source(src_w, src_h, 0, dst_w, dst_h, tr, 1,
+                                     border_type, border_value,
+                                     oneline_part_initializer);
 
-  TestFixture::test_special_source(src_w, src_h, (1ULL << 32) - 1, dst_w, dst_h,
-                                   tr, 1, oneline_part_initializer);
+    TestFixture::test_special_source(src_w, src_h, (1ULL << 32) - 1, dst_w,
+                                     dst_h, tr, 1, border_type, border_value,
+                                     oneline_part_initializer);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, OneLineSmallSourceImage) {
@@ -396,15 +471,19 @@ TYPED_TEST(WarpPerspectiveNearest, OneLineSmallSourceImage) {
   size_t src_w = 2;
   size_t src_h = 1;
 
-  TestFixture::test_special_source(src_w, src_h, src_h, dst_w, dst_h, tr, 1);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_special_source(src_w, src_h, src_h, dst_w, dst_h, tr, 1,
+                                     border_type, border_value);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveNearest, NullPointer) {
   const TypeParam src[4] = {};
+  const TypeParam border_value[KLEIDICV_MAXIMUM_CHANNEL_COUNT] = {};
   TypeParam dst[8];
   test::test_null_args(kleidicv_warp_perspective_u8, src, 2, 2, 2, dst, 8, 8, 1,
                        transform_identity, 1, KLEIDICV_INTERPOLATION_NEAREST,
-                       KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
+                       KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
 }
 
 TYPED_TEST(WarpPerspectiveNearest, ZeroImageSize) {
@@ -465,15 +544,16 @@ TYPED_TEST(WarpPerspectiveNearest, UnsupportedTwoChannels) {
                 nullptr));
 }
 
-TYPED_TEST(WarpPerspectiveNearest, UnsupportedBorderTypeConst) {
+TYPED_TEST(WarpPerspectiveNearest, UnsupportedBorderType) {
   const TypeParam src[1] = {};
+  const TypeParam border_value[KLEIDICV_MAXIMUM_CHANNEL_COUNT] = {};
   TypeParam dst[8];
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_warp_perspective_u8(
                 src, 1, 1, 1, dst, 8, 8, 1, transform_identity, 1,
-                KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_CONSTANT,
-                nullptr));
+                KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REFLECT,
+                border_value));
 }
 
 TYPED_TEST(WarpPerspectiveNearest, UnsupportedTooSmallImage) {
@@ -552,7 +632,8 @@ class WarpPerspectiveLinear : public testing::Test {
   static void test_stripe(size_t src_w, size_t src_h, size_t dst_w,
                           size_t dst_h, size_t y_begin, size_t y_end,
                           const float transform[9], size_t channels,
-                          size_t padding,
+                          kleidicv_border_type_t border_type,
+                          const ScalarType *border_value, size_t padding,
                           void (*initializer)(test::Array2D<ScalarType> &) =
                               sequential_initializer) {
     size_t src_total_width = channels * src_w;
@@ -570,7 +651,8 @@ class WarpPerspectiveLinear : public testing::Test {
       }
     }
 
-    calculate_expected(source, y_begin, y_end, transform, expected);
+    calculate_expected(source, y_begin, y_end, transform, border_type,
+                       border_value, expected);
 
     ASSERT_EQ(
         KLEIDICV_OK,
@@ -578,7 +660,7 @@ class WarpPerspectiveLinear : public testing::Test {
             source.data(), source.stride(), source.width(), source.height(),
             actual.data(), actual.stride(), actual.width(), actual.height(),
             y_begin, y_end, transform, channels, KLEIDICV_INTERPOLATION_LINEAR,
-            KLEIDICV_BORDER_TYPE_REPLICATE, {}));
+            border_type, border_value));
 
     ScalarType threshold = 1;
     for (size_t row = y_begin; row < y_end; ++row) {
@@ -607,17 +689,26 @@ class WarpPerspectiveLinear : public testing::Test {
   }
 
   static void test(size_t src_w, size_t src_h, size_t dst_w, size_t dst_h,
-                   const float transform[9], size_t channels, size_t padding,
+                   const float transform[9], size_t channels,
+                   kleidicv_border_type_t border_type,
+                   const ScalarType *border_value, size_t padding,
                    void (*initializer)(test::Array2D<ScalarType> &) =
                        sequential_initializer) {
     test_stripe(src_w, src_h, dst_w, dst_h, 0, dst_h, transform, channels,
-                padding, initializer);
+                border_type, border_value, padding, initializer);
   }
 
  private:
   static void calculate_expected(test::Array2D<ScalarType> &src, size_t y_begin,
                                  size_t y_end, const float transform[9],
+                                 kleidicv_border_type_t border_type,
+                                 const ScalarType *border_value,
                                  test::Array2D<ScalarType> &expected) {
+    auto get_src = [&](ptrdiff_t x, ptrdiff_t y) {
+      return get_array2d_element_or_border(src, x, y, border_type,
+                                           border_value);
+    };
+
     for (size_t y = y_begin; y < y_end; ++y) {
       for (size_t x = 0; x < expected.width() / src.channels(); ++x) {
         double dx = static_cast<double>(x), dy = static_cast<double>(y);
@@ -627,21 +718,19 @@ class WarpPerspectiveLinear : public testing::Test {
         double ty = transform[3] * dx + transform[4] * dy + transform[5];
         double fx = inv_w * tx;
         double fy = inv_w * ty;
-        uint32_t ix0 = static_cast<uint32_t>(
-            std::max(0.0, std::min(fx, src.width() - 1.0)));
-        uint32_t iy0 = static_cast<uint32_t>(
-            std::max(0.0, std::min(fy, src.height() - 1.0)));
-        uint32_t ix1 = (ix0 < src.width() - 1 && fx >= 0) ? ix0 + 1 : ix0;
-        uint32_t iy1 = (iy0 < src.height() - 1 && fy >= 0) ? iy0 + 1 : iy0;
-        double xfrac =
-            (ix0 < src.width() - 1 && fx >= 0) ? fx - floor(fx) : 0.0;
-        double yfrac =
-            (iy0 < src.height() - 1 && fy >= 0) ? fy - floor(fy) : 0.0;
+        ptrdiff_t ix0 = static_cast<ptrdiff_t>(std::max<double>(
+            INT_MIN, std::min<double>(floor(fx), KLEIDICV_MAX_IMAGE_PIXELS)));
+        ptrdiff_t iy0 = static_cast<ptrdiff_t>(std::max<double>(
+            INT_MIN, std::min<double>(floor(fy), KLEIDICV_MAX_IMAGE_PIXELS)));
+        ptrdiff_t ix1 = ix0 + 1;
+        ptrdiff_t iy1 = iy0 + 1;
+        double xfrac = std::isfinite(fx) ? fx - floor(fx) : 0.0;
+        double yfrac = std::isfinite(fy) ? fy - floor(fy) : 0.0;
         for (size_t ch = 0; ch < src.channels(); ++ch) {
-          double a = *src.at(iy0, ix0 * src.channels() + ch);
-          double b = *src.at(iy0, ix1 * src.channels() + ch);
-          double c = *src.at(iy1, ix0 * src.channels() + ch);
-          double d = *src.at(iy1, ix1 * src.channels() + ch);
+          double a = get_src(ix0, iy0)[ch];
+          double b = get_src(ix1, iy0)[ch];
+          double c = get_src(ix0, iy1)[ch];
+          double d = get_src(ix1, iy1)[ch];
           double line1 = (b - a) * xfrac + a;
           double line2 = (d - c) * xfrac + c;
           double double_result = (line2 - line1) * yfrac + line1;
@@ -704,7 +793,10 @@ TYPED_TEST(WarpPerspectiveLinear, IdentityNoPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_identity, 1, 0);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_identity, 1,
+                      border_type, border_value, 0);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, TransposeNoPadding) {
@@ -712,7 +804,10 @@ TYPED_TEST(WarpPerspectiveLinear, TransposeNoPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_transpose, 1, 0);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_transpose, 1,
+                      border_type, border_value, 0);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, SmallPadding) {
@@ -720,7 +815,10 @@ TYPED_TEST(WarpPerspectiveLinear, SmallPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_small, 1, 13);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_small, 1,
+                      border_type, border_value, 13);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, Upscale) {
@@ -736,7 +834,10 @@ TYPED_TEST(WarpPerspectiveLinear, Upscale) {
   size_t src_h = 4;
   size_t dst_w = src_w * 3;
   size_t dst_h = src_h * 2;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1, 3);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1,
+                      border_type, border_value, 3);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, RandomTransform) {
@@ -758,7 +859,10 @@ TYPED_TEST(WarpPerspectiveLinear, RandomTransform) {
     size_t src_h = 4;
     size_t dst_w = src_w;
     size_t dst_h = src_h;
-    TestFixture::test(src_w, src_h, dst_w, dst_h, transform, 1, 19);
+    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+      TestFixture::test(src_w, src_h, dst_w, dst_h, transform, 1, border_type,
+                        border_value, 19);
+    }
   }
 }
 
@@ -775,7 +879,10 @@ TYPED_TEST(WarpPerspectiveLinear, DivisionByZero) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1, 3);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1,
+                      border_type, border_value, 3);
+  }
 }
 
 template <class ScalarType>
@@ -801,8 +908,10 @@ TYPED_TEST(WarpPerspectiveLinear, RoughSource) {
   size_t src_h = 634;
   size_t dst_w = 17;
   size_t dst_h = 852;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transformation, 1, 13,
-                    crisscross_initializer);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transformation, 1,
+                      border_type, border_value, 13, crisscross_initializer);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, BigSourceImage) {
@@ -820,8 +929,10 @@ TYPED_TEST(WarpPerspectiveLinear, BigSourceImage) {
   size_t src_w = kBigWidth + kPartWidth + 3;
   size_t src_h = kBigHeight + kPartHeight;
 
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_cut, 1, 0,
-                    part_initializer);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_cut, 1, border_type,
+                      border_value, 0, part_initializer);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, BigWidthDestination) {
@@ -837,7 +948,10 @@ TYPED_TEST(WarpPerspectiveLinear, BigWidthDestination) {
   size_t dst_h = 1;
   size_t src_w = dst_w / 1000;
   size_t src_h = dst_h;
-  TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1, 3);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_upscale, 1,
+                      border_type, border_value, 3);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, BigHeightDestination) {
@@ -853,8 +967,11 @@ TYPED_TEST(WarpPerspectiveLinear, BigHeightDestination) {
   size_t dst_h = kHugeHeight;
   size_t src_w = dst_w;
   size_t src_h = dst_h / 10000;
-  TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - kPartHeight,
-                           dst_h, transform_upscale, 1, 0);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - kPartHeight,
+                             dst_h, transform_upscale, 1, border_type,
+                             border_value, 0);
+  }
 }
 
 TYPED_TEST(WarpPerspectiveLinear, HugeHeightSourceAndDestination) {
@@ -870,7 +987,9 @@ TYPED_TEST(WarpPerspectiveLinear, HugeHeightSourceAndDestination) {
   size_t dst_h = (1ULL << 24) - 1;
   size_t src_w = dst_w;
   size_t src_h = dst_h;
-  TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - kPartHeight,
-                           dst_h, transform, 1, 0,
-                           huge_height_part_initializer<TypeParam>);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_stripe(src_w, src_h, dst_w, dst_h, dst_h - kPartHeight,
+                             dst_h, transform, 1, border_type, border_value, 0,
+                             huge_height_part_initializer<TypeParam>);
+  }
 }

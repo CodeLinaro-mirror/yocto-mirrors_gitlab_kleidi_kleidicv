@@ -1912,6 +1912,7 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
 /// @param border_type    Way of handling the border. The supported border types
 ///                       are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
+///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT
 /// @param border_value   Border value if the border_type is
 ///                       @ref KLEIDICV_BORDER_TYPE_CONSTANT.
 kleidicv_error_t kleidicv_warp_perspective_u8(

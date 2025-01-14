@@ -21,7 +21,7 @@ This changelog aims to follow the guiding principles of
   - Nearest neighbour, for replicated borders with 1-channel u8 and u16 inputs.
   - Fixed-point interpolation, for replicated borders with 1-channel u8 input.
 - WarpPerspective implementation
-  - Nearest and Linear interpolation method, for replicated borders and 1-channel u8 input.
+  - Nearest and Linear interpolation method, for 1-channel u8 input.
 
 ### Changed
 - Increased precision of sum for 32 bit floats and expose it to OpenCV HAL.

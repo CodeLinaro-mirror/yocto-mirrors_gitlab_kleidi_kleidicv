@@ -229,7 +229,7 @@ Notes on parameters:
 * `src.cols`, `src.rows`, `dst.cols`, `dst.rows` - must be less than 2^24
 * `src.step` - must be less than 2^32
 * `dst.cols` - must be at least 8
-* `borderMode` - only supports `BORDER_REPLICATE`
+* `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`
 * `interpolation` - supports `INTER_NEAREST` and `INTER_LINEAR`
 
 ### [`cv::pyrDown()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaf9bba239dfca11654cb7f50f889fc2ff)

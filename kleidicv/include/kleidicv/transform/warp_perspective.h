@@ -35,8 +35,8 @@ inline bool warp_perspective_is_implemented(
     return (dst_width >= 8 &&
             (interpolation == KLEIDICV_INTERPOLATION_NEAREST ||
              interpolation == KLEIDICV_INTERPOLATION_LINEAR) &&
-            border_type ==
-                kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE &&
+            (border_type == KLEIDICV_BORDER_TYPE_REPLICATE ||
+             border_type == KLEIDICV_BORDER_TYPE_CONSTANT) &&
             channels == 1);
   } else {
     return false;
