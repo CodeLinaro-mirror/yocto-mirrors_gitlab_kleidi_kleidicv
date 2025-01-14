@@ -14,7 +14,7 @@
       "debugServerArgs": "-g 2345 ${workspaceFolder}/build/kleidicv-debug/test/framework/kleidicv-framework-test --gtest_filter=*",
       "cwd": "${workspaceFolder}",
       "internalConsoleOptions": "openOnSessionStart",
-      "preLaunchTask": "Build KleidiCV for debug",
+      "preLaunchTask": "Build KleidiCV debug",
     },
     {
       "name": "NEON API tests",
@@ -29,7 +29,7 @@
       "debugServerArgs": "-g 2345 -cpu cortex-a53 ${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test --vector-length=16 --gtest_filter=*",
       "cwd": "${workspaceFolder}",
       "internalConsoleOptions": "openOnSessionStart",
-      "preLaunchTask": "Build KleidiCV for debug",
+      "preLaunchTask": "Build KleidiCV debug",
     },
     {
       "name": "SVE2 API tests, 128 bits",
@@ -44,7 +44,7 @@
       "debugServerArgs": "-g 2345 -cpu max,sve128=on,sme=off ${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test --vector-length=16 --gtest_filter=*",
       "cwd": "${workspaceFolder}",
       "internalConsoleOptions": "openOnSessionStart",
-      "preLaunchTask": "Build KleidiCV for debug",
+      "preLaunchTask": "Build KleidiCV debug",
     },
     {
       "name": "SVE2 API tests, 2048 bits",
@@ -59,7 +59,7 @@
       "debugServerArgs": "-g 2345 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off ${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test --vector-length=256 --gtest_filter=*",
       "cwd": "${workspaceFolder}",
       "internalConsoleOptions": "openOnSessionStart",
-      "preLaunchTask": "Build KleidiCV for debug",
+      "preLaunchTask": "Build KleidiCV debug",
     },
     {
       "name": "SME2 API tests",
@@ -74,7 +74,7 @@
       "debugServerArgs": "-g 2345 -cpu max,sve128=on,sme512=on ${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test --vector-length=64 --gtest_filter=*",
       "cwd": "${workspaceFolder}",
       "internalConsoleOptions": "openOnSessionStart",
-      "preLaunchTask": "Build KleidiCV for debug",
+      "preLaunchTask": "Build KleidiCV debug",
     },
   ]
 }
