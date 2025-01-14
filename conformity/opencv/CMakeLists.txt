@@ -20,6 +20,7 @@ include(FetchContent)
 FetchContent_Declare(
   OpenCV
   URL ${OPENCV_URL}
+  DOWNLOAD_EXTRACT_TIMESTAMP ON
   PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/../../adapters/opencv/opencv-${OPENCV_PATCH_VERSION}.patch
 )
 

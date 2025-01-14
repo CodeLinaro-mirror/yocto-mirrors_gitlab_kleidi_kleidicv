@@ -19,6 +19,7 @@ FetchContent_Declare(
   benchmark
   URL https://github.com/google/benchmark/archive/refs/tags/v1.8.3.tar.gz
   URL_HASH SHA256=6bc180a57d23d4d9515519f92b0c83d61b05b5bab188961f36ac7b06b0d9e9ce
+  DOWNLOAD_EXTRACT_TIMESTAMP ON
 )
 FetchContent_MakeAvailable(benchmark)
 
