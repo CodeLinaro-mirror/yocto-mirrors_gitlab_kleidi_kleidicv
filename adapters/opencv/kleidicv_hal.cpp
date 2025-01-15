@@ -1023,6 +1023,12 @@ int sum(const uchar *src_data, size_t src_step, int src_type, size_t width,
 int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int angle) {
   int element_size = CV_ELEM_SIZE(src_type);
+#if !KLEIDICV_ENABLE_ALL_OPENCV_HAL
+  // KleidiCV has regression on some devices for 4-byte and 8-byte element size
+  if ((element_size != 1) && (element_size != 2)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
   int multithread_min_elements = 0;
   switch (element_size) {
