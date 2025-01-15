@@ -75,9 +75,9 @@ class RotateThread : public testing::TestWithParam<size_t> {
                           size_t height, size_t stride,
                           size_t element_size) const {
     for (size_t i = 0; i < height; i++) {
-      for (size_t j = 0; j < width * element_size; j++) {
-        ASSERT_EQ(lhs[i * stride + j], rhs[i * stride + j]);
-      }
+      ASSERT_EQ(
+          std::memcmp(lhs + i * stride, rhs + i * stride, width * element_size),
+          0);
     }
   }
 };
