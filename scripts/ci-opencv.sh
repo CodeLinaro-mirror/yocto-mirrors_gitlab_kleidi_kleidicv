@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -26,7 +26,6 @@ EXTRA_CMAKE_ARGS="\
   -DKLEIDICV_ENABLE_SME2=ON \
   -DBUILD_ANDROID_EXAMPLES=OFF \
   -DBUILD_ANDROID_PROJECTS=OFF \
-  -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCV_TRACE=OFF \
   -DBUILD_EXAMPLES=OFF \
   -DBUILD_opencv_apps=OFF \
@@ -52,8 +51,11 @@ EXTRA_CMAKE_ARGS="\
   -DWITH_IMGCODEC_PFM=OFF \
   -DWITH_ADE=OFF \
   -DWITH_LAPACK=OFF \
-  -DOPENCV_PYTHON_SKIP_DETECTION=ON" \
+  -DOPENCV_PYTHON_SKIP_DETECTION=ON \
+  -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
+  -DCMAKE_CXX_FLAGS=-Wno-nontrivial-memcall" \
 ./scripts/build-opencv.sh
+# OpenCV 4.10.0 has a warning with latest clang, so the specific warning is turned off.
 
 # ------------------------------------------------------------------------------
 # Run OpenCV conformity checks
