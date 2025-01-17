@@ -88,7 +88,6 @@ class RemapS16 : public testing::Test {
                                 const ScalarType *border_value,
                                 size_t padding) {
     test::Array2D<int16_t> mapxy{2 * dst_w, dst_h, padding, 2};
-    // One more y than x so we'll see many combinations
     const int16_t corner_x_values[] = {-32768,
                                        -1,
                                        0,
@@ -104,6 +103,8 @@ class RemapS16 : public testing::Test {
                                        static_cast<int16_t>(src_h - 1),
                                        static_cast<int16_t>(src_h),
                                        32767};
+    // Number of elements in corner_x_values and corner_y_values
+    // One more y than x, so it will cycle through all combinations
     static const size_t nx = sizeof(corner_x_values) / sizeof(int16_t);
     static const size_t ny = sizeof(corner_y_values) / sizeof(int16_t);
     size_t counter = 0;
@@ -111,6 +112,7 @@ class RemapS16 : public testing::Test {
       for (size_t column = 0; column < dst_w; ++column) {
         *mapxy.at(row, column * 2) = corner_x_values[counter % nx];
         *mapxy.at(row, column * 2 + 1) = corner_y_values[counter % ny];
+        ++counter;
       }
     }
 
