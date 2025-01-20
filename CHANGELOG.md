@@ -29,6 +29,9 @@ This changelog aims to follow the guiding principles of
 ### Fixed
 - Handling of cv::erode and cv::dilate non-default constant borders.
 
+### Removed
+- Support for OpenCV 4.10.
+
 ## 0.3.0 - 2024-12-12
 
 ### Added
