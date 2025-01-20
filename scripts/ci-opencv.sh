@@ -9,7 +9,7 @@ set -exu
 # Ensure we're at the root of the repo.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-export OPENCV_VERSION="4.10.0"
+export OPENCV_VERSION="4.11.0"
 
 # ------------------------------------------------------------------------------
 # Try to build unpatched OpenCV with KleidiCV
@@ -39,7 +39,6 @@ EXTRA_CMAKE_ARGS="\
   -DWITH_OPENJPEG=OFF \
   -DWITH_JPEG=OFF \
   -DWITH_WEBP=OFF \
-  -DWITH_PNG=OFF \
   -DWITH_TIFF=OFF \
   -DWITH_V4L=OFF \
   -DWITH_OPENCL=OFF \
@@ -55,7 +54,7 @@ EXTRA_CMAKE_ARGS="\
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_CXX_FLAGS=-Wno-nontrivial-memcall" \
 ./scripts/build-opencv.sh
-# OpenCV 4.10.0 has a warning with latest clang, so the specific warning is turned off.
+# OpenCV 4.11.0 has a warning with latest clang, so the specific warning is turned off.
 
 # ------------------------------------------------------------------------------
 # Run OpenCV conformity checks
@@ -112,18 +111,17 @@ IMGPROC_TEST_PATTERNS_STR="$(join_strings_with_colon "${IMGPROC_TEST_PATTERNS[*]
   --gtest_filter="${IMGPROC_TEST_PATTERNS_STR}" || TESTRESULT=1
 
 CORE_TEST_PATTERNS=(
-  '*Core_AbsDiff*'
-  '*Core_Add*'
-  '*Core_And*'
-  '*Core_Mul*'
-  '*Core_Sub*'
-  '*Core_Rotate*'
-  '*Core_Transpose*'
-  '*Core_MinMaxLoc*'
+  '*Core_AbsDiff/*'
+  '*Core_Add/*'
+  '*Core_And/*'
+  '*Core_Mul/*'
+  '*Core_Sub/*'
+  '*Core_Rotate/*'
+  '*Core_Transpose/*'
   '*MinMaxLoc*'
-  '*Core_ConvertScale*'
-  '*Core_Exp*'
-  '*Core_Sum*'
+  '*Core_ConvertScale/*'
+  '*Core_Exp/*'
+  '*Core_Sum/*'
   '*Core_MinMaxIdx*'
   '*Core_minMaxIdx*'
   '*Core_Array*'

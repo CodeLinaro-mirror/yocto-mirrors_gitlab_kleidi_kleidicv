@@ -14,4 +14,4 @@ Scripts within this project may download and patch third party sources.
 These third party sources are:
 * Google Test 1.12.1.
 * Google Benchmark 1.8.3.
-* OpenCV 4.10.0 (and its dependencies)
+* OpenCV 4.11.0 (and its dependencies)

@@ -29,20 +29,20 @@ For details of which OpenCV function are accelerated by KleidiCV see
 
 ### Get and patch OpenCV source
 
-This version of KleidiCV is compatible with [OpenCV](https://opencv.org) version 4.10 and later.
+This version of KleidiCV is compatible with [OpenCV](https://opencv.org) version 4.11 and later.
 Earlier versions of KleidiCV are compatible with earlier versions of OpenCV.
 OpenCV 5.x support is experimental.
 
 Integration consists of the following steps:
 1. Download OpenCV sources:
 ```
-wget https://github.com/opencv/opencv/archive/refs/tags/4.10.0.tar.gz
-tar xf 4.10.0.tar.gz
-cd opencv-4.10.0
+wget https://github.com/opencv/opencv/archive/refs/tags/4.11.0.tar.gz
+tar xf 4.11.0.tar.gz
+cd opencv-4.11.0
 ```
 2. Patch OpenCV:
 ```
-patch -p1</path/to/kleidicv/adapters/opencv/opencv-4.10.patch
+patch -p1</path/to/kleidicv/adapters/opencv/opencv-4.11.patch
 ```
 
 ### Build
