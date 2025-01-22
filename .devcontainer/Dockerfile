@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # If changing this image ID, please also change it in .gitlab-ci.yml
-FROM registry.gitlab.arm.com/kleidi/kleidicv:15
+FROM registry.gitlab.arm.com/kleidi/kleidicv:16
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
