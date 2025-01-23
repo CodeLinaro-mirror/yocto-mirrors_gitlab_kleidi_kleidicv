@@ -59,7 +59,7 @@ template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
 template void dump<float>(const TwoDimensional<float> *);
 template void dump<double>(const TwoDimensional<double> *);
 
-std::array<test::ArrayLayout, 7> small_array_layouts(size_t min_width,
+std::array<test::ArrayLayout, 8> small_array_layouts(size_t min_width,
                                                      size_t min_height) {
   size_t vl = test::Options::vector_length();
   size_t width = std::max(min_width, vl);
@@ -68,6 +68,7 @@ std::array<test::ArrayLayout, 7> small_array_layouts(size_t min_width,
       // clang-format off
       //          width,         height,  padding, channels
       {       min_width,     min_height,        0,        1},
+      {   min_width + 1, min_height + 1,        0,        1},
       {   min_width * 2,     min_height,        0,        2},
       {   min_width * 3,     min_height,       vl,        3},
       {   min_width * 3,     min_height,        0,        1},

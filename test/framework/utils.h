@@ -124,7 +124,7 @@ default_border_values() {
 }
 
 // Returns an array of just a few small layouts.
-std::array<test::ArrayLayout, 7> small_array_layouts(size_t min_width,
+std::array<test::ArrayLayout, 8> small_array_layouts(size_t min_width,
                                                      size_t min_height);
 // Returns an array of default tested layouts.
 std::array<test::ArrayLayout, 14> default_array_layouts(size_t min_width,
