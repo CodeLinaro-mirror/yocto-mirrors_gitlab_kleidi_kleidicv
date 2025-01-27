@@ -40,15 +40,14 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 //
 
 template <typename ScalarType, bool IsLarge,
-          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
-void warp_perspective_operation(Rows<const ScalarType> src_rows,
-                                size_t src_width, size_t src_height,
-                                const float transform[9],
-                                const ScalarType *border_value,
-                                Rows<ScalarType> dst_rows, size_t dst_width,
-                                size_t y_begin, size_t y_end) {
+          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border,
+          typename ProcessRow, typename CoordinateGetter>
+void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
+                           size_t src_height, const ScalarType *border_value,
+                           Rows<ScalarType> dst_rows, size_t dst_width,
+                           size_t y_begin, size_t y_end, ProcessRow process_row,
+                           CoordinateGetter coordinate_getter) {
   svbool_t pg_all32 = svptrue_b32();
-  svfloat32_t sv_0123 = svcvt_f32_u32_z(pg_all32, svindex_u32(0, 1));
   svuint32_t sv_xmax = svdup_n_u32(src_width - 1);
   svuint32_t sv_ymax = svdup_n_u32(src_height - 1);
   svuint32_t sv_src_stride = svdup_n_u32(src_rows.stride());
@@ -60,32 +59,13 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     sv_border = svdup_n_u32(border_value[0]);
   }
 
-  svfloat32_t T0 = svdup_n_f32(transform[0]);
-  svfloat32_t T3 = svdup_n_f32(transform[3]);
-  svfloat32_t T6 = svdup_n_f32(transform[6]);
-  svfloat32_t tx0, ty0, tw0;
   svfloat32_t xmaxf = svdup_n_f32(static_cast<float>(src_width - 1));
   svfloat32_t ymaxf = svdup_n_f32(static_cast<float>(src_height - 1));
 
   const size_t kStep = VecTraits<float>::num_lanes();
 
-  auto calculate_coordinates = [&](size_t x) {
-    svfloat32_t vx = svadd_n_f32_x(pg_all32, sv_0123, static_cast<float>(x));
-    // Calculate half-transformed values from the first few pixel values,
-    // plus Tn*x, similarly to the one above
-    // Calculate inverse weight because division is expensive
-    svfloat32_t iw =
-        svdiv_f32_x(pg_all32, svdup_n_f32(1.F), svmla_x(pg_all32, tw0, vx, T6));
-    svfloat32_t tx = svmla_x(pg_all32, tx0, vx, T0);
-    svfloat32_t ty = svmla_x(pg_all32, ty0, vx, T3);
-
-    // Calculate coordinates into the source image
-    return svcreate2(svmul_f32_x(pg_all32, tx, iw),
-                     svmul_f32_x(pg_all32, ty, iw));
-  };
-
-  auto calculate_nearest_coordinates = [&](size_t x) {
-    svfloat32x2_t coords = calculate_coordinates(x);
+  auto calculate_nearest_coordinates = [&](svbool_t pg32, size_t x) {
+    svfloat32x2_t coords = coordinate_getter(pg32, x);
     svfloat32_t xf = svget2(coords, 0);
     svfloat32_t yf = svget2(coords, 1);
 
@@ -150,15 +130,17 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
       }
     };
     ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
-    svuint32_t res32_0 = load_source(calculate_nearest_coordinates(x));
+    svuint32_t res32_0 =
+        load_source(calculate_nearest_coordinates(pg_all32, x));
     x += kStep;
-    svuint32_t res32_1 = load_source(calculate_nearest_coordinates(x));
+    svuint32_t res32_1 =
+        load_source(calculate_nearest_coordinates(pg_all32, x));
     svuint16_t result0 = svuzp1_u16(svreinterpret_u16_u32(res32_0),
                                     svreinterpret_u16_u32(res32_1));
     x += kStep;
-    res32_0 = load_source(calculate_nearest_coordinates(x));
+    res32_0 = load_source(calculate_nearest_coordinates(pg_all32, x));
     x += kStep;
-    res32_1 = load_source(calculate_nearest_coordinates(x));
+    res32_1 = load_source(calculate_nearest_coordinates(pg_all32, x));
     svuint16_t result1 = svuzp1_u16(svreinterpret_u16_u32(res32_0),
                                     svreinterpret_u16_u32(res32_1));
     svuint8_t result =
@@ -171,7 +153,7 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     size_t length = x_max - x;
     svbool_t pg32 = svwhilelt_b32(0ULL, length);
 
-    svuint32x2_t coords = calculate_nearest_coordinates(x);
+    svuint32x2_t coords = calculate_nearest_coordinates(pg32, x);
     svuint32_t xi = svget2(coords, 0);
     svuint32_t yi = svget2(coords, 1);
 
@@ -189,7 +171,7 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
       return load(pg, x, y);
     };
 
-    svfloat32x2_t coords = calculate_coordinates(x);
+    svfloat32x2_t coords = coordinate_getter(pg, x);
     svfloat32_t xf = svget2(coords, 0);
     svfloat32_t yf = svget2(coords, 1);
     // Take the integer part, clamp it to within the dimensions of the
@@ -231,7 +213,7 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
   };
 
   auto calculate_linear_constant_border = [&](svbool_t pg, uint32_t x) {
-    svfloat32x2_t coords = calculate_coordinates(x);
+    svfloat32x2_t coords = coordinate_getter(pg, x);
     svfloat32_t xf = svget2(coords, 0);
     svfloat32_t yf = svget2(coords, 1);
 
@@ -281,16 +263,8 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     }
   };
 
-  auto process_row = [&](size_t y, Columns<ScalarType> dst) {
-    float fy = static_cast<float>(y);
-    // Calculate half-transformed values at the first pixel (nominators)
-    // tw =  T6*x + T7*y + T8
-    // tx = (T0*x + T1*y + T2) / tw
-    // ty = (T3*x + T4*y + T5) / tw
-    tx0 = svdup_n_f32(fmaf(transform[1], fy, transform[2]));
-    ty0 = svdup_n_f32(fmaf(transform[4], fy, transform[5]));
-    tw0 = svdup_n_f32(fmaf(transform[7], fy, transform[8]));
-
+  auto process_row_callback = [&]() {
+    Columns<ScalarType> dst = dst_rows.as_columns();
     LoopUnroll2 loop{dst_width, kStep};
     if constexpr (Inter == KLEIDICV_INTERPOLATION_NEAREST) {
       loop.unroll_four_times([&](size_t x) { vector_path_nearest_4x(x, dst); });
@@ -336,7 +310,7 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
   };
 
   for (size_t y = y_begin; y < y_end; ++y) {
-    process_row(y, dst_rows.as_columns());
+    process_row(process_row_callback, y);
     ++dst_rows;
   }
 }
@@ -344,31 +318,43 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
 // Convert border_type to a template argument.
 template <typename ScalarType, bool IsLarge,
           kleidicv_interpolation_type_t Inter, typename... Args>
-void warp_perspective_operation(kleidicv_border_type_t border_type,
-                                Args &&...args) {
+void remap32f_process_rows(kleidicv_border_type_t border_type, Args &&...args) {
   if (border_type == KLEIDICV_BORDER_TYPE_REPLICATE) {
-    warp_perspective_operation<ScalarType, IsLarge, Inter,
-                               KLEIDICV_BORDER_TYPE_REPLICATE>(
+    remap32f_process_rows<ScalarType, IsLarge, Inter,
+                          KLEIDICV_BORDER_TYPE_REPLICATE>(
         std::forward<Args>(args)...);
   } else {
-    warp_perspective_operation<ScalarType, IsLarge, Inter,
-                               KLEIDICV_BORDER_TYPE_CONSTANT>(
+    remap32f_process_rows<ScalarType, IsLarge, Inter,
+                          KLEIDICV_BORDER_TYPE_CONSTANT>(
         std::forward<Args>(args)...);
   }
 }
 
 // Convert interpolation_type to a template argument.
 template <typename ScalarType, bool IsLarge, typename... Args>
-void warp_perspective_operation(
-    kleidicv_interpolation_type_t interpolation_type, Args &&...args) {
+void remap32f_process_rows(kleidicv_interpolation_type_t interpolation_type,
+                           Args &&...args) {
   if (interpolation_type == KLEIDICV_INTERPOLATION_NEAREST) {
-    warp_perspective_operation<ScalarType, IsLarge,
-                               KLEIDICV_INTERPOLATION_NEAREST>(
+    remap32f_process_rows<ScalarType, IsLarge, KLEIDICV_INTERPOLATION_NEAREST>(
         std::forward<Args>(args)...);
   } else {
-    warp_perspective_operation<ScalarType, IsLarge,
-                               KLEIDICV_INTERPOLATION_LINEAR>(
+    remap32f_process_rows<ScalarType, IsLarge, KLEIDICV_INTERPOLATION_LINEAR>(
         std::forward<Args>(args)...);
+  }
+}
+
+template <typename T>
+bool remap_image_is_large(const Rows<T> &rows, size_t height) {
+  return rows.stride() * height >= 1ULL << 32;
+}
+
+// Convert is_large to a template argument.
+template <typename ScalarType, typename... Args>
+void remap32f_process_rows(bool is_large, Args &&...args) {
+  if (KLEIDICV_UNLIKELY(is_large)) {
+    remap32f_process_rows<ScalarType, true>(std::forward<Args>(args)...);
+  } else {
+    remap32f_process_rows<ScalarType, false>(std::forward<Args>(args)...);
   }
 }
 
@@ -378,12 +364,12 @@ template <typename T>
 KLEIDICV_LOCALLY_STREAMING kleidicv_error_t warp_perspective_stripe_sc(
     const T *src, size_t src_stride, size_t src_width, size_t src_height,
     T *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
-    size_t y_begin, size_t y_end, const float transformation[9],
-    size_t channels, kleidicv_interpolation_type_t interpolation,
+    size_t y_begin, size_t y_end, const float transform[9], size_t channels,
+    kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const T *border_value) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-  CHECK_POINTERS(transformation);
+  CHECK_POINTERS(transform);
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
   if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT && nullptr == border_value) {
@@ -404,15 +390,44 @@ KLEIDICV_LOCALLY_STREAMING kleidicv_error_t warp_perspective_stripe_sc(
 
   dst_rows += y_begin;
 
-  if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
-    warp_perspective_operation<T, true>(
-        interpolation, border_type, src_rows, src_width, src_height,
-        transformation, border_value, dst_rows, dst_width, y_begin, y_end);
-  } else {
-    warp_perspective_operation<T, false>(
-        interpolation, border_type, src_rows, src_width, src_height,
-        transformation, border_value, dst_rows, dst_width, y_begin, y_end);
-  }
+  svbool_t pg_all32 = svptrue_b32();
+  svfloat32_t sv_0123 = svcvt_f32_u32_z(pg_all32, svindex_u32(0, 1));
+  svfloat32_t T0 = svdup_n_f32(transform[0]);
+  svfloat32_t T3 = svdup_n_f32(transform[3]);
+  svfloat32_t T6 = svdup_n_f32(transform[6]);
+  svfloat32_t tx0, ty0, tw0;
+  auto calculate_coordinates = [&](svbool_t, size_t x) {
+    svfloat32_t vx = svadd_n_f32_x(pg_all32, sv_0123, static_cast<float>(x));
+    // Calculate half-transformed values from the first few pixel values,
+    // plus Tn*x, similarly to the one above
+    // Calculate inverse weight because division is expensive
+    svfloat32_t iw =
+        svdiv_f32_x(pg_all32, svdup_n_f32(1.F), svmla_x(pg_all32, tw0, vx, T6));
+    svfloat32_t tx = svmla_x(pg_all32, tx0, vx, T0);
+    svfloat32_t ty = svmla_x(pg_all32, ty0, vx, T3);
+
+    // Calculate coordinates into the source image
+    return svcreate2(svmul_f32_x(pg_all32, tx, iw),
+                     svmul_f32_x(pg_all32, ty, iw));
+  };
+
+  auto process_row = [&](auto callback, size_t y) {
+    float fy = static_cast<float>(y);
+    // Calculate half-transformed values at the first pixel (nominators)
+    // tw =  T6*x + T7*y + T8
+    // tx = (T0*x + T1*y + T2) / tw
+    // ty = (T3*x + T4*y + T5) / tw
+    tx0 = svdup_n_f32(fmaf(transform[1], fy, transform[2]));
+    ty0 = svdup_n_f32(fmaf(transform[4], fy, transform[5]));
+    tw0 = svdup_n_f32(fmaf(transform[7], fy, transform[8]));
+
+    callback();
+  };
+
+  remap32f_process_rows<T>(remap_image_is_large(src_rows, src_height),
+                           interpolation, border_type, src_rows, src_width,
+                           src_height, border_value, dst_rows, dst_width,
+                           y_begin, y_end, process_row, calculate_coordinates);
 
   return KLEIDICV_OK;
 }
