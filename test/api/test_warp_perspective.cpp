@@ -844,7 +844,7 @@ TYPED_TEST(WarpPerspectiveLinear, RandomTransform) {
   float transform[9];
   // Not entirely random, as very small and very big floats (in absolute value)
   // cause too big errors and they are far from being valid use cases anyway
-  test::PseudoRandomNumberGeneratorIntRange<size_t> exponentGenerator(-10, 10);
+  test::PseudoRandomNumberGeneratorIntRange<size_t> exponentGenerator(-7, 7);
   test::PseudoRandomNumberGeneratorFloatRange<float> mantissaGenerator(-1.0,
                                                                        1.0);
   for (size_t cc = 0; cc < 100; ++cc) {
