@@ -96,7 +96,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 |                                            |  u8 | u16 |
 |--------------------------------------------|-----|-----|
 | Remap int16 coordinates                    |  x  |  x  |
-| Remap int16+uint16 fixed-point coordinates |  x  |     |
+| Remap int16+uint16 fixed-point coordinates |  x  |  x  |
 
 # WarpPerspective
 |                      |  u8 |

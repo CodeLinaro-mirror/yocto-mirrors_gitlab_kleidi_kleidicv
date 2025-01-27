@@ -19,7 +19,7 @@ This changelog aims to follow the guiding principles of
 - Implementation of Rotate 90 degrees clockwise.
 - Remap implementations
   - Nearest neighbour, for replicated borders with 1-channel u8 and u16 inputs.
-  - Fixed-point interpolation, for replicated borders with 1-channel u8 input.
+  - Fixed-point interpolation, for replicated borders with 1-channel u8 and u16 inputs.
 - WarpPerspective implementation
   - Nearest and Linear interpolation method, for 1-channel u8 input.
 

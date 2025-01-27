@@ -721,6 +721,29 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
   return parallel_batches(callback, mt, dst_height);
 }
 
+kleidicv_error_t kleidicv_thread_remap_s16point5_u16(
+    const uint16_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint16_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    size_t channels, const int16_t *mapxy, size_t mapxy_stride,
+    const uint16_t *mapfrac, size_t mapfrac_stride,
+    kleidicv_border_type_t border_type, const uint16_t *border_value,
+    kleidicv_thread_multithreading mt) {
+  if (!kleidicv::remap_s16point5_is_implemented<uint16_t>(
+          src_stride, src_width, src_height, dst_width, border_type,
+          channels)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_remap_s16point5_u16(
+        src, src_stride, src_width, src_height,
+        dst + begin * dst_stride / sizeof(uint16_t), dst_stride, dst_width,
+        end - begin, channels, mapxy + begin * mapxy_stride / sizeof(int16_t),
+        mapxy_stride, mapfrac + begin * mapfrac_stride / sizeof(uint16_t),
+        mapfrac_stride, border_type, border_value);
+  };
+  return parallel_batches(callback, mt, dst_height);
+}
+
 kleidicv_error_t kleidicv_thread_warp_perspective_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,

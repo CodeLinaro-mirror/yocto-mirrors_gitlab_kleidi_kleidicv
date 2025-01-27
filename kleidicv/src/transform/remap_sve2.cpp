@@ -27,10 +27,10 @@ kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
                                  const uint16_t *mapfrac, size_t mapfrac_stride,
                                  kleidicv_border_type_t border_type,
                                  const T *border_value) {
-  return remap_s16point5_sc<uint8_t>(src, src_stride, src_width, src_height,
-                                     dst, dst_stride, dst_width, dst_height,
-                                     channels, mapxy, mapxy_stride, mapfrac,
-                                     mapfrac_stride, border_type, border_value);
+  return remap_s16point5_sc<T>(src, src_stride, src_width, src_height, dst,
+                               dst_stride, dst_width, dst_height, channels,
+                               mapxy, mapxy_stride, mapfrac, mapfrac_stride,
+                               border_type, border_value);
 }
 
 #define KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(type)                          \
@@ -52,5 +52,6 @@ KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16(uint16_t);
       kleidicv_border_type_t border_type, const type *border_value)
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint16_t);
 
 }  // namespace kleidicv::sve2

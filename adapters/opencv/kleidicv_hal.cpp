@@ -1352,14 +1352,23 @@ int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  auto border_value = get_border_value<uint8_t>(border_value_f64);
-
   auto mt = get_multithreading();
 
   if (src_type == CV_8UC1) {
+    auto border_value = get_border_value<uint8_t>(border_value_f64);
     return convert_error(kleidicv_thread_remap_s16point5_u8(
-        src_data, src_step, static_cast<size_t>(src_width),
-        static_cast<size_t>(src_height), dst_data, dst_step,
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+        reinterpret_cast<uint8_t *>(dst_data), dst_step,
+        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height), 1,
+        mapxy, mapxy_step, mapfrac, mapfrac_step, kleidicv_border_type,
+        border_value.data(), mt));
+  } else if (src_type == CV_16UC1) {
+    auto border_value = get_border_value<uint16_t>(border_value_f64);
+    return convert_error(kleidicv_thread_remap_s16point5_u16(
+        reinterpret_cast<const uint16_t *>(src_data), src_step,
+        static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+        reinterpret_cast<uint16_t *>(dst_data), dst_step,
         static_cast<size_t>(dst_width), static_cast<size_t>(dst_height), 1,
         mapxy, mapxy_step, mapfrac, mapfrac_step, kleidicv_border_type,
         border_value.data(), mt));

@@ -16,6 +16,12 @@
 KLEIDICV_REMAP_S16(uint8_t, u8);
 KLEIDICV_REMAP_S16(uint16_t, u16);
 
+#define KLEIDICV_REMAP_S16POINT5(type, type_suffix) \
+  KLEIDICV_API(remap_s16point5, kleidicv_remap_s16point5_##type_suffix, type)
+
+KLEIDICV_REMAP_S16POINT5(uint8_t, u8);
+KLEIDICV_REMAP_S16POINT5(uint16_t, u16);
+
 template <typename ScalarType>
 static const ScalarType *get_array2d_element_or_border(
     const test::Array2D<ScalarType> &src, ptrdiff_t x, ptrdiff_t y,
@@ -299,24 +305,35 @@ TYPED_TEST(RemapS16, InvalidImageSize) {
   TypeParam dst[8];
   int16_t mapxy[16] = {};
 
+  // Source too wide
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             remap_s16<TypeParam>()(src, 1 * sizeof(TypeParam),
                                    std::numeric_limits<int16_t>::max() + 2, 1,
                                    dst, 8, 8, 1, 1, mapxy, 4,
                                    KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
+  // Source too high
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             remap_s16<TypeParam>()(src, 1 * sizeof(TypeParam), 1,
                                    std::numeric_limits<int16_t>::max() + 2, dst,
                                    8, 8, 1, 1, mapxy, 4,
                                    KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
+  // Source extremely wide
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             remap_s16<TypeParam>()(
                 src, (KLEIDICV_MAX_IMAGE_PIXELS + 1) * sizeof(TypeParam),
                 KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst, 8 * sizeof(TypeParam), 8,
                 1, 1, mapxy, 4, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
+  // Source extremely high
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            remap_s16<TypeParam>()(src, sizeof(TypeParam), 1,
+                                   KLEIDICV_MAX_IMAGE_PIXELS + 1, dst,
+                                   8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4,
+                                   KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  // Source too large
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             remap_s16<TypeParam>()(
                 src, KLEIDICV_MAX_IMAGE_PIXELS * sizeof(TypeParam),
@@ -324,6 +341,7 @@ TYPED_TEST(RemapS16, InvalidImageSize) {
                 8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4,
                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
+  // Destination too wide
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             remap_s16<TypeParam>()(
                 src, 1 * sizeof(TypeParam), 1, 1, dst,
@@ -331,6 +349,7 @@ TYPED_TEST(RemapS16, InvalidImageSize) {
                 KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1, mapxy, 4,
                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
+  // Destination too large
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             remap_s16<TypeParam>()(
                 src, 1 * sizeof(TypeParam), 1, 1, dst,
@@ -347,7 +366,7 @@ TYPED_TEST(RemapS16, UnsupportedBigStride) {
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       remap_s16<TypeParam>()(
-          src, (std::numeric_limits<uint16_t>::max() + 1) * sizeof(TypeParam),
+          src, (std::numeric_limits<uint16_t>::max() + 1L) * sizeof(TypeParam),
           1, 1, dst, 8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4,
           KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
@@ -387,7 +406,7 @@ TYPED_TEST(RemapS16, UnsupportedTooSmallImage) {
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             remap_s16<TypeParam>()(src, 1 * sizeof(TypeParam), 1, 1, dst,
-                                   7 * sizeof(TypeParam), 7, 1, 1, mapxy, 4,
+                                   8 * sizeof(TypeParam), 7, 1, 1, mapxy, 4,
                                    KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
@@ -510,7 +529,7 @@ class RemapS16Point5 : public testing::Test {
     calculate_expected(source, mapxy, mapfrac, border_type, border_value,
                        expected);
 
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_remap_s16point5_u8(
+    ASSERT_EQ(KLEIDICV_OK, remap_s16point5<ScalarType>()(
                                source.data(), source.stride(), source.width(),
                                source.height(), actual.data(), actual.stride(),
                                actual.width(), actual.height(), channels,
@@ -540,7 +559,7 @@ class RemapS16Point5 : public testing::Test {
     calculate_expected(source, mapxy, mapfrac, border_type, border_value,
                        expected);
 
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_remap_s16point5_u8(
+    ASSERT_EQ(KLEIDICV_OK, remap_s16point5<ScalarType>()(
                                source.data(), source.stride(), source.width(),
                                source.height(), actual.data(), actual.stride(),
                                actual.width(), actual.height(), channels,
@@ -594,7 +613,7 @@ class RemapS16Point5 : public testing::Test {
   }
 };
 
-using RemapS16Point5ElementTypes = ::testing::Types<uint8_t>;
+using RemapS16Point5ElementTypes = ::testing::Types<uint8_t, uint16_t>;
 TYPED_TEST_SUITE(RemapS16Point5, RemapS16Point5ElementTypes);
 
 TYPED_TEST(RemapS16Point5, RandomNoPadding) {
@@ -602,9 +621,11 @@ TYPED_TEST(RemapS16Point5, RandomNoPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
+  size_t channels = 1;
+  size_t padding = 0;
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test_random(src_w, src_h, dst_w, dst_h, 1, border_type,
-                             border_value, 0);
+    TestFixture::test_random(src_w, src_h, dst_w, dst_h, channels, border_type,
+                             border_value, padding);
   }
 }
 
@@ -613,9 +634,11 @@ TYPED_TEST(RemapS16Point5, BlendPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
+  size_t channels = 1;
+  size_t padding = 13;
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test_blend(src_w, src_h, dst_w, dst_h, 1, border_type,
-                            border_value, 13);
+    TestFixture::test_blend(src_w, src_h, dst_w, dst_h, channels, border_type,
+                            border_value, padding);
   }
 }
 
@@ -624,9 +647,11 @@ TYPED_TEST(RemapS16Point5, OutsideRandomPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
+  size_t channels = 1;
+  size_t padding = 13;
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test_outside_random(src_w, src_h, dst_w, dst_h, 1, border_type,
-                                     border_value, 13);
+    TestFixture::test_outside_random(src_w, src_h, dst_w, dst_h, channels,
+                                     border_type, border_value, padding);
   }
 }
 
@@ -648,9 +673,11 @@ TYPED_TEST(RemapS16Point5, CornerCases) {
   size_t src_h = std::numeric_limits<int16_t>::max() + 1;
   size_t dst_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
   size_t dst_h = 4;
+  size_t channels = 1;
+  size_t padding = 17;
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, 1, border_type,
-                                   border_value, 17);
+    TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
+                                   border_type, border_value, padding);
   }
 }
 
@@ -659,9 +686,9 @@ TYPED_TEST(RemapS16Point5, NullPointer) {
   TypeParam dst[1];
   int16_t mapxy[2] = {};
   uint16_t mapfrac[1] = {};
-  test::test_null_args(kleidicv_remap_s16point5_u8, src, 2, 2, 2, dst, 1, 1, 1,
-                       1, mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_CONSTANT,
-                       src);
+  test::test_null_args(remap_s16point5<TypeParam>(), src, 2 * sizeof(TypeParam),
+                       2, 2, dst, 1 * sizeof(TypeParam), 1, 1, 1, mapxy, 4,
+                       mapfrac, 2, KLEIDICV_BORDER_TYPE_CONSTANT, src);
 }
 
 TYPED_TEST(RemapS16Point5, ZeroImageSize) {
@@ -671,13 +698,14 @@ TYPED_TEST(RemapS16Point5, ZeroImageSize) {
   uint16_t mapfrac[1] = {};
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_remap_s16point5_u8(
-                src, 1, 0, 1, dst, 1, 0, 1, 1, mapxy, 4, mapfrac, 2,
+            remap_s16point5<TypeParam>()(
+                src, 0, 0, 1, dst, 0, 0, 1, 1, mapxy, 4, mapfrac, 2,
                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_remap_s16point5_u8(
-                src, 1, 1, 0, dst, 1, 1, 0, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      remap_s16point5<TypeParam>()(
+          src, 1 * sizeof(TypeParam), 1, 0, dst, 1 * sizeof(TypeParam), 1, 0, 1,
+          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16Point5, InvalidImageSize) {
@@ -686,38 +714,78 @@ TYPED_TEST(RemapS16Point5, InvalidImageSize) {
   int16_t mapxy[2] = {};
   uint16_t mapfrac[1] = {};
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      kleidicv_remap_s16point5_u8(
-          src, 1, std::numeric_limits<int16_t>::max() + 2, 1, dst, 1, 1, 1, 1,
-          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
-
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      kleidicv_remap_s16point5_u8(
-          src, 1, 1, std::numeric_limits<int16_t>::max() + 2, dst, 1, 1, 1, 1,
-          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_remap_s16point5_u8(
-                src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst, 1, 1, 1, 1,
-                mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_remap_s16point5_u8(
-                src, 1, KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
-                dst, 1, 1, 1, 1, mapxy, 4, mapfrac, 2,
+  const size_t kTooBig = std::numeric_limits<int16_t>::max() + 2L;
+  // Source too wide
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            remap_s16point5<TypeParam>()(
+                src, kTooBig * sizeof(TypeParam), kTooBig, 1, dst,
+                8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4, mapfrac, 2,
                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_remap_s16point5_u8(
-                src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1,
-                mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+  // Source too high
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      remap_s16point5<TypeParam>()(
+          src, sizeof(TypeParam), 1, kTooBig, dst, 8 * sizeof(TypeParam), 8, 1,
+          1, mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 
+  // Source extremely wide
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      remap_s16point5<TypeParam>()(
+          src, (KLEIDICV_MAX_IMAGE_PIXELS + 1) * sizeof(TypeParam),
+          KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, dst, 8 * sizeof(TypeParam), 8, 1, 1,
+          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  // Source extremely high
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_remap_s16point5_u8(
-                src, 1, 1, 1, dst, 1, KLEIDICV_MAX_IMAGE_PIXELS,
-                KLEIDICV_MAX_IMAGE_PIXELS, 1, mapxy, 4, mapfrac, 2,
+            remap_s16point5<TypeParam>()(
+                src, sizeof(TypeParam), 1, KLEIDICV_MAX_IMAGE_PIXELS + 1, dst,
+                8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4, mapfrac, 2,
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  // Source too large
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            remap_s16point5<TypeParam>()(
+                src, KLEIDICV_MAX_IMAGE_PIXELS * sizeof(TypeParam),
+                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, dst,
+                8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4, mapfrac, 2,
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  // Destination too wide
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            remap_s16point5<TypeParam>()(
+                src, sizeof(TypeParam), 1, 1, dst,
+                (KLEIDICV_MAX_IMAGE_PIXELS + 1) * sizeof(TypeParam),
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 1, mapxy, 4, mapfrac, 2,
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  // Destination too large
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            remap_s16point5<TypeParam>()(
+                src, 1 * sizeof(TypeParam), 1, 1, dst,
+                (KLEIDICV_MAX_IMAGE_PIXELS + 1) * sizeof(TypeParam),
+                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, 1, mapxy,
+                4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+}
+
+TYPED_TEST(RemapS16Point5, UnsupportedBigStride) {
+  const TypeParam src[1] = {};
+  TypeParam dst[8];
+  int16_t mapxy[16] = {};
+  uint16_t mapfrac[8] = {};
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      remap_s16point5<TypeParam>()(
+          src, (std::numeric_limits<uint16_t>::max() + 1L) * sizeof(TypeParam),
+          1, 1, dst, 8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4, mapfrac, 2,
+          KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+
+  EXPECT_EQ(KLEIDICV_OK,
+            remap_s16point5<TypeParam>()(
+                src, std::numeric_limits<uint16_t>::max() * sizeof(TypeParam),
+                1, 1, dst, 8 * sizeof(TypeParam), 8, 1, 1, mapxy, 4, mapfrac, 2,
                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
@@ -727,10 +795,11 @@ TYPED_TEST(RemapS16Point5, UnsupportedTwoChannels) {
   int16_t mapxy[16] = {};
   uint16_t mapfrac[8] = {};
 
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_remap_s16point5_u8(
-                src, 1, 1, 1, dst, 8, 8, 1, 2, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      remap_s16point5<TypeParam>()(
+          src, 1 * sizeof(TypeParam), 1, 1, dst, 8 * sizeof(TypeParam), 8, 1, 2,
+          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedBorderType) {
@@ -740,9 +809,9 @@ TYPED_TEST(RemapS16Point5, UnsupportedBorderType) {
   uint16_t mapfrac[8] = {};
 
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_remap_s16point5_u8(src, 1, 1, 1, dst, 8, 8, 1, 1, mapxy, 4,
-                                        mapfrac, 2,
-                                        KLEIDICV_BORDER_TYPE_REFLECT, src));
+            remap_s16point5<TypeParam>()(
+                src, 1 * sizeof(TypeParam), 1, 1, dst, 8 * sizeof(TypeParam), 8,
+                1, 1, mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REFLECT, src));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedTooSmallImage) {
@@ -751,8 +820,9 @@ TYPED_TEST(RemapS16Point5, UnsupportedTooSmallImage) {
   int16_t mapxy[16] = {};
   uint16_t mapfrac[8] = {};
 
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_remap_s16point5_u8(
-                src, 1, 1, 1, dst, 8, 7, 1, 1, mapxy, 4, mapfrac, 2,
-                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      remap_s16point5<TypeParam>()(
+          src, 1 * sizeof(TypeParam), 1, 1, dst, 8 * sizeof(TypeParam), 7, 1, 1,
+          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }

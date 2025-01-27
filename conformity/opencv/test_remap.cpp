@@ -137,10 +137,12 @@ std::vector<test>& remap_tests_get() {
     TEST("RemapS16 uint8 Replicate", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16 uint16 Replicate", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint8 Replicate", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
 
     TEST("RemapS16 uint8 Constant", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>)),
     TEST("RemapS16 uint16 Constant", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>)),
     TEST("RemapS16Point5 uint8 Constant", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>)),
+    TEST("RemapS16Point5 uint16 Constant", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>)),
   };
   // clang-format on
   return tests;

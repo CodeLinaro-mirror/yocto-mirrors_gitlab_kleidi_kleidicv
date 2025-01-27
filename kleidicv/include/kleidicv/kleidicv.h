@@ -1822,6 +1822,16 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u8, const uint8_t *src,
                          const uint16_t *mapfrac, size_t mapfrac_stride,
                          kleidicv_border_type_t border_type,
                          const uint8_t *border_value);
+
+/// @copydoc kleidicv_remap_s16point5_u8
+KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u16, const uint16_t *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         uint16_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height, size_t channels,
+                         const int16_t *mapxy, size_t mapxy_stride,
+                         const uint16_t *mapfrac, size_t mapfrac_stride,
+                         kleidicv_border_type_t border_type,
+                         const uint16_t *border_value);
 #endif  // DOXYGEN
 
 #ifndef DOXYGEN

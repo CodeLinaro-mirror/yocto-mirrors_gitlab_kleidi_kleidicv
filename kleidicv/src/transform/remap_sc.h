@@ -300,6 +300,38 @@ inline svuint16_t interpolate_16point5<uint8_t>(
                  2ULL * REMAP16POINT5_FRAC_BITS);
 }
 
+template <>
+inline svuint16_t interpolate_16point5<uint16_t>(
+    svbool_t pg, svuint16_t frac, svuint16_t src_a, svuint16_t src_b,
+    svuint16_t src_c, svuint16_t src_d, svuint32_t bias) {
+  svuint16_t xfrac = svand_x(pg, frac, svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+  svuint16_t yfrac =
+      svand_x(pg, svlsr_n_u16_x(pg, frac, REMAP16POINT5_FRAC_BITS),
+              svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+  svuint16_t nxfrac =
+      svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
+  svuint16_t nyfrac =
+      svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac);
+  svuint32_t line0_b = svmla_x(pg, svmullb(xfrac, src_b), svmovlb_u32(nxfrac),
+                               svmovlb_u32(src_a));
+  svuint32_t line0_t = svmla_x(pg, svmullt(xfrac, src_b), svmovlt_u32(nxfrac),
+                               svmovlt_u32(src_a));
+  svuint32_t line1_b = svmla_x(pg, svmullb(xfrac, src_d), svmovlb_u32(nxfrac),
+                               svmovlb_u32(src_c));
+  svuint32_t line1_t = svmla_x(pg, svmullt(xfrac, src_d), svmovlt_u32(nxfrac),
+                               svmovlt_u32(src_c));
+
+  svuint32_t acc_b =
+      svmla_u32_x(pg, svmla_u32_x(pg, bias, line0_b, svmovlb_u32(nyfrac)),
+                  line1_b, svmovlb_u32(yfrac));
+  svuint32_t acc_t =
+      svmla_u32_x(pg, svmla_u32_x(pg, bias, line0_t, svmovlt_u32(nyfrac)),
+                  line1_t, svmovlt_u32(yfrac));
+
+  return svshrnt(svshrnb(acc_b, 2ULL * REMAP16POINT5_FRAC_BITS), acc_t,
+                 2ULL * REMAP16POINT5_FRAC_BITS);
+}
+
 template <typename ScalarType>
 class RemapS16Point5Replicate;
 
@@ -419,6 +451,134 @@ class RemapS16Point5Replicate<uint8_t> {
   MapVectorType& v_ymax_;
 };  // end of class RemapS16Point5Replicate<uint8_t>
 
+template <>
+class RemapS16Point5Replicate<uint16_t> {
+ public:
+  using ScalarType = uint16_t;
+  using MapVecTraits = VecTraits<int16_t>;
+  using MapVectorType = typename MapVecTraits::VectorType;
+  using MapVector2Type = typename MapVecTraits::Vector2Type;
+  using FracVecTraits = VecTraits<uint16_t>;
+  using FracVectorType = typename FracVecTraits::VectorType;
+
+  RemapS16Point5Replicate(Rows<const ScalarType> src_rows, size_t src_width,
+                          size_t src_height, svuint16_t& v_src_stride,
+                          MapVectorType& v_x_max, MapVectorType& v_y_max)
+      : src_rows_{src_rows},
+        v_src_element_stride_{v_src_stride},
+        v_xmax_{v_x_max},
+        v_ymax_{v_y_max} {
+    v_src_element_stride_ = svdup_u16(src_rows.stride() / sizeof(ScalarType));
+    v_xmax_ = svdup_s16(static_cast<int16_t>(src_width - 1));
+    v_ymax_ = svdup_s16(static_cast<int16_t>(src_height - 1));
+  }
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
+    svuint16_t src_a, src_b, src_c, src_d;
+
+    svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
+    auto vector_path = [&](svbool_t pg, ptrdiff_t step) {
+      load_source(pg, step, mapxy, src_a, src_b, src_c, src_d);
+      interpolate_and_store(pg, step, mapfrac, dst, src_a, src_b, src_c, src_d,
+                            bias);
+    };
+
+    LoopUnroll loop{width, MapVecTraits::num_lanes()};
+    loop.unroll_once([&](size_t step) {
+      svbool_t pg = MapVecTraits::svptrue();
+      vector_path(pg, static_cast<ptrdiff_t>(step));
+    });
+    loop.remaining([&](size_t length, size_t step) {
+      svbool_t pg = MapVecTraits::svwhilelt(step - length, step);
+      vector_path(pg, static_cast<ptrdiff_t>(length));
+    });
+  }
+
+ protected:
+  svuint16_t gather_load_src(svbool_t pg_b, svuint32_t offsets_b, svbool_t pg_t,
+                             svuint32_t offsets_t) {
+    // Account for the size of the source type when calculating offset
+    offsets_b = svlsl_n_u32_x(pg_b, offsets_b, 1);
+    offsets_t = svlsl_n_u32_x(pg_t, offsets_t, 1);
+
+    svuint32_t src_b =
+        svldnt1uh_gather_u32offset_u32(pg_b, &src_rows_[0], offsets_b);
+    svuint32_t src_t =
+        svldnt1uh_gather_u32offset_u32(pg_t, &src_rows_[0], offsets_t);
+    return svtrn1_u16(svreinterpret_u16_u32(src_b),
+                      svreinterpret_u16_u32(src_t));
+  }
+
+  void load_source(svbool_t pg, ptrdiff_t step, Columns<const int16_t>& mapxy,
+                   svuint16_t& src_a, svuint16_t& src_b, svuint16_t& src_c,
+                   svuint16_t& src_d) {
+    MapVector2Type xy = svld2_s16(pg, &mapxy[0]);
+
+    // Clamp coordinates to within the dimensions of the source image
+    svuint16_t x0 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0), svmin_x(pg, svget2(xy, 0), v_xmax_)));
+    svuint16_t y0 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0), svmin_x(pg, svget2(xy, 1), v_ymax_)));
+
+    // x1 = x0 + 1, and clamp it too
+    svuint16_t x1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 0), 1), v_xmax_)));
+
+    svuint16_t y1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 1), 1), v_ymax_)));
+    svbool_t pg_b = svwhilelt_b32(int64_t{0}, (step + 1) / 2);
+    svbool_t pg_t = svwhilelt_b32(int64_t{0}, step / 2);
+
+    // Calculate offsets from coordinates (y * stride/sizeof(ScalarType) + x)
+    svuint32_t offsets_a_b =
+        svmlalb_u32(svmovlb_u32(x0), y0, v_src_element_stride_);
+    svuint32_t offsets_a_t =
+        svmlalt_u32(svmovlt_u32(x0), y0, v_src_element_stride_);
+    svuint32_t offsets_b_b =
+        svmlalb_u32(svmovlb_u32(x1), y0, v_src_element_stride_);
+    svuint32_t offsets_b_t =
+        svmlalt_u32(svmovlt_u32(x1), y0, v_src_element_stride_);
+    svuint32_t offsets_c_b =
+        svmlalb_u32(svmovlb_u32(x0), y1, v_src_element_stride_);
+    svuint32_t offsets_c_t =
+        svmlalt_u32(svmovlt_u32(x0), y1, v_src_element_stride_);
+    svuint32_t offsets_d_b =
+        svmlalb_u32(svmovlb_u32(x1), y1, v_src_element_stride_);
+    svuint32_t offsets_d_t =
+        svmlalt_u32(svmovlt_u32(x1), y1, v_src_element_stride_);
+
+    // Load pixels from source
+    src_a = gather_load_src(pg_b, offsets_a_b, pg_t, offsets_a_t);
+    src_b = gather_load_src(pg_b, offsets_b_b, pg_t, offsets_b_t);
+    src_c = gather_load_src(pg_b, offsets_c_b, pg_t, offsets_c_t);
+    src_d = gather_load_src(pg_b, offsets_d_b, pg_t, offsets_d_t);
+    mapxy += step;
+  }
+
+  void interpolate_and_store(svbool_t pg, ptrdiff_t step,
+                             Columns<const uint16_t>& mapfrac,
+                             Columns<ScalarType>& dst, svuint16_t src_a,
+                             svuint16_t src_b, svuint16_t src_c,
+                             svuint16_t src_d, svuint32_t bias) {
+    FracVectorType frac = svld1_u16(pg, &mapfrac[0]);
+    svuint16_t result = interpolate_16point5<uint16_t>(pg, frac, src_a, src_b,
+                                                       src_c, src_d, bias);
+    svst1_u16(pg, &dst[0], result);
+    mapfrac += step;
+    dst += step;
+  }
+
+  Rows<const ScalarType> src_rows_;
+
+ private:
+  svuint16_t& v_src_element_stride_;
+  MapVectorType& v_xmax_;
+  MapVectorType& v_ymax_;
+};  // end of class RemapS16Point5Replicate<uint16_t>
+
 template <typename ScalarType>
 class RemapS16Point5ConstantBorder;
 
@@ -512,6 +672,107 @@ class RemapS16Point5ConstantBorder<uint8_t> {
   svuint16_t& v_height_;
   svuint16_t& v_border_;
 };  // end of class RemapS16Point5ConstantBorder<uint8_t>
+
+template <>
+class RemapS16Point5ConstantBorder<uint16_t> {
+ public:
+  using ScalarType = uint16_t;
+
+  RemapS16Point5ConstantBorder(Rows<const ScalarType> src_rows,
+                               size_t src_width, size_t src_height,
+                               const ScalarType* border_value,
+                               svuint16_t& v_src_stride, svuint16_t& v_width,
+                               svuint16_t& v_height, svuint16_t& v_border)
+      : src_rows_{src_rows},
+        v_src_element_stride_{v_src_stride},
+        v_width_{v_width},
+        v_height_{v_height},
+        v_border_{v_border} {
+    v_src_element_stride_ = svdup_u16(src_rows.stride() / sizeof(ScalarType));
+    v_width_ = svdup_u16(static_cast<uint16_t>(src_width));
+    v_height_ = svdup_u16(static_cast<uint16_t>(src_height));
+    v_border_ = svdup_u16(*border_value);
+  }
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
+    svuint16_t one = svdup_n_u16(1);
+    svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
+    for (size_t i = 0; i < width; i += svcnth()) {
+      svbool_t pg = svwhilelt_b16(i, width);
+
+      svuint16x2_t xy =
+          svld2_u16(pg, reinterpret_cast<const uint16_t*>(
+                            &mapxy[static_cast<ptrdiff_t>(i * 2)]));
+
+      svuint16_t x0 = svget2(xy, 0);
+      svuint16_t y0 = svget2(xy, 1);
+      svuint16_t x1 = svadd_x(pg, x0, one);
+      svuint16_t y1 = svadd_x(pg, y0, one);
+
+      svuint16_t v00 = load_pixels_or_constant_border(
+          src_rows_, v_src_element_stride_, v_width_, v_height_, v_border_, pg,
+          x0, y0);
+      svuint16_t v01 = load_pixels_or_constant_border(
+          src_rows_, v_src_element_stride_, v_width_, v_height_, v_border_, pg,
+          x0, y1);
+      svuint16_t v10 = load_pixels_or_constant_border(
+          src_rows_, v_src_element_stride_, v_width_, v_height_, v_border_, pg,
+          x1, y0);
+      svuint16_t v11 = load_pixels_or_constant_border(
+          src_rows_, v_src_element_stride_, v_width_, v_height_, v_border_, pg,
+          x1, y1);
+
+      svuint16_t frac = svld1_u16(pg, &mapfrac[static_cast<ptrdiff_t>(i)]);
+      svuint16_t result =
+          interpolate_16point5<uint16_t>(pg, frac, v00, v10, v01, v11, bias);
+
+      svst1_u16(pg, &dst[static_cast<ptrdiff_t>(i)], result);
+    }
+  }
+
+ private:
+  svuint16_t load_pixels_or_constant_border(Rows<const ScalarType> src_rows_,
+                                            svuint16_t& v_src_element_stride_,
+                                            svuint16_t& v_width_,
+                                            svuint16_t& v_height_,
+                                            svuint16_t& v_border_, svbool_t pg,
+                                            svuint16_t x, svuint16_t y) {
+    // Find whether coordinates are within the image dimensions.
+    svbool_t in_range = svand_b_z(pg, svcmplt_u16(pg, x, v_width_),
+                                  svcmplt_u16(pg, y, v_height_));
+
+    // Calculate offsets from coordinates (y * stride/sizeof(ScalarType) + x)
+    svuint32_t offsets_b =
+        svmlalb_u32(svmovlb_u32(x), y, v_src_element_stride_);
+    svuint32_t offsets_t =
+        svmlalt_u32(svmovlt_u32(x), y, v_src_element_stride_);
+
+    svbool_t pg_b = in_range;
+    svbool_t pg_t = svtrn2_b16(in_range, svpfalse());
+
+    // Account for the size of the source type when calculating offset
+    offsets_b = svlsl_n_u32_x(pg_b, offsets_b, 1);
+    offsets_t = svlsl_n_u32_x(pg_t, offsets_t, 1);
+
+    // Copy pixels from source
+    svuint32_t result_b =
+        svld1uh_gather_u32offset_u32(pg_b, &src_rows_[0], offsets_b);
+    svuint32_t result_t =
+        svld1uh_gather_u32offset_u32(pg_t, &src_rows_[0], offsets_t);
+
+    svuint16_t result = svtrn1_u16(svreinterpret_u16_u32(result_b),
+                                   svreinterpret_u16_u32(result_t));
+
+    return svsel(in_range, result, v_border_);
+  }
+
+  Rows<const ScalarType> src_rows_;
+  svuint16_t& v_src_element_stride_;
+  svuint16_t& v_width_;
+  svuint16_t& v_height_;
+  svuint16_t& v_border_;
+};  // end of class RemapS16Point5ConstantBorder<uint16_t>
 
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)

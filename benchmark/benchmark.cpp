@@ -690,6 +690,22 @@ BENCH_REMAP_S16POINT5(remap_s16point5_u8_identity, remap_s16point5_u8,
                       get_identity_mapxy<int16_t>, 1,
                       KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
+BENCH_REMAP_S16POINT5(remap_s16point5_u16_random, remap_s16point5_u16,
+                      get_random_mapxy<int16_t>, 1,
+                      KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_S16POINT5(remap_s16point5_u16_blend, remap_s16point5_u16,
+                      get_blend_mapxy<int16_t>, 1,
+                      KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_S16POINT5(remap_s16point5_u16_flip, remap_s16point5_u16,
+                      get_flip_mapxy<int16_t>, 1,
+                      KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_S16POINT5(remap_s16point5_u16_identity, remap_s16point5_u16,
+                      get_identity_mapxy<int16_t>, 1,
+                      KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
 // clang-format off
 static const float transform_identity[] = {
   1.0, 0, 0,

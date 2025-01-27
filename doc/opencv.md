@@ -212,8 +212,7 @@ Notes on parameters:
 * `src.step` - must be less than 2^16 * `element size`
 * `src.width`, `src_height` - must not be bigger than 2^15
 * `src.depth()`
-  * Supports `CV_8U` and `CV_16U` depths and 1 channel when prodiving only an integer map (`map1`).
-  * Supports `CV_8U` depth and 1 channel when providing integer + fractional maps (`map1` and `map2`).
+  * Supports `CV_8U` and `CV_16U` depths and 1 channel.
 * `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`. \
 Supported map configurations:
 * `map1` is 16SC2: channel #1 is x coordinate (column) and channel #2 is y (row)
