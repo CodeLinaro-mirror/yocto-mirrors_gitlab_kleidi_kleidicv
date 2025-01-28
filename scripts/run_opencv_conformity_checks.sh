@@ -59,6 +59,7 @@ common_cmake_args=(
     "-DWITH_ADE=OFF"
     "-DWITH_LAPACK=OFF"
     "-DOPENCV_PYTHON_SKIP_DETECTION=ON"
+    "-DOPENCV_ALGO_HINT_DEFAULT=ALGO_HINT_APPROX"
 )
 
 if [[ -n "${OPENCV_VERSION}" ]]; then

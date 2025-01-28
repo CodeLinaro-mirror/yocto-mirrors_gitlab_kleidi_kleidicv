@@ -42,6 +42,7 @@ KLEIDICV_SOURCE_PATH="$(realpath "${SCRIPT_PATH}/..")"
 export COMMON_CMAKE_ARGS="\
   -DANDROID_ABI=arm64-v8a \
   -DBUILD_PERF_TESTS=ON \
+  -DOPENCV_ALGO_HINT_DEFAULT=ALGO_HINT_APPROX \
 "
 
 # ------------------------------------------------------------------------------

@@ -15,7 +15,8 @@ cv::Mat exec_gaussian_blur(cv::Mat& input) {
   cv::Mat input_mat = input.rowRange(0, input.rows - 2).clone();
   cv::Size kernel(KernelSize, KernelSize);
   cv::Mat result;
-  cv::GaussianBlur(input_mat, result, kernel, sigma, sigma, BorderType);
+  cv::GaussianBlur(input_mat, result, kernel, sigma, sigma, BorderType,
+                   cv::ALGO_HINT_APPROX);
   return result;
 }
 
