@@ -90,20 +90,22 @@ Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.channels()` - supports 3 for RGB/BGR and 4 for RGBA/BGRA.
 
-### [`cv::GaussianBlur()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaabe8c836e97159a9193fb0b11ac52cf1)
+### [`cv::GaussianBlur()`](https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#gae8bdcd9154ed5ca3cbc1766d960f45c1)
 Blurs an image using a Gaussian filter.\
 The filter's standard deviation must be the same in horizontal and vertical directions (`sigmaX == sigmaY`).\
-In-place filtering is not supported.
+In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.cols`,`src.rows` - should be greater than or equal to the size of the kernel in the given direction.
 * `ksize` - supported kernel sizes are 3x3, 5x5, 7x7 and 15x15.
-* `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
+* `sigmaX`, `sigmaY` - optimal performance is achieved if these are set to 0.
+* `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.11.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
   + `cv::BORDER_REPLICATE`
   + `cv::BORDER_REFLECT`
   + `cv::BORDER_WRAP`
   + `cv::BORDER_REFLECT_101`
+* `hint` - must be [`ALGO_HINT_APPROX`](https://docs.opencv.org/4.11.0/db/de0/group__core__utils.html#gafeab8763db9cdb68a6c20353efe0e9de) (not available in versions of OpenCV prior to 4.11) if `sigmaX` or `sigmaY` are not 0.
 
 ### [`cv::dilate()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c)
 Notes on parameters:
@@ -118,8 +120,6 @@ Notes on parameters:
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
 ### [`cv::resize()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga47a974309e9102f5f08231edc7e7529d)
-In-place operation not supported.
-
 Notes on parameters:
 * `src.type()` - only supports certain values in combination with other parameters as shown in the table below.
 * `dst.cols`,`dst.rows` - must be a multiple of `src.cols` and `src.rows` respectively, in combination with other parameters as shown in the table below.
@@ -133,8 +133,7 @@ Notes on parameters:
 | `CV_32FC1` |`INTER_LINEAR` |     2x2, 4x4, 8x8      |
 
 ### [`cv::Sobel()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gacea54f142e81b6758cb6f375ce782c8d)
-Applies Sobel gradient filter to a given image.\
-In-place filtering is not supported.
+Applies Sobel gradient filter to a given image.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
@@ -150,7 +149,7 @@ Notes on parameters:
 Transposes a matrix.
 
 Notes on parameters:
-* In-place `transpose` is only supported for square matrices. (`src.cols == src.rows`)
+* The size of each matrix element must be either 1 or 2 bytes, for example `CV_8UC1`, `CV_8SC2` or `CV_16UC1`.
 
 ### [`cv::minMaxIdx()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga7622c466c628a75d9ed008b42250a73f)
 Finds the minimum and maximum element values and their positions.
@@ -166,36 +165,40 @@ Notes on parameters:
 * `minIdx`,`maxIdx` - are only supported for `src.depth() == CV_8U`.
 
 ### [`cv::Mat::convertTo()`](https://docs.opencv.org/4.10.0/d3/d63/classcv_1_1Mat.html#adf88c60c5b4980e05bb556080916978b)
-This function will scale given input using `alpha` and `beta` if they are significant enough, and if `src.depth()` equals `dst.depth()`.\
+> ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.10.patch`**
+
+If the `rtype` parameter is `-1` or the same as the input depth, scale and offset values using `alpha` and `beta`.
 Supported depths:
   + `CV_8U`
   + `CV_32F`
 
-Additionally, it is able to convert between data types as follows:
+Otherwise, if `alpha` and `beta` are 1 and 0 respectively, conversion between data types is supported as follows:
 
-|`src.depth()`|`dst.depth()`|
-|-------------|-------------|
-|   `CV_32F`  |   `CV_8S`   |
-|   `CV_32F`  |   `CV_8U`   |
-|   `CV_8S`   |   `CV_32F`  |
-|   `CV_8U`   |   `CV_32F`  |
+|`depth()` | `rtype`  |
+|----------|----------|
+| `CV_32F` | `CV_8S`  |
+| `CV_32F` | `CV_8U`  |
+| `CV_8S`  | `CV_32F` |
+| `CV_8U`  | `CV_32F` |
 
 ### [`cv::exp()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga3e10108e2162c338f1b848af619f39e5)
 Exponential function. Currently only `CV_32F` type is supported.
 
 ### [`cv::inRange()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga48af0ab51e36436c5d04340e036ce981)
+> ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.10.patch`**
+
 Checks whether array elements fall between the lower and upper bounds set by the user.\
 Currently only scalar bounds are supported.
 
 Notes on parameters:
-* `src.depth()` - only supports `CV_8U` and `CV_32F` depths and 1 channel.
+* `src.type()` - only supports `CV_8UC1` and `CV_32FC1`.
 * `src`, `lowerb` and `upperb` need to have the same type.
 
 ### [`cv::pyrDown()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaf9bba239dfca11654cb7f50f889fc2ff)
 Blurs and downsamples an image.
 
 Notes on parameters:
-* `src.depth()` - only supports `CV_8U` and 1 channel.
+* `src.type()` - only supports `CV_8UC1`.
 * if `dstsize` is specified it must be equal to `Size((src.cols + 1) / 2, (src.rows + 1) / 2)`
 
 ### [`cv::buildOpticalFlowPyramid()`](https://docs.opencv.org/4.10.0/dc/d6b/group__video__track.html#ga86640c1c470f87b2660c096d2b22b2ce)
