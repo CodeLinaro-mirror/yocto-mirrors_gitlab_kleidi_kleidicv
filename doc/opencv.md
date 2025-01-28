@@ -32,13 +32,6 @@ Notes on parameters:
 ### [`cv::bitwise_and()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga60b4d04b251ba5eb1392c34425497e14)
 Bitwise conjunction of two arrays.
 
-### [`cv::sum()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga716e10a2dd9e228e4d3c95818f106722)
-Calculates the sum of array elements.
-
-Notes on parameters:
-* `src.depth()` - only supports `CV_32F` depth.
-* `src.channels()` - only supports 1 channel.
-
 ### [`cv::cvtColor()`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#ga397ae87e1288a81d2363b61574eb8cab)
 Converts the color space of an image.
 
@@ -97,20 +90,22 @@ Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.channels()` - supports 3 for RGB/BGR and 4 for RGBA/BGRA.
 
-### [`cv::GaussianBlur()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaabe8c836e97159a9193fb0b11ac52cf1)
+### [`cv::GaussianBlur()`](https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#gae8bdcd9154ed5ca3cbc1766d960f45c1)
 Blurs an image using a Gaussian filter.\
 The filter's standard deviation must be the same in horizontal and vertical directions (`sigmaX == sigmaY`).\
-In-place filtering is not supported.
+In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.cols`,`src.rows` - should be greater than or equal to the size of the kernel in the given direction.
 * `ksize` - supported kernel sizes are 3x3, 5x5, 7x7 and 15x15.
-* `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
+* `sigmaX`, `sigmaY` - optimal performance is achieved if these are set to 0.
+* `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.11.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
   + `cv::BORDER_REPLICATE`
   + `cv::BORDER_REFLECT`
   + `cv::BORDER_WRAP`
   + `cv::BORDER_REFLECT_101`
+* `hint` - must be [`ALGO_HINT_APPROX`](https://docs.opencv.org/4.11.0/db/de0/group__core__utils.html#gafeab8763db9cdb68a6c20353efe0e9de) if `sigmaX` or `sigmaY` are not 0.
 
 ### [`cv::dilate()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c)
 Notes on parameters:
@@ -125,8 +120,6 @@ Notes on parameters:
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
 ### [`cv::resize()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga47a974309e9102f5f08231edc7e7529d)
-In-place operation not supported.
-
 Notes on parameters:
 * `src.type()` - only supports certain values in combination with other parameters as shown in the table below.
 * `dst.cols`,`dst.rows` - must be a multiple of `src.cols` and `src.rows` respectively, in combination with other parameters as shown in the table below.
@@ -140,8 +133,7 @@ Notes on parameters:
 | `CV_32FC1` |`INTER_LINEAR` |     2x2, 4x4, 8x8      |
 
 ### [`cv::Sobel()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gacea54f142e81b6758cb6f375ce782c8d)
-Applies Sobel gradient filter to a given image.\
-In-place filtering is not supported.
+Applies Sobel gradient filter to a given image.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
@@ -157,14 +149,15 @@ Notes on parameters:
 Transposes a matrix.
 
 Notes on parameters:
-* In-place `transpose` is only supported for square matrices. (`src.cols == src.rows`)
+* The size of each matrix element must be either 1 or 2 bytes, for example `CV_8UC1`, `CV_8SC2` or `CV_16UC1`.
 
 ### [`cv::rotate()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga4ad01c0978b0ce64baa246811deeac24)
 Rotates a 2D array in multiples of 90 degrees.
 
 Notes on parameters:
-* In-place `rotate` is not supported. (`src == dst`)
+* In-place `rotate` is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
 * `rotateCode` - only `ROTATE_90_CLOCKWISE` is supported.
+* The size of each matrix element must be either 1 or 2 bytes, for example `CV_8UC1`, `CV_8SC2` or `CV_16UC1`.
 
 ### [`cv::minMaxIdx()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga7622c466c628a75d9ed008b42250a73f)
 Finds the minimum and maximum element values and their positions.
@@ -180,53 +173,60 @@ Notes on parameters:
 * `minIdx`,`maxIdx` - are only supported for `src.depth() == CV_8U`.
 
 ### [`cv::Mat::convertTo()`](https://docs.opencv.org/4.10.0/d3/d63/classcv_1_1Mat.html#adf88c60c5b4980e05bb556080916978b)
-This function will scale given input using `alpha` and `beta` if they are significant enough, and if `src.depth()` equals `dst.depth()`.\
+> ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.11.patch`**
+
+If the `rtype` parameter is `-1` or the same as the input depth, scale and offset values using `alpha` and `beta`.
 Supported depths:
   + `CV_8U`
   + `CV_32F`
 
-Additionally, it is able to convert between data types as follows:
+Otherwise, if `alpha` and `beta` are 1 and 0 respectively, conversion between data types is supported as follows:
 
-|`src.depth()`|`dst.depth()`|
-|-------------|-------------|
-|   `CV_32F`  |   `CV_8S`   |
-|   `CV_32F`  |   `CV_8U`   |
-|   `CV_8S`   |   `CV_32F`  |
-|   `CV_8U`   |   `CV_32F`  |
+|`depth()` | `rtype`  |
+|----------|----------|
+| `CV_32F` | `CV_8S`  |
+| `CV_32F` | `CV_8U`  |
+| `CV_8S`  | `CV_32F` |
+| `CV_8U`  | `CV_32F` |
 
 ### [`cv::exp()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga3e10108e2162c338f1b848af619f39e5)
 Exponential function. Currently only `CV_32F` type is supported.
 
 ### [`cv::inRange()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga48af0ab51e36436c5d04340e036ce981)
+> ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.11.patch`**
+
 Checks whether array elements fall between the lower and upper bounds set by the user.\
 Currently only scalar bounds are supported.
 
 Notes on parameters:
-* `src.depth()` - only supports `CV_8U` and `CV_32F` depths and 1 channel.
+* `src.type()` - only supports `CV_8UC1` and `CV_32FC1`.
 * `src`, `lowerb` and `upperb` need to have the same type.
 
 ### [`cv::remap()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4)
 Geometrically transforms the `src` image by taking the pixels specified by the coordinates from the `map` image.
 
 Notes on parameters:
-* `src.step` - must be less than 2^16 * `element size`
-* `src.width`, `src_height` - must not be bigger than 2^15
-* `src.depth()`
-  * Supports `CV_8U` and `CV_16U` depths and 1 channel.
+* `src.step` - must be less than 65536 * element size.
+* `src.width`, `src_height` - must not be greater than 32768.
+* `src.type()` - supports `CV_8UC1` and `CV_16UC1`.
 * `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`. \
 Supported map configurations:
-* `map1` is 16SC2: channel #1 is x coordinate (column) and channel #2 is y (row)
+* `map1.type()` is `CV_16SC2` and `map2` is empty:
+  * > ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.11.patch`**
+  * channel #1 is x coordinates (column)
+  * channel #2 is y coordinates (row)
   * supported `interpolation`: `INTER_NEAREST` only
-* `map1` is 16SC2 and `map2` is 16UC1: `map1` is as above, `map2` contains combined 5+5 bits of x (low) and y (high) fractions, i.e. x = x1 + x2 / 2^5
+* `map1.type()` is `CV_16SC2` and `map2.type()` is `CV_16UC1` - fixed-point representation as generated by [`cv::convertMaps`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga9156732fa8f01be9ebd1a194f2728b7f):
+  * > ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.11.patch`**
   * supported `interpolation`: `INTER_LINEAR` only
 
 ### [`cv::warpPerspective()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gaf73673a7e8e18ec6963e3774e6a94b87)
 Performs a perspective transformation on an image.
 
 Notes on parameters:
-* `src.depth()` - only supports `CV_8U` depth and 1 channel.
-* `src.cols`, `src.rows`, `dst.cols`, `dst.rows` - must be less than 2^24
-* `src.step` - must be less than 2^32
+* `src.type()` - only supports `CV_8UC1`.
+* `src.cols`, `src.rows`, `dst.cols`, `dst.rows` - must be less than 16777216
+* `src.step` - must be less than 4294967296
 * `dst.cols` - must be at least 8
 * `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`
 * `interpolation` - supports `INTER_NEAREST` and `INTER_LINEAR`
@@ -235,7 +235,7 @@ Notes on parameters:
 Blurs and downsamples an image.
 
 Notes on parameters:
-* `src.depth()` - only supports `CV_8U` and 1 channel.
+* `src.type()` - only supports `CV_8UC1`.
 * if `dstsize` is specified it must be equal to `Size((src.cols + 1) / 2, (src.rows + 1) / 2)`
 
 ### [`cv::buildOpticalFlowPyramid()`](https://docs.opencv.org/4.10.0/dc/d6b/group__video__track.html#ga86640c1c470f87b2660c096d2b22b2ce)
