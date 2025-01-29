@@ -1837,12 +1837,10 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u16, const uint16_t *src,
 /// Transforms the `src` image by taking the pixels specified by the coordinates
 /// from the `mapxy` image.
 ///
-/// Width and height are the same for `mapxy` and for `dst`. `src` dimensions
-/// may be different, but due to the 16-bit signed format, its width and height
-/// must not be bigger than 32767. Coordinates outside of `src` dimensions are
-/// considered border. In case of @ref KLEIDICV_BORDER_TYPE_REPLICATE, that
-/// means that negative coordinates map to the first row/column (zero), and
-/// those bigger than height/width - 1 map to the last row/column.
+/// Width and height are the same for `mapx`, `mapy` and for `dst`. `src`
+/// dimensions may be different, but due to the limits of 32-bit float format,
+/// its width and height must be less than 2^24. Coordinates outside of `src`
+/// dimensions are considered border.
 ///
 /// @param src            Pointer to the source data. Must be non-null.
 /// @param src_stride     Distance in bytes from the start of one row to the
@@ -1858,30 +1856,27 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u16, const uint16_t *src,
 ///                       start of the next row for the destination data.
 ///                       Must be a multiple of `sizeof(type)` and no less than
 ///                       `width * sizeof(type)`, except for single-row images.
-/// @param dst_width      Number of elements in the destination row. Must be at
-///                       least 4. Must be less than 2^24.
-/// @param dst_height     Number of rows in the destination data. Must be less
-///                       than 2^24.
-/// @param channels       Number of channels in the data. Must be 1.
-/// @param mapx           Pointer to the mapping data for x coordniates. Must be
-///                       non-null.
+/// @param dst_width      Number of elements in a destination row. Must be at
+///                       least 4.
+/// @param dst_height     Number of rows in the destination data.
+/// @param channels       Number of channels in the (source and destination)
+/// data. Must be 1.
+/// @param mapx           Pointer to the x coordinates' data. Must be non-null.
 /// @param mapx_stride    Distance in bytes from the start of one row to the
-///                       start of the next row for the destination data.
-///                       Must be a multiple of `sizeof(float)` and no less than
-///                       `width * sizeof(float)`, except for single-row images.
-/// @param mapy           Pointer to the mapping data for y coordniates. Must be
-///                       non-null.
+///                       start of the next row for `mapx`. Must be a multiple
+///                       of `sizeof(float)` and no less than `width *
+///                       sizeof(float)`, except for single-row images.
+/// @param mapy           Pointer to the y coordinates' data. Must be non-null.
 /// @param mapy_stride    Distance in bytes from the start of one row to the
-///                       start of the next row for the destination data.
-///                       Must be a multiple of `sizeof(float)` and no less than
-///                       `width * sizeof(float)`, except for single-row images.
+///                       start of the next row for `mapy`. Must be a multiple
+///                       of `sizeof(float)` and no less than `width *
+///                       sizeof(float)`, except for single-row images.
 /// @param interpolation  Interpolation algorithm. Supported types: \n
-///                         - @ref KLEIDICV_INTERPOLATION_NEAREST   (Not yet)
 ///                         - @ref KLEIDICV_INTERPOLATION_LINEAR
 /// @param border_type    Way of handling the border. The supported border types
 ///                       are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
-///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT    (Not yet)
+///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT
 /// @param border_value   Border values if the border_type is
 ///                       @ref KLEIDICV_BORDER_TYPE_CONSTANT.
 KLEIDICV_API_DECLARATION(kleidicv_remap_f32_u8, const uint8_t *src,

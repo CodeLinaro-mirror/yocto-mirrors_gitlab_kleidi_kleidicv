@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <cassert>
+#include <cstdint>  // TODO: check
 #include <type_traits>
 
 #include "kleidicv/kleidicv.h"
@@ -890,16 +891,17 @@ kleidicv_error_t remap_s16point5(
 // NOLINTEND(readability-function-cognitive-complexity)
 
 template <typename ScalarType, bool IsLarge>
-class RemapF32;
+class RemapF32Replicate;
 
 template <bool IsLarge>
-class RemapF32<uint8_t, IsLarge> {
+class RemapF32Replicate<uint8_t, IsLarge> {
  public:
   using ScalarType = uint8_t;
   using MapVecTraits = neon::VecTraits<float>;
   using MapVectorType = typename MapVecTraits::VectorType;  // float32x4_t
 
-  RemapF32(Rows<const ScalarType> src_rows, size_t src_width, size_t src_height)
+  RemapF32Replicate(Rows<const ScalarType> src_rows, size_t src_width,
+                    size_t src_height)
       : src_rows_{src_rows},
         v_src_stride_{vdup_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
         vq_src_stride_{vdupq_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
@@ -1041,7 +1043,174 @@ class RemapF32<uint8_t, IsLarge> {
   uint32x4_t vq_src_stride_;  // load_small
   uint32x4_t v_xmax_;
   uint32x4_t v_ymax_;
-};  // end of class RemapF32<uint8_t>
+};  // end of class RemapF32Replicate<uint8_t>
+
+template <typename ScalarType, bool IsLarge>
+class RemapF32ConstantBorder;
+
+// TODO: Need to refactor to reduce the complexity
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+template <bool IsLarge>
+class RemapF32ConstantBorder<uint8_t, IsLarge> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = neon::VecTraits<float>;
+  using MapVectorType = typename MapVecTraits::VectorType;  // float32x4_t
+
+  RemapF32ConstantBorder(Rows<const ScalarType> src_rows, size_t src_width,
+                         size_t src_height, const ScalarType *border_value)
+      : src_rows_{src_rows},
+        src_width_{src_width},
+        src_height_{src_height},
+        border_value_{border_value} {}
+
+  void process_row(size_t width, Columns<const float> mapx,
+                   Columns<const float> mapy, Columns<ScalarType> dst) {
+    const size_t kStep = VecTraits<float>::num_lanes();
+
+    auto get_edge_pixels =
+        [&](unsigned &a_result, unsigned &b_result, unsigned &c_result,
+            unsigned &d_result, int x0, int y0, ptrdiff_t offset,
+            Rows<const ScalarType> src_rows, int src_width, int src_height) {
+          if (y0 >= 0) {
+            if (x0 >= 0) {
+              a_result = src_rows[offset];
+            }
+            if (x0 + 1 < src_width) {
+              b_result = src_rows[offset + 1];
+            }
+          }
+          if (y0 + 1 < src_height) {
+            offset += static_cast<ptrdiff_t>(src_rows.stride());
+            if (x0 >= 0) {
+              c_result = src_rows[offset];
+            }
+            if (x0 + 1 < src_width) {
+              d_result = src_rows[offset + 1];
+            }
+          }
+        };
+
+    auto vector_path_1 = [&](const float *ptr_mapx, const float *ptr_mapy) {
+      MapVectorType xf = vld1q_f32(ptr_mapx);
+      MapVectorType yf = vld1q_f32(ptr_mapy);
+      // Convert obviously out-of-range coordinates to values that are just
+      // beyond the largest permitted image width & height. This avoids the need
+      // for special case handling elsewhere.
+      float32x4_t big = vdupq_n_f32(1 << 24);
+      xf = vbslq_f32(vcleq_f32(vabsq_f32(xf), big), xf, big);
+      yf = vbslq_f32(vcleq_f32(vabsq_f32(yf), big), yf, big);
+
+      int32x4_t x0 = vcvtmq_s32_f32(xf);
+      int32x4_t y0 = vcvtmq_s32_f32(yf);
+      int x0_array[4], y0_array[4];
+      unsigned a_array[4], b_array[4], c_array[4], d_array[4];
+      vst1q_s32(x0_array, x0);
+      vst1q_s32(y0_array, y0);
+      for (int i = 0; i < 4; ++i) {
+        int x0i = x0_array[i];
+        int y0i = y0_array[i];
+        ptrdiff_t offset = x0i + y0i * src_rows_.stride();
+
+        // src_width < (1ULL << 24) && src_height_ < (1ULL << 24) is guaranteed
+        if (x0i < 0 || x0i + 1 >= static_cast<int>(src_width_) || y0i < 0 ||
+            y0i + 1 >= static_cast<int>(src_height_)) {
+          // Not entirely within the source image
+
+          a_array[i] = b_array[i] = c_array[i] = d_array[i] = border_value_[0];
+
+          if (x0i < -1 || x0i >= static_cast<int>(src_width_) || y0i < -1 ||
+              y0i >= static_cast<int>(src_height_)) {
+            // Completely outside the source image
+            continue;
+          }
+
+          get_edge_pixels(a_array[i], b_array[i], c_array[i], d_array[i], x0i,
+                          y0i, offset, src_rows_, src_width_, src_height_);
+          continue;
+        }
+
+        // Completely inside the source image
+        a_array[i] = src_rows_[offset];
+        b_array[i] = src_rows_[offset + 1];
+        offset += src_rows_.stride();
+        c_array[i] = src_rows_[offset];
+        d_array[i] = src_rows_[offset + 1];
+      }
+
+      float32x4_t xfrac = vsubq_f32(xf, vrndmq_f32(xf));
+      float32x4_t yfrac = vsubq_f32(yf, vrndmq_f32(yf));
+      float32x4_t a = vcvtq_f32_u32(vld1q_u32(a_array));
+      float32x4_t b = vcvtq_f32_u32(vld1q_u32(b_array));
+      float32x4_t line0 = vmlaq_f32(a, vsubq_f32(b, a), xfrac);
+      float32x4_t c = vcvtq_f32_u32(vld1q_u32(c_array));
+      float32x4_t d = vcvtq_f32_u32(vld1q_u32(d_array));
+      float32x4_t line1 = vmlaq_f32(c, vsubq_f32(d, c), xfrac);
+      float32x4_t result = vmlaq_f32(line0, vsubq_f32(line1, line0), yfrac);
+      return vcvtaq_u32_f32(result);
+    };
+
+    auto vector_path_4 = [&](size_t step) {  // step = 4*4 = 16
+      const float *ptr_mapx = &mapx[0];
+      const float *ptr_mapy = &mapy[0];
+      uint32x4_t res0 = vector_path_1(ptr_mapx, ptr_mapy);
+
+      ptr_mapx += kStep;
+      ptr_mapy += kStep;
+      uint32x4_t res1 = vector_path_1(ptr_mapx, ptr_mapy);
+      uint16x8_t result16_0 = vuzp1q_u16(res0, res1);
+
+      ptr_mapx += kStep;
+      ptr_mapy += kStep;
+      res0 = vector_path_1(ptr_mapx, ptr_mapy);
+
+      ptr_mapx += kStep;
+      ptr_mapy += kStep;
+      res1 = vector_path_1(ptr_mapx, ptr_mapy);
+      uint16x8_t result16_1 = vuzp1q_u16(res0, res1);
+      vst1q_u8(&dst[0], vuzp1q_u8(result16_0, result16_1));
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, kStep};
+    loop.unroll_four_times(vector_path_4);
+    loop.unroll_once([&](size_t step) {
+      const float *ptr_mapx = &mapx[0];
+      const float *ptr_mapy = &mapy[0];
+      uint32x4_t result = vector_path_1(ptr_mapx, ptr_mapy);
+      dst[0] = vgetq_lane_u32(result, 0);
+      dst[1] = vgetq_lane_u32(result, 1);
+      dst[2] = vgetq_lane_u32(result, 2);
+      dst[3] = vgetq_lane_u32(result, 3);
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    });
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapx -= back_step;
+    mapy -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t) {
+      const float *ptr_mapx = &mapx[0];
+      const float *ptr_mapy = &mapy[0];
+      uint32x4_t result = vector_path_1(ptr_mapx, ptr_mapy);
+      dst[0] = vgetq_lane_u32(result, 0);
+      dst[1] = vgetq_lane_u32(result, 1);
+      dst[2] = vgetq_lane_u32(result, 2);
+      dst[3] = vgetq_lane_u32(result, 3);
+    });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  size_t src_width_;
+  size_t src_height_;
+  const ScalarType *border_value_;
+};  // end of class RemapF32ConstantBorder<uint8_t>
+// NOLINTEND(readability-function-cognitive-complexity)
 
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
@@ -1061,6 +1230,9 @@ kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
   CHECK_POINTER_AND_STRIDE(mapy, mapy_stride, dst_height);
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT && nullptr == border_value) {
+    return KLEIDICV_ERROR_NULL_POINTER;
+  }
 
   if (!remap_f32_is_implemented<T>(src_stride, src_width, src_height, dst_width,
                                    border_type, channels, interpolation)) {
@@ -1078,13 +1250,28 @@ kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
   Rows<const float> mapy_rows{mapy, mapy_stride, 1};
   Rows<T> dst_rows{dst, dst_stride, channels};
   Rectangle rect{dst_width, dst_height};
-  if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
-    RemapF32<T, true> operation{src_rows, src_width, src_height};
-    zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+      RemapF32ConstantBorder<T, true> operation{src_rows, src_width, src_height,
+                                                border_value};
+      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    } else {
+      RemapF32ConstantBorder<T, false> operation{src_rows, src_width,
+                                                 src_height, border_value};
+      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    }
   } else {
-    RemapF32<T, false> operation{src_rows, src_width, src_height};
-    zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
+    if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+      RemapF32Replicate<T, true> operation{src_rows, src_width, src_height};
+      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    } else {
+      RemapF32Replicate<T, false> operation{src_rows, src_width, src_height};
+      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    }
   }
+
   return KLEIDICV_OK;
 }
 // NOLINTEND(readability-function-cognitive-complexity)

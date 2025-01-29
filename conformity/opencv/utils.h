@@ -72,7 +72,9 @@ bool are_matrices_different(T threshold, cv::Mat& A, cv::Mat& B) {
   for (int i = 0; i < A.rows; ++i) {
     for (int j = 0; j < (A.cols * CV_MAT_CN(A.type())); ++j) {
       if (abs_diff<T>(A.at<T>(i, j), B.at<T>(i, j)) > threshold) {
-        std::cout << "=== Mismatch at: " << i << " " << j << std::endl
+        std::cout << "=== Mismatch at [" << i << ", " << j
+                  << "]: " << +A.at<T>(i, j) << " vs. " << +B.at<T>(i, j)
+                  << std::endl
                   << std::endl;
         return true;
       }

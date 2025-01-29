@@ -15,9 +15,9 @@
 #include <limits>
 #include <memory>
 
+#include "common_sc.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/transform/remap.h"
-#include "warp_perspective_sc.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -823,6 +823,102 @@ kleidicv_error_t remap_s16point5_sc(
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
+template <typename ScalarType, bool IsLarge,
+          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
+void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
+                           size_t src_height, const ScalarType* border_value,
+                           Rows<ScalarType> dst_rows, size_t dst_width,
+                           size_t y_begin, size_t y_end,
+                           Rows<const float> mapx_rows,
+                           Rows<const float> mapy_rows) {
+  svbool_t pg_all32 = svptrue_b32();
+  svuint32_t sv_xmax = svdup_n_u32(src_width - 1);
+  svuint32_t sv_ymax = svdup_n_u32(src_height - 1);
+  svuint32_t sv_src_stride = svdup_n_u32(src_rows.stride());
+  svuint32_t sv_border;
+  // sv_border is only used if the border type is constant.
+  // If the border type is not constant then border_value is permitted to be
+  // null and must not be read.
+  if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    sv_border = svdup_n_u32(border_value[0]);
+  }
+
+  svfloat32_t xmaxf = svdup_n_f32(static_cast<float>(src_width - 1));
+  svfloat32_t ymaxf = svdup_n_f32(static_cast<float>(src_height - 1));
+
+  const size_t kStep = VecTraits<float>::num_lanes();
+
+  // auto get_coordinates = [&](svbool_t pg, size_t xs) {
+  auto coordinate_getter = [&](svbool_t pg, size_t xs) {
+    auto x = static_cast<ptrdiff_t>(xs);
+    return svcreate2(svld1_f32(pg, &mapx_rows.as_columns()[x]),
+                     svld1_f32(pg, &mapy_rows.as_columns()[x]));
+  };
+
+  auto calculate_linear = [&](svbool_t pg, uint32_t x) {
+    if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
+      svfloat32x2_t coords = coordinate_getter(pg, x);
+      return calculate_linear_replicate<ScalarType, IsLarge>(
+          pg, coords, xmaxf, ymaxf, sv_src_stride, src_rows);
+    } else {
+      static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
+      svfloat32x2_t coords = coordinate_getter(pg, x);
+      return calculate_linear_constant_border<ScalarType, IsLarge>(
+          pg, coords, sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows);
+    }
+  };
+
+  auto process_row = [&]() {
+    Columns<ScalarType> dst = dst_rows.as_columns();
+    LoopUnroll2 loop{dst_width, kStep};
+    // GCOVR_EXCL_START
+    if constexpr (Inter == KLEIDICV_INTERPOLATION_NEAREST) {
+      assert(!"INTER_NEAREST not implemented for RemapF32");
+      // GCOVR_EXCL_STOP
+    } else if constexpr (Inter == KLEIDICV_INTERPOLATION_LINEAR) {
+      loop.unroll_four_times([&](size_t x) {
+        ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
+        svuint32_t res0 = calculate_linear(pg_all32, x);
+        x += kStep;
+        svuint32_t res1 = calculate_linear(pg_all32, x);
+        svuint16_t result16_0 = svuzp1_u16(svreinterpret_u16_u32(res0),
+                                           svreinterpret_u16_u32(res1));
+        x += kStep;
+        res0 = calculate_linear(pg_all32, x);
+        x += kStep;
+        res1 = calculate_linear(pg_all32, x);
+        svuint16_t result16_1 = svuzp1_u16(svreinterpret_u16_u32(res0),
+                                           svreinterpret_u16_u32(res1));
+        svst1_u8(svptrue_b8(), p_dst,
+                 svuzp1_u8(svreinterpret_u8_u16(result16_0),
+                           svreinterpret_u8_u16(result16_1)));
+      });
+      loop.unroll_once([&](size_t x) {
+        ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
+        svuint32_t result = calculate_linear(pg_all32, x);
+        svst1b_u32(pg_all32, p_dst, result);
+      });
+      loop.remaining([&](size_t x, size_t x_max) {
+        ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
+        svbool_t pg32 = svwhilelt_b32(x, x_max);
+        svuint32_t result = calculate_linear(pg32, x);
+        svst1b_u32(pg32, p_dst, result);
+      });
+    } else {
+      static_assert(Inter == KLEIDICV_INTERPOLATION_NEAREST ||
+                        Inter == KLEIDICV_INTERPOLATION_LINEAR,
+                    ": Unknown interpolation type!");
+    }
+    ++mapx_rows;
+    ++mapy_rows;
+  };
+
+  for (size_t y = y_begin; y < y_end; ++y) {
+    process_row();
+    ++dst_rows;
+  }
+}
+
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename T>
@@ -841,6 +937,9 @@ kleidicv_error_t remap_f32_sc(const T* src, size_t src_stride, size_t src_width,
   CHECK_POINTER_AND_STRIDE(mapy, mapy_stride, dst_height);
   CHECK_IMAGE_SIZE(src_width, src_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
+  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT && nullptr == border_value) {
+    return KLEIDICV_ERROR_NULL_POINTER;
+  }
 
   if (!remap_f32_is_implemented<T>(src_stride, src_width, src_height, dst_width,
                                    border_type, channels, interpolation)) {
@@ -859,22 +958,10 @@ kleidicv_error_t remap_f32_sc(const T* src, size_t src_stride, size_t src_width,
   Rows<T> dst_rows{dst, dst_stride, channels};
   Rectangle rect{dst_width, dst_height};
 
-  auto get_coordinates = [&](svbool_t pg, size_t xs) {
-    auto x = static_cast<ptrdiff_t>(xs);
-    return svcreate2(svld1_f32(pg, &mapx_rows.as_columns()[x]),
-                     svld1_f32(pg, &mapy_rows.as_columns()[x]));
-  };
-
-  auto process_row = [&](auto callback, size_t /*y*/) {
-    callback();
-    ++mapx_rows;
-    ++mapy_rows;
-  };
-
   remap32f_process_rows<T>(remap_image_is_large(src_rows, src_height),
                            interpolation, border_type, src_rows, src_width,
                            src_height, border_value, dst_rows, dst_width, 0,
-                           dst_height, process_row, get_coordinates);
+                           dst_height, mapx_rows, mapy_rows);
 
   return KLEIDICV_OK;
 }

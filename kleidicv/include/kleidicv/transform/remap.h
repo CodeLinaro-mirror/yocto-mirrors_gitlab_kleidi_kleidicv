@@ -62,8 +62,9 @@ inline bool remap_f32_is_implemented(
             static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1 &&
         src_height <=
             static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1 &&
-        border_type == KLEIDICV_BORDER_TYPE_REPLICATE && channels == 1 &&
-        interpolation == KLEIDICV_INTERPOLATION_LINEAR);
+        (border_type == KLEIDICV_BORDER_TYPE_REPLICATE ||
+         border_type == KLEIDICV_BORDER_TYPE_CONSTANT) &&
+        channels == 1 && interpolation == KLEIDICV_INTERPOLATION_LINEAR);
   } else {
     return false;
   }

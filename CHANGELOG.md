@@ -18,8 +18,10 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Implementation of Rotate 90 degrees clockwise.
 - Remap implementations with
+  - Integer coordinates with nearest neighbour method
+  - Fixed-point coordinates with linear interpolation
+  - Floating-point coordinates with linear interpolation
   - Replicated and constant borders
-  - Nearest neighbour and fixed-point interpolations
   - 1-channel only
   - u8 and u16 inputs
 - WarpPerspective implementation

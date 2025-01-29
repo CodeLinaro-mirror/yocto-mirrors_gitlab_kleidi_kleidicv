@@ -772,10 +772,12 @@ kleidicv_error_t kleidicv_thread_remap_f32_u8(
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_remap_f32_u8(
         src, src_stride, src_width, src_height,
-        dst + begin * dst_stride / sizeof(uint8_t), dst_stride, dst_width,
-        end - begin, channels, mapx + begin * mapx_stride / sizeof(float),
-        mapx_stride, mapy + begin * mapy_stride / sizeof(float), mapy_stride,
-        interpolation, border_type, border_value);
+        dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint8_t)),
+        dst_stride, dst_width, end - begin, channels,
+        mapx + static_cast<ptrdiff_t>(begin * mapx_stride / sizeof(float)),
+        mapx_stride,
+        mapy + static_cast<ptrdiff_t>(begin * mapy_stride / sizeof(float)),
+        mapy_stride, interpolation, border_type, border_value);
   };
   return parallel_batches(callback, mt, dst_height);
 }

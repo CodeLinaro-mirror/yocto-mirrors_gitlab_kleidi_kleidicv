@@ -8,6 +8,7 @@
 #include <cmath>
 #include <utility>
 
+#include "common_sc.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
@@ -40,13 +41,12 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 //
 
 template <typename ScalarType, bool IsLarge,
-          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border,
-          typename ProcessRow, typename CoordinateGetter>
+          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
 void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
                            size_t src_height, const ScalarType *border_value,
                            Rows<ScalarType> dst_rows, size_t dst_width,
-                           size_t y_begin, size_t y_end, ProcessRow process_row,
-                           CoordinateGetter coordinate_getter) {
+                           size_t y_begin, size_t y_end,
+                           const float transform[9]) {
   svbool_t pg_all32 = svptrue_b32();
   svuint32_t sv_xmax = svdup_n_u32(src_width - 1);
   svuint32_t sv_ymax = svdup_n_u32(src_height - 1);
@@ -63,6 +63,27 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
   svfloat32_t ymaxf = svdup_n_f32(static_cast<float>(src_height - 1));
 
   const size_t kStep = VecTraits<float>::num_lanes();
+
+  svfloat32_t sv_0123 = svcvt_f32_u32_z(pg_all32, svindex_u32(0, 1));
+  svfloat32_t T0 = svdup_n_f32(transform[0]);
+  svfloat32_t T3 = svdup_n_f32(transform[3]);
+  svfloat32_t T6 = svdup_n_f32(transform[6]);
+  svfloat32_t tx0, ty0, tw0;
+
+  auto coordinate_getter = [&](svbool_t, size_t x) {
+    svfloat32_t vx = svadd_n_f32_x(pg_all32, sv_0123, static_cast<float>(x));
+    // Calculate half-transformed values from the first few pixel values,
+    // plus Tn*x, similarly to the one above
+    // Calculate inverse weight because division is expensive
+    svfloat32_t iw =
+        svdiv_f32_x(pg_all32, svdup_n_f32(1.F), svmla_x(pg_all32, tw0, vx, T6));
+    svfloat32_t tx = svmla_x(pg_all32, tx0, vx, T0);
+    svfloat32_t ty = svmla_x(pg_all32, ty0, vx, T3);
+
+    // Calculate coordinates into the source image
+    return svcreate2(svmul_f32_x(pg_all32, tx, iw),
+                     svmul_f32_x(pg_all32, ty, iw));
+  };
 
   auto calculate_nearest_coordinates = [&](svbool_t pg32, size_t x) {
     svfloat32x2_t coords = coordinate_getter(pg32, x);
@@ -89,32 +110,11 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
     return svcreate2(xi, yi);
   };
 
-  auto load = [&](svbool_t pg, svuint32_t x, svuint32_t y) {
-    if constexpr (IsLarge) {
-      svbool_t pg_b = pg;
-      svbool_t pg_t = svtrn2_b32(pg, svpfalse());
-
-      // Calculate offsets from coordinates (y * stride + x)
-      // To avoid losing precision, the final offsets should be in 64 bits
-      svuint64_t offsets_b = svmlalb(svmovlb(x), y, sv_src_stride);
-      svuint64_t offsets_t = svmlalt(svmovlt(x), y, sv_src_stride);
-      // Copy pixels from source
-      svuint64_t result_b =
-          svld1ub_gather_offset_u64(pg_b, &src_rows[0], offsets_b);
-      svuint64_t result_t =
-          svld1ub_gather_offset_u64(pg_t, &src_rows[0], offsets_t);
-      return svtrn1_u32(svreinterpret_u32_u64(result_b),
-                        svreinterpret_u32_u64(result_t));
-    } else {
-      svuint32_t offsets = svmla_x(pg, x, y, sv_src_stride);
-      return svld1ub_gather_offset_u32(pg, &src_rows[0], offsets);
-    }
-  };
-
   auto get_pixels_or_border = [&](svbool_t pg, svuint32_t x, svuint32_t y) {
     svbool_t in_range =
         svand_b_z(pg, svcmple_u32(pg, x, sv_xmax), svcmple_u32(pg, y, sv_ymax));
-    svuint32_t result = load(in_range, x, y);
+    svuint32_t result = load_common<ScalarType, IsLarge>(
+        in_range, x, y, sv_src_stride, src_rows);
     // Select between source pixels and border colour
     return svsel_u32(in_range, result, sv_border);
   };
@@ -126,7 +126,8 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
       if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
         return get_pixels_or_border(pg_all32, x, y);
       } else {
-        return load(pg_all32, x, y);
+        return load_common<ScalarType, IsLarge>(pg_all32, x, y, sv_src_stride,
+                                                src_rows);
       }
     };
     ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
@@ -161,109 +162,35 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
     if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
       result = get_pixels_or_border(pg32, xi, yi);
     } else {
-      result = load(pg32, xi, yi);
+      result = load_common<ScalarType, IsLarge>(pg32, xi, yi, sv_src_stride,
+                                                src_rows);
     }
     svst1b_u32(pg32, &dst[static_cast<ptrdiff_t>(x)], result);
   };
 
-  auto calculate_linear_replicate = [&](svbool_t pg, uint32_t x) {
-    auto load_source = [&](svuint32_t x, svuint32_t y) {
-      return load(pg, x, y);
-    };
-
-    svfloat32x2_t coords = coordinate_getter(pg, x);
-    svfloat32_t xf = svget2(coords, 0);
-    svfloat32_t yf = svget2(coords, 1);
-    // Take the integer part, clamp it to within the dimensions of the
-    // source image (negative values are already saturated to 0)
-    svuint32_t x0 = svcvt_u32_f32_x(pg_all32, svmin_x(pg_all32, xf, xmaxf));
-    svuint32_t y0 = svcvt_u32_f32_x(pg_all32, svmin_x(pg_all32, yf, ymaxf));
-
-    // Get fractional part, or 0 if out of range
-    svbool_t x_in_range = svand_z(pg_all32, svcmpge_n_f32(pg_all32, xf, 0.F),
-                                  svcmplt_f32(pg_all32, xf, xmaxf));
-    svbool_t y_in_range = svand_z(pg_all32, svcmpge_n_f32(pg_all32, yf, 0.F),
-                                  svcmplt_f32(pg_all32, yf, ymaxf));
-    svfloat32_t xfrac = svsel_f32(
-        x_in_range, svsub_f32_x(pg_all32, xf, svrintm_x(pg_all32, xf)),
-        svdup_n_f32(0.F));
-    svfloat32_t yfrac = svsel_f32(
-        y_in_range, svsub_f32_x(pg_all32, yf, svrintm_x(pg_all32, yf)),
-        svdup_n_f32(0.F));
-
-    // x1 = x0 + 1, except if it's already xmax or out of range
-    svuint32_t x1 = svsel_u32(x_in_range, svadd_n_u32_x(pg_all32, x0, 1), x0);
-    svuint32_t y1 = svsel_u32(y_in_range, svadd_n_u32_x(pg_all32, y0, 1), y0);
-
-    // Calculate offsets from coordinates (y * stride + x)
-    // a: top left, b: top right, c: bottom left, d: bottom right
-    svfloat32_t a = svcvt_f32_u32_x(pg_all32, load_source(x0, y0));
-    svfloat32_t b = svcvt_f32_u32_x(pg_all32, load_source(x1, y0));
-    svfloat32_t line0 =
-        svmla_f32_x(pg_all32, a, svsub_f32_x(pg_all32, b, a), xfrac);
-    svfloat32_t c = svcvt_f32_u32_x(pg_all32, load_source(x0, y1));
-    svfloat32_t d = svcvt_f32_u32_x(pg_all32, load_source(x1, y1));
-    svfloat32_t line1 =
-        svmla_f32_x(pg_all32, c, svsub_f32_x(pg_all32, d, c), xfrac);
-    svfloat32_t result = svmla_f32_x(
-        pg_all32, line0, svsub_f32_x(pg_all32, line1, line0), yfrac);
-    return svmin_u32_x(
-        pg_all32, svdup_n_u32(0xFF),
-        svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, result, 0.5F)));
-  };
-
-  auto calculate_linear_constant_border = [&](svbool_t pg, uint32_t x) {
-    svfloat32x2_t coords = coordinate_getter(pg, x);
-    svfloat32_t xf = svget2(coords, 0);
-    svfloat32_t yf = svget2(coords, 1);
-
-    // Convert obviously out-of-range coordinates to values that are just beyond
-    // the largest permitted image width & height. This avoids the need for
-    // special case handling elsewhere.
-    svfloat32_t big = svdup_n_f32(1 << 24);
-    xf = svsel_f32(svcmple_f32(pg, svabs_f32_x(pg, xf), big), xf, big);
-    yf = svsel_f32(svcmple_f32(pg, svabs_f32_x(pg, yf), big), yf, big);
-
-    svfloat32_t xf0 = svrintm_f32_x(pg, xf);
-    svfloat32_t yf0 = svrintm_f32_x(pg, yf);
-
-    svint32_t x0 = svcvt_s32_x(pg, xf0);
-    svint32_t y0 = svcvt_s32_x(pg, yf0);
-    svint32_t x1 = svadd_s32_x(pg, x0, svdup_n_s32(1));
-    svint32_t y1 = svadd_s32_x(pg, y0, svdup_n_s32(1));
-
-    svfloat32_t xfrac = svsub_f32_x(pg, xf, xf0);
-    svfloat32_t yfrac = svsub_f32_x(pg, yf, yf0);
-
-    svfloat32_t a =
-        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x0),
-                                                 svreinterpret_u32_s32(y0)));
-    svfloat32_t b =
-        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x1),
-                                                 svreinterpret_u32_s32(y0)));
-    svfloat32_t line0 = svmla_f32_x(pg, a, svsub_f32_x(pg, b, a), xfrac);
-    svfloat32_t c =
-        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x0),
-                                                 svreinterpret_u32_s32(y1)));
-    svfloat32_t d =
-        svcvt_f32_u32_x(pg, get_pixels_or_border(pg, svreinterpret_u32_s32(x1),
-                                                 svreinterpret_u32_s32(y1)));
-    svfloat32_t line1 = svmla_f32_x(pg, c, svsub_f32_x(pg, d, c), xfrac);
-    svfloat32_t result =
-        svmla_f32_x(pg, line0, svsub_f32_x(pg, line1, line0), yfrac);
-    return svcvt_u32_f32_x(pg, svrinta_f32_x(pg, result));
-  };
-
   auto calculate_linear = [&](svbool_t pg, uint32_t x) {
     if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
-      return calculate_linear_replicate(pg, x);
+      svfloat32x2_t coords = coordinate_getter(pg, x);
+      return calculate_linear_replicate<ScalarType, IsLarge>(
+          pg, coords, xmaxf, ymaxf, sv_src_stride, src_rows);
     } else {
       static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
-      return calculate_linear_constant_border(pg, x);
+      svfloat32x2_t coords = coordinate_getter(pg, x);
+      return calculate_linear_constant_border<ScalarType, IsLarge>(
+          pg, coords, sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows);
     }
   };
 
-  auto process_row_callback = [&]() {
+  auto process_row = [&](size_t y) {
+    float fy = static_cast<float>(y);
+    // Calculate half-transformed values at the first pixel (nominators)
+    // tw =  T6*x + T7*y + T8
+    // tx = (T0*x + T1*y + T2) / tw
+    // ty = (T3*x + T4*y + T5) / tw
+    tx0 = svdup_n_f32(fmaf(transform[1], fy, transform[2]));
+    ty0 = svdup_n_f32(fmaf(transform[4], fy, transform[5]));
+    tw0 = svdup_n_f32(fmaf(transform[7], fy, transform[8]));
+
     Columns<ScalarType> dst = dst_rows.as_columns();
     LoopUnroll2 loop{dst_width, kStep};
     if constexpr (Inter == KLEIDICV_INTERPOLATION_NEAREST) {
@@ -310,51 +237,8 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
   };
 
   for (size_t y = y_begin; y < y_end; ++y) {
-    process_row(process_row_callback, y);
+    process_row(y);
     ++dst_rows;
-  }
-}
-
-// Convert border_type to a template argument.
-template <typename ScalarType, bool IsLarge,
-          kleidicv_interpolation_type_t Inter, typename... Args>
-void remap32f_process_rows(kleidicv_border_type_t border_type, Args &&...args) {
-  if (border_type == KLEIDICV_BORDER_TYPE_REPLICATE) {
-    remap32f_process_rows<ScalarType, IsLarge, Inter,
-                          KLEIDICV_BORDER_TYPE_REPLICATE>(
-        std::forward<Args>(args)...);
-  } else {
-    remap32f_process_rows<ScalarType, IsLarge, Inter,
-                          KLEIDICV_BORDER_TYPE_CONSTANT>(
-        std::forward<Args>(args)...);
-  }
-}
-
-// Convert interpolation_type to a template argument.
-template <typename ScalarType, bool IsLarge, typename... Args>
-void remap32f_process_rows(kleidicv_interpolation_type_t interpolation_type,
-                           Args &&...args) {
-  if (interpolation_type == KLEIDICV_INTERPOLATION_NEAREST) {
-    remap32f_process_rows<ScalarType, IsLarge, KLEIDICV_INTERPOLATION_NEAREST>(
-        std::forward<Args>(args)...);
-  } else {
-    remap32f_process_rows<ScalarType, IsLarge, KLEIDICV_INTERPOLATION_LINEAR>(
-        std::forward<Args>(args)...);
-  }
-}
-
-template <typename T>
-bool remap_image_is_large(const Rows<T> &rows, size_t height) {
-  return rows.stride() * height >= 1ULL << 32;
-}
-
-// Convert is_large to a template argument.
-template <typename ScalarType, typename... Args>
-void remap32f_process_rows(bool is_large, Args &&...args) {
-  if (KLEIDICV_UNLIKELY(is_large)) {
-    remap32f_process_rows<ScalarType, true>(std::forward<Args>(args)...);
-  } else {
-    remap32f_process_rows<ScalarType, false>(std::forward<Args>(args)...);
   }
 }
 
@@ -390,44 +274,10 @@ KLEIDICV_LOCALLY_STREAMING kleidicv_error_t warp_perspective_stripe_sc(
 
   dst_rows += y_begin;
 
-  svbool_t pg_all32 = svptrue_b32();
-  svfloat32_t sv_0123 = svcvt_f32_u32_z(pg_all32, svindex_u32(0, 1));
-  svfloat32_t T0 = svdup_n_f32(transform[0]);
-  svfloat32_t T3 = svdup_n_f32(transform[3]);
-  svfloat32_t T6 = svdup_n_f32(transform[6]);
-  svfloat32_t tx0, ty0, tw0;
-  auto calculate_coordinates = [&](svbool_t, size_t x) {
-    svfloat32_t vx = svadd_n_f32_x(pg_all32, sv_0123, static_cast<float>(x));
-    // Calculate half-transformed values from the first few pixel values,
-    // plus Tn*x, similarly to the one above
-    // Calculate inverse weight because division is expensive
-    svfloat32_t iw =
-        svdiv_f32_x(pg_all32, svdup_n_f32(1.F), svmla_x(pg_all32, tw0, vx, T6));
-    svfloat32_t tx = svmla_x(pg_all32, tx0, vx, T0);
-    svfloat32_t ty = svmla_x(pg_all32, ty0, vx, T3);
-
-    // Calculate coordinates into the source image
-    return svcreate2(svmul_f32_x(pg_all32, tx, iw),
-                     svmul_f32_x(pg_all32, ty, iw));
-  };
-
-  auto process_row = [&](auto callback, size_t y) {
-    float fy = static_cast<float>(y);
-    // Calculate half-transformed values at the first pixel (nominators)
-    // tw =  T6*x + T7*y + T8
-    // tx = (T0*x + T1*y + T2) / tw
-    // ty = (T3*x + T4*y + T5) / tw
-    tx0 = svdup_n_f32(fmaf(transform[1], fy, transform[2]));
-    ty0 = svdup_n_f32(fmaf(transform[4], fy, transform[5]));
-    tw0 = svdup_n_f32(fmaf(transform[7], fy, transform[8]));
-
-    callback();
-  };
-
   remap32f_process_rows<T>(remap_image_is_large(src_rows, src_height),
                            interpolation, border_type, src_rows, src_width,
                            src_height, border_value, dst_rows, dst_width,
-                           y_begin, y_end, process_row, calculate_coordinates);
+                           y_begin, y_end, transform);
 
   return KLEIDICV_OK;
 }

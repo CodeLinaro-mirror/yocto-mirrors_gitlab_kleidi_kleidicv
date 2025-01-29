@@ -768,17 +768,24 @@ TEST_P(Thread, remap_f32_u8_border_replicate) {
                            KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
 }
 
+TEST_P(Thread, remap_f32_u8_border_constant) {
+  const uint8_t border_value = 0;
+  check_remap_f32<uint8_t>(kleidicv_remap_f32_u8, kleidicv_thread_remap_f32_u8,
+                           1, KLEIDICV_INTERPOLATION_LINEAR,
+                           KLEIDICV_BORDER_TYPE_CONSTANT, &border_value);
+}
+
 TEST_P(Thread, remap_f32_u8_not_implemented) {
-  const uint8_t border_value[4] = {};
+  const uint8_t border_value = 0;
   check_remap_f32_not_implemented<uint8_t>(
       kleidicv_thread_remap_f32_u8, 2, KLEIDICV_INTERPOLATION_LINEAR,
-      KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
-  check_remap_f32_not_implemented<uint8_t>(
-      kleidicv_thread_remap_f32_u8, 1, KLEIDICV_INTERPOLATION_LINEAR,
-      KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
+      KLEIDICV_BORDER_TYPE_REPLICATE, &border_value);
   check_remap_f32_not_implemented<uint8_t>(
       kleidicv_thread_remap_f32_u8, 1, KLEIDICV_INTERPOLATION_NEAREST,
-      KLEIDICV_BORDER_TYPE_REPLICATE, border_value);
+      KLEIDICV_BORDER_TYPE_REPLICATE, &border_value);
+  check_remap_f32_not_implemented<uint8_t>(
+      kleidicv_thread_remap_f32_u8, 1, KLEIDICV_INTERPOLATION_LINEAR,
+      KLEIDICV_BORDER_TYPE_REFLECT, &border_value);
 }
 
 TEST_P(Thread, warp_perspective_u8_border_replicate) {

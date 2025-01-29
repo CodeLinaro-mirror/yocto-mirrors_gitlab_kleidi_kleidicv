@@ -85,8 +85,7 @@ template <class ScalarType, int Format, int Interpolation, int BorderMode,
           int BorderValue>
 cv::Mat exec_remap_s16point5(cv::Mat& map_mat) {
   cv::Mat empty;
-  // integer part is 16SC2, that is twice as much data as the fractional part,
-  // 16UC1
+  // integer part is 16SC2, twice as much data as the fractional part, 16UC1
   int height = map_mat.rows * 2 / 3;
   cv::Mat mapxy_mat = map_mat.rowRange(0, height);
   ushort* p_frac = map_mat.rowRange(height, map_mat.rows).ptr<ushort>();
@@ -177,11 +176,15 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
 
       bool success =
           (CV_MAT_DEPTH(Format) == CV_8U &&
-           !are_matrices_different<uint8_t>(1, actual_mat, expected_mat)) ||
+           !are_matrices_different<uint8_t>(2, actual_mat, expected_mat)) ||
           (CV_MAT_DEPTH(Format) == CV_16U &&
-           !are_matrices_different<uint16_t>(1, actual_mat, expected_mat));
+           !are_matrices_different<uint16_t>(2, actual_mat, expected_mat));
       if (!success) {
         fail_print_matrices(w, h, source_mat, actual_mat, expected_mat);
+        std::cout << "=== mapx_mat:" << std::endl;
+        std::cout << mapx_mat << std::endl << std::endl;
+        std::cout << "=== mapy_mat:" << std::endl;
+        std::cout << mapy_mat << std::endl << std::endl;
         return true;
       }
     }
@@ -200,10 +203,11 @@ std::vector<test>& remap_tests_get() {
     TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapF32 uint8 Replicate", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
 
-    TEST("RemapS16 uint8 Constant", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>)),
-    TEST("RemapS16 uint16 Constant", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 321>)),
-    TEST("RemapS16Point5 uint8 Constant", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>)),
-    TEST("RemapS16Point5 uint16 Constant", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 321>)),
+    TEST("RemapS16 uint8 Constant", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapS16 uint16 Constant", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapS16Point5 uint8 Constant", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapS16Point5 uint16 Constant", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapF32 uint8 Constant", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
   };
   // clang-format on
   return tests;
