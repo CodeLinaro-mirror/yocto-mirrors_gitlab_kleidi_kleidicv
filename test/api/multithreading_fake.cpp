@@ -32,7 +32,8 @@ static kleidicv_error_t parallel_fake(kleidicv_thread_callback callback,
   // Put task_indices in random order to simulate the unpredictability of
   // multithreading.
   std::shuffle(task_indices.begin(), task_indices.end(),
-               std::minstd_rand{test::Options::seed()});
+               std::minstd_rand{static_cast<std::minstd_rand::result_type>(
+                   test::Options::seed())});
 
   for (unsigned i : task_indices) {
     unsigned task_begin = i * task_count / thread_count;
