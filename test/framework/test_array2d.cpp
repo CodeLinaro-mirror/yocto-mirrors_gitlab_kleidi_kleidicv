@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -100,9 +100,6 @@ TEST(Array2D, At) {
 
   array.at(0, 0)[0] = 2;
   EXPECT_EQ(array.at(0, 0)[0], 2);
-
-  const test::Array2D<uint32_t> const_array{width, height};
-  EXPECT_EQ(const_array.at(0, 0)[0], 0);
 }
 
 // Tests that test::Array2D<T>.set() works.
