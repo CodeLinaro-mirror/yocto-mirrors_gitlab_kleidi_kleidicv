@@ -137,8 +137,8 @@ s8_to_f32(const int8_t* src, size_t src_stride, float* dst, size_t dst_stride,
       dst[x] = src[x];
     }
 
-    src += src_stride / sizeof(*src);
-    dst += dst_stride / sizeof(*dst);
+    src += static_cast<ptrdiff_t>(src_stride / sizeof(*src));
+    dst += static_cast<ptrdiff_t>(dst_stride / sizeof(*dst));
   }
   return KLEIDICV_OK;
 }
@@ -182,8 +182,8 @@ u8_to_f32(const uint8_t* src, size_t src_stride, float* dst, size_t dst_stride,
       dst[x] = src[x];
     }
 
-    src += src_stride / sizeof(*src);
-    dst += dst_stride / sizeof(*dst);
+    src += static_cast<ptrdiff_t>(src_stride / sizeof(*src));
+    dst += static_cast<ptrdiff_t>(dst_stride / sizeof(*dst));
   }
   return KLEIDICV_OK;
 }

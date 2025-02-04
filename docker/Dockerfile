@@ -30,9 +30,9 @@ RUN apt-get update \
 # Install latest version of most LLVM tools except clang-format and clang-tidy
 # because we prioritise stability when it comes to how we format our code and
 # which cland-tidy checks we expect.
-ENV LLVM_VERSION=20
-ENV CLANG_FORMAT_VERSION=19
-ENV CLANG_TIDY_VERSION=19
+ENV LLVM_VERSION=21
+ENV CLANG_FORMAT_VERSION=20
+ENV CLANG_TIDY_VERSION=20
 
 RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d/apt.llvm.org.asc \
     && echo "ce6eee4130298f79b0e0f09a89f93c1bc711cd68e7e3182d37c8e96c5227e2f0 /etc/apt/trusted.gpg.d/apt.llvm.org.asc" | sha256sum -c - \

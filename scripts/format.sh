@@ -8,7 +8,7 @@
 #
 # Options:
 #   CHECK_ONLY:             If set to 'ON', the script exists with non-zero value if source is not formatted. Defaults to 'OFF'.
-#   CLANG_FORMAT_BIN_PATH:  Clang-format binary, defaults to 'clang-format=19'.
+#   CLANG_FORMAT_BIN_PATH:  Clang-format binary, defaults to 'clang-format=20'.
 #   VERBOSE:                If set to 'ON', verbose output is printed. Defaults to 'OFF'.
 # ------------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 KLEIDICV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 
 : "${CHECK_ONLY:=OFF}"
-: "${CLANG_FORMAT_BIN_PATH:=clang-format-19}"
+: "${CLANG_FORMAT_BIN_PATH:=clang-format-20}"
 : "${VERBOSE:=OFF}"
 
 # ------------------------------------------------------------------------------

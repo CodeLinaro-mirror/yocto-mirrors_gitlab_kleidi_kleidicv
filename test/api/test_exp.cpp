@@ -44,7 +44,7 @@ class ExpTestSpecial<float> final : public UnaryOperationTest<float> {
 
  public:
   ExpTestSpecial() : test_elements_(input_values().size()) {
-    auto inputs = input_values();
+    const std::vector<ElementType>& inputs = input_values();
 
     for (size_t i = 0; i < inputs.size(); ++i) {
       test_elements_[i].values[0] = inputs[i];

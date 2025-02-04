@@ -5,6 +5,7 @@
 #include "kleidicv_thread/kleidicv_thread.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <limits>
 #include <vector>
@@ -75,9 +76,10 @@ inline kleidicv_error_t kleidicv_thread_unary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src, size_t src_stride,
     DstT *dst, size_t dst_stride, size_t width, size_t height, Args... args) {
   auto callback = [=](unsigned begin, unsigned end) {
-    return f(src + begin * src_stride / sizeof(SrcT), src_stride,
-             dst + begin * dst_stride / sizeof(DstT), dst_stride, width,
-             end - begin, args...);
+    return f(src + static_cast<ptrdiff_t>(begin * src_stride / sizeof(SrcT)),
+             src_stride,
+             dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(DstT)),
+             dst_stride, width, end - begin, args...);
   };
   return parallel_batches(callback, mt, height);
 }
@@ -88,10 +90,13 @@ inline kleidicv_error_t kleidicv_thread_binary_op_impl(
     size_t src_a_stride, const SrcT *src_b, size_t src_b_stride, DstT *dst,
     size_t dst_stride, size_t width, size_t height, Args... args) {
   auto callback = [=](unsigned begin, unsigned end) {
-    return f(src_a + begin * src_a_stride / sizeof(SrcT), src_a_stride,
-             src_b + begin * src_b_stride / sizeof(SrcT), src_b_stride,
-             dst + begin * dst_stride / sizeof(DstT), dst_stride, width,
-             end - begin, args...);
+    return f(
+        src_a + static_cast<ptrdiff_t>(begin * src_a_stride / sizeof(SrcT)),
+        src_a_stride,
+        src_b + static_cast<ptrdiff_t>(begin * src_b_stride / sizeof(SrcT)),
+        src_b_stride,
+        dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(DstT)),
+        dst_stride, width, end - begin, args...);
   };
   return parallel_batches(callback, mt, height);
 }
@@ -668,11 +673,12 @@ kleidicv_error_t kleidicv_thread_remap_s16_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
   auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_remap_s16_u8(src, src_stride, src_width, src_height,
-                                 dst + begin * dst_stride / sizeof(uint8_t),
-                                 dst_stride, dst_width, end - begin, channels,
-                                 mapxy + begin * mapxy_stride / sizeof(int16_t),
-                                 mapxy_stride, border_type, border_value);
+    return kleidicv_remap_s16_u8(
+        src, src_stride, src_width, src_height,
+        dst + begin * dst_stride / sizeof(uint8_t), dst_stride, dst_width,
+        end - begin, channels,
+        mapxy + static_cast<ptrdiff_t>(begin * mapxy_stride / sizeof(int16_t)),
+        mapxy_stride, border_type, border_value);
   };
   return parallel_batches(callback, mt, dst_height);
 }
@@ -691,8 +697,9 @@ kleidicv_error_t kleidicv_thread_remap_s16_u16(
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_remap_s16_u16(
         src, src_stride, src_width, src_height,
-        dst + begin * dst_stride / sizeof(uint16_t), dst_stride, dst_width,
-        end - begin, channels, mapxy + begin * mapxy_stride / sizeof(int16_t),
+        dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint16_t)),
+        dst_stride, dst_width, end - begin, channels,
+        mapxy + static_cast<ptrdiff_t>(begin * mapxy_stride / sizeof(int16_t)),
         mapxy_stride, border_type, border_value);
   };
   return parallel_batches(callback, mt, dst_height);
@@ -714,8 +721,11 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
     return kleidicv_remap_s16point5_u8(
         src, src_stride, src_width, src_height,
         dst + begin * dst_stride / sizeof(uint8_t), dst_stride, dst_width,
-        end - begin, channels, mapxy + begin * mapxy_stride / sizeof(int16_t),
-        mapxy_stride, mapfrac + begin * mapfrac_stride / sizeof(uint16_t),
+        end - begin, channels,
+        mapxy + static_cast<ptrdiff_t>(begin * mapxy_stride / sizeof(int16_t)),
+        mapxy_stride,
+        mapfrac +
+            static_cast<ptrdiff_t>(begin * mapfrac_stride / sizeof(uint16_t)),
         mapfrac_stride, border_type, border_value);
   };
   return parallel_batches(callback, mt, dst_height);
@@ -736,9 +746,12 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u16(
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_remap_s16point5_u16(
         src, src_stride, src_width, src_height,
-        dst + begin * dst_stride / sizeof(uint16_t), dst_stride, dst_width,
-        end - begin, channels, mapxy + begin * mapxy_stride / sizeof(int16_t),
-        mapxy_stride, mapfrac + begin * mapfrac_stride / sizeof(uint16_t),
+        dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint16_t)),
+        dst_stride, dst_width, end - begin, channels,
+        mapxy + static_cast<ptrdiff_t>(begin * mapxy_stride / sizeof(int16_t)),
+        mapxy_stride,
+        mapfrac +
+            static_cast<ptrdiff_t>(begin * mapfrac_stride / sizeof(uint16_t)),
         mapfrac_stride, border_type, border_value);
   };
   return parallel_batches(callback, mt, dst_height);

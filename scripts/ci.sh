@@ -39,7 +39,7 @@ doxygen
 # Build
 cmake -S . -B build -G Ninja \
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-  -DCMAKE_CXX_CLANG_TIDY=clang-tidy-19 \
+  -DCMAKE_CXX_CLANG_TIDY=clang-tidy-20 \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
   -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
   -DKLEIDICV_ENABLE_SME2=ON \

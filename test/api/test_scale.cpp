@@ -166,10 +166,11 @@ class ScaleTestLinearBase {
                           test::Array2D<ElementType>& expected) {
     for (size_t hindex = 0; hindex < source.height(); ++hindex) {
       for (size_t vindex = 0; vindex < source.width(); ++vindex) {
-        // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign)
+        // clang-tidy cannot detect that source is fully initialized
+        // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign,clang-analyzer-core.CallAndMessage)
         *expected.at(hindex, vindex) = scale_operation<ElementType>()(
             *source.at(hindex, vindex), scale(), shift());
-        // NOLINTEND(clang-analyzer-core.uninitialized.Assign)
+        // NOLINTEND(clang-analyzer-core.uninitialized.Assign,clang-analyzer-core.CallAndMessage)
       }
     }
   }
