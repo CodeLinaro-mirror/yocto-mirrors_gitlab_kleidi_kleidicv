@@ -993,7 +993,7 @@ class RemapF32 : public testing::Test {
             channels, mapx.data(), mapx.stride(), mapy.data(), mapy.stride(),
             KLEIDICV_INTERPOLATION_LINEAR, border_type, border_value));
 
-    EXPECT_EQ_ARRAY2D(actual, expected);
+    EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, actual, expected);
   }
 
  private:
@@ -1023,7 +1023,7 @@ class RemapF32 : public testing::Test {
             channels, mapx.data(), mapx.stride(), mapy.data(), mapy.stride(),
             KLEIDICV_INTERPOLATION_LINEAR, border_type, border_value));
 
-    EXPECT_EQ_ARRAY2D(actual, expected);
+    EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, actual, expected);
   }
 
   static void calculate_expected(test::Array2D<ScalarType> &src,

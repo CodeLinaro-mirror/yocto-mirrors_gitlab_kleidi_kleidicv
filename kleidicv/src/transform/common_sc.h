@@ -90,14 +90,14 @@ svuint32_t inline load_common(svbool_t pg, svuint32_t x, svuint32_t y,
 }
 
 template <typename ScalarType, bool IsLarge>
-svuint32_t inline calculate_linear_replicate(svbool_t pg, svfloat32x2_t coords,
-                                             svfloat32_t xmaxf,
-                                             svfloat32_t ymaxf,
-                                             svuint32_t sv_src_stride,
-                                             Rows<const ScalarType> &src_rows) {
+svuint32_t inline calculate_linear_replicated_border(
+    svbool_t pg, svfloat32x2_t coords, svfloat32_t xmaxf, svfloat32_t ymaxf,
+    svuint32_t sv_src_stride, Rows<const ScalarType> &src_rows) {
   auto load_source = [&](svuint32_t x, svuint32_t y) {
     return load_common<ScalarType, IsLarge>(pg, x, y, sv_src_stride, src_rows);
   };
+  const float MULTIPLIER = 1 << 8;
+  svuint32_t bias = svdup_n_u32(MULTIPLIER * MULTIPLIER / 2);
   svbool_t pg_all32 = svptrue_b32();
   svfloat32_t xf = svget2(coords, 0);
   svfloat32_t yf = svget2(coords, 1);
@@ -111,12 +111,25 @@ svuint32_t inline calculate_linear_replicate(svbool_t pg, svfloat32x2_t coords,
                                 svcmplt_f32(pg_all32, xf, xmaxf));
   svbool_t y_in_range = svand_z(pg_all32, svcmpge_n_f32(pg_all32, yf, 0.F),
                                 svcmplt_f32(pg_all32, yf, ymaxf));
-  svfloat32_t xfrac =
-      svsel_f32(x_in_range, svsub_f32_x(pg_all32, xf, svrintm_x(pg_all32, xf)),
-                svdup_n_f32(0.F));
-  svfloat32_t yfrac =
-      svsel_f32(y_in_range, svsub_f32_x(pg_all32, yf, svrintm_x(pg_all32, yf)),
-                svdup_n_f32(0.F));
+  svuint32_t xfrac = svsel_u32(
+      x_in_range,
+      svcvt_u32_f32_x(
+          pg_all32,
+          svmul_n_f32_x(pg_all32,
+                        svsub_f32_x(pg_all32, xf, svrintm_x(pg_all32, xf)),
+                        MULTIPLIER)),
+      svdup_n_u32(0));
+  svuint32_t yfrac = svsel_u32(
+      y_in_range,
+      svcvt_u32_f32_x(
+          pg_all32,
+          svmul_n_f32_x(pg_all32,
+                        svsub_f32_x(pg_all32, yf, svrintm_x(pg_all32, yf)),
+                        MULTIPLIER)),
+      svdup_n_u32(0));
+
+  svuint32_t nxfrac = svsub_u32_x(pg_all32, svdup_n_u32(MULTIPLIER), xfrac);
+  svuint32_t nyfrac = svsub_u32_x(pg_all32, svdup_n_u32(MULTIPLIER), yfrac);
 
   // x1 = x0 + 1, except if it's already xmax or out of range
   svuint32_t x1 = svsel_u32(x_in_range, svadd_n_u32_x(pg_all32, x0, 1), x0);
@@ -124,17 +137,19 @@ svuint32_t inline calculate_linear_replicate(svbool_t pg, svfloat32x2_t coords,
 
   // Calculate offsets from coordinates (y * stride + x)
   // a: top left, b: top right, c: bottom left, d: bottom right
-  svfloat32_t a = svcvt_f32_u32_x(pg_all32, load_source(x0, y0));
-  svfloat32_t b = svcvt_f32_u32_x(pg_all32, load_source(x1, y0));
-  svfloat32_t line0 =
-      svmla_f32_x(pg_all32, a, svsub_f32_x(pg_all32, b, a), xfrac);
-  svfloat32_t c = svcvt_f32_u32_x(pg_all32, load_source(x0, y1));
-  svfloat32_t d = svcvt_f32_u32_x(pg_all32, load_source(x1, y1));
-  svfloat32_t line1 =
-      svmla_f32_x(pg_all32, c, svsub_f32_x(pg_all32, d, c), xfrac);
-  svfloat32_t result =
-      svmla_f32_x(pg_all32, line0, svsub_f32_x(pg_all32, line1, line0), yfrac);
-  return svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, result, 0.5F));
+
+  svuint32_t a = load_source(x0, y0);
+  svuint32_t b = load_source(x1, y0);
+  svuint32_t line0 = svmla_x(pg_all32, svmul_x(pg_all32, a, nxfrac), b, xfrac);
+
+  svuint32_t c = load_source(x0, y1);
+  svuint32_t d = load_source(x1, y1);
+  svuint32_t line1 = svmla_x(pg_all32, svmul_x(pg_all32, c, nxfrac), d, xfrac);
+
+  svuint32_t acc = svmla_x(pg_all32, svmla_u32_x(pg_all32, bias, line0, nyfrac),
+                           line1, yfrac);
+
+  return svlsr_n_u32_x(pg_all32, acc, 16);
 }
 
 template <typename ScalarType, bool IsLarge>
