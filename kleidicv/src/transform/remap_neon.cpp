@@ -1510,6 +1510,465 @@ class RemapF32ConstantBorder<uint16_t, IsLarge> {
 };  // end of class RemapF32ConstantBorder<uint16_t>
 // NOLINTEND(readability-function-cognitive-complexity)
 
+template <typename ScalarType, bool IsLarge>
+class RemapF32NearestReplicate;
+
+template <bool IsLarge>
+class RemapF32NearestReplicate<uint8_t, IsLarge> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = neon::VecTraits<float>;
+  using MapVectorType = typename MapVecTraits::VectorType;  // float32x4_t
+
+  RemapF32NearestReplicate(Rows<const ScalarType> src_rows, size_t src_width,
+                           size_t src_height)
+      : src_rows_{src_rows},
+        v_src_stride_{vdupq_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
+        v_xmax_{vdupq_n_u32(static_cast<uint32_t>(src_width - 1))},
+        v_ymax_{vdupq_n_u32(static_cast<uint32_t>(src_height - 1))} {}
+
+  void get_map_coordinates(Columns<const float> mapx, Columns<const float> mapy,
+                           uint32x4_t &x, uint32x4_t &y) {
+    MapVectorType x_raw = vld1q_f32(&mapx[0]);
+    MapVectorType y_raw = vld1q_f32(&mapy[0]);
+
+    MapVectorType bias = vdupq_n_f32(0.5F);
+    // Round to nearest positive value
+    uint32x4_t x_nearest = vcvtmq_u32_f32(vaddq_f32(x_raw, bias));
+    uint32x4_t y_nearest = vcvtmq_u32_f32(vaddq_f32(y_raw, bias));
+
+    // Clamp coordinates to within the dimensions of the source image
+    x = vmaxq_u32(vdupq_n_u32(0), vminq_u32(x_nearest, v_xmax_));
+    y = vmaxq_u32(vdupq_n_u32(0), vminq_u32(y_nearest, v_ymax_));
+  }
+
+  uint8x8_t load_pixels_large(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * stride + x)
+    uint64x2_t indices_low =
+        vmlal_u32(vmovl_u32(vget_low_u32(x)), vget_low_u32(y),
+                  vget_low_u32(v_src_stride_));
+    uint64x2_t indices_high =
+        vmlal_high_u32(vmovl_high_u32(x), y, v_src_stride_);
+
+    uint8x8_t pixels = {src_rows_[vgetq_lane_u64(indices_low, 0)],
+                        src_rows_[vgetq_lane_u64(indices_low, 1)],
+                        src_rows_[vgetq_lane_u64(indices_high, 0)],
+                        src_rows_[vgetq_lane_u64(indices_high, 1)],
+                        0,
+                        0,
+                        0,
+                        0};
+    return pixels;
+  }
+
+  uint8x8_t load_pixels_small(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * stride + x)
+    uint32x4_t indices = vmlaq_u32(x, y, v_src_stride_);
+
+    uint8x8_t pixels = {src_rows_[vgetq_lane_u32(indices, 0)],
+                        src_rows_[vgetq_lane_u32(indices, 1)],
+                        src_rows_[vgetq_lane_u32(indices, 2)],
+                        src_rows_[vgetq_lane_u32(indices, 3)],
+                        0,
+                        0,
+                        0,
+                        0};
+    return pixels;
+  }
+
+  void store_pixels(uint8x8_t pixels, Columns<ScalarType> dst) {
+    dst[0] = vget_lane_u8(pixels, 0);
+    dst[1] = vget_lane_u8(pixels, 1);
+    dst[2] = vget_lane_u8(pixels, 2);
+    dst[3] = vget_lane_u8(pixels, 3);
+  }
+
+  void process_row(size_t width, Columns<const float> mapx,
+                   Columns<const float> mapy, Columns<ScalarType> dst) {
+    const size_t kStep = VecTraits<float>::num_lanes();
+
+    auto vector_path = [&](size_t step) {
+      uint32x4_t x, y;
+      get_map_coordinates(mapx, mapy, x, y);
+
+      uint8x8_t pixels;
+      if constexpr (IsLarge) {
+        pixels = load_pixels_large(x, y);
+      } else {
+        pixels = load_pixels_small(x, y);
+      }
+
+      store_pixels(pixels, dst);
+
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, kStep};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapx -= back_step;
+    mapy -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint32x4_t v_src_stride_;
+  uint32x4_t v_xmax_;
+  uint32x4_t v_ymax_;
+};  // end of class RemapF32NearestReplicate<uint8_t>
+
+template <bool IsLarge>
+class RemapF32NearestReplicate<uint16_t, IsLarge> {
+ public:
+  using ScalarType = uint16_t;
+  using MapVecTraits = neon::VecTraits<float>;
+  using MapVectorType = typename MapVecTraits::VectorType;  // float32x4_t
+
+  RemapF32NearestReplicate(Rows<const ScalarType> src_rows, size_t src_width,
+                           size_t src_height)
+      : src_rows_{src_rows},
+        v_src_element_stride_{vdupq_n_u32(
+            static_cast<uint32_t>(src_rows_.stride() / sizeof(ScalarType)))},
+        v_xmax_{vdupq_n_u32(static_cast<uint32_t>(src_width - 1))},
+        v_ymax_{vdupq_n_u32(static_cast<uint32_t>(src_height - 1))} {}
+
+  void get_map_coordinates(Columns<const float> mapx, Columns<const float> mapy,
+                           uint32x4_t &x, uint32x4_t &y) {
+    MapVectorType x_raw = vld1q_f32(&mapx[0]);
+    MapVectorType y_raw = vld1q_f32(&mapy[0]);
+
+    MapVectorType bias = vdupq_n_f32(0.5F);
+    // Round to nearest positive value
+    uint32x4_t x_nearest = vcvtmq_u32_f32(vaddq_f32(x_raw, bias));
+    uint32x4_t y_nearest = vcvtmq_u32_f32(vaddq_f32(y_raw, bias));
+
+    // Clamp coordinates to within the dimensions of the source image
+    x = vmaxq_u32(vdupq_n_u32(0), vminq_u32(x_nearest, v_xmax_));
+    y = vmaxq_u32(vdupq_n_u32(0), vminq_u32(y_nearest, v_ymax_));
+  }
+
+  uint16x4_t load_pixels_large(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * element_stride + x)
+    uint64x2_t indices_low =
+        vmlal_u32(vmovl_u32(vget_low_u32(x)), vget_low_u32(y),
+                  vget_low_u32(v_src_element_stride_));
+    uint64x2_t indices_high =
+        vmlal_high_u32(vmovl_high_u32(x), y, v_src_element_stride_);
+
+    uint16x4_t pixels = {src_rows_[vgetq_lane_u64(indices_low, 0)],
+                         src_rows_[vgetq_lane_u64(indices_low, 1)],
+                         src_rows_[vgetq_lane_u64(indices_high, 0)],
+                         src_rows_[vgetq_lane_u64(indices_high, 1)]};
+    return pixels;
+  }
+
+  uint16x4_t load_pixels_small(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * element_stride + x)
+    uint32x4_t indices = vmlaq_u32(x, y, v_src_element_stride_);
+
+    uint16x4_t pixels = {src_rows_[vgetq_lane_u32(indices, 0)],
+                         src_rows_[vgetq_lane_u32(indices, 1)],
+                         src_rows_[vgetq_lane_u32(indices, 2)],
+                         src_rows_[vgetq_lane_u32(indices, 3)]};
+    return pixels;
+  }
+
+  void store_pixels(uint16x4_t pixels, Columns<ScalarType> dst) {
+    vst1_u16(&dst[0], pixels);
+  }
+
+  void process_row(size_t width, Columns<const float> mapx,
+                   Columns<const float> mapy, Columns<ScalarType> dst) {
+    const size_t kStep = VecTraits<float>::num_lanes();
+
+    auto vector_path = [&](size_t step) {
+      uint32x4_t x, y;
+      get_map_coordinates(mapx, mapy, x, y);
+
+      uint16x4_t pixels;
+      if constexpr (IsLarge) {
+        pixels = load_pixels_large(x, y);
+      } else {
+        pixels = load_pixels_small(x, y);
+      }
+
+      store_pixels(pixels, dst);
+
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, kStep};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapx -= back_step;
+    mapy -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint32x4_t v_src_element_stride_;
+  uint32x4_t v_xmax_;
+  uint32x4_t v_ymax_;
+};  // end of class RemapF32NearestReplicate<uint16_t>
+
+template <typename ScalarType, bool IsLarge>
+class RemapF32NearestConstant;
+
+template <bool IsLarge>
+class RemapF32NearestConstant<uint8_t, IsLarge> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = neon::VecTraits<float>;
+  using MapVectorType = typename MapVecTraits::VectorType;  // float32x4_t
+
+  RemapF32NearestConstant(Rows<const ScalarType> src_rows, size_t src_width,
+                          size_t src_height, const ScalarType *border_value)
+      : src_rows_{src_rows},
+        v_src_stride_{vdupq_n_u32(static_cast<uint32_t>(src_rows_.stride()))},
+        v_width_{vdupq_n_u32(static_cast<uint32_t>(src_width))},
+        v_height_{vdupq_n_u32(static_cast<uint32_t>(src_height))},
+        v_border_{vdup_n_u8(*border_value)} {}
+
+  void get_map_coordinates(Columns<const float> mapx, Columns<const float> mapy,
+                           uint32x4_t &x, uint32x4_t &y, uint32x4_t &in_range) {
+    MapVectorType x_raw = vld1q_f32(&mapx[0]);
+    MapVectorType y_raw = vld1q_f32(&mapy[0]);
+
+    MapVectorType bias = vdupq_n_f32(0.5F);
+    float32x4_t x_biased = vaddq_f32(x_raw, bias);
+    float32x4_t y_biased = vaddq_f32(y_raw, bias);
+
+    // Round to nearest positive value
+    uint32x4_t x_nearest = vcvtmq_u32_f32(x_biased);
+    uint32x4_t y_nearest = vcvtmq_u32_f32(y_biased);
+
+    // Find whether coordinates are within the image dimensions.
+    uint32x4_t above_zero =
+        vandq_u32(vcgezq_f32(x_biased), vcgezq_f32(y_biased));
+    uint32x4_t below_limits = vandq_u32(vcltq_u32(x_nearest, v_width_),
+                                        vcltq_u32(y_nearest, v_height_));
+    in_range = vandq_u32(above_zero, below_limits);
+
+    // Zero out-of-range coordinates.
+    x = vandq_u32(in_range, x_nearest);
+    y = vandq_u32(in_range, y_nearest);
+  }
+
+  uint8x8_t load_pixels_large(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * stride + x)
+    uint64x2_t indices_low =
+        vmlal_u32(vmovl_u32(vget_low_u32(x)), vget_low_u32(y),
+                  vget_low_u32(v_src_stride_));
+    uint64x2_t indices_high =
+        vmlal_high_u32(vmovl_high_u32(x), y, v_src_stride_);
+
+    uint8x8_t pixels = {src_rows_[vgetq_lane_u64(indices_low, 0)],
+                        src_rows_[vgetq_lane_u64(indices_low, 1)],
+                        src_rows_[vgetq_lane_u64(indices_high, 0)],
+                        src_rows_[vgetq_lane_u64(indices_high, 1)],
+                        0,
+                        0,
+                        0,
+                        0};
+    return pixels;
+  }
+
+  uint8x8_t load_pixels_small(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * stride + x)
+    uint32x4_t indices = vmlaq_u32(x, y, v_src_stride_);
+
+    uint8x8_t pixels = {src_rows_[vgetq_lane_u32(indices, 0)],
+                        src_rows_[vgetq_lane_u32(indices, 1)],
+                        src_rows_[vgetq_lane_u32(indices, 2)],
+                        src_rows_[vgetq_lane_u32(indices, 3)],
+                        0,
+                        0,
+                        0,
+                        0};
+    return pixels;
+  }
+
+  void store_pixels(uint8x8_t pixels, Columns<ScalarType> dst) {
+    dst[0] = vget_lane_u8(pixels, 0);
+    dst[1] = vget_lane_u8(pixels, 1);
+    dst[2] = vget_lane_u8(pixels, 2);
+    dst[3] = vget_lane_u8(pixels, 3);
+  }
+
+  void process_row(size_t width, Columns<const float> mapx,
+                   Columns<const float> mapy, Columns<ScalarType> dst) {
+    const size_t kStep = VecTraits<float>::num_lanes();
+
+    auto vector_path = [&](size_t step) {
+      uint32x4_t x, y;
+      uint32x4_t in_range;
+      get_map_coordinates(mapx, mapy, x, y, in_range);
+
+      uint8x8_t pixels;
+      if constexpr (IsLarge) {
+        pixels = load_pixels_large(x, y);
+      } else {
+        pixels = load_pixels_small(x, y);
+      }
+
+      // Select between source pixels and border colour
+      uint8x8_t in_range_narrowed =
+          vmovn_u16(vcombine_u16(vmovn_u32(in_range), vdup_n_u16(0)));
+      uint8x8_t pixels_or_border =
+          vbsl_u8(in_range_narrowed, pixels, v_border_);
+
+      store_pixels(pixels_or_border, dst);
+
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, kStep};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapx -= back_step;
+    mapy -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint32x4_t v_src_stride_;
+  uint32x4_t v_width_;
+  uint32x4_t v_height_;
+  uint8x8_t v_border_;
+};  // end of class RemapF32NearestConstant<uint8_t>
+
+template <bool IsLarge>
+class RemapF32NearestConstant<uint16_t, IsLarge> {
+ public:
+  using ScalarType = uint16_t;
+  using MapVecTraits = neon::VecTraits<float>;
+  using MapVectorType = typename MapVecTraits::VectorType;  // float32x4_t
+
+  RemapF32NearestConstant(Rows<const ScalarType> src_rows, size_t src_width,
+                          size_t src_height, const ScalarType *border_value)
+      : src_rows_{src_rows},
+        v_src_element_stride_{vdupq_n_u32(
+            static_cast<uint32_t>(src_rows_.stride() / sizeof(ScalarType)))},
+        v_width_{vdupq_n_u32(static_cast<uint32_t>(src_width))},
+        v_height_{vdupq_n_u32(static_cast<uint32_t>(src_height))},
+        v_border_{vdup_n_u16(*border_value)} {}
+
+  void get_map_coordinates(Columns<const float> mapx, Columns<const float> mapy,
+                           uint32x4_t &x, uint32x4_t &y, uint32x4_t &in_range) {
+    MapVectorType x_raw = vld1q_f32(&mapx[0]);
+    MapVectorType y_raw = vld1q_f32(&mapy[0]);
+
+    MapVectorType bias = vdupq_n_f32(0.5F);
+    float32x4_t x_biased = vaddq_f32(x_raw, bias);
+    float32x4_t y_biased = vaddq_f32(y_raw, bias);
+
+    // Round to nearest positive value
+    uint32x4_t x_nearest = vcvtmq_u32_f32(x_biased);
+    uint32x4_t y_nearest = vcvtmq_u32_f32(y_biased);
+
+    // Find whether coordinates are within the image dimensions.
+    uint32x4_t above_zero =
+        vandq_u32(vcgezq_f32(x_biased), vcgezq_f32(y_biased));
+    uint32x4_t below_limits = vandq_u32(vcltq_u32(x_nearest, v_width_),
+                                        vcltq_u32(y_nearest, v_height_));
+    in_range = vandq_u32(above_zero, below_limits);
+
+    // Zero out-of-range coordinates.
+    x = vandq_u32(in_range, x_nearest);
+    y = vandq_u32(in_range, y_nearest);
+  }
+
+  uint16x4_t load_pixels_large(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * stride + x)
+    uint64x2_t indices_low =
+        vmlal_u32(vmovl_u32(vget_low_u32(x)), vget_low_u32(y),
+                  vget_low_u32(v_src_element_stride_));
+    uint64x2_t indices_high =
+        vmlal_high_u32(vmovl_high_u32(x), y, v_src_element_stride_);
+
+    uint16x4_t pixels = {src_rows_[vgetq_lane_u64(indices_low, 0)],
+                         src_rows_[vgetq_lane_u64(indices_low, 1)],
+                         src_rows_[vgetq_lane_u64(indices_high, 0)],
+                         src_rows_[vgetq_lane_u64(indices_high, 1)]};
+    return pixels;
+  }
+
+  uint16x4_t load_pixels_small(uint32x4_t x, uint32x4_t y) {
+    // Calculate offsets from coordinates (y * stride + x)
+    uint32x4_t indices = vmlaq_u32(x, y, v_src_element_stride_);
+
+    uint16x4_t pixels = {src_rows_[vgetq_lane_u32(indices, 0)],
+                         src_rows_[vgetq_lane_u32(indices, 1)],
+                         src_rows_[vgetq_lane_u32(indices, 2)],
+                         src_rows_[vgetq_lane_u32(indices, 3)]};
+    return pixels;
+  }
+
+  void store_pixels(uint16x4_t pixels, Columns<ScalarType> dst) {
+    vst1_u16(&dst[0], pixels);
+  }
+
+  void process_row(size_t width, Columns<const float> mapx,
+                   Columns<const float> mapy, Columns<ScalarType> dst) {
+    const size_t kStep = VecTraits<float>::num_lanes();
+
+    auto vector_path = [&](size_t step) {
+      uint32x4_t x, y;
+      uint32x4_t in_range;
+      get_map_coordinates(mapx, mapy, x, y, in_range);
+
+      uint16x4_t pixels;
+      if constexpr (IsLarge) {
+        pixels = load_pixels_large(x, y);
+      } else {
+        pixels = load_pixels_small(x, y);
+      }
+
+      // Select between source pixels and border colour
+      uint16x4_t in_range_narrowed = vmovn_u32(in_range);
+      uint16x4_t pixels_or_border =
+          vbsl_u16(in_range_narrowed, pixels, v_border_);
+
+      store_pixels(pixels_or_border, dst);
+
+      mapx += ptrdiff_t(step);
+      mapy += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, kStep};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapx -= back_step;
+    mapy -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint32x4_t v_src_element_stride_;
+  uint32x4_t v_width_;
+  uint32x4_t v_height_;
+  uint16x4_t v_border_;
+};  // end of class RemapF32NearestConstant<uint16_t>
+
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename T>
@@ -1549,24 +2008,50 @@ kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
   Rows<T> dst_rows{dst, dst_stride, channels};
   Rectangle rect{dst_width, dst_height};
 
-  if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
-    if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
-      RemapF32ConstantBorder<T, true> operation{src_rows, src_width, src_height,
-                                                border_value};
-      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+  if (interpolation == KLEIDICV_INTERPOLATION_LINEAR) {
+    if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+      if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+        RemapF32ConstantBorder<T, true> operation{src_rows, src_width,
+                                                  src_height, border_value};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      } else {
+        RemapF32ConstantBorder<T, false> operation{src_rows, src_width,
+                                                   src_height, border_value};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      }
     } else {
-      RemapF32ConstantBorder<T, false> operation{src_rows, src_width,
-                                                 src_height, border_value};
-      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
+      if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+        RemapF32Replicate<T, true> operation{src_rows, src_width, src_height};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      } else {
+        RemapF32Replicate<T, false> operation{src_rows, src_width, src_height};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      }
     }
   } else {
-    assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
-    if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
-      RemapF32Replicate<T, true> operation{src_rows, src_width, src_height};
-      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+    assert(interpolation == KLEIDICV_INTERPOLATION_NEAREST);
+    if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+      if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+        RemapF32NearestConstant<T, true> operation{src_rows, src_width,
+                                                   src_height, border_value};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      } else {
+        RemapF32NearestConstant<T, false> operation{src_rows, src_width,
+                                                    src_height, border_value};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      }
     } else {
-      RemapF32Replicate<T, false> operation{src_rows, src_width, src_height};
-      zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
+      if (KLEIDICV_UNLIKELY(src_rows.stride() * src_height >= (1ULL << 32))) {
+        RemapF32NearestReplicate<T, true> operation{src_rows, src_width,
+                                                    src_height};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      } else {
+        RemapF32NearestReplicate<T, false> operation{src_rows, src_width,
+                                                     src_height};
+        zip_rows(operation, rect, mapx_rows, mapy_rows, dst_rows);
+      }
     }
   }
 
