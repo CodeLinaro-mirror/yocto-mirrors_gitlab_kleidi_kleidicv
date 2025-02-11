@@ -760,7 +760,7 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u16(
 kleidicv_error_t kleidicv_thread_remap_f32_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
-    size_t channels, float *mapx, size_t mapx_stride, float *mapy,
+    size_t channels, const float *mapx, size_t mapx_stride, const float *mapy,
     size_t mapy_stride, kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
@@ -773,6 +773,31 @@ kleidicv_error_t kleidicv_thread_remap_f32_u8(
     return kleidicv_remap_f32_u8(
         src, src_stride, src_width, src_height,
         dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint8_t)),
+        dst_stride, dst_width, end - begin, channels,
+        mapx + static_cast<ptrdiff_t>(begin * mapx_stride / sizeof(float)),
+        mapx_stride,
+        mapy + static_cast<ptrdiff_t>(begin * mapy_stride / sizeof(float)),
+        mapy_stride, interpolation, border_type, border_value);
+  };
+  return parallel_batches(callback, mt, dst_height);
+}
+
+kleidicv_error_t kleidicv_thread_remap_f32_u16(
+    const uint16_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint16_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    size_t channels, const float *mapx, size_t mapx_stride, const float *mapy,
+    size_t mapy_stride, kleidicv_interpolation_type_t interpolation,
+    kleidicv_border_type_t border_type, const uint16_t *border_value,
+    kleidicv_thread_multithreading mt) {
+  if (!kleidicv::remap_f32_is_implemented<uint16_t>(
+          src_stride, src_width, src_height, dst_width, border_type, channels,
+          interpolation)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_remap_f32_u16(
+        src, src_stride, src_width, src_height,
+        dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint16_t)),
         dst_stride, dst_width, end - begin, channels,
         mapx + static_cast<ptrdiff_t>(begin * mapx_stride / sizeof(float)),
         mapx_stride,

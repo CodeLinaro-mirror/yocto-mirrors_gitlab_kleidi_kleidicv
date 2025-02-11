@@ -1882,11 +1882,23 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u16, const uint16_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_remap_f32_u8, const uint8_t *src,
                          size_t src_stride, size_t src_width, size_t src_height,
                          uint8_t *dst, size_t dst_stride, size_t dst_width,
-                         size_t dst_height, size_t channels, float *mapx,
-                         size_t mapx_stride, float *mapy, size_t mapy_stride,
+                         size_t dst_height, size_t channels, const float *mapx,
+                         size_t mapx_stride, const float *mapy,
+                         size_t mapy_stride,
                          kleidicv_interpolation_type_t interpolation,
                          kleidicv_border_type_t border_type,
                          const uint8_t *border_value);
+
+/// @copydoc kleidicv_remap_f32_u8
+KLEIDICV_API_DECLARATION(kleidicv_remap_f32_u16, const uint16_t *src,
+                         size_t src_stride, size_t src_width, size_t src_height,
+                         uint16_t *dst, size_t dst_stride, size_t dst_width,
+                         size_t dst_height, size_t channels, const float *mapx,
+                         size_t mapx_stride, const float *mapy,
+                         size_t mapy_stride,
+                         kleidicv_interpolation_type_t interpolation,
+                         kleidicv_border_type_t border_type,
+                         const uint16_t *border_value);
 
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.

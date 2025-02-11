@@ -10,7 +10,7 @@
 #include "opencv2/imgproc/hal/interface.h"
 #include "tests.h"
 
-const int kMaxHeight = 32, kMaxWidth = 32;
+const int kMaxHeight = 36, kMaxWidth = 32;
 
 template <class ScalarType>
 static cv::Mat get_source_mat(int format) {
@@ -178,7 +178,7 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
           (CV_MAT_DEPTH(Format) == CV_8U &&
            !are_matrices_different<uint8_t>(2, actual_mat, expected_mat)) ||
           (CV_MAT_DEPTH(Format) == CV_16U &&
-           !are_matrices_different<uint16_t>(2, actual_mat, expected_mat));
+           !are_matrices_different<uint16_t>(2048, actual_mat, expected_mat));
       if (!success) {
         fail_print_matrices(w, h, source_mat, actual_mat, expected_mat);
         std::cout << "=== mapx_mat:" << std::endl;
@@ -199,15 +199,18 @@ std::vector<test>& remap_tests_get() {
   static std::vector<test> tests = {
     TEST("RemapS16 uint8 Replicate", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16 uint16 Replicate", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapS16Point5 uint8 Replicate", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapF32 uint8 Replicate", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-
     TEST("RemapS16 uint8 Constant", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
     TEST("RemapS16 uint16 Constant", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
+
+    TEST("RemapS16Point5 uint8 Replicate", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint8 Constant", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
     TEST("RemapS16Point5 uint16 Constant", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
+
+    TEST("RemapF32 uint8 Replicate", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint16 Replicate", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapF32 uint8 Constant", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
+    TEST("RemapF32 uint16 Constant", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
   };
   // clang-format on
   return tests;

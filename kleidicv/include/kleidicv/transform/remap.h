@@ -55,7 +55,8 @@ inline bool remap_f32_is_implemented(
     size_t src_stride, size_t src_width, size_t src_height, size_t dst_width,
     kleidicv_border_type_t border_type, size_t channels,
     kleidicv_interpolation_type_t interpolation) KLEIDICV_STREAMING_COMPATIBLE {
-  if constexpr (std::is_same<T, uint8_t>::value) {
+  if constexpr (std::is_same<T, uint8_t>::value ||
+                std::is_same<T, uint16_t>::value) {
     return (
         src_stride <= std::numeric_limits<uint32_t>::max() && dst_width >= 4 &&
         src_width <=
@@ -100,8 +101,8 @@ template <typename T>
 kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
                            size_t src_height, T *dst, size_t dst_stride,
                            size_t dst_width, size_t dst_height, size_t channels,
-                           float *mapx, size_t mapx_stride, float *mapy,
-                           size_t mapy_stride,
+                           const float *mapx, size_t mapx_stride,
+                           const float *mapy, size_t mapy_stride,
                            kleidicv_interpolation_type_t interpolation,
                            kleidicv_border_type_t border_type,
                            const T *border_value);
@@ -132,8 +133,8 @@ template <typename T>
 kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
                            size_t src_height, T *dst, size_t dst_stride,
                            size_t dst_width, size_t dst_height, size_t channels,
-                           float *mapx, size_t mapx_stride, float *mapy,
-                           size_t mapy_stride,
+                           const float *mapx, size_t mapx_stride,
+                           const float *mapy, size_t mapy_stride,
                            kleidicv_interpolation_type_t interpolation,
                            kleidicv_border_type_t border_type,
                            const T *border_value);
