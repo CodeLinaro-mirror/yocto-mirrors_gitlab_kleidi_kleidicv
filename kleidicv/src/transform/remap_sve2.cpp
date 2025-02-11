@@ -79,5 +79,6 @@ KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_S16Point5(uint16_t);
       kleidicv_border_type_t border_type, const type *border_value)
 
 KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_F32(uint8_t);
+KLEIDICV_INSTANTIATE_TEMPLATE_REMAP_F32(uint16_t);
 
 }  // namespace kleidicv::sve2

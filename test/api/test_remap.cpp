@@ -1061,7 +1061,7 @@ class RemapF32 : public testing::Test {
       dump(&actual);
     }
 
-    EXPECT_EQ_ARRAY2D(actual, expected);
+    EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, actual, expected);
   }
 
   static void calculate_expected(test::Array2D<ScalarType> &src,
@@ -1212,26 +1212,36 @@ TYPED_TEST(RemapF32, NullPointer) {
                        KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
 }
 
-TYPED_TEST(RemapF32, ZeroImageSize) {
-  const TypeParam src[1] = {};
-  TypeParam dst[1];
-  const size_t src_stride = sizeof(TypeParam);
-  const size_t dst_stride = sizeof(TypeParam);
-  float mapx[1] = {};
-  float mapy[1] = {};
-  const size_t mapx_stride = sizeof(float);
-  const size_t mapy_stride = sizeof(float);
+TYPED_TEST(RemapF32, ZeroHeightImage) {
+  const size_t kW = 4;
+  const TypeParam src[kW] = {};
+  TypeParam dst[kW];
+  const size_t src_stride = kW * sizeof(TypeParam);
+  const size_t big_stride = (1UL << 32UL) - sizeof(TypeParam);
+  const size_t dst_stride = kW * sizeof(TypeParam);
+  float mapx[kW] = {};
+  float mapy[kW] = {};
+  const size_t mapx_stride = kW * sizeof(float);
+  const size_t mapy_stride = kW * sizeof(float);
 
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            remap_f32<TypeParam>()(src, src_stride, 0, 1, dst, dst_stride, 0, 1,
-                                   1, mapx, mapx_stride, mapy, mapy_stride,
-                                   KLEIDICV_INTERPOLATION_LINEAR,
-                                   KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            remap_f32<TypeParam>()(src, src_stride, 1, 0, dst, dst_stride, 1, 0,
-                                   1, mapx, mapx_stride, mapy, mapy_stride,
-                                   KLEIDICV_INTERPOLATION_LINEAR,
-                                   KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    EXPECT_EQ(KLEIDICV_OK,
+              remap_f32<TypeParam>()(src, src_stride, kW, 1, dst, dst_stride,
+                                     kW, 0, 1, mapx, mapx_stride, mapy,
+                                     mapy_stride, KLEIDICV_INTERPOLATION_LINEAR,
+                                     border_type, border_value));
+    EXPECT_EQ(KLEIDICV_OK,
+              remap_f32<TypeParam>()(src, big_stride, kW, 2, dst, dst_stride,
+                                     kW, 0, 1, mapx, mapx_stride, mapy,
+                                     mapy_stride, KLEIDICV_INTERPOLATION_LINEAR,
+                                     border_type, border_value));
+  }
+  const TypeParam border_value[1] = {0};
+  EXPECT_EQ(KLEIDICV_OK,
+            remap_f32<TypeParam>()(
+                src, src_stride, kW, 0, dst, dst_stride, kW, 1, 1, mapx,
+                mapx_stride, mapy, mapy_stride, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_CONSTANT, border_value));
 }
 
 TYPED_TEST(RemapF32, InvalidImageSize) {

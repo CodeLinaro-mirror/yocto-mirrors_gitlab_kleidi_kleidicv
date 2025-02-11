@@ -821,8 +821,8 @@ kleidicv_error_t remap_s16point5_sc(
   }
   return KLEIDICV_OK;
 }
-// NOLINTEND(readability-function-cognitive-complexity)
 
+// TODO reduce functional complexity
 template <typename ScalarType, bool IsLarge,
           kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
 void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
@@ -876,33 +876,55 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
       assert(!"INTER_NEAREST not implemented for RemapF32");
       // GCOVR_EXCL_STOP
     } else if constexpr (Inter == KLEIDICV_INTERPOLATION_LINEAR) {
-      loop.unroll_four_times([&](size_t x) {
-        ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
-        svuint32_t res0 = calculate_linear(pg_all32, x);
-        x += kStep;
-        svuint32_t res1 = calculate_linear(pg_all32, x);
-        svuint16_t result16_0 = svuzp1_u16(svreinterpret_u16_u32(res0),
+      if constexpr (std::is_same<ScalarType, uint8_t>::value) {
+        loop.unroll_four_times([&](size_t x) {
+          ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
+          svuint32_t res0 = calculate_linear(pg_all32, x);
+          x += kStep;
+          svuint32_t res1 = calculate_linear(pg_all32, x);
+          svuint16_t result16_0 = svuzp1_u16(svreinterpret_u16_u32(res0),
+                                             svreinterpret_u16_u32(res1));
+          x += kStep;
+          res0 = calculate_linear(pg_all32, x);
+          x += kStep;
+          res1 = calculate_linear(pg_all32, x);
+          svuint16_t result16_1 = svuzp1_u16(svreinterpret_u16_u32(res0),
+                                             svreinterpret_u16_u32(res1));
+          svst1_u8(svptrue_b8(), p_dst,
+                   svuzp1_u8(svreinterpret_u8_u16(result16_0),
+                             svreinterpret_u8_u16(result16_1)));
+        });
+      } else if constexpr (std::is_same<ScalarType, uint16_t>::value) {
+        loop.unroll_twice([&](size_t x) {
+          ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
+          svuint32_t res0 = calculate_linear(pg_all32, x);
+          x += kStep;
+          svuint32_t res1 = calculate_linear(pg_all32, x);
+          svuint16_t result16 = svuzp1_u16(svreinterpret_u16_u32(res0),
                                            svreinterpret_u16_u32(res1));
-        x += kStep;
-        res0 = calculate_linear(pg_all32, x);
-        x += kStep;
-        res1 = calculate_linear(pg_all32, x);
-        svuint16_t result16_1 = svuzp1_u16(svreinterpret_u16_u32(res0),
-                                           svreinterpret_u16_u32(res1));
-        svst1_u8(svptrue_b8(), p_dst,
-                 svuzp1_u8(svreinterpret_u8_u16(result16_0),
-                           svreinterpret_u8_u16(result16_1)));
-      });
+          svst1_u16(svptrue_b16(), p_dst, result16);
+        });
+      }
       loop.unroll_once([&](size_t x) {
         ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
         svuint32_t result = calculate_linear(pg_all32, x);
-        svst1b_u32(pg_all32, p_dst, result);
+        if constexpr (std::is_same<ScalarType, uint8_t>::value) {
+          svst1b_u32(pg_all32, p_dst, result);
+        }
+        if constexpr (std::is_same<ScalarType, uint16_t>::value) {
+          svst1h_u32(pg_all32, p_dst, result);
+        }
       });
       loop.remaining([&](size_t x, size_t x_max) {
         ScalarType* p_dst = &dst[static_cast<ptrdiff_t>(x)];
         svbool_t pg32 = svwhilelt_b32(x, x_max);
         svuint32_t result = calculate_linear(pg32, x);
-        svst1b_u32(pg32, p_dst, result);
+        if constexpr (std::is_same<ScalarType, uint8_t>::value) {
+          svst1b_u32(pg32, p_dst, result);
+        }
+        if constexpr (std::is_same<ScalarType, uint16_t>::value) {
+          svst1h_u32(pg32, p_dst, result);
+        }
       });
     } else {
       static_assert(Inter == KLEIDICV_INTERPOLATION_NEAREST ||
@@ -918,6 +940,7 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
     ++dst_rows;
   }
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
