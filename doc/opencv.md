@@ -209,7 +209,7 @@ Notes on parameters:
 * `src.step` - must be less than 65536 * element size.
 * `src.width`, `src_height` - must not be greater than 32768.
 * `src.type()` - supports `CV_8UC1` and `CV_16UC1`.
-* `dst.cols` - must be at least 8
+* `dst.cols` - must be at least 4 (32FC1-type maps) or 8 (16SC2-type maps)
 * `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`. \
 Supported map configurations:
 * `map1.type()` is `CV_16SC2` and `map2` is empty:

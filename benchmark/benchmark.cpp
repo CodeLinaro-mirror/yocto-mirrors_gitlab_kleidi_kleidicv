@@ -519,10 +519,54 @@ static const ScalarType* get_random_mapxy() {
 }
 
 template <class ScalarType>
+static const ScalarType* get_random_mapx() {
+  auto generate_mapx = [&]() {
+    // Prevent KleidiCV from flattening the image, it affects the performance
+    // Add 4 elements' padding, so the image won't be processed as a single row
+    const size_t image_stripe = image_width + 4;
+    std::vector<ScalarType> v(image_height * image_stripe);
+    std::mt19937_64 rng;
+    std::uniform_int_distribution<int> dist_x(0, image_width);
+    for (int row = 0; row < static_cast<int>(image_height); ++row) {
+      for (int column = 0; column < static_cast<int>(image_width); ++column) {
+        size_t index = row * image_stripe + column;
+        // Use a second degree function to add a nonlinear blend to the image
+        v[index] = dist_x(rng);
+      }
+    }
+    return v;
+  };
+  static std::vector<ScalarType> mapx = generate_mapx();
+  return mapx.data();
+}
+
+template <class ScalarType>
+static const ScalarType* get_random_mapy() {
+  auto generate_mapx = [&]() {
+    // Prevent KleidiCV from flattening the image, it affects the performance
+    // Add 4 elements' padding, so the image won't be processed as a single row
+    const size_t image_stripe = image_width + 4;
+    std::vector<ScalarType> v(image_height * image_stripe);
+    std::mt19937_64 rng;
+    std::uniform_int_distribution<int> dist_y(0, image_height);
+    for (int row = 0; row < static_cast<int>(image_height); ++row) {
+      for (int column = 0; column < static_cast<int>(image_width); ++column) {
+        size_t index = row * image_stripe + column;
+        // Use a second degree function to add a nonlinear blend to the image
+        v[index] = dist_y(rng);
+      }
+    }
+    return v;
+  };
+  static std::vector<ScalarType> mapy = generate_mapx();
+  return mapy.data();
+}
+
+template <class ScalarType>
 static const ScalarType* get_blend_mapxy() {
   auto generate_mapxy = [&]() {
     // Prevent KleidiCV from flattening the image, it affects the performance
-    // Add 4 bytes padding, so the image won't be processed as a single row
+    // Add 4 elements' padding, so the image won't be processed as a single row
     const size_t image_stripe = image_width + 4;
     std::vector<ScalarType> v(image_height * image_stripe * 2);
     for (int row = 0; row < static_cast<int>(image_height); ++row) {
@@ -543,6 +587,51 @@ static const ScalarType* get_blend_mapxy() {
 }
 
 template <class ScalarType>
+static const ScalarType* get_blend_mapx() {
+  auto generate_mapx = [&]() {
+    // Prevent KleidiCV from flattening the image, it affects the performance
+    // Add 4 elements' padding, so the image won't be processed as a single row
+    const size_t image_stripe = image_width + 4;
+    std::vector<ScalarType> v(image_height * image_stripe);
+    for (int row = 0; row < static_cast<int>(image_height); ++row) {
+      for (int column = 0; column < static_cast<int>(image_width); ++column) {
+        size_t index = row * image_stripe + column;
+        // Use a second degree function to add a nonlinear blend to the image
+        v[index] = static_cast<ScalarType>(
+            column * 2 -
+            column * column / static_cast<ScalarType>(image_width));
+      }
+    }
+    return v;
+  };
+  static std::vector<ScalarType> mapx = generate_mapx();
+  return mapx.data();
+}
+
+template <class ScalarType>
+static const ScalarType* get_blend_mapy() {
+  auto generate_mapx = [&]() {
+    // Prevent KleidiCV from flattening the image, it affects the performance
+    // Add 4 elements' padding, so the image won't be processed as a single row
+    const size_t image_stripe = image_width + 4;
+    std::vector<ScalarType> v(image_height * image_stripe);
+    for (int row = 0; row < static_cast<int>(image_height); ++row) {
+      for (int column = 0; column < static_cast<int>(image_width); ++column) {
+        size_t index = row * image_stripe + column;
+        // Use a second degree function to add a nonlinear blend to the image
+        v[index] = static_cast<ScalarType>(
+            row * (image_width - column) /
+                static_cast<ScalarType>(image_width) +
+            4 * row / static_cast<ScalarType>(image_height));
+      }
+    }
+    return v;
+  };
+  static std::vector<ScalarType> mapy = generate_mapx();
+  return mapy.data();
+}
+
+template <class ScalarType>
 static const ScalarType* get_flip_mapxy() {
   auto generate_mapxy = [&]() {
     // Prevent KleidiCV from flattening the image, it affects the performance
@@ -560,6 +649,44 @@ static const ScalarType* get_flip_mapxy() {
   };
   static std::vector<ScalarType> mapxy = generate_mapxy();
   return mapxy.data();
+}
+
+template <class ScalarType>
+static const ScalarType* get_flip_mapx() {
+  auto generate_mapx = [&]() {
+    // Prevent KleidiCV from flattening the image, it affects the performance
+    // Add 4 elements' padding, so the image won't be processed as a single row
+    const size_t image_stripe = image_width + 4;
+    std::vector<ScalarType> v(image_height * image_stripe);
+    for (int row = 0; row < static_cast<int>(image_height); ++row) {
+      for (int column = 0; column < static_cast<int>(image_width); ++column) {
+        size_t index = row * image_stripe + column;
+        v[index] = image_width - column - 0.3F;
+      }
+    }
+    return v;
+  };
+  static std::vector<ScalarType> mapx = generate_mapx();
+  return mapx.data();
+}
+
+template <class ScalarType>
+static const ScalarType* get_flip_mapy() {
+  auto generate_mapy = [&]() {
+    // Prevent KleidiCV from flattening the image, it affects the performance
+    // Add 4 elements' padding, so the image won't be processed as a single row
+    const size_t image_stripe = image_width + 4;
+    std::vector<ScalarType> v(image_height * image_stripe);
+    for (int row = 0; row < static_cast<int>(image_height); ++row) {
+      for (int column = 0; column < static_cast<int>(image_width); ++column) {
+        size_t index = row * image_stripe + column;
+        v[index] = row + 0.23F;
+      }
+    }
+    return v;
+  };
+  static std::vector<ScalarType> mapy = generate_mapy();
+  return mapy.data();
 }
 
 template <class ScalarType>
@@ -705,6 +832,54 @@ BENCH_REMAP_S16POINT5(remap_s16point5_u16_flip, remap_s16point5_u16,
 BENCH_REMAP_S16POINT5(remap_s16point5_u16_identity, remap_s16point5_u16,
                       get_identity_mapxy<int16_t>, 1,
                       KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+template <typename T, typename Function, typename MapFuncX, typename MapFuncY>
+static void remap_f32(Function f, MapFuncX mfx, MapFuncY mfy, size_t channels,
+                      kleidicv_interpolation_type_t interpolation,
+                      kleidicv_border_type_t border_type,
+                      benchmark::State& state) {
+  const T border_value[4] = {};
+  bench_functor(state, [f, mfx, mfy, channels, interpolation, border_type,
+                        border_value]() {
+    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
+            image_height, get_destination_buffer<T>(), image_width * sizeof(T),
+            image_width, image_height, channels, mfx(),
+            image_width * sizeof(float), mfy(), image_width * sizeof(float),
+            interpolation, border_type, border_value);
+  });
+}
+
+#define BENCH_REMAP_F32(benchname, name, mapxfunc, mapyfunc, channels, \
+                        interpolation, border_type, type)              \
+  static void benchname(benchmark::State& state) {                     \
+    remap_f32<type>(kleidicv_##name, mapxfunc, mapyfunc, channels,     \
+                    interpolation, border_type, state);                \
+  }                                                                    \
+  BENCHMARK(benchname)
+
+BENCH_REMAP_F32(remap_f32_u8_random, remap_f32_u8, get_random_mapx<float>,
+                get_random_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_REMAP_F32(remap_f32_u8_blend, remap_f32_u8, get_blend_mapx<float>,
+                get_blend_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_REMAP_F32(remap_f32_u8_flip, remap_f32_u8, get_flip_mapx<float>,
+                get_flip_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_REMAP_F32(remap_f32_u16_random, remap_f32_u16, get_random_mapx<float>,
+                get_random_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_F32(remap_f32_u16_blend, remap_f32_u16, get_blend_mapx<float>,
+                get_blend_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_F32(remap_f32_u16_flip, remap_f32_u16, get_flip_mapx<float>,
+                get_flip_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
 
 // clang-format off
 static const float transform_identity[] = {
