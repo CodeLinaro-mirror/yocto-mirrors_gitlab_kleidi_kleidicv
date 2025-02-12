@@ -161,10 +161,29 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
     for (size_t h = 5; h <= kMaxHeight * 2; h += 2) {
       cv::Mat map_mat(h * 2, w, CV_32FC1);
       cv::Mat mapx_mat = map_mat.rowRange(0, h);
-      rng.fill(mapx_mat, cv::RNG::UNIFORM, -3, kMaxWidth + 3);
-
       cv::Mat mapy_mat = map_mat.rowRange(h, map_mat.rows);
-      rng.fill(mapy_mat, cv::RNG::UNIFORM, -3, kMaxHeight + 3);
+      for (size_t y = 0; y < h; ++y) {
+        for (size_t x = 0; x < w; ++x) {
+          // Values from -0.49 to 0.49, so exactly 0.5 is excluded
+
+          // Reason: When rounding floating point values to integer, OpenCV does
+          // scalar rounding that works differently based on the rounding
+          // environment. E.g. it can use "Rounding to nearest, ties to even",
+          // while KleidiCV always uses "Rounding to nearest, towards plus
+          // infinity". To prevent these differences, values with exactly 0.5
+          // fractional part are excluded.
+          float divisor = (1.01 * 0x1p32);
+          float epsilon = 0x1p-16;
+          float fractionX = rng.next() / divisor - 0.5F + epsilon;
+          float fractionY = rng.next() / divisor - 0.5F + epsilon;
+          mapx_mat.at<float>(y, x) =
+              (static_cast<int32_t>(rng.next() % (kMaxWidth + 6)) - 3) +
+              fractionX;
+          mapy_mat.at<float>(y, x) =
+              (static_cast<int32_t>(rng.next() % (kMaxHeight + 6)) - 3) +
+              fractionY;
+        }
+      }
 
       cv::Mat actual_mat = exec_remap_f32<ScalarType, Format, Interpolation,
                                           BorderMode, BorderValue>(map_mat);

@@ -805,9 +805,6 @@ TEST_P(Thread, remap_f32_u16_not_implemented) {
       kleidicv_thread_remap_f32_u16, 2, KLEIDICV_INTERPOLATION_LINEAR,
       KLEIDICV_BORDER_TYPE_REPLICATE, &border_value);
   check_remap_f32_not_implemented<uint16_t>(
-      kleidicv_thread_remap_f32_u16, 1, KLEIDICV_INTERPOLATION_NEAREST,
-      KLEIDICV_BORDER_TYPE_REPLICATE, &border_value);
-  check_remap_f32_not_implemented<uint16_t>(
       kleidicv_thread_remap_f32_u16, 1, KLEIDICV_INTERPOLATION_LINEAR,
       KLEIDICV_BORDER_TYPE_REFLECT, &border_value);
 }
