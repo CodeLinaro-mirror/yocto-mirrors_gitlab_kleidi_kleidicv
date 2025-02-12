@@ -68,24 +68,45 @@ template <typename ScalarType, bool IsLarge>
 svuint32_t inline load_common(svbool_t pg, svuint32_t x, svuint32_t y,
                               svuint32_t sv_src_stride,
                               Rows<const ScalarType> &src_rows) {
-  if constexpr (IsLarge) {
-    svbool_t pg_b = pg;
-    svbool_t pg_t = svtrn2_b32(pg, svpfalse());
+  if constexpr (std::is_same<ScalarType, uint8_t>::value) {
+    if constexpr (IsLarge) {
+      svbool_t pg_b = pg;
+      svbool_t pg_t = svtrn2_b32(pg, svpfalse());
 
-    // Calculate offsets from coordinates (y * stride + x)
-    // To avoid losing precision, the final offsets should be in 64 bits
-    svuint64_t offsets_b = svmlalb(svmovlb(x), y, sv_src_stride);
-    svuint64_t offsets_t = svmlalt(svmovlt(x), y, sv_src_stride);
-    // Copy pixels from source
-    svuint64_t result_b =
-        svld1ub_gather_offset_u64(pg_b, &src_rows[0], offsets_b);
-    svuint64_t result_t =
-        svld1ub_gather_offset_u64(pg_t, &src_rows[0], offsets_t);
-    return svtrn1_u32(svreinterpret_u32_u64(result_b),
-                      svreinterpret_u32_u64(result_t));
-  } else {
-    svuint32_t offsets = svmla_x(pg, x, y, sv_src_stride);
-    return svld1ub_gather_offset_u32(pg, &src_rows[0], offsets);
+      // Calculate offsets from coordinates (y * stride + x)
+      // To avoid losing precision, the final offsets should be in 64 bits
+      svuint64_t offsets_b = svmlalb(svmovlb(x), y, sv_src_stride);
+      svuint64_t offsets_t = svmlalt(svmovlt(x), y, sv_src_stride);
+      // Copy pixels from source
+      svuint64_t result_b =
+          svld1ub_gather_offset_u64(pg_b, &src_rows[0], offsets_b);
+      svuint64_t result_t =
+          svld1ub_gather_offset_u64(pg_t, &src_rows[0], offsets_t);
+      return svtrn1_u32(svreinterpret_u32_u64(result_b),
+                        svreinterpret_u32_u64(result_t));
+    } else {
+      svuint32_t offsets = svmla_x(pg, x, y, sv_src_stride);
+      return svld1ub_gather_offset_u32(pg, &src_rows[0], offsets);
+    }
+  } else if constexpr (std::is_same<ScalarType, uint16_t>::value) {
+    if constexpr (IsLarge) {
+      svbool_t pg_b = pg;
+      svbool_t pg_t = svtrn2_b32(pg, svpfalse());
+      // Calculate offsets from coordinates (y * stride + x)
+      // To avoid losing precision, the final offsets should be in 64 bits
+      svuint64_t offsets_b = svmlalb(svshllb(x, 1), y, sv_src_stride);
+      svuint64_t offsets_t = svmlalt(svshllt(x, 1), y, sv_src_stride);
+      // Copy pixels from source
+      svuint64_t result_b, result_t;
+      result_b = svld1uh_gather_offset_u64(pg_b, &src_rows[0], offsets_b);
+      result_t = svld1uh_gather_offset_u64(pg_t, &src_rows[0], offsets_t);
+      return svtrn1_u32(svreinterpret_u32_u64(result_b),
+                        svreinterpret_u32_u64(result_t));
+    } else {
+      svuint32_t offsets =
+          svmla_x(pg, svlsl_n_u32_x(pg, x, 1), y, sv_src_stride);
+      return svld1uh_gather_offset_u32(pg, &src_rows[0], offsets);
+    }
   }
 }
 
