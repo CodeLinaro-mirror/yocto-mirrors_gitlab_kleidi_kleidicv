@@ -822,6 +822,112 @@ kleidicv_error_t remap_s16point5_sc(
   return KLEIDICV_OK;
 }
 
+template <bool IsLarge, kleidicv_border_type_t Border>
+void remapf32_nearest_u8(svuint32_t sv_xmax, svuint32_t sv_ymax,
+                         svuint32_t sv_src_stride, Rows<const uint8_t> src_rows,
+                         svuint32_t sv_border, Columns<uint8_t> dst,
+                         size_t kStep, size_t dst_width,
+                         Rows<const float> mapx_rows,
+                         Rows<const float> mapy_rows) {
+  svbool_t pg_all32 = svptrue_b32();
+  auto coordinate_getter = [&](svbool_t pg, size_t xs) {
+    auto x = static_cast<ptrdiff_t>(xs);
+    return svcreate2(svld1_f32(pg, &mapx_rows.as_columns()[x]),
+                     svld1_f32(pg, &mapy_rows.as_columns()[x]));
+  };
+
+  auto get_pixels_or_border_local = [&](svbool_t pg, svuint32_t x,
+                                        svuint32_t y) {
+    svbool_t in_range =
+        svand_b_z(pg, svcmple_u32(pg, x, sv_xmax), svcmple_u32(pg, y, sv_ymax));
+    svuint32_t result =
+        load_common<uint8_t, IsLarge>(in_range, x, y, sv_src_stride, src_rows);
+    // Select between source pixels and border colour
+    return svsel_u32(in_range, result, sv_border);
+  };
+
+  auto calculate_nearest_coordinates = [&](svbool_t pg32, size_t x) {
+    svfloat32x2_t coords = coordinate_getter(pg32, x);
+    svfloat32_t xf = svget2(coords, 0);
+    svfloat32_t yf = svget2(coords, 1);
+
+    svuint32_t xi, yi;
+    if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+      // Round to the nearest integer
+      xi = svreinterpret_u32_s32(
+          svcvt_s32_f32_x(pg_all32, svrinta_f32_x(pg_all32, xf)));
+      yi = svreinterpret_u32_s32(
+          svcvt_s32_f32_x(pg_all32, svrinta_f32_x(pg_all32, yf)));
+    } else {
+      // Round to the nearest integer, clamp it to within the dimensions of
+      // the source image (negative values are already saturated to 0)
+      xi = svmin_x(pg_all32,
+                   svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, xf, 0.5F)),
+                   sv_xmax);
+      yi = svmin_x(pg_all32,
+                   svcvt_u32_f32_x(pg_all32, svadd_n_f32_x(pg_all32, yf, 0.5F)),
+                   sv_ymax);
+    }
+    return svcreate2(xi, yi);
+  };
+
+  auto vector_path_nearest_tail = [&](size_t x, size_t x_max,
+                                      Columns<uint8_t> dst) {
+    size_t length = x_max - x;
+    svbool_t pg32 = svwhilelt_b32(0ULL, length);
+
+    svuint32x2_t coords = calculate_nearest_coordinates(pg32, x);
+    svuint32_t xi = svget2(coords, 0);
+    svuint32_t yi = svget2(coords, 1);
+
+    svuint32_t result;
+    if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+      result = get_pixels_or_border_local(pg32, xi, yi);
+    } else {
+      result =
+          load_common<uint8_t, IsLarge>(pg32, xi, yi, sv_src_stride, src_rows);
+    }
+    svst1b_u32(pg32, &dst[static_cast<ptrdiff_t>(x)], result);
+  };
+  auto vector_path_nearest_4x = [&](size_t x, Columns<uint8_t> dst) {
+    auto load_source = [&](svuint32x2_t coords) {
+      svuint32_t x = svget2(coords, 0);
+      svuint32_t y = svget2(coords, 1);
+      if constexpr (Border == KLEIDICV_BORDER_TYPE_CONSTANT) {
+        return get_pixels_or_border_local(pg_all32, x, y);
+      } else {
+        return load_common<uint8_t, IsLarge>(pg_all32, x, y, sv_src_stride,
+                                             src_rows);
+      }
+    };
+    uint8_t* p_dst = &dst[static_cast<ptrdiff_t>(x)];
+    svuint32_t res32_0 =
+        load_source(calculate_nearest_coordinates(pg_all32, x));
+    x += kStep;
+    svuint32_t res32_1 =
+        load_source(calculate_nearest_coordinates(pg_all32, x));
+    svuint16_t result0 = svuzp1_u16(svreinterpret_u16_u32(res32_0),
+                                    svreinterpret_u16_u32(res32_1));
+    x += kStep;
+    res32_0 = load_source(calculate_nearest_coordinates(pg_all32, x));
+    x += kStep;
+    res32_1 = load_source(calculate_nearest_coordinates(pg_all32, x));
+    svuint16_t result1 = svuzp1_u16(svreinterpret_u16_u32(res32_0),
+                                    svreinterpret_u16_u32(res32_1));
+    svuint8_t result =
+        svuzp1_u8(svreinterpret_u8_u16(result0), svreinterpret_u8_u16(result1));
+    svst1(svptrue_b8(), p_dst, result);
+  };
+
+  LoopUnroll2 loop{dst_width, kStep};
+  loop.unroll_four_times([&](size_t x) { vector_path_nearest_4x(x, dst); });
+  loop.unroll_once(
+      [&](size_t x) { vector_path_nearest_tail(x, x + kStep, dst); });
+  loop.remaining([&](size_t x, size_t length) {
+    vector_path_nearest_tail(x, length, dst);
+  });
+}
+
 // TODO reduce functional complexity
 template <typename ScalarType, bool IsLarge,
           kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
@@ -871,10 +977,12 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
   auto process_row = [&]() {
     Columns<ScalarType> dst = dst_rows.as_columns();
     LoopUnroll2 loop{dst_width, kStep};
-    // GCOVR_EXCL_START
     if constexpr (Inter == KLEIDICV_INTERPOLATION_NEAREST) {
-      assert(!"INTER_NEAREST not implemented for RemapF32");
-      // GCOVR_EXCL_STOP
+      if constexpr (std::is_same_v<ScalarType, uint8_t>) {
+        remapf32_nearest_u8<IsLarge, Border>(sv_xmax, sv_ymax, sv_src_stride,
+                                             src_rows, sv_border, dst, kStep,
+                                             dst_width, mapx_rows, mapy_rows);
+      }
     } else if constexpr (Inter == KLEIDICV_INTERPOLATION_LINEAR) {
       if constexpr (std::is_same<ScalarType, uint8_t>::value) {
         loop.unroll_four_times([&](size_t x) {
@@ -968,6 +1076,12 @@ kleidicv_error_t remap_f32_sc(const T* src, size_t src_stride, size_t src_width,
   if (!remap_f32_is_implemented<T>(src_stride, src_width, src_height, dst_width,
                                    border_type, channels, interpolation)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if constexpr (std::is_same_v<T, uint16_t>) {
+    if (interpolation == KLEIDICV_INTERPOLATION_NEAREST) {
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+    }
   }
 
   // Calculating in float32_t will only be precise until 24 bits
