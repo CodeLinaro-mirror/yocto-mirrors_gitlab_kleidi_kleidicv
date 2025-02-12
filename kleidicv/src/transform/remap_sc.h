@@ -858,7 +858,7 @@ void remap32f_process_rows(Rows<const ScalarType> src_rows, size_t src_width,
   auto calculate_linear = [&](svbool_t pg, uint32_t x) {
     if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
       svfloat32x2_t coords = coordinate_getter(pg, x);
-      return calculate_linear_replicate<ScalarType, IsLarge>(
+      return calculate_linear_replicated_border<ScalarType, IsLarge>(
           pg, coords, xmaxf, ymaxf, sv_src_stride, src_rows);
     } else {
       static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
@@ -925,8 +925,9 @@ template <typename T>
 kleidicv_error_t remap_f32_sc(const T* src, size_t src_stride, size_t src_width,
                               size_t src_height, T* dst, size_t dst_stride,
                               size_t dst_width, size_t dst_height,
-                              size_t channels, float* mapx, size_t mapx_stride,
-                              float* mapy, size_t mapy_stride,
+                              size_t channels, const float* mapx,
+                              size_t mapx_stride, const float* mapy,
+                              size_t mapy_stride,
                               kleidicv_interpolation_type_t interpolation,
                               kleidicv_border_type_t border_type,
                               [[maybe_unused]] const T* border_value) {

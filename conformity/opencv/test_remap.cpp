@@ -10,22 +10,20 @@
 #include "opencv2/imgproc/hal/interface.h"
 #include "tests.h"
 
-const int kMaxHeight = 32, kMaxWidth = 32;
+const int kMaxHeight = 36, kMaxWidth = 32;
 
 template <class ScalarType>
 static cv::Mat get_source_mat(int format) {
   auto generate_source = [&]() {
     cv::Mat m(kMaxHeight, kMaxWidth, format);
+    const int64_t kMaxValue = std::numeric_limits<ScalarType>::max();
     for (size_t row = 0; row < kMaxHeight; ++row) {
       for (size_t column = 0; column < kMaxWidth; ++column) {
-        // Referring to the conformity check in test_warp_perspective
-        // Remap calculation in float greatly amplifies any small errors
-        // coming from precision innaccuracies, but ensuring that neighbouring
-        // pixels have neighbouring values decreases this effect, so it can be
-        // expected that the error won't be bigger than 1.
-        const int kMaxValue = std::numeric_limits<ScalarType>::max();
-        m.at<ScalarType>(row, column) = abs(
-            static_cast<int>(row + column) % (2 * kMaxValue + 1) - kMaxValue);
+        // Create as many different differences between neighbouring pixels as
+        // possible
+        size_t counter = row + column;
+        m.at<ScalarType>(row, column) =
+            (counter % 2) ? kMaxValue : (counter % (kMaxValue + 1));
       }
     }
     return m;
@@ -159,8 +157,8 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
   cv::Mat source_mat = get_source_mat<ScalarType>(Format);
   cv::RNG rng(0);
 
-  for (size_t w = 5; w <= kMaxWidth; w += 3) {
-    for (size_t h = 5; h <= kMaxHeight; h += 2) {
+  for (size_t w = 5; w <= kMaxWidth * 2; w += 3) {
+    for (size_t h = 5; h <= kMaxHeight * 2; h += 2) {
       cv::Mat map_mat(h * 2, w, CV_32FC1);
       cv::Mat mapx_mat = map_mat.rowRange(0, h);
       rng.fill(mapx_mat, cv::RNG::UNIFORM, -3, kMaxWidth + 3);
@@ -174,11 +172,41 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
       cv::Mat expected_mat = get_expected_from_subordinate(
           index, request_queue, reply_queue, map_mat);
 
+      // clang-format off
+      // Reference algorithm in OpenCV uses integer interpolation with 5 bits
+      // fractional part. That means that the maximum error between that and the
+      // exact result in one dimension can be as big as 2^data_bits / 2^5 / 2
+      // (we cannot have more than 2^32 different results), for two dimensions
+      // it is the double, which is 8 for u8 and 2048 for u16.
+      //
+      // Example in 16 bits:
+      // Source height = 36, width = 32;
+      // mapx = 31.17005, mapy = 35.326836
+      // so this is a corner case (bottom right corner):
+      //    65469  123
+      //      123  123    (constant border)
+      //
+      // Interpolation:
+      // xfrac = 0.17005, yfrac = 0.326836
+      // line0 = 65469 * (1 - 0.17005) + 123 * 0.17005 = 54356.9127
+      // line1 = 123
+      // EXACT RESULT calculated in float:
+      //       54356.9127 * (1 - 0.326836) + 123 * 0.326836 = 36631.3176087828
+      //
+      // WITH 5-bit fractional part:
+      // xfrac is rounded to 0.15625  (5/32)
+      // line0 = 65469 * (1 - 0.15625) + 123 * 0.15625 = 55258.6875
+      // (diff is less than 1024, as provisioned)
+      // 2nd dimension: line1 = 123
+      // yfrac is rounded to 0.3125 (10/32)
+      // 5BIT RESULT:
+      // 55258.6875 * (1 - 0.3125) + 123 * 0.3125 = 38028.78515625
+      // clang-format on
       bool success =
           (CV_MAT_DEPTH(Format) == CV_8U &&
-           !are_matrices_different<uint8_t>(2, actual_mat, expected_mat)) ||
+           !are_matrices_different<uint8_t>(8, actual_mat, expected_mat)) ||
           (CV_MAT_DEPTH(Format) == CV_16U &&
-           !are_matrices_different<uint16_t>(2, actual_mat, expected_mat));
+           !are_matrices_different<uint16_t>(2048, actual_mat, expected_mat));
       if (!success) {
         fail_print_matrices(w, h, source_mat, actual_mat, expected_mat);
         std::cout << "=== mapx_mat:" << std::endl;
@@ -199,15 +227,18 @@ std::vector<test>& remap_tests_get() {
   static std::vector<test> tests = {
     TEST("RemapS16 uint8 Replicate", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16 uint16 Replicate", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapS16Point5 uint8 Replicate", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapF32 uint8 Replicate", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-
     TEST("RemapS16 uint8 Constant", (test_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
     TEST("RemapS16 uint16 Constant", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
+
+    TEST("RemapS16Point5 uint8 Replicate", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint8 Constant", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
     TEST("RemapS16Point5 uint16 Constant", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
-    TEST("RemapF32 uint8 Constant", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
+
+    TEST("RemapF32 uint8 Replicate", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint16 Replicate", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint8 Constant", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapF32 uint16 Constant", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
   };
   // clang-format on
   return tests;

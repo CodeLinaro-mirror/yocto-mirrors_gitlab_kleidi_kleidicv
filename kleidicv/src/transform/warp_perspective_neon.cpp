@@ -299,7 +299,7 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
     return vcvtq_f32_u32(vreinterpretq_u32_u64(rawsrc));
   };
 
-  auto calculate_linear_replicate = [&](uint32_t x) {
+  auto calculate_linear_replicated_border = [&](uint32_t x) {
     auto load_floats = [&](uint32x4_t x, uint32x4_t y) {
       if constexpr (IsLarge) {
         return load_src_into_floats_large(x, y);
@@ -341,7 +341,7 @@ void warp_perspective_operation(Rows<const ScalarType> src_rows,
 
   auto calculate_linear = [&](uint32_t x) {
     if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
-      return calculate_linear_replicate(x);
+      return calculate_linear_replicated_border(x);
     } else {
       static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
       auto &&[xf, yf] = calculate_coordinates(x);

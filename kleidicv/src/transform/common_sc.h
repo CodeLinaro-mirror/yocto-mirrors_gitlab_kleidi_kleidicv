@@ -90,11 +90,9 @@ svuint32_t inline load_common(svbool_t pg, svuint32_t x, svuint32_t y,
 }
 
 template <typename ScalarType, bool IsLarge>
-svuint32_t inline calculate_linear_replicate(svbool_t pg, svfloat32x2_t coords,
-                                             svfloat32_t xmaxf,
-                                             svfloat32_t ymaxf,
-                                             svuint32_t sv_src_stride,
-                                             Rows<const ScalarType> &src_rows) {
+svuint32_t inline calculate_linear_replicated_border(
+    svbool_t pg, svfloat32x2_t coords, svfloat32_t xmaxf, svfloat32_t ymaxf,
+    svuint32_t sv_src_stride, Rows<const ScalarType> &src_rows) {
   auto load_source = [&](svuint32_t x, svuint32_t y) {
     return load_common<ScalarType, IsLarge>(pg, x, y, sv_src_stride, src_rows);
   };

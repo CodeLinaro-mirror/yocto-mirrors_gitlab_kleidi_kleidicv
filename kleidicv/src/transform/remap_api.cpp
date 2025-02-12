@@ -26,3 +26,7 @@ KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16point5_u16,
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_f32_u8,
                             &kleidicv::neon::remap_f32<uint8_t>,
                             &kleidicv::sve2::remap_f32<uint8_t>, nullptr);
+
+KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_f32_u16,
+                            &kleidicv::neon::remap_f32<uint16_t>, nullptr,
+                            nullptr);
