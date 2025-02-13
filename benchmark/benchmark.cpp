@@ -857,28 +857,58 @@ static void remap_f32(Function f, MapFuncX mfx, MapFuncY mfy, size_t channels,
   }                                                                    \
   BENCHMARK(benchname)
 
-BENCH_REMAP_F32(remap_f32_u8_random, remap_f32_u8, get_random_mapx<float>,
-                get_random_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
-                KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+BENCH_REMAP_F32(remap_f32_u8_linear_random, remap_f32_u8,
+                get_random_mapx<float>, get_random_mapy<float>, 1,
+                KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_BORDER_TYPE_REPLICATE,
+                uint8_t);
 
-BENCH_REMAP_F32(remap_f32_u8_blend, remap_f32_u8, get_blend_mapx<float>,
+BENCH_REMAP_F32(remap_f32_u8_linear_blend, remap_f32_u8, get_blend_mapx<float>,
                 get_blend_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
                 KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
-BENCH_REMAP_F32(remap_f32_u8_flip, remap_f32_u8, get_flip_mapx<float>,
+BENCH_REMAP_F32(remap_f32_u8_linear_flip, remap_f32_u8, get_flip_mapx<float>,
                 get_flip_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
                 KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
 
-BENCH_REMAP_F32(remap_f32_u16_random, remap_f32_u16, get_random_mapx<float>,
-                get_random_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
-                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+BENCH_REMAP_F32(remap_f32_u16_linear_random, remap_f32_u16,
+                get_random_mapx<float>, get_random_mapy<float>, 1,
+                KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_BORDER_TYPE_REPLICATE,
+                uint16_t);
 
-BENCH_REMAP_F32(remap_f32_u16_blend, remap_f32_u16, get_blend_mapx<float>,
-                get_blend_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
-                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+BENCH_REMAP_F32(remap_f32_u16_linear_blend, remap_f32_u16,
+                get_blend_mapx<float>, get_blend_mapy<float>, 1,
+                KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_BORDER_TYPE_REPLICATE,
+                uint16_t);
 
-BENCH_REMAP_F32(remap_f32_u16_flip, remap_f32_u16, get_flip_mapx<float>,
+BENCH_REMAP_F32(remap_f32_u16_linear_flip, remap_f32_u16, get_flip_mapx<float>,
                 get_flip_mapy<float>, 1, KLEIDICV_INTERPOLATION_LINEAR,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
+
+BENCH_REMAP_F32(remap_f32_u8_nearest_random, remap_f32_u8,
+                get_random_mapx<float>, get_random_mapy<float>, 1,
+                KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
+                uint8_t);
+
+BENCH_REMAP_F32(remap_f32_u8_nearest_blend, remap_f32_u8, get_blend_mapx<float>,
+                get_blend_mapy<float>, 1, KLEIDICV_INTERPOLATION_NEAREST,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_REMAP_F32(remap_f32_u8_nearest_flip, remap_f32_u8, get_flip_mapx<float>,
+                get_flip_mapy<float>, 1, KLEIDICV_INTERPOLATION_NEAREST,
+                KLEIDICV_BORDER_TYPE_REPLICATE, uint8_t);
+
+BENCH_REMAP_F32(remap_f32_u16_nearest_random, remap_f32_u16,
+                get_random_mapx<float>, get_random_mapy<float>, 1,
+                KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
+                uint16_t);
+
+BENCH_REMAP_F32(remap_f32_u16_nearest_blend, remap_f32_u16,
+                get_blend_mapx<float>, get_blend_mapy<float>, 1,
+                KLEIDICV_INTERPOLATION_NEAREST, KLEIDICV_BORDER_TYPE_REPLICATE,
+                uint16_t);
+
+BENCH_REMAP_F32(remap_f32_u16_nearest_flip, remap_f32_u16, get_flip_mapx<float>,
+                get_flip_mapy<float>, 1, KLEIDICV_INTERPOLATION_NEAREST,
                 KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
 
 // clang-format off

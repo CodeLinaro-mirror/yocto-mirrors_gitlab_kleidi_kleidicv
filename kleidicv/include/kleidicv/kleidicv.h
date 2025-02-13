@@ -1873,6 +1873,7 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u16, const uint16_t *src,
 ///                       sizeof(float)`, except for single-row images.
 /// @param interpolation  Interpolation algorithm. Supported types: \n
 ///                         - @ref KLEIDICV_INTERPOLATION_LINEAR
+///                         - @ref KLEIDICV_INTERPOLATION_NEAREST
 /// @param border_type    Way of handling the border. The supported border types
 ///                       are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE

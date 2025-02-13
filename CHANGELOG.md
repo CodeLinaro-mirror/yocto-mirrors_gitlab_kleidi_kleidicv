@@ -20,7 +20,7 @@ This changelog aims to follow the guiding principles of
 - Remap implementations with
   - Integer coordinates with nearest neighbour method
   - Fixed-point coordinates with linear interpolation
-  - Floating-point coordinates with linear interpolation
+  - Floating-point coordinates with nearest neighbour and linear interpolation
   - Replicated and constant borders
   - 1-channel only
   - u8 and u16 images

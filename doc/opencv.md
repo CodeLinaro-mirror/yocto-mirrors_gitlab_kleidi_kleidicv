@@ -223,7 +223,7 @@ Supported map configurations:
 * `map1` is 32FC1 and `map2` is 32FC1:
   * `map1` is x coordinates (column)
   * `map2` is y coordinates (row)
-  * supported `interpolation`: `INTER_LINEAR` only
+  * supported `interpolation`: `INTER_NEAREST` and `INTER_LINEAR`
 
 ### [`cv::warpPerspective()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gaf73673a7e8e18ec6963e3774e6a94b87)
 Performs a perspective transformation on an image.
