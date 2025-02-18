@@ -581,6 +581,433 @@ class RemapS16Point5Replicate<uint16_t> {
 };  // end of class RemapS16Point5Replicate<uint16_t>
 
 template <typename ScalarType>
+class RemapS16Point5ReplicateFourChannels;
+
+template <>
+class RemapS16Point5ReplicateFourChannels<uint8_t> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = VecTraits<int16_t>;
+  using MapVectorType = typename MapVecTraits::VectorType;
+  using MapVector2Type = typename MapVecTraits::Vector2Type;
+  using FracVecTraits = VecTraits<uint16_t>;
+  using FracVectorType = typename FracVecTraits::VectorType;
+
+  RemapS16Point5ReplicateFourChannels(Rows<const ScalarType> src_rows,
+                                      size_t src_width, size_t src_height,
+                                      svuint16_t& v_src_stride,
+                                      MapVectorType& v_x_max,
+                                      MapVectorType& v_y_max)
+      : src_rows_{src_rows},
+        v_src_stride_{v_src_stride},
+        v_xmax_{v_x_max},
+        v_ymax_{v_y_max} {
+    v_src_stride_ = svdup_u16(src_rows.stride());
+    v_xmax_ = svdup_s16(static_cast<int16_t>(src_width - 1));
+    v_ymax_ = svdup_s16(static_cast<int16_t>(src_height - 1));
+  }
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
+    LoopUnroll loop{width, MapVecTraits::num_lanes()};
+    loop.unroll_once([&](size_t step) {
+      svbool_t pg = MapVecTraits::svptrue();
+      vector_path(pg, mapxy, mapfrac, dst, static_cast<ptrdiff_t>(step));
+    });
+    loop.remaining([&](size_t length, size_t step) {
+      svbool_t pg = MapVecTraits::svwhilelt(step - length, step);
+      vector_path(pg, mapxy, mapfrac, dst, static_cast<ptrdiff_t>(length));
+    });
+  }
+
+  void vector_path(svbool_t pg, Columns<const int16_t>& mapxy,
+                   Columns<const uint16_t>& mapfrac, Columns<ScalarType>& dst,
+                   ptrdiff_t step) {
+    MapVector2Type xy = svld2_s16(pg, &mapxy[0]);
+    svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
+
+    // Clamp coordinates to within the dimensions of the source image
+    svuint16_t x0 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0), svmin_x(pg, svget2(xy, 0), v_xmax_)));
+    svuint16_t y0 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0), svmin_x(pg, svget2(xy, 1), v_ymax_)));
+
+    // x1 = x0 + 1, and clamp it too
+    svuint16_t x1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 0), 1), v_xmax_)));
+
+    svuint16_t y1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 1), 1), v_ymax_)));
+    svbool_t pg_b = svwhilelt_b32(int64_t{0}, (step + 1) / 2);
+    svbool_t pg_t = svwhilelt_b32(int64_t{0}, step / 2);
+
+    //// NEW PART
+    // Calculate offsets from coordinates (y * stride + x), x multiplied by 4
+    // channels
+    auto load_4ch_b = [&](svuint16_t x, svuint16_t y) {
+      return svreinterpret_u8_u32(svld1_gather_u32offset_u32(
+          pg_b, reinterpret_cast<const uint32_t*>(&src_rows_[0]),
+          svmlalb_u32(svshllb_n_u32(x, 2), y, v_src_stride_)));
+    };
+    auto load_4ch_t = [&](svuint16_t x, svuint16_t y) {
+      return svreinterpret_u8_u32(svld1_gather_u32offset_u32(
+          pg_t, reinterpret_cast<const uint32_t*>(&src_rows_[0]),
+          svmlalt_u32(svshllt_n_u32(x, 2), y, v_src_stride_)));
+    };
+
+    FracVectorType frac = svld1_u16(pg, &mapfrac[0]);
+    svuint16_t xfrac =
+        svand_x(pg, frac, svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+    svuint16_t yfrac =
+        svand_x(pg, svlsr_n_u16_x(pg, frac, REMAP16POINT5_FRAC_BITS),
+                svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+
+    auto lerp2d = [&](svuint16_t xfrac, svuint16_t yfrac, svuint16_t nxfrac,
+                      svuint16_t nyfrac, svuint16_t src_a, svuint16_t src_b,
+                      svuint16_t src_c, svuint16_t src_d, svuint32_t bias) {
+      svuint16_t line0 = svmla_x(
+          svptrue_b16(), svmul_x(svptrue_b16(), xfrac, src_b), nxfrac, src_a);
+      svuint16_t line1 = svmla_x(
+          svptrue_b16(), svmul_x(svptrue_b16(), xfrac, src_d), nxfrac, src_c);
+
+      svuint32_t acc_b = svmlalb_u32(bias, line0, nyfrac);
+      svuint32_t acc_t = svmlalt_u32(bias, line0, nyfrac);
+      acc_b = svmlalb_u32(acc_b, line1, yfrac);
+      acc_t = svmlalt_u32(acc_t, line1, yfrac);
+
+      return svshrnt(svshrnb(acc_b, 2ULL * REMAP16POINT5_FRAC_BITS), acc_t,
+                     2ULL * REMAP16POINT5_FRAC_BITS);
+    };
+
+    // bottom part
+    svuint8_t a = load_4ch_b(x0, y0);
+    svuint8_t b = load_4ch_b(x1, y0);
+    svuint8_t c = load_4ch_b(x0, y1);
+    svuint8_t d = load_4ch_b(x1, y1);
+    // from xfrac, we need the bottom part twice
+    svuint16_t xfrac2b = svtrn1_u16(xfrac, xfrac);
+    svuint16_t nxfrac2b = svsub_u16_x(
+        svptrue_b16(), svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac2b);
+    svuint16_t yfrac2b = svtrn1_u16(yfrac, yfrac);
+    svuint16_t nyfrac2b = svsub_u16_x(
+        svptrue_b16(), svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac2b);
+
+    // a,b,c,d looks like 12341234...(four channels)
+    // bottom is 1313...
+    svuint16_t res_bb =
+        lerp2d(xfrac2b, yfrac2b, nxfrac2b, nyfrac2b, svmovlb_u16(a),
+               svmovlb_u16(b), svmovlb_u16(c), svmovlb_u16(d), bias);
+    // top is 2424...
+    svuint16_t res_bt =
+        lerp2d(xfrac2b, yfrac2b, nxfrac2b, nyfrac2b, svmovlt_u16(a),
+               svmovlt_u16(b), svmovlt_u16(c), svmovlt_u16(d), bias);
+    svuint8_t res_b =
+        svtrn1_u8(svreinterpret_u8_u16(res_bb), svreinterpret_u8_u16(res_bt));
+
+    // top part
+    a = load_4ch_t(x0, y0);
+    b = load_4ch_t(x1, y0);
+    c = load_4ch_t(x0, y1);
+    d = load_4ch_t(x1, y1);
+    // from xfrac, we need the top part twice
+    svuint16_t xfrac2t = svtrn2_u16(xfrac, xfrac);
+    svuint16_t nxfrac2t = svsub_u16_x(
+        svptrue_b16(), svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac2t);
+    svuint16_t yfrac2t = svtrn2_u16(yfrac, yfrac);
+    svuint16_t nyfrac2t = svsub_u16_x(
+        svptrue_b16(), svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac2t);
+
+    // a,b,c,d looks like 12341234...(four channels)
+    // bottom is 1313...
+    svuint16_t res_tb =
+        lerp2d(xfrac2t, yfrac2t, nxfrac2t, nyfrac2t, svmovlb_u16(a),
+               svmovlb_u16(b), svmovlb_u16(c), svmovlb_u16(d), bias);
+    // top is 2424...
+    svuint16_t res_tt =
+        lerp2d(xfrac2t, yfrac2t, nxfrac2t, nyfrac2t, svmovlt_u16(a),
+               svmovlt_u16(b), svmovlt_u16(c), svmovlt_u16(d), bias);
+    svuint8_t res_t =
+        svtrn1_u8(svreinterpret_u8_u16(res_tb), svreinterpret_u8_u16(res_tt));
+
+    svbool_t pg_low = svwhilelt_b32(0L, step);
+    svbool_t pg_high = svwhilelt_b32(svcntw(), static_cast<size_t>(step));
+    svuint32_t res_low =
+        svzip1_u32(svreinterpret_u32_u8(res_b), svreinterpret_u32_u8(res_t));
+    svuint32_t res_high =
+        svzip2_u32(svreinterpret_u32_u8(res_b), svreinterpret_u32_u8(res_t));
+    mapxy += step;
+    svst1_u32(pg_low, reinterpret_cast<uint32_t*>(&dst[0]), res_low);
+    svst1_u32(pg_high, reinterpret_cast<uint32_t*>(&dst[0]) + svcntw(),
+              res_high);
+    mapfrac += step;
+    dst += step;
+  }
+
+  Rows<const ScalarType> src_rows_;
+
+ private:
+  svuint16_t& v_src_stride_;
+  MapVectorType& v_xmax_;
+  MapVectorType& v_ymax_;
+};  // end of class RemapS16Point5ReplicateFourChannels<uint8_t>
+
+template <>
+class RemapS16Point5ReplicateFourChannels<uint16_t> {
+ public:
+  using ScalarType = uint16_t;
+  using MapVecTraits = VecTraits<int16_t>;
+  using MapVectorType = typename MapVecTraits::VectorType;
+  using MapVector2Type = typename MapVecTraits::Vector2Type;
+  using FracVecTraits = VecTraits<uint16_t>;
+  using FracVectorType = typename FracVecTraits::VectorType;
+
+  RemapS16Point5ReplicateFourChannels(Rows<const ScalarType> src_rows,
+                                      size_t src_width, size_t src_height,
+                                      svuint16_t& v_src_stride,
+                                      MapVectorType& v_x_max,
+                                      MapVectorType& v_y_max)
+      : src_rows_{src_rows},
+        v_src_element_stride_{v_src_stride},
+        v_xmax_{v_x_max},
+        v_ymax_{v_y_max} {
+    v_src_element_stride_ = svdup_u16(src_rows.stride() / sizeof(ScalarType));
+    v_xmax_ = svdup_s16(static_cast<int16_t>(src_width - 1));
+    v_ymax_ = svdup_s16(static_cast<int16_t>(src_height - 1));
+  }
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
+    LoopUnroll loop{width, MapVecTraits::num_lanes()};
+    loop.unroll_once([&](size_t step) {
+      svbool_t pg = MapVecTraits::svptrue();
+      vector_path(pg, mapxy, mapfrac, dst, static_cast<ptrdiff_t>(step));
+    });
+    loop.remaining([&](size_t length, size_t step) {
+      svbool_t pg = MapVecTraits::svwhilelt(step - length, step);
+      vector_path(pg, mapxy, mapfrac, dst, static_cast<ptrdiff_t>(length));
+    });
+  }
+
+  void vector_path(svbool_t pg, Columns<const int16_t>& mapxy,
+                   Columns<const uint16_t>& mapfrac, Columns<ScalarType>& dst,
+                   ptrdiff_t step) {
+    MapVector2Type xy = svld2_s16(pg, &mapxy[0]);
+    svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
+
+    // Clamp coordinates to within the dimensions of the source image
+    svuint16_t x0 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0), svmin_x(pg, svget2(xy, 0), v_xmax_)));
+    svuint16_t y0 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0), svmin_x(pg, svget2(xy, 1), v_ymax_)));
+
+    // x1 = x0 + 1, and clamp it too
+    svuint16_t x1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 0), 1), v_xmax_)));
+
+    svuint16_t y1 = svreinterpret_u16_s16(
+        svmax_x(pg, svdup_n_s16(0),
+                svmin_x(pg, svqadd_n_s16_x(pg, svget2(xy, 1), 1), v_ymax_)));
+
+    auto load_4ch_b = [&](svbool_t pg, svuint32_t offsets) {
+      return svreinterpret_u16_u64(svld1_gather_u64offset_u64(
+          pg, reinterpret_cast<const uint64_t*>(&src_rows_[0]),
+          svshllb_n_u64(offsets, 1)));
+    };
+    auto load_4ch_t = [&](svbool_t pg, svuint32_t offsets) {
+      return svreinterpret_u16_u64(svld1_gather_u64offset_u64(
+          pg, reinterpret_cast<const uint64_t*>(&src_rows_[0]),
+          svshllt_n_u64(offsets, 1)));
+    };
+
+    FracVectorType frac = svld1_u16(pg, &mapfrac[0]);
+    svuint16_t xfrac =
+        svand_x(pg, frac, svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+    svuint16_t yfrac =
+        svand_x(pg, svlsr_n_u16_x(pg, frac, REMAP16POINT5_FRAC_BITS),
+                svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+    svuint16_t nxfrac =
+        svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
+    svuint16_t nyfrac =
+        svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac);
+
+    auto lerp2d = [&](svuint16_t xfrac, svuint16_t yfrac, svuint16_t nxfrac,
+                      svuint16_t nyfrac, svuint16_t src_a, svuint16_t src_b,
+                      svuint16_t src_c, svuint16_t src_d, svuint32_t bias) {
+      svuint32_t line0_b = svmlalb(svmullb(xfrac, src_b), nxfrac, src_a);
+      svuint32_t line0_t = svmlalt(svmullt(xfrac, src_b), nxfrac, src_a);
+      svuint32_t line1_b = svmlalb(svmullb(xfrac, src_d), nxfrac, src_c);
+      svuint32_t line1_t = svmlalt(svmullt(xfrac, src_d), nxfrac, src_c);
+
+      svuint32_t acc_b =
+          svmla_u32_x(svptrue_b32(), bias, line0_b, svmovlb_u32(nyfrac));
+      svuint32_t acc_t =
+          svmla_u32_x(svptrue_b32(), bias, line0_t, svmovlt_u32(nyfrac));
+      acc_b = svmla_u32_x(svptrue_b32(), acc_b, line1_b, svmovlb_u32(yfrac));
+      acc_t = svmla_u32_x(svptrue_b32(), acc_t, line1_t, svmovlt_u32(yfrac));
+
+      return svshrnt(svshrnb(acc_b, 2ULL * REMAP16POINT5_FRAC_BITS), acc_t,
+                     2ULL * REMAP16POINT5_FRAC_BITS);
+    };
+
+    // There are 4 channels: data is 4 times wider than the maps (4x16 bits vs
+    // 16-bit coordinates) So calculation is done in 4 parts:
+    // - 0,4,8,... (bottom-bottom)
+    // - 2,6,10,... (bottom-top)
+    // - 1,5,9,... (top-bottom)
+    // - 3,7,11,... (top-top)
+    svuint16_t res_bb, res_bt, res_tb, res_tt;
+
+    svuint16_t fractbl_bb =
+        svreinterpret_u16_u64(svindex_u64(0, 0x0004000400040004UL));
+    svuint16_t fractbl_bt = svreinterpret_u16_u64(
+        svadd_n_u64_x(svptrue_b64(), svreinterpret_u64_u16(fractbl_bb),
+                      0x0002000200020002UL));
+    svuint16_t fractbl_tb = svreinterpret_u16_u64(
+        svadd_n_u64_x(svptrue_b64(), svreinterpret_u64_u16(fractbl_bb),
+                      0x0001000100010001UL));
+    svuint16_t fractbl_tt = svreinterpret_u16_u64(
+        svadd_n_u64_x(svptrue_b64(), svreinterpret_u64_u16(fractbl_bb),
+                      0x0003000300030003UL));
+
+    {  // bottom
+      svbool_t pg_bb = svwhilelt_b64(int64_t{0}, (step + 3) / 4);
+      svbool_t pg_bt = svwhilelt_b64(int64_t{0}, (step + 2) / 4);
+
+      svuint32_t offsets_a_b =
+          svmlalb_u32(svshllb_n_u32(x0, 2), y0, v_src_element_stride_);
+      svuint32_t offsets_b_b =
+          svmlalb_u32(svshllb_n_u32(x1, 2), y0, v_src_element_stride_);
+      svuint32_t offsets_c_b =
+          svmlalb_u32(svshllb_n_u32(x0, 2), y1, v_src_element_stride_);
+      svuint32_t offsets_d_b =
+          svmlalb_u32(svshllb_n_u32(x1, 2), y1, v_src_element_stride_);
+
+      {  // bottom-bottom
+        svuint16_t a = load_4ch_b(pg_bb, offsets_a_b);
+        svuint16_t b = load_4ch_b(pg_bb, offsets_b_b);
+        svuint16_t c = load_4ch_b(pg_bb, offsets_c_b);
+        svuint16_t d = load_4ch_b(pg_bb, offsets_d_b);
+
+        svuint16_t xfr = svtbl_u16(xfrac, fractbl_bb);
+        svuint16_t nxfr = svtbl_u16(nxfrac, fractbl_bb);
+        svuint16_t yfr = svtbl_u16(yfrac, fractbl_bb);
+        svuint16_t nyfr = svtbl_u16(nyfrac, fractbl_bb);
+
+        res_bb = lerp2d(xfr, yfr, nxfr, nyfr, a, b, c, d, bias);
+      }
+
+      {  // bottom-top
+        svuint16_t a = load_4ch_t(pg_bt, offsets_a_b);
+        svuint16_t b = load_4ch_t(pg_bt, offsets_b_b);
+        svuint16_t c = load_4ch_t(pg_bt, offsets_c_b);
+        svuint16_t d = load_4ch_t(pg_bt, offsets_d_b);
+
+        svuint16_t xfr = svtbl_u16(xfrac, fractbl_bt);
+        svuint16_t nxfr = svtbl_u16(nxfrac, fractbl_bt);
+        svuint16_t yfr = svtbl_u16(yfrac, fractbl_bt);
+        svuint16_t nyfr = svtbl_u16(nyfrac, fractbl_bt);
+
+        res_bt = lerp2d(xfr, yfr, nxfr, nyfr, a, b, c, d, bias);
+      }
+    }
+
+    {  // top
+      svbool_t pg_tb = svwhilelt_b64(int64_t{0}, (step + 1) / 4);
+      svbool_t pg_tt = svwhilelt_b64(int64_t{0}, step / 4);
+
+      svuint32_t offsets_a_t =
+          svmlalt_u32(svshllt_n_u32(x0, 2), y0, v_src_element_stride_);
+      svuint32_t offsets_b_t =
+          svmlalt_u32(svshllt_n_u32(x1, 2), y0, v_src_element_stride_);
+      svuint32_t offsets_c_t =
+          svmlalt_u32(svshllt_n_u32(x0, 2), y1, v_src_element_stride_);
+      svuint32_t offsets_d_t =
+          svmlalt_u32(svshllt_n_u32(x1, 2), y1, v_src_element_stride_);
+
+      {  // top-bottom
+        svuint16_t a = load_4ch_b(pg_tb, offsets_a_t);
+        svuint16_t b = load_4ch_b(pg_tb, offsets_b_t);
+        svuint16_t c = load_4ch_b(pg_tb, offsets_c_t);
+        svuint16_t d = load_4ch_b(pg_tb, offsets_d_t);
+
+        svuint16_t xfr = svtbl_u16(xfrac, fractbl_tb);
+        svuint16_t nxfr = svtbl_u16(nxfrac, fractbl_tb);
+        svuint16_t yfr = svtbl_u16(yfrac, fractbl_tb);
+        svuint16_t nyfr = svtbl_u16(nyfrac, fractbl_tb);
+
+        res_tb = lerp2d(xfr, yfr, nxfr, nyfr, a, b, c, d, bias);
+      }
+
+      {  // top-top
+        svuint16_t a = load_4ch_t(pg_tt, offsets_a_t);
+        svuint16_t b = load_4ch_t(pg_tt, offsets_b_t);
+        svuint16_t c = load_4ch_t(pg_tt, offsets_c_t);
+        svuint16_t d = load_4ch_t(pg_tt, offsets_d_t);
+
+        svuint16_t xfr = svtbl_u16(xfrac, fractbl_tt);
+        svuint16_t nxfr = svtbl_u16(nxfrac, fractbl_tt);
+        svuint16_t yfr = svtbl_u16(yfrac, fractbl_tt);
+        svuint16_t nyfr = svtbl_u16(nyfrac, fractbl_tt);
+
+        res_tt = lerp2d(xfr, yfr, nxfr, nyfr, a, b, c, d, bias);
+      }
+    }
+
+    svbool_t pg_00 = svwhilelt_b64(0L, step);
+    svbool_t pg_01 = svwhilelt_b64(svcntd(), static_cast<size_t>(step));
+    svbool_t pg_02 = svwhilelt_b64(2 * svcntd(), static_cast<size_t>(step));
+    svbool_t pg_03 = svwhilelt_b64(3 * svcntd(), static_cast<size_t>(step));
+
+    // Back-transforming is needed, svst4 cannot be used because the
+    // interleaving would need equal number of elements in the 4 vectors the
+    // results are now these:
+    // - 0,4,8,... (bottom-bottom)
+    // - 2,6,10,... (bottom-top)
+    // - 1,5,9,... (top-bottom)
+    // - 3,7,11,... (top-top)
+    // first pass will result in:
+    // - 0,2,4,... (lower and higher ones)
+    // - 1,3,5,... (lower and higher ones)
+    // second pass gives back 0,1,2,3,....
+
+    svuint64_t res_even_low = svzip1_u64(svreinterpret_u64_u16(res_bb),
+                                         svreinterpret_u64_u16(res_bt));
+    svuint64_t res_even_high = svzip2_u64(svreinterpret_u64_u16(res_bb),
+                                          svreinterpret_u64_u16(res_bt));
+    svuint64_t res_odd_low = svzip1_u64(svreinterpret_u64_u16(res_tb),
+                                        svreinterpret_u64_u16(res_tt));
+    svuint64_t res_odd_high = svzip2_u64(svreinterpret_u64_u16(res_tb),
+                                         svreinterpret_u64_u16(res_tt));
+
+    svuint64_t res_00 = svzip1_u64(res_even_low, res_odd_low);
+    svuint64_t res_01 = svzip2_u64(res_even_low, res_odd_low);
+    svuint64_t res_02 = svzip1_u64(res_even_high, res_odd_high);
+    svuint64_t res_03 = svzip2_u64(res_even_high, res_odd_high);
+
+    svst1_u64(pg_00, reinterpret_cast<uint64_t*>(&dst[0]), res_00);
+    svst1_u64(pg_01, reinterpret_cast<uint64_t*>(&dst[0]) + svcntd(), res_01);
+    svst1_u64(pg_02, reinterpret_cast<uint64_t*>(&dst[0]) + 2 * svcntd(),
+              res_02);
+    svst1_u64(pg_03, reinterpret_cast<uint64_t*>(&dst[0]) + 3 * svcntd(),
+              res_03);
+
+    mapxy += step;
+    mapfrac += step;
+    dst += step;
+  }
+
+  Rows<const ScalarType> src_rows_;
+
+ private:
+  svuint16_t& v_src_element_stride_;
+  MapVectorType& v_xmax_;
+  MapVectorType& v_ymax_;
+};  // end of class RemapS16Point5ReplicateFourChannels<uint16_t>
+
+template <typename ScalarType>
 class RemapS16Point5ConstantBorder;
 
 template <>
@@ -808,16 +1235,29 @@ kleidicv_error_t remap_s16point5_sc(
 
   if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
     svuint16_t sv_width, sv_height, sv_border;
-    RemapS16Point5ConstantBorder<T> operation{
-        src_rows,      src_width, src_height, border_value,
-        sv_src_stride, sv_width,  sv_height,  sv_border};
-    zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    if (channels == 1) {
+      RemapS16Point5ConstantBorder<T> operation{
+          src_rows,      src_width, src_height, border_value,
+          sv_src_stride, sv_width,  sv_height,  sv_border};
+      zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    } else {
+      assert(channels == 4);
+      // TODO
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+    }
   } else {
     assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
     svint16_t sv_xmax, sv_ymax;
-    RemapS16Point5Replicate<T> operation{src_rows,      src_width, src_height,
-                                         sv_src_stride, sv_xmax,   sv_ymax};
-    zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    if (channels == 1) {
+      RemapS16Point5Replicate<T> operation{src_rows,      src_width, src_height,
+                                           sv_src_stride, sv_xmax,   sv_ymax};
+      zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    } else {
+      assert(channels == 4);
+      RemapS16Point5ReplicateFourChannels<T> operation{
+          src_rows, src_width, src_height, sv_src_stride, sv_xmax, sv_ymax};
+      zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    }
   }
   return KLEIDICV_OK;
 }

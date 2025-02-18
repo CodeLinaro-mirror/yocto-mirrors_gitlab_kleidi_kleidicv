@@ -625,6 +625,332 @@ class RemapS16Point5ConstantBorder<uint16_t> {
   int16x8_t y1_;
 };  // end of class RemapS16Point5ConstantBorder<uint16_t>
 
+template <typename ScalarType>
+class RemapS16Point5ReplicateFourChannels;
+
+template <>
+class RemapS16Point5ReplicateFourChannels<uint8_t> {
+ public:
+  using ScalarType = uint8_t;
+  using MapVecTraits = neon::VecTraits<int16_t>;
+  using MapVectorType = typename MapVecTraits::VectorType;
+  using MapVector2Type = typename MapVecTraits::Vector2Type;
+  using FracVecTraits = neon::VecTraits<uint16_t>;
+  using FracVectorType = typename FracVecTraits::VectorType;
+
+  RemapS16Point5ReplicateFourChannels(Rows<const ScalarType> src_rows,
+                                      size_t src_width, size_t src_height)
+      : src_rows_{src_rows},
+        v_src_stride_{vdup_n_u16(static_cast<uint16_t>(src_rows_.stride()))},
+        v_xmax_{vdupq_n_s16(static_cast<int16_t>(src_width - 1))},
+        v_ymax_{vdupq_n_s16(static_cast<int16_t>(src_height - 1))} {}
+
+  void get_map_coordinates(Columns<const int16_t> mapxy,
+                           Columns<const uint16_t> mapfrac, uint16x8_t &x0,
+                           uint16x8_t &y0, uint16x8_t &x1, uint16x8_t &y1,
+                           uint16x8_t &xfrac, uint16x8_t &yfrac) {
+    MapVector2Type xy = vld2q_s16(&mapxy[0]);
+    FracVectorType frac = vld1q_u16(&mapfrac[0]);
+    xfrac = vbslq_u16(vcltq_s16(xy.val[0], vdupq_n_s16(0)), vdupq_n_u16(0),
+                      vandq_u16(frac, vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
+    yfrac = vbslq_u16(vcltq_s16(xy.val[1], vdupq_n_s16(0)), vdupq_n_u16(0),
+                      vandq_u16(vshrq_n_u16(frac, REMAP16POINT5_FRAC_BITS),
+                                vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
+
+    // Clamp coordinates to within the dimensions of the source image
+    x0 = vreinterpretq_u16_s16(
+        vmaxq_s16(vdupq_n_s16(0), vminq_s16(xy.val[0], v_xmax_)));
+    y0 = vreinterpretq_u16_s16(
+        vmaxq_s16(vdupq_n_s16(0), vminq_s16(xy.val[1], v_ymax_)));
+
+    // x1 = x0 + 1, except if it's already xmax
+    x1 = vsubq_u16(x0, vcltq_s16(xy.val[0], v_xmax_));
+    y1 = vsubq_u16(y0, vcltq_s16(xy.val[1], v_ymax_));
+  }
+
+  void get_offsets(uint16x4_t x0, uint16x4_t y0, uint16x4_t x1, uint16x4_t y1,
+                   uint32x4_t &offsets_a, uint32x4_t &offsets_b,
+                   uint32x4_t &offsets_c, uint32x4_t &offsets_d) {
+    // Multiply by 4 because of channels
+    uint32x4_t x0_scaled = vshll_n_u16(x0, 2);
+    uint32x4_t x1_scaled = vshll_n_u16(x1, 2);
+
+    // Calculate offsets from coordinates (y * stride + x)
+    // a: top left, b: top right, c: bottom left, d: bottom right
+    offsets_a = vmlal_u16(x0_scaled, y0, v_src_stride_);
+    offsets_b = vmlal_u16(x1_scaled, y0, v_src_stride_);
+    offsets_c = vmlal_u16(x0_scaled, y1, v_src_stride_);
+    offsets_d = vmlal_u16(x1_scaled, y1, v_src_stride_);
+  };
+
+  uint16x4_t interpolate(uint16x4_t a, uint16x4_t b, uint16x4_t c, uint16x4_t d,
+                         uint16_t xfrac, uint16_t yfrac) {
+    uint16x4_t line0 =
+        vmla_n_u16(vmul_n_u16(b, xfrac), a, REMAP16POINT5_FRAC_MAX - xfrac);
+    uint32x4_t line0_lerpd =
+        vmlal_n_u16(vdupq_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2), line0,
+                    REMAP16POINT5_FRAC_MAX - yfrac);
+    uint16x4_t line1 =
+        vmla_n_u16(vmul_n_u16(d, xfrac), c, REMAP16POINT5_FRAC_MAX - xfrac);
+    return vshrn_n_u32(vmlal_n_u16(line0_lerpd, line1, yfrac),
+                       2 * REMAP16POINT5_FRAC_BITS);
+  };
+
+  uint64_t load_32bit(const ScalarType *src) {
+    uint32_t value;
+    memcpy(&value, src, sizeof(uint32_t));
+    return static_cast<uint64_t>(value);
+  };
+
+  uint16x8_t load_64bit(uint32_t offset_low, uint32_t offset_high) {
+    uint64_t acc = load_32bit(&src_rows_[offset_low]) |
+                   (load_32bit(&src_rows_[offset_high]) << 32);
+    return vmovl_u8(vset_lane_u64(acc, vdup_n_u64(0), 0));
+  };
+
+  uint16x8_t load_01(uint32x4_t offsets) {
+    return load_64bit(vgetq_lane_u32(offsets, 0), vgetq_lane_u32(offsets, 1));
+  };
+
+  uint16x8_t load_23(uint32x4_t offsets) {
+    return load_64bit(vgetq_lane_u32(offsets, 2), vgetq_lane_u32(offsets, 3));
+  };
+
+  uint8x16_t load_and_interpolate(uint32x4_t offsets_a, uint32x4_t offsets_b,
+                                  uint32x4_t offsets_c, uint32x4_t offsets_d,
+                                  uint16x4_t xfrac, uint16x4_t yfrac) {
+    uint16x8_t a = load_01(offsets_a);
+    uint16x8_t b = load_01(offsets_b);
+    uint16x8_t c = load_01(offsets_c);
+    uint16x8_t d = load_01(offsets_d);
+
+    uint16x4x4_t res;
+    res.val[0] = interpolate(vget_low_u16(a), vget_low_u16(b), vget_low_u16(c),
+                             vget_low_u16(d), vget_lane_u16(xfrac, 0),
+                             vget_lane_u16(yfrac, 0));
+    res.val[1] = interpolate(vget_high_u16(a), vget_high_u16(b),
+                             vget_high_u16(c), vget_high_u16(d),
+                             vget_lane_u16(xfrac, 1), vget_lane_u16(yfrac, 1));
+
+    a = load_23(offsets_a);
+    b = load_23(offsets_b);
+    c = load_23(offsets_c);
+    d = load_23(offsets_d);
+
+    res.val[2] = interpolate(vget_low_u16(a), vget_low_u16(b), vget_low_u16(c),
+                             vget_low_u16(d), vget_lane_u16(xfrac, 2),
+                             vget_lane_u16(yfrac, 2));
+    res.val[3] = interpolate(vget_high_u16(a), vget_high_u16(b),
+                             vget_high_u16(c), vget_high_u16(d),
+                             vget_lane_u16(xfrac, 3), vget_lane_u16(yfrac, 3));
+
+    return vuzp1q_u8(vcombine(res.val[0], res.val[1]),
+                     vcombine(res.val[2], res.val[3]));
+  }
+
+  void store_pixels(uint8x16_t res_low, uint8x16_t res_high,
+                    Columns<ScalarType> dst) {
+    uint8x16x2_t res;
+    res.val[0] = res_low;
+    res.val[1] = res_high;
+    vst1q_u8_x2(&dst[0], res);
+  }
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
+    auto vector_path = [&](size_t step) {
+      uint16x8_t x0, y0, x1, y1, xfrac, yfrac;
+      get_map_coordinates(mapxy, mapfrac, x0, y0, x1, y1, xfrac, yfrac);
+
+      uint32x4_t offsets_a, offsets_b, offsets_c, offsets_d;
+
+      get_offsets(vget_low_u16(x0), vget_low_u16(y0), vget_low_u16(x1),
+                  vget_low_u16(y1), offsets_a, offsets_b, offsets_c, offsets_d);
+      uint8x16_t res_low =
+          load_and_interpolate(offsets_a, offsets_b, offsets_c, offsets_d,
+                               vget_low_u16(xfrac), vget_low_u16(yfrac));
+
+      get_offsets(vget_high_u16(x0), vget_high_u16(y0), vget_high_u16(x1),
+                  vget_high_u16(y1), offsets_a, offsets_b, offsets_c,
+                  offsets_d);
+      uint8x16_t res_high =
+          load_and_interpolate(offsets_a, offsets_b, offsets_c, offsets_d,
+                               vget_high_u16(xfrac), vget_high_u16(yfrac));
+
+      store_pixels(res_low, res_high, dst);
+      mapxy += ptrdiff_t(step);
+      mapfrac += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+
+    LoopUnroll loop{width, MapVecTraits::num_lanes()};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapxy -= back_step;
+    mapfrac -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint16x4_t v_src_stride_;
+  int16x8_t v_xmax_;
+  int16x8_t v_ymax_;
+};  // end of class RemapS16Point5ReplicateFourChannels<uint8_t>
+
+// TODO: Refactor this to match the uint8_t layout
+template <>
+class RemapS16Point5ReplicateFourChannels<uint16_t> {
+ public:
+  using ScalarType = uint16_t;
+  using MapVecTraits = neon::VecTraits<int16_t>;
+  using MapVectorType = typename MapVecTraits::VectorType;
+  using MapVector2Type = typename MapVecTraits::Vector2Type;
+  using FracVecTraits = neon::VecTraits<uint16_t>;
+  using FracVectorType = typename FracVecTraits::VectorType;
+
+  RemapS16Point5ReplicateFourChannels(Rows<const ScalarType> src_rows,
+                                      size_t src_width, size_t src_height)
+      : src_rows_{src_rows},
+        v_src_element_stride_{vdup_n_u16(
+            static_cast<uint16_t>(src_rows_.stride() / sizeof(ScalarType)))},
+        v_xmax_{vdupq_n_s16(static_cast<int16_t>(src_width - 1))},
+        v_ymax_{vdupq_n_s16(static_cast<int16_t>(src_height - 1))} {}
+
+  void process_row(size_t width, Columns<const int16_t> mapxy,
+                   Columns<const uint16_t> mapfrac, Columns<ScalarType> dst) {
+    auto vector_path = [&](size_t step) {
+      MapVector2Type xy = vld2q_s16(&mapxy[0]);
+      FracVectorType frac = vld1q_u16(&mapfrac[0]);
+      uint16x8_t xfrac =
+          vbslq_u16(vcltq_s16(xy.val[0], vdupq_n_s16(0)), vdupq_n_u16(0),
+                    vandq_u16(frac, vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
+      uint16x8_t yfrac =
+          vbslq_u16(vcltq_s16(xy.val[1], vdupq_n_s16(0)), vdupq_n_u16(0),
+                    vandq_u16(vshrq_n_u16(frac, REMAP16POINT5_FRAC_BITS),
+                              vdupq_n_u16(REMAP16POINT5_FRAC_MAX - 1)));
+
+      // Clamp coordinates to within the dimensions of the source image
+      uint16x8_t x0 = vreinterpretq_u16_s16(
+          vmaxq_s16(vdupq_n_s16(0), vminq_s16(xy.val[0], v_xmax_)));
+      uint16x8_t y0 = vreinterpretq_u16_s16(
+          vmaxq_s16(vdupq_n_s16(0), vminq_s16(xy.val[1], v_ymax_)));
+
+      // x1 = x0 + 1, except if it's already xmax
+      uint16x8_t x1 = vsubq_u16(x0, vcltq_s16(xy.val[0], v_xmax_));
+      uint16x8_t y1 = vsubq_u16(y0, vcltq_s16(xy.val[1], v_ymax_));
+
+      auto load_16x4 = [&](uint32_t offset) {
+        return vld1_u64(reinterpret_cast<const uint64_t *>(&src_rows_[offset]));
+      };
+
+      uint16_t xfrac_array[8], yfrac_array[8];
+      vst1q_u16(xfrac_array, xfrac);
+      vst1q_u16(yfrac_array, yfrac);
+
+      auto interpolate = [xfrac_array, yfrac_array](uint16x4_t a, uint16x4_t b,
+                                                    uint16x4_t c, uint16x4_t d,
+                                                    size_t index) {
+        uint32x4_t line0 =
+            vmlal_n_u16(vmull_n_u16(b, xfrac_array[index]), a,
+                        REMAP16POINT5_FRAC_MAX - xfrac_array[index]);
+        uint32x4_t line0_lerpd = vmlaq_n_u32(
+            vdupq_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2), line0,
+            static_cast<uint32_t>(REMAP16POINT5_FRAC_MAX - yfrac_array[index]));
+        uint32x4_t line1 =
+            vmlal_n_u16(vmull_n_u16(d, xfrac_array[index]), c,
+                        REMAP16POINT5_FRAC_MAX - xfrac_array[index]);
+        return vshrn_n_u32(
+            vmlaq_n_u32(line0_lerpd, line1,
+                        static_cast<uint32_t>(yfrac_array[index])),
+            2 * REMAP16POINT5_FRAC_BITS);
+      };
+
+#define LOAD_AND_INTERPOLATE(a, b, c, d, index1, index2) \
+  interpolate(load_16x4(vgetq_lane_u32((a), (index1))),  \
+              load_16x4(vgetq_lane_u32((b), (index1))),  \
+              load_16x4(vgetq_lane_u32((c), (index1))),  \
+              load_16x4(vgetq_lane_u32((d), (index1))), (index2))
+
+      // Calculate offsets from coordinates (y * element_stride + x)
+      // a: top left, b: top right, c: bottom left, d: bottom right
+      uint16x8x4_t res;
+      {
+        // multiply by 4 because of channels
+        uint32x4_t x0_low = vshll_n_u16(vget_low_u16(x0), 2);
+        uint32x4_t x1_low = vshll_n_u16(vget_low_u16(x1), 2);
+        uint32x4_t offsets_a =
+            vmlal_u16(x0_low, vget_low_u16(y0), v_src_element_stride_);
+        uint32x4_t offsets_b =
+            vmlal_u16(x1_low, vget_low_u16(y0), v_src_element_stride_);
+        uint32x4_t offsets_c =
+            vmlal_u16(x0_low, vget_low_u16(y1), v_src_element_stride_);
+        uint32x4_t offsets_d =
+            vmlal_u16(x1_low, vget_low_u16(y1), v_src_element_stride_);
+
+        uint16x4_t res0 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 0, 0);
+        uint16x4_t res1 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 1, 1);
+        uint16x4_t res2 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 2, 2);
+        uint16x4_t res3 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 3, 3);
+
+        res.val[0] = vcombine(res0, res1);
+        res.val[1] = vcombine(res2, res3);
+      }
+
+      {
+        // multiply by 4 because of channels
+        uint32x4_t x0_high = vshll_high_n_u16(x0, 2);
+        uint32x4_t x1_high = vshll_high_n_u16(x1, 2);
+        uint32x4_t offsets_a =
+            vmlal_u16(x0_high, vget_high_u16(y0), v_src_element_stride_);
+        uint32x4_t offsets_b =
+            vmlal_u16(x1_high, vget_high_u16(y0), v_src_element_stride_);
+        uint32x4_t offsets_c =
+            vmlal_u16(x0_high, vget_high_u16(y1), v_src_element_stride_);
+        uint32x4_t offsets_d =
+            vmlal_u16(x1_high, vget_high_u16(y1), v_src_element_stride_);
+
+        uint16x4_t res0 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 0, 4);
+        uint16x4_t res1 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 1, 5);
+        uint16x4_t res2 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 2, 6);
+        uint16x4_t res3 = LOAD_AND_INTERPOLATE(offsets_a, offsets_b, offsets_c,
+                                               offsets_d, 3, 7);
+
+        res.val[2] = vcombine(res0, res1);
+        res.val[3] = vcombine(res2, res3);
+      }
+
+      vst1q_u16_x4(&dst[0], res);
+      mapxy += ptrdiff_t(step);
+      mapfrac += ptrdiff_t(step);
+      dst += ptrdiff_t(step);
+    };
+    LoopUnroll loop{width, MapVecTraits::num_lanes()};
+    loop.unroll_once(vector_path);
+    ptrdiff_t back_step = static_cast<ptrdiff_t>(loop.step()) -
+                          static_cast<ptrdiff_t>(loop.remaining_length());
+    mapxy -= back_step;
+    mapfrac -= back_step;
+    dst -= back_step;
+    loop.remaining([&](size_t, size_t step) { vector_path(step); });
+  }
+
+ private:
+  Rows<const ScalarType> src_rows_;
+  uint16x4_t v_src_element_stride_;
+  int16x8_t v_xmax_;
+  int16x8_t v_ymax_;
+};  // end of class RemapS16Point5ReplicateFourChannels<uint16_t>
+
 // Most of the complexity comes from parameter checking.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 template <typename T>
@@ -656,13 +982,26 @@ kleidicv_error_t remap_s16point5(
   Rows<T> dst_rows{dst, dst_stride, channels};
   Rectangle rect{dst_width, dst_height};
   if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
-    RemapS16Point5ConstantBorder<T> operation{src_rows, src_width, src_height,
-                                              border_value};
-    zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    if (channels == 1) {
+      RemapS16Point5ConstantBorder<T> operation{src_rows, src_width, src_height,
+                                                border_value};
+      zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    } else {
+      assert(channels == 4);
+      // TODO
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+    }
   } else {
     assert(border_type == KLEIDICV_BORDER_TYPE_REPLICATE);
-    RemapS16Point5Replicate<T> operation{src_rows, src_width, src_height};
-    zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    if (channels == 1) {
+      RemapS16Point5Replicate<T> operation{src_rows, src_width, src_height};
+      zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    } else {
+      assert(channels == 4);
+      RemapS16Point5ReplicateFourChannels<T> operation{src_rows, src_width,
+                                                       src_height};
+      zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
+    }
   }
   return KLEIDICV_OK;
 }
