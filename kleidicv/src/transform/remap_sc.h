@@ -581,10 +581,10 @@ class RemapS16Point5Replicate<uint16_t> {
 };  // end of class RemapS16Point5Replicate<uint16_t>
 
 template <typename ScalarType>
-class RemapS16Point5ReplicateFourChannels;
+class RemapS16Point5Replicate4ch;
 
 template <>
-class RemapS16Point5ReplicateFourChannels<uint8_t> {
+class RemapS16Point5Replicate4ch<uint8_t> {
  public:
   using ScalarType = uint8_t;
   using MapVecTraits = VecTraits<int16_t>;
@@ -593,11 +593,9 @@ class RemapS16Point5ReplicateFourChannels<uint8_t> {
   using FracVecTraits = VecTraits<uint16_t>;
   using FracVectorType = typename FracVecTraits::VectorType;
 
-  RemapS16Point5ReplicateFourChannels(Rows<const ScalarType> src_rows,
-                                      size_t src_width, size_t src_height,
-                                      svuint16_t& v_src_stride,
-                                      MapVectorType& v_x_max,
-                                      MapVectorType& v_y_max)
+  RemapS16Point5Replicate4ch(Rows<const ScalarType> src_rows, size_t src_width,
+                             size_t src_height, svuint16_t& v_src_stride,
+                             MapVectorType& v_x_max, MapVectorType& v_y_max)
       : src_rows_{src_rows},
         v_src_stride_{v_src_stride},
         v_xmax_{v_x_max},
@@ -751,10 +749,10 @@ class RemapS16Point5ReplicateFourChannels<uint8_t> {
   svuint16_t& v_src_stride_;
   MapVectorType& v_xmax_;
   MapVectorType& v_ymax_;
-};  // end of class RemapS16Point5ReplicateFourChannels<uint8_t>
+};  // end of class RemapS16Point5Replicate4ch<uint8_t>
 
 template <>
-class RemapS16Point5ReplicateFourChannels<uint16_t> {
+class RemapS16Point5Replicate4ch<uint16_t> {
  public:
   using ScalarType = uint16_t;
   using MapVecTraits = VecTraits<int16_t>;
@@ -763,11 +761,9 @@ class RemapS16Point5ReplicateFourChannels<uint16_t> {
   using FracVecTraits = VecTraits<uint16_t>;
   using FracVectorType = typename FracVecTraits::VectorType;
 
-  RemapS16Point5ReplicateFourChannels(Rows<const ScalarType> src_rows,
-                                      size_t src_width, size_t src_height,
-                                      svuint16_t& v_src_stride,
-                                      MapVectorType& v_x_max,
-                                      MapVectorType& v_y_max)
+  RemapS16Point5Replicate4ch(Rows<const ScalarType> src_rows, size_t src_width,
+                             size_t src_height, svuint16_t& v_src_stride,
+                             MapVectorType& v_x_max, MapVectorType& v_y_max)
       : src_rows_{src_rows},
         v_src_element_stride_{v_src_stride},
         v_xmax_{v_x_max},
@@ -1005,7 +1001,7 @@ class RemapS16Point5ReplicateFourChannels<uint16_t> {
   svuint16_t& v_src_element_stride_;
   MapVectorType& v_xmax_;
   MapVectorType& v_ymax_;
-};  // end of class RemapS16Point5ReplicateFourChannels<uint16_t>
+};  // end of class RemapS16Point5Replicate4ch<uint16_t>
 
 template <typename ScalarType>
 class RemapS16Point5ConstantBorder;
@@ -1254,7 +1250,7 @@ kleidicv_error_t remap_s16point5_sc(
       zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
     } else {
       assert(channels == 4);
-      RemapS16Point5ReplicateFourChannels<T> operation{
+      RemapS16Point5Replicate4ch<T> operation{
           src_rows, src_width, src_height, sv_src_stride, sv_xmax, sv_ymax};
       zip_rows(operation, rect, mapxy_rows, mapfrac_rows, dst_rows);
     }
