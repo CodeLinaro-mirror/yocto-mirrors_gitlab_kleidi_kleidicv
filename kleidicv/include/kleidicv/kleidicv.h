@@ -1786,7 +1786,9 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
 ///                     start of the next row for the destination data.
 ///                     Must be a multiple of `sizeof(int16_t)` and no less than
 ///                     `width * sizeof(int16_t)`, except for single-row images.
-/// @param channels      Number of channels in the data. Must be 1.
+/// @param channels      Number of channels in the data: \n
+///                         - Must be 1 for constant border.
+//                          - Must be 1 or 4 for replicate border.
 /// @param border_type   Way of handling the border. The supported border types
 ///                      are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT

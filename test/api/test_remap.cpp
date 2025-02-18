@@ -36,14 +36,17 @@ template <typename ScalarType>
 static const ScalarType *get_array2d_element_or_border(
     const test::Array2D<ScalarType> &src, ptrdiff_t x, ptrdiff_t y,
     kleidicv_border_type_t border_type, const ScalarType *border_value) {
+  // Width is the number of pixels in a row, but Array2D does not handle that
+  const ptrdiff_t src_width =
+      static_cast<ptrdiff_t>(src.width() / src.channels());
+  const ptrdiff_t src_height = static_cast<ptrdiff_t>(src.height());
+
   if (border_type == KLEIDICV_BORDER_TYPE_REPLICATE) {
-    x = std::clamp<ptrdiff_t>(
-        x, 0, static_cast<ptrdiff_t>(src.width() / src.channels()) - 1);
-    y = std::clamp<ptrdiff_t>(y, 0, static_cast<ptrdiff_t>(src.height()) - 1);
+    x = std::clamp<ptrdiff_t>(x, 0, src_width - 1);
+    y = std::clamp<ptrdiff_t>(y, 0, src_height - 1);
   } else {
     assert(border_type == KLEIDICV_BORDER_TYPE_CONSTANT);
-    if (x * src.channels() >= src.width() ||
-        y >= static_cast<ptrdiff_t>(src.height()) || x < 0 || y < 0) {
+    if (x >= src_width || y >= src_height || x < 0 || y < 0) {
       return border_value;
     }
   }
@@ -147,12 +150,11 @@ class RemapS16 : public testing::Test {
 
     calculate_expected(source, mapxy, border_type, border_value, expected);
 
-    ASSERT_EQ(
-        KLEIDICV_OK,
-        remap_s16<ScalarType>()(
-            source.data(), source.stride(), source.width(), source.height(),
-            actual.data(), actual.stride(), actual.width(), actual.height(),
-            channels, mapxy.data(), mapxy.stride(), border_type, border_value));
+    ASSERT_EQ(KLEIDICV_OK, remap_s16<ScalarType>()(
+                               source.data(), source.stride(), src_w,
+                               source.height(), actual.data(), actual.stride(),
+                               dst_w, actual.height(), channels, mapxy.data(),
+                               mapxy.stride(), border_type, border_value));
 
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
@@ -176,12 +178,11 @@ class RemapS16 : public testing::Test {
 
     calculate_expected(source, mapxy, border_type, border_value, expected);
 
-    ASSERT_EQ(
-        KLEIDICV_OK,
-        remap_s16<ScalarType>()(
-            source.data(), source.stride(), source.width(), source.height(),
-            actual.data(), actual.stride(), actual.width(), actual.height(),
-            channels, mapxy.data(), mapxy.stride(), border_type, border_value));
+    ASSERT_EQ(KLEIDICV_OK, remap_s16<ScalarType>()(
+                               source.data(), source.stride(), src_w,
+                               source.height(), actual.data(), actual.stride(),
+                               dst_w, actual.height(), channels, mapxy.data(),
+                               mapxy.stride(), border_type, border_value));
 
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
@@ -524,8 +525,9 @@ class RemapS16Point5 : public testing::Test {
       }
     }
 
-    // This part is the same as execute_test() but without initializing source.
-    // Corner Cases use the biggest possible source.
+    // This part is the same as execute_test() except source initialization.
+    // Corner Cases use the biggest possible source, so it is only initializing
+    // the edges.
     size_t src_total_width = channels * src_w;
     size_t dst_total_width = channels * dst_w;
 
@@ -559,12 +561,27 @@ class RemapS16Point5 : public testing::Test {
     calculate_expected(source, mapxy, mapfrac, border_type, border_value,
                        expected);
 
-    ASSERT_EQ(KLEIDICV_OK, remap_s16point5<ScalarType>()(
-                               source.data(), source.stride(), source.width(),
-                               source.height(), actual.data(), actual.stride(),
-                               actual.width(), actual.height(), channels,
-                               mapxy.data(), mapxy.stride(), mapfrac.data(),
-                               mapfrac.stride(), border_type, border_value));
+    ASSERT_EQ(KLEIDICV_OK,
+              remap_s16point5<ScalarType>()(
+                  source.data(), source.stride(), src_w, source.height(),
+                  actual.data(), actual.stride(), dst_w, actual.height(),
+                  channels, mapxy.data(), mapxy.stride(), mapfrac.data(),
+                  mapfrac.stride(), border_type, border_value));
+
+    if (expected.compare_to(actual, 1)) {
+      if (source.width() < 100 && source.height() < 100) {
+        std::cout << "source:\n";
+        dump(&source);
+      }
+      std::cout << "mapxy:\n";
+      dump(&mapxy);
+      std::cout << "mapfrac:\n";
+      dump(&mapfrac);
+      std::cout << "expected:\n";
+      dump(&expected);
+      std::cout << "actual:\n";
+      dump(&actual);
+    }
 
     EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, actual, expected);
   }
@@ -589,12 +606,27 @@ class RemapS16Point5 : public testing::Test {
     calculate_expected(source, mapxy, mapfrac, border_type, border_value,
                        expected);
 
-    ASSERT_EQ(KLEIDICV_OK, remap_s16point5<ScalarType>()(
-                               source.data(), source.stride(), source.width(),
-                               source.height(), actual.data(), actual.stride(),
-                               actual.width(), actual.height(), channels,
-                               mapxy.data(), mapxy.stride(), mapfrac.data(),
-                               mapfrac.stride(), border_type, border_value));
+    ASSERT_EQ(KLEIDICV_OK,
+              remap_s16point5<ScalarType>()(
+                  source.data(), source.stride(), src_w, source.height(),
+                  actual.data(), actual.stride(), dst_w, actual.height(),
+                  channels, mapxy.data(), mapxy.stride(), mapfrac.data(),
+                  mapfrac.stride(), border_type, border_value));
+
+    if (expected.compare_to(actual)) {
+      if (source.width() < 100 && source.height() < 100) {
+        std::cout << "source:\n";
+        dump(&source);
+      }
+      std::cout << "mapxy:\n";
+      dump(&mapxy);
+      std::cout << "mapfrac:\n";
+      dump(&mapfrac);
+      std::cout << "expected:\n";
+      dump(&expected);
+      std::cout << "actual:\n";
+      dump(&actual);
+    }
 
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
@@ -623,17 +655,17 @@ class RemapS16Point5 : public testing::Test {
     for (size_t row = 0; row < expected.height(); row++) {
       for (size_t column = 0; column < expected.width() / src.channels();
            ++column) {
+        // Clang-tidy thinks mapfrac may contain garbage, but it is fully
+        // initialized at all code paths and the map size always equals dst
+        // map pixel size
+        // NOLINTBEGIN(clang-analyzer-core.UndefinedBinaryOperatorResult)
+        uint8_t x_frac = *mapfrac.at(row, column) & (FRAC_MAX - 1);
+        uint8_t y_frac =
+            (*mapfrac.at(row, column) >> FRAC_BITS) & (FRAC_MAX - 1);
+        // NOLINTEND(clang-analyzer-core.UndefinedBinaryOperatorResult)
+        const int16_t *coords = mapxy.at(row, column * 2);
+        ptrdiff_t x = coords[0], y = coords[1];
         for (size_t ch = 0; ch < src.channels(); ++ch) {
-          // Clang-tidy thinks mapfrac may contain garbage, but it is fully
-          // initialized at all code paths and the map size always equals dst
-          // map pixel size
-          // NOLINTBEGIN(clang-analyzer-core.UndefinedBinaryOperatorResult)
-          uint8_t x_frac = *mapfrac.at(row, column) & (FRAC_MAX - 1);
-          uint8_t y_frac =
-              (*mapfrac.at(row, column) >> FRAC_BITS) & (FRAC_MAX - 1);
-          // NOLINTEND(clang-analyzer-core.UndefinedBinaryOperatorResult)
-          const int16_t *coords = mapxy.at(row, column * 2);
-          int16_t x = coords[0], y = coords[1];
           *expected.at(row, column * src.channels() + ch) =
               lerp_2d(x_frac, y_frac, get_src(x, y)[ch], get_src(x + 1, y)[ch],
                       get_src(x, y + 1)[ch], get_src(x + 1, y + 1)[ch]);
@@ -646,48 +678,69 @@ class RemapS16Point5 : public testing::Test {
 using RemapS16Point5ElementTypes = ::testing::Types<uint8_t, uint16_t>;
 TYPED_TEST_SUITE(RemapS16Point5, RemapS16Point5ElementTypes);
 
+template <typename T>
+size_t defaultWidth() {
+  return 3 * test::Options::vector_lanes<T>() - 1;
+}
+
+size_t defaultHeight() { return 4; }
+
 TYPED_TEST(RemapS16Point5, RandomNoPadding) {
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 4;
-  size_t dst_w = src_w;
-  size_t dst_h = src_h;
-  size_t channels = 1;
-  size_t padding = 0;
+  size_t w = defaultWidth<TypeParam>();
+  size_t h = defaultHeight();
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test_random(src_w, src_h, dst_w, dst_h, channels, border_type,
-                             border_value, padding);
+    TestFixture::test_random(w, h, w, h, 1, border_type, border_value, 0);
   }
+}
+
+// TODO: Modify tests to also run constant border once implemented
+TYPED_TEST(RemapS16Point5, RandomNoPadding4chReplicate) {
+  size_t w = defaultWidth<TypeParam>();
+  size_t h = defaultHeight();
+  size_t channels = 4;
+  size_t padding = 0;
+  TestFixture::test_random(w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE,
+                           nullptr, padding);
 }
 
 TYPED_TEST(RemapS16Point5, BlendPadding) {
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 4;
-  size_t dst_w = src_w;
-  size_t dst_h = src_h;
-  size_t channels = 1;
-  size_t padding = 13;
+  size_t w = defaultWidth<TypeParam>();
+  size_t h = defaultHeight();
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test_blend(src_w, src_h, dst_w, dst_h, channels, border_type,
-                            border_value, padding);
+    TestFixture::test_blend(w, h, w, h, 1, border_type, border_value, 13);
   }
+}
+
+TYPED_TEST(RemapS16Point5, BlendPadding4chReplicate) {
+  size_t w = defaultWidth<TypeParam>();
+  size_t h = defaultHeight();
+  size_t channels = 4;
+  size_t padding = 7;
+  TestFixture::test_blend(w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE,
+                          nullptr, padding);
 }
 
 TYPED_TEST(RemapS16Point5, OutsideRandomPadding) {
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 4;
-  size_t dst_w = src_w;
-  size_t dst_h = src_h;
-  size_t channels = 1;
-  size_t padding = 13;
+  size_t w = defaultWidth<TypeParam>();
+  size_t h = defaultHeight();
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test_outside_random(src_w, src_h, dst_w, dst_h, channels,
-                                     border_type, border_value, padding);
+    TestFixture::test_outside_random(w, h, w, h, 1, border_type, border_value,
+                                     13);
   }
 }
 
+TYPED_TEST(RemapS16Point5, OutsideRandomPadding4chReplicate) {
+  size_t w = defaultWidth<TypeParam>();
+  size_t h = defaultHeight();
+  size_t channels = 4;
+  size_t padding = 11;
+  TestFixture::test_outside_random(
+      w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr, padding);
+}
+
 TYPED_TEST(RemapS16Point5, BlendBigStride) {
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 16;
+  size_t src_w = defaultWidth<TypeParam>();
+  size_t src_h = defaultHeight();
   size_t dst_w = src_w;
   size_t dst_h = src_h;
   size_t channels = 1;
@@ -696,6 +749,16 @@ TYPED_TEST(RemapS16Point5, BlendBigStride) {
     TestFixture::test_blend(src_w, src_h, dst_w, dst_h, channels, border_type,
                             border_value, padding);
   }
+}
+
+TYPED_TEST(RemapS16Point5, BlendBigStride4chReplicate) {
+  size_t w = defaultWidth<TypeParam>();
+  size_t h = defaultHeight();
+  size_t channels = 4;
+  size_t padding =
+      std::numeric_limits<uint16_t>::max() / channels - w * channels;
+  TestFixture::test_blend(w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE,
+                          nullptr, padding);
 }
 
 TYPED_TEST(RemapS16Point5, CornerCases) {
@@ -709,6 +772,18 @@ TYPED_TEST(RemapS16Point5, CornerCases) {
     TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
                                    border_type, border_value, padding);
   }
+}
+
+TYPED_TEST(RemapS16Point5, CornerCases4ch) {
+  size_t src_w = 100;
+  size_t src_h = 8;
+  size_t dst_w = defaultWidth<TypeParam>();
+  size_t dst_h = defaultHeight();
+  size_t channels = 4;
+  size_t padding = 17;
+  TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
+                                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr,
+                                 padding);
 }
 
 TYPED_TEST(RemapS16Point5, NullPointer) {
@@ -819,17 +894,20 @@ TYPED_TEST(RemapS16Point5, UnsupportedBigStride) {
                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
-TYPED_TEST(RemapS16Point5, UnsupportedTwoChannels) {
+TYPED_TEST(RemapS16Point5, UnsupportedChannels) {
   const TypeParam src[1] = {};
   TypeParam dst[8];
   int16_t mapxy[16] = {};
   uint16_t mapfrac[8] = {};
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      remap_s16point5<TypeParam>()(
-          src, 1 * sizeof(TypeParam), 1, 1, dst, 8 * sizeof(TypeParam), 8, 1, 2,
-          mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            remap_s16point5<TypeParam>()(
+                src, 1, 1, 1, dst, 8, 8, 1, 2, mapxy, 4, mapfrac, 2,
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            remap_s16point5<TypeParam>()(
+                src, 1, 1, 1, dst, 8, 8, 1, 3, mapxy, 4, mapfrac, 2,
+                KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedBorderType) {
@@ -842,6 +920,33 @@ TYPED_TEST(RemapS16Point5, UnsupportedBorderType) {
             remap_s16point5<TypeParam>()(
                 src, 1 * sizeof(TypeParam), 1, 1, dst, 8 * sizeof(TypeParam), 8,
                 1, 1, mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REFLECT, src));
+}
+
+TYPED_TEST(RemapS16Point5, UnsupportedConstantBorder4ch) {
+  const TypeParam src[1] = {};
+  TypeParam dst[8];
+  int16_t mapxy[16] = {};
+  uint16_t mapfrac[8] = {};
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            remap_s16point5<TypeParam>()(src, sizeof(TypeParam), 1, 1, dst, 8,
+                                         8, 1, 4, mapxy, 4, mapfrac, 2,
+                                         KLEIDICV_BORDER_TYPE_CONSTANT, src));
+}
+
+TYPED_TEST(RemapS16Point5, UnsupportedBigStride4ch) {
+  const TypeParam src[1] = {};
+  TypeParam dst[8];
+  int16_t mapxy[16] = {};
+  uint16_t mapfrac[8] = {};
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      remap_s16point5<TypeParam>()(
+          src,
+          (std::numeric_limits<uint16_t>::max() / 4 + 1L) * sizeof(TypeParam),
+          1, 1, dst, 8, 8, 1, 4, mapxy, 4, mapfrac, 2,
+          KLEIDICV_BORDER_TYPE_CONSTANT, src));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedTooSmallImage) {

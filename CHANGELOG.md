@@ -17,13 +17,14 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Implementation of Rotate 90 degrees clockwise.
-- Remap implementations with
-  - Integer coordinates with nearest neighbour method
+- Remap implementations for u8 and u16 images
+  - Integer coordinates with nearest neighbour method (1 channel only)
+    - Replicated and constant borders
   - Fixed-point coordinates with linear interpolation
-  - Floating-point coordinates with nearest neighbour and linear interpolation
-  - Replicated and constant borders
-  - 1 channel source image for integer and fixed-points coordinates, 1 and 2 channels for floating-point coordinates
-  - u8 and u16 images
+    - 1 channel with Replicated and constant borders
+    - 4 channels with Replicated borders only
+  - Floating-point coordinates with nearest neighbour and linear interpolation (1 and 2 channels)
+    - Replicated and constant borders
 - WarpPerspective implementation
   - Nearest and Linear interpolation method, for 1-channel u8 input.
 

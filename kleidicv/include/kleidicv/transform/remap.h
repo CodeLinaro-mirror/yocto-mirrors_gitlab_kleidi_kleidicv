@@ -38,13 +38,15 @@ inline bool remap_s16point5_is_implemented(
     size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
   if constexpr (std::is_same<T, uint8_t>::value ||
                 std::is_same<T, uint16_t>::value) {
-    return (src_stride / sizeof(T) <= std::numeric_limits<uint16_t>::max() &&
+    return (src_stride / sizeof(T) <=
+                (std::numeric_limits<uint16_t>::max() / channels) &&
             dst_width >= 8 &&
             src_width <= std::numeric_limits<int16_t>::max() + 1 &&
             src_height <= std::numeric_limits<int16_t>::max() + 1 &&
             (border_type == KLEIDICV_BORDER_TYPE_REPLICATE ||
              border_type == KLEIDICV_BORDER_TYPE_CONSTANT) &&
-            channels == 1);
+            (channels == 1 ||
+             (channels == 4 && border_type == KLEIDICV_BORDER_TYPE_REPLICATE)));
   } else {
     return false;
   }

@@ -12,8 +12,8 @@
 
 const int kMaxHeight = 36, kMaxWidth = 32;
 
-template <class ScalarType>
-static cv::Mat get_source_mat(int format) {
+template <class ScalarType, int Channels>
+cv::Mat get_source_mat(int format) {
   auto generate_source = [&]() {
     cv::Mat m(kMaxHeight, kMaxWidth, format);
     const int64_t kMaxValue = std::numeric_limits<ScalarType>::max();
@@ -21,9 +21,13 @@ static cv::Mat get_source_mat(int format) {
       for (size_t column = 0; column < kMaxWidth; ++column) {
         // Create as many different differences between neighbouring pixels as
         // possible
-        size_t counter = row + column;
-        m.at<ScalarType>(row, column) =
-            (counter % 2) ? kMaxValue : (counter % (kMaxValue + 1));
+        cv::Vec<ScalarType, Channels> pixel_value;
+        for (size_t ch = 0; ch < Channels; ++ch) {
+          size_t counter = row + column + ch;
+          pixel_value[ch] =
+              (counter % 2) ? kMaxValue : (counter % (kMaxValue + 1));
+        }
+        m.at<cv::Vec<ScalarType, Channels>>(row, column) = pixel_value;
       }
     }
     return m;
@@ -36,7 +40,7 @@ static cv::Mat get_source_mat(int format) {
 template <class ScalarType, int Format, int Interpolation, int BorderMode,
           int BorderValue>
 cv::Mat exec_remap_s16(cv::Mat& mapxy_mat) {
-  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::Mat source_mat = get_source_mat<ScalarType, CV_MAT_CN(Format)>(Format);
   cv::Mat result(mapxy_mat.rows, mapxy_mat.cols, Format);
   cv::Mat empty;
   remap(source_mat, result, mapxy_mat, empty, Interpolation, BorderMode,
@@ -49,12 +53,13 @@ template <class ScalarType, int Format, int Interpolation, int BorderMode,
           int BorderValue>
 bool test_remap_s16(int index, RecreatedMessageQueue& request_queue,
                     RecreatedMessageQueue& reply_queue) {
-  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::Mat source_mat = get_source_mat<ScalarType, CV_MAT_CN(Format)>(Format);
   cv::RNG rng(0);
 
   for (size_t w = 5; w <= kMaxWidth; w += 3) {
     for (size_t h = 5; h <= kMaxHeight; h += 2) {
-      cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+      cv::Mat source_mat =
+          get_source_mat<ScalarType, CV_MAT_CN(Format)>(Format);
       cv::Mat mapxy_mat(w, h, CV_16SC2);
       rng.fill(mapxy_mat, cv::RNG::UNIFORM, -3, kMaxWidth + 3);
 
@@ -89,7 +94,7 @@ cv::Mat exec_remap_s16point5(cv::Mat& map_mat) {
   ushort* p_frac = map_mat.rowRange(height, map_mat.rows).ptr<ushort>();
   cv::Mat mapfrac_mat{height, map_mat.cols, CV_16UC1, p_frac};
   cv::Mat result(mapxy_mat.rows, mapxy_mat.cols, Format);
-  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::Mat source_mat = get_source_mat<ScalarType, CV_MAT_CN(Format)>(Format);
   remap(source_mat, result, mapxy_mat, mapfrac_mat, Interpolation, BorderMode,
         BorderValue / 1000.0);
   return result;
@@ -100,7 +105,7 @@ template <class ScalarType, int Format, int Interpolation, int BorderMode,
           int BorderValue>
 bool test_remap_s16point5(int index, RecreatedMessageQueue& request_queue,
                           RecreatedMessageQueue& reply_queue) {
-  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::Mat source_mat = get_source_mat<ScalarType, CV_MAT_CN(Format)>(Format);
   cv::RNG rng(0);
 
   for (int w = 5; w <= kMaxWidth; ++w) {
@@ -138,7 +143,7 @@ bool test_remap_s16point5(int index, RecreatedMessageQueue& request_queue,
 template <class ScalarType, int Format, int Interpolation, int BorderMode,
           int BorderValue>
 cv::Mat exec_remap_f32(cv::Mat& mapxy_mat) {
-  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::Mat source_mat = get_source_mat<ScalarType, CV_MAT_CN(Format)>(Format);
   cv::Mat result(mapxy_mat.rows, mapxy_mat.cols, Format);
 
   cv::Mat mapx_mat = mapxy_mat.rowRange(0, mapxy_mat.rows / 2);
@@ -154,7 +159,7 @@ template <class ScalarType, int Format, int Interpolation, int BorderMode,
           int BorderValue>
 bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
                     RecreatedMessageQueue& reply_queue) {
-  cv::Mat source_mat = get_source_mat<ScalarType>(Format);
+  cv::Mat source_mat = get_source_mat<ScalarType, CV_MAT_CN(Format)>(Format);
   cv::RNG rng(0);
 
   for (size_t w = 5; w <= kMaxWidth * 2; w += 3) {
@@ -250,7 +255,9 @@ std::vector<test>& remap_tests_get() {
     TEST("RemapS16 uint16 Constant", (test_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
 
     TEST("RemapS16Point5 uint8 Replicate", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapS16Point5 uint8 Replicate 4ch", (test_remap_s16point5<uint8_t, CV_8UC4, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint8_t, CV_8UC4, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint16 Replicate", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapS16Point5 uint16 Replicate 4ch", (test_remap_s16point5<uint16_t, CV_16UC4, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_s16point5<uint16_t, CV_16UC4, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapS16Point5 uint8 Constant", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
     TEST("RemapS16Point5 uint16 Constant", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
 

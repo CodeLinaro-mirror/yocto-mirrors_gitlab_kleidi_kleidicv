@@ -722,9 +722,21 @@ TEST_P(Thread, remap_s16point5_u8_border_replicate) {
                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
 }
 
+TEST_P(Thread, remap_s16point5_u8_border_replicate_4ch) {
+  check_remap_s16point5<uint8_t>(kleidicv_remap_s16point5_u8,
+                                 kleidicv_thread_remap_s16point5_u8, 4,
+                                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
+}
+
 TEST_P(Thread, remap_s16point5_u16_border_replicate) {
   check_remap_s16point5<uint16_t>(kleidicv_remap_s16point5_u16,
                                   kleidicv_thread_remap_s16point5_u16, 1,
+                                  KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
+}
+
+TEST_P(Thread, remap_s16point5_u16_border_replicate_4ch) {
+  check_remap_s16point5<uint16_t>(kleidicv_remap_s16point5_u16,
+                                  kleidicv_thread_remap_s16point5_u16, 4,
                                   KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
 }
 
