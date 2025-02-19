@@ -602,7 +602,8 @@ inline uint8x16_t load_4px_4ch(Rows<const uint8_t> src_rows,
 }
 
 inline void store_pixels_u8_4ch(uint8x16x2_t res, Columns<uint8_t> dst) {
-  vst1q_u8_x2(&dst[0], res);
+  using ScalarType = uint8_t;
+  neon::VecTraits<ScalarType>::store(res, &dst[0]);
 }
 
 inline uint16x8_t load_2px_4ch(Rows<const uint16_t> src_rows,
@@ -612,7 +613,8 @@ inline uint16x8_t load_2px_4ch(Rows<const uint16_t> src_rows,
 }
 
 inline void store_pixels_u16_4ch(uint16x8x4_t res, Columns<uint16_t> dst) {
-  vst1q_u16_x4(&dst[0], res);
+  using ScalarType = uint16_t;
+  neon::VecTraits<ScalarType>::store(res, &dst[0]);
 }
 
 // Replicate border specific functions

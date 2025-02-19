@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -15,7 +15,9 @@ class GrayToRGB final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  GrayToRGB() : indices_{vld1q_u8_x3(kGrayToRGBTableIndices)} {}
+  GrayToRGB() : indices_{} {
+    VecTraits::load(kGrayToRGBTableIndices, indices_);
+  }
 #else
   GrayToRGB() = default;
 #endif
@@ -31,7 +33,7 @@ class GrayToRGB final : public UnrollTwice {
     dst_vect.val[0] = vqtbl1q_u8(src_vect, indices_.val[0]);
     dst_vect.val[1] = vqtbl1q_u8(src_vect, indices_.val[1]);
     dst_vect.val[2] = vqtbl1q_u8(src_vect, indices_.val[2]);
-    vst1q_u8_x3(dst, dst_vect);
+    VecTraits::store(dst_vect, dst);
 #endif
   }
 
@@ -41,11 +43,11 @@ class GrayToRGB final : public UnrollTwice {
 
  private:
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+
   static constexpr uint8_t kGrayToRGBTableIndices[48] = {
       0,  0,  0,  1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  5,
       5,  5,  6,  6,  6,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10,
       10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15};
-
   uint8x16x3_t indices_;
 #endif
 };  // end of class GrayToRGB<ScalarType>
@@ -60,7 +62,8 @@ class GrayToRGBA final : public UnrollTwice {
   GrayToRGBA() : alpha_{vdupq_n_u8(0xff)} {}
 #else
   // NOLINTBEGIN(hicpp-member-init)
-  GrayToRGBA() : indices_{vld1q_u8_x4(kGrayToRGBATableIndices)} {
+  GrayToRGBA() : indices_{} {
+    VecTraits::load(kGrayToRGBATableIndices, indices_);
     src_and_alpha_.val[1] = vdupq_n_u8(0xff);
   }
   // NOLINTEND(hicpp-member-init)
@@ -80,7 +83,8 @@ class GrayToRGBA final : public UnrollTwice {
     dst_vect.val[1] = vqtbl2q_u8(src_and_alpha_, indices_.val[1]);
     dst_vect.val[2] = vqtbl2q_u8(src_and_alpha_, indices_.val[2]);
     dst_vect.val[3] = vqtbl2q_u8(src_and_alpha_, indices_.val[3]);
-    vst1q_u8_x4(dst, dst_vect);
+    VecTraits::store(dst_vect, dst);
+
 #endif
   }
 
@@ -101,6 +105,7 @@ class GrayToRGBA final : public UnrollTwice {
       4,  4,  4,  16, 5,  5,  5,  16, 6,  6,  6,  16, 7,  7,  7,  16,
       8,  8,  8,  16, 9,  9,  9,  16, 10, 10, 10, 16, 11, 11, 11, 16,
       12, 12, 12, 16, 13, 13, 13, 16, 14, 14, 14, 16, 15, 15, 15, 16};
+
 #endif
 };  // end of class GrayToRGBA<ScalarType>
 

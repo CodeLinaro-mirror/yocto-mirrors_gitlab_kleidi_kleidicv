@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -50,6 +50,12 @@ option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector 
 option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
+
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11 OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") 
+  set(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS ON)
+else()
+  set(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS OFF)
+endif()
 
 if(KLEIDICV_ENABLE_SME2 AND NOT KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS)
   set(KLEIDICV_ALWAYS_ENABLE_SME2 ON)

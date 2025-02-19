@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -173,6 +173,228 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   // Maximum number of lanes in a vector.
   static constexpr size_t max_num_lanes() { return num_lanes(); }
 
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
+
+ private:
+  static inline int8x16x2_t vld1q_x2(const int8_t *src) {
+    return vld1q_s8_x2(src);
+  }
+
+  static inline uint8x16x2_t vld1q_x2(const uint8_t *src) {
+    return vld1q_u8_x2(src);
+  }
+
+  static inline int16x8x2_t vld1q_x2(const int16_t *src) {
+    return vld1q_s16_x2(src);
+  }
+
+  static inline uint16x8x2_t vld1q_x2(const uint16_t *src) {
+    return vld1q_u16_x2(src);
+  }
+
+  static inline int32x4x2_t vld1q_x2(const int32_t *src) {
+    return vld1q_s32_x2(src);
+  }
+
+  static inline uint32x4x2_t vld1q_x2(const uint32_t *src) {
+    return vld1q_u32_x2(src);
+  }
+
+  static inline int64x2x2_t vld1q_x2(const int64_t *src) {
+    return vld1q_s64_x2(src);
+  }
+
+  static inline uint64x2x2_t vld1q_x2(const uint64_t *src) {
+    return vld1q_u64_x2(src);
+  }
+
+  static inline float32x4x2_t vld1q_x2(const float32_t *src) {
+    return vld1q_f32_x2(src);
+  }
+
+  static inline int8x16x3_t vld1q_x3(const int8_t *src) {
+    return vld1q_s8_x3(src);
+  }
+
+  static inline uint8x16x3_t vld1q_x3(const uint8_t *src) {
+    return vld1q_u8_x3(src);
+  }
+
+  static inline int16x8x3_t vld1q_x3(const int16_t *src) {
+    return vld1q_s16_x3(src);
+  }
+
+  static inline uint16x8x3_t vld1q_x3(const uint16_t *src) {
+    return vld1q_u16_x3(src);
+  }
+
+  static inline int32x4x3_t vld1q_x3(const int32_t *src) {
+    return vld1q_s32_x3(src);
+  }
+
+  static inline uint32x4x3_t vld1q_x3(const uint32_t *src) {
+    return vld1q_u32_x3(src);
+  }
+
+  static inline int64x2x3_t vld1q_x3(const int64_t *src) {
+    return vld1q_s64_x3(src);
+  }
+
+  static inline uint64x2x3_t vld1q_x3(const uint64_t *src) {
+    return vld1q_u64_x3(src);
+  }
+
+  static inline float32x4x3_t vld1q_x3(const float32_t *src) {
+    return vld1q_f32_x3(src);
+  }
+
+  static inline int8x16x4_t vld1q_x4(const int8_t *src) {
+    return vld1q_s8_x4(src);
+  }
+
+  static inline uint8x16x4_t vld1q_x4(const uint8_t *src) {
+    return vld1q_u8_x4(src);
+  }
+
+  static inline int16x8x4_t vld1q_x4(const int16_t *src) {
+    return vld1q_s16_x4(src);
+  }
+
+  static inline uint16x8x4_t vld1q_x4(const uint16_t *src) {
+    return vld1q_u16_x4(src);
+  }
+
+  static inline int32x4x4_t vld1q_x4(const int32_t *src) {
+    return vld1q_s32_x4(src);
+  }
+
+  static inline uint32x4x4_t vld1q_x4(const uint32_t *src) {
+    return vld1q_u32_x4(src);
+  }
+
+  static inline int64x2x4_t vld1q_x4(const int64_t *src) {
+    return vld1q_s64_x4(src);
+  }
+
+  static inline uint64x2x4_t vld1q_x4(const uint64_t *src) {
+    return vld1q_u64_x4(src);
+  }
+
+  static inline float32x4x4_t vld1q_x4(const float32_t *src) {
+    return vld1q_f32_x4(src);
+  }
+
+  static inline void vst1q_x2(int8_t *dst, int8x16x2_t vec) {
+    vst1q_s8_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(uint8_t *dst, uint8x16x2_t vec) {
+    vst1q_u8_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(int16_t *dst, int16x8x2_t vec) {
+    vst1q_s16_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(uint16_t *dst, uint16x8x2_t vec) {
+    vst1q_u16_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(int32_t *dst, int32x4x2_t vec) {
+    vst1q_s32_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(uint32_t *dst, uint32x4x2_t vec) {
+    vst1q_u32_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(int64_t *dst, int64x2x2_t vec) {
+    vst1q_s64_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(uint64_t *dst, uint64x2x2_t vec) {
+    vst1q_u64_x2(dst, vec);
+  }
+
+  static inline void vst1q_x2(float32_t *dst, float32x4x2_t vec) {
+    vst1q_f32_x2(dst, vec);
+  }
+
+  static inline void vst1q_x3(int8_t *dst, int8x16x3_t vec) {
+    vst1q_s8_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(uint8_t *dst, uint8x16x3_t vec) {
+    vst1q_u8_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(int16_t *dst, int16x8x3_t vec) {
+    vst1q_s16_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(uint16_t *dst, uint16x8x3_t vec) {
+    vst1q_u16_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(int32_t *dst, int32x4x3_t vec) {
+    vst1q_s32_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(uint32_t *dst, uint32x4x3_t vec) {
+    vst1q_u32_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(int64_t *dst, int64x2x3_t vec) {
+    vst1q_s64_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(uint64_t *dst, uint64x2x3_t vec) {
+    vst1q_u64_x3(dst, vec);
+  }
+
+  static inline void vst1q_x3(float32_t *dst, float32x4x3_t vec) {
+    vst1q_f32_x3(dst, vec);
+  }
+
+  static inline void vst1q_x4(int8_t *dst, int8x16x4_t vec) {
+    vst1q_s8_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(uint8_t *dst, uint8x16x4_t vec) {
+    vst1q_u8_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(int16_t *dst, int16x8x4_t vec) {
+    vst1q_s16_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(uint16_t *dst, uint16x8x4_t vec) {
+    vst1q_u16_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(int32_t *dst, int32x4x4_t vec) {
+    vst1q_s32_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(uint32_t *dst, uint32x4x4_t vec) {
+    vst1q_u32_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(int64_t *dst, int64x2x4_t vec) {
+    vst1q_s64_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(uint64_t *dst, uint64x2x4_t vec) {
+    vst1q_u64_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(float32_t *dst, float32x4x4_t vec) {
+    vst1q_f32_x4(dst, vec);
+  }
+
+ public:
+#endif
+
   // Loads a single vector from 'src'.
   static inline void load(const ScalarType *src, VectorType &vec) {
     vec = vld1q(&src[0]);
@@ -180,17 +402,32 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
 
   // Loads two consecutive vectors from 'src'.
   static inline void load(const ScalarType *src, Vector2Type &vec) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
     vec = vld1q_x2(&src[0]);
+#else
+    vec = {vld1q(&src[0]), vld1q(&src[0] + num_lanes())};
+#endif
   }
 
   // Loads three consecutive vectors from 'src'.
   static inline void load(const ScalarType *src, Vector3Type &vec) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
     vec = vld1q_x3(&src[0]);
+#else
+    vec = {vld1q(&src[0]), vld1q(&src[0] + num_lanes()),
+           vld1q(&src[0] + (2 * num_lanes()))};
+#endif
   }
 
   // Loads four consecutive vectors from 'src'.
   static inline void load(const ScalarType *src, Vector4Type &vec) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
     vec = vld1q_x4(&src[0]);
+#else
+    vec = {vld1q(&src[0]), vld1q(&src[0] + num_lanes()),
+           vld1q(&src[0] + (2 * num_lanes())),
+           vld1q(&src[0] + (3 * num_lanes()))};
+#endif
   }
 
   // Loads two consecutive vectors from 'src'.
@@ -203,22 +440,47 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   // Loads 2x2 consecutive vectors from 'src'.
   static inline void load_consecutive(const ScalarType *src, Vector2Type &vec_0,
                                       Vector2Type &vec_1) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
     vec_0 = vld1q_x2(&src[0]);
     vec_1 = vld1q_x2(&src[num_lanes() * 2]);
+#else
+    vec_0 = {vld1q(&src[0]), vld1q(&src[0] + num_lanes())};
+    vec_1 = {vld1q(&src[num_lanes() * 2]),
+             vld1q(&src[num_lanes() * 2] + num_lanes())};
+#endif
   }
 
   // Loads 2x3 consecutive vectors from 'src'.
   static inline void load_consecutive(const ScalarType *src, Vector3Type &vec_0,
                                       Vector3Type &vec_1) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
     vec_0 = vld1q_x3(&src[0]);
     vec_1 = vld1q_x3(&src[num_lanes() * 3]);
+#else
+    vec_0 = {vld1q(&src[0]), vld1q(&src[0] + num_lanes()),
+             vld1q(&src[0] + (2 * num_lanes()))};
+    vec_1 = {vld1q(&src[num_lanes() * 3]),
+             vld1q(&src[num_lanes() * 3] + num_lanes()),
+             vld1q(&src[num_lanes() * 3] + (2 * num_lanes()))};
+#endif
   }
 
   // Loads 2x4 consecutive vectors from 'src'.
   static inline void load_consecutive(const ScalarType *src, Vector4Type &vec_0,
                                       Vector4Type &vec_1) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
     vec_0 = vld1q_x4(&src[0]);
     vec_1 = vld1q_x4(&src[num_lanes() * 4]);
+
+#else
+    vec_0 = {vld1q(&src[0]), vld1q(&src[0] + num_lanes()),
+             vld1q(&src[0] + (2 * num_lanes())),
+             vld1q(&src[0] + (3 * num_lanes()))};
+    vec_1 = {vld1q(&src[num_lanes() * 4]),
+             vld1q(&src[num_lanes() * 4] + num_lanes()),
+             vld1q(&src[num_lanes() * 4] + (2 * num_lanes())),
+             vld1q(&src[num_lanes() * 4] + (3 * num_lanes()))};
+#endif
   }
 
   // Stores a single vector to 'dst'.
@@ -228,7 +490,35 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
 
   // Stores two consecutive vectors to 'dst'.
   static inline void store(Vector2Type vec, ScalarType *dst) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
     vst1q_x2(&dst[0], vec);
+#else
+    vst1q(&dst[0], vec.val[0]);
+    vst1q(&dst[0] + num_lanes(), vec.val[1]);
+#endif
+  }
+
+  // Stores three consecutive vectors to 'dst'.
+  static inline void store(Vector3Type vec, ScalarType *dst) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
+    vst1q_x3(&dst[0], vec);
+#else
+    vst1q(&dst[0], vec.val[0]);
+    vst1q(&dst[0] + num_lanes(), vec.val[1]);
+    vst1q(&dst[0] + (2 * num_lanes()), vec.val[2]);
+#endif
+  }
+
+  // Stores four consecutive vectors to 'dst'.
+  static inline void store(Vector4Type vec, ScalarType *dst) {
+#if KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
+    vst1q_x4(&dst[0], vec);
+#else
+    vst1q(&dst[0], vec.val[0]);
+    vst1q(&dst[0] + num_lanes(), vec.val[1]);
+    vst1q(&dst[0] + (2 * num_lanes()), vec.val[2]);
+    vst1q(&dst[0] + (3 * num_lanes()), vec.val[3]);
+#endif
   }
 
   // Stores two consecutive vectors to 'dst'.

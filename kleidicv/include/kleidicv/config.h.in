@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -20,6 +20,8 @@
 #cmakedefine01 KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
 #cmakedefine01 KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV
+
+#cmakedefine01 KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
 
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
 #ifndef KLEIDICV_TARGET_NEON

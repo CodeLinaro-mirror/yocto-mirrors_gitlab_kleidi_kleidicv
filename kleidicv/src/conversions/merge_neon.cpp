@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -41,11 +41,12 @@ class Merge2 final : public UnrollTwice {
     dst_vect.val[0] = src_a;
     dst_vect.val[1] = src_b;
     vst2q(&dst[0], dst_vect);
-#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+#else  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     Vector2Type dst_vect;
     dst_vect.val[0] = vzip1q(src_a, src_b);
     dst_vect.val[1] = vzip2q(src_a, src_b);
-    vst1q_x2(&dst[0], dst_vect);
+    VecTraits::store(dst_vect, &dst[0]);
+
 #endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   }
 
@@ -68,26 +69,30 @@ class Merge3 final : public UnrollTwice {
   using Vector3Type = typename VecTraits::Vector3Type;
 
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  Merge3() : table_indices_{vld1q_u8_x3(lookup_table(ScalarType()))} {}
+
+  Merge3() : table_indices_{} {
+    neon::VecTraits<uint8_t>::load(lookup_table(ScalarType()), table_indices_);
+  }
+
 #endif
 
   void vector_path(VectorType src_a, VectorType src_b, VectorType src_c,
                    ScalarType *dst) {
-#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     Vector3Type dst_vect;
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     dst_vect.val[0] = src_a;
     dst_vect.val[1] = src_b;
     dst_vect.val[2] = src_c;
     vst3q(&dst[0], dst_vect);
 #else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-    uint8x16x3_t src_vect, dst_vect;
+    uint8x16x3_t src_vect;
     src_vect.val[0] = vreinterpretq_u8(src_a);
     src_vect.val[1] = vreinterpretq_u8(src_b);
     src_vect.val[2] = vreinterpretq_u8(src_c);
     dst_vect.val[0] = vqtbl3q_u8(src_vect, table_indices_.val[0]);
     dst_vect.val[1] = vqtbl3q_u8(src_vect, table_indices_.val[1]);
     dst_vect.val[2] = vqtbl3q_u8(src_vect, table_indices_.val[2]);
-    vst1q_u8_x3(reinterpret_cast<uint8_t *>(&dst[0]), dst_vect);
+    VecTraits::store(dst_vect, &dst[0]);
 #endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   }
 
@@ -100,21 +105,20 @@ class Merge3 final : public UnrollTwice {
 
  private:
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  static const uint8_t *lookup_table(uint8_t) {
+  static uint8_t *lookup_table(uint8_t) {
     // clang-format off
-    static constexpr uint8_t kIndices[48] = {
+    static  uint8_t kIndices[48] = {
        0, 16, 32,  1, 17, 33,  2, 18, 34,  3, 19, 35,  4, 20, 36,  5,
       21, 37,  6, 22, 38,  7, 23, 39,  8, 24, 40,  9, 25, 41, 10, 26,
       42, 11, 27, 43, 12, 28, 44, 13, 29, 45, 14, 30, 46, 15, 31, 47,
     };
-    // clang-format on
     return &kIndices[0];
   }
 
   // Lookup table for 16-bit inputs.
-  static const uint8_t *lookup_table(uint16_t) {
+  static uint8_t *lookup_table(uint16_t) {
     // clang-format off
-    static constexpr uint8_t kIndices[48] = {
+    static uint8_t kIndices[48] = {
        0,  1, 16, 17, 32, 33,  2,  3, 18, 19, 34, 35,  4,  5, 20, 21,
       36, 37,  6,  7, 22, 23, 38, 39,  8,  9, 24, 25, 40, 41, 10, 11,
       26, 27, 42, 43, 12, 13, 28, 29, 44, 45, 14, 15, 30, 31, 46, 47,
@@ -215,7 +219,8 @@ class Merge3<uint64_t> final : public UnrollTwice {
     dst_vect.val[1] = src_c;
     dst_vect.val[1][1] = src_a[1];
     dst_vect.val[2] = vzip2q_u64(src_b, src_c);
-    vst1q_u64_x3(&dst[0], dst_vect);
+
+    VecTraits::store(dst_vect, &dst[0]);
   }
 
   void scalar_path(const ScalarType *src_a, const ScalarType *src_b,
@@ -273,7 +278,7 @@ class Merge4 final : public UnrollTwice {
     dst_vect.val[2] = src_c;
     dst_vect.val[3] = src_d;
     vst4q(&dst[0], dst_vect);
-#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+#else  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     auto zip1_a_b = double_width(vzip1q(src_a, src_b));
     auto zip1_c_d = double_width(vzip1q(src_c, src_d));
     auto zip2_a_b = double_width(vzip2q(src_a, src_b));
@@ -287,7 +292,9 @@ class Merge4 final : public UnrollTwice {
     dst_vect.val[1] = vzip2q(zip1_a_b, zip1_c_d);
     dst_vect.val[2] = vzip1q(zip2_a_b, zip2_c_d);
     dst_vect.val[3] = vzip2q(zip2_a_b, zip2_c_d);
-    vst1q_x4(reinterpret_cast<DoubleScalarType *>(&dst[0]), dst_vect);
+    neon::VecTraits<DoubleScalarType>::store(
+        dst_vect, reinterpret_cast<DoubleScalarType *>(&dst[0]));
+
 #endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   }
 
@@ -346,7 +353,7 @@ class Merge4<uint64_t> final : public UnrollTwice {
     dst_vect.val[1] = vzip1q(src_c, src_d);
     dst_vect.val[2] = vzip2q(src_a, src_b);
     dst_vect.val[3] = vzip2q(src_c, src_d);
-    vst1q_x4(&dst[0], dst_vect);
+    VecTraits::store(dst_vect, &dst[0]);
   }
 
   void scalar_path(const ScalarType *src_a, const ScalarType *src_b,

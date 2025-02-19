@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,6 +6,7 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/operations.h"
 #include "kleidicv/resize/resize_linear.h"
 
 namespace kleidicv::neon {
@@ -887,38 +888,43 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32(
           lerp2d_vector(coeffs_p0, a, coeffs_q0, b, coeffs_r0, c, coeffs_s0, d);
       dst_0.val[1] =
           lerp2d_vector(coeffs_p1, a, coeffs_q1, b, coeffs_r1, c, coeffs_s1, d);
-      vst1q_x2(dst_row0, dst_0);
 
+      neon::VecTraits<float>::store(dst_0, dst_row0);
       float32x4x2_t dst_7;
       dst_7.val[0] =
           lerp2d_vector(coeffs_r0, a, coeffs_s0, b, coeffs_p0, c, coeffs_q0, d);
       dst_7.val[1] =
           lerp2d_vector(coeffs_r1, a, coeffs_s1, b, coeffs_p1, c, coeffs_q1, d);
-      vst1q_x2(dst_row7, dst_7);
 
+      neon::VecTraits<float>::store(dst_7, dst_row7);
       float32x4_t delta07_0 = vsubq_f32(dst_7.val[0], dst_0.val[0]);
       float32x4_t delta07_1 = vsubq_f32(dst_7.val[1], dst_0.val[1]);
 
       float32x4x2_t dst;
       dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 1.0 / 7, delta07_0);
       dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 1.0 / 7, delta07_1);
-      vst1q_x2(dst_row1, dst);
+
+      neon::VecTraits<float>::store(dst, dst_row1);
       dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 2.0 / 7, delta07_0);
       dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 2.0 / 7, delta07_1);
-      vst1q_x2(dst_row2, dst);
+
+      neon::VecTraits<float>::store(dst, dst_row2);
       dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 3.0 / 7, delta07_0);
       dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 3.0 / 7, delta07_1);
-      vst1q_x2(dst_row3, dst);
+
+      neon::VecTraits<float>::store(dst, dst_row3);
       dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 4.0 / 7, delta07_0);
       dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 4.0 / 7, delta07_1);
-      vst1q_x2(dst_row4, dst);
+
+      neon::VecTraits<float>::store(dst, dst_row4);
       dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 5.0 / 7, delta07_0);
       dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 5.0 / 7, delta07_1);
-      vst1q_x2(dst_row5, dst);
+
+      neon::VecTraits<float>::store(dst, dst_row5);
       dst.val[0] = lerp1d_vector_n2(dst_0.val[0], 6.0 / 7, delta07_0);
       dst.val[1] = lerp1d_vector_n2(dst_0.val[1], 6.0 / 7, delta07_1);
-      vst1q_x2(dst_row6, dst);
 
+      neon::VecTraits<float>::store(dst, dst_row6);
       dst_row0 += 8;
       dst_row1 += 8;
       dst_row2 += 8;

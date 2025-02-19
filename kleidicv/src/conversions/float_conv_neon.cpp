@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -124,13 +124,14 @@ s8_to_f32(const int8_t* src, size_t src_stride, float* dst, size_t dst_stride,
       int32x4_t c = vreinterpretq_s32_s8(vqtbl1q_s8(input, index2));
       int32x4_t d = vreinterpretq_s32_s8(vqtbl1q_s8(input, index3));
       // Convert to float and divide by 2^24.
+
       float32x4x4_t output = {
           vcvtq_n_f32_s32(a, 24),
           vcvtq_n_f32_s32(b, 24),
           vcvtq_n_f32_s32(c, 24),
           vcvtq_n_f32_s32(d, 24),
       };
-      vst1q_f32_x4(dst + x, output);
+      neon::VecTraits<float>::store(output, dst + x);
     }
     for (; x != width; ++x) {
       disable_loop_vectorization();
@@ -169,13 +170,14 @@ u8_to_f32(const uint8_t* src, size_t src_stride, float* dst, size_t dst_stride,
       uint32x4_t b = vreinterpretq_u32_u8(vqtbl1q_u8(input, index1));
       uint32x4_t c = vreinterpretq_u32_u8(vqtbl1q_u8(input, index2));
       uint32x4_t d = vreinterpretq_u32_u8(vqtbl1q_u8(input, index3));
+
       float32x4x4_t output = {
           vcvtq_f32_u32(a),
           vcvtq_f32_u32(b),
           vcvtq_f32_u32(c),
           vcvtq_f32_u32(d),
       };
-      vst1q_f32_x4(dst + x, output);
+      neon::VecTraits<float>::store(output, dst + x);
     }
     for (; x != width; ++x) {
       disable_loop_vectorization();

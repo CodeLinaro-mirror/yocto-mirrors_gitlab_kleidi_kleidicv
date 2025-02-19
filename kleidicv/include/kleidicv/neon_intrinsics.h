@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -375,36 +375,6 @@ static inline int64x2x4_t   vld4q(const int64_t   *src) { return vld4q_s64(src);
 static inline uint64x2x4_t  vld4q(const uint64_t  *src) { return vld4q_u64(src); }
 static inline float32x4x4_t vld4q(const float32_t *src) { return vld4q_f32(src); }
 
-static inline int8x16x2_t   vld1q_x2(const int8_t    *src) { return  vld1q_s8_x2(src); }
-static inline uint8x16x2_t  vld1q_x2(const uint8_t   *src) { return  vld1q_u8_x2(src); }
-static inline int16x8x2_t   vld1q_x2(const int16_t   *src) { return vld1q_s16_x2(src); }
-static inline uint16x8x2_t  vld1q_x2(const uint16_t  *src) { return vld1q_u16_x2(src); }
-static inline int32x4x2_t   vld1q_x2(const int32_t   *src) { return vld1q_s32_x2(src); }
-static inline uint32x4x2_t  vld1q_x2(const uint32_t  *src) { return vld1q_u32_x2(src); }
-static inline int64x2x2_t   vld1q_x2(const int64_t   *src) { return vld1q_s64_x2(src); }
-static inline uint64x2x2_t  vld1q_x2(const uint64_t  *src) { return vld1q_u64_x2(src); }
-static inline float32x4x2_t vld1q_x2(const float32_t *src) { return vld1q_f32_x2(src); }
-
-static inline int8x16x3_t   vld1q_x3(const int8_t    *src) { return  vld1q_s8_x3(src); }
-static inline uint8x16x3_t  vld1q_x3(const uint8_t   *src) { return  vld1q_u8_x3(src); }
-static inline int16x8x3_t   vld1q_x3(const int16_t   *src) { return vld1q_s16_x3(src); }
-static inline uint16x8x3_t  vld1q_x3(const uint16_t  *src) { return vld1q_u16_x3(src); }
-static inline int32x4x3_t   vld1q_x3(const int32_t   *src) { return vld1q_s32_x3(src); }
-static inline uint32x4x3_t  vld1q_x3(const uint32_t  *src) { return vld1q_u32_x3(src); }
-static inline int64x2x3_t   vld1q_x3(const int64_t   *src) { return vld1q_s64_x3(src); }
-static inline uint64x2x3_t  vld1q_x3(const uint64_t  *src) { return vld1q_u64_x3(src); }
-static inline float32x4x3_t vld1q_x3(const float32_t *src) { return vld1q_f32_x3(src); }
-
-static inline int8x16x4_t   vld1q_x4(const int8_t    *src) { return  vld1q_s8_x4(src); }
-static inline uint8x16x4_t  vld1q_x4(const uint8_t   *src) { return  vld1q_u8_x4(src); }
-static inline int16x8x4_t   vld1q_x4(const int16_t   *src) { return vld1q_s16_x4(src); }
-static inline uint16x8x4_t  vld1q_x4(const uint16_t  *src) { return vld1q_u16_x4(src); }
-static inline int32x4x4_t   vld1q_x4(const int32_t   *src) { return vld1q_s32_x4(src); }
-static inline uint32x4x4_t  vld1q_x4(const uint32_t  *src) { return vld1q_u32_x4(src); }
-static inline int64x2x4_t   vld1q_x4(const int64_t   *src) { return vld1q_s64_x4(src); }
-static inline uint64x2x4_t  vld1q_x4(const uint64_t  *src) { return vld1q_u64_x4(src); }
-static inline float32x4x4_t vld1q_x4(const float32_t *src) { return vld1q_f32_x4(src); }
-
 // -----------------------------------------------------------------------------
 // NEON store operations
 // -----------------------------------------------------------------------------
@@ -457,26 +427,6 @@ static inline void vst4q(uint32_t  *dst, uint32x4x4_t  vec) { vst4q_u32(dst, vec
 static inline void vst4q(int64_t   *dst, int64x2x4_t   vec) { vst4q_s64(dst, vec); }
 static inline void vst4q(uint64_t  *dst, uint64x2x4_t  vec) { vst4q_u64(dst, vec); }
 static inline void vst4q(float32_t *dst, float32x4x4_t vec) { vst4q_f32(dst, vec); }
-
-static inline void vst1q_x2(int8_t    *dst, int8x16x2_t   vec) { vst1q_s8_x2(dst, vec); }
-static inline void vst1q_x2(uint8_t   *dst, uint8x16x2_t  vec) { vst1q_u8_x2(dst, vec); }
-static inline void vst1q_x2(int16_t   *dst, int16x8x2_t   vec) { vst1q_s16_x2(dst, vec); }
-static inline void vst1q_x2(uint16_t  *dst, uint16x8x2_t  vec) { vst1q_u16_x2(dst, vec); }
-static inline void vst1q_x2(int32_t   *dst, int32x4x2_t   vec) { vst1q_s32_x2(dst, vec); }
-static inline void vst1q_x2(uint32_t  *dst, uint32x4x2_t  vec) { vst1q_u32_x2(dst, vec); }
-static inline void vst1q_x2(int64_t   *dst, int64x2x2_t   vec) { vst1q_s64_x2(dst, vec); }
-static inline void vst1q_x2(uint64_t  *dst, uint64x2x2_t  vec) { vst1q_u64_x2(dst, vec); }
-static inline void vst1q_x2(float32_t *dst, float32x4x2_t vec) { vst1q_f32_x2(dst, vec); }
-
-static inline void vst1q_x4(int8_t    *dst, int8x16x4_t   vec) { vst1q_s8_x4(dst, vec); }
-static inline void vst1q_x4(uint8_t   *dst, uint8x16x4_t  vec) { vst1q_u8_x4(dst, vec); }
-static inline void vst1q_x4(int16_t   *dst, int16x8x4_t   vec) { vst1q_s16_x4(dst, vec); }
-static inline void vst1q_x4(uint16_t  *dst, uint16x8x4_t  vec) { vst1q_u16_x4(dst, vec); }
-static inline void vst1q_x4(int32_t   *dst, int32x4x4_t   vec) { vst1q_s32_x4(dst, vec); }
-static inline void vst1q_x4(uint32_t  *dst, uint32x4x4_t  vec) { vst1q_u32_x4(dst, vec); }
-static inline void vst1q_x4(int64_t   *dst, int64x2x4_t   vec) { vst1q_s64_x4(dst, vec); }
-static inline void vst1q_x4(uint64_t  *dst, uint64x2x4_t  vec) { vst1q_u64_x4(dst, vec); }
-static inline void vst1q_x4(float32_t *dst, float32x4x4_t vec) { vst1q_f32_x4(dst, vec); }
 
 // -----------------------------------------------------------------------------
 // vreinterpret*

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -28,8 +28,11 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce, public TryToAvoidTailLoop {
                             128 * (kUVWeights[1] + kUVWeights[2]))},
         b_base_{vdupq_n_s32(static_cast<int32_t>(1 << (kWeightScale - 1)) -
                             128 * kUVWeights[3])},
-        de_interleave_indices_{vld1q_s8_x4(kDeInterleaveTableIndices)},
-        is_nv21_(is_nv21) {}
+        de_interleave_indices_{},
+        is_nv21_(is_nv21) {
+    neon::VecTraits<int8_t>::load(kDeInterleaveTableIndices,
+                                  de_interleave_indices_);
+  }
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() {
@@ -266,8 +269,8 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce, public TryToAvoidTailLoop {
   int8x16x4_t de_interleave_indices_;
 
   const bool is_nv21_;
-
   // clang-format off
+
   static constexpr int8_t kDeInterleaveTableIndices[64] = {
       /* low and even */
       0, -1, -1, -1,  2, -1, -1, -1,  4, -1, -1, -1,  6, -1, -1, -1,
@@ -278,6 +281,7 @@ class YUVSpToRGBxOrBGRx final : public UnrollOnce, public TryToAvoidTailLoop {
       /* high and odd */
       9, -1, -1, -1, 11, -1, -1, -1, 13, -1, -1, -1, 15, -1, -1, -1,
   };
+
   // clang-format on
 };  // end of class YUVSpToRGBxOrBGRx<bool, bool>
 

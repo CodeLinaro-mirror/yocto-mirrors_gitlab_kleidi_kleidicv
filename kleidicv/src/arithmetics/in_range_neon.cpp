@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -58,7 +58,9 @@ class InRange<float> {
                    Columns<uint8_t> dst) {
     LoopUnroll{width, SrcVecTraits::num_lanes()}
         .unroll_n_times<4>([&](size_t step) {
-          SrcVector4Type src_vector = vld1q_f32_x4(&src[0]);
+          SrcVector4Type src_vector;
+          SrcVecTraits::load(&src[0], src_vector);
+
           DstVectorType result_vector = vector_path(src_vector);
           vst1q(&dst[0], result_vector);
           src += ptrdiff_t(step);

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -28,7 +28,8 @@ class RGBToYUVAll final : public UnrollOnce, public TryToAvoidTailLoop {
     RawSourceVectorType vsrc;
     int16x8_t r_l, r_h, g_l, g_h, b_l, b_h;
     if constexpr (ALPHA) {
-      vsrc = vld1q_u8_x4(src);
+      VecTraits::load(src, vsrc);
+
       uint16x8_t rb_l = vuzp1q_u8(vsrc.val[0], vsrc.val[1]);
       uint16x8_t rb_h = vuzp1q_u8(vsrc.val[2], vsrc.val[3]);
       if constexpr (BGR) {

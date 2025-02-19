@@ -1,10 +1,11 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #ifndef KLEIDICV_SEPARABLE_FILTER_3X3_NEON_H
 #define KLEIDICV_SEPARABLE_FILTER_3X3_NEON_H
 
+#include "kleidicv/config.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/workspace/border_3x3.h"
 
@@ -45,9 +46,12 @@ class SeparableFilter<FilterType, 3UL> {
       auto src_1 = &src_rows.at(border_offsets.c1())[index];
       auto src_2 = &src_rows.at(border_offsets.c2())[index];
 
-      auto src_0_x2 = vld1q_x2(&src_0[0]);
-      auto src_1_x2 = vld1q_x2(&src_1[0]);
-      auto src_2_x2 = vld1q_x2(&src_2[0]);
+      typename SourceVecTraits::Vector2Type src_0_x2;
+      SourceVecTraits::load(&src_0[0], src_0_x2);
+      typename SourceVecTraits::Vector2Type src_1_x2;
+      SourceVecTraits::load(&src_1[0], src_1_x2);
+      typename SourceVecTraits::Vector2Type src_2_x2;
+      SourceVecTraits::load(&src_2[0], src_2_x2);
 
       SourceVectorType src_a[3], src_b[3];
       src_a[0] = src_0_x2.val[0];
@@ -90,9 +94,12 @@ class SeparableFilter<FilterType, 3UL> {
       auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
       auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
 
-      auto src_0_x2 = vld1q_x2(&src_0[0]);
-      auto src_1_x2 = vld1q_x2(&src_1[0]);
-      auto src_2_x2 = vld1q_x2(&src_2[0]);
+      typename BufferVecTraits::Vector2Type src_0_x2;
+      BufferVecTraits::load(&src_0[0], src_0_x2);
+      typename BufferVecTraits::Vector2Type src_1_x2;
+      BufferVecTraits::load(&src_1[0], src_1_x2);
+      typename BufferVecTraits::Vector2Type src_2_x2;
+      BufferVecTraits::load(&src_2[0], src_2_x2);
 
       BufferVectorType src_a[3], src_b[3];
       src_a[0] = src_0_x2.val[0];

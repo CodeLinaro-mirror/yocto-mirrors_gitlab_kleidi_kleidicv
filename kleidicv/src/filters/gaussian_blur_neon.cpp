@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -37,7 +37,7 @@ class GaussianBlur<uint8_t, 3, true> {
   using BufferVectorType = typename VecTraits<BufferType>::VectorType;
   using DestinationType = ScalarType;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma) {}
+  explicit GaussianBlur([[maybe_unused]] float sigma)
 
   // Applies vertical filtering vector using SIMD operations.
   //
@@ -179,7 +179,7 @@ class GaussianBlur<uint8_t, 7, true> {
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma)
+explicit GaussianBlur([[maybe_unused]] float sigma)
       : const_7_u16_{vdupq_n_u16(7)},
         const_7_u32_{vdupq_n_u32(7)},
         const_9_u16_{vdupq_n_u16(9)} {}
@@ -434,8 +434,7 @@ class GaussianBlur<uint8_t, 15, true> {
         vmlal_u16(acc.val[2], vget_low_u16(acc_7_h), const_158_u16_half_);
     acc.val[3] =
         vmlal_u16(acc.val[3], vget_high_u16(acc_7_h), const_158_u16_half_);
-
-    vst1q_u32_x4(&dst[0], acc);
+    neon::VecTraits<uint32_t>::store(acc, &dst[0]);
   }
 
   // Applies vertical filtering vector using scalar operations.
@@ -565,8 +564,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
     }
 
     uint32x4x4_t result = {acc_l_l, acc_l_h, acc_h_l, acc_h_h};
-
-    vst1q_u32_x4(&dst[0], result);
+    neon::VecTraits<uint32_t>::store(result, &dst[0]);
   }
 
   void vertical_scalar_path(const SourceType src[KernelSize],

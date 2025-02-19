@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -88,16 +88,18 @@ class ScaleUint8Tbx final : public ScaleIntBase<uint8_t> {
     for (size_t i = 0; i < TableLength; ++i) {
       values[i] = this->scale_value(i);
     }
-    t0_3_ = vld1q_u8_x3(values);
-    t1_3_ = vld1q_u8_x3(values + 3 * VecTraits::num_lanes());
-    t2_2_ = vld1q_u8_x2(values + (3 + 3) * VecTraits::num_lanes());
-    t3_3_ = vld1q_u8_x3(values + (3 + 3 + 2) * VecTraits::num_lanes());
-    t4_2_ = vld1q_u8_x2(values + (3 + 3 + 2 + 3) * VecTraits::num_lanes());
-    t5_3_ = vld1q_u8_x3(values + (3 + 3 + 2 + 3 + 2) * VecTraits::num_lanes());
+
+    VecTraits::load(values, t0_3_);
+    VecTraits::load(values + 3 * VecTraits::num_lanes(), t1_3_);
+    VecTraits::load(values + (3 + 3) * VecTraits::num_lanes(), t2_2_);
+    VecTraits::load(values + (3 + 3 + 2) * VecTraits::num_lanes(), t3_3_);
+    VecTraits::load(values + (3 + 3 + 2 + 3) * VecTraits::num_lanes(), t4_2_);
+    VecTraits::load(values + (3 + 3 + 2 + 3 + 2) * VecTraits::num_lanes(),
+                    t5_3_);
+
     v_step3_ = vdupq_n_u8(3 * VecTraits::num_lanes());
     v_step2_ = vdupq_n_u8(2 * VecTraits::num_lanes());
   }
-
   VectorType vector_path(VectorType src) {
     VectorType dst = vqtbl3q_u8(t0_3_, src);
     src = vsubq_u8(src, v_step3_);

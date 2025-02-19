@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@ class RGBToBGR final : public UnrollTwice {
   using VecTraits = neon::VecTraits<ScalarType>;
 
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  RGBToBGR() : indices_{vld1q_u8_x3(kRGBToBGRTableIndices)} {}
+  RGBToBGR() : indices_{} { VecTraits::load(kRGBToBGRTableIndices, indices_); }
 #else
   RGBToBGR() = default;
 #endif
@@ -30,7 +30,10 @@ class RGBToBGR final : public UnrollTwice {
 
     vst3q_u8(dst, dst_vect);
 #else
-    uint8x16x3_t src_vect = vld1q_u8_x3(src);
+
+    uint8x16x3_t src_vect;
+    VecTraits::load(src, src_vect);
+
     uint8x16x3_t dst_vect;
 
     uint8x16x2_t src_vect_0_1;
@@ -45,7 +48,7 @@ class RGBToBGR final : public UnrollTwice {
     dst_vect.val[1] = vqtbl3q_u8(src_vect, indices_.val[1]);
     dst_vect.val[2] = vqtbl2q_u8(src_vect_1_2, indices_.val[2]);
 
-    vst1q_u8_x3(dst, dst_vect);
+    VecTraits::store(dst_vect, dst);
 #endif
   }
 
@@ -62,7 +65,6 @@ class RGBToBGR final : public UnrollTwice {
       2,  1,  0,  5,  4,  3,  8,  7,  6,  11, 10, 9,  14, 13, 12, 17,
       16, 15, 20, 19, 18, 23, 22, 21, 26, 25, 24, 29, 28, 27, 32, 31,
       14, 19, 18, 17, 22, 21, 20, 25, 24, 23, 28, 27, 26, 31, 30, 29};
-
   uint8x16x3_t indices_;
 #endif
 };  // end of class RGBToBGR<ScalarType>
