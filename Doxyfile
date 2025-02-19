@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 PROJECT_NAME           = "KleidiCV"
-OUTPUT_DIRECTORY       = build
+OUTPUT_DIRECTORY       = build/ci
 HIDE_UNDOC_MEMBERS     = YES
 HIDE_UNDOC_CLASSES     = YES
 SHOW_INCLUDE_FILES     = NO

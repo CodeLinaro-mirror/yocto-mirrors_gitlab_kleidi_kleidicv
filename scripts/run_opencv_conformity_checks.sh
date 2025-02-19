@@ -6,15 +6,15 @@
 
 set -exu
 
+SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
+
 : "${CLEAN:=OFF}"
 : "${OPENCV_VERSION:=}"
 : "${OPENCV_URL:=}"
-
-SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
+: "${BUILD_PATH:=${SCRIPT_PATH}/../build/conformity}"
 
 SOURCE_PATH="${SCRIPT_PATH}/../conformity/opencv"
 KLEIDICV_SOURCE_PATH="${SCRIPT_PATH}/.."
-BUILD_PATH="${SCRIPT_PATH}/../build/conformity"
 OPENCV_DEFAULT_PATH="${BUILD_PATH}/opencv_default"
 OPENCV_KLEIDICV_PATH="${BUILD_PATH}/opencv_kleidicv"
 

@@ -41,7 +41,7 @@ the toolchain with which the binaries were built."""
     source_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     build_dir = os.path.abspath(
-        args.build_directory or os.path.join(source_dir, "build")
+        args.build_directory or os.path.join(source_dir, "build", "ci")
     )
 
     cobertura = os.path.join(build_dir, "cobertura-coverage.xml")
