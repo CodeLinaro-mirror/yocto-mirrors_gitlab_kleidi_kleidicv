@@ -1840,7 +1840,8 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u16, const uint16_t *src,
 /// Width and height are the same for `mapx`, `mapy` and for `dst`. `src`
 /// dimensions may be different, but due to the limits of 32-bit float format,
 /// its width and height must be less than 2^24. Coordinates outside of `src`
-/// dimensions are considered border.
+/// dimensions are considered border. Zero width or height `src` is not
+/// supported.
 ///
 /// @param src            Pointer to the source data. Must be non-null.
 /// @param src_stride     Distance in bytes from the start of one row to the

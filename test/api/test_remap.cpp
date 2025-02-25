@@ -599,8 +599,8 @@ class RemapS16Point5 : public testing::Test {
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
 
-  static ScalarType lerp2d(size_t cx, size_t cy, ScalarType a, ScalarType b,
-                           ScalarType c, ScalarType d) {
+  static ScalarType lerp_2d(size_t cx, size_t cy, ScalarType a, ScalarType b,
+                            ScalarType c, ScalarType d) {
     size_t inv_cx = FRAC_MAX - cx, inv_cy = FRAC_MAX - cy;
     ScalarType r = static_cast<ScalarType>((inv_cx * inv_cy * a +
                                             cx * inv_cy * b + inv_cx * cy * c +
@@ -635,8 +635,8 @@ class RemapS16Point5 : public testing::Test {
           const int16_t *coords = mapxy.at(row, column * 2);
           int16_t x = coords[0], y = coords[1];
           *expected.at(row, column * src.channels() + ch) =
-              lerp2d(x_frac, y_frac, get_src(x, y)[ch], get_src(x + 1, y)[ch],
-                     get_src(x, y + 1)[ch], get_src(x + 1, y + 1)[ch]);
+              lerp_2d(x_frac, y_frac, get_src(x, y)[ch], get_src(x + 1, y)[ch],
+                      get_src(x, y + 1)[ch], get_src(x + 1, y + 1)[ch]);
         }
       }
     }
@@ -1269,8 +1269,8 @@ TYPED_TEST(RemapF32, ZeroHeightImage) {
   const size_t src_stride = kW * sizeof(TypeParam);
   const size_t big_stride = (1UL << 32UL) - sizeof(TypeParam);
   const size_t dst_stride = kW * sizeof(TypeParam);
-  float mapx[kW] = {};
-  float mapy[kW] = {};
+  float mapx[kW] = {-0.2, 0.3, 1.4, 2.5};
+  float mapy[kW] = {-1.8, -0.7, 0.6, 1.3};
   const size_t mapx_stride = kW * sizeof(float);
   const size_t mapy_stride = kW * sizeof(float);
 
@@ -1288,7 +1288,7 @@ TYPED_TEST(RemapF32, ZeroHeightImage) {
                                      border_type, border_value));
   }
   const TypeParam border_value[1] = {0};
-  EXPECT_EQ(KLEIDICV_OK,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             remap_f32<TypeParam>()(
                 src, src_stride, kW, 0, dst, dst_stride, kW, 1, 1, mapx,
                 mapx_stride, mapy, mapy_stride, KLEIDICV_INTERPOLATION_LINEAR,

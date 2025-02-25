@@ -142,20 +142,6 @@ kleidicv_error_t remap_f32(const T *src, size_t src_stride, size_t src_width,
                            const T *border_value);
 }  // namespace sve2
 
-namespace sme2 {
-
-template <typename T>
-kleidicv_error_t remap_s16point5(const T *src, size_t src_stride,
-                                 size_t src_width, size_t src_height, T *dst,
-                                 size_t dst_stride, size_t dst_width,
-                                 size_t dst_height, size_t channels,
-                                 const int16_t *mapxy, size_t mapxy_stride,
-                                 const uint16_t *mapfrac, size_t mapfrac_stride,
-                                 kleidicv_border_type_t border_type,
-                                 const T *border_value);
-
-}  // namespace sme2
-
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_REMAP_REMAP_H

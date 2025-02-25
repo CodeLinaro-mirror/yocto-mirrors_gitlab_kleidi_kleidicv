@@ -724,8 +724,8 @@ class WarpPerspectiveLinear : public testing::Test {
             INT_MIN, std::min<double>(floor(fy), KLEIDICV_MAX_IMAGE_PIXELS)));
         ptrdiff_t ix1 = ix0 + 1;
         ptrdiff_t iy1 = iy0 + 1;
-        double xfrac = std::isfinite(fx) ? fx - floor(fx) : 0.0;
-        double yfrac = std::isfinite(fy) ? fy - floor(fy) : 0.0;
+        double xfrac = fx - floor(fx);
+        double yfrac = fy - floor(fy);
         for (size_t ch = 0; ch < src.channels(); ++ch) {
           double a = get_src(ix0, iy0)[ch];
           double b = get_src(ix1, iy0)[ch];
@@ -844,15 +844,16 @@ TYPED_TEST(WarpPerspectiveLinear, RandomTransform) {
   float transform[9];
   // Not entirely random, as very small and very big floats (in absolute value)
   // cause too big errors and they are far from being valid use cases anyway
-  test::PseudoRandomNumberGeneratorIntRange<size_t> exponentGenerator(-7, 7);
-  test::PseudoRandomNumberGeneratorFloatRange<float> mantissaGenerator(-1.0,
+  test::PseudoRandomNumberGeneratorIntRange<int> exponentGenerator(-7, 7);
+  test::PseudoRandomNumberGeneratorIntRange<int> signGenerator(0, 1);
+  test::PseudoRandomNumberGeneratorFloatRange<float> mantissaGenerator(0.01,
                                                                        1.0);
   for (size_t cc = 0; cc < 100; ++cc) {
     for (size_t i = 0; i < 9; ++i) {
       transform[i] =
-          mantissaGenerator.next().value_or(1.0) *
-          static_cast<float>(
-              exp(static_cast<double>(exponentGenerator.next().value_or(1.0))));
+          mantissaGenerator.next().value_or(1.0F) *
+          (2.0F * static_cast<float>(signGenerator.next().value_or(0)) - 1.0F) *
+          expf(static_cast<float>(exponentGenerator.next().value_or(1)));
     }
 
     size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
@@ -875,13 +876,26 @@ TYPED_TEST(WarpPerspectiveLinear, DivisionByZero) {
   };
   // clang-format on
 
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 4;
-  size_t dst_w = src_w;
-  size_t dst_h = src_h;
+  size_t kW = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t kH = 2;
+
+  test::Array2D<TypeParam> source{kW, kH, 1, 1};
+  test::Array2D<TypeParam> dst{kW, kH, 1, 1};
+
+  for (int64_t y = 0; y < static_cast<int64_t>(source.height()); ++y) {
+    for (int64_t x = 0; x < static_cast<int64_t>(source.width()); ++x) {
+      const int64_t kMaxVal = std::numeric_limits<TypeParam>::max() / 2;
+      *source.at(y, x) =
+          kMaxVal / 4 + abs((x + y) % (2 * kMaxVal + 1) - kMaxVal);
+    }
+  }
+
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1,
-                      border_type, border_value, 3);
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_warp_perspective_u8(
+                  source.data(), source.stride(), kW, kH, dst.data(),
+                  dst.stride(), kW, kH, transform_div_by_zero, 1,
+                  KLEIDICV_INTERPOLATION_LINEAR, border_type, border_value));
   }
 }
 

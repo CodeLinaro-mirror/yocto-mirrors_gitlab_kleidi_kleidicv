@@ -18,56 +18,14 @@
 #include "kleidicv/sve2.h"
 #include "kleidicv/traits.h"
 #include "kleidicv/types.h"
+#include "transform_common.h"
 
-namespace KLEIDICV_TARGET_NAMESPACE {
-
-// Convert border_type to a template argument.
-template <typename ScalarType, bool IsLarge,
-          kleidicv_interpolation_type_t Inter, typename... Args>
-void remap32f_process_rows(kleidicv_border_type_t border_type, Args &&...args) {
-  if (border_type == KLEIDICV_BORDER_TYPE_REPLICATE) {
-    remap32f_process_rows<ScalarType, IsLarge, Inter,
-                          KLEIDICV_BORDER_TYPE_REPLICATE>(
-        std::forward<Args>(args)...);
-  } else {
-    remap32f_process_rows<ScalarType, IsLarge, Inter,
-                          KLEIDICV_BORDER_TYPE_CONSTANT>(
-        std::forward<Args>(args)...);
-  }
-}
-
-// Convert interpolation_type to a template argument.
-template <typename ScalarType, bool IsLarge, typename... Args>
-void remap32f_process_rows(kleidicv_interpolation_type_t interpolation_type,
-                           Args &&...args) {
-  if (interpolation_type == KLEIDICV_INTERPOLATION_NEAREST) {
-    remap32f_process_rows<ScalarType, IsLarge, KLEIDICV_INTERPOLATION_NEAREST>(
-        std::forward<Args>(args)...);
-  } else {
-    remap32f_process_rows<ScalarType, IsLarge, KLEIDICV_INTERPOLATION_LINEAR>(
-        std::forward<Args>(args)...);
-  }
-}
-
-template <typename T>
-bool remap_image_is_large(const Rows<T> &rows, size_t height) {
-  return rows.stride() * height >= 1ULL << 32;
-}
-
-// Convert is_large to a template argument.
-template <typename ScalarType, typename... Args>
-void remap32f_process_rows(bool is_large, Args &&...args) {
-  if (KLEIDICV_UNLIKELY(is_large)) {
-    remap32f_process_rows<ScalarType, true>(std::forward<Args>(args)...);
-  } else {
-    remap32f_process_rows<ScalarType, false>(std::forward<Args>(args)...);
-  }
-}
+namespace kleidicv::sve2 {
 
 template <typename ScalarType, bool IsLarge>
-svuint32_t inline load_common(svbool_t pg, svuint32_t x, svuint32_t y,
-                              svuint32_t sv_src_stride,
-                              Rows<const ScalarType> &src_rows) {
+svuint32_t inline load_xy(svbool_t pg, svuint32_t x, svuint32_t y,
+                          svuint32_t sv_src_stride,
+                          Rows<const ScalarType> &src_rows) {
   if constexpr (std::is_same<ScalarType, uint8_t>::value) {
     if constexpr (IsLarge) {
       svbool_t pg_b = pg;
@@ -115,7 +73,7 @@ svuint32_t inline calculate_linear_replicated_border(
     svbool_t pg, svfloat32x2_t coords, svfloat32_t xmaxf, svfloat32_t ymaxf,
     svuint32_t sv_src_stride, Rows<const ScalarType> &src_rows) {
   auto load_source = [&](svuint32_t x, svuint32_t y) {
-    return load_common<ScalarType, IsLarge>(pg, x, y, sv_src_stride, src_rows);
+    return load_xy<ScalarType, IsLarge>(pg, x, y, sv_src_stride, src_rows);
   };
   svbool_t pg_all32 = svptrue_b32();
   svfloat32_t xf = svget2(coords, 0);
@@ -164,7 +122,7 @@ svuint32_t get_pixels_or_border(svbool_t pg, svuint32_t x, svuint32_t y,
   svbool_t in_range =
       svand_b_z(pg, svcmple_u32(pg, x, sv_xmax), svcmple_u32(pg, y, sv_ymax));
   svuint32_t result =
-      load_common<ScalarType, IsLarge>(in_range, x, y, sv_src_stride, src_rows);
+      load_xy<ScalarType, IsLarge>(in_range, x, y, sv_src_stride, src_rows);
   // Select between source pixels and border colour
   return svsel_u32(in_range, result, sv_border);
 }
@@ -174,48 +132,44 @@ svuint32_t inline calculate_linear_constant_border(
     svbool_t pg, svfloat32x2_t coords, svuint32_t sv_border, svuint32_t sv_xmax,
     svuint32_t sv_ymax, svuint32_t sv_src_stride,
     Rows<const ScalarType> &src_rows) {
-  svfloat32_t xf = svget2(coords, 0);
-  svfloat32_t yf = svget2(coords, 1);
+  // Convert coordinates to integers, truncating towards minus infinity.
+  // Negative numbers will become large positive numbers.
+  // Since the source width and height is known to be <=2^24 these large
+  // positive numbers will always be treated as outside the source image
+  // bounds.
+  svuint32_t x0, y0, x1, y1;
+  svfloat32_t xfrac, yfrac;
+  {
+    svfloat32_t xf = svget2(coords, 0);
+    svfloat32_t yf = svget2(coords, 1);
+    svfloat32_t xf0 = svrintm_f32_x(pg, xf);
+    svfloat32_t yf0 = svrintm_f32_x(pg, yf);
+    x0 = svreinterpret_u32_s32(svcvt_s32_f32_x(pg, xf0));
+    y0 = svreinterpret_u32_s32(svcvt_s32_f32_x(pg, yf0));
+    x1 = svadd_u32_x(pg, x0, svdup_n_u32(1));
+    y1 = svadd_u32_x(pg, y0, svdup_n_u32(1));
 
-  // Convert obviously out-of-range coordinates to values that are just beyond
-  // the largest permitted image width & height. This avoids the need for
-  // special case handling elsewhere.
-  svfloat32_t big = svdup_n_f32(1 << 24);
-  xf = svsel_f32(svcmple_f32(pg, svabs_f32_x(pg, xf), big), xf, big);
-  yf = svsel_f32(svcmple_f32(pg, svabs_f32_x(pg, yf), big), yf, big);
+    xfrac = svsub_f32_x(pg, xf, xf0);
+    yfrac = svsub_f32_x(pg, yf, yf0);
+  }
 
-  svfloat32_t xf0 = svrintm_f32_x(pg, xf);
-  svfloat32_t yf0 = svrintm_f32_x(pg, yf);
-
-  svint32_t x0 = svcvt_s32_x(pg, xf0);
-  svint32_t y0 = svcvt_s32_x(pg, yf0);
-  svint32_t x1 = svadd_s32_x(pg, x0, svdup_n_s32(1));
-  svint32_t y1 = svadd_s32_x(pg, y0, svdup_n_s32(1));
-
-  svfloat32_t xfrac = svsub_f32_x(pg, xf, xf0);
-  svfloat32_t yfrac = svsub_f32_x(pg, yf, yf0);
-
-  svfloat32_t a = svcvt_f32_u32_x(
-      pg, get_pixels_or_border<ScalarType, IsLarge>(
-              pg, svreinterpret_u32_s32(x0), svreinterpret_u32_s32(y0),
-              sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows));
-  svfloat32_t b = svcvt_f32_u32_x(
-      pg, get_pixels_or_border<ScalarType, IsLarge>(
-              pg, svreinterpret_u32_s32(x1), svreinterpret_u32_s32(y0),
-              sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows));
+  svfloat32_t a = svcvt_f32_u32_x(pg, get_pixels_or_border<ScalarType, IsLarge>(
+                                          pg, x0, y0, sv_border, sv_xmax,
+                                          sv_ymax, sv_src_stride, src_rows));
+  svfloat32_t b = svcvt_f32_u32_x(pg, get_pixels_or_border<ScalarType, IsLarge>(
+                                          pg, x1, y0, sv_border, sv_xmax,
+                                          sv_ymax, sv_src_stride, src_rows));
   svfloat32_t line0 = svmla_f32_x(pg, a, svsub_f32_x(pg, b, a), xfrac);
-  svfloat32_t c = svcvt_f32_u32_x(
-      pg, get_pixels_or_border<ScalarType, IsLarge>(
-              pg, svreinterpret_u32_s32(x0), svreinterpret_u32_s32(y1),
-              sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows));
-  svfloat32_t d = svcvt_f32_u32_x(
-      pg, get_pixels_or_border<ScalarType, IsLarge>(
-              pg, svreinterpret_u32_s32(x1), svreinterpret_u32_s32(y1),
-              sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows));
+  svfloat32_t c = svcvt_f32_u32_x(pg, get_pixels_or_border<ScalarType, IsLarge>(
+                                          pg, x0, y1, sv_border, sv_xmax,
+                                          sv_ymax, sv_src_stride, src_rows));
+  svfloat32_t d = svcvt_f32_u32_x(pg, get_pixels_or_border<ScalarType, IsLarge>(
+                                          pg, x1, y1, sv_border, sv_xmax,
+                                          sv_ymax, sv_src_stride, src_rows));
   svfloat32_t line1 = svmla_f32_x(pg, c, svsub_f32_x(pg, d, c), xfrac);
   svfloat32_t result =
       svmla_f32_x(pg, line0, svsub_f32_x(pg, line1, line0), yfrac);
   return svcvt_u32_f32_x(pg, svrinta_f32_x(pg, result));
 }
 
-}  // namespace KLEIDICV_TARGET_NAMESPACE
+}  // namespace kleidicv::sve2
