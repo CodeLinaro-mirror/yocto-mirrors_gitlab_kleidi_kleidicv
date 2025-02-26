@@ -228,3 +228,22 @@ index 673c6f03e6..56d9e0b554 100644
  }
 
  void CV_ImageWarpBaseTest::validate_results() const
+diff --git a/modules/imgproc/test/test_imgwarp.cpp b/modules/imgproc/test/test_imgwarp.cpp
+index e8840d231b..adfaad38b0 100644
+--- a/modules/imgproc/test/test_imgwarp.cpp
++++ b/modules/imgproc/test/test_imgwarp.cpp
+@@ -1371,7 +1371,13 @@ TEST_P(Imgproc_RemapRelative, validity)
+         cv::remap(src, dstRelative, mapRelativeX32F, mapRelativeY32F, interpolation | WARP_RELATIVE_MAP, borderType);
+     }
+
+-    EXPECT_EQ(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 0);
++    if (interpolation != INTER_LINEAR) {
++        EXPECT_EQ(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 0);
++    } else {
++        // Absolute algorithm can be different from Relative, they can have different precision:
++        // Error between full float and integer interpolation with INTER_BITS can be estimated from above with this formula.
++        EXPECT_LT(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 1 << (src.elemSize1() * CHAR_BIT - INTER_BITS));
++    }
+ };
+
+ INSTANTIATE_TEST_CASE_P(ImgProc, Imgproc_RemapRelative, testing::Combine(

@@ -113,9 +113,7 @@ IMGPROC_TEST_PATTERNS=(
   '*Imgproc_Dilate*'
   '*Imgproc_Erode*'
   '*Imgproc_PyramidDown*'
-# ImgProc_RemapRelative is not implemented so it's omitted
-  '*Imgproc_Remap.*'
-  '*Imgproc_Remap_Test*'
+  '*Imgproc_Remap*'
   '*Imgproc_Warp*'
 )
 IMGPROC_TEST_PATTERNS_STR="$(join_strings_with_colon "${IMGPROC_TEST_PATTERNS[*]}")"
