@@ -146,6 +146,11 @@ class Columns final {
                       channels()};
   }
 
+  // Returns a pointer to a given column.
+  [[nodiscard]] T *ptr_at(ptrdiff_t column) KLEIDICV_STREAMING_COMPATIBLE {
+    return ptr_ + column * static_cast<ptrdiff_t>(channels());
+  }
+
   // Returns the number of channels in a row.
   size_t channels() const KLEIDICV_STREAMING_COMPATIBLE { return channels_; }
 

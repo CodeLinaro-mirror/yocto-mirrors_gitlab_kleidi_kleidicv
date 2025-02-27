@@ -254,14 +254,23 @@ std::vector<test>& remap_tests_get() {
     TEST("RemapS16Point5 uint8 Constant", (test_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
     TEST("RemapS16Point5 uint16 Constant", (test_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_s16point5<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
 
-    TEST("RemapF32 uint8 Replicate Linear", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapF32 uint16 Replicate Linear", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapF32 uint8 Constant Linear", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
-    TEST("RemapF32 uint16 Constant Linear", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
-    TEST("RemapF32 uint8 Replicate Nearest", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapF32 uint16 Replicate Nearest", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
-    TEST("RemapF32 uint8 Constant Nearest", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
-    TEST("RemapF32 uint16 Constant Nearest", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>)),
+    TEST("RemapF32 uint8 Replicate Linear 1ch", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint16 Replicate Linear 1ch", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint8 Constant Linear 1ch", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapF32 uint16 Constant Linear 1ch", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
+    TEST("RemapF32 uint8 Replicate Nearest 1ch", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint16 Replicate Nearest 1ch", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint8 Constant Nearest 1ch", (test_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapF32 uint16 Constant Nearest 1ch", (test_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>)),
+
+    TEST("RemapF32 uint8 Replicate Linear 2ch", (test_remap_f32<uint8_t, CV_8UC2, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC2, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint16 Replicate Linear 2ch", (test_remap_f32<uint16_t, CV_16UC2, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC2, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint8 Constant Linear 2ch", (test_remap_f32<uint8_t, CV_8UC2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapF32 uint16 Constant Linear 2ch", (test_remap_f32<uint16_t, CV_16UC2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC2, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 123210>)),
+    TEST("RemapF32 uint8 Replicate Nearest 2ch", (test_remap_f32<uint8_t, CV_8UC2, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint8_t, CV_8UC2, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint16 Replicate Nearest 2ch", (test_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
+    TEST("RemapF32 uint8 Constant Nearest 2ch", (test_remap_f32<uint8_t, CV_8UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
+    TEST("RemapF32 uint16 Constant Nearest 2ch", (test_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>)),
   };
   // clang-format on
   return tests;

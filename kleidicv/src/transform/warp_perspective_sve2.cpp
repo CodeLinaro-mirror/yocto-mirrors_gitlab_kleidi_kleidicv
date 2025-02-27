@@ -33,7 +33,8 @@ namespace kleidicv::sve2 {
 //
 
 template <typename ScalarType, bool IsLarge,
-          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
+          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border,
+          size_t Channels>
 void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
                          size_t src_height, const ScalarType *border_value,
                          Rows<ScalarType> dst_rows, size_t dst_width,
@@ -160,15 +161,20 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
     svst1b_u32(pg32, &dst[static_cast<ptrdiff_t>(x)], result);
   };
 
+  // WarpPerspective does not implement 2 channels, so this is dummy
+  svuint8_t dummy_load_table_2ch{};
+
   auto calculate_linear = [&](svbool_t pg, uint32_t x) {
     svfloat32x2_t coords = calc_coords(pg, x);
     if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
-      return calculate_linear_replicated_border<ScalarType, IsLarge>(
-          pg, coords, xmaxf, ymaxf, sv_src_stride, src_rows);
+      return calculate_linear_replicated_border<ScalarType, IsLarge, 1>(
+          pg, coords, xmaxf, ymaxf, sv_src_stride, src_rows,
+          dummy_load_table_2ch);
     } else {
       static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
-      return calculate_linear_constant_border<ScalarType, IsLarge>(
-          pg, coords, sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows);
+      return calculate_linear_constant_border<ScalarType, IsLarge, 1>(
+          pg, coords, sv_border, sv_xmax, sv_ymax, sv_src_stride, src_rows,
+          dummy_load_table_2ch);
     }
   };
 
@@ -265,7 +271,7 @@ KLEIDICV_LOCALLY_STREAMING kleidicv_error_t warp_perspective_stripe(
   dst_rows += y_begin;
 
   transform_operation<T>(is_image_large(src_rows, src_height), interpolation,
-                         border_type, src_rows, src_width, src_height,
+                         border_type, channels, src_rows, src_width, src_height,
                          border_value, dst_rows, dst_width, y_begin, y_end,
                          transform);
 

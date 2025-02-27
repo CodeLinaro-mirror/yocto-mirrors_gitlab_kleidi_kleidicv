@@ -37,11 +37,12 @@ static const ScalarType *get_array2d_element_or_border(
     const test::Array2D<ScalarType> &src, ptrdiff_t x, ptrdiff_t y,
     kleidicv_border_type_t border_type, const ScalarType *border_value) {
   if (border_type == KLEIDICV_BORDER_TYPE_REPLICATE) {
-    x = std::clamp<ptrdiff_t>(x, 0, static_cast<ptrdiff_t>(src.width()) - 1);
+    x = std::clamp<ptrdiff_t>(
+        x, 0, static_cast<ptrdiff_t>(src.width() / src.channels()) - 1);
     y = std::clamp<ptrdiff_t>(y, 0, static_cast<ptrdiff_t>(src.height()) - 1);
   } else {
     assert(border_type == KLEIDICV_BORDER_TYPE_CONSTANT);
-    if (x >= static_cast<ptrdiff_t>(src.width()) ||
+    if (x * src.channels() >= src.width() ||
         y >= static_cast<ptrdiff_t>(src.height()) || x < 0 || y < 0) {
       return border_value;
     }
@@ -216,7 +217,6 @@ static const auto &get_borders() {
   static const T border_value[KLEIDICV_MAXIMUM_CHANNEL_COUNT] = {4, 5, 6, 7};
   static const std::array borders{
       P{KLEIDICV_BORDER_TYPE_REPLICATE, nullptr},
-      P{KLEIDICV_BORDER_TYPE_REPLICATE, border_value},
       P{KLEIDICV_BORDER_TYPE_CONSTANT, border_value},
   };
   return borders;
@@ -970,28 +970,29 @@ class RemapF32 : public testing::Test {
     test::Array2D<ScalarType> expected{dst_total_width, dst_h, padding,
                                        channels};
 
-    // Initalize the edges only
+    // Initalize the four corners only
     const int64_t kMaxVal = std::numeric_limits<ScalarType>::max() * 3 / 4;
     const int64_t kMinVal =
         std::numeric_limits<ScalarType>::lowest() + kMaxVal / 3;
     auto generateSource = [&](size_t x, size_t y) {
       return static_cast<ScalarType>((x + y) % 2 ? kMaxVal : kMinVal);
     };
-    for (size_t y = 0; y < src_h; ++y) {
+    for (size_t y = 0; y < 2; ++y) {
       *source.at(y, 0) = generateSource(y, 0);
       *source.at(y, 1) = generateSource(y, 1);
       *source.at(y, 2) = generateSource(y, 2);
       *source.at(y, src_w - 3) = generateSource(y, src_w - 3);
       *source.at(y, src_w - 2) = generateSource(y, src_w - 2);
       *source.at(y, src_w - 1) = generateSource(y, src_w - 1);
-    }
-    for (size_t x = 0; x < src_w; ++x) {
-      *source.at(0, x) = generateSource(0, x);
-      *source.at(1, x) = generateSource(1, x);
-      *source.at(2, x) = generateSource(2, x);
-      *source.at(src_h - 3, x) = generateSource(src_h - 3, x);
-      *source.at(src_h - 2, x) = generateSource(src_h - 2, x);
-      *source.at(src_h - 1, x) = generateSource(src_h - 1, x);
+      *source.at(src_h - y - 1, 0) = generateSource(src_h - y - 1, 0);
+      *source.at(src_h - y - 1, 1) = generateSource(src_h - y - 1, 1);
+      *source.at(src_h - y - 1, 2) = generateSource(src_h - y - 1, 2);
+      *source.at(src_h - y - 1, src_w - 3) =
+          generateSource(src_h - y - 1, src_w - 3);
+      *source.at(src_h - y - 1, src_w - 2) =
+          generateSource(src_h - y - 1, src_w - 2);
+      *source.at(src_h - y - 1, src_w - 1) =
+          generateSource(src_h - y - 1, src_w - 1);
     }
 
     test::PseudoRandomNumberGenerator<ScalarType> generator;
@@ -1000,13 +1001,12 @@ class RemapF32 : public testing::Test {
     calculate_expected(source, mapx, mapy, border_type, border_value,
                        interpolation, expected);
 
-    ASSERT_EQ(
-        KLEIDICV_OK,
-        remap_f32<ScalarType>()(
-            source.data(), source.stride(), source.width(), source.height(),
-            actual.data(), actual.stride(), actual.width(), actual.height(),
-            channels, mapx.data(), mapx.stride(), mapy.data(), mapy.stride(),
-            interpolation, border_type, border_value));
+    ASSERT_EQ(KLEIDICV_OK,
+              remap_f32<ScalarType>()(
+                  source.data(), source.stride(), src_w, source.height(),
+                  actual.data(), actual.stride(), dst_w, actual.height(),
+                  channels, mapx.data(), mapx.stride(), mapy.data(),
+                  mapy.stride(), interpolation, border_type, border_value));
 
     if (expected.compare_to(actual, 1)) {
       if (source.width() < 100 && source.height() < 100) {
@@ -1048,13 +1048,12 @@ class RemapF32 : public testing::Test {
     calculate_expected(source, mapx, mapy, border_type, border_value,
                        interpolation, expected);
 
-    ASSERT_EQ(
-        KLEIDICV_OK,
-        remap_f32<ScalarType>()(
-            source.data(), source.stride(), source.width(), source.height(),
-            actual.data(), actual.stride(), actual.width(), actual.height(),
-            channels, mapx.data(), mapx.stride(), mapy.data(), mapy.stride(),
-            interpolation, border_type, border_value));
+    ASSERT_EQ(KLEIDICV_OK,
+              remap_f32<ScalarType>()(
+                  source.data(), source.stride(), src_w, source.height(),
+                  actual.data(), actual.stride(), dst_w, actual.height(),
+                  channels, mapx.data(), mapx.stride(), mapy.data(),
+                  mapy.stride(), interpolation, border_type, border_value));
 
     if (expected.compare_to(actual, 1)) {
       if (source.width() < 100 && source.height() < 100) {
@@ -1142,14 +1141,15 @@ TYPED_TEST(RemapF32, RandomNoPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  size_t channels = 1;
   size_t padding = 0;
-  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    for (auto interpolation :
-         {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
-      TestFixture::test_random(src_w, src_h, dst_w, dst_h, channels,
-                               border_type, border_value, interpolation,
-                               padding);
+  for (size_t channels = 1; channels <= 2; ++channels) {
+    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+      for (auto interpolation :
+           {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
+        TestFixture::test_random(src_w, src_h, dst_w, dst_h, channels,
+                                 border_type, border_value, interpolation,
+                                 padding);
+      }
     }
   }
 }
@@ -1159,13 +1159,15 @@ TYPED_TEST(RemapF32, BlendPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  size_t channels = 1;
   size_t padding = 13;
-  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    for (auto interpolation :
-         {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
-      TestFixture::test_blend(src_w, src_h, dst_w, dst_h, channels, border_type,
-                              border_value, interpolation, padding);
+  for (size_t channels = 2; channels <= 2; ++channels) {
+    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+      for (auto interpolation :
+           {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
+        TestFixture::test_blend(src_w, src_h, dst_w, dst_h, channels,
+                                border_type, border_value, interpolation,
+                                padding);
+      }
     }
   }
 }
@@ -1175,14 +1177,15 @@ TYPED_TEST(RemapF32, OutsideRandomPadding) {
   size_t src_h = 4;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  size_t channels = 1;
   size_t padding = 13;
-  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    for (auto interpolation :
-         {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
-      TestFixture::test_outside_random(src_w, src_h, dst_w, dst_h, channels,
-                                       border_type, border_value, interpolation,
-                                       padding);
+  for (size_t channels = 1; channels <= 2; ++channels) {
+    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+      for (auto interpolation :
+           {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
+        TestFixture::test_outside_random(src_w, src_h, dst_w, dst_h, channels,
+                                         border_type, border_value,
+                                         interpolation, padding);
+      }
     }
   }
 }
@@ -1192,13 +1195,15 @@ TYPED_TEST(RemapF32, BlendBigStride) {
   size_t src_h = 2;
   size_t dst_w = src_w;
   size_t dst_h = src_h;
-  size_t channels = 1;
   size_t padding = 1 << 16;
-  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    for (auto interpolation :
-         {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
-      TestFixture::test_blend(src_w, src_h, dst_w, dst_h, channels, border_type,
-                              border_value, interpolation, padding);
+  for (size_t channels = 1; channels <= 2; ++channels) {
+    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+      for (auto interpolation :
+           {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
+        TestFixture::test_blend(src_w, src_h, dst_w, dst_h, channels,
+                                border_type, border_value, interpolation,
+                                padding);
+      }
     }
   }
 }
@@ -1208,14 +1213,15 @@ TYPED_TEST(RemapF32, CornerCases) {
   size_t src_h = (1ULL << 12) - 1;
   size_t dst_w = 4;
   size_t dst_h = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t channels = 1;
   size_t padding = 17;
-  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    for (auto interpolation :
-         {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
-      TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
-                                     border_type, border_value, interpolation,
-                                     padding);
+  for (size_t channels = 1; channels <= 2; ++channels) {
+    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+      for (auto interpolation :
+           {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
+        TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
+                                       border_type, border_value, interpolation,
+                                       padding);
+      }
     }
   }
 }
@@ -1227,14 +1233,15 @@ TYPED_TEST(RemapF32, CornerCasesLargeLoad) {
   size_t src_h = 1ULL << 14;
   size_t dst_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
   size_t dst_h = 4;
-  size_t channels = 1;
   size_t padding = 1;
-  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    for (auto interpolation :
-         {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
-      TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
-                                     border_type, border_value, interpolation,
-                                     padding);
+  for (size_t channels = 1; channels <= 2; ++channels) {
+    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+      for (auto interpolation :
+           {KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_INTERPOLATION_NEAREST}) {
+        TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
+                                       border_type, border_value, interpolation,
+                                       padding);
+      }
     }
   }
 }
@@ -1249,17 +1256,18 @@ TYPED_TEST(RemapF32, NullPointer) {
   const size_t dst_stride = dst_width * element_size;
   const TypeParam src[4] = {};
   TypeParam dst[1];
-  const size_t channels = 1;
   float mapx[1] = {};
   const size_t mapx_stride = dst_width * sizeof(float);
   float mapy[1] = {};
   const size_t mapy_stride = dst_width * sizeof(float);
   const TypeParam border_value[1] = {};
-  test::test_null_args(remap_f32<TypeParam>(), src, src_stride, src_width,
-                       src_height, dst, dst_stride, dst_width, dst_height,
-                       channels, mapx, mapx_stride, mapy, mapy_stride,
-                       KLEIDICV_INTERPOLATION_LINEAR,
-                       KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
+  for (size_t channels = 1; channels <= 2; ++channels) {
+    test::test_null_args(remap_f32<TypeParam>(), src, src_stride, src_width,
+                         src_height, dst, dst_stride, dst_width, dst_height,
+                         channels, mapx, mapx_stride, mapy, mapy_stride,
+                         KLEIDICV_INTERPOLATION_LINEAR,
+                         KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
+  }
 }
 
 TYPED_TEST(RemapF32, ZeroHeightImage) {
@@ -1288,7 +1296,7 @@ TYPED_TEST(RemapF32, ZeroHeightImage) {
                                      border_type, border_value));
   }
   const TypeParam border_value[1] = {0};
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             remap_f32<TypeParam>()(
                 src, src_stride, kW, 0, dst, dst_stride, kW, 1, 1, mapx,
                 mapx_stride, mapy, mapy_stride, KLEIDICV_INTERPOLATION_LINEAR,
@@ -1333,13 +1341,13 @@ TYPED_TEST(RemapF32, InvalidImageSize) {
                              KLEIDICV_BORDER_TYPE_REPLICATE, nullptr));
 }
 
-TYPED_TEST(RemapF32, UnsupportedTwoChannels) {
+TYPED_TEST(RemapF32, UnsupportedThreeChannels) {
   const size_t element_size = sizeof(TypeParam);
   const TypeParam src[1] = {};
   TypeParam dst[16];
   float mapx[16] = {};
   float mapy[16] = {};
-  const size_t channels = 2;
+  const size_t channels = 3;
 
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
@@ -1388,7 +1396,7 @@ TYPED_TEST(RemapF32, UnsupportedBigSourceWidth) {
   float mapx[16] = {};
   float mapy[16] = {};
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             remap_f32<TypeParam>()(src, element_size, 1ULL << 24, 1, dst,
                                    16 * element_size, 16, 1, 1, mapx,
                                    16 * sizeof(float), mapy, 16 * sizeof(float),
@@ -1410,7 +1418,7 @@ TYPED_TEST(RemapF32, UnsupportedBigSourceHeight) {
   float mapx[16] = {};
   float mapy[16] = {};
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             remap_f32<TypeParam>()(src, element_size, 1, 1ULL << 24, dst,
                                    16 * element_size, 16, 1, 1, mapx,
                                    16 * sizeof(float), mapy, 16 * sizeof(float),
@@ -1433,7 +1441,7 @@ TYPED_TEST(RemapF32, UnsupportedBigDestinationWidth) {
   float mapy[16] = {};
 
   EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
       remap_f32<TypeParam>()(src, element_size, 1, 1, dst, 16 * element_size,
                              1ULL << 24, 1, 1, mapx, 16 * sizeof(float), mapy,
                              16 * sizeof(float), KLEIDICV_INTERPOLATION_LINEAR,
@@ -1448,7 +1456,7 @@ TYPED_TEST(RemapF32, UnsupportedBigDestinationHeight) {
   float mapy[16] = {};
 
   EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
       remap_f32<TypeParam>()(src, element_size, 1, 1, dst, 16 * element_size,
                              16, 1ULL << 24, 1, mapx, 16 * sizeof(float), mapy,
                              16 * sizeof(float), KLEIDICV_INTERPOLATION_LINEAR,

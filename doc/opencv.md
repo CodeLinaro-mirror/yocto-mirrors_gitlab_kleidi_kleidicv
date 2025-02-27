@@ -208,9 +208,10 @@ Geometrically transforms the `src` image by taking the pixels specified by the c
 Notes on parameters:
 * `src.step` - must be less than 65536 * element size.
 * `src.width`, `src_height` - must not be greater than 32768.
-* `src.type()` - supports `CV_8UC1` and `CV_16UC1`.
+* `src.type()` - supports `CV_8UC1` and `CV_16UC1`. With `CV_32FC1` map config, it supports `CV_8UC2` and `CV_16UC2` as well.
 * `dst.cols` - must be at least 4 (32FC1-type maps) or 8 (16SC2-type maps)
-* `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`. \
+* `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`.
+
 Supported map configurations:
 * `map1.type()` is `CV_16SC2` and `map2` is empty:
   * > ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.11.patch`**

@@ -1,8 +1,6 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
-
-#include <arm_neon.h>
 
 #include <cassert>
 
@@ -34,10 +32,11 @@ namespace kleidicv::neon {
 //
 
 template <typename ScalarType, bool IsLarge,
-          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border>
+          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border,
+          size_t Channels>
 void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
                          size_t src_height, const float transform[9],
-                         const ScalarType *border_value,
+                         const ScalarType *border_values,
                          Rows<ScalarType> dst_rows, size_t dst_width,
                          size_t y_begin, size_t y_end) {
   static constexpr uint32_t first_few_x[] = {0, 1, 2, 3};
@@ -73,8 +72,8 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
     } else {
       static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
       load_quad_pixels_constant<ScalarType, IsLarge>(
-          calculate_coordinates(x), v_xmax, v_ymax, v_src_stride,
-          border_value[0], src_rows, xfrac, yfrac, a, b, c, d);
+          calculate_coordinates(x), v_xmax, v_ymax, v_src_stride, border_values,
+          src_rows, xfrac, yfrac, a, b, c, d);
     }
     return lerp_2d(xfrac, yfrac, a, b, c, d);
   };
@@ -96,16 +95,16 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
       if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
         loop.unroll_once([&](size_t x) {
           auto &&[xf, yf] = calculate_coordinates(x);
-          transform_pixels_replicate<ScalarType, IsLarge>(
+          transform_pixels_replicate<ScalarType, IsLarge, Channels>(
               xf, yf, v_xmax, v_ymax, v_src_stride, src_rows, dst.at(x));
         });
       } else {
         static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
         loop.unroll_once([&](size_t x) {
           auto &&[xf, yf] = calculate_coordinates(x);
-          transform_pixels_constant<ScalarType, IsLarge>(
+          transform_pixels_constant<ScalarType, IsLarge, Channels>(
               xf, yf, v_xmax, v_ymax, v_src_stride, src_rows, dst.at(x),
-              border_value[0]);
+              border_values);
         });
       }
     } else {
@@ -168,7 +167,7 @@ kleidicv_error_t warp_perspective_stripe(
   dst_rows += y_begin;
 
   transform_operation<T>(is_image_large(src_rows, src_height), interpolation,
-                         border_type, src_rows, src_width, src_height,
+                         border_type, channels, src_rows, src_width, src_height,
                          transformation, border_value, dst_rows, dst_width,
                          y_begin, y_end);
   return KLEIDICV_OK;

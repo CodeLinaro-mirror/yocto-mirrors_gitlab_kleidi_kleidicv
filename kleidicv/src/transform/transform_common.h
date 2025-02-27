@@ -13,6 +13,24 @@ bool is_image_large(const Rows<T> &rows, size_t height) {
   return rows.stride() * height >= 1ULL << 32;
 }
 
+// Convert channels to a template argument.
+template <typename ScalarType, bool IsLarge,
+          kleidicv_interpolation_type_t Inter, kleidicv_border_type_t Border,
+          typename... Args>
+void transform_operation(size_t channels, Args &&...args) {
+  switch (channels) {
+    case 1:
+      transform_operation<ScalarType, IsLarge, Inter, Border, 1UL>(
+          std::forward<Args>(args)...);
+      break;
+    case 2:
+      transform_operation<ScalarType, IsLarge, Inter, Border, 2UL>(
+          std::forward<Args>(args)...);
+    default:
+      return;
+  }
+}
+
 // Convert border_type to a template argument.
 template <typename ScalarType, bool IsLarge,
           kleidicv_interpolation_type_t Inter, typename... Args>

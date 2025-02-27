@@ -53,21 +53,19 @@ inline bool remap_s16point5_is_implemented(
 template <typename T>
 inline bool remap_f32_is_implemented(
     size_t src_stride, size_t src_width, size_t src_height, size_t dst_width,
-    kleidicv_border_type_t border_type, size_t channels,
+    size_t dst_height, kleidicv_border_type_t border_type, size_t channels,
     kleidicv_interpolation_type_t interpolation) KLEIDICV_STREAMING_COMPATIBLE {
   if constexpr (std::is_same<T, uint8_t>::value ||
                 std::is_same<T, uint16_t>::value) {
-    return (
-        src_stride <= std::numeric_limits<uint32_t>::max() && dst_width >= 4 &&
-        src_width <=
-            static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1 &&
-        src_height <=
-            static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) + 1 &&
-        (border_type == KLEIDICV_BORDER_TYPE_REPLICATE ||
-         border_type == KLEIDICV_BORDER_TYPE_CONSTANT) &&
-        channels == 1 &&
-        (interpolation == KLEIDICV_INTERPOLATION_LINEAR ||
-         interpolation == KLEIDICV_INTERPOLATION_NEAREST));
+    return (src_stride <= std::numeric_limits<uint32_t>::max() &&
+            dst_width >= 4 && src_width < (1ULL << 24) &&
+            src_height < (1ULL << 24) && dst_width < (1ULL << 24) &&
+            dst_height < (1ULL << 24) && src_width > 0 && src_height > 0 &&
+            (border_type == KLEIDICV_BORDER_TYPE_REPLICATE ||
+             border_type == KLEIDICV_BORDER_TYPE_CONSTANT) &&
+            (channels == 1 || channels == 2) &&
+            (interpolation == KLEIDICV_INTERPOLATION_LINEAR ||
+             interpolation == KLEIDICV_INTERPOLATION_NEAREST));
   } else {
     return false;
   }

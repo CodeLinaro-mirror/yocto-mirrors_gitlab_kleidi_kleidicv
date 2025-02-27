@@ -765,8 +765,8 @@ kleidicv_error_t kleidicv_thread_remap_f32_u8(
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
   if (!kleidicv::remap_f32_is_implemented<uint8_t>(
-          src_stride, src_width, src_height, dst_width, border_type, channels,
-          interpolation)) {
+          src_stride, src_width, src_height, dst_width, dst_height, border_type,
+          channels, interpolation)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
   auto callback = [=](unsigned begin, unsigned end) {
@@ -790,8 +790,8 @@ kleidicv_error_t kleidicv_thread_remap_f32_u16(
     kleidicv_border_type_t border_type, const uint16_t *border_value,
     kleidicv_thread_multithreading mt) {
   if (!kleidicv::remap_f32_is_implemented<uint16_t>(
-          src_stride, src_width, src_height, dst_width, border_type, channels,
-          interpolation)) {
+          src_stride, src_width, src_height, dst_width, dst_height, border_type,
+          channels, interpolation)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
   auto callback = [=](unsigned begin, unsigned end) {

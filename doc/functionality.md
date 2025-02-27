@@ -93,11 +93,12 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | 8x8         |     |  x  |
 
 # Remap
-|                                            |  u8 | u16 |
-|--------------------------------------------|-----|-----|
-| Remap int16 coordinates                    |  x  |  x  |
-| Remap int16+uint16 fixed-point coordinates |  x  |  x  |
-| Remap float32 coordinates                  |  x  |  x  |
+|                                                   |  1ch u8 | 1ch u16 | 2ch u8 | 2ch u16 |
+|---------------------------------------------------|---------|---------|--------|---------|
+| Remap int16 coordinates                           |    x    |    x    |        |         |
+| Remap int16+uint16 fixed-point coordinates        |    x    |    x    |        |         |
+| Remap float32 coordinates - nearest interpolation |    x    |    x    |    x   |    x    |
+| Remap float32 coordinates - linear interpolation  |    x    |    x    |    x   |    x    |
 
 # WarpPerspective
 |                      |  u8 |

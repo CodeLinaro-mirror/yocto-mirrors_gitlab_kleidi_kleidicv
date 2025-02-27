@@ -22,7 +22,7 @@ This changelog aims to follow the guiding principles of
   - Fixed-point coordinates with linear interpolation
   - Floating-point coordinates with nearest neighbour and linear interpolation
   - Replicated and constant borders
-  - 1-channel only
+  - 1 channel source image for integer and fixed-points coordinates, 1 and 2 channels for floating-point coordinates
   - u8 and u16 images
 - WarpPerspective implementation
   - Nearest and Linear interpolation method, for 1-channel u8 input.

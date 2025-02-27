@@ -1861,7 +1861,7 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u16, const uint16_t *src,
 ///                       least 4.
 /// @param dst_height     Number of rows in the destination data.
 /// @param channels       Number of channels in the (source and destination)
-///                       data. Must be 1.
+///                       data. Can be 1 or 2.
 /// @param mapx           Pointer to the x coordinates' data. Must be non-null.
 /// @param mapx_stride    Distance in bytes from the start of one row to the
 ///                       start of the next row for `mapx`. Must be a multiple

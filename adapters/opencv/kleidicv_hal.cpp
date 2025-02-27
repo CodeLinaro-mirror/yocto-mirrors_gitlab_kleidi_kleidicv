@@ -1393,24 +1393,25 @@ int remap_f32(int src_type, const uchar *src_data, size_t src_step,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  size_t channels = (src_type >> CV_CN_SHIFT) + 1;
   auto mt = get_multithreading();
 
-  if (src_type == CV_8UC1) {
+  if (CV_MAT_DEPTH(src_type) == CV_8U) {
     auto border_value = get_border_value<uint8_t>(border_value_f64);
     return convert_error(kleidicv_thread_remap_f32_u8(
         src_data, src_step, static_cast<size_t>(src_width),
         static_cast<size_t>(src_height), dst_data, dst_step,
-        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height), 1,
-        mapx, mapx_step, mapy, mapy_step, kleidicv_interpolation_type,
+        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
+        channels, mapx, mapx_step, mapy, mapy_step, kleidicv_interpolation_type,
         kleidicv_border_type, border_value.data(), mt));
-  } else if (src_type == CV_16UC1) {
+  } else if (CV_MAT_DEPTH(src_type) == CV_16UC1) {
     auto border_value = get_border_value<uint16_t>(border_value_f64);
     return convert_error(kleidicv_thread_remap_f32_u16(
         reinterpret_cast<const uint16_t *>(src_data), src_step,
         static_cast<size_t>(src_width), static_cast<size_t>(src_height),
         reinterpret_cast<uint16_t *>(dst_data), dst_step,
-        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height), 1,
-        mapx, mapx_step, mapy, mapy_step, kleidicv_interpolation_type,
+        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
+        channels, mapx, mapx_step, mapy, mapy_step, kleidicv_interpolation_type,
         kleidicv_border_type, border_value.data(), mt));
   }
 
