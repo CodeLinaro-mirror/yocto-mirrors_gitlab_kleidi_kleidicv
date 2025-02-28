@@ -37,7 +37,7 @@ class GaussianBlur<uint8_t, 3, true> {
   using BufferVectorType = typename VecTraits<BufferType>::VectorType;
   using DestinationType = ScalarType;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma)
+  explicit GaussianBlur(float sigma [[maybe_unused]]) {}
 
   // Applies vertical filtering vector using SIMD operations.
   //
@@ -98,7 +98,7 @@ class GaussianBlur<uint8_t, 5, true> {
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma)
+  explicit GaussianBlur(float sigma [[maybe_unused]])
       : const_6_u8_half_{vdup_n_u8(6)},
         const_6_u16_{vdupq_n_u16(6)},
         const_4_u16_{vdupq_n_u16(4)} {}
@@ -179,7 +179,7 @@ class GaussianBlur<uint8_t, 7, true> {
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-explicit GaussianBlur([[maybe_unused]] float sigma)
+  explicit GaussianBlur(float sigma [[maybe_unused]])
       : const_7_u16_{vdupq_n_u16(7)},
         const_7_u32_{vdupq_n_u32(7)},
         const_9_u16_{vdupq_n_u16(9)} {}
@@ -327,7 +327,7 @@ class GaussianBlur<uint8_t, 15, true> {
   using BufferType = uint32_t;
   using DestinationType = uint8_t;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma)
+  explicit GaussianBlur(float sigma [[maybe_unused]])
       : const_11_u16_{vdupq_n_u16(11)},
         const_11_u32_{vdupq_n_u32(11)},
         const_25_u16_{vdupq_n_u16(25)},
