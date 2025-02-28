@@ -25,6 +25,30 @@ class SeparableFilterWorkspaceDeleter {
   };
 };
 
+class DefaultBufferSizesPolicy {
+ public:
+  DefaultBufferSizesPolicy(const Rectangle &rect, size_t channels)
+      : rect_(rect), channels_(channels) {}
+
+  size_t compute_buffer_rows_stride() const {
+    size_t buffer_rows_number_of_elements = rect_.width() * channels_;
+    // Adding more elements because of SVE, where interleaving stores are
+    // governed by one predicate. For example, if a predicate requires 7 uint8_t
+    // elements and an algorithm performs widening to 16 bits, the resulting
+    // interleaving store will still be governed by the same predicate, thus
+    // storing 8 elements. Choosing '3' to account for svst4().
+    buffer_rows_number_of_elements += 3;
+
+    return buffer_rows_number_of_elements;
+  }
+
+  size_t compute_buffer_size() const { return compute_buffer_rows_stride(); }
+
+ protected:
+  const Rectangle rect_;
+  const size_t channels_;
+};
+
 // Workspace for separable fixed-size filters.
 //
 // Theory of operation
@@ -76,45 +100,35 @@ class SeparableFilterWorkspace {
   using Pointer = std::unique_ptr<SeparableFilterWorkspace,
                                   SeparableFilterWorkspaceDeleter>;
 
-  // Workspace is only constructible with create().
-  SeparableFilterWorkspace() = delete;
-
   // Creates a workspace on the heap.
+  template <class BufferAllocationPolicy>
   static Pointer create(Rectangle rect, size_t channels,
-                        size_t intermediate_size) KLEIDICV_STREAMING {
-    size_t buffer_rows_number_of_elements = rect.width() * channels;
-    // Adding more elements because of SVE, where interleaving stores are
-    // governed by one predicate. For example, if a predicate requires 7 uint8_t
-    // elements and an algorithm performs widening to 16 bits, the resulting
-    // interleaving store will still be governed by the same predicate, thus
-    // storing 8 elements. Choosing '3' to account for svst4().
-    buffer_rows_number_of_elements += 3;
-
-    size_t buffer_rows_stride =
-        buffer_rows_number_of_elements * intermediate_size;
-    size_t buffer_rows_size = buffer_rows_stride;
-    buffer_rows_size += kAlignment - 1;
+                        size_t intermediate_size, BufferAllocationPolicy policy)
+      KLEIDICV_STREAMING {
+    size_t buffer_rows_size =
+        (policy.compute_buffer_size() + kAlignment - 1) * intermediate_size;
 
     // Try to allocate workspace at once.
     size_t allocation_size =
         sizeof(SeparableFilterWorkspace) + buffer_rows_size;
     void *allocation = std::malloc(allocation_size);
-    auto workspace = SeparableFilterWorkspace::Pointer{
-        reinterpret_cast<SeparableFilterWorkspace *>(allocation)};
-
-    if (!workspace) {
-      return workspace;
+    if (!allocation) {
+      return SeparableFilterWorkspace::Pointer{
+          reinterpret_cast<SeparableFilterWorkspace *>(allocation)};
     }
 
-    auto *buffer_rows_address = &workspace->data_[0];
-    buffer_rows_address = align_up(buffer_rows_address, kAlignment);
-    workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
-    workspace->buffer_rows_stride_ = buffer_rows_stride;
-    workspace->image_size_ = rect;
-    workspace->channels_ = channels;
-    workspace->intermediate_size_ = intermediate_size;
+    auto workspace = SeparableFilterWorkspace::Pointer{
+        new (allocation) SeparableFilterWorkspace(
+            rect, channels, intermediate_size,
+            static_cast<DefaultBufferSizesPolicy>(policy))};
 
     return workspace;
+  }
+
+  static Pointer create(Rectangle rect, size_t channels,
+                        size_t intermediate_size) {
+    return create(rect, channels, intermediate_size,
+                  DefaultBufferSizesPolicy{rect, channels});
   }
 
   size_t channels() const { return channels_; }
@@ -197,6 +211,19 @@ class SeparableFilterWorkspace {
   }
 
  protected:
+  // Workspace is only constructible with create().
+  SeparableFilterWorkspace(const Rectangle &rect, size_t channels,
+                           size_t intermediate_size,
+                           DefaultBufferSizesPolicy policy)
+      : buffer_rows_stride_(policy.compute_buffer_rows_stride()),
+        image_size_(rect),
+        channels_(channels),
+        intermediate_size_(intermediate_size) {
+    auto *buffer_rows_address = &data_[0];
+    buffer_rows_address = align_up(buffer_rows_address, kAlignment);
+    buffer_rows_offset_ = buffer_rows_address - &data_[0];
+  }
+
   template <typename FilterType>
   void process_horizontal(size_t width,
                           Rows<typename FilterType::BufferType> buffer_rows,

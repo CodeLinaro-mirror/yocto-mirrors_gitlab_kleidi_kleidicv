@@ -66,6 +66,7 @@ option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector 
 option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
+option(KLEIDICV_ENABLE_MOPA_CONVOLUTION "If turned ON gaussian blur will use MOPA convolution algorithm")
 
 # Continuous load and store NEON instructions can produce suboptimal code generation on GCC,
 # and these instructions are not supported on GCC version <=8.

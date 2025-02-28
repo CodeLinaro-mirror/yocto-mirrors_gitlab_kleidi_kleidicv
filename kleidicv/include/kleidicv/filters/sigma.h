@@ -5,9 +5,11 @@
 #ifndef KLEIDICV_SIGMA_H
 #define KLEIDICV_SIGMA_H
 
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 
 #include "kleidicv/config.h"
 
@@ -76,6 +78,26 @@ static bool generate_gaussian_half_kernel(uint8_t* half_kernel,
   }
   half_kernel[kMid] = static_cast<uint8_t>(mid_value);
   return true;
+}
+
+template <size_t KernelSize>
+static std::array<uint8_t, KernelSize> generate_gaussian_float_kernel(
+    float sigma) {
+  constexpr size_t half_kernel_size = KernelSize / 2 + 1;
+  std::array<uint16_t, half_kernel_size> half_kernel;
+  generate_gaussian_half_kernel(half_kernel.data(), half_kernel_size, sigma);
+
+  std::array<uint8_t, KernelSize> kernel;
+  uint16_t max_value = std::numeric_limits<uint8_t>::max();
+  for (size_t i = 0; i <= KernelSize / 2; i++) {
+    kernel[i] = std::min(max_value, half_kernel[i]);
+  }
+  for (size_t i = KernelSize / 2 + 1; i < KernelSize; i++) {
+    kernel[i] =
+        std::min(max_value, half_kernel[KernelSize / 2 - (i - KernelSize / 2)]);
+  }
+
+  return kernel;
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE

@@ -130,6 +130,16 @@ kleidicv_error_t gaussian_blur_fixed_stripe_u8(
 
 }  // namespace sme
 
+namespace sme2 {
+
+kleidicv_error_t gaussian_blur_fixed_stripe_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
+    size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
+    FixedBorderType border_type, kleidicv_filter_context_t *context);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_FILTERS_GAUSSIAN_BLUR_H

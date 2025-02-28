@@ -19,6 +19,11 @@ kleidicv_error_t separable_filter_2d_stripe(
     size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
 
+SeparableFilterWorkspace *create_separable_filter_workspace(
+    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
+    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
+
+void release_separable_filter_workspace(void *workspace);
 }  // namespace neon
 
 namespace sve2 {
@@ -30,6 +35,11 @@ kleidicv_error_t separable_filter_2d_stripe(
     const T *kernel_x, size_t kernel_width, const T *kernel_y,
     size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
+
+SeparableFilterWorkspace *create_separable_filter_workspace(
+    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
+    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
+void release_separable_filter_workspace(void *workspace);
 
 }  // namespace sve2
 
@@ -45,6 +55,15 @@ kleidicv_error_t separable_filter_2d_stripe(
 
 }  // namespace sme
 
+namespace sme2 {
+
+SeparableFilterWorkspace *create_separable_filter_workspace(
+    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
+    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
+void release_separable_filter_workspace(void *workspace);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_C_API(name, type)                                      \
@@ -56,6 +75,17 @@ kleidicv_error_t separable_filter_2d_stripe(
 KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u8, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u16, uint16_t);
 KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_s16, int16_t);
+
+KLEIDICV_MULTIVERSION_C_API(create_separable_filter_workspace,
+                            &kleidicv::neon::create_separable_filter_workspace,
+                            &kleidicv::sve2::create_separable_filter_workspace,
+                            &kleidicv::sme2::create_separable_filter_workspace);
+
+KLEIDICV_MULTIVERSION_C_API(
+    release_separable_filter_workspace,
+    &kleidicv::neon::release_separable_filter_workspace,
+    &kleidicv::sve2::release_separable_filter_workspace,
+    &kleidicv::sme2::release_separable_filter_workspace);
 
 extern "C" {
 
@@ -81,28 +111,23 @@ kleidicv_error_t kleidicv_filter_context_create(
   // As we cannot predict the intermediate size based on the parameters given,
   // just use the largest possible size out of all available operations.
   constexpr size_t intermediate_size = sizeof(uint32_t);
-  auto workspace = SeparableFilterWorkspace::create(
-      Rectangle{max_image_width, max_image_height}, max_channels,
-      intermediate_size);
+  auto *workspace = create_separable_filter_workspace(
+      max_image_width, max_image_height, max_kernel_width, max_kernel_height,
+      max_channels, intermediate_size);
+
   if (!workspace) {
     *context = nullptr;
     return KLEIDICV_ERROR_ALLOCATION;
   }
 
-  *context = reinterpret_cast<kleidicv_filter_context_t *>(workspace.release());
+  *context = reinterpret_cast<kleidicv_filter_context_t *>(workspace);
   return KLEIDICV_OK;
 }
 
 kleidicv_error_t kleidicv_filter_context_release(
     kleidicv_filter_context_t *context) {
   CHECK_POINTERS(context);
-
-  // Deliberately create and immediately destroy a unique_ptr to delete the
-  // workspace.
-  // NOLINTBEGIN(bugprone-unused-raii)
-  SeparableFilterWorkspace::Pointer{
-      reinterpret_cast<SeparableFilterWorkspace *>(context)};
-  // NOLINTEND(bugprone-unused-raii)
+  release_separable_filter_workspace(reinterpret_cast<void *>(context));
   return KLEIDICV_OK;
 }
 

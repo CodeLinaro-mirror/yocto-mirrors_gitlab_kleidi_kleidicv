@@ -33,6 +33,8 @@
 
 #cmakedefine01 KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
 
+#cmakedefine01 KLEIDICV_ENABLE_MOPA_CONVOLUTION
+
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
 #ifndef KLEIDICV_TARGET_NEON
 #define KLEIDICV_TARGET_NEON 0
@@ -74,6 +76,9 @@
 #define KLEIDICV_ASSUME_128BIT_SVE2 0
 #define KLEIDICV_LOCALLY_STREAMING __arm_locally_streaming
 #define KLEIDICV_STREAMING __arm_streaming
+#define KLEIDICV_INOUT_ZA __arm_inout("za")
+#define KLEIDICV_NEW_ZA __arm_new("za")
+#define KLEIDICV_PRESERVES_ZA __arm_preserves("za")
 
 #if KLEIDICV_TARGET_SME
 #define KLEIDICV_TARGET_FN_ATTRS KLEIDICV_ATTR_SECTION(".text.sme")
@@ -128,5 +133,6 @@
 #endif
 
 #define KLEIDICV_PREFETCH(address) __builtin_prefetch(address)
+#define KLEIDICV_RESTRICT __restrict__
 
 #endif  // KLEIDICV_CONFIG_H
