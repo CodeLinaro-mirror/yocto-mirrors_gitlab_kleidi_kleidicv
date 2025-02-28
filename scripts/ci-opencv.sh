@@ -65,11 +65,13 @@ EXTRA_CMAKE_ARGS="\
 # ------------------------------------------------------------------------------
 # Run OpenCV conformity checks
 # ------------------------------------------------------------------------------
-TESTRESULT=0
 CLEAN="ON" \
   OPENCV_URL="/opt/opencv-${OPENCV_VERSION}.tar.gz" \
   LDFLAGS="--rtlib=compiler-rt -fuse-ld=lld" \
   BUILD_PATH="build/ci/conformity" \
+  ./scripts/build_opencv_conformity_checks.sh
+
+TESTRESULT=0 \
   ./scripts/run_opencv_conformity_checks.sh || TESTRESULT=1
 
 # ------------------------------------------------------------------------------
