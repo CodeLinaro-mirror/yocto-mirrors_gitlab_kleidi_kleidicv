@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -83,7 +83,10 @@ cmake "${common_cmake_args[@]}" \
       -B "${OPENCV_KLEIDICV_PATH}" \
       -DWITH_KLEIDICV=ON \
       -DKLEIDICV_SOURCE_PATH="${KLEIDICV_SOURCE_PATH}" \
-      -DKLEIDICV_ENABLE_SME2=ON
+      -DKLEIDICV_ENABLE_SME2=ON \
+      -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
+      -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
+      -DKLEIDICV_ENABLE_ALL_OPENCV_HAL=ON
 ninja -C "${OPENCV_KLEIDICV_PATH}" manager
 
 TESTRESULT=0
