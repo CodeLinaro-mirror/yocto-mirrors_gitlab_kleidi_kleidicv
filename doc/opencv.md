@@ -210,7 +210,7 @@ Notes on parameters:
 * `src.width`, `src_height` - must not be greater than 32768.
 * `src.type()` - supports `CV_8UC1` and `CV_16UC1` with all map configs
   * additionally, with `CV_32FC1` map config, it supports `CV_8UC2` and `CV_16UC2` as well.
-  * additionally, with `CV_16SC2` plus `CV_16UC1` map config and `BORDER_REPLICATE`, it supports `CV_8UC4` and `CV_16UC4`
+  * additionally, with `CV_16SC2` plus `CV_16UC1` map config, it supports `CV_8UC4` and `CV_16UC4`
 * `dst.cols` - must be at least 4 (32FC1-type maps) or 8 (16SC2-type maps)
 * `borderMode` - supports `BORDER_REPLICATE` and `BORDER_CONSTANT`.
 

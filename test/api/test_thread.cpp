@@ -747,11 +747,25 @@ TEST_P(Thread, remap_s16point5_u8_border_constant) {
                                  KLEIDICV_BORDER_TYPE_CONSTANT, &border_value);
 }
 
+TEST_P(Thread, remap_s16point5_u8_border_constant_4ch) {
+  const uint8_t border_value[] = {1, 2, 3, 4};
+  check_remap_s16point5<uint8_t>(kleidicv_remap_s16point5_u8,
+                                 kleidicv_thread_remap_s16point5_u8, 4,
+                                 KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
+}
+
 TEST_P(Thread, remap_s16point5_u16_border_constant) {
   const uint16_t border_value = 0;
   check_remap_s16point5<uint16_t>(kleidicv_remap_s16point5_u16,
                                   kleidicv_thread_remap_s16point5_u16, 1,
                                   KLEIDICV_BORDER_TYPE_CONSTANT, &border_value);
+}
+
+TEST_P(Thread, remap_s16point5_u16_border_constant_4ch) {
+  const uint16_t border_value[] = {1, 2, 3, 4};
+  check_remap_s16point5<uint16_t>(kleidicv_remap_s16point5_u16,
+                                  kleidicv_thread_remap_s16point5_u16, 4,
+                                  KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
 }
 
 TEST_P(Thread, remap_s16point5_u8_not_implemented) {

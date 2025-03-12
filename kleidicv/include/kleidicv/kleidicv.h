@@ -1786,11 +1786,9 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
 ///                     start of the next row for the destination data.
 ///                     Must be a multiple of `sizeof(int16_t)` and no less than
 ///                     `width * sizeof(int16_t)`, except for single-row images.
-/// @param channels      Number of channels in the data: \n
-///                         - Must be 1 for constant border.
-//                          - Must be 1 or 4 for replicate border.
-/// @param border_type   Way of handling the border. The supported border types
-///                      are: \n
+/// @param channels     Number of channels in the data. Must be 1.
+/// @param border_type  Way of handling the border. The supported border types
+///                     are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
 /// @param border_value Border value if the border_type is
@@ -1816,6 +1814,9 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_s16_u16, const uint16_t *src,
 /// Internal - not part of the public API and its direct use is not supported.
 /// Functionality is similar to @ref kleidicv_remap_s16_u8 , the difference is
 /// in the data format: it contains a fractional part with 5+5 bits (`mapfrac`).
+/// Other difference:
+/// @param channels     Number of channels in the data.
+///                     - Supported values:  1 and 4.
 KLEIDICV_API_DECLARATION(kleidicv_remap_s16point5_u8, const uint8_t *src,
                          size_t src_stride, size_t src_width, size_t src_height,
                          uint8_t *dst, size_t dst_stride, size_t dst_width,

@@ -35,7 +35,8 @@ KLEIDICV_REMAP_F32(uint16_t, u16);
 template <typename ScalarType>
 static const ScalarType *get_array2d_element_or_border(
     const test::Array2D<ScalarType> &src, ptrdiff_t x, ptrdiff_t y,
-    kleidicv_border_type_t border_type, const ScalarType *border_value) {
+    ptrdiff_t ch, kleidicv_border_type_t border_type,
+    const ScalarType *border_value) {
   // Width is the number of pixels in a row, but Array2D does not handle that
   const ptrdiff_t src_width =
       static_cast<ptrdiff_t>(src.width() / src.channels());
@@ -47,10 +48,10 @@ static const ScalarType *get_array2d_element_or_border(
   } else {
     assert(border_type == KLEIDICV_BORDER_TYPE_CONSTANT);
     if (x >= src_width || y >= src_height || x < 0 || y < 0) {
-      return border_value;
+      return border_value + ch;
     }
   }
-  return src.at(y, x * src.channels());
+  return src.at(y, x * src.channels() + ch);
 }
 
 template <class ScalarType>
@@ -191,9 +192,9 @@ class RemapS16 : public testing::Test {
                                  kleidicv_border_type_t border_type,
                                  const ScalarType *border_value,
                                  test::Array2D<ScalarType> &expected) {
-    auto get_src = [&](ptrdiff_t x, ptrdiff_t y) {
-      return get_array2d_element_or_border(src, x, y, border_type,
-                                           border_value);
+    auto get_src = [&](ptrdiff_t x, ptrdiff_t y, size_t ch) {
+      return get_array2d_element_or_border(src, x, y, ptrdiff_t(ch),
+                                           border_type, border_value);
     };
 
     for (size_t row = 0; row < expected.height(); row++) {
@@ -202,7 +203,7 @@ class RemapS16 : public testing::Test {
         for (size_t ch = 0; ch < src.channels(); ++ch) {
           const int16_t *coords = mapxy.at(row, column * 2);
           int16_t x = coords[0], y = coords[1];
-          *expected.at(row, column * src.channels() + ch) = get_src(x, y)[ch];
+          *expected.at(row, column * src.channels() + ch) = *get_src(x, y, ch);
         }
       }
     }
@@ -599,8 +600,12 @@ class RemapS16Point5 : public testing::Test {
     test::Array2D<ScalarType> actual{dst_total_width, dst_h, padding, channels};
     test::Array2D<ScalarType> expected{dst_total_width, dst_h, padding,
                                        channels};
-    test::PseudoRandomNumberGenerator<ScalarType> generator;
-    source.fill(generator);
+    ScalarType counter = 0;
+    for (size_t y = 0; y < src_h; ++y) {
+      for (size_t x = 0; x < src_total_width; ++x) {
+        *source.at(y, x) = ++counter;
+      }
+    }
     actual.fill(42);
 
     calculate_expected(source, mapxy, mapfrac, border_type, border_value,
@@ -647,9 +652,9 @@ class RemapS16Point5 : public testing::Test {
                                  kleidicv_border_type_t border_type,
                                  const ScalarType *border_value,
                                  test::Array2D<ScalarType> &expected) {
-    auto get_src = [&](ptrdiff_t x, ptrdiff_t y) {
-      return get_array2d_element_or_border(src, x, y, border_type,
-                                           border_value);
+    auto get_src = [&](ptrdiff_t x, ptrdiff_t y, size_t ch) {
+      return get_array2d_element_or_border(src, x, y, ptrdiff_t(ch),
+                                           border_type, border_value);
     };
 
     for (size_t row = 0; row < expected.height(); row++) {
@@ -666,9 +671,9 @@ class RemapS16Point5 : public testing::Test {
         const int16_t *coords = mapxy.at(row, column * 2);
         ptrdiff_t x = coords[0], y = coords[1];
         for (size_t ch = 0; ch < src.channels(); ++ch) {
-          *expected.at(row, column * src.channels() + ch) =
-              lerp_2d(x_frac, y_frac, get_src(x, y)[ch], get_src(x + 1, y)[ch],
-                      get_src(x, y + 1)[ch], get_src(x + 1, y + 1)[ch]);
+          *expected.at(row, column * src.channels() + ch) = lerp_2d(
+              x_frac, y_frac, *get_src(x, y, ch), *get_src(x + 1, y, ch),
+              *get_src(x, y + 1, ch), *get_src(x + 1, y + 1, ch));
         }
       }
     }
@@ -693,14 +698,15 @@ TYPED_TEST(RemapS16Point5, RandomNoPadding) {
   }
 }
 
-// TODO: Modify tests to also run constant border once implemented
-TYPED_TEST(RemapS16Point5, RandomNoPadding4chReplicate) {
+TYPED_TEST(RemapS16Point5, RandomNoPadding4ch) {
   size_t w = defaultWidth<TypeParam>();
   size_t h = defaultHeight();
   size_t channels = 4;
   size_t padding = 0;
-  TestFixture::test_random(w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE,
-                           nullptr, padding);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_random(w, h, w, h, channels, border_type, border_value,
+                             padding);
+  }
 }
 
 TYPED_TEST(RemapS16Point5, BlendPadding) {
@@ -711,13 +717,15 @@ TYPED_TEST(RemapS16Point5, BlendPadding) {
   }
 }
 
-TYPED_TEST(RemapS16Point5, BlendPadding4chReplicate) {
+TYPED_TEST(RemapS16Point5, BlendPadding4ch) {
   size_t w = defaultWidth<TypeParam>();
   size_t h = defaultHeight();
   size_t channels = 4;
   size_t padding = 7;
-  TestFixture::test_blend(w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE,
-                          nullptr, padding);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_blend(w, h, w, h, channels, border_type, border_value,
+                            padding);
+  }
 }
 
 TYPED_TEST(RemapS16Point5, OutsideRandomPadding) {
@@ -729,13 +737,15 @@ TYPED_TEST(RemapS16Point5, OutsideRandomPadding) {
   }
 }
 
-TYPED_TEST(RemapS16Point5, OutsideRandomPadding4chReplicate) {
+TYPED_TEST(RemapS16Point5, OutsideRandomPadding4ch) {
   size_t w = defaultWidth<TypeParam>();
   size_t h = defaultHeight();
   size_t channels = 4;
   size_t padding = 11;
-  TestFixture::test_outside_random(
-      w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr, padding);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_outside_random(w, h, w, h, channels, border_type,
+                                     border_value, padding);
+  }
 }
 
 TYPED_TEST(RemapS16Point5, BlendBigStride) {
@@ -751,14 +761,16 @@ TYPED_TEST(RemapS16Point5, BlendBigStride) {
   }
 }
 
-TYPED_TEST(RemapS16Point5, BlendBigStride4chReplicate) {
+TYPED_TEST(RemapS16Point5, BlendBigStride4ch) {
   size_t w = defaultWidth<TypeParam>();
   size_t h = defaultHeight();
   size_t channels = 4;
   size_t padding =
       std::numeric_limits<uint16_t>::max() / channels - w * channels;
-  TestFixture::test_blend(w, h, w, h, channels, KLEIDICV_BORDER_TYPE_REPLICATE,
-                          nullptr, padding);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_blend(w, h, w, h, channels, border_type, border_value,
+                            padding);
+  }
 }
 
 TYPED_TEST(RemapS16Point5, CornerCases) {
@@ -781,9 +793,10 @@ TYPED_TEST(RemapS16Point5, CornerCases4ch) {
   size_t dst_h = defaultHeight();
   size_t channels = 4;
   size_t padding = 17;
-  TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
-                                 KLEIDICV_BORDER_TYPE_REPLICATE, nullptr,
-                                 padding);
+  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
+    TestFixture::test_corner_cases(src_w, src_h, dst_w, dst_h, channels,
+                                   border_type, border_value, padding);
+  }
 }
 
 TYPED_TEST(RemapS16Point5, NullPointer) {
@@ -920,18 +933,6 @@ TYPED_TEST(RemapS16Point5, UnsupportedBorderType) {
             remap_s16point5<TypeParam>()(
                 src, 1 * sizeof(TypeParam), 1, 1, dst, 8 * sizeof(TypeParam), 8,
                 1, 1, mapxy, 4, mapfrac, 2, KLEIDICV_BORDER_TYPE_REFLECT, src));
-}
-
-TYPED_TEST(RemapS16Point5, UnsupportedConstantBorder4ch) {
-  const TypeParam src[1] = {};
-  TypeParam dst[8];
-  int16_t mapxy[16] = {};
-  uint16_t mapfrac[8] = {};
-
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            remap_s16point5<TypeParam>()(src, sizeof(TypeParam), 1, 1, dst, 8,
-                                         8, 1, 4, mapxy, 4, mapfrac, 2,
-                                         KLEIDICV_BORDER_TYPE_CONSTANT, src));
 }
 
 TYPED_TEST(RemapS16Point5, UnsupportedBigStride4ch) {
@@ -1185,9 +1186,9 @@ class RemapF32 : public testing::Test {
                                  const ScalarType *border_value,
                                  kleidicv_interpolation_type_t interpolation,
                                  test::Array2D<ScalarType> &expected) {
-    auto get_src = [&](ptrdiff_t x, ptrdiff_t y) {
-      return get_array2d_element_or_border(src, x, y, border_type,
-                                           border_value);
+    auto get_src = [&](ptrdiff_t x, ptrdiff_t y, size_t ch) {
+      return get_array2d_element_or_border(src, x, y, ptrdiff_t(ch),
+                                           border_type, border_value);
     };
 
     for (size_t row = 0; row < expected.height(); row++) {
@@ -1208,10 +1209,10 @@ class RemapF32 : public testing::Test {
           float xfrac = x - std::floor(x);
           float yfrac = y - std::floor(y);
           for (size_t ch = 0; ch < src.channels(); ++ch) {
-            float a = get_src(ix, iy)[ch];
-            float b = get_src(ix + 1, iy)[ch];
-            float c = get_src(ix, iy + 1)[ch];
-            float d = get_src(ix + 1, iy + 1)[ch];
+            float a = *get_src(ix, iy, ch);
+            float b = *get_src(ix + 1, iy, ch);
+            float c = *get_src(ix, iy + 1, ch);
+            float d = *get_src(ix + 1, iy + 1, ch);
             float line1 = (b - a) * xfrac + a;
             float line2 = (d - c) * xfrac + c;
             float float_result = (line2 - line1) * yfrac + line1;
@@ -1230,7 +1231,7 @@ class RemapF32 : public testing::Test {
                               static_cast<float>(KLEIDICV_MAX_IMAGE_PIXELS))));
           for (size_t ch = 0; ch < src.channels(); ++ch) {
             *expected.at(row, column * src.channels() + ch) =
-                get_src(ix, iy)[ch];
+                *get_src(ix, iy, ch);
           }
         }
       }

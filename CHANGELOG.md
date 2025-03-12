@@ -17,16 +17,16 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Implementation of Rotate 90 degrees clockwise.
-- Remap implementations for u8 and u16 images
-  - Integer coordinates with nearest neighbour method (1 channel only)
-    - Replicated and constant borders
-  - Fixed-point coordinates with linear interpolation
-    - 1 channel with Replicated and constant borders
-    - 4 channels with Replicated borders only
-  - Floating-point coordinates with nearest neighbour and linear interpolation (1 and 2 channels)
-    - Replicated and constant borders
-- WarpPerspective implementation
-  - Nearest and Linear interpolation method, for 1-channel u8 input.
+- Remap implementations for u8 and u16 images, Replicated and Constant borders
+  - Integer coordinates with Nearest Neighbour method
+    - 1 channel only
+  - Fixed-point coordinates with Linear interpolation
+    - 1 and 4 channels
+  - Floating-point coordinates with Nearest Neighbour and Linear interpolation
+    - 1 and 2 channels
+- WarpPerspective implementation for 1-channel u8 input
+  - Nearest Neighbour and Linear interpolation methods
+  - Replicated and Constant borders
 
 ### Changed
 - Increased precision of sum for 32 bit floats and expose it to OpenCV HAL.
