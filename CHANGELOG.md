@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -17,16 +17,17 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Implementation of Rotate 90 degrees clockwise.
-- Remap implementations for u8 and u16 images, Replicated and Constant borders
+- Remap implementations for u8 and u16 images, Replicated and Constant borders:
   - Integer coordinates with Nearest Neighbour method
     - 1 channel only
   - Fixed-point coordinates with Linear interpolation
     - 1 and 4 channels
   - Floating-point coordinates with Nearest Neighbour and Linear interpolation
     - 1 and 2 channels
-- WarpPerspective implementation for 1-channel u8 input
+- WarpPerspective implementation for 1-channel u8 input:
   - Nearest Neighbour and Linear interpolation methods
   - Replicated and Constant borders
+- Support for OpenCV 4.11.
 
 ### Changed
 - Increased precision of sum for 32 bit floats and expose it to OpenCV HAL.
