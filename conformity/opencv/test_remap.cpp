@@ -70,9 +70,9 @@ bool test_remap_s16(int index, RecreatedMessageQueue& request_queue,
 
       bool success =
           (CV_MAT_DEPTH(Format) == CV_8U &&
-           !are_matrices_different<uint8_t>(1, actual_mat, expected_mat)) ||
+           !are_matrices_different<uint8_t>(0, actual_mat, expected_mat)) ||
           (CV_MAT_DEPTH(Format) == CV_16U &&
-           !are_matrices_different<uint16_t>(1, actual_mat, expected_mat));
+           !are_matrices_different<uint16_t>(0, actual_mat, expected_mat));
       if (!success) {
         fail_print_matrices(w, h, source_mat, actual_mat, expected_mat);
         return true;
