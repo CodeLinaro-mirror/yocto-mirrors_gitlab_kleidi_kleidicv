@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -9,6 +9,14 @@ SPDX-License-Identifier: Apache-2.0
 [OpenCV](https://github.com/opencv/opencv) can be built with KleidiCV
 acceleration via KleidiCV's OpenCV Hardware Acceleration Layer (HAL).
 For details of building OpenCV with KleidiCV see [the build documentation](build.md).
+
+In addition, KleidiCV is enabled in certain official OpenCV builds. For example,
+the [OpenCV 4.11 maven package](https://mvnrepository.com/artifact/org.opencv/opencv/4.11.0)
+contains KleidiCV accelerations already, and it can be easily used in Android
+applications. (See this [learning path](https://learn.arm.com/learning-paths/mobile-graphics-and-gaming/android_opencv_kleidicv/)
+for more information.) Please check OpenCV's documentation, change log or build
+configuration whether KleidiCV is enabled in a given OpenCV version for a given
+platform, and which version of KleidiCV is integrated.
 
 ## Functionality in KleidiCV OpenCV HAL
 
@@ -91,6 +99,8 @@ Notes on parameters:
 * `src.channels()` - supports 3 for RGB/BGR and 4 for RGBA/BGRA.
 
 ### [`cv::GaussianBlur()`](https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#gae8bdcd9154ed5ca3cbc1766d960f45c1)
+> ⚠️ **The operation is not bitexact with OpenCV due to rounding differences even if ALGO_HINT_ACCURATE is used as the hint parameter.**
+
 Blurs an image using a Gaussian filter.\
 The filter's standard deviation must be the same in horizontal and vertical directions (`sigmaX == sigmaY`).\
 In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
@@ -120,6 +130,8 @@ Notes on parameters:
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
 ### [`cv::resize()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#ga47a974309e9102f5f08231edc7e7529d)
+> ⚠️ **The operation is not bitexact with OpenCV due to rounding differences.**
+
 Notes on parameters:
 * `src.type()` - only supports certain values in combination with other parameters as shown in the table below.
 * `dst.cols`,`dst.rows` - must be a multiple of `src.cols` and `src.rows` respectively, in combination with other parameters as shown in the table below.
@@ -167,6 +179,8 @@ Notes on parameters:
 ### [`cv::Mat::convertTo()`](https://docs.opencv.org/4.10.0/d3/d63/classcv_1_1Mat.html#adf88c60c5b4980e05bb556080916978b)
 > ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.10.patch`**
 
+> ⚠️ **The operation is not bitexact with OpenCV due to rounding differences.**
+
 If the `rtype` parameter is `-1` or the same as the input depth, scale and offset values using `alpha` and `beta`.
 Supported depths:
   + `CV_8U`
@@ -182,6 +196,8 @@ Otherwise, if `alpha` and `beta` are 1 and 0 respectively, conversion between da
 | `CV_8U`  | `CV_32F` |
 
 ### [`cv::exp()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga3e10108e2162c338f1b848af619f39e5)
+> ⚠️ **The operation is not bitexact with OpenCV as OpenCV is using a less precise algorithm.**
+
 Exponential function. Currently only `CV_32F` type is supported.
 
 ### [`cv::inRange()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga48af0ab51e36436c5d04340e036ce981)
