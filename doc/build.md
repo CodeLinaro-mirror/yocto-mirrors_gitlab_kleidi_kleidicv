@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -86,7 +86,7 @@ documentation for cross-building instructions.
 
 ## Prerequisites
 To successfully build and compile this project for AArch64 Linux, you'll need the following tools:
-- Either GCC 9.4 or higher, or Clang 10 or higher.
+- Either GCC 9.4 or higher, or Clang 12 or higher.
 - Binutils
 - [CMake](https://cmake.org) 3.16 or higher.
 - `make`
