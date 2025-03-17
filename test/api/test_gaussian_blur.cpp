@@ -10,7 +10,6 @@
 #include "framework/utils.h"
 #include "kleidicv/filters/sigma.h"
 #include "kleidicv/kleidicv.h"
-#include "test_config.h"
 
 #define KLEIDICV_GAUSSIAN_BLUR(type, type_suffix) \
   KLEIDICV_API(gaussian_blur, kleidicv_gaussian_blur_##type_suffix, type)
@@ -101,14 +100,20 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
   }
 
   // Apply rounding to nearest integer division.
-  IntermediateType scale_result(const test::Kernel<IntermediateType> &kernel,
+  IntermediateType scale_result(const test::Kernel<IntermediateType> &,
                                 IntermediateType result) override {
-    // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
-    return kernel.width() == 3   ? ((result + 8) / 16)
-           : kernel.width() == 5 ? ((result + 128) / 256)
-           : kernel.width() == 7 ? ((result + 2048) / 4096)
-                                 : ((result + 524288) / 1048576);
-    // NOLINTEND(readability-avoid-nested-conditional-operator)
+    if constexpr (KernelTestParams::kKernelSize == 3) {
+      return (result + 8) / 16;
+    }
+    if constexpr (KernelTestParams::kKernelSize == 5) {
+      return (result + 128) / 256;
+    }
+    if constexpr (KernelTestParams::kKernelSize == 7) {
+      return (result + 2048) / 4096;
+    }
+    if constexpr (KernelTestParams::kKernelSize == 15) {
+      return (result + 524288) / 1048576;
+    }
   }
 
   const ArrayContainerType array_layouts_;

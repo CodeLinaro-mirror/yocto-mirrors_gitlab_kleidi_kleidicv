@@ -69,12 +69,12 @@ std::array<test::ArrayLayout, 8> small_array_layouts(size_t min_width,
       //          width,         height,  padding, channels
       {       min_width,     min_height,        0,        1},
       {   min_width + 1, min_height + 1,        0,        1},
-      {   min_width * 2,     min_height,        0,        2},
+      {   min_width * 2,     min_height,        1,        2},
       {   min_width * 3,     min_height,       vl,        3},
       {   min_width * 3,     min_height,        0,        1},
       {       width + 1,     min_height,        0,        1},
-      {       2 * width,     min_height,       vl,        1},
-      {       4 * width,     min_height,       vl,        1},
+      {       width + 4,     min_height,       vl,        1},
+      {       width + 7,     min_height,        4,        1},
       // clang-format on
   }};
 }
