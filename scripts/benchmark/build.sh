@@ -39,6 +39,8 @@ BENCHMARK_SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SCRIPT_PATH="${BENCHMARK_SCRIPT_PATH}/.."
 KLEIDICV_SOURCE_PATH="$(realpath "${SCRIPT_PATH}/..")"
 
+export CMAKE_CXX_FLAGS="-s"
+
 export COMMON_CMAKE_ARGS="\
   -DANDROID_ABI=arm64-v8a \
   -DBUILD_PERF_TESTS=ON \
