@@ -132,9 +132,9 @@ int min_max_idx(const uchar *src_data, size_t src_stride, int width, int height,
                 int depth, double *min_value, double *max_value, int *min_index,
                 int *max_index, uchar *mask);
 
-int convertTo(const uchar *src_data, size_t src_step, int src_depth,
-              uchar *dst_data, size_t dst_step, int dst_depth, int width,
-              int height, double scale, double shift);
+int convertScale(const uchar *src_data, size_t src_step, uchar *dst_data,
+                 size_t dst_step, int width, int height, int src_depth,
+                 int dst_depth, double scale, double shift);
 
 int exp32f(const float *src, float *dst, int len);
 
@@ -521,18 +521,18 @@ static inline int kleidicv_min_max_idx_with_fallback(
 #undef cv_hal_minMaxIdx
 #define cv_hal_minMaxIdx kleidicv_min_max_idx_with_fallback
 
-#if defined(cv_hal_convertTo)
+#ifdef cv_hal_convertScale
 static inline int kleidicv_convertTo_with_fallback(
-    const uchar *src_data, size_t src_step, int src_depth, uchar *dst_data,
-    size_t dst_step, int dst_depth, int width, int height, double scale,
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int width, int height, int src_depth, int dst_depth, double scale,
     double shift) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(convertTo, cv_hal_convertTo, src_data,
-                                       src_step, src_depth, dst_data, dst_step,
-                                       dst_depth, width, height, scale, shift);
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      convertScale, cv_hal_convertScale, src_data, src_step, dst_data, dst_step,
+      width, height, src_depth, dst_depth, scale, shift);
 }
-#undef cv_hal_convertTo
-#define cv_hal_convertTo kleidicv_convertTo_with_fallback
-#endif  // defined(cv_hal_convertTo)
+#undef cv_hal_convertScale
+#define cv_hal_convertScale kleidicv_convertTo_with_fallback
+#endif  // cv_hal_convertScale
 
 // exp32f
 static inline int kleidicv_exp32f_with_fallback(const float *src, float *dst,

@@ -13,26 +13,60 @@
 // SPDX-License-Identifier: Apache-2.0
 
 diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
-index 2b4035285f..729cd1dd43 100644
+index 2b40352..402f2d4 100644
 --- a/modules/core/src/convert.dispatch.cpp
 +++ b/modules/core/src/convert.dispatch.cpp
-@@ -281,6 +281,11 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
+@@ -281,6 +281,15 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
      dst.create(dims, size, dtype);
      Mat dstMat = dst.getMat();
  
-+    if( dims <= 2 ) {
-+        int width_in_elements = src.cols * cn;
-+        CALL_HAL(convertTo, cv_hal_convertTo, src.data, src.step, src.depth(), dstMat.data, dstMat.step, dstMat.depth(), width_in_elements, src.rows, alpha, beta);
++   if( dims <= 2 )
++    {
++        CALL_HAL(convertScale, cv_hal_convertScale, src.data, src.step, dstMat.data, dstMat.step, src.cols * cn, src.rows, sdepth, ddepth, alpha, beta);
 +    }
-+
++    else if( src.isContinuous() && dstMat.isContinuous() )
++    {
++        CALL_HAL(convertScale, cv_hal_convertScale, src.data, 0, dstMat.data, 0, (int)src.total() * cn, 1, sdepth, ddepth, alpha, beta);
++    }
++    
      BinaryFunc func = noScale ? getConvertFunc(sdepth, ddepth) : getConvertScaleFunc(sdepth, ddepth);
      double scale[] = {alpha, beta};
      CV_Assert( func != 0 );
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
-index 474fe17393..5d5289cc16 100644
+index 474fe17..9a43264 100644
 --- a/modules/core/src/hal_replacement.hpp
 +++ b/modules/core/src/hal_replacement.hpp
-@@ -1011,6 +1011,53 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
+@@ -307,9 +307,29 @@ Hamming distance between two vectors
+ inline int hal_ni_normHammingDiff8u(const uchar* a, const uchar* b, int n, int cellSize, int* result) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
+ //! @}
+ 
++/**
++@brief Convert array to another with specified type.
++@param src Source image
++@param src_step Source image
++@param dst Destination image
++@param dst_step Destination image
++@param width Source image dimensions
++@param height Source image dimensions
++@param sdepth Depth of source image
++@param ddepth Depth of destination image
++@param alpha Scale value
++@param beta Shift value
++*/
++//! @addtogroup core_hal_interface_convert Array convert
++//! @{
++inline int hal_ni_convertScale(const uchar* src, size_t src_step, uchar* dst, size_t dst_step, int width, int height,
++                               int sdepth, int ddepth, double alpha, double beta) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++//! @}
++
+ //! @cond IGNORED
+ #define cv_hal_normHamming8u hal_ni_normHamming8u
+ #define cv_hal_normHammingDiff8u hal_ni_normHammingDiff8u
++#define cv_hal_convertScale hal_ni_convertScale
+ //! @endcond
+ 
+ /**
+@@ -1011,6 +1031,38 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
  #define cv_hal_transpose2d hal_ni_transpose2d
  //! @endcond
  
@@ -46,21 +80,6 @@ index 474fe17393..5d5289cc16 100644
 +
 +//! @cond IGNORED
 +#define cv_hal_sum hal_ni_sum
-+//! @endcond
-+
-+/**
-+   @brief convertTo
-+   @param src_data,src_step,src_depth Source image
-+   @param dst_data,dst_step,dst_depth Destination image
-+   @param width,height Source image dimensions
-+   @param scale,shift Dst values = src_value * scale + shift
-+*/
-+inline int hal_ni_convertTo(const uchar *src_data, size_t src_step, int src_depth,
-+              uchar *dst_data, size_t dst_step, int dst_depth, int width,
-+              int height, double scale, double shift) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
-+
-+//! @cond IGNORED
-+#define cv_hal_convertTo hal_ni_convertTo
 +//! @endcond
 +
 +/**
@@ -87,7 +106,7 @@ index 474fe17393..5d5289cc16 100644
  
  
 diff --git a/modules/core/src/sum.dispatch.cpp b/modules/core/src/sum.dispatch.cpp
-index fade948336..17b40ca0e8 100644
+index fade948..17b40ca 100644
 --- a/modules/core/src/sum.dispatch.cpp
 +++ b/modules/core/src/sum.dispatch.cpp
 @@ -199,6 +199,10 @@ Scalar sum(InputArray _src)
@@ -102,7 +121,7 @@ index fade948336..17b40ca0e8 100644
      CV_Assert( cn <= 4 && func != 0 );
  
 diff --git a/modules/imgproc/src/hal_replacement.hpp b/modules/imgproc/src/hal_replacement.hpp
-index fe6019e3a7..b2d8c8b533 100644
+index fe6019e..b2d8c8b 100644
 --- a/modules/imgproc/src/hal_replacement.hpp
 +++ b/modules/imgproc/src/hal_replacement.hpp
 @@ -378,6 +378,60 @@ inline int hal_ni_remap32f(int src_type, const uchar *src_data, size_t src_step,
@@ -167,7 +186,7 @@ index fe6019e3a7..b2d8c8b533 100644
     @brief hal_cvtBGRtoBGR
     @param src_data source image data
 diff --git a/modules/imgproc/src/imgwarp.cpp b/modules/imgproc/src/imgwarp.cpp
-index dfc718bf87..c1f953f230 100644
+index dfc718b..c1f953f 100644
 --- a/modules/imgproc/src/imgwarp.cpp
 +++ b/modules/imgproc/src/imgwarp.cpp
 @@ -1819,6 +1819,14 @@ void cv::remap( InputArray _src, OutputArray _dst,
@@ -186,7 +205,7 @@ index dfc718bf87..c1f953f230 100644
  
      interpolation &= ~WARP_RELATIVE_MAP;
 diff --git a/modules/imgproc/test/test_imgwarp.cpp b/modules/imgproc/test/test_imgwarp.cpp
-index 4cf99b4704..332bc10f06 100644
+index 4cf99b4..332bc10 100644
 --- a/modules/imgproc/test/test_imgwarp.cpp
 +++ b/modules/imgproc/test/test_imgwarp.cpp
 @@ -1371,7 +1371,13 @@ TEST_P(Imgproc_RemapRelative, validity)
@@ -205,7 +224,7 @@ index 4cf99b4704..332bc10f06 100644
  
  INSTANTIATE_TEST_CASE_P(ImgProc, Imgproc_RemapRelative, testing::Combine(
 diff --git a/modules/imgproc/test/test_imgwarp_strict.cpp b/modules/imgproc/test/test_imgwarp_strict.cpp
-index 673c6f03e6..56d9e0b554 100644
+index 673c6f0..56d9e0b 100644
 --- a/modules/imgproc/test/test_imgwarp_strict.cpp
 +++ b/modules/imgproc/test/test_imgwarp_strict.cpp
 @@ -239,7 +239,7 @@ float CV_ImageWarpBaseTest::get_success_error_level(int _interpolation, int) con

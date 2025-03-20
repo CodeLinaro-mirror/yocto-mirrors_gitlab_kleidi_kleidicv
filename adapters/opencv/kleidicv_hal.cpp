@@ -1181,9 +1181,9 @@ int min_max_idx(const uchar *src_data, size_t src_step, int width, int height,
   }
 }
 
-int convertTo(const uchar *src_data, size_t src_step, int src_depth,
-              uchar *dst_data, size_t dst_step, int dst_depth, int width,
-              int height, double scale, double shift) {
+int convertScale(const uchar *src_data, size_t src_step, uchar *dst_data,
+                 size_t dst_step, int width, int height, int src_depth,
+                 int dst_depth, double scale, double shift) {
   auto mt = get_multithreading();
 
   // scaling only
