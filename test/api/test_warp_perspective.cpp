@@ -6,6 +6,7 @@
 
 #include <climits>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 
 #include "framework/array.h"
@@ -83,8 +84,8 @@ static const auto &get_borders() {
   return borders;
 }
 
-template <class ScalarType>
-class WarpPerspectiveNearest : public testing::Test {
+template <class ScalarType, kleidicv_interpolation_type_t Interpolation>
+class WarpPerspectiveBase : public testing::Test {
  public:
   static void test_stripe(size_t src_w, size_t src_h, size_t dst_w,
                           size_t dst_h, size_t y_begin, size_t y_end,
@@ -111,13 +112,12 @@ class WarpPerspectiveNearest : public testing::Test {
     calculate_expected(source, y_begin, y_end, transform, border_type,
                        border_value, expected);
 
-    ASSERT_EQ(
-        KLEIDICV_OK,
-        kleidicv_warp_perspective_stripe_u8(
-            source.data(), source.stride(), source.width(), source.height(),
-            actual.data(), actual.stride(), actual.width(), actual.height(),
-            y_begin, y_end, transform, channels, KLEIDICV_INTERPOLATION_NEAREST,
-            border_type, border_value));
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_warp_perspective_stripe_u8(
+                  source.data(), source.stride(), source.width(),
+                  source.height(), actual.data(), actual.stride(),
+                  actual.width(), actual.height(), y_begin, y_end, transform,
+                  channels, Interpolation, border_type, border_value));
 
     ScalarType threshold = 1;
     for (size_t row = y_begin; row < y_end; ++row) {
@@ -137,6 +137,22 @@ class WarpPerspectiveNearest : public testing::Test {
           error = std::abs(lhs[0] - rhs[0]);
         }
         if (error > threshold) {
+          if (source.width() < 100 && source.height() < 100) {
+            std::cout << "source:\n";
+            dump(&source);
+          }
+          std::cout << "transform:\n";
+          std::cout << transform[0] << "  " << transform[1] << "  "
+                    << transform[2] << "\n";
+          std::cout << transform[3] << "  " << transform[4] << "  "
+                    << transform[5] << "\n";
+          std::cout << transform[6] << "  " << transform[7] << "  "
+                    << transform[8] << "\n\n";
+          std::cout << "expected:\n";
+          dump(&expected);
+          std::cout << "actual:\n";
+          dump(&actual);
+
           GTEST_FAIL() << "Mismatch at (row=" << row << ", col=" << column
                        << "): " << +(expected).at(row, column)[0] << " vs "
                        << +(actual).at(row, column)[0] << "." << std::endl;
@@ -184,10 +200,38 @@ class WarpPerspectiveNearest : public testing::Test {
               kleidicv_warp_perspective_u8(
                   source.data(), src_stride, src_w, src_h, actual.data(),
                   actual.stride(), actual.width(), actual.height(), transform,
-                  channels, KLEIDICV_INTERPOLATION_NEAREST, border_type,
-                  border_value));
+                  channels, Interpolation, border_type, border_value));
 
     EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, actual, expected);
+  }
+
+  static void test_random_transforms() {
+    float transform[9];
+    // Not entirely random, as very small and very big floats (in absolute
+    // value) cause too big errors and they are far from being valid use cases
+    // anyway
+    test::PseudoRandomNumberGeneratorIntRange<int16_t> exponentGenerator(-10,
+                                                                         10);
+    test::PseudoRandomNumberGeneratorFloatRange<float> mantissaGenerator(-1.0,
+                                                                         1.0);
+
+    for (size_t cc = 0; cc < 100; ++cc) {
+      for (size_t i = 0; i < 9; ++i) {
+        transform[i] =
+            mantissaGenerator.next().value_or(1.0) *
+            static_cast<float>(
+                exp(static_cast<double>(exponentGenerator.next().value_or(1))));
+      }
+
+      size_t src_w = 3 * test::Options::vector_lanes<ScalarType>() - 1;
+      size_t src_h = 4;
+      size_t dst_w = src_w;
+      size_t dst_h = src_h;
+      for (auto [border_type, border_value] : get_borders<ScalarType>()) {
+        test(src_w, src_h, dst_w, dst_h, transform, 1, border_type,
+             border_value, 19);
+      }
+    }
   }
 
  private:
@@ -203,27 +247,60 @@ class WarpPerspectiveNearest : public testing::Test {
 
     for (size_t y = y_begin; y < y_end; ++y) {
       for (size_t x = 0; x < expected.width() / src.channels(); ++x) {
-        float dx = static_cast<float>(x), dy = static_cast<float>(y);
-
-        float dw = transform[6] * dx + transform[7] * dy + transform[8];
-        float inv_w = 1.F / dw;
-        float fx =
-            inv_w * (transform[0] * dx + transform[1] * dy + transform[2]);
-        float fy =
-            inv_w * (transform[3] * dx + transform[4] * dy + transform[5]);
-        ptrdiff_t ix = static_cast<ptrdiff_t>(std::max<double>(
-            INT_MIN,
-            std::min<double>(std::round(fx), KLEIDICV_MAX_IMAGE_PIXELS)));
-        ptrdiff_t iy = static_cast<ptrdiff_t>(std::max<double>(
-            INT_MIN,
-            std::min<double>(std::round(fy), KLEIDICV_MAX_IMAGE_PIXELS)));
-        for (size_t ch = 0; ch < src.channels(); ++ch) {
-          *expected.at(y, x * src.channels() + ch) = get_src(ix, iy)[ch];
+        if constexpr (Interpolation == KLEIDICV_INTERPOLATION_NEAREST) {
+          float dx = static_cast<float>(x), dy = static_cast<float>(y);
+          float dw = transform[6] * dx + transform[7] * dy + transform[8];
+          float inv_w = 1.F / dw;
+          float fx =
+              inv_w * (transform[0] * dx + transform[1] * dy + transform[2]);
+          float fy =
+              inv_w * (transform[3] * dx + transform[4] * dy + transform[5]);
+          ptrdiff_t ix = static_cast<ptrdiff_t>(std::max<double>(
+              INT_MIN,
+              std::min<double>(std::round(fx), KLEIDICV_MAX_IMAGE_PIXELS)));
+          ptrdiff_t iy = static_cast<ptrdiff_t>(std::max<double>(
+              INT_MIN,
+              std::min<double>(std::round(fy), KLEIDICV_MAX_IMAGE_PIXELS)));
+          for (size_t ch = 0; ch < src.channels(); ++ch) {
+            *expected.at(y, x * src.channels() + ch) = get_src(ix, iy)[ch];
+          }
+        }
+        if constexpr (Interpolation == KLEIDICV_INTERPOLATION_LINEAR) {
+          double dx = static_cast<double>(x), dy = static_cast<double>(y);
+          double tw = transform[6] * dx + transform[7] * dy + transform[8];
+          double inv_w = 1.F / tw;
+          double tx = transform[0] * dx + transform[1] * dy + transform[2];
+          double ty = transform[3] * dx + transform[4] * dy + transform[5];
+          double fx = inv_w * tx;
+          double fy = inv_w * ty;
+          ptrdiff_t ix0 = static_cast<ptrdiff_t>(std::max<double>(
+              INT_MIN, std::min<double>(floor(fx), KLEIDICV_MAX_IMAGE_PIXELS)));
+          ptrdiff_t iy0 = static_cast<ptrdiff_t>(std::max<double>(
+              INT_MIN, std::min<double>(floor(fy), KLEIDICV_MAX_IMAGE_PIXELS)));
+          ptrdiff_t ix1 = ix0 + 1;
+          ptrdiff_t iy1 = iy0 + 1;
+          double xfrac = fx - floor(fx);
+          double yfrac = fy - floor(fy);
+          for (size_t ch = 0; ch < src.channels(); ++ch) {
+            double a = get_src(ix0, iy0)[ch];
+            double b = get_src(ix1, iy0)[ch];
+            double c = get_src(ix0, iy1)[ch];
+            double d = get_src(ix1, iy1)[ch];
+            double line1 = (b - a) * xfrac + a;
+            double line2 = (d - c) * xfrac + c;
+            double double_result = (line2 - line1) * yfrac + line1;
+            *expected.at(y, x * src.channels() + ch) =
+                static_cast<ScalarType>(lround(double_result));
+          }
         }
       }
     }
   }
 };
+
+template <class ScalarType>
+class WarpPerspectiveNearest
+    : public WarpPerspectiveBase<ScalarType, KLEIDICV_INTERPOLATION_NEAREST> {};
 
 using WarpPerspectiveElementTypes = ::testing::Types<uint8_t>;
 TYPED_TEST_SUITE(WarpPerspectiveNearest, WarpPerspectiveElementTypes);
@@ -281,20 +358,7 @@ TYPED_TEST(WarpPerspectiveNearest, Upscale) {
 }
 
 TYPED_TEST(WarpPerspectiveNearest, RandomTransform) {
-  float transform[9];
-  test::PseudoRandomNumberGenerator<float> generator;
-  for (size_t i = 0; i < 9; ++i) {
-    transform[i] = generator.next().value_or(1.0);
-  }
-
-  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t src_h = 4;
-  size_t dst_w = src_w;
-  size_t dst_h = src_h;
-  for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    TestFixture::test(src_w, src_h, dst_w, dst_h, transform, 1, border_type,
-                      border_value, 19);
-  }
+  TestFixture::test_random_transforms();
 }
 
 TYPED_TEST(WarpPerspectiveNearest, DivisionByZero) {
@@ -627,120 +691,8 @@ TYPED_TEST(WarpPerspectiveNearest, UnsupportedBigDestinationWidth) {
 /////////////////////////////////////////////////////////////
 
 template <class ScalarType>
-class WarpPerspectiveLinear : public testing::Test {
- public:
-  static void test_stripe(size_t src_w, size_t src_h, size_t dst_w,
-                          size_t dst_h, size_t y_begin, size_t y_end,
-                          const float transform[9], size_t channels,
-                          kleidicv_border_type_t border_type,
-                          const ScalarType *border_value, size_t padding,
-                          void (*initializer)(test::Array2D<ScalarType> &) =
-                              sequential_initializer) {
-    size_t src_total_width = channels * src_w;
-    size_t dst_total_width = channels * dst_w;
-
-    test::Array2D<ScalarType> source{src_total_width, src_h, padding, channels};
-    test::Array2D<ScalarType> actual{dst_total_width, dst_h, padding, channels};
-    test::Array2D<ScalarType> expected{dst_total_width, dst_h, padding,
-                                       channels};
-
-    initializer(source);
-    for (size_t row = y_begin; row < y_end; ++row) {
-      for (size_t column = 0; column < actual.width(); ++column) {
-        *actual.at(row, column) = 42;
-      }
-    }
-
-    calculate_expected(source, y_begin, y_end, transform, border_type,
-                       border_value, expected);
-
-    ASSERT_EQ(
-        KLEIDICV_OK,
-        kleidicv_warp_perspective_stripe_u8(
-            source.data(), source.stride(), source.width(), source.height(),
-            actual.data(), actual.stride(), actual.width(), actual.height(),
-            y_begin, y_end, transform, channels, KLEIDICV_INTERPOLATION_LINEAR,
-            border_type, border_value));
-
-    ScalarType threshold = 1;
-    for (size_t row = y_begin; row < y_end; ++row) {
-      for (size_t column = 0; column < expected.width(); ++column) {
-        const ScalarType *lhs = expected.at(row, column);
-        const ScalarType *rhs = actual.at(row, column);
-        if (!lhs || !rhs) {
-          GTEST_FAIL() << "Nullptr at (row=" << row << ", column=" << column
-                       << "): " << reinterpret_cast<const void *>(lhs) << " , "
-                       << reinterpret_cast<const void *>(lhs) << std::endl;
-        }
-        ScalarType error;
-        if constexpr (std::is_integral<ScalarType>::value) {
-          error = static_cast<ScalarType>(
-              abs(static_cast<int64_t>(lhs[0]) - static_cast<int64_t>(rhs[0])));
-        } else {
-          error = std::abs(lhs[0] - rhs[0]);
-        }
-        if (error > threshold) {
-          GTEST_FAIL() << "Mismatch at (row=" << row << ", col=" << column
-                       << "): " << +(expected).at(row, column)[0] << " vs "
-                       << +(actual).at(row, column)[0] << "." << std::endl;
-        }
-      }
-    }
-  }
-
-  static void test(size_t src_w, size_t src_h, size_t dst_w, size_t dst_h,
-                   const float transform[9], size_t channels,
-                   kleidicv_border_type_t border_type,
-                   const ScalarType *border_value, size_t padding,
-                   void (*initializer)(test::Array2D<ScalarType> &) =
-                       sequential_initializer) {
-    test_stripe(src_w, src_h, dst_w, dst_h, 0, dst_h, transform, channels,
-                border_type, border_value, padding, initializer);
-  }
-
- private:
-  static void calculate_expected(test::Array2D<ScalarType> &src, size_t y_begin,
-                                 size_t y_end, const float transform[9],
-                                 kleidicv_border_type_t border_type,
-                                 const ScalarType *border_value,
-                                 test::Array2D<ScalarType> &expected) {
-    auto get_src = [&](ptrdiff_t x, ptrdiff_t y) {
-      return get_array2d_element_or_border(src, x, y, border_type,
-                                           border_value);
-    };
-
-    for (size_t y = y_begin; y < y_end; ++y) {
-      for (size_t x = 0; x < expected.width() / src.channels(); ++x) {
-        double dx = static_cast<double>(x), dy = static_cast<double>(y);
-        double tw = transform[6] * dx + transform[7] * dy + transform[8];
-        double inv_w = 1.F / tw;
-        double tx = transform[0] * dx + transform[1] * dy + transform[2];
-        double ty = transform[3] * dx + transform[4] * dy + transform[5];
-        double fx = inv_w * tx;
-        double fy = inv_w * ty;
-        ptrdiff_t ix0 = static_cast<ptrdiff_t>(std::max<double>(
-            INT_MIN, std::min<double>(floor(fx), KLEIDICV_MAX_IMAGE_PIXELS)));
-        ptrdiff_t iy0 = static_cast<ptrdiff_t>(std::max<double>(
-            INT_MIN, std::min<double>(floor(fy), KLEIDICV_MAX_IMAGE_PIXELS)));
-        ptrdiff_t ix1 = ix0 + 1;
-        ptrdiff_t iy1 = iy0 + 1;
-        double xfrac = fx - floor(fx);
-        double yfrac = fy - floor(fy);
-        for (size_t ch = 0; ch < src.channels(); ++ch) {
-          double a = get_src(ix0, iy0)[ch];
-          double b = get_src(ix1, iy0)[ch];
-          double c = get_src(ix0, iy1)[ch];
-          double d = get_src(ix1, iy1)[ch];
-          double line1 = (b - a) * xfrac + a;
-          double line2 = (d - c) * xfrac + c;
-          double double_result = (line2 - line1) * yfrac + line1;
-          *expected.at(y, x * src.channels() + ch) =
-              static_cast<ScalarType>(lround(double_result));
-        }
-      }
-    }
-  }
-};
+class WarpPerspectiveLinear
+    : public WarpPerspectiveBase<ScalarType, KLEIDICV_INTERPOLATION_LINEAR> {};
 
 TYPED_TEST_SUITE(WarpPerspectiveLinear, WarpPerspectiveElementTypes);
 
@@ -841,30 +793,7 @@ TYPED_TEST(WarpPerspectiveLinear, Upscale) {
 }
 
 TYPED_TEST(WarpPerspectiveLinear, RandomTransform) {
-  float transform[9];
-  // Not entirely random, as very small and very big floats (in absolute value)
-  // cause too big errors and they are far from being valid use cases anyway
-  test::PseudoRandomNumberGeneratorIntRange<int> exponentGenerator(-7, 7);
-  test::PseudoRandomNumberGeneratorIntRange<int> signGenerator(0, 1);
-  test::PseudoRandomNumberGeneratorFloatRange<float> mantissaGenerator(0.01,
-                                                                       1.0);
-  for (size_t cc = 0; cc < 100; ++cc) {
-    for (size_t i = 0; i < 9; ++i) {
-      transform[i] =
-          mantissaGenerator.next().value_or(1.0F) *
-          (2.0F * static_cast<float>(signGenerator.next().value_or(0)) - 1.0F) *
-          expf(static_cast<float>(exponentGenerator.next().value_or(1)));
-    }
-
-    size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-    size_t src_h = 4;
-    size_t dst_w = src_w;
-    size_t dst_h = src_h;
-    for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-      TestFixture::test(src_w, src_h, dst_w, dst_h, transform, 1, border_type,
-                        border_value, 19);
-    }
-  }
+  TestFixture::test_random_transforms();
 }
 
 TYPED_TEST(WarpPerspectiveLinear, DivisionByZero) {
