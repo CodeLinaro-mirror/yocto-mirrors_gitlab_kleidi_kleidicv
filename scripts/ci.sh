@@ -95,7 +95,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
   build/ci/sanitize/test/api/kleidicv-api-test
 fi
 
-# Build benchmarks, just to prevent bitrot.
+# Build benchmarks and without continuous load/store code path, just to prevent bitrot.
 cmake -S . -B build/ci/build-benchmark -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
@@ -107,7 +107,8 @@ cmake -S . -B build/ci/build-benchmark -G Ninja \
   -DKLEIDICV_BENCHMARK=ON \
   -DKLEIDICV_ENABLE_SME2=ON \
   -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
-  -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF
+  -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
+  -DKLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS=OFF
 ninja -C build/ci/build-benchmark kleidicv-benchmark
 
 # TODO: Cross-build OpenCV
