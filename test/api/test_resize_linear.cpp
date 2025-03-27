@@ -1,11 +1,10 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <cfloat>
 #include <cstdint>
 #include <random>
 #include <type_traits>
@@ -623,11 +622,14 @@ INSTANTIATE_TEST_SUITE_P(
         Pf32{{{0, 255}},
              {{0, 63.75F, 191.25F, 255}, {0, 63.75F, 191.25F, 255}}},
         // 2*2 -> 4*4
-        Pf32{{{FLT_MAX, 1e38F}, {0, FLT_TRUE_MIN}},
-             {{FLT_MAX, 2.8021173e38F, 1.6007058e38F, 1e38F},
+        Pf32{{{std::numeric_limits<float>::max(), 1e38F},
+              {0, std::numeric_limits<float>::denorm_min()}},
+             {{std::numeric_limits<float>::max(), 2.8021173e38F, 1.6007058e38F,
+               1e38F},
               {2.5521173e38F, 2.101588e38F, 1.2005294e38F, 7.5e37F},
               {8.5070577e37F, 7.0052933e37F, 4.0017645e37F, 2.5e37F},
-              {0, 0, FLT_TRUE_MIN, FLT_TRUE_MIN}}},
+              {0, 0, std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min()}}},
         // 3*3 -> 6*6
         Pf32{{{1, 63, 164}, {28, 251, 35}, {218, 64, 99}},
              {{1, 16.5F, 47.5F, 88.25F, 138.75F, 164},
@@ -655,12 +657,13 @@ INSTANTIATE_TEST_SUITE_P(
               37.5F},
              {200, 175, 125, 112.5F, 137.5F, 125, 75, 50}}},
         // 35*2 -> 70*4
+        // clang-format off
         Pf32{{{0,   1,   2,       3,       4,   5,   6,   7,   8,
-               9,   10,  FLT_MAX, FLT_MAX, 104, 108, 227, 46,  162,
+               9,   10,  std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 104, 108, 227, 46,  162,
                21,  220, 235,     183,     113, 225, 146, 196, 144,
                104, 148, 19,      126,     172, 9,   12,  61},
-              {4,       5,   6,   7,   8,  9,   10, 11,  12,  13,  14, FLT_MAX,
-               FLT_MAX, 105, 191, 106, 73, 148, 13, 161, 118, 21,  3,  34,
+              {4,       5,   6,   7,   8,  9,   10, 11,  12,  13,  14, std::numeric_limits<float>::max(),
+               std::numeric_limits<float>::max(), 105, 191, 106, 73, 148, 13, 161, 118, 21,  3,  34,
                40,      150, 120, 68,  75, 14,  31, 124, 221, 214, 146}},
              {{0.0F,         0.25F,         0.75F,         1.25F,
                1.75F,        2.25F,         2.75F,         3.25F,
@@ -735,10 +738,10 @@ INSTANTIATE_TEST_SUITE_P(
                196.75F,      219.25F,       215.75F,       197.0F,
                163.0F,       146.0F}}},
         // 2*2 -> 8*8
-        Pf32{{{FLT_MAX, 1e38F}, {0, FLT_TRUE_MIN}},
-             {{FLT_MAX, FLT_MAX, 3.10247e38F, 2.5017644e38F, 1.9010587e38F,
+        Pf32{{{std::numeric_limits<float>::max(), 1e38F}, {0, std::numeric_limits<float>::denorm_min()}},
+             {{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 3.10247e38F, 2.5017644e38F, 1.9010587e38F,
                1.3003528e38F, 1e38F, 1e38F},
-              {FLT_MAX, FLT_MAX, 3.1024702e38F, 2.5017644e38F, 1.9010587e38F,
+              {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 3.1024702e38F, 2.5017644e38F, 1.9010587e38F,
                1.3003528e38F, 1e38F, 1e38F},
               {2.9774701e38F, 2.9774701e38F, 2.7146614e38F, 2.189044e38F,
                1.6634263e38F, 1.1378087e38F, 8.75e37F, 8.75e37F},
@@ -748,10 +751,36 @@ INSTANTIATE_TEST_SUITE_P(
                7.1289698e37F, 4.8763233e37F, 3.75e37F, 3.75e37F},
               {4.2535288e37F, 4.2535288e37F, 3.8780877e37F, 3.1272055e37F,
                2.3763234e37F, 1.6254411e37F, 1.25e37F, 1.25e37F},
-              {0, 0, 0, 0, FLT_TRUE_MIN, FLT_TRUE_MIN, FLT_TRUE_MIN,
-               FLT_TRUE_MIN},
-              {0, 0, 0, 0, FLT_TRUE_MIN, FLT_TRUE_MIN, FLT_TRUE_MIN,
-               FLT_TRUE_MIN}}},
+              {0, 0, 0, 0, std::numeric_limits<float>::denorm_min(), std::numeric_limits<float>::denorm_min(), std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min()},
+              {0, 0, 0, 0, std::numeric_limits<float>::denorm_min(), std::numeric_limits<float>::denorm_min(), std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min()}}},
+        // 35*2 -> 140*8
+        Pf32{{{std::numeric_limits<float>::max(), 1e38F},
+              {0, std::numeric_limits<float>::denorm_min()}},
+             {{std::numeric_limits<float>::max(),
+               std::numeric_limits<float>::max(), 3.10247e38F, 2.5017644e38F,
+               1.9010587e38F, 1.3003528e38F, 1e38F, 1e38F},
+              {std::numeric_limits<float>::max(),
+               std::numeric_limits<float>::max(), 3.1024702e38F, 2.5017644e38F,
+               1.9010587e38F, 1.3003528e38F, 1e38F, 1e38F},
+              {2.9774701e38F, 2.9774701e38F, 2.7146614e38F, 2.189044e38F,
+               1.6634263e38F, 1.1378087e38F, 8.75e37F, 8.75e37F},
+              {2.1267644e38F, 2.1267644e38F, 1.9390438e38F, 1.5636028e38F,
+               1.1881617e38F, 8.1272051e37F, 6.25e37F, 6.25e37F},
+              {1.2760587e38F, 1.2760587e38F, 1.1634263e38F, 9.3816164e37F,
+               7.1289698e37F, 4.8763233e37F, 3.75e37F, 3.75e37F},
+              {4.2535288e37F, 4.2535288e37F, 3.8780877e37F, 3.1272055e37F,
+               2.3763234e37F, 1.6254411e37F, 1.25e37F, 1.25e37F},
+              {0, 0, 0, 0, std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min()},
+              {0, 0, 0, 0, std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min(),
+               std::numeric_limits<float>::denorm_min()}}},
+        // clang-format on
         // 35*2 -> 140*8
         Pf32{{{0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  82,
                155, 104, 108, 227, 46,  162, 21,  220, 235, 183, 113, 225,
@@ -968,7 +997,8 @@ INSTANTIATE_TEST_SUITE_P(
                216.625F, 214.875F, 205.5F,   188.5F,   171.5F,   154.5F,
                146,      146}}},
         // 2*2 -> 16*16
-        Pf32{{{FLT_MAX, 1e38F}, {0, FLT_TRUE_MIN}},
+        Pf32{{{std::numeric_limits<float>::max(), 1e38F},
+              {0, std::numeric_limits<float>::denorm_min()}},
              {
                  {3.402823466e+38F, 3.402823466e+38F, 3.402823466e+38F,
                   3.402823466e+38F, 3.252647029e+38F, 2.952294156e+38F,
