@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -24,8 +24,9 @@ cores, and writes the mean & stddev to a tsv file that can be opened in a
 text editor or spreadsheet editor for further analysis:
 
 ./run_gtest_adb.py \
-    --taskset_masks 0x10 0x80 \
+    --taskset_masks 0x30 0x03 \
     --thermal_zones 1 0 \
+    --threads 2 \
     --serial 0123456789ABCDEF \
     --tsv multiply_subtract.tsv \
     --tsv_columns mean stddev \
@@ -63,8 +64,16 @@ def parse_args():
         "--taskset_masks",
         type=int_hex,
         nargs="+",
-        help="taskset masks to run with. "
-        "Typically 0x80 for big, 0x10 for mid, 0x1 for little",
+        help="Taskset masks to run with. "
+        "Typically 0x80 for one big, 0x10 for one mid, 0x1 for one little core",
+    )
+    parser.add_argument(
+        "--threads",
+        type=int,
+        nargs="+",
+        default=[2],
+        help="Number of threads to run with. Default is 2. "
+        "If more than one numbers are given, all the executables run that many times."
     )
     parser.add_argument(
         "--thermal_zones",
@@ -184,16 +193,15 @@ def wait_for_cooldown(runner, thermal_zone):
         time.sleep(3)
 
 
-def get_run_name(rep, executable, taskset_mask):
-    return f"{executable}-{taskset_mask:x}-#{rep}"
-
+def get_run_name(rep, executable, taskset_mask, threads):
+    return f"{executable}-{taskset_mask:x}-threads:{threads}-#{rep}"
 
 def host_filename_to_device_filename(args, host_filename):
     return os.path.join(args.tmpdir, host_filename.lstrip(os.sep).replace(os.sep, "-"))
 
 
 def run_executable_tests(
-    runner, args, host_executable, taskset_mask, thermal_zone
+    runner, args, host_executable, taskset_mask, thermal_zone, threads
 ):
     executable = host_filename_to_device_filename(args, host_executable)
 
@@ -231,7 +239,7 @@ def run_executable_tests(
         wait_for_cooldown(runner, thermal_zone)
         try:
             runner.check_output(
-                f"cd {shlex.quote(args.tmpdir)} && "
+                f"cd {shlex.quote(args.tmpdir)} && OPENCV_FOR_THREADS_NUM={threads} "
                 + shlex.join(
                     [
                         "taskset",
@@ -277,7 +285,7 @@ def run_executable_tests(
     return results
 
 
-def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone):
+def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone, threads):
     # Iterate through the CPUs enabled in the taskset mask
     for cpu in range(taskset_mask.bit_length()):
         if (1 << cpu) & taskset_mask == 0:
@@ -295,9 +303,9 @@ def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone):
             )
             return {
                 get_run_name(
-                    rep, executable, taskset_mask
+                    rep, executable, taskset_mask, threads
                 ): run_executable_tests(
-                    runner, args, executable, taskset_mask, thermal_zone
+                    runner, args, executable, taskset_mask, thermal_zone, threads
                 )
                 for executable in args.executables
             }
@@ -315,11 +323,12 @@ def get_results_table(args, results):
     field_names = ["name", "value_param"]
     for taskset_mask in args.taskset_masks:
         for key in args.tsv_columns:
-            for executable in args.executables:
-                for rep in range(args.repetitions):
-                    field_names.append(
-                        f"{taskset_mask:x} {executable[exe_common_prefix_len:]} {key} #{rep}"
-                    )
+            for threads in args.threads:
+                for executable in args.executables:
+                    for rep in range(args.repetitions):
+                        field_names.append(
+                            f"{taskset_mask:x} {executable[exe_common_prefix_len:]} {key} threads:{threads} #{rep}"
+                        )
 
     rows = [field_names]
 
@@ -334,15 +343,16 @@ def get_results_table(args, results):
             try:
                 for taskset_mask in args.taskset_masks:
                     for key in args.tsv_columns:
-                        for executable in args.executables:
-                            for rep in range(args.repetitions):
-                                result = results[
-                                    get_run_name(rep, executable, taskset_mask)
-                                ]
-                                exe_test = result["testsuites"][
-                                    testsuite_index
-                                ]["testsuite"][test_index]
-                                row.append(exe_test[key])
+                        for threads in args.threads:
+                            for executable in args.executables:
+                                for rep in range(args.repetitions):
+                                    result = results[
+                                        get_run_name(rep, executable, taskset_mask, threads)
+                                    ]
+                                    exe_test = result["testsuites"][
+                                        testsuite_index
+                                    ]["testsuite"][test_index]
+                                    row.append(exe_test[key])
                 rows.append(row)
             except KeyError:
                 pass
@@ -369,14 +379,15 @@ def main():
     results = {}
 
     for rep in range(args.repetitions):
-        for taskset_mask, thermal_zone in zip(
-            args.taskset_masks, args.thermal_zones
-        ):
-            results.update(
-                run_tests_on_cpus(
-                    runner, args, rep, taskset_mask, thermal_zone
+        for threads in args.threads:
+            for taskset_mask, thermal_zone in zip(
+                args.taskset_masks, args.thermal_zones
+            ):
+                results.update(
+                    run_tests_on_cpus(
+                        runner, args, rep, taskset_mask, thermal_zone, threads
+                    )
                 )
-            )
 
     with open(args.json, "w") as f:
         json.dump(results, f, indent="  ")
