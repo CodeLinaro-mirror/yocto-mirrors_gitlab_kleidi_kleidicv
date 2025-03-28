@@ -206,6 +206,90 @@ class SeparableFilter<FilterType, 15UL> {
 template <class FilterType>
 using SeparableFilter15x15 = SeparableFilter<FilterType, 15UL>;
 
+/////////////////////////////////// Proto //////////////////////////////////////
+
+// Template for drivers of separable NxM filters.
+template <typename FilterType, const size_t S>
+class SeparableFilterDirect;
+
+template <typename FilterType>
+class SeparableFilterDirect<FilterType, 15UL> {
+ public:
+  using SourceType = typename FilterType::SourceType;
+  using BufferType = typename FilterType::BufferType;
+  using DestinationType = typename FilterType::DestinationType;
+  using SourceVecTraits = typename neon::VecTraits<SourceType>;
+  using SourceVectorType = typename SourceVecTraits::VectorType;
+  using BufferVecTraits = typename neon::VecTraits<BufferType>;
+  using BufferVectorType = typename BufferVecTraits::VectorType;
+  using BorderInfoType =
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo15x15<SourceType>;
+  using BorderType = FixedBorderType;
+  using BorderOffsets = typename BorderInfoType::Offsets;
+
+  explicit SeparableFilterDirect(FilterType filter) : filter_{filter} {}
+
+  static constexpr size_t margin = 7UL;
+
+  void process_row(size_t width, Rows<const SourceType> src_rows,
+                   BorderOffsets vertical_border_offsets,
+                   Rows<DestinationType> dst_rows,
+                   BorderInfoType horizontal_border) {
+    LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
+                                         SourceVecTraits::num_lanes()};
+
+    DestinationType* dst = &dst_rows[0];
+    filter_.start_row();
+    loop.unroll_once([&](size_t index) {
+      SourceVectorType src[15];
+      src[0] = vld1q(&src_rows.at(vertical_border_offsets.c0())[index]);
+      src[1] = vld1q(&src_rows.at(vertical_border_offsets.c1())[index]);
+      src[2] = vld1q(&src_rows.at(vertical_border_offsets.c2())[index]);
+      src[3] = vld1q(&src_rows.at(vertical_border_offsets.c3())[index]);
+      src[4] = vld1q(&src_rows.at(vertical_border_offsets.c4())[index]);
+      src[5] = vld1q(&src_rows.at(vertical_border_offsets.c5())[index]);
+      src[6] = vld1q(&src_rows.at(vertical_border_offsets.c6())[index]);
+      src[7] = vld1q(&src_rows.at(vertical_border_offsets.c7())[index]);
+      src[8] = vld1q(&src_rows.at(vertical_border_offsets.c8())[index]);
+      src[9] = vld1q(&src_rows.at(vertical_border_offsets.c9())[index]);
+      src[10] = vld1q(&src_rows.at(vertical_border_offsets.c10())[index]);
+      src[11] = vld1q(&src_rows.at(vertical_border_offsets.c11())[index]);
+      src[12] = vld1q(&src_rows.at(vertical_border_offsets.c12())[index]);
+      src[13] = vld1q(&src_rows.at(vertical_border_offsets.c13())[index]);
+      src[14] = vld1q(&src_rows.at(vertical_border_offsets.c14())[index]);
+      filter_.combined_vector_path(src, dst, dst_rows.channels(),
+                                   horizontal_border);
+    });
+
+    /* skip this for the proto
+    loop.tail([&](size_t index) {
+      SourceType src[15];
+      src[0] = src_rows.at(vertical_border_offsets.c0())[index];
+      src[1] = src_rows.at(vertical_border_offsets.c1())[index];
+      src[2] = src_rows.at(vertical_border_offsets.c2())[index];
+      src[3] = src_rows.at(vertical_border_offsets.c3())[index];
+      src[4] = src_rows.at(vertical_border_offsets.c4())[index];
+      src[5] = src_rows.at(vertical_border_offsets.c5())[index];
+      src[6] = src_rows.at(vertical_border_offsets.c6())[index];
+      src[7] = src_rows.at(vertical_border_offsets.c7())[index];
+      src[8] = src_rows.at(vertical_border_offsets.c8())[index];
+      src[9] = src_rows.at(vertical_border_offsets.c9())[index];
+      src[10] = src_rows.at(vertical_border_offsets.c10())[index];
+      src[11] = src_rows.at(vertical_border_offsets.c11())[index];
+      src[12] = src_rows.at(vertical_border_offsets.c12())[index];
+      src[13] = src_rows.at(vertical_border_offsets.c13())[index];
+      src[14] = src_rows.at(vertical_border_offsets.c14())[index];
+      filter_.vertical_scalar_path(src, &dst_rows[index]);
+    });
+    */
+  }
+  FilterType filter_;
+};  // end of class SeparableFilter<FilterType, 15UL>
+
+// Shorthand for 15x15 separable filters driver type.
+template <class FilterType>
+using SeparableFilterDirect15x15 = SeparableFilter<FilterType, 15UL>;
+
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
 #endif  // KLEIDICV_SEPARABLE_FILTER_15X15_NEON_H

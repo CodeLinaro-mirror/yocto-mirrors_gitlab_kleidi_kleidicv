@@ -155,6 +155,42 @@ class SeparableFilterWorkspace {
     }
   }
 
+  // Processes rows along the full width, one vector length vertically and
+  // immediately horizontally too
+  // TODO kernel data type?? it depends on kernel size, in case of GaussianBlur
+  // inside here, we have to know the data types!
+  // Filter has the type and the kernel!
+  template <typename FilterType>
+  void process_direct(Rectangle rect, size_t y_begin, size_t y_end,
+                      Rows<const typename FilterType::SourceType> src_rows,
+                      Rows<typename FilterType::DestinationType> dst_rows,
+                      typename FilterType::BorderType border_type,
+                      FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+    // Border helper which calculates border offsets.
+    typename FilterType::BorderInfoType vertical_border{rect.height(),
+                                                        border_type};
+    typename FilterType::BorderInfoType horizontal_border{rect.width(),
+                                                          border_type};
+
+    // ha nagy a kernel és mindkét vége kilóg, akkor teljesen speciális
+    // ha az egyik vége lóg bele, vagy másik, akkor az a path megy
+    // egyébként meg a sima
+
+    // Vertical processing loop for the bordering part
+    for (size_t vertical_index = y_begin; vertical_index < y_end;
+         ++vertical_index) {
+      // if need border handling, use the old method
+      //      if (vertical_index < filter.margin ||
+      //          vertical_index >= rect.height() - filter.margin) {
+      // Recalculate vertical border offsets.
+      auto offsets = vertical_border.offsets_with_border(vertical_index);
+
+      // Process in the vertical direction first.
+      filter.process_row(rect.width(), src_rows.at(vertical_index), offsets,
+                         dst_rows.at(vertical_index), horizontal_border);
+    }
+  }
+
  protected:
   template <typename FilterType>
   void process_horizontal(size_t width,

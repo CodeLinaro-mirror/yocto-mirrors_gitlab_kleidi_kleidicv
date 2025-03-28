@@ -231,7 +231,7 @@ def run_executable_tests(
         wait_for_cooldown(runner, thermal_zone)
         try:
             runner.check_output(
-                f"cd {shlex.quote(args.tmpdir)} && "
+                f"cd {shlex.quote(args.tmpdir)} && OPENCV_FOR_THREADS_NUM=1 "
                 + shlex.join(
                     [
                         "taskset",

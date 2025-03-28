@@ -567,6 +567,136 @@ class GaussianBlur<uint8_t, KernelSize, false> {
     neon::VecTraits<uint32_t>::store(result, &dst[0]);
   }
 
+  using BorderInfoType =
+      typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo15x15<SourceType>;
+  using BorderType = FixedBorderType;
+  using BorderOffsets = typename BorderInfoType::Offsets;
+
+  static constexpr size_t kNLanes = 4;
+
+  template <size_t Offset>
+  uint32x4_t extract_from_buffers() {
+    return vextq_u32(buffer_[Offset / kNLanes], buffer_[Offset / kNLanes + 1],
+                     (Offset / kNLanes) % kNLanes);
+  }
+
+  template <size_t Channels>
+  void horizontal_direct_path(uint32x4_t buf, DestinationType *&dst,
+                              BorderInfoType) {
+    buffer_[buffer_len_++] = buf;
+    constexpr size_t kNBuffersNeeded =
+        (kNLanes + (KernelSize - 1) * Channels + kNLanes - 1) / kNLanes;
+    if (buffer_len_ >= kNBuffersNeeded) {  // have enough buffers to process
+      uint32x4_t src[KernelSize];
+      src[0] = buffer_[0];
+      src[1] = extract_from_buffers<Channels>();
+      src[2] = extract_from_buffers<2 * Channels>();
+      src[3] = extract_from_buffers<3 * Channels>();
+      src[4] = extract_from_buffers<4 * Channels>();
+      src[5] = extract_from_buffers<5 * Channels>();
+      src[6] = extract_from_buffers<6 * Channels>();
+      src[7] = extract_from_buffers<7 * Channels>();
+      src[8] = extract_from_buffers<8 * Channels>();
+      src[9] = extract_from_buffers<9 * Channels>();
+      src[10] = extract_from_buffers<10 * Channels>();
+      src[11] = extract_from_buffers<11 * Channels>();
+      src[12] = extract_from_buffers<12 * Channels>();
+      src[13] = extract_from_buffers<13 * Channels>();
+      if constexpr (Channels == 4) {
+        src[14] = buffer_[14];
+      } else {
+        src[14] = extract_from_buffers<14 * Channels>();
+      }
+
+      uint32x4_t acc =
+          vmulq_u32(src[KernelSize >> 1], half_kernel_u32_[KernelSize >> 1]);
+
+      // Optimization to avoid unnecessary branching in vector code.
+      KLEIDICV_FORCE_LOOP_UNROLL
+      for (size_t i = 0; i < (KernelSize >> 1); i++) {
+        const size_t j = KernelSize - i - 1;
+        uint32x4_t vec_inner = vaddq_u32(src[i], src[j]);
+        acc = vmlaq_u32(acc, vec_inner, half_kernel_u32_[i]);
+      }
+
+      uint32x4_t acc_u32 = vrshrq_n_u32(acc, 16);
+      uint16x4_t narrowed = vmovn_u32(acc_u32);
+      uint8x8_t interleaved = vuzp1_u8(vreinterpret_u8_u16(narrowed),
+                                       vreinterpret_u8_u16(narrowed));
+      uint32_t result = vget_lane_u32(vreinterpret_u32_u8(interleaved), 0);
+      memcpy(dst, &result, sizeof(result));
+      dst += kNLanes;
+      KLEIDICV_FORCE_LOOP_UNROLL
+      for (size_t i = 0; i < kNBuffersNeeded; ++i) {
+        buffer_[i] = buffer_[i + 1];
+      }
+      --buffer_len_;
+    }
+  }
+
+  // Convert channels to a template argument.
+  void combined_vector_path(uint8x16_t src[KernelSize], DestinationType *&dst,
+                            size_t channels,
+                            BorderInfoType horizontal_border_offsets) {
+    switch (channels) {
+      case 1:
+        fixed_combined_vector_path<1UL>(src, dst, horizontal_border_offsets);
+        break;
+      case 2:
+        fixed_combined_vector_path<2UL>(src, dst, horizontal_border_offsets);
+        break;
+      case 3:
+        fixed_combined_vector_path<3UL>(src, dst, horizontal_border_offsets);
+        break;
+      case 4:
+        fixed_combined_vector_path<4UL>(src, dst, horizontal_border_offsets);
+        break;
+      default:
+        return;
+    }
+  }
+
+  template <size_t Channels>
+  void fixed_combined_vector_path(uint8x16_t src[KernelSize],
+                                  DestinationType *&dst,
+                                  BorderInfoType horizontal_border_offsets) {
+    uint16x8_t initial_l = vmovl_u8(vget_low_u8(src[KernelSize >> 1]));
+    uint16x8_t initial_h = vmovl_high_u8(src[KernelSize >> 1]);
+
+    uint32x4_t acc_l_l =
+        vmull_u16(vget_low_u16(initial_l),
+                  vget_low_u16(half_kernel_u16_[KernelSize >> 1]));
+    uint32x4_t acc_l_h =
+        vmull_high_u16(initial_l, half_kernel_u16_[KernelSize >> 1]);
+    uint32x4_t acc_h_l =
+        vmull_u16(vget_low_u16(initial_h),
+                  vget_low_u16(half_kernel_u16_[KernelSize >> 1]));
+    uint32x4_t acc_h_h =
+        vmull_high_u16(initial_h, half_kernel_u16_[KernelSize >> 1]);
+
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 0; i < (KernelSize >> 1); i++) {
+      const size_t j = KernelSize - i - 1;
+      uint16x8_t vec_l = vaddl_u8(vget_low_u8(src[i]), vget_low_u8(src[j]));
+      uint16x8_t vec_h = vaddl_high_u8(src[i], src[j]);
+
+      acc_l_l = vmlal_u16(acc_l_l, vget_low_u16(vec_l),
+                          vget_low_u16(half_kernel_u16_[i]));
+      acc_l_h = vmlal_high_u16(acc_l_h, vec_l, half_kernel_u16_[i]);
+      acc_h_l = vmlal_u16(acc_h_l, vget_low_u16(vec_h),
+                          vget_low_u16(half_kernel_u16_[i]));
+      acc_h_h = vmlal_high_u16(acc_h_h, vec_h, half_kernel_u16_[i]);
+    }
+
+    horizontal_direct_path<Channels>(acc_l_l, dst, horizontal_border_offsets);
+    horizontal_direct_path<Channels>(acc_l_h, dst, horizontal_border_offsets);
+    horizontal_direct_path<Channels>(acc_h_l, dst, horizontal_border_offsets);
+    horizontal_direct_path<Channels>(acc_h_h, dst, horizontal_border_offsets);
+  }
+
+  void start_row() { buffer_len_ = 0; }
+
   void vertical_scalar_path(const SourceType src[KernelSize],
                             BufferType *dst) const {
     BufferType acc = static_cast<BufferType>(src[0]) * half_kernel_[0];
@@ -630,6 +760,8 @@ class GaussianBlur<uint8_t, KernelSize, false> {
   const std::array<uint16_t, kHalfKernelSize> half_kernel_;
   uint16x8_t half_kernel_u16_[kHalfKernelSize];
   uint32x4_t half_kernel_u32_[kHalfKernelSize];
+  uint32x4_t buffer_[KernelSize];
+  size_t buffer_len_ = 0;
 };  // end of class GaussianBlur<uint8_t, KernelSize, false>
 
 template <size_t KernelSize, bool IsBinomial, typename ScalarType>
@@ -640,14 +772,27 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     SeparableFilterWorkspace *workspace) {
   using GaussianBlurFilter = GaussianBlur<ScalarType, KernelSize, IsBinomial>;
 
-  GaussianBlurFilter blur{sigma};
-  SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+  // Proto -- use old for binomial, use new for customsigma
+  if constexpr (IsBinomial) {
+    GaussianBlurFilter blur{sigma};
+    SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
 
-  Rows<const ScalarType> src_rows{src, src_stride, channels};
-  Rows<ScalarType> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     border_type, filter);
+    Rows<const ScalarType> src_rows{src, src_stride, channels};
+    Rows<ScalarType> dst_rows{dst, dst_stride, channels};
+    workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                       border_type, filter);
+  } else {
+    if constexpr (KernelSize == 15) {
+      GaussianBlurFilter blur{sigma};
+      SeparableFilterDirect<GaussianBlurFilter, KernelSize> filter{blur};
 
+      Rows<const ScalarType> src_rows{src, src_stride, channels};
+      Rows<ScalarType> dst_rows{dst, dst_stride, channels};
+
+      workspace->process_direct(rect, y_begin, y_end, src_rows, dst_rows,
+                                border_type, filter);
+    }
+  }
   return KLEIDICV_OK;
 }
 
