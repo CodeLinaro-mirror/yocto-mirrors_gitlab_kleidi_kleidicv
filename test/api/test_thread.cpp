@@ -858,6 +858,51 @@ INSTANTIATE_TEST_SUITE_P(
                     P{2, 48, 1}, P{6, 64, 1}, P{4, 80, 2}, P{2, 96, 3},
                     P{1, 112, 4}, P{12, 34, 5}));
 
+TEST(ThreadedScaleU8, NotImplemented) {
+  test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
+  test::test_null_args(kleidicv_thread_scale_u8, src.data(), src.stride(),
+                       dst.data(), dst.stride(), 1, 1, 2, 0,
+                       get_multithreading_fake(2));
+}
+
+TEST(ThreadedScaleU8, OversizeImage) {
+  test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
+  kleidicv_error_t result = kleidicv_thread_scale_u8(
+      src.data(), src.stride(), dst.data(), dst.stride(),
+      KLEIDICV_MAX_IMAGE_PIXELS + 1, 2, 2, 0, get_multithreading_fake(2));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE, result);
+}
+
+TEST(ThreadedScaleU8, ZerosizeImage) {
+  test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
+  kleidicv_error_t result = kleidicv_thread_scale_u8(
+      src.data(), src.stride(), dst.data(), dst.stride(), 0, 2, 2, 0,
+      get_multithreading_fake(2));
+  EXPECT_EQ(KLEIDICV_OK, result);
+}
+
+TEST(ThreadedScaleU8, Consistency) {
+  const auto width = 55;
+  const auto height = 60;
+  const uint8_t src_val = 230, scale = 2, shift = 3;
+  test::Array2D<uint8_t> src(size_t{width}, height),
+      dst_single(size_t{width}, height), dst_multi(size_t{width}, height);
+
+  src.fill(src_val);
+
+  kleidicv_error_t single_result =
+      kleidicv_scale_u8(src.data(), src.stride(), dst_single.data(),
+                        dst_single.stride(), width, height, scale, shift);
+
+  kleidicv_error_t multi_result = kleidicv_thread_scale_u8(
+      src.data(), src.stride(), dst_multi.data(), dst_multi.stride(), width,
+      height, scale, shift, get_multithreading_fake(2));
+
+  EXPECT_EQ(KLEIDICV_OK, multi_result);
+  EXPECT_EQ(KLEIDICV_OK, single_result);
+  EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+}
+
 // Operations in the Neon backend have both a vector path and a scalar path.
 // The vector path is used to process most data and the scalar path is used to
 // process the parts of the data that don't fit into the vector width.

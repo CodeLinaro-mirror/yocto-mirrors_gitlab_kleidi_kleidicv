@@ -4,9 +4,10 @@
 
 #include <climits>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 
-#include "kleidicv/kleidicv.h"
+#include "kleidicv/arithmetics/scale.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/traits.h"
 
@@ -61,17 +62,24 @@ class ScaleIntBase : public UnrollTwice {
  protected:
   static constexpr ScalarType ScalarMax =
       std::numeric_limits<ScalarType>::max();
-  inline ScalarType scale_value(ScalarType value) {
-    int64_t v = lrintf(value * scale_ + shift_);
-    if (static_cast<uint64_t>(v) <= ScalarMax) {
-      return static_cast<ScalarType>(v);
-    }
-    return static_cast<ScalarType>(v > 0 ? ScalarMax : 0);
-  }
 
- private:
   float scale_, shift_;
 };
+
+template <typename T>
+kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       float scale, float shift);
+
+template <typename T>
+T scale_value(T value, float scale, float shift) {
+  static constexpr T ScalarMax = std::numeric_limits<T>::max();
+  int64_t v = lrintf(static_cast<float>(value) * scale + shift);
+  if (static_cast<uint64_t>(v) <= ScalarMax) {
+    return static_cast<T>(v);
+  }
+  return static_cast<T>(v > 0 ? ScalarMax : 0);
+}
 
 class ScaleUint8Tbx final : public ScaleIntBase<uint8_t> {
  public:
@@ -81,24 +89,22 @@ class ScaleUint8Tbx final : public ScaleIntBase<uint8_t> {
   using Vector2Type = typename VecTraits::Vector2Type;
   using Vector3Type = typename VecTraits::Vector3Type;
 
-  ScaleUint8Tbx(float scale, float shift)
-      : ScaleIntBase<uint8_t>(scale, shift) {
-    constexpr size_t TableLength = 1 << (CHAR_BIT * sizeof(ScalarType));
-    ScalarType values[TableLength];
-    for (size_t i = 0; i < TableLength; ++i) {
-      values[i] = this->scale_value(i);
-    }
-
-    VecTraits::load(values, t0_3_);
-    VecTraits::load(values + 3 * VecTraits::num_lanes(), t1_3_);
-    VecTraits::load(values + (3 + 3) * VecTraits::num_lanes(), t2_2_);
-    VecTraits::load(values + (3 + 3 + 2) * VecTraits::num_lanes(), t3_3_);
-    VecTraits::load(values + (3 + 3 + 2 + 3) * VecTraits::num_lanes(), t4_2_);
-    VecTraits::load(values + (3 + 3 + 2 + 3 + 2) * VecTraits::num_lanes(),
-                    t5_3_);
-
-    v_step3_ = vdupq_n_u8(3 * VecTraits::num_lanes());
-    v_step2_ = vdupq_n_u8(2 * VecTraits::num_lanes());
+  ScaleUint8Tbx(float scale, float shift, const ScalarType *precalculated_table)
+      : ScaleIntBase<uint8_t>(scale, shift),
+        table_pointer_(precalculated_table),
+        v_step3_(vdupq_n_u8(3 * VecTraits::num_lanes())),
+        v_step2_(vdupq_n_u8(2 * VecTraits::num_lanes())) {
+    VecTraits::load(precalculated_table, t0_3_);
+    VecTraits::load(precalculated_table + 3 * VecTraits::num_lanes(), t1_3_);
+    VecTraits::load(precalculated_table + (3 + 3) * VecTraits::num_lanes(),
+                    t2_2_);
+    VecTraits::load(precalculated_table + (3 + 3 + 2) * VecTraits::num_lanes(),
+                    t3_3_);
+    VecTraits::load(
+        precalculated_table + (3 + 3 + 2 + 3) * VecTraits::num_lanes(), t4_2_);
+    VecTraits::load(
+        precalculated_table + (3 + 3 + 2 + 3 + 2) * VecTraits::num_lanes(),
+        t5_3_);
   }
   VectorType vector_path(VectorType src) {
     VectorType dst = vqtbl3q_u8(t0_3_, src);
@@ -115,9 +121,10 @@ class ScaleUint8Tbx final : public ScaleIntBase<uint8_t> {
     return dst;
   }
 
-  ScalarType scalar_path(ScalarType src) { return this->scale_value(src); }
+  ScalarType scalar_path(ScalarType src) { return table_pointer_[src]; }
 
  private:
+  const ScalarType *table_pointer_;
   Vector3Type t0_3_{}, t1_3_{}, t3_3_{}, t5_3_{};
   Vector2Type t2_2_{}, t4_2_{};
   VectorType v_step3_, v_step2_;
@@ -153,7 +160,9 @@ class ScaleUint8Calc final : public ScaleIntBase<uint8_t> {
     return vqmovn_high_u16(vqmovn_u16(res1), res2);
   }
 
-  ScalarType scalar_path(ScalarType src) { return this->scale_value(src); }
+  ScalarType scalar_path(ScalarType src) {
+    return scale_value(src, scale_, shift_);
+  }
 
  private:
   static constexpr ScalarType FF = std::numeric_limits<uint8_t>::max();
@@ -173,6 +182,82 @@ class ScaleUint8Calc final : public ScaleIntBase<uint8_t> {
 
   float32x4_t vscale_, vshift_;
 };  // end of class ScaleUint8Calc<T>
+
+kleidicv_error_t scale_with_precalculated_table(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, float scale, float shift,
+    const std::array<uint8_t, 256> &precalculated_table) {
+  Rectangle rect{width, height};
+  Rows<const uint8_t> src_rows{src, src_stride};
+  Rows<uint8_t> dst_rows{dst, dst_stride};
+  ScaleUint8Tbx operation(scale, shift, precalculated_table.data());
+  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+
+  return KLEIDICV_OK;
+}
+
+// Specialization for uint8_t
+template <>
+kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       float scale, float shift) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+  // For smaller inputs, the full calculation is the faster
+  if (width * height < 675) {  // empirical value
+    Rectangle rect{width, height};
+    Rows<const uint8_t> src_rows{src, src_stride};
+    Rows<uint8_t> dst_rows{dst, dst_stride};
+    ScaleUint8Calc operation(scale, shift);
+    apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  } else {
+    // For bigger inputs, it's faster to pre-calculate the table
+    // and map those values during the run
+    auto precalculated_table = precalculate_scale_table_u8(scale, shift);
+    return scale_with_precalculated_table(src, src_stride, dst, dst_stride,
+                                          width, height, scale, shift,
+                                          precalculated_table);
+  }
+  return KLEIDICV_OK;
+}
+
+static uint32x4_t scale_shift(uint32x4_t src, float scale, float shift) {
+  float32x4_t fx = vcvtq_f32_u32(src);
+  float32x4_t max = vdupq_n_f32(255.0F);
+  float32x4_t min = vdupq_n_f32(0.0F);
+  float32x4_t val = vmlaq_f32(vdupq_n_f32(shift), fx, vdupq_n_f32(scale));
+  return vcvtnq_u32_f32(vmaxq_f32(min, vminq_f32(val, max)));
+}
+
+std::array<uint8_t, 256> precalculate_scale_table_u8(float scale, float shift) {
+  static constexpr size_t TableLength = 256;
+  std::array<uint8_t, TableLength> precalculated_table{};
+
+  uint32x4_t counter = {0, 1, 2, 3};
+  uint32x4_t four = vdupq_n_u32(4);
+
+  for (size_t i = 0; i < TableLength; i += 16) {
+    uint32x4_t res11 = scale_shift(counter, scale, shift);
+    counter = vaddq(counter, four);
+    uint32x4_t res12 = scale_shift(counter, scale, shift);
+    counter = vaddq(counter, four);
+    uint32x4_t res21 = scale_shift(counter, scale, shift);
+    counter = vaddq(counter, four);
+    uint32x4_t res22 = scale_shift(counter, scale, shift);
+    counter = vaddq(counter, four);
+
+    uint16x8_t res1 =
+        vuzp1q_u16(vreinterpretq_u16_u32(res11), vreinterpretq_u16_u32(res12));
+    uint16x8_t res2 =
+        vuzp1q_u16(vreinterpretq_u16_u32(res21), vreinterpretq_u16_u32(res22));
+    // Saturating narrowing from 16 to 8 bits
+    uint8x16_t res = vqmovn_high_u16(vqmovn_u16(res1), res2);
+
+    vst1q_u8(&precalculated_table[i], res);
+  }
+  return precalculated_table;
+}
 
 // -----------------------------------------------------------------------
 // Float implementation
@@ -225,36 +310,6 @@ class ScaleFloat final : public UnrollTwice,
   float scale_, shift_;
   float32x4_t vscale_, vshift_;
 };  // end of class ScaleFloat
-
-template <typename T>
-kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
-                       size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift);
-
-// Specialization for uint8_t
-template <>
-kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
-                       size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
-  CHECK_IMAGE_SIZE(width, height);
-
-  Rectangle rect{width, height};
-  Rows<const uint8_t> src_rows{src, src_stride};
-  Rows<uint8_t> dst_rows{dst, dst_stride};
-  // For smaller inputs, the full calculation is the faster
-  if (width * height < 2500) {  // empirical value
-    ScaleUint8Calc operation(scale, shift);
-    apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  } else {
-    // For bigger inputs, it's faster to pre-calculate the table
-    // and map those values during the run
-    ScaleUint8Tbx operation(scale, shift);
-    apply_operation_by_rows(operation, rect, src_rows, dst_rows);
-  }
-  return KLEIDICV_OK;
-}
 
 // Specialization for float
 template <>
