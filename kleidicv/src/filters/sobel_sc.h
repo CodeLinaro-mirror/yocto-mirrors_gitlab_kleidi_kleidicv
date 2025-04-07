@@ -59,10 +59,15 @@ class HorizontalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    // Explicitly narrow. Overflow is permitted.
-    dst[0] = static_cast<DestinationType>(src[2] - src[0]);
+  void horizontal_scalar_path(
+      const BufferType *p_src_0, const BufferType *p_src_1,
+      const BufferType *p_src_2,
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svbool_t pg16_1 = svptrue_pat_b16(SV_VL1);
+    svint16_t src_0 = svld1(pg16_1, p_src_0);
+    svint16_t src_1 = svld1(pg16_1, p_src_1);
+    svint16_t src_2 = svld1(pg16_1, p_src_2);
+    horizontal_vector_path(pg16_1, src_0, src_1, src_2, dst);
   }
 };  // end of class HorizontalSobel3x3<uint8_t>
 
@@ -112,12 +117,17 @@ class VerticalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    // Explicitly narrow. Overflow is permitted.
-    dst[0] = static_cast<DestinationType>(src[0] + 2 * src[1] + src[2]);
+  void horizontal_scalar_path(
+      const BufferType *p_src_0, const BufferType *p_src_1,
+      const BufferType *p_src_2,
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svbool_t pg16_1 = svptrue_pat_b16(SV_VL1);
+    svint16_t src_0 = svld1(pg16_1, p_src_0);
+    svint16_t src_1 = svld1(pg16_1, p_src_1);
+    svint16_t src_2 = svld1(pg16_1, p_src_2);
+    horizontal_vector_path(pg16_1, src_0, src_1, src_2, dst);
   }
-};  // end of class VerticalSobel3x3<uint8_t>
+};  // end of class HorizontalSobel3x3<uint8_t>
 
 KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8_sc(
