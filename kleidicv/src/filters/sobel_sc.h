@@ -55,20 +55,6 @@ class HorizontalSobel3x3<uint8_t> {
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     svst1(pg, &dst[0], svsub_x(pg, src_2, src_0));
   }
-
-  // Applies horizontal filtering vector using scalar operations.
-  //
-  // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void horizontal_scalar_path(
-      const BufferType *p_src_0, const BufferType *p_src_1,
-      const BufferType *p_src_2,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svbool_t pg16_1 = svptrue_pat_b16(SV_VL1);
-    svint16_t src_0 = svld1(pg16_1, p_src_0);
-    svint16_t src_1 = svld1(pg16_1, p_src_1);
-    svint16_t src_2 = svld1(pg16_1, p_src_2);
-    horizontal_vector_path(pg16_1, src_0, src_1, src_2, dst);
-  }
 };  // end of class HorizontalSobel3x3<uint8_t>
 
 // Template for 3x3 Sobel filters which calculate vertical derivative
@@ -112,20 +98,6 @@ class VerticalSobel3x3<uint8_t> {
     svint16_t acc = svadd_x(pg, src_0, src_2);
     acc = svmad_s16_x(pg, src_1, svdup_n_s16(2), acc);
     svst1(pg, &dst[0], acc);
-  }
-
-  // Applies horizontal filtering vector using scalar operations.
-  //
-  // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_scalar_path(
-      const BufferType *p_src_0, const BufferType *p_src_1,
-      const BufferType *p_src_2,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svbool_t pg16_1 = svptrue_pat_b16(SV_VL1);
-    svint16_t src_0 = svld1(pg16_1, p_src_0);
-    svint16_t src_1 = svld1(pg16_1, p_src_1);
-    svint16_t src_2 = svld1(pg16_1, p_src_2);
-    horizontal_vector_path(pg16_1, src_0, src_1, src_2, dst);
   }
 };  // end of class HorizontalSobel3x3<uint8_t>
 

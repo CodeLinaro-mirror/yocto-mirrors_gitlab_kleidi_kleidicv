@@ -251,6 +251,30 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
     return svptrue_b64();
   }
 
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b8(pat);
+  }
+
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b16(pat);
+  }
+
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b32(pat);
+  }
+
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b64(pat);
+  }
+
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svwhilelt(
       IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {

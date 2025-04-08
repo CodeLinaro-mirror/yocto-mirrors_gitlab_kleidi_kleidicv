@@ -70,20 +70,6 @@ class GaussianBlur<uint8_t, 3, true> {
 
     svst1b(pg, &dst[0], acc);
   }
-
-  // Applies horizontal filtering vector using scalar operations.
-  //
-  // DST = 1/16 * [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_scalar_path(
-      const BufferType *p_src_0, const BufferType *p_src_1,
-      const BufferType *p_src_2,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svbool_t pg16_1 = svptrue_pat_b16(SV_VL1);
-    svuint16_t src_0 = svld1(pg16_1, p_src_0);
-    svuint16_t src_1 = svld1(pg16_1, p_src_1);
-    svuint16_t src_2 = svld1(pg16_1, p_src_2);
-    horizontal_vector_path(pg16_1, src_0, src_1, src_2, dst);
-  }
 };  // end of class GaussianBlur<uint8_t, 3, true>
 
 // Template for 5x5 Gaussian Blur binomial filters.
@@ -496,17 +482,6 @@ class GaussianBlur<uint8_t, 3, false> final
 
     acc = svrshr_n_u32_x(pg, acc, 16);
     svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(
-      const BufferType *p_src_0, const BufferType *p_src_1,
-      const BufferType *p_src_2,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svbool_t pg32_1 = svptrue_pat_b32(SV_VL1);
-    svuint32_t src_0 = svld1(pg32_1, p_src_0);
-    svuint32_t src_1 = svld1(pg32_1, p_src_1);
-    svuint32_t src_2 = svld1(pg32_1, p_src_2);
-    horizontal_vector_path(pg32_1, src_0, src_1, src_2, dst);
   }
 };  // end of class GaussianBlur<uint8_t, 3, false>
 
