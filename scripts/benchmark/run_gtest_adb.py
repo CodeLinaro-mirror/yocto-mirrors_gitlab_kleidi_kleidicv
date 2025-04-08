@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -55,8 +55,13 @@ def parse_args():
     parser.add_argument(
         "--executables",
         nargs="+",
-        help="Path to the gtest executables on the host. "
-        "These will be copied to the device.",
+        help="Path to the gtest executables on the host (or target if --no-push is used). "
+        "These are copied to the device, unless --no-push is used.",
+    )
+    parser.add_argument(
+        "--no_push",
+        action="store_true",
+        help="Don't push --executables from host, use them as target path instead.",
     )
     parser.add_argument("--adb", default="adb", help="Path to adb")
     parser.add_argument(
@@ -134,15 +139,15 @@ class ADBRunner:
             result.extend(["-s", self.serial_number])
         return result
 
-    def _print_command(self, command):
+    def _print_command(self, command: list[str]):
         if self.verbose:
-            print("+ " + shlex.join(command))
+            print("+ ", shlex.join(command))
 
-    def check_output(self, script):
+    def check_output(self, script: str):
         command = self._make_adb_command() + ["shell", "su"]
         self._print_command(command)
         if self.verbose:
-            print("+ " + script)
+            print("+ ", script)
         try:
             return subprocess.check_output(
                 command,
@@ -350,8 +355,8 @@ def get_results_table(args, results):
     return rows
 
 
-def main():
-    args = parse_args()
+def main(args):
+    print(args)
 
     runner = ADBRunner(
         adb_command=args.adb,
@@ -360,11 +365,12 @@ def main():
     )
 
     # Copy executables to device
-    for host_filename in args.executables:
-        runner.push(
-            [host_filename],
-            host_filename_to_device_filename(args, host_filename),
-        )
+    if not args.no_push:
+        for host_filename in args.executables:
+            runner.push(
+                [host_filename],
+                host_filename_to_device_filename(args, host_filename),
+            )
 
     results = {}
 
@@ -388,4 +394,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args)
