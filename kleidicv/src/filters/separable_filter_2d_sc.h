@@ -28,14 +28,12 @@ class SeparableFilter2D<uint8_t, 5> {
   using DestinationType = uint8_t;
 
   SeparableFilter2D(
-      const SourceType *kernel_x, BufferVectorType &kernel_x_0_u16,
-      BufferVectorType &kernel_x_1_u16, BufferVectorType &kernel_x_2_u16,
-      BufferVectorType &kernel_x_3_u16, BufferVectorType &kernel_x_4_u16,
-      SourceVectorType &kernel_y_0_u8, SourceVectorType &kernel_y_1_u8,
-      SourceVectorType &kernel_y_2_u8, SourceVectorType &kernel_y_3_u8,
-      SourceVectorType &kernel_y_4_u8)
-      : kernel_x_(kernel_x),
-        kernel_x_0_u16_(kernel_x_0_u16),
+      BufferVectorType &kernel_x_0_u16, BufferVectorType &kernel_x_1_u16,
+      BufferVectorType &kernel_x_2_u16, BufferVectorType &kernel_x_3_u16,
+      BufferVectorType &kernel_x_4_u16, SourceVectorType &kernel_y_0_u8,
+      SourceVectorType &kernel_y_1_u8, SourceVectorType &kernel_y_2_u8,
+      SourceVectorType &kernel_y_3_u8, SourceVectorType &kernel_y_4_u8)
+      : kernel_x_0_u16_(kernel_x_0_u16),
         kernel_x_1_u16_(kernel_x_1_u16),
         kernel_x_2_u16_(kernel_x_2_u16),
         kernel_x_3_u16_(kernel_x_3_u16),
@@ -118,32 +116,7 @@ class SeparableFilter2D<uint8_t, 5> {
     svst1b_u16(pg, &dst[0], acc_u16);
   }
 
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    SourceType acc;  // NOLINT
-    if (__builtin_mul_overflow(src[0], kernel_x_[0], &acc)) {
-      dst[0] = std::numeric_limits<SourceType>::max();
-      return;
-    }
-
-    for (size_t i = 1; i < 5; i++) {
-      SourceType temp;  // NOLINT
-      if (__builtin_mul_overflow(src[i], kernel_x_[i], &temp)) {
-        dst[0] = std::numeric_limits<SourceType>::max();
-        return;
-      }
-      if (__builtin_add_overflow(acc, temp, &acc)) {
-        dst[0] = std::numeric_limits<SourceType>::max();
-        return;
-      }
-    }
-
-    dst[0] = acc;
-  }
-
  private:
-  const SourceType *kernel_x_;
-
   BufferVectorType &kernel_x_0_u16_;
   BufferVectorType &kernel_x_1_u16_;
   BufferVectorType &kernel_x_2_u16_;
@@ -168,14 +141,12 @@ class SeparableFilter2D<uint16_t, 5> {
   using DestinationType = uint16_t;
 
   SeparableFilter2D(
-      const SourceType *kernel_x, BufferVectorType &kernel_x_0_u32,
-      BufferVectorType &kernel_x_1_u32, BufferVectorType &kernel_x_2_u32,
-      BufferVectorType &kernel_x_3_u32, BufferVectorType &kernel_x_4_u32,
-      SourceVectorType &kernel_y_0_u16, SourceVectorType &kernel_y_1_u16,
-      SourceVectorType &kernel_y_2_u16, SourceVectorType &kernel_y_3_u16,
-      SourceVectorType &kernel_y_4_u16)
-      : kernel_x_(kernel_x),
-        kernel_x_0_u32_(kernel_x_0_u32),
+      BufferVectorType &kernel_x_0_u32, BufferVectorType &kernel_x_1_u32,
+      BufferVectorType &kernel_x_2_u32, BufferVectorType &kernel_x_3_u32,
+      BufferVectorType &kernel_x_4_u32, SourceVectorType &kernel_y_0_u16,
+      SourceVectorType &kernel_y_1_u16, SourceVectorType &kernel_y_2_u16,
+      SourceVectorType &kernel_y_3_u16, SourceVectorType &kernel_y_4_u16)
+      : kernel_x_0_u32_(kernel_x_0_u32),
         kernel_x_1_u32_(kernel_x_1_u32),
         kernel_x_2_u32_(kernel_x_2_u32),
         kernel_x_3_u32_(kernel_x_3_u32),
@@ -258,32 +229,7 @@ class SeparableFilter2D<uint16_t, 5> {
     svst1h_u32(pg, &dst[0], acc_u32);
   }
 
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    SourceType acc;  // Avoid cppcoreguidelines-init-variables. NOLINT
-    if (__builtin_mul_overflow(src[0], kernel_x_[0], &acc)) {
-      dst[0] = std::numeric_limits<SourceType>::max();
-      return;
-    }
-
-    for (size_t i = 1; i < 5; i++) {
-      SourceType temp;  // Avoid cppcoreguidelines-init-variables. NOLINT
-      if (__builtin_mul_overflow(src[i], kernel_x_[i], &temp)) {
-        dst[0] = std::numeric_limits<SourceType>::max();
-        return;
-      }
-      if (__builtin_add_overflow(acc, temp, &acc)) {
-        dst[0] = std::numeric_limits<SourceType>::max();
-        return;
-      }
-    }
-
-    dst[0] = acc;
-  }
-
  private:
-  const SourceType *kernel_x_;
-
   BufferVectorType &kernel_x_0_u32_;
   BufferVectorType &kernel_x_1_u32_;
   BufferVectorType &kernel_x_2_u32_;
@@ -308,14 +254,12 @@ class SeparableFilter2D<int16_t, 5> {
   using DestinationType = int16_t;
 
   SeparableFilter2D(
-      const SourceType *kernel_x, BufferVectorType &kernel_x_0_s32,
-      BufferVectorType &kernel_x_1_s32, BufferVectorType &kernel_x_2_s32,
-      BufferVectorType &kernel_x_3_s32, BufferVectorType &kernel_x_4_s32,
-      SourceVectorType &kernel_y_0_s16, SourceVectorType &kernel_y_1_s16,
-      SourceVectorType &kernel_y_2_s16, SourceVectorType &kernel_y_3_s16,
-      SourceVectorType &kernel_y_4_s16)
-      : kernel_x_(kernel_x),
-        kernel_x_0_s32_(kernel_x_0_s32),
+      BufferVectorType &kernel_x_0_s32, BufferVectorType &kernel_x_1_s32,
+      BufferVectorType &kernel_x_2_s32, BufferVectorType &kernel_x_3_s32,
+      BufferVectorType &kernel_x_4_s32, SourceVectorType &kernel_y_0_s16,
+      SourceVectorType &kernel_y_1_s16, SourceVectorType &kernel_y_2_s16,
+      SourceVectorType &kernel_y_3_s16, SourceVectorType &kernel_y_4_s16)
+      : kernel_x_0_s32_(kernel_x_0_s32),
         kernel_x_1_s32_(kernel_x_1_s32),
         kernel_x_2_s32_(kernel_x_2_s32),
         kernel_x_3_s32_(kernel_x_3_s32),
@@ -403,25 +347,7 @@ class SeparableFilter2D<int16_t, 5> {
     svst1h_s32(pg, &dst[0], acc_s32);
   }
 
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    int64_t acc = static_cast<int64_t>(src[0]) * kernel_x_[0];
-    for (size_t i = 1; i < 5; i++) {
-      acc += static_cast<int64_t>(src[i]) * kernel_x_[i];
-    }
-
-    if (acc < std::numeric_limits<DestinationType>::min()) {
-      acc = std::numeric_limits<DestinationType>::min();
-    } else if (acc > std::numeric_limits<DestinationType>::max()) {
-      acc = std::numeric_limits<DestinationType>::max();
-    }
-
-    dst[0] = static_cast<DestinationType>(acc);
-  }
-
  private:
-  const SourceType *kernel_x_;
-
   BufferVectorType &kernel_x_0_s32_;
   BufferVectorType &kernel_x_1_s32_;
   BufferVectorType &kernel_x_2_s32_;
@@ -501,7 +427,7 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
   KernelYVectorT kernel_y_4 = KernelYVectorTraits::svdup(kernel_y[4]);
 
   SeparableFilterClass filterClass{
-      kernel_x,   kernel_x_0, kernel_x_1, kernel_x_2, kernel_x_3, kernel_x_4,
+      kernel_x_0, kernel_x_1, kernel_x_2, kernel_x_3, kernel_x_4,
       kernel_y_0, kernel_y_1, kernel_y_2, kernel_y_3, kernel_y_4};
   SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
 

@@ -233,23 +233,8 @@ class SeparableFilter<FilterType, 15UL> {
       Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets border_offsets,
       size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
-    BufferType src[15];
-    src[0] = src_rows.at(0, border_offsets.c0())[index];
-    src[1] = src_rows.at(0, border_offsets.c1())[index];
-    src[2] = src_rows.at(0, border_offsets.c2())[index];
-    src[3] = src_rows.at(0, border_offsets.c3())[index];
-    src[4] = src_rows.at(0, border_offsets.c4())[index];
-    src[5] = src_rows.at(0, border_offsets.c5())[index];
-    src[6] = src_rows.at(0, border_offsets.c6())[index];
-    src[7] = src_rows.at(0, border_offsets.c7())[index];
-    src[8] = src_rows.at(0, border_offsets.c8())[index];
-    src[9] = src_rows.at(0, border_offsets.c9())[index];
-    src[10] = src_rows.at(0, border_offsets.c10())[index];
-    src[11] = src_rows.at(0, border_offsets.c11())[index];
-    src[12] = src_rows.at(0, border_offsets.c12())[index];
-    src[13] = src_rows.at(0, border_offsets.c13())[index];
-    src[14] = src_rows.at(0, border_offsets.c14())[index];
-    filter_.horizontal_scalar_path(src, &dst_rows[index]);
+    svbool_t pg_1 = BufferVecTraits::template svptrue_pat<SV_VL1>();
+    horizontal_vector_path(pg_1, src_rows, dst_rows, border_offsets, index);
   }
 
   FilterType filter_;

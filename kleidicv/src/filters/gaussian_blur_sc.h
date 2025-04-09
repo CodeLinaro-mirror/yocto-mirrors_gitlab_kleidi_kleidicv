@@ -124,15 +124,6 @@ class GaussianBlur<uint8_t, 5, true> {
     acc = svrshr_x(pg, acc, 8);
     svst1b(pg, &dst[0], acc);
   }
-
-  // Applies horizontal filtering vector using scalar operations.
-  //
-  // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    auto acc = src[0] + src[4] + 4 * (src[1] + src[3]) + 6 * src[2];
-    dst[0] = rounding_shift_right(acc, 8);
-  }
 };  // end of class GaussianBlur<uint8_t, 5, true>
 
 // Template for 7x7 Gaussian Blur binomial filters.
@@ -236,17 +227,6 @@ class GaussianBlur<uint8_t, 7, true> {
         svrshrnt_n_u32(acc_0_1_2_3_4_5_6_u16_b, acc_0_1_2_3_4_5_6_t, 12);
 
     svst1b(pg, &dst[0], acc_0_1_2_3_4_5_6_u16);
-  }
-
-  // Applies horizontal filtering vector using scalar operations.
-  //
-  // DST = 1/4096 * [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6 ] *
-  //              * [ 2, 7, 14, 18, 14, 7, 2 ]T
-  void horizontal_scalar_path(const BufferType src[7], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * 2 + src[1] * 7 + src[2] * 14 + src[3] * 18 +
-                   src[4] * 14 + src[5] * 7 + src[6] * 2;
-    dst[0] = rounding_shift_right(acc, 12);
   }
 };  // end of class GaussianBlur<uint8_t, 7, true>
 
@@ -403,20 +383,6 @@ class GaussianBlur<uint8_t, 15, true> {
     acc = svrshr_n_u32_x(pg, acc, 20);
     svst1b_u32(pg, &dst[0], acc);
   }
-
-  // Applies horizontal filtering vector using scalar operations.
-  //
-  // DST = 1/1048576 * [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
-  //                 * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
-  void horizontal_scalar_path(const BufferType src[15], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = (static_cast<uint32_t>(src[3]) + src[11]) * 4;
-    acc += (acc + src[1] + src[13]) * 11;
-    acc += (src[0] + src[14]) * 4 + (src[2] + src[12]) * 25 +
-           (src[4] + src[10]) * 81;
-    acc += (src[5] + src[9]) * 118 + (src[6] + src[8]) * 146 + src[7] * 158;
-    dst[0] = rounding_shift_right(acc, 20);
-  }
 };  // end of class GaussianBlur<uint8_t, 15, true>
 
 template <typename ScalarType, size_t KernelSize>
@@ -549,14 +515,6 @@ class GaussianBlur<uint8_t, 5, false> final
     acc = svrshr_n_u32_x(pg, acc, 16);
     svst1b_u32(pg, &dst[0], acc);
   }
-
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * half_kernel_[0] + src[1] * half_kernel_[1] +
-                   src[2] * half_kernel_[2] + src[3] * half_kernel_[1] +
-                   src[4] * half_kernel_[0];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
-  }
 };  // end of class GaussianBlur<uint8_t, 5, false>
 
 template <>
@@ -635,15 +593,6 @@ class GaussianBlur<uint8_t, 7, false> final
 
     acc = svrshr_n_u32_x(pg, acc, 16);
     svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(const BufferType src[7], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * half_kernel_[0] + src[1] * half_kernel_[1] +
-                   src[2] * half_kernel_[2] + src[3] * half_kernel_[3] +
-                   src[4] * half_kernel_[2] + src[5] * half_kernel_[1] +
-                   src[6] * half_kernel_[0];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
   }
 };  // end of class GaussianBlur<uint8_t, 7, false>
 
@@ -780,19 +729,6 @@ class GaussianBlur<uint8_t, 15, false> final
 
     acc = svrshr_n_u32_x(pg, acc, 16);
     svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(const BufferType src[15], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * half_kernel_[0] + src[1] * half_kernel_[1] +
-                   src[2] * half_kernel_[2] + src[3] * half_kernel_[3] +
-                   src[4] * half_kernel_[4] + src[5] * half_kernel_[5] +
-                   src[6] * half_kernel_[6] + src[7] * half_kernel_[7] +
-                   src[8] * half_kernel_[6] + src[9] * half_kernel_[5] +
-                   src[10] * half_kernel_[4] + src[11] * half_kernel_[3] +
-                   src[12] * half_kernel_[2] + src[13] * half_kernel_[1] +
-                   src[14] * half_kernel_[0];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
   }
 };  // end of class GaussianBlur<uint8_t, 15, false>
 

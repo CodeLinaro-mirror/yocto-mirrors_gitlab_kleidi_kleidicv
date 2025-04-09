@@ -158,13 +158,8 @@ class SeparableFilter<FilterType, 5UL> {
       Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets border_offsets,
       size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
-    BufferType src[5];
-    src[0] = src_rows.at(0, border_offsets.c0())[index];
-    src[1] = src_rows.at(0, border_offsets.c1())[index];
-    src[2] = src_rows.at(0, border_offsets.c2())[index];
-    src[3] = src_rows.at(0, border_offsets.c3())[index];
-    src[4] = src_rows.at(0, border_offsets.c4())[index];
-    filter_.horizontal_scalar_path(src, &dst_rows[index]);
+    svbool_t pg_1 = BufferVecTraits::template svptrue_pat<SV_VL1>();
+    horizontal_vector_path(pg_1, src_rows, dst_rows, border_offsets, index);
   }
 
   FilterType filter_;
