@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -17,8 +17,8 @@ include(FetchContent)
 # Please update SECURITY.md if adding, removing or changing the version of third party content.
 FetchContent_Declare(
   benchmark
-  URL https://github.com/google/benchmark/archive/refs/tags/v1.8.3.tar.gz
-  URL_HASH SHA256=6bc180a57d23d4d9515519f92b0c83d61b05b5bab188961f36ac7b06b0d9e9ce
+  URL https://github.com/google/benchmark/archive/refs/tags/v1.9.2.tar.gz
+  URL_HASH SHA256=409075176168dc46bbb81b74c1b4b6900385b5d16bfc181d678afb060d928bd3
 )
 FetchContent_MakeAvailable(benchmark)
 
