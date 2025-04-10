@@ -43,15 +43,28 @@ T* get_destination_buffer() {
   return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0xC1>());
 }
 
+// A hook before and after the benchmarks can be useful in some environments.
+#ifndef KLEIDICV_BENCHMARK_PRE_HOOK
+#define KLEIDICV_BENCHMARK_PRE_HOOK()
+#endif
+#ifndef KLEIDICV_BENCHMARK_POST_HOOK
+#define KLEIDICV_BENCHMARK_POST_HOOK()
+#endif
+
 // Warms up the functor then benchmarks it.
 template <typename F>
 void bench_functor(benchmark::State& state, F functor) {
   // warm up
   functor();
+
+  KLEIDICV_BENCHMARK_PRE_HOOK();
+
   for (auto _ : state) {
     // This code gets benchmarked
     functor();
   }
+
+  KLEIDICV_BENCHMARK_POST_HOOK();
 }
 
 template <typename T, typename Function>
