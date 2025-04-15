@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <memory>
 
+#include "border_15x15.h"
 #include "border_types.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
@@ -68,6 +69,21 @@ class SeparableFilterWorkspaceDeleter {
 //
 // Handling of borders is calculated based on offsets rather than setting up
 // suitably-sized buffers which could hold both borders and data.
+
+template <typename, typename = void>
+struct has_process_left_border : std::false_type {};
+
+extern const Rows<const uint32_t> _dummy_src;
+extern const Rows<uint8_t> _dummy_dst;
+extern const FixedBorderInfo15x15<uint8_t> _dummy_border;
+extern const size_t _dummy_width;
+
+template <typename F>
+struct has_process_left_border<
+    F, std::void_t<decltype(std::declval<F>().process_left_border(
+           _dummy_src, _dummy_dst, _dummy_border, _dummy_width))>>
+    : std::true_type {};
+
 class SeparableFilterWorkspace {
  public:
   // To avoid load/store penalties.
@@ -166,24 +182,33 @@ class SeparableFilterWorkspace {
     // Margin associated with the filter.
     constexpr size_t margin = filter.margin;
 
+    size_t processed = 0;
+
     // Process data affected by left border.
-    KLEIDICV_FORCE_LOOP_UNROLL
-    for (size_t horizontal_index = 0; horizontal_index < margin;
-         ++horizontal_index) {
-      auto offsets =
-          horizontal_border.offsets_with_left_border(horizontal_index);
-      filter.process_horizontal_borders(buffer_rows.at(0, horizontal_index),
-                                        dst_rows.at(0, horizontal_index),
-                                        offsets);
+    if constexpr (has_process_left_border<FilterType>::value) {
+      processed = filter.process_left_border(buffer_rows, dst_rows,
+                                             horizontal_border, width);
+    }
+    if (processed == 0) {
+      KLEIDICV_FORCE_LOOP_UNROLL
+      for (size_t horizontal_index = 0; horizontal_index < margin;
+           ++horizontal_index) {
+        auto offsets =
+            horizontal_border.offsets_with_left_border(horizontal_index);
+        filter.process_horizontal_borders(buffer_rows.at(0, horizontal_index),
+                                          dst_rows.at(0, horizontal_index),
+                                          offsets);
+      }
+      processed = margin;
     }
 
     // Process data which is not affected by any borders in bulk.
     {
-      size_t width_without_borders = width - (2 * margin);
+      size_t width_without_borders = width - margin - processed;
       auto offsets = horizontal_border.offsets_without_border();
       filter.process_horizontal(width_without_borders,
-                                buffer_rows.at(0, margin),
-                                dst_rows.at(0, margin), offsets);
+                                buffer_rows.at(0, processed),
+                                dst_rows.at(0, processed), offsets);
     }
 
     // Process data affected by right border.

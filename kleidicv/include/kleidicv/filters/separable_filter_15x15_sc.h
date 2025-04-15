@@ -1,9 +1,11 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #ifndef KLEIDICV_SEPARABLE_FILTER_15X15_SC_H
 #define KLEIDICV_SEPARABLE_FILTER_15X15_SC_H
+
+#include <memory>
 
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/border_15x15.h"
@@ -76,6 +78,104 @@ class SeparableFilter<FilterType, 15UL> {
           svbool_t pg = BufferVecTraits::svwhilelt(index, length);
           horizontal_vector_path(pg, src_rows, dst_rows, border_offsets, index);
         });
+  }
+
+  template <typename T>
+  class CopyOperation final : public UnrollTwice {
+   public:
+    using ContextType = Context;
+    using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<T>;
+    using VectorType = typename VecTraits::VectorType;
+
+    VectorType vector_path(ContextType,
+                           VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+      return src;
+    }
+  };  // end of class CopyOperation
+
+  template <typename T>
+  void copy_data_sve2(Rows<const T> src_rows, Rows<T> dst_rows,
+                      size_t length) const KLEIDICV_STREAMING_COMPATIBLE {
+    // 'apply_operation_by_rows' can only handle one channel well
+    // so width must be multiplied in order to copy all the data
+    Rectangle rect{length * dst_rows.channels(), std::size_t{1}};
+    Rows<const T> src_1ch{&src_rows[0], src_rows.stride(), 1};
+    Rows<T> dst_1ch{&dst_rows[0], dst_rows.stride(), 1};
+    CopyOperation<T> op{};
+    apply_operation_by_rows(op, rect, src_1ch, dst_1ch);
+  }
+
+  size_t process_left_border(Rows<const BufferType> src_rows,
+                             Rows<DestinationType> dst_rows,
+                             BorderInfoType horizontal_border,
+                             size_t width) const KLEIDICV_STREAMING_COMPATIBLE {
+    // Process <number of channels> vectors, as many times as needed to pass all
+    // the borders. Plus, because of the horizontal path, the algorithm needs
+    // additional <ksize - 1> pixels.
+    const size_t block_len = src_rows.channels() * BufferVecTraits::num_lanes();
+    const size_t border_len = src_rows.channels() * margin;
+    const size_t process_len =
+        ((border_len + block_len - 1) / block_len) * block_len;
+    const size_t buffer_len = process_len + src_rows.channels() * (15 - 1);
+    if (buffer_len - margin >= width) {  // would it be too long?
+      return 0;
+    }
+    std::unique_ptr<BufferType[]> left_pixels{new BufferType[buffer_len]};
+    BorderOffsets offsets = horizontal_border.offsets_with_left_border(0);
+    svbool_t pg_ch{};
+    switch (src_rows.channels()) {
+      case 1:
+        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL1>();
+        break;
+      case 2:
+        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL2>();
+        break;
+      case 3:
+        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL3>();
+        break;
+      case 4:
+        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL4>();
+        break;
+      default:
+        break;
+    }
+
+    Rows<BufferType> buffer_rows{left_pixels.get(), 0, src_rows.channels()};
+    Columns<BufferType> buffer_cols = buffer_rows.as_columns();
+    Columns<const BufferType> src_cols = src_rows.as_columns();
+
+    // Copy the 7 border pixels (=margin) into the buffer
+    {
+      BufferVectorType pixel0 = svld1(pg_ch, src_cols.ptr_at(offsets.c0()));
+      svst1(pg_ch, buffer_cols.ptr_at(0), pixel0);
+      BufferVectorType pixel1 = svld1(pg_ch, src_cols.ptr_at(offsets.c1()));
+      svst1(pg_ch, buffer_cols.ptr_at(1), pixel1);
+      BufferVectorType pixel2 = svld1(pg_ch, src_cols.ptr_at(offsets.c2()));
+      svst1(pg_ch, buffer_cols.ptr_at(2), pixel2);
+      BufferVectorType pixel3 = svld1(pg_ch, src_cols.ptr_at(offsets.c3()));
+      svst1(pg_ch, buffer_cols.ptr_at(3), pixel3);
+      BufferVectorType pixel4 = svld1(pg_ch, src_cols.ptr_at(offsets.c4()));
+      svst1(pg_ch, buffer_cols.ptr_at(4), pixel4);
+      BufferVectorType pixel5 = svld1(pg_ch, src_cols.ptr_at(offsets.c5()));
+      svst1(pg_ch, buffer_cols.ptr_at(5), pixel5);
+      BufferVectorType pixel6 = svld1(pg_ch, src_cols.ptr_at(offsets.c6()));
+      svst1(pg_ch, buffer_cols.ptr_at(6), pixel6);
+    }
+
+    // Copy the rest of the buffer using SME copy
+    copy_data_sve2(src_rows, buffer_rows.at(0, margin),
+                   buffer_len / src_rows.channels() - margin);
+
+    // Do the gaussian blur
+    offsets = horizontal_border.offsets_without_border();
+    for (size_t index = 0; index < process_len;
+         index += BufferVecTraits::num_lanes()) {
+      horizontal_vector_path(BufferVecTraits::svptrue(),
+                             buffer_rows.at(0, margin), dst_rows, offsets,
+                             index);
+    }
+
+    return process_len;
   }
 
   // Processing of horizontal borders is always scalar because border offsets
