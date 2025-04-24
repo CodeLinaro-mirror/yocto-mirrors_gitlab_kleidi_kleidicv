@@ -741,7 +741,9 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
   using GaussianBlurFilter = GaussianBlur<ScalarType, KernelSize, IsBinomial>;
 
   GaussianBlurFilter blur{sigma};
-  SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+  typename VecTraits<typename GaussianBlurFilter::BufferType>::VectorType t1,
+      t2, t3, t4;
+  SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur, t1, t2, t3, t4};
 
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};

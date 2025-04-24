@@ -125,7 +125,12 @@ static kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8_sc(
   }
 
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
-  SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
+  typename VecTraits<
+      typename HorizontalSobel3x3<uint8_t>::BufferType>::VectorType t1,
+      t2, t3, t4;
+
+  SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel, t1,
+                                                         t2, t3, t4};
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
@@ -155,7 +160,13 @@ static kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8_sc(
   }
 
   VerticalSobel3x3<uint8_t> vertical_sobel;
-  SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
+  typename VecTraits<typename VerticalSobel3x3<uint8_t>::BufferType>::VectorType
+      t1,
+      t2, t3, t4;
+
+  SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel, t1, t2,
+                                                       t3, t4};
+
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;

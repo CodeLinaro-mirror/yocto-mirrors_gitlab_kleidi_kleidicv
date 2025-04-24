@@ -33,7 +33,9 @@ class SeparableFilter<FilterType, 7UL> {
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  explicit SeparableFilter(FilterType filter) KLEIDICV_STREAMING_COMPATIBLE
+  explicit SeparableFilter(FilterType filter, BufferVectorType,
+                           BufferVectorType, BufferVectorType,
+                           BufferVectorType) KLEIDICV_STREAMING_COMPATIBLE
       : filter_{filter} {}
 
   static constexpr size_t margin = 3UL;

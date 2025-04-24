@@ -5,6 +5,8 @@
 #ifndef KLEIDICV_SEPARABLE_FILTER_15X15_SC_H
 #define KLEIDICV_SEPARABLE_FILTER_15X15_SC_H
 
+#include <arm_sve.h>
+
 #include <memory>
 
 #include "kleidicv/sve2.h"
@@ -35,8 +37,24 @@ class SeparableFilter<FilterType, 15UL> {
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  explicit SeparableFilter(FilterType filter) KLEIDICV_STREAMING_COMPATIBLE
-      : filter_{filter} {}
+  explicit SeparableFilter(FilterType filter, svuint32_t& t1, svuint32_t& t2,
+                           svuint32_t& t3,
+                           svuint32_t& t4) KLEIDICV_STREAMING_COMPATIBLE
+      : filter_{filter},
+        t1_{t1},
+        t2_{t2},
+        t3_{t3},
+        t4_{t4} {
+    uint32_t kTblPair[16] = {0, 16};
+    uint32_t kTblPair2[16] = {0, 1, 16, 17};
+    uint32_t kTblPair4[16] = {0, 1, 2, 3, 16, 17, 18, 19};
+    uint32_t kTblPair7[16] = {0,  1,  2,  3,  4,  5,  6,  16,
+                              17, 18, 19, 20, 21, 22, 23, 24};
+    t1_ = svld1(svptrue_b32(), kTblPair);
+    t2_ = svld1(svptrue_b32(), kTblPair2);
+    t3_ = svld1(svptrue_b32(), kTblPair4);
+    t4_ = svld1(svptrue_b32(), kTblPair7);
+  }
 
   static constexpr size_t margin = 7UL;
 
@@ -80,99 +98,112 @@ class SeparableFilter<FilterType, 15UL> {
         });
   }
 
-  template <typename T>
-  class CopyOperation final : public UnrollTwice {
-   public:
-    using ContextType = Context;
-    using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<T>;
-    using VectorType = typename VecTraits::VectorType;
-
-    VectorType vector_path(ContextType,
-                           VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
-      return src;
-    }
-  };  // end of class CopyOperation
-
-  template <typename T>
-  void copy_data_sve2(Rows<const T> src_rows, Rows<T> dst_rows,
-                      size_t length) const KLEIDICV_STREAMING_COMPATIBLE {
-    // 'apply_operation_by_rows' can only handle one channel well
-    // so width must be multiplied in order to copy all the data
-    Rectangle rect{length * dst_rows.channels(), std::size_t{1}};
-    Rows<const T> src_1ch{&src_rows[0], src_rows.stride(), 1};
-    Rows<T> dst_1ch{&dst_rows[0], dst_rows.stride(), 1};
-    CopyOperation<T> op{};
-    apply_operation_by_rows(op, rect, src_1ch, dst_1ch);
-  }
-
   size_t process_left_border(Rows<const BufferType> src_rows,
                              Rows<DestinationType> dst_rows,
                              BorderInfoType horizontal_border,
                              size_t width) const KLEIDICV_STREAMING_COMPATIBLE {
-    // Process <number of channels> vectors, as many times as needed to pass all
-    // the borders. Plus, because of the horizontal path, the algorithm needs
-    // additional <ksize - 1> pixels.
-    const size_t block_len = src_rows.channels() * BufferVecTraits::num_lanes();
-    const size_t border_len = src_rows.channels() * margin;
-    const size_t process_len =
-        ((border_len + block_len - 1) / block_len) * block_len;
-    const size_t buffer_len = process_len + src_rows.channels() * (15 - 1);
-    if (buffer_len - margin >= width) {  // would it be too long?
-      return 0;
-    }
-    std::unique_ptr<BufferType[]> left_pixels{new BufferType[buffer_len]};
-    BorderOffsets offsets = horizontal_border.offsets_with_left_border(0);
-    svbool_t pg_ch{};
     switch (src_rows.channels()) {
       case 1:
-        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL1>();
+        return process_left_border<1UL>(
+            src_rows, dst_rows, horizontal_border, width,
+            BufferVecTraits::template svptrue_pat<SV_VL1>());
         break;
       case 2:
-        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL2>();
+        return process_left_border<2UL>(
+            src_rows, dst_rows, horizontal_border, width,
+            BufferVecTraits::template svptrue_pat<SV_VL2>());
         break;
       case 3:
-        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL3>();
+        return process_left_border<3UL>(
+            src_rows, dst_rows, horizontal_border, width,
+            BufferVecTraits::template svptrue_pat<SV_VL3>());
         break;
       case 4:
-        pg_ch = BufferVecTraits::template svptrue_pat<SV_VL4>();
+        return process_left_border<4UL>(
+            src_rows, dst_rows, horizontal_border, width,
+            BufferVecTraits::template svptrue_pat<SV_VL4>());
         break;
       default:
         break;
     }
+    return 0;
+  }
 
-    Rows<BufferType> buffer_rows{left_pixels.get(), 0, src_rows.channels()};
-    Columns<BufferType> buffer_cols = buffer_rows.as_columns();
+  template <size_t Channels>
+  size_t process_left_border(
+      Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
+      BorderInfoType horizontal_border, size_t width,
+      svbool_t pg_ch) const KLEIDICV_STREAMING_COMPATIBLE {
+    // Process <number of channels> vectors, as many times as needed to pass
+    // all the borders. Plus, because of the horizontal path, the algorithm
+    // needs additional <ksize - 1> pixels.
+    const size_t block_len = Channels * BufferVecTraits::num_lanes();
+    const size_t border_len = Channels * margin;
+    const size_t process_len =
+        ((border_len + block_len - 1) / block_len) * block_len;
+    const size_t buffer_len = process_len + Channels * (15 - 1);
+    if (buffer_len - margin >= width) {  // would it be too long?
+      return 0;
+    }
+    // PROTO: now this is pretty much fixed
+    // only implemented for 512-bit vector length
+    if (svcntw() != 16) {
+      return 0;
+    }
+    // With 4 channels, buffer_len is 14*4 + 16 = 72, that needs 5 vectors (80)
+    BufferVectorType vbuf0, vbuf1;  //, vbuf2, vbuf3, vbuf4;
+    // BufferVectorType* pvbuf[5] = {&vbuf0, &vbuf1, &vbuf2, &vbuf3, &vbuf4};
+
+    BorderOffsets offsets = horizontal_border.offsets_with_left_border(0);
+
     Columns<const BufferType> src_cols = src_rows.as_columns();
 
     // Copy the 7 border pixels (=margin) into the buffer
     {
       BufferVectorType pixel0 = svld1(pg_ch, src_cols.ptr_at(offsets.c0()));
-      svst1(pg_ch, buffer_cols.ptr_at(0), pixel0);
       BufferVectorType pixel1 = svld1(pg_ch, src_cols.ptr_at(offsets.c1()));
-      svst1(pg_ch, buffer_cols.ptr_at(1), pixel1);
       BufferVectorType pixel2 = svld1(pg_ch, src_cols.ptr_at(offsets.c2()));
-      svst1(pg_ch, buffer_cols.ptr_at(2), pixel2);
       BufferVectorType pixel3 = svld1(pg_ch, src_cols.ptr_at(offsets.c3()));
-      svst1(pg_ch, buffer_cols.ptr_at(3), pixel3);
       BufferVectorType pixel4 = svld1(pg_ch, src_cols.ptr_at(offsets.c4()));
-      svst1(pg_ch, buffer_cols.ptr_at(4), pixel4);
       BufferVectorType pixel5 = svld1(pg_ch, src_cols.ptr_at(offsets.c5()));
-      svst1(pg_ch, buffer_cols.ptr_at(5), pixel5);
       BufferVectorType pixel6 = svld1(pg_ch, src_cols.ptr_at(offsets.c6()));
-      svst1(pg_ch, buffer_cols.ptr_at(6), pixel6);
+      if constexpr (Channels == 1) {
+        // need to load 14 + 16 = 30 elements, that's two vectors
+        BufferVectorType px01 = svtbl2_u32(svcreate2(pixel0, pixel1), t1_);
+        BufferVectorType px23 = svtbl2_u32(svcreate2(pixel2, pixel3), t1_);
+        BufferVectorType px45 = svtbl2_u32(svcreate2(pixel4, pixel5), t1_);
+        BufferVectorType px0123 = svtbl2_u32(svcreate2(px01, px23), t2_);
+        BufferVectorType px456 = svtbl2_u32(svcreate2(px45, pixel6), t2_);
+        BufferVectorType px0to6 = svtbl2_u32(svcreate2(px0123, px456), t3_);
+        BufferVectorType image0 = svld1(svwhilelt_b32(7, 16), &src_cols[0]);
+        vbuf1 = svld1(svwhilelt_b32(0, 14), &src_cols[16 - 7]);
+        vbuf0 = svtbl2_u32(svcreate2(px0to6, image0), t4_);
+      } else {
+        vbuf0 = svld1(svptrue_b32(), &src_cols[0]);
+      }
     }
-
-    // Copy the rest of the buffer using SME copy
-    copy_data_sve2(src_rows, buffer_rows.at(0, margin),
-                   buffer_len / src_rows.channels() - margin);
-
     // Do the gaussian blur
-    offsets = horizontal_border.offsets_without_border();
-    for (size_t index = 0; index < process_len;
-         index += BufferVecTraits::num_lanes()) {
-      horizontal_vector_path(BufferVecTraits::svptrue(),
-                             buffer_rows.at(0, margin), dst_rows, offsets,
-                             index);
+
+    if constexpr (Channels == 1) {
+      BufferVectorType src_0 = vbuf0;
+      BufferVectorType src_1 = svext(vbuf0, vbuf1, 1);
+      BufferVectorType src_2 = svext(vbuf0, vbuf1, 2);
+      BufferVectorType src_3 = svext(vbuf0, vbuf1, 3);
+      BufferVectorType src_4 = svext(vbuf0, vbuf1, 4);
+      BufferVectorType src_5 = svext(vbuf0, vbuf1, 5);
+      BufferVectorType src_6 = svext(vbuf0, vbuf1, 6);
+      BufferVectorType src_7 = svext(vbuf0, vbuf1, 7);
+      BufferVectorType src_8 = svext(vbuf0, vbuf1, 8);
+      BufferVectorType src_9 = svext(vbuf0, vbuf1, 9);
+      BufferVectorType src_10 = svext(vbuf0, vbuf1, 10);
+      BufferVectorType src_11 = svext(vbuf0, vbuf1, 11);
+      BufferVectorType src_12 = svext(vbuf0, vbuf1, 12);
+      BufferVectorType src_13 = svext(vbuf0, vbuf1, 13);
+      BufferVectorType src_14 = svext(vbuf0, vbuf1, 14);
+      filter_.horizontal_vector_path(svptrue_b32(), src_0, src_1, src_2, src_3,
+                                     src_4, src_5, src_6, src_7, src_8, src_9,
+                                     src_10, src_11, src_12, src_13, src_14,
+                                     &dst_rows.as_columns()[0]);
     }
 
     return process_len;
@@ -338,6 +369,7 @@ class SeparableFilter<FilterType, 15UL> {
   }
 
   FilterType filter_;
+  svuint32_t &t1_, &t2_, &t3_, &t4_;
 };  // end of class SeparableFilter<FilterType, 15UL>
 
 // Shorthand for 15x15 separable filters driver type.

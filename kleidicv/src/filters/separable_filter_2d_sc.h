@@ -429,7 +429,10 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
   SeparableFilterClass filterClass{
       kernel_x_0, kernel_x_1, kernel_x_2, kernel_x_3, kernel_x_4,
       kernel_y_0, kernel_y_1, kernel_y_2, kernel_y_3, kernel_y_4};
-  SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
+  typename VecTraits<typename SeparableFilterClass::BufferType>::VectorType t1,
+      t2, t3, t4;
+
+  SeparableFilter<SeparableFilterClass, 5> filter{filterClass, t1, t2, t3, t4};
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
