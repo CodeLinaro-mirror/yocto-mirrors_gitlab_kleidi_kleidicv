@@ -45,15 +45,34 @@ class SeparableFilter<FilterType, 15UL> {
         t2_{t2},
         t3_{t3},
         t4_{t4} {
-    uint32_t kTblPair[16] = {0, 16};
-    uint32_t kTblPair2[16] = {0, 1, 16, 17};
-    uint32_t kTblPair4[16] = {0, 1, 2, 3, 16, 17, 18, 19};
-    uint32_t kTblPair7[16] = {0,  1,  2,  3,  4,  5,  6,  16,
-                              17, 18, 19, 20, 21, 22, 23, 24};
-    t1_ = svld1(svptrue_b32(), kTblPair);
-    t2_ = svld1(svptrue_b32(), kTblPair2);
-    t3_ = svld1(svptrue_b32(), kTblPair4);
-    t4_ = svld1(svptrue_b32(), kTblPair7);
+    /*
+        uint32_t kTblPair[16] = {0, 16};
+        uint32_t kTblPair2[16] = {0, 1, 16, 17};
+        uint32_t kTblPair4[16] = {0, 1, 2, 3, 16, 17, 18, 19};
+        uint32_t kTblPair7[16] = {0,  1,  2,  3,  4,  5,  6,  16,
+                                  17, 18, 19, 20, 21, 22, 23, 24};
+        t1_ = svld1(svptrue_b32(), kTblPair);
+        t2_ = svld1(svptrue_b32(), kTblPair2);
+        t3_ = svld1(svptrue_b32(), kTblPair4);
+        t4_ = svld1(svptrue_b32(), kTblPair7);
+    */
+    // PROTO: REFLECT ONLY
+    //    case FixedBorderType::REFLECT:
+    //    if (column_index == 0) {
+    //      return get(6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7);
+    uint32_t kTbl[16] = {6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
+    t1_ = svld1(svptrue_b32(), kTbl);
+
+    /* this is to replace SVEXTs with SVTBLs
+    uint32_t kTbl3[16] = {3,  4,  5,  6,  7,  8,  9,  10,
+                          11, 12, 13, 14, 15, 16, 17, 18};
+    uint32_t kTbl6[16] = {6,  7,  8,  9,  10, 11, 12, 13,
+                          14, 15, 16, 17, 18, 19, 20, 21};
+    uint32_t kTbl9[16] = {9,  10, 11, 12, 13, 14, 15, 16,
+                          17, 18, 19, 20, 21, 22, 23, 24};
+    t2_ = svld1(svptrue_b32(), kTbl3);
+    t3_ = svld1(svptrue_b32(), kTbl6);
+    t4_ = svld1(svptrue_b32(), kTbl9);*/
   }
 
   static constexpr size_t margin = 7UL;
@@ -98,88 +117,49 @@ class SeparableFilter<FilterType, 15UL> {
         });
   }
 
-  size_t process_left_border(Rows<const BufferType> src_rows,
-                             Rows<DestinationType> dst_rows,
-                             BorderInfoType horizontal_border,
-                             size_t width) const KLEIDICV_STREAMING_COMPATIBLE {
-    switch (src_rows.channels()) {
-      case 1:
-        return process_left_border<1UL>(
-            src_rows, dst_rows, horizontal_border, width,
-            BufferVecTraits::template svptrue_pat<SV_VL1>());
-        break;
-      case 2:
-        return process_left_border<2UL>(
-            src_rows, dst_rows, horizontal_border, width,
-            BufferVecTraits::template svptrue_pat<SV_VL2>());
-        break;
-      case 3:
-        return process_left_border<3UL>(
-            src_rows, dst_rows, horizontal_border, width,
-            BufferVecTraits::template svptrue_pat<SV_VL3>());
-        break;
-      case 4:
-        return process_left_border<4UL>(
-            src_rows, dst_rows, horizontal_border, width,
-            BufferVecTraits::template svptrue_pat<SV_VL4>());
-        break;
-      default:
-        break;
-    }
-    return 0;
-  }
-
   template <size_t Channels>
-  size_t process_left_border(
-      Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
-      BorderInfoType horizontal_border, size_t width,
-      svbool_t pg_ch) const KLEIDICV_STREAMING_COMPATIBLE {
+  size_t process_left_border(Rows<const BufferType> src_rows,
+                             Rows<DestinationType> dst_rows, BorderInfoType,
+                             size_t) const KLEIDICV_STREAMING_COMPATIBLE {
     // Process <number of channels> vectors, as many times as needed to pass
     // all the borders. Plus, because of the horizontal path, the algorithm
     // needs additional <ksize - 1> pixels.
-    const size_t block_len = Channels * BufferVecTraits::num_lanes();
-    const size_t border_len = Channels * margin;
-    const size_t process_len =
+    // This algo only works with 512 bits and 32 bit words --> 16 lanes
+    constexpr size_t num_lanes = 16;
+    constexpr size_t block_len = Channels * num_lanes;
+    constexpr size_t border_len = Channels * margin;
+    constexpr size_t process_len =
         ((border_len + block_len - 1) / block_len) * block_len;
-    const size_t buffer_len = process_len + Channels * (15 - 1);
-    if (buffer_len - margin >= width) {  // would it be too long?
-      return 0;
-    }
+    /*    const size_t buffer_len = process_len + Channels * (15 - 1);
+        if (buffer_len - margin >= width) {  // would it be too long?
+          return 0;
+        }*/
     // PROTO: now this is pretty much fixed
     // only implemented for 512-bit vector length
-    if (svcntw() != 16) {
-      return 0;
-    }
+    /*    if (svcntw() != 16) {
+          return 0;
+        }*/
     // With 4 channels, buffer_len is 14*4 + 16 = 72, that needs 5 vectors (80)
     BufferVectorType vbuf0, vbuf1;  //, vbuf2, vbuf3, vbuf4;
     // BufferVectorType* pvbuf[5] = {&vbuf0, &vbuf1, &vbuf2, &vbuf3, &vbuf4};
 
-    BorderOffsets offsets = horizontal_border.offsets_with_left_border(0);
+    //    BorderOffsets offsets = horizontal_border.offsets_with_left_border(0);
+
+    // PROTO: REFLECT ONLY
+    //    case FixedBorderType::REFLECT:
+    //    if (column_index == 0) {
+    //      return get(6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7);
 
     Columns<const BufferType> src_cols = src_rows.as_columns();
 
-    // Copy the 7 border pixels (=margin) into the buffer
+    // Load the border-affected pixels (=margin) into the buffer
     {
-      BufferVectorType pixel0 = svld1(pg_ch, src_cols.ptr_at(offsets.c0()));
-      BufferVectorType pixel1 = svld1(pg_ch, src_cols.ptr_at(offsets.c1()));
-      BufferVectorType pixel2 = svld1(pg_ch, src_cols.ptr_at(offsets.c2()));
-      BufferVectorType pixel3 = svld1(pg_ch, src_cols.ptr_at(offsets.c3()));
-      BufferVectorType pixel4 = svld1(pg_ch, src_cols.ptr_at(offsets.c4()));
-      BufferVectorType pixel5 = svld1(pg_ch, src_cols.ptr_at(offsets.c5()));
-      BufferVectorType pixel6 = svld1(pg_ch, src_cols.ptr_at(offsets.c6()));
+      // need to load 14 + 16 = 30 elements, that's two vectors
+      // but it's actually only 23 pixels, the first 7 are the same, permuted
       if constexpr (Channels == 1) {
-        // need to load 14 + 16 = 30 elements, that's two vectors
-        BufferVectorType px01 = svtbl2_u32(svcreate2(pixel0, pixel1), t1_);
-        BufferVectorType px23 = svtbl2_u32(svcreate2(pixel2, pixel3), t1_);
-        BufferVectorType px45 = svtbl2_u32(svcreate2(pixel4, pixel5), t1_);
-        BufferVectorType px0123 = svtbl2_u32(svcreate2(px01, px23), t2_);
-        BufferVectorType px456 = svtbl2_u32(svcreate2(px45, pixel6), t2_);
-        BufferVectorType px0to6 = svtbl2_u32(svcreate2(px0123, px456), t3_);
-        BufferVectorType image0 = svld1(svwhilelt_b32(7, 16), &src_cols[0]);
-        vbuf1 = svld1(svwhilelt_b32(0, 14), &src_cols[16 - 7]);
-        vbuf0 = svtbl2_u32(svcreate2(px0to6, image0), t4_);
-      } else {
-        vbuf0 = svld1(svptrue_b32(), &src_cols[0]);
+        BufferVectorType image0 = svld1(svptrue_b32(), &src_cols[0]);
+        vbuf1 = svld1(svwhilelt_b32(9, 23), &src_cols[9]);
+        vbuf0 = svtbl_u32(image0, t1_);
       }
     }
     // Do the gaussian blur
@@ -200,6 +180,23 @@ class SeparableFilter<FilterType, 15UL> {
       BufferVectorType src_12 = svext(vbuf0, vbuf1, 12);
       BufferVectorType src_13 = svext(vbuf0, vbuf1, 13);
       BufferVectorType src_14 = svext(vbuf0, vbuf1, 14);
+      /* alternative way, did not help:
+      BufferVectorType src_0 = vbuf0;
+      BufferVectorType src_1 = svext(vbuf0, vbuf1, 1);
+      BufferVectorType src_2 = svext(vbuf0, vbuf1, 2);
+      BufferVectorType src_3 = svtbl2(svcreate2(vbuf0, vbuf1), t2_);
+      BufferVectorType src_4 = svext(vbuf0, vbuf1, 4);
+      BufferVectorType src_5 = svext(vbuf0, vbuf1, 5);
+      BufferVectorType src_6 = svtbl2(svcreate2(vbuf0, vbuf1), t3_);
+      BufferVectorType src_7 = svext(vbuf0, vbuf1, 7);
+      BufferVectorType src_8 = svext(vbuf0, vbuf1, 8);
+      BufferVectorType src_9 = svtbl2(svcreate2(vbuf0, vbuf1), t4_);
+      BufferVectorType src_10 = svext(vbuf0, vbuf1, 10);
+      BufferVectorType src_11 = svext(vbuf0, vbuf1, 11);
+      BufferVectorType src_12 = svext(vbuf0, vbuf1, 12);
+      BufferVectorType src_13 = svext(vbuf0, vbuf1, 13);
+      BufferVectorType src_14 = svext(vbuf0, vbuf1, 14);
+    */
       filter_.horizontal_vector_path(svptrue_b32(), src_0, src_1, src_2, src_3,
                                      src_4, src_5, src_6, src_7, src_8, src_9,
                                      src_10, src_11, src_12, src_13, src_14,

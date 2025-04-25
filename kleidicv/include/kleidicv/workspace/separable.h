@@ -146,6 +146,34 @@ class SeparableFilterWorkspace {
                Rows<typename FilterType::DestinationType> dst_rows,
                size_t channels, typename FilterType::BorderType border_type,
                FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+    switch (channels) {
+      case 1:
+        process_template<1>(rect, y_begin, y_end, src_rows, dst_rows,
+                            border_type, filter);
+        break;
+      case 2:
+        process_template<2>(rect, y_begin, y_end, src_rows, dst_rows,
+                            border_type, filter);
+        break;
+      case 3:
+        process_template<3>(rect, y_begin, y_end, src_rows, dst_rows,
+                            border_type, filter);
+        break;
+      case 4:
+        process_template<4>(rect, y_begin, y_end, src_rows, dst_rows,
+                            border_type, filter);
+        break;
+      default:
+        break;
+    }
+  }
+
+  template <size_t Channels, typename FilterType>
+  void process_template(Rectangle rect, size_t y_begin, size_t y_end,
+                        Rows<const typename FilterType::SourceType> src_rows,
+                        Rows<typename FilterType::DestinationType> dst_rows,
+                        typename FilterType::BorderType border_type,
+                        FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
     // Border helper which calculates border offsets.
     typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                         border_type};
@@ -155,7 +183,7 @@ class SeparableFilterWorkspace {
     // Buffer rows which hold intermediate widened data.
     auto buffer_rows = Rows{reinterpret_cast<typename FilterType::BufferType *>(
                                 &data_[buffer_rows_offset_]),
-                            buffer_rows_stride_, channels};
+                            buffer_rows_stride_, Channels};
 
     // Vertical processing loop.
     for (size_t vertical_index = y_begin; vertical_index < y_end;
@@ -166,13 +194,14 @@ class SeparableFilterWorkspace {
       filter.process_vertical(rect.width(), src_rows.at(vertical_index),
                               buffer_rows, offsets);
       // Process in the horizontal direction last.
-      process_horizontal(rect.width(), buffer_rows, dst_rows.at(vertical_index),
-                         filter, horizontal_border);
+      process_horizontal<Channels>(rect.width(), buffer_rows,
+                                   dst_rows.at(vertical_index), filter,
+                                   horizontal_border);
     }
   }
 
  protected:
-  template <typename FilterType>
+  template <size_t Channels, typename FilterType>
   void process_horizontal(size_t width,
                           Rows<typename FilterType::BufferType> buffer_rows,
                           Rows<typename FilterType::DestinationType> dst_rows,
@@ -186,9 +215,10 @@ class SeparableFilterWorkspace {
 
     // Process data affected by left border.
     if constexpr (has_process_left_border<FilterType>::value) {
-      processed = filter.process_left_border(buffer_rows, dst_rows,
-                                             horizontal_border, width);
+      processed = filter.process_left_border<Channels>(
+          buffer_rows, dst_rows, horizontal_border, width);
     }
+    /*
     if (processed == 0) {
       KLEIDICV_FORCE_LOOP_UNROLL
       for (size_t horizontal_index = 0; horizontal_index < margin;
@@ -200,7 +230,7 @@ class SeparableFilterWorkspace {
                                           offsets);
       }
       processed = margin;
-    }
+    }*/
 
     // Process data which is not affected by any borders in bulk.
     {
