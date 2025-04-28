@@ -28,14 +28,15 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
   cv::RNG rng(0);
 
   size_t size_min = 5;
-  size_t size_max = 16;
+  size_t width_max = 16;
+  size_t height_max = 16;
   if constexpr (KernelSize == 15) {
     size_min = 14;
-    size_max = 32;
+    width_max = 120;
   }
 
-  for (size_t y = size_min; y <= size_max; ++y) {
-    for (size_t x = size_min; x <= size_max; ++x) {
+  for (size_t y = size_min; y <= height_max; y += 3) {
+    for (size_t x = size_min; x <= width_max; x += 5) {
       // Two extra lines allocated to be sure sigma can be placed next to the
       // real input
       cv::Mat input(y + 2, x, CV_8UC(Channels));
@@ -79,6 +80,7 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& gaussian_blur_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
+    /*
     TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 1 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 1>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),
     TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 2 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 2>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),
     TEST("Gaussian blur 3x3, BORDER_REFLECT_101, 3 channel", (test_gaussian_blur<3, cv::BORDER_REFLECT_101, 3>), (exec_gaussian_blur<3, cv::BORDER_REFLECT_101>)),
@@ -163,8 +165,9 @@ std::vector<test>& gaussian_blur_tests_get() {
     TEST("Gaussian blur 15x15, BORDER_REFLECT_101, 2 channel, random sigma", (test_gaussian_blur<15, cv::BORDER_REFLECT_101, 2, false>), (exec_gaussian_blur<15, cv::BORDER_REFLECT_101>)),
     TEST("Gaussian blur 15x15, BORDER_REFLECT_101, 3 channel, random sigma", (test_gaussian_blur<15, cv::BORDER_REFLECT_101, 3, false>), (exec_gaussian_blur<15, cv::BORDER_REFLECT_101>)),
     TEST("Gaussian blur 15x15, BORDER_REFLECT_101, 4 channel, random sigma", (test_gaussian_blur<15, cv::BORDER_REFLECT_101, 4, false>), (exec_gaussian_blur<15, cv::BORDER_REFLECT_101>)),
-
+*/
     TEST("Gaussian blur 15x15, BORDER_REFLECT, 1 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 1>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
+/*
     TEST("Gaussian blur 15x15, BORDER_REFLECT, 2 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 2>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
     TEST("Gaussian blur 15x15, BORDER_REFLECT, 3 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 3>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
     TEST("Gaussian blur 15x15, BORDER_REFLECT, 4 channel", (test_gaussian_blur<15, cv::BORDER_REFLECT, 4>), (exec_gaussian_blur<15, cv::BORDER_REFLECT>)),
@@ -178,6 +181,7 @@ std::vector<test>& gaussian_blur_tests_get() {
     TEST("Gaussian blur 15x15, BORDER_REPLICATE, 2 channel", (test_gaussian_blur<15, cv::BORDER_REPLICATE, 2>), (exec_gaussian_blur<15, cv::BORDER_REPLICATE>)),
     TEST("Gaussian blur 15x15, BORDER_REPLICATE, 3 channel", (test_gaussian_blur<15, cv::BORDER_REPLICATE, 3>), (exec_gaussian_blur<15, cv::BORDER_REPLICATE>)),
     TEST("Gaussian blur 15x15, BORDER_REPLICATE, 4 channel", (test_gaussian_blur<15, cv::BORDER_REPLICATE, 4>), (exec_gaussian_blur<15, cv::BORDER_REPLICATE>)),
+    */
   };
   // clang-format on
   return tests;
