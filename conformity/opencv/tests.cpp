@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -44,6 +44,7 @@ std::vector<test> all_tests = merge_tests({
     warp_perspective_tests_get,
     blur_and_downsample_tests_get,
     scharr_interleaved_tests_get,
+    median_blur_tests_get,
 });
 
 #if MANAGER

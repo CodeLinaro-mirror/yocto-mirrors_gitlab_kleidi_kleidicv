@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -28,5 +28,6 @@ std::vector<test>& remap_tests_get();
 std::vector<test>& warp_perspective_tests_get();
 std::vector<test>& blur_and_downsample_tests_get();
 std::vector<test>& scharr_interleaved_tests_get();
+std::vector<test>& median_blur_tests_get();
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TESTS_H_

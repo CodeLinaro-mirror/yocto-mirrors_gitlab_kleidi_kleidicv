@@ -105,6 +105,10 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
           int margin_bottom, int dx, int dy, int ksize, double scale,
           double delta, int border_type);
 
+int medianBlur(const uchar *src_data, size_t src_step, uchar *dst_data,
+               size_t dst_step, int width, int height, int depth, int cn,
+               int ksize);
+
 int compare_u8(const uchar *src1_data, size_t src1_step, const uchar *src2_data,
                size_t src2_step, uchar *dst_data, size_t dst_step, int width,
                int height, int operation);
@@ -372,6 +376,16 @@ static inline int kleidicv_sobel_with_fallback(
 }
 #undef cv_hal_sobel
 #define cv_hal_sobel kleidicv_sobel_with_fallback
+
+static inline int kleidicv_median_blur_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int width, int height, int depth, int cn, int ksize) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(medianBlur, cv_hal_medianBlur, src_data,
+                                       src_step, dst_data, dst_step, width,
+                                       height, depth, cn, ksize);
+}
+#undef cv_hal_medianBlur
+#define cv_hal_medianBlur kleidicv_median_blur_with_fallback
 
 #if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 // canny

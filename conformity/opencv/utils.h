@@ -19,6 +19,8 @@ constexpr int get_opencv_matrix_type() {
     return CV_16UC(Channels);
   } else if constexpr (std::is_same_v<T, int16_t>) {
     return CV_16SC(Channels);
+  } else if constexpr (std::is_same_v<T, float>) {
+    return CV_32FC(Channels);
   }
 }
 

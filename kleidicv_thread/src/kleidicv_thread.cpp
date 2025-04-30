@@ -16,6 +16,7 @@
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
+#include "kleidicv/filters/median_blur.h"
 #include "kleidicv/filters/scharr.h"
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/filters/sobel.h"
@@ -573,6 +574,98 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels);
+  };
+  return parallel_batches(callback, mt, height);
+}
+
+kleidicv_error_t kleidicv_thread_median_blur_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_thread_multithreading mt) {
+  auto result_pair = kleidicv::median_blur_is_implemented(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
+      kernel_height, border_type);
+
+  auto checks_result = result_pair.first;
+  auto fixed_border_type = result_pair.second;
+  if (checks_result != KLEIDICV_OK) {
+    return checks_result;
+  }
+
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_median_blur_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_width, kernel_height, fixed_border_type);
+  };
+  return parallel_batches(callback, mt, height);
+}
+
+kleidicv_error_t kleidicv_thread_median_blur_s16(
+    const int16_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_thread_multithreading mt) {
+  auto result_pair = kleidicv::median_blur_is_implemented(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
+      kernel_height, border_type);
+
+  auto checks_result = result_pair.first;
+  auto fixed_border_type = result_pair.second;
+  if (checks_result != KLEIDICV_OK) {
+    return checks_result;
+  }
+
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_median_blur_stripe_s16(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_width, kernel_height, fixed_border_type);
+  };
+  return parallel_batches(callback, mt, height);
+}
+
+kleidicv_error_t kleidicv_thread_median_blur_u16(
+    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_thread_multithreading mt) {
+  auto result_pair = kleidicv::median_blur_is_implemented(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
+      kernel_height, border_type);
+
+  auto checks_result = result_pair.first;
+  auto fixed_border_type = result_pair.second;
+  if (checks_result != KLEIDICV_OK) {
+    return checks_result;
+  }
+
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_median_blur_stripe_u16(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_width, kernel_height, fixed_border_type);
+  };
+  return parallel_batches(callback, mt, height);
+}
+
+kleidicv_error_t kleidicv_thread_median_blur_f32(
+    const float *src, size_t src_stride, float *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, kleidicv_border_type_t border_type,
+    kleidicv_thread_multithreading mt) {
+  auto result_pair = kleidicv::median_blur_is_implemented(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
+      kernel_height, border_type);
+
+  auto checks_result = result_pair.first;
+  auto fixed_border_type = result_pair.second;
+  if (checks_result != KLEIDICV_OK) {
+    return checks_result;
+  }
+
+  auto callback = [=](unsigned y_begin, unsigned y_end) {
+    return kleidicv_median_blur_stripe_f32(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_width, kernel_height, fixed_border_type);
   };
   return parallel_batches(callback, mt, height);
 }

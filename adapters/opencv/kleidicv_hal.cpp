@@ -952,6 +952,38 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
+int medianBlur(const uchar *src_data, size_t src_step, uchar *dst_data,
+               size_t dst_step, int width, int height, int depth, int cn,
+               int ksize) {
+  auto mt = get_multithreading();
+  if (depth == CV_8U) {
+    return convert_error(kleidicv_thread_median_blur_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
+        ksize, ksize, kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE,
+        mt));
+  } else if (depth == CV_16S) {
+    return convert_error(kleidicv_thread_median_blur_s16(
+        reinterpret_cast<const int16_t *>(src_data), src_step,
+        reinterpret_cast<int16_t *>(dst_data), dst_step, width, height, cn,
+        ksize, ksize, kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE,
+        mt));
+  } else if (depth == CV_16U) {
+    return convert_error(kleidicv_thread_median_blur_u16(
+        reinterpret_cast<const uint16_t *>(src_data), src_step,
+        reinterpret_cast<uint16_t *>(dst_data), dst_step, width, height, cn,
+        ksize, ksize, kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE,
+        mt));
+  } else if (depth == CV_32F) {
+    return convert_error(kleidicv_thread_median_blur_f32(
+        reinterpret_cast<const float *>(src_data), src_step,
+        reinterpret_cast<float *>(dst_data), dst_step, width, height, cn, ksize,
+        ksize, kleidicv_border_type_t::KLEIDICV_BORDER_TYPE_REPLICATE, mt));
+  } else {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+}
+
 #if KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
           size_t dst_step, int width, int height, int cn, double lowThreshold,

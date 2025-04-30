@@ -1,0 +1,349 @@
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#include <gtest/gtest.h>
+
+#include <algorithm>
+#include <cstdio>
+#include <vector>
+
+#include "framework/array.h"
+#include "framework/generator.h"
+#include "kleidicv/kleidicv.h"
+#include "test_config.h"
+
+#define KLEIDICV_MEDIAN_BLUR(type, type_suffix) \
+  KLEIDICV_API(median_blur, kleidicv_median_blur_##type_suffix, type)
+
+KLEIDICV_MEDIAN_BLUR(int8_t, s8);
+KLEIDICV_MEDIAN_BLUR(uint8_t, u8);
+KLEIDICV_MEDIAN_BLUR(uint16_t, u16);
+KLEIDICV_MEDIAN_BLUR(int16_t, s16);
+KLEIDICV_MEDIAN_BLUR(uint32_t, u32);
+KLEIDICV_MEDIAN_BLUR(int32_t, s32);
+KLEIDICV_MEDIAN_BLUR(float, f32);
+
+template <typename ElementType>
+class MedianBlurTest : public testing::Test {
+ public:
+  struct TestParams {
+    size_t width;
+    size_t src_padding;
+    size_t dst_padding;
+    size_t height;
+    size_t channels;
+    size_t filter_size;
+    kleidicv_border_type_t border_type;
+  };
+
+  static std::vector<TestParams> generate_test_cases(
+      const std::vector<size_t>& widths,
+      const std::vector<size_t>& src_paddings,
+      const std::vector<size_t>& dst_paddings,
+      const std::vector<size_t>& heights, const std::vector<size_t>& channels,
+      const std::vector<size_t>& filter_sizes,
+      const std::vector<kleidicv_border_type_t>& border_types) {
+    std::vector<TestParams> cases;
+
+    for (size_t w : widths) {
+      for (size_t src_pad : src_paddings) {
+        for (size_t dst_pad : dst_paddings) {
+          for (size_t h : heights) {
+            for (size_t c : channels) {
+              for (size_t f : filter_sizes) {
+                for (auto b : border_types) {
+                  cases.push_back({w, src_pad, dst_pad, h, c, f, b});
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return cases;
+  }
+
+  static std::vector<TestParams> get_unpadded_test_cases() {
+    std::vector<size_t> widths = {50};
+    std::vector<size_t> src_paddings = {0};
+    std::vector<size_t> dst_paddings = {0};
+    std::vector<size_t> heights = {30};
+    std::vector<size_t> channels = {1, 4};
+    std::vector<size_t> filter_sizes = {5};
+    std::vector<kleidicv_border_type_t> border_types = {
+        KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
+        KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
+
+    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
+                               channels, filter_sizes, border_types);
+  }
+
+  static std::vector<TestParams> get_padded_test_Cases() {
+    std::vector<size_t> widths = {20};
+    std::vector<size_t> src_paddings = {5};
+    std::vector<size_t> dst_paddings = {13};
+    std::vector<size_t> heights = {10};
+    std::vector<size_t> channels = {1, 4};
+    std::vector<size_t> filter_sizes = {5};
+    std::vector<kleidicv_border_type_t> border_types = {
+        KLEIDICV_BORDER_TYPE_REPLICATE};
+
+    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
+                               channels, filter_sizes, border_types);
+  }
+
+  static std::vector<TestParams> get_small_image_test_Cases() {
+    std::vector<size_t> widths = {20};
+    std::vector<size_t> src_paddings = {0};
+    std::vector<size_t> dst_paddings = {0};
+    std::vector<size_t> heights = {5};
+    std::vector<size_t> channels = {1};
+    std::vector<size_t> filter_sizes = {5};
+    std::vector<kleidicv_border_type_t> border_types = {
+        KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
+        KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
+
+    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
+                               channels, filter_sizes, border_types);
+  }
+
+  void run_test_case(const TestParams& params) {
+    test::Array2D<ElementType> src{params.width * params.channels,
+                                   params.height, params.src_padding,
+                                   params.channels};
+    test::Array2D<ElementType> expected_dst{params.width * params.channels,
+                                            params.height, 0, params.channels};
+    test::Array2D<ElementType> dst{params.width * params.channels,
+                                   params.height, params.dst_padding,
+                                   params.channels};
+
+    test::PseudoRandomNumberGenerator<ElementType> input_value_random_range;
+    src.fill(input_value_random_range);
+
+    calculate_reference(src, expected_dst, params.filter_size,
+                        params.border_type);
+
+    auto status = median_blur<ElementType>()(
+        src.data(), src.stride(), dst.data(), dst.stride(), params.width,
+        params.height, params.channels, params.filter_size, params.filter_size,
+        params.border_type);
+
+    EXPECT_EQ(KLEIDICV_OK, status);
+    EXPECT_EQ_ARRAY2D(expected_dst, dst);
+  }
+
+ private:
+  int handle_under_over_read(int index, int limit,
+                             kleidicv_border_type_t border_type) {
+    int result = 0;
+
+    if (index >= 0 && index < limit) {
+      result = index;
+    } else {
+      switch (border_type) {
+        case KLEIDICV_BORDER_TYPE_REPLICATE: {
+          result = std::clamp(index, 0, limit - 1);
+          break;
+        }
+        case KLEIDICV_BORDER_TYPE_REFLECT: {
+          if (index < 0) {
+            result = -index - 1;
+          } else {
+            result = 2 * limit - index - 1;
+          }
+          break;
+        }
+
+        case KLEIDICV_BORDER_TYPE_WRAP: {
+          result = (index + limit) % limit;
+          break;
+        }
+
+        case KLEIDICV_BORDER_TYPE_REVERSE: {
+          int period = 2 * limit - 2;
+          if (index < 0) {
+            result = (-index) % period;
+          } else {
+            result = period - (index % period);
+          }
+          break;
+        }
+
+        default:
+          result = 0;
+          break;
+      }
+    }
+    return result;
+  }
+
+  void calculate_reference(const test::Array2D<ElementType>& src,
+                           test::Array2D<ElementType>& dst, size_t filter_size,
+                           kleidicv_border_type_t border_type) {
+    const int half_kernel_size = static_cast<int>(filter_size) / 2;
+    const size_t height = src.height();
+    const size_t width = src.width() / src.channels();
+
+    for (size_t row = 0; row < height; ++row) {
+      for (size_t col = 0; col < width; ++col) {
+        for (size_t channel = 0; channel < src.channels(); ++channel) {
+          std::vector<ElementType> window;
+
+          for (int window_row = -half_kernel_size;
+               window_row <= half_kernel_size; ++window_row) {
+            for (int window_col = -half_kernel_size;
+                 window_col <= half_kernel_size; ++window_col) {
+              int row_after_border_handling =
+                  handle_under_over_read(row + window_row, height, border_type);
+              int col_after_border_handling =
+                  handle_under_over_read(col + window_col, width, border_type);
+
+              window.push_back(*src.at(
+                  row_after_border_handling,
+                  col_after_border_handling * src.channels() + channel));
+            }
+          }
+
+          std::sort(window.begin(), window.end());
+          dst.set(row, col * dst.channels() + channel,
+                  {window[window.size() / 2]});
+        }
+      }
+    }
+  }
+};
+
+using ElementTypes = ::testing::Types<uint8_t, int8_t, int16_t, uint16_t,
+                                      int32_t, uint32_t, float>;
+TYPED_TEST_SUITE(MedianBlurTest, ElementTypes);
+
+TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithoutPadding) {
+  if (test::Options::are_long_running_tests_skipped()) {
+    GTEST_SKIP() << "Long running exp test skipped";
+  }
+
+  for (const auto& params : TestFixture::get_unpadded_test_cases()) {
+    this->run_test_case(params);
+  }
+}
+
+TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithSmallImageSize) {
+  for (const auto& params : TestFixture::get_small_image_test_Cases()) {
+    this->run_test_case(params);
+  }
+}
+
+TYPED_TEST(MedianBlurTest, ChannelNumber) {
+  test::Array2D<TypeParam> src{25, 25, 0, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1};
+  test::Array2D<TypeParam> dst{25, 25, 0, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1};
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 25, 25,
+                                     KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 5, 5,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
+TYPED_TEST(MedianBlurTest, BorderNotImplemented) {
+  test::Array2D<TypeParam> src{25, 25};
+  test::Array2D<TypeParam> dst{25, 25};
+  auto status = median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                         dst.stride(), 25, 25, 1, 5, 5,
+                                         KLEIDICV_BORDER_TYPE_TRANSPARENT);
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED, status);
+}
+
+TYPED_TEST(MedianBlurTest, HeightTooSmall) {
+  test::Array2D<TypeParam> src{100, 3};
+  test::Array2D<TypeParam> dst{100, 3};
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 3, 1, 5, 5,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
+TYPED_TEST(MedianBlurTest, WidthTooSmall) {
+  test::Array2D<TypeParam> src{3, 100};
+  test::Array2D<TypeParam> dst{3, 100};
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 3, 100, 1, 5, 5,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
+TYPED_TEST(MedianBlurTest, NullPointer) {
+  test::Array2D<TypeParam> src{5, 5};
+  test::Array2D<TypeParam> dst{5, 5};
+  test::test_null_args(median_blur<TypeParam>(), src.data(), src.stride(),
+                       dst.data(), dst.stride(), 5, 5, 1, 5, 5,
+                       KLEIDICV_BORDER_TYPE_REPLICATE);
+}
+
+TYPED_TEST(MedianBlurTest, OversizeImage) {
+  test::Array2D<TypeParam> src{5, 5};
+  test::Array2D<TypeParam> dst{5, 5};
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), KLEIDICV_MAX_IMAGE_PIXELS,
+                                     KLEIDICV_MAX_IMAGE_PIXELS, 1, 5, 5,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            median_blur<TypeParam>()(
+                src.data(), src.stride(), dst.data(), dst.stride(),
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, KLEIDICV_MAX_IMAGE_PIXELS, 1, 5,
+                5, KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), KLEIDICV_MAX_IMAGE_PIXELS,
+                                     KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 5, 5,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_RANGE,
+      median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                               dst.stride(), 10, KLEIDICV_MAX_IMAGE_PIXELS, 1,
+                               5, 5, KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
+TYPED_TEST(MedianBlurTest, UnsupportedLargeFilterSize) {
+  test::Array2D<TypeParam> src{100, 100};
+  test::Array2D<TypeParam> dst{100, 100};
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 100, 1, 100, 100,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
+TYPED_TEST(MedianBlurTest, NonSquareFilterSizeWithValidHeight) {
+  test::Array2D<TypeParam> src{100, 100};
+  test::Array2D<TypeParam> dst{100, 100};
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 100, 1, 100, 5,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
+TYPED_TEST(MedianBlurTest, NonSquareFilterSizeWithValidWidth) {
+  test::Array2D<TypeParam> src{100, 100};
+  test::Array2D<TypeParam> dst{100, 100};
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 100, 1, 5, 100,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
+template <typename ElementType>
+class MedianBlurByteStrideTest : public MedianBlurTest<ElementType> {};
+
+using ByteStrideTypes = ::testing::Types<uint8_t, int16_t, int32_t>;
+TYPED_TEST_SUITE(MedianBlurByteStrideTest, ByteStrideTypes);
+
+TYPED_TEST(MedianBlurByteStrideTest, RunAllParamCombinationsWithPadding) {
+  if (test::Options::are_long_running_tests_skipped()) {
+    GTEST_SKIP() << "Long running exp test skipped";
+  }
+
+  for (const auto& params : TestFixture::get_padded_test_Cases()) {
+    this->run_test_case(params);
+  }
+}

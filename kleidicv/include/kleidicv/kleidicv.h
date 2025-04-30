@@ -2004,6 +2004,60 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
     kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const uint8_t *border_value);
 
+#define KLEIDICV_FILTER_OP_MEDIAN(name, type)                            \
+  kleidicv_error_t name(                                                 \
+      const type *src, size_t src_stride, type *dst, size_t dst_stride,  \
+      size_t width, size_t height, size_t channels, size_t kernel_width, \
+      size_t kernel_height, kleidicv_border_type_t border_type)
+
+/// Reduces noise by applying a median filter.
+///
+/// Width and height are assumed to be the same for the source and for the
+/// destination. The total number of elements is limited to
+/// @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src            Pointer to the source data. Must be non-null.
+/// @param src_stride     Distance in bytes from the start of one row to the
+///                       start of the next row in the source data. Must be a
+///                       multiple of `sizeof(type)` and no less than
+///                       `width * sizeof(type) * channels`, except for
+///                       single-row images.
+/// @param dst            Pointer to the destination data. Must be non-null.
+/// @param dst_stride     Distance in bytes from the start of one row to the
+///                       start of the next row in the destination data. Must be
+///                       a multiple of `sizeof(type)` and no less than
+///                       `width * sizeof(type) * channels`, except for
+///                       single-row images.
+/// @param width          Number of columns in the data. (One column consists of
+///                       `channels` number of elements.) Must be greater
+///                       than 4.
+/// @param height         Number of rows in the data. Must be greater than 4.
+/// @param channels       Number of channels in the data. Must not be more than
+///                       @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
+/// @param kernel_width   Width of the Median kernel. Must be 5 and equal to
+///                       `kernel_height`.
+/// @param kernel_height  Height of the Median kernel. Must be 5 and equal to
+///                       `kernel_width`.
+/// @param border_type    Way of handling the border. The supported border types
+///                       are: \n
+///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE \n
+///                         - @ref KLEIDICV_BORDER_TYPE_REFLECT \n
+///                         - @ref KLEIDICV_BORDER_TYPE_WRAP \n
+///                         - @ref KLEIDICV_BORDER_TYPE_REVERSE
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u8, uint8_t);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s16, int16_t);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u16, uint16_t);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_f32, float);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s8, int8_t);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s32, int32_t);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u32, uint32_t);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

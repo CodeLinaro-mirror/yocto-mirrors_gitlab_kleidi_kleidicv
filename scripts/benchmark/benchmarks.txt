@@ -31,6 +31,8 @@ SepFilter2D_5x5_U8:  opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '
 SepFilter2D_5x5_U16: opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '($PIXEL_FORMAT, 16UC1, 5, BORDER_REPLICATE)'
 SepFilter2D_5x5_S16: opencv_perf_imgproc '*KleidiCV_SepFilter2D.SepFilter2D/*' '($PIXEL_FORMAT, 16SC1, 5, BORDER_REPLICATE)'
 
+MedianBlur5x5:   opencv_perf_imgproc '*medianBlur/*'   '($PIXEL_FORMAT, 8UC1, 5)'
+
 GaussianBlur3x3:   opencv_perf_imgproc '*gaussianBlur3x3/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
 GaussianBlur5x5:   opencv_perf_imgproc '*gaussianBlur5x5/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
 GaussianBlur7x7:   opencv_perf_imgproc '*gaussianBlur7x7/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'

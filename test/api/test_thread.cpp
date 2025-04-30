@@ -106,6 +106,18 @@ class Thread : public testing::TestWithParam<P> {
     ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
   }
 
+  template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc>
+  void check_median_blur(SingleThreadedFunc single_threaded_func,
+                         MultithreadedFunc multithreaded_func) {
+    auto [width, height, thread_count] = GetParam();
+    (void)thread_count;
+    size_t channels = 1;
+    size_t ksize = 5;
+    kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
+    check_unary_op<T, T>(single_threaded_func, multithreaded_func, channels,
+                         channels, channels, ksize, ksize, border_type);
+  }
+
   template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc,
             typename... Args>
   void check_remap_s16(SingleThreadedFunc single_threaded_func,
@@ -353,6 +365,80 @@ TEST_P(Thread, gaussian_blur_u8) {
       /*remaining arguments passed to gaussian_blur_u8 functions*/ channels,
       kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
+
+template <typename T, typename MultithreadedFunc>
+void check_median_blur_not_implemented(MultithreadedFunc multithreaded_func) {
+  constexpr size_t channels = 1;
+  constexpr size_t kernel_width = 1;
+  constexpr size_t kernel_height = kernel_width;
+  test::Array2D<T> src(1, 1);
+  test::Array2D<T> dst(1, 1);
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            multithreaded_func(src.data(), src.stride(), dst.data(),
+                               dst.stride(), 1, 1, channels, kernel_width,
+                               kernel_height, KLEIDICV_BORDER_TYPE_REPLICATE,
+                               get_multithreading_fake(2)));
+
+  constexpr size_t max_width = 25, max_height = 25;
+  test::Array2D<T> src1(max_width, max_height);
+  test::Array2D<T> dst1(max_width, max_height);
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            multithreaded_func(
+                src1.data(), src1.stride(), dst1.data(), dst1.stride(),
+                max_width, max_height, channels, kernel_width, kernel_height,
+                KLEIDICV_BORDER_TYPE_TRANSPARENT, get_multithreading_fake(2)));
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      multithreaded_func(src1.data(), src1.stride(), src1.data(), src1.stride(),
+                         25, 25, 1, 5, 5, KLEIDICV_BORDER_TYPE_REPLICATE,
+                         get_multithreading_fake(2)));
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            multithreaded_func(
+                src1.data(), src1.stride(), dst1.data(), dst1.stride(), 25, 25,
+                KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 5, 5,
+                KLEIDICV_BORDER_TYPE_REPLICATE, get_multithreading_fake(2)));
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      multithreaded_func(src1.data(), src1.stride(), dst1.data(), dst1.stride(),
+                         25, 25, 1, 5, 3, KLEIDICV_BORDER_TYPE_REPLICATE,
+                         get_multithreading_fake(2)));
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      multithreaded_func(src1.data(), src1.stride(), dst1.data(), dst1.stride(),
+                         25, 25, 1, 3, 3, KLEIDICV_BORDER_TYPE_REPLICATE,
+                         get_multithreading_fake(2)));
+}
+
+TEST(ThreadMedianBlur, NotImplemented) {
+  check_median_blur_not_implemented<uint8_t>(kleidicv_thread_median_blur_u8);
+  check_median_blur_not_implemented<uint16_t>(kleidicv_thread_median_blur_u16);
+  check_median_blur_not_implemented<int16_t>(kleidicv_thread_median_blur_s16);
+  check_median_blur_not_implemented<float>(kleidicv_thread_median_blur_f32);
+}
+
+TEST_P(Thread, median_blur_u8) {
+  check_median_blur<uint8_t>(kleidicv_median_blur_u8,
+                             kleidicv_thread_median_blur_u8);
+}
+
+TEST_P(Thread, median_blur_s16) {
+  check_median_blur<int16_t>(kleidicv_median_blur_s16,
+                             kleidicv_thread_median_blur_s16);
+}
+
+TEST_P(Thread, median_blur_u16) {
+  check_median_blur<uint16_t>(kleidicv_median_blur_u16,
+                              kleidicv_thread_median_blur_u16);
+}
+
+TEST_P(Thread, median_blur_f32) {
+  check_median_blur<float>(kleidicv_median_blur_f32,
+                           kleidicv_thread_median_blur_f32);
 }
 
 TEST(ThreadGaussianBlur, NotImplemented) {

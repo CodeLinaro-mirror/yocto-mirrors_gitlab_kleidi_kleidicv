@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -358,6 +358,58 @@ BENCH_GAUSSIAN_BLUR(7, 1);
 BENCH_GAUSSIAN_BLUR(7, 3);
 BENCH_GAUSSIAN_BLUR(15, 1);
 BENCH_GAUSSIAN_BLUR(15, 3);
+
+template <typename T, int Channels, typename Function>
+static void median_blur(benchmark::State& state, Function func) {
+  int kernel_size = state.range(0);
+
+  bench_functor(state, [&]() {
+    (void)func(
+        get_source_buffer_a<T, Channels>(), image_width * Channels * sizeof(T),
+        get_destination_buffer<T, Channels>(),
+        image_width * Channels * sizeof(T), image_width, image_height, Channels,
+        kernel_size, kernel_size, KLEIDICV_BORDER_TYPE_REPLICATE);
+  });
+}
+
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 1, , kleidicv_median_blur_u8)
+    ->Arg(5);
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 4, , kleidicv_median_blur_u8)
+    ->Arg(5);
+
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int8_t, 1, , kleidicv_median_blur_s8)
+    ->Arg(5);
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int8_t, 4, , kleidicv_median_blur_s8)
+    ->Arg(5);
+
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint16_t, 1, ,
+                            kleidicv_median_blur_u16)
+    ->Arg(5);
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint16_t, 4, ,
+                            kleidicv_median_blur_u16)
+    ->Arg(5);
+
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int16_t, 1, , kleidicv_median_blur_s16)
+    ->Arg(5);
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int16_t, 4, , kleidicv_median_blur_s16)
+    ->Arg(5);
+
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint32_t, 1, ,
+                            kleidicv_median_blur_u32)
+    ->Arg(5);
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint32_t, 4, ,
+                            kleidicv_median_blur_u32)
+    ->Arg(5);
+
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int32_t, 1, , kleidicv_median_blur_s32)
+    ->Arg(5);
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int32_t, 4, , kleidicv_median_blur_s32)
+    ->Arg(5);
+
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, float, 1, , kleidicv_median_blur_f32)
+    ->Arg(5);
+BENCHMARK_TEMPLATE2_CAPTURE(median_blur, float, 4, , kleidicv_median_blur_f32)
+    ->Arg(5);
 
 template <typename Function>
 static void sobel_filter(Function f, benchmark::State& state) {

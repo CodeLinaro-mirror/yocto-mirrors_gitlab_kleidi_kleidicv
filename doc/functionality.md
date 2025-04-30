@@ -72,13 +72,14 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Rotate (90 degrees clockwise) |   x   |    x   |    x   |    x   |
 
 ## Image filters
-|                                      | u8  | s16 | u16 |
-|--------------------------------------|-----|-----|-----|
-| Erode                                |  x  |     |     |
-| Dilate                               |  x  |     |     |
-| Sobel (3x3)                          |  x  |     |     |
-| Separable Filter 2D (5x5)            |  x  |  x  |  x  |
-| Gaussian Blur (3x3, 5x5, 7x7, 15x15) |  x  |     |     |
+|                                      | s8  | u8  | s16 | u16 | s32 | u32 | f32 |
+|--------------------------------------|-----|-----|-----|-----|-----|-----|-----|
+| Erode                                |     |  x  |     |     |     |     |     |
+| Dilate                               |     |  x  |     |     |     |     |     |
+| Sobel (3x3)                          |     |  x  |     |     |     |     |     |
+| Separable Filter 2D (5x5)            |     |  x  |  x  |  x  |     |     |     |
+| Gaussian Blur (3x3, 5x5, 7x7, 15x15) |     |  x  |     |     |     |     |     |
+| Median Blur (5x5)                    |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
 
 ## Resize to quarter
 |             | u8  |

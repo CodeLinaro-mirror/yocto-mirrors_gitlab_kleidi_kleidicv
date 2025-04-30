@@ -157,6 +157,13 @@ Notes on parameters:
 * `delta` - delta value is not supported.
 * `borderType` - only supports [`cv::BORDER_REPLICATE`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aa1de4cff95e3377d6d0cbe7569bd4e9f).
 
+### [`cv::medianBlur()`](https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#ga564869aa33e58769b4469101aac458f9)
+Applies median filter to a given image.
+
+Notes on parameters:
+* `src.cols`,`src.rows` - image width and height must be `>=5`.
+* `ksize` - must be 5, as KleidiCV only supports 5x5 kernel size.
+
 ### [`cv::transpose()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga46630ed6c0ea6254a35f447289bd7404)
 Transposes a matrix.
 
