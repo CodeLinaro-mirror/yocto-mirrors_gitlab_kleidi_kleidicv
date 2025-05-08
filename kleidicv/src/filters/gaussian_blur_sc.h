@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -359,27 +359,27 @@ class GaussianBlur<uint8_t, 15, true> {
       svuint32_t src_11, svuint32_t src_12, svuint32_t src_13,
       svuint32_t src_14,
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint32_t acc_1_13 = svadd_u32_x(pg, src_1, src_13);
-    svuint32_t acc_2_12 = svadd_u32_x(pg, src_2, src_12);
     svuint32_t acc_6_8 = svadd_u32_x(pg, src_6, src_8);
+    acc_6_8 = svmul_n_u32_x(pg, acc_6_8, 146);
     svuint32_t acc_5_9 = svadd_u32_x(pg, src_5, src_9);
-    svuint32_t acc_0_14 = svadd_u32_x(pg, src_0, src_14);
     svuint32_t acc_3_11 = svadd_u32_x(pg, src_3, src_11);
+    acc_3_11 = svmul_n_u32_x(pg, acc_3_11, 48);
     svuint32_t acc_4_10 = svadd_u32_x(pg, src_4, src_10);
-
+    svuint32_t acc_2_12 = svadd_u32_x(pg, src_2, src_12);
+    acc_2_12 = svmul_n_u32_x(pg, acc_2_12, 25);
+    svuint32_t acc_1_13 = svadd_u32_x(pg, src_1, src_13);
+    svuint32_t acc_0_14 = svadd_u32_x(pg, src_0, src_14);
     acc_0_14 = svlsl_n_u32_x(pg, acc_0_14, 2);
-    acc_3_11 = svlsl_n_u32_x(pg, acc_3_11, 2);
-    acc_4_10 = svmul_n_u32_x(pg, acc_4_10, 81);
 
-    svuint32_t acc_1_3_11_13 = svadd_u32_x(pg, acc_3_11, acc_1_13);
-    acc_1_3_11_13 = svmla_n_u32_x(pg, acc_3_11, acc_1_3_11_13, 11);
-    svuint32_t acc_0_1_3_11_13_14 = svadd_u32_x(pg, acc_1_3_11_13, acc_0_14);
-    svuint32_t acc_2_4_10_12 = svmla_n_u32_x(pg, acc_4_10, acc_2_12, 25);
+    svuint32_t acc_6_8_5_9 = svmla_n_u32_x(pg, acc_6_8, acc_5_9, 118);
+    svuint32_t acc_3_11_4_10 = svmla_n_u32_x(pg, acc_3_11, acc_4_10, 81);
+    svuint32_t acc_2_12_1_13 = svmla_n_u32_x(pg, acc_2_12, acc_1_13, 11);
+    svuint32_t acc_7_0_14 = svmla_n_u32_x(pg, acc_0_14, src_7, 158);
 
-    svuint32_t acc = svadd_u32_x(pg, acc_2_4_10_12, acc_0_1_3_11_13_14);
-    acc = svmla_n_u32_x(pg, acc, acc_6_8, 146);
-    acc = svmla_n_u32_x(pg, acc, acc_5_9, 118);
-    acc = svmla_n_u32_x(pg, acc, src_7, 158);
+    svuint32_t acc1 = svadd_u32_x(pg, acc_6_8_5_9, acc_3_11_4_10);
+    svuint32_t acc2 = svadd_u32_x(pg, acc_2_12_1_13, acc_7_0_14);
+
+    svuint32_t acc = svadd_u32_x(pg, acc1, acc2);
     acc = svrshr_n_u32_x(pg, acc, 20);
     svst1b_u32(pg, &dst[0], acc);
   }
@@ -696,38 +696,33 @@ class GaussianBlur<uint8_t, 15, false> final
       svuint32_t src_11, svuint32_t src_12, svuint32_t src_13,
       svuint32_t src_14,
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    // 7
-    svuint32_t acc = svmul_n_u32_x(pg, src_7, half_kernel_[7]);
-
-    // 6 - 8
     svuint32_t acc_6_8 = svadd_u32_x(pg, src_6, src_8);
-    acc = svmla_n_u32_x(pg, acc, acc_6_8, half_kernel_[6]);
+    acc_6_8 = svmul_n_u32_x(pg, acc_6_8, half_kernel_[6]);
 
-    // 5 - 9
     svuint32_t acc_5_9 = svadd_u32_x(pg, src_5, src_9);
-    acc = svmla_n_u32_x(pg, acc, acc_5_9, half_kernel_[5]);
+    acc_5_9 = svmul_n_u32_x(pg, acc_5_9, half_kernel_[5]);
 
-    // 4 - 10
     svuint32_t acc_4_10 = svadd_u32_x(pg, src_4, src_10);
-    acc = svmla_n_u32_x(pg, acc, acc_4_10, half_kernel_[4]);
+    acc_4_10 = svmul_n_u32_x(pg, acc_4_10, half_kernel_[4]);
 
-    // 3 - 11
     svuint32_t acc_3_11 = svadd_u32_x(pg, src_3, src_11);
-    acc = svmla_n_u32_x(pg, acc, acc_3_11, half_kernel_[3]);
+    acc_3_11 = svmul_n_u32_x(pg, acc_3_11, half_kernel_[3]);
 
-    // 2 - 12
     svuint32_t acc_2_12 = svadd_u32_x(pg, src_2, src_12);
-    acc = svmla_n_u32_x(pg, acc, acc_2_12, half_kernel_[2]);
+    svuint32_t acc1 = svmla_n_u32_x(pg, acc_6_8, acc_2_12, half_kernel_[2]);
 
-    // 1 - 13
     svuint32_t acc_1_13 = svadd_u32_x(pg, src_1, src_13);
-    acc = svmla_n_u32_x(pg, acc, acc_1_13, half_kernel_[1]);
+    svuint32_t acc2 = svmla_n_u32_x(pg, acc_5_9, acc_1_13, half_kernel_[1]);
 
-    // 0 - 14
     svuint32_t acc_0_14 = svadd_u32_x(pg, src_0, src_14);
-    acc = svmla_n_u32_x(pg, acc, acc_0_14, half_kernel_[0]);
+    svuint32_t acc3 = svmla_n_u32_x(pg, acc_4_10, acc_0_14, half_kernel_[0]);
 
-    acc = svrshr_n_u32_x(pg, acc, 16);
+    svuint32_t acc4 = svmla_n_u32_x(pg, acc_3_11, src_7, half_kernel_[7]);
+
+    acc1 = svadd_u32_x(pg, acc1, acc2);
+    acc2 = svadd_u32_x(pg, acc3, acc4);
+
+    svuint32_t acc = svrshr_n_u32_x(pg, svadd_u32_x(pg, acc1, acc2), 16);
     svst1b_u32(pg, &dst[0], acc);
   }
 };  // end of class GaussianBlur<uint8_t, 15, false>
