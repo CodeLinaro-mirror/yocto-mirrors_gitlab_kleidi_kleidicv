@@ -944,14 +944,14 @@ INSTANTIATE_TEST_SUITE_P(
                     P{2, 48, 1}, P{6, 64, 1}, P{4, 80, 2}, P{2, 96, 3},
                     P{1, 112, 4}, P{12, 34, 5}));
 
-TEST(ThreadedScaleU8, NotImplemented) {
+TEST(ThreadScaleU8, NotImplemented) {
   test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
   test::test_null_args(kleidicv_thread_scale_u8, src.data(), src.stride(),
                        dst.data(), dst.stride(), 1, 1, 2, 0,
                        get_multithreading_fake(2));
 }
 
-TEST(ThreadedScaleU8, OversizeImage) {
+TEST(ThreadScaleU8, OversizeImage) {
   test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
   kleidicv_error_t result = kleidicv_thread_scale_u8(
       src.data(), src.stride(), dst.data(), dst.stride(),
@@ -959,7 +959,7 @@ TEST(ThreadedScaleU8, OversizeImage) {
   EXPECT_EQ(KLEIDICV_ERROR_RANGE, result);
 }
 
-TEST(ThreadedScaleU8, ZerosizeImage) {
+TEST(ThreadScaleU8, ZerosizeImage) {
   test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
   kleidicv_error_t result = kleidicv_thread_scale_u8(
       src.data(), src.stride(), dst.data(), dst.stride(), 0, 2, 2, 0,
@@ -967,14 +967,18 @@ TEST(ThreadedScaleU8, ZerosizeImage) {
   EXPECT_EQ(KLEIDICV_OK, result);
 }
 
-TEST(ThreadedScaleU8, Consistency) {
-  const auto width = 55;
-  const auto height = 60;
-  const uint8_t src_val = 230, scale = 2, shift = 3;
-  test::Array2D<uint8_t> src(size_t{width}, height),
-      dst_single(size_t{width}, height), dst_multi(size_t{width}, height);
+void check_scale_u8_consistency(size_t width, size_t height, float scale,
+                                float shift) {
+  test::Array2D<uint8_t> src(width, height), dst_single(width, height),
+      dst_multi(width, height);
 
-  src.fill(src_val);
+  // Check full input data range
+  uint8_t counter = 0;
+  for (size_t row = 0; row < height; ++row) {
+    for (size_t col = 0; col < width; ++col) {
+      *src.at(row, col) = counter++;
+    }
+  }
 
   kleidicv_error_t single_result =
       kleidicv_scale_u8(src.data(), src.stride(), dst_single.data(),
@@ -989,19 +993,29 @@ TEST(ThreadedScaleU8, Consistency) {
   EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
 }
 
+// Test below and above the magic 675 (number of pixels).
+// Multi-thread ScaleU8 always uses the Table method, and the single-thread
+// ScaleU8 uses Calculate for smaller inputs and Table for bigger ones.
+TEST(ThreadScaleU8, ConsistencyCalculate) {
+  check_scale_u8_consistency(30, 20, 1.3, -5.5);
+}
+TEST(ThreadScaleU8, ConsistencyTable) {
+  check_scale_u8_consistency(37, 23, 0.8, 3.3);
+}
+
 // Operations in the Neon backend have both a vector path and a scalar path.
 // The vector path is used to process most data and the scalar path is used to
 // process the parts of the data that don't fit into the vector width.
-// For floating point operations in particular, the results may be very slightly
-// different between vector and scalar paths.
-// When using multithreading, images are divided into parts to be processed by
-// each thread, and this can change which parts of the data end up being
-// processed by the vector and scalar paths. Since the threading may be
-// non-deterministic in how it divides up the image, this non-determinism could
-// leak through in the values of the output. This could cause subtle bugs and
-// must be avoided.
-// Prior to the fix, these tests were found to trigger the bug when run via
-// qemu-aarch64 8.0.4 on an x86 machine, but passed in other environments.
+// For floating point operations in particular, the results may be very
+// slightly different between vector and scalar paths. When using
+// multithreading, images are divided into parts to be processed by each
+// thread, and this can change which parts of the data end up being processed
+// by the vector and scalar paths. Since the threading may be
+// non-deterministic in how it divides up the image, this non-determinism
+// could leak through in the values of the output. This could cause subtle
+// bugs and must be avoided. Prior to the fix, these tests were found to
+// trigger the bug when run via qemu-aarch64 8.0.4 on an x86 machine, but
+// passed in other environments.
 class SingleMultiThreadInconsistency : public testing::TestWithParam<P> {};
 
 TEST_P(SingleMultiThreadInconsistency, ScaleF32) {
