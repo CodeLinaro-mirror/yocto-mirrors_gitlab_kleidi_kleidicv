@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
-index 2b40352..402f2d4 100644
+index 2b4035285f..402f2d451a 100644
 --- a/modules/core/src/convert.dispatch.cpp
 +++ b/modules/core/src/convert.dispatch.cpp
 @@ -281,6 +281,15 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
@@ -33,7 +33,7 @@ index 2b40352..402f2d4 100644
      double scale[] = {alpha, beta};
      CV_Assert( func != 0 );
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
-index 474fe17..9a43264 100644
+index 474fe17393..9a43264a4b 100644
 --- a/modules/core/src/hal_replacement.hpp
 +++ b/modules/core/src/hal_replacement.hpp
 @@ -307,9 +307,29 @@ Hamming distance between two vectors
@@ -106,7 +106,7 @@ index 474fe17..9a43264 100644
  
  
 diff --git a/modules/core/src/sum.dispatch.cpp b/modules/core/src/sum.dispatch.cpp
-index fade948..17b40ca 100644
+index fade948336..17b40ca0e8 100644
 --- a/modules/core/src/sum.dispatch.cpp
 +++ b/modules/core/src/sum.dispatch.cpp
 @@ -199,6 +199,10 @@ Scalar sum(InputArray _src)
@@ -121,15 +121,15 @@ index fade948..17b40ca 100644
      CV_Assert( cn <= 4 && func != 0 );
  
 diff --git a/modules/imgproc/src/hal_replacement.hpp b/modules/imgproc/src/hal_replacement.hpp
-index fe6019e..b2d8c8b 100644
+index fe6019e3a7..994012fbc8 100644
 --- a/modules/imgproc/src/hal_replacement.hpp
 +++ b/modules/imgproc/src/hal_replacement.hpp
-@@ -378,6 +378,60 @@ inline int hal_ni_remap32f(int src_type, const uchar *src_data, size_t src_step,
- #define cv_hal_remap32f hal_ni_remap32f
- //! @endcond
- 
+@@ -373,9 +373,35 @@ inline int hal_ni_remap32f(int src_type, const uchar *src_data, size_t src_step,
+                            float* mapx, size_t mapx_step, float* mapy, size_t mapy_step,
+                            int interpolation, int border_type, const double border_value[4])
+ { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
 +/**
-+   @brief hal_remap with a short integer map
++   @brief hal_remap with fixed-point maps
 +   @param src_type source and destination image type
 +   @param src_data source image data
 +   @param src_step source image step
@@ -139,73 +139,45 @@ index fe6019e..b2d8c8b 100644
 +   @param dst_step destination image step
 +   @param dst_width destination image width
 +   @param dst_height destination image height
-+   @param mapxy map for interleaved x and y values
-+   @param mapxy_step mapxy matrix step
++   @param mapx map for x values
++   @param mapx_step mapx matrix step
++   @param mapy map for y values
++   @param mapy_step mapy matrix step
++   @param interpolation interpolation mode (CV_HAL_INTER_NEAREST, ...)
 +   @param border_type border processing mode (CV_HAL_BORDER_REFLECT, ...)
 +   @param border_value values to use for CV_HAL_BORDER_CONSTANT mode
 +   @sa cv::remap
 + */
 +inline int hal_ni_remap16s(int src_type, const uchar *src_data, size_t src_step, int src_width, int src_height,
 +                           uchar *dst_data, size_t dst_step, int dst_width, int dst_height,
-+                           const short* mapxy, size_t mapxy_step, int border_type, const double border_value[4])
++                           short* mapx, size_t mapx_step, ushort* mapy, size_t mapy_step,
++                           int interpolation, int border_type, const double border_value[4])
 +{ return CV_HAL_ERROR_NOT_IMPLEMENTED; }
-+
-+//! @cond IGNORED
+ 
+ //! @cond IGNORED
+ #define cv_hal_remap32f hal_ni_remap32f
 +#define cv_hal_remap16s hal_ni_remap16s
-+//! @endcond
-+
-+/**
-+   @brief hal_remap with short maps plus fractions
-+   @param src_type source and destination image type
-+   @param src_data source image data
-+   @param src_step source image step
-+   @param src_width source image width
-+   @param src_height source image height
-+   @param dst_data destination image data
-+   @param dst_step destination image step
-+   @param dst_width destination image width
-+   @param dst_height destination image height
-+   @param mapxy map for interleaved x and y values
-+   @param mapxy_step mapxy matrix step
-+   @param mapfrac map for fractional part x and y values (5+5 bits)
-+   @param mapfrac_step mapfrac matrix step
-+   @param border_type border processing mode (CV_HAL_BORDER_REFLECT, ...)
-+   @param border_value values to use for CV_HAL_BORDER_CONSTANT mode
-+   @sa cv::remap
-+ */
-+inline int hal_ni_remap16s16u(int src_type, const uchar *src_data, size_t src_step, int src_width, int src_height,
-+                           uchar *dst_data, size_t dst_step, int dst_width, int dst_height,
-+                           const short* mapxy, size_t mapxy_step, const unsigned short* mapfrac, size_t mapfrac_step, int border_type, const double border_value[4])
-+{ return CV_HAL_ERROR_NOT_IMPLEMENTED; }
-+
-+//! @cond IGNORED
-+#define cv_hal_remap16s16u hal_ni_remap16s16u
-+//! @endcond
-+
+ //! @endcond
+ 
  /**
-    @brief hal_cvtBGRtoBGR
-    @param src_data source image data
 diff --git a/modules/imgproc/src/imgwarp.cpp b/modules/imgproc/src/imgwarp.cpp
-index dfc718b..c1f953f 100644
+index dfc718bf87..8e293cc805 100644
 --- a/modules/imgproc/src/imgwarp.cpp
 +++ b/modules/imgproc/src/imgwarp.cpp
-@@ -1819,6 +1819,14 @@ void cv::remap( InputArray _src, OutputArray _dst,
-     {
+@@ -1820,6 +1820,11 @@ void cv::remap( InputArray _src, OutputArray _dst,
          CALL_HAL(remap32f, cv_hal_remap32f, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
                   map1.ptr<float>(), map1.step, map2.ptr<float>(), map2.step, interpolation, borderType, borderValue.val);
-+    } else if ((map1.type() == CV_16SC2) && map2.empty() && interpolation == INTER_NEAREST)
+     }
++    if ((map1.type() == CV_16SC2) && (map2.empty() || map2.type() == CV_16UC1))
 +    {
 +        CALL_HAL(remap16s, cv_hal_remap16s, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
-+                 map1.ptr<short>(), map1.step, borderType, borderValue.val);
-+    } else if ((map1.type() == CV_16SC2) && (map2.type() == CV_16UC1) && interpolation == INTER_LINEAR)
-+    {
-+        CALL_HAL(remap16s16u, cv_hal_remap16s16u, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
-+                 map1.ptr<short>(), map1.step, map2.ptr<unsigned short>(), map2.step, borderType, borderValue.val);
-     }
++                 map1.ptr<short>(), map1.step, map2.ptr<ushort>(), map2.step, interpolation, borderType, borderValue.val);
++    }
  
      interpolation &= ~WARP_RELATIVE_MAP;
+     if( interpolation == INTER_AREA )
 diff --git a/modules/imgproc/test/test_imgwarp.cpp b/modules/imgproc/test/test_imgwarp.cpp
-index 4cf99b4..332bc10 100644
+index 4cf99b4704..332bc10f06 100644
 --- a/modules/imgproc/test/test_imgwarp.cpp
 +++ b/modules/imgproc/test/test_imgwarp.cpp
 @@ -1371,7 +1371,13 @@ TEST_P(Imgproc_RemapRelative, validity)
@@ -224,7 +196,7 @@ index 4cf99b4..332bc10 100644
  
  INSTANTIATE_TEST_CASE_P(ImgProc, Imgproc_RemapRelative, testing::Combine(
 diff --git a/modules/imgproc/test/test_imgwarp_strict.cpp b/modules/imgproc/test/test_imgwarp_strict.cpp
-index 673c6f0..56d9e0b 100644
+index 673c6f03e6..56d9e0b554 100644
 --- a/modules/imgproc/test/test_imgwarp_strict.cpp
 +++ b/modules/imgproc/test/test_imgwarp_strict.cpp
 @@ -239,7 +239,7 @@ float CV_ImageWarpBaseTest::get_success_error_level(int _interpolation, int) con

@@ -1340,9 +1340,9 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
 
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
-              int dst_width, int dst_height, const int16_t *mapxy,
-              size_t mapxy_step, int border_type,
-              const double border_value_f64[4]) {
+              int dst_width, int dst_height, int16_t *mapx, size_t mapx_step,
+              uint16_t *mapy, size_t mapy_step, int interpolation,
+              int border_type, const double border_value_f64[4]) {
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -1350,60 +1350,52 @@ int remap_s16(int src_type, const uchar *src_data, size_t src_step,
 
   auto mt = get_multithreading();
 
-  if (src_type == CV_8UC1) {
-    auto border_value = get_border_value<uint8_t>(border_value_f64);
-    return convert_error(kleidicv_thread_remap_s16_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        static_cast<size_t>(src_width), static_cast<size_t>(src_height),
-        reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
-        CV_MAT_CN(src_type), mapxy, mapxy_step, kleidicv_border_type,
-        border_value.data(), mt));
-  } else if (src_type == CV_16UC1) {
-    auto border_value = get_border_value<uint16_t>(border_value_f64);
-    return convert_error(kleidicv_thread_remap_s16_u16(
-        reinterpret_cast<const uint16_t *>(src_data), src_step,
-        static_cast<size_t>(src_width), static_cast<size_t>(src_height),
-        reinterpret_cast<uint16_t *>(dst_data), dst_step,
-        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
-        CV_MAT_CN(src_type), mapxy, mapxy_step, kleidicv_border_type,
-        border_value.data(), mt));
+  // OpenCV provides mapx and mapy inputs, while mapx is interleaved x and y
+  // coordinates, and mapy is interleaved fractional parts, if present.
+  // KleidiCV has different naming for the same inputs.
+
+  if (interpolation == CV_HAL_INTER_NEAREST) {
+    if (src_type == CV_8UC1) {
+      auto border_value = get_border_value<uint8_t>(border_value_f64);
+      return convert_error(kleidicv_thread_remap_s16_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+          reinterpret_cast<uint8_t *>(dst_data), dst_step,
+          static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
+          CV_MAT_CN(src_type), mapx, mapx_step, kleidicv_border_type,
+          border_value.data(), mt));
+    } else if (src_type == CV_16UC1) {
+      auto border_value = get_border_value<uint16_t>(border_value_f64);
+      return convert_error(kleidicv_thread_remap_s16_u16(
+          reinterpret_cast<const uint16_t *>(src_data), src_step,
+          static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+          reinterpret_cast<uint16_t *>(dst_data), dst_step,
+          static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
+          CV_MAT_CN(src_type), mapx, mapx_step, kleidicv_border_type,
+          border_value.data(), mt));
+    }
   }
 
-  return CV_HAL_ERROR_NOT_IMPLEMENTED;
-}
-
-int remap_s16point5(int src_type, const uchar *src_data, size_t src_step,
-                    int src_width, int src_height, uchar *dst_data,
-                    size_t dst_step, int dst_width, int dst_height,
-                    const int16_t *mapxy, size_t mapxy_step,
-                    const uint16_t *mapfrac, size_t mapfrac_step,
-                    int border_type, const double border_value_f64[4]) {
-  kleidicv_border_type_t kleidicv_border_type;
-  if (from_opencv(border_type, kleidicv_border_type)) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  auto mt = get_multithreading();
-
-  if (CV_MAT_DEPTH(src_type) == CV_8U) {
-    auto border_value = get_border_value<uint8_t>(border_value_f64);
-    return convert_error(kleidicv_thread_remap_s16point5_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        static_cast<size_t>(src_width), static_cast<size_t>(src_height),
-        reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
-        CV_MAT_CN(src_type), mapxy, mapxy_step, mapfrac, mapfrac_step,
-        kleidicv_border_type, border_value.data(), mt));
-  } else if (CV_MAT_DEPTH(src_type) == CV_16U) {
-    auto border_value = get_border_value<uint16_t>(border_value_f64);
-    return convert_error(kleidicv_thread_remap_s16point5_u16(
-        reinterpret_cast<const uint16_t *>(src_data), src_step,
-        static_cast<size_t>(src_width), static_cast<size_t>(src_height),
-        reinterpret_cast<uint16_t *>(dst_data), dst_step,
-        static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
-        CV_MAT_CN(src_type), mapxy, mapxy_step, mapfrac, mapfrac_step,
-        kleidicv_border_type, border_value.data(), mt));
+  if (interpolation == CV_HAL_INTER_LINEAR) {
+    if (CV_MAT_DEPTH(src_type) == CV_8U) {
+      auto border_value = get_border_value<uint8_t>(border_value_f64);
+      return convert_error(kleidicv_thread_remap_s16point5_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+          reinterpret_cast<uint8_t *>(dst_data), dst_step,
+          static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
+          CV_MAT_CN(src_type), mapx, mapx_step, mapy, mapy_step,
+          kleidicv_border_type, border_value.data(), mt));
+    } else if (CV_MAT_DEPTH(src_type) == CV_16U) {
+      auto border_value = get_border_value<uint16_t>(border_value_f64);
+      return convert_error(kleidicv_thread_remap_s16point5_u16(
+          reinterpret_cast<const uint16_t *>(src_data), src_step,
+          static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+          reinterpret_cast<uint16_t *>(dst_data), dst_step,
+          static_cast<size_t>(dst_width), static_cast<size_t>(dst_height),
+          CV_MAT_CN(src_type), mapx, mapx_step, mapy, mapy_step,
+          kleidicv_border_type, border_value.data(), mt));
+    }
   }
 
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
