@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -27,7 +27,7 @@ bool test_scharr_interleaved(int index, RecreatedMessageQueue& request_queue,
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,
                                                        reply_queue, input);
 
-      if (are_matrices_different<uint8_t>(0, actual, expected)) {
+      if (are_matrices_different<int16_t>(0, actual, expected)) {
         fail_print_matrices(x, y, input, actual, expected);
         return true;
       }

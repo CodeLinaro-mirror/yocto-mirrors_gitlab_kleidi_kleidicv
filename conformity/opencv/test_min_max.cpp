@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -49,7 +49,7 @@ bool test_min_max(int index, RecreatedMessageQueue& request_queue,
       cv::Mat actual = exec_min_max<GetIndex>(input);
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,
                                                        reply_queue, input);
-      if (are_matrices_different<T>(0, actual, expected)) {
+      if (are_matrices_different<int32_t>(0, actual, expected)) {
         fail_print_matrices(x, y, input, actual, expected);
         return true;
       }
@@ -64,7 +64,7 @@ bool test_min_max(int index, RecreatedMessageQueue& request_queue,
   cv::Mat actual = exec_min_max<GetIndex>(input);
   cv::Mat expected =
       get_expected_from_subordinate(index, request_queue, reply_queue, input);
-  if (are_matrices_different<T>(0, actual, expected)) {
+  if (are_matrices_different<int32_t>(0, actual, expected)) {
     std::cout << "[FAIL]\n";
     std::cout << "=== Input Matrix:\n";
     for (int i = 0; i < z; ++i) {
