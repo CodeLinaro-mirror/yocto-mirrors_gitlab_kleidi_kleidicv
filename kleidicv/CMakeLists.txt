@@ -51,6 +51,8 @@ option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interlea
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
 
+# Continuous load and store NEON instructions produce suboptimal code generation on GCC version <= 11,
+# and these instructions are not supported on GCC version <=8.
 if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11 OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") 
   set(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS ON)
 else()
