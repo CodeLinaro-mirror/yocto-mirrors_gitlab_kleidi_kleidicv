@@ -174,8 +174,10 @@ int scharr_deriv(const uchar *src_data, size_t src_step, int16_t *dst_data,
 }  // namespace hal
 }  // namespace kleidicv
 
+#if KLEIDICV_USE_CV_NAMESPACE_IN_OPENCV_HAL
 // Other HAL implementations might require the cv namespace
 namespace cv {
+#endif  // KLEIDICV_USE_CV_NAMESPACE_IN_OPENCV_HAL
 
 // If the KleidiCV function has a signature matching the OpenCV HAL interface
 // AND it never returns KLEIDICV_NOT_IMPLEMENTED then we can call it directly
@@ -665,6 +667,8 @@ static inline int kleidicv_ScharrDeriv_with_fallback(const uchar *src_data,
 // Remove no longer needed macro definitions.
 #undef KLEIDICV_HAL_FALLBACK_FORWARD
 
+#if KLEIDICV_USE_CV_NAMESPACE_IN_OPENCV_HAL
 }  // namespace cv
+#endif  // KLEIDICV_USE_CV_NAMESPACE_IN_OPENCV_HAL
 
 #endif  // KLEIDICV_OPENCV_HAL_H

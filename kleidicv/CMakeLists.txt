@@ -40,6 +40,11 @@ option(
   ON
 )
 option(
+  KLEIDICV_USE_CV_NAMESPACE_IN_OPENCV_HAL
+  "Controls whether to use the cv namespace. Other OpenCV HAL implementations might require this, but it can cause issues as well."
+  ON
+)
+option(
   KLEIDICV_ENABLE_ALL_OPENCV_HAL
   "Internal - Enable all KleidiCV operations in the OpenCV HAL.
  By default operations are only enabled in the HAL if benchmarks show a measurable performance uplift."
