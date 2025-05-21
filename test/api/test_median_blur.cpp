@@ -221,7 +221,9 @@ TYPED_TEST_SUITE(MedianBlurTest, ElementTypes);
 
 TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithoutPadding) {
   if (test::Options::are_long_running_tests_skipped()) {
-    GTEST_SKIP() << "Long running exp test skipped";
+    GTEST_SKIP() << "Long running test "
+                    "MedianBlurTest::RunAllParamCombinationsWithoutPadding "
+                    "skipped";
   }
 
   for (const auto& params : TestFixture::get_unpadded_test_cases()) {
@@ -340,7 +342,10 @@ TYPED_TEST_SUITE(MedianBlurByteStrideTest, ByteStrideTypes);
 
 TYPED_TEST(MedianBlurByteStrideTest, RunAllParamCombinationsWithPadding) {
   if (test::Options::are_long_running_tests_skipped()) {
-    GTEST_SKIP() << "Long running exp test skipped";
+    GTEST_SKIP()
+        << "Long running test "
+           "MedianBlurByteStrideTest::RunAllParamCombinationsWithPadding "
+           "skipped";
   }
 
   for (const auto& params : TestFixture::get_padded_test_Cases()) {
