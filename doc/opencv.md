@@ -108,7 +108,7 @@ In-place filtering is not supported i.e. `src` and `dst` must be different (non-
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.cols`,`src.rows` - should be greater than or equal to the size of the kernel in the given direction.
-* `ksize` - supported kernel sizes are 3x3, 5x5, 7x7 and 15x15.
+* `ksize` - supported kernel sizes are 3x3, 5x5, 7x7, 15x15 and 21x21.
 * `sigmaX`, `sigmaY` - optimal performance is achieved if these are set to 0.
 * `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.11.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
   + `cv::BORDER_REPLICATE`

@@ -8,6 +8,7 @@
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/separable_filter_15x15_neon.h"
+#include "kleidicv/filters/separable_filter_21x21_neon.h"
 #include "kleidicv/filters/separable_filter_3x3_neon.h"
 #include "kleidicv/filters/separable_filter_5x5_neon.h"
 #include "kleidicv/filters/separable_filter_7x7_neon.h"
@@ -676,6 +677,12 @@ static kleidicv_error_t gaussian_blur(size_t kernel_size, const ScalarType *src,
       return gaussian_blur_fixed_kernel_size<15, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
           sigma, border_type, workspace);
+    case 21:
+      // 21x21 does not have a binomial variant
+      return gaussian_blur_fixed_kernel_size<21, false>(
+          src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
+          sigma, border_type, workspace);
+
     // gaussian_blur_is_implemented checked the kernel size already.
     // GCOVR_EXCL_START
     default:

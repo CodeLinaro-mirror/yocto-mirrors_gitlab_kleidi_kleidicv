@@ -365,12 +365,19 @@ static void gaussian_blur(benchmark::State& state) {
 
 BENCH_GAUSSIAN_BLUR(3, 1);
 BENCH_GAUSSIAN_BLUR(3, 3);
+BENCH_GAUSSIAN_BLUR(3, 4);
 BENCH_GAUSSIAN_BLUR(5, 1);
 BENCH_GAUSSIAN_BLUR(5, 3);
+BENCH_GAUSSIAN_BLUR(5, 4);
 BENCH_GAUSSIAN_BLUR(7, 1);
 BENCH_GAUSSIAN_BLUR(7, 3);
+BENCH_GAUSSIAN_BLUR(7, 4);
 BENCH_GAUSSIAN_BLUR(15, 1);
 BENCH_GAUSSIAN_BLUR(15, 3);
+BENCH_GAUSSIAN_BLUR(15, 4);
+BENCH_GAUSSIAN_BLUR(21, 1);
+BENCH_GAUSSIAN_BLUR(21, 3);
+BENCH_GAUSSIAN_BLUR(21, 4);
 
 template <typename T, int Channels, typename Function>
 static void median_blur(benchmark::State& state, Function func) {

@@ -9,12 +9,12 @@
 #include <cassert>
 
 #include "kleidicv/filters/separable_filter_15x15_sc.h"
+#include "kleidicv/filters/separable_filter_21x21_sc.h"
 #include "kleidicv/filters/separable_filter_3x3_sc.h"
 #include "kleidicv/filters/separable_filter_5x5_sc.h"
 #include "kleidicv/filters/separable_filter_7x7_sc.h"
 #include "kleidicv/filters/sigma.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sve2.h"
 #include "kleidicv/workspace/separable.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
@@ -812,6 +812,198 @@ class GaussianBlur<uint8_t, 15, false> final
   }
 };  // end of class GaussianBlur<uint8_t, 15, false>
 
+template <>
+class GaussianBlur<uint8_t, 21, false> final
+    : public GaussianBlurNonBinomialBase<uint8_t, 21> {
+ public:
+  using SourceType = uint8_t;
+  using BufferType = uint32_t;
+  using DestinationType = uint8_t;
+
+  explicit GaussianBlur(float sigma) KLEIDICV_STREAMING_COMPATIBLE
+      : GaussianBlurNonBinomialBase<uint8_t, 21>(sigma) {}
+
+  void vertical_vector_path(
+      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
+      svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
+      svuint8_t src_7, svuint8_t src_8, svuint8_t src_9, svuint8_t src_10,
+      svuint8_t src_11, svuint8_t src_12, svuint8_t src_13, svuint8_t src_14,
+      svuint8_t src_15, svuint8_t src_16, svuint8_t src_17, svuint8_t src_18,
+      svuint8_t src_19, svuint8_t src_20,
+      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svbool_t pg16all = svptrue_b16();
+
+    // (10) + (9 + 11)
+    // Need to calculate them in 32 bits, for small sigmas they can be large
+    svuint16_t acc_10_0 = svmovlb_u16(src_10);
+    svuint16_t acc_10_1 = svmovlt_u16(src_10);
+
+    svuint32_t acc3_00 = svmullb_n_u32(acc_10_0, half_kernel_[10]);
+    svuint32_t acc3_10 = svmullt_n_u32(acc_10_0, half_kernel_[10]);
+    svuint32_t acc3_01 = svmullb_n_u32(acc_10_1, half_kernel_[10]);
+    svuint32_t acc3_11 = svmullt_n_u32(acc_10_1, half_kernel_[10]);
+
+    svuint16_t acc_9_0 = svaddlb_u16(src_9, src_11);
+    svuint16_t acc_9_1 = svaddlt_u16(src_9, src_11);
+
+    acc3_00 = svmlalb_n_u32(acc3_00, acc_9_0, half_kernel_[9]);
+    acc3_10 = svmlalt_n_u32(acc3_10, acc_9_0, half_kernel_[9]);
+    acc3_01 = svmlalb_n_u32(acc3_01, acc_9_1, half_kernel_[9]);
+    acc3_11 = svmlalt_n_u32(acc3_11, acc_9_1, half_kernel_[9]);
+
+    // (8 + 12) + (7 + 13) + (6 + 14)
+    // 16bits are enough for these products, for any sigma
+    svuint16_t acc_8_0 = svaddlb_u16(src_8, src_12);
+    svuint16_t acc_8_1 = svaddlt_u16(src_8, src_12);
+
+    svuint16_t mul8_0 = svmul_n_u16_x(pg16all, acc_8_0, half_kernel_[8]);
+    svuint16_t mul8_1 = svmul_n_u16_x(pg16all, acc_8_1, half_kernel_[8]);
+
+    svuint16_t acc_7_0 = svaddlb_u16(src_7, src_13);
+    svuint16_t acc_7_1 = svaddlt_u16(src_7, src_13);
+
+    svuint16_t mul7_0 = svmul_n_u16_x(pg16all, acc_7_0, half_kernel_[7]);
+    svuint16_t mul7_1 = svmul_n_u16_x(pg16all, acc_7_1, half_kernel_[7]);
+
+    svuint16_t acc_6_0 = svaddlb_u16(src_6, src_14);
+    svuint16_t acc_6_1 = svaddlt_u16(src_6, src_14);
+
+    svuint16_t mul6_0 = svmul_n_u16_x(pg16all, acc_6_0, half_kernel_[6]);
+    svuint16_t mul6_1 = svmul_n_u16_x(pg16all, acc_6_1, half_kernel_[6]);
+
+    svuint32_t acc2_00 = svaddlb_u32(mul6_0, mul7_0);
+    svuint32_t acc2_10 = svaddlt_u32(mul6_0, mul7_0);
+    svuint32_t acc2_01 = svaddlb_u32(mul6_1, mul7_1);
+    svuint32_t acc2_11 = svaddlt_u32(mul6_1, mul7_1);
+
+    svbool_t pg32all = svptrue_b32();
+    acc2_00 = svadd_u32_x(pg32all, acc2_00, svmovlb_u32(mul8_0));
+    acc2_10 = svadd_u32_x(pg32all, acc2_10, svmovlt_u32(mul8_0));
+    acc2_01 = svadd_u32_x(pg32all, acc2_01, svmovlb_u32(mul8_1));
+    acc2_11 = svadd_u32_x(pg32all, acc2_11, svmovlt_u32(mul8_1));
+
+    // (5 + 15) + (4 + 14) + (3 + 17)
+    // these fit into 16 bits together with acc0 too, we can save some cycles
+    svuint16_t acc_5_0 = svaddlb_u16(src_5, src_15);
+    svuint16_t acc_5_1 = svaddlt_u16(src_5, src_15);
+
+    svuint16_t acc1_0 = svmul_n_u16_x(pg16all, acc_5_0, half_kernel_[5]);
+    svuint16_t acc1_1 = svmul_n_u16_x(pg16all, acc_5_1, half_kernel_[5]);
+
+    svuint16_t acc_4_0 = svaddlb_u16(src_4, src_16);
+    svuint16_t acc_4_1 = svaddlt_u16(src_4, src_16);
+
+    acc1_0 = svmla_n_u16_x(pg16all, acc1_0, acc_4_0, half_kernel_[4]);
+    acc1_1 = svmla_n_u16_x(pg16all, acc1_1, acc_4_1, half_kernel_[4]);
+
+    svuint16_t acc_3_0 = svaddlb_u16(src_3, src_17);
+    svuint16_t acc_3_1 = svaddlt_u16(src_3, src_17);
+
+    acc1_0 = svmla_n_u16_x(pg16all, acc1_0, acc_3_0, half_kernel_[3]);
+    acc1_1 = svmla_n_u16_x(pg16all, acc1_1, acc_3_1, half_kernel_[3]);
+
+    // (2 + 18) + (1 + 19) + (0 + 20)
+    // these fit into 16 bits together with acc1 too, we can save some cycles
+    svuint16_t acc_2_0 = svaddlb_u16(src_2, src_18);
+    svuint16_t acc_2_1 = svaddlt_u16(src_2, src_18);
+
+    svuint16_t acc0_0 = svmul_n_u16_x(pg16all, acc_2_0, half_kernel_[2]);
+    svuint16_t acc0_1 = svmul_n_u16_x(pg16all, acc_2_1, half_kernel_[2]);
+
+    svuint16_t acc_1_0 = svaddlb_u16(src_1, src_19);
+    svuint16_t acc_1_1 = svaddlt_u16(src_1, src_19);
+
+    acc0_0 = svmla_n_u16_x(pg16all, acc0_0, acc_1_0, half_kernel_[1]);
+    acc0_1 = svmla_n_u16_x(pg16all, acc0_1, acc_1_1, half_kernel_[1]);
+
+    svuint16_t acc_0_0 = svaddlb_u16(src_0, src_20);
+    svuint16_t acc_0_1 = svaddlt_u16(src_0, src_20);
+
+    acc0_0 = svmla_n_u16_x(pg16all, acc0_0, acc_0_0, half_kernel_[0]);
+    acc0_1 = svmla_n_u16_x(pg16all, acc0_1, acc_0_1, half_kernel_[0]);
+
+    // Sum them up
+    svuint32_t acc_second_00 = svadd_u32_x(pg32all, acc3_00, acc2_00);
+    svuint32_t acc_second_10 = svadd_u32_x(pg32all, acc3_10, acc2_10);
+    svuint32_t acc_second_01 = svadd_u32_x(pg32all, acc3_01, acc2_01);
+    svuint32_t acc_second_11 = svadd_u32_x(pg32all, acc3_11, acc2_11);
+
+    svuint32_t acc_first_00 = svaddlb_u32(acc1_0, acc0_0);
+    svuint32_t acc_first_10 = svaddlt_u32(acc1_0, acc0_0);
+    svuint32_t acc_first_01 = svaddlb_u32(acc1_1, acc0_1);
+    svuint32_t acc_first_11 = svaddlt_u32(acc1_1, acc0_1);
+
+    svuint32_t acc_00 = svadd_u32_x(pg32all, acc_first_00, acc_second_00);
+    svuint32_t acc_10 = svadd_u32_x(pg32all, acc_first_10, acc_second_10);
+    svuint32_t acc_01 = svadd_u32_x(pg32all, acc_first_01, acc_second_01);
+    svuint32_t acc_11 = svadd_u32_x(pg32all, acc_first_11, acc_second_11);
+
+    svuint32x4_t interleaved = svcreate4(acc_00, acc_01, acc_10, acc_11);
+    svst4(pg, &dst[0], interleaved);
+  }
+
+  void horizontal_vector_path(
+      svbool_t pg, svuint32_t src_0, svuint32_t src_1, svuint32_t src_2,
+      svuint32_t src_3, svuint32_t src_4, svuint32_t src_5, svuint32_t src_6,
+      svuint32_t src_7, svuint32_t src_8, svuint32_t src_9, svuint32_t src_10,
+      svuint32_t src_11, svuint32_t src_12, svuint32_t src_13,
+      svuint32_t src_14, svuint32_t src_15, svuint32_t src_16,
+      svuint32_t src_17, svuint32_t src_18, svuint32_t src_19,
+      svuint32_t src_20,
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint32_t acc = svmul_n_u32_x(pg, src_10, half_kernel_[10]);
+
+    svuint32_t acc_9_11 = svadd_u32_x(pg, src_9, src_11);
+    acc = svmla_n_u32_x(pg, acc, acc_9_11, half_kernel_[9]);
+
+    svuint32_t acc_8_12 = svadd_u32_x(pg, src_8, src_12);
+    acc = svmla_n_u32_x(pg, acc, acc_8_12, half_kernel_[8]);
+
+    svuint32_t acc_7_13 = svadd_u32_x(pg, src_7, src_13);
+    acc = svmla_n_u32_x(pg, acc, acc_7_13, half_kernel_[7]);
+
+    svuint32_t acc_6_14 = svadd_u32_x(pg, src_6, src_14);
+    acc = svmla_n_u32_x(pg, acc, acc_6_14, half_kernel_[6]);
+
+    svuint32_t acc_5_15 = svadd_u32_x(pg, src_5, src_15);
+    acc = svmla_n_u32_x(pg, acc, acc_5_15, half_kernel_[5]);
+
+    svuint32_t acc_4_16 = svadd_u32_x(pg, src_4, src_16);
+    acc = svmla_n_u32_x(pg, acc, acc_4_16, half_kernel_[4]);
+
+    svuint32_t acc_3_17 = svadd_u32_x(pg, src_3, src_17);
+    acc = svmla_n_u32_x(pg, acc, acc_3_17, half_kernel_[3]);
+
+    svuint32_t acc_2_18 = svadd_u32_x(pg, src_2, src_18);
+    acc = svmla_n_u32_x(pg, acc, acc_2_18, half_kernel_[2]);
+
+    svuint32_t acc_1_19 = svadd_u32_x(pg, src_1, src_19);
+    acc = svmla_n_u32_x(pg, acc, acc_1_19, half_kernel_[1]);
+
+    svuint32_t acc_0_20 = svadd_u32_x(pg, src_0, src_20);
+    acc = svmla_n_u32_x(pg, acc, acc_0_20, half_kernel_[0]);
+
+    acc = svrshr_n_u32_x(pg, acc, 16);
+    svst1b_u32(pg, &dst[0], acc);
+  }
+
+  void horizontal_scalar_path(const BufferType src[15], DestinationType *dst)
+      const KLEIDICV_STREAMING_COMPATIBLE {
+    uint32_t acc = (src[0] + src[20]) * half_kernel_[0] +
+                   (src[1] + src[19]) * half_kernel_[1] +
+                   (src[2] + src[18]) * half_kernel_[2] +
+                   (src[3] + src[17]) * half_kernel_[3] +
+                   (src[4] + src[16]) * half_kernel_[4] +
+                   (src[5] + src[15]) * half_kernel_[5] +
+                   (src[6] + src[14]) * half_kernel_[6] +
+                   (src[7] + src[13]) * half_kernel_[7] +
+                   (src[8] + src[12]) * half_kernel_[8] +
+                   (src[9] + src[11]) * half_kernel_[9] +
+                   src[10] * half_kernel_[10];
+    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
+  }
+};  // end of class GaussianBlur<uint8_t, 21, false>
+
 template <size_t KernelSize, bool IsBinomial, typename ScalarType>
 static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     const ScalarType *src, size_t src_stride, ScalarType *dst,
@@ -854,7 +1046,12 @@ static kleidicv_error_t gaussian_blur(
       return gaussian_blur_fixed_kernel_size<15, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
           sigma, border_type, workspace);
-    // gaussian_blur_is_implemented checked the kernel size already.
+    case 21:
+      // 21x21 does not have a binomial variant
+      return gaussian_blur_fixed_kernel_size<21, false>(
+          src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
+          sigma, border_type, workspace);
+      // gaussian_blur_is_implemented checked the kernel size already.
     // GCOVR_EXCL_START
     default:
       assert(!"kernel size not implemented");

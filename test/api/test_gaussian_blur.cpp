@@ -114,6 +114,9 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
     if constexpr (KernelTestParams::kKernelSize == 15) {
       return (result + 524288) / 1048576;
     }
+    if constexpr (KernelTestParams::kKernelSize == 21) {
+      return (result + 32768) / 65536;
+    }
   }
 
   const ArrayContainerType array_layouts_;
@@ -213,6 +216,53 @@ TYPED_TEST(GaussianBlur, 15x15) {
   mask.set(14, 0, {  16,   44,  100,  192,   324,   472,   584,   632,   584,   472,   324,  192,  100,   44,  16 });
   // clang-format on
   GaussianBlurTest{KernelTestParams{}}.test(mask);
+}
+
+// Tests gaussian_blur_21x21_<input_type> API.
+TYPED_TEST(GaussianBlur, 21x21) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 21>;
+  test::Array2D<typename KernelTestParams::IntermediateType> mask{21, 21};
+  // clang-format off
+  mask.set(0, 0,  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  mask.set(1, 0,  {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
+  mask.set(2, 0,  {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
+  mask.set(3, 0,  {0, 8, 8, 16, 24, 44, 60, 80, 100, 112, 120, 112, 100, 80, 60, 44, 24, 16, 8, 8, 0});
+  mask.set(4, 0,  {0, 12, 12, 24, 36, 66, 90, 120, 150, 168, 180, 168, 150, 120, 90, 66, 36, 24, 12, 12, 0});
+  mask.set(5, 0,  {0, 22, 22, 44, 66, 121, 165, 220, 275, 308, 330, 308, 275, 220, 165, 121, 66, 44, 22, 22, 0});
+  mask.set(6, 0,  {0, 30, 30, 60, 90, 165, 225, 300, 375, 420, 450, 420, 375, 300, 225, 165, 90, 60, 30, 30, 0});
+  mask.set(7, 0,  {0, 40, 40, 80, 120, 220, 300, 400, 500, 560, 600, 560, 500, 400, 300, 220, 120, 80, 40, 40, 0});
+  mask.set(8, 0,  {0, 50, 50, 100, 150, 275, 375, 500, 625, 700, 750, 700, 625, 500, 375, 275, 150, 100, 50, 50, 0});
+  mask.set(9, 0,  {0, 56, 56, 112, 168, 308, 420, 560, 700, 784, 840, 784, 700, 560, 420, 308, 168, 112, 56, 56, 0});
+  mask.set(10, 0, {0, 60, 60, 120, 180, 330, 450, 600, 750, 840, 900, 840, 750, 600, 450, 330, 180, 120, 60, 60, 0});
+  mask.set(11, 0, {0, 56, 56, 112, 168, 308, 420, 560, 700, 784, 840, 784, 700, 560, 420, 308, 168, 112, 56, 56, 0});
+  mask.set(12, 0, {0, 50, 50, 100, 150, 275, 375, 500, 625, 700, 750, 700, 625, 500, 375, 275, 150, 100, 50, 50, 0});
+  mask.set(13, 0, {0, 40, 40, 80, 120, 220, 300, 400, 500, 560, 600, 560, 500, 400, 300, 220, 120, 80, 40, 40, 0});
+  mask.set(14, 0, {0, 30, 30, 60, 90, 165, 225, 300, 375, 420, 450, 420, 375, 300, 225, 165, 90, 60, 30, 30, 0});
+  mask.set(15, 0, {0, 22, 22, 44, 66, 121, 165, 220, 275, 308, 330, 308, 275, 220, 165, 121, 66, 44, 22, 22, 0});
+  mask.set(16, 0, {0, 12, 12, 24, 36, 66, 90, 120, 150, 168, 180, 168, 150, 120, 90, 66, 36, 24, 12, 12, 0});
+  mask.set(17, 0, {0, 8, 8, 16, 24, 44, 60, 80, 100, 112, 120, 112, 100, 80, 60, 44, 24, 16, 8, 8, 0});
+  mask.set(18, 0, {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
+  mask.set(19, 0, {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
+  mask.set(20, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+  // clang-format on
+  auto array_layouts = [](size_t w, size_t h) {
+    size_t vl = test::Options::vector_length();
+    size_t margin = w / 2;
+    // two borders + one for the tail, so the NEON scalar path activates
+    size_t small_width = 2 * margin + 1;
+    // two borders + unrollonce + one for the tail
+    size_t medium_width = 2 * margin + vl / 4 + 1;
+    // two borders + unrolltwice + one for the tail
+    size_t big_width = 2 * margin + 2 * vl / 4 + 1;
+    return std::array<test::ArrayLayout, 3>{{
+        {small_width, 2 * margin + 1, 1, 1},
+        {medium_width, h, 1, 1},
+        {big_width, h, 1, 1},
+    }};
+  };
+
+  GaussianBlurTest{KernelTestParams{}, array_layouts}.test(mask);
 }
 
 TYPED_TEST(GaussianBlur, 3x3_CustomSigma) {
@@ -511,6 +561,26 @@ TYPED_TEST(GaussianBlur, UnsupportedBorderType15x15) {
               gaussian_blur<TypeParam>()(
                   src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
                   validSize, 1, 15, 15, 0.0, 0.0, border, context));
+  }
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
+
+TYPED_TEST(GaussianBlur, UnsupportedBorderType21x21) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 21>;
+  kleidicv_filter_context_t *context = nullptr;
+  size_t validSize = KernelTestParams::kKernelSize - 1;
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 21, 21,
+                                                        validSize, validSize));
+  TypeParam src[1] = {}, dst[1];
+  for (kleidicv_border_type_t border : {
+           KLEIDICV_BORDER_TYPE_CONSTANT,
+           KLEIDICV_BORDER_TYPE_TRANSPARENT,
+           KLEIDICV_BORDER_TYPE_NONE,
+       }) {
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              gaussian_blur<TypeParam>()(
+                  src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                  validSize, 1, 21, 21, 0.0, 0.0, border, context));
   }
   EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }

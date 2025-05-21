@@ -46,6 +46,7 @@ inline bool gaussian_blur_is_implemented(size_t width, size_t height,
     case 5:
     case 7:
     case 15:
+    case 21:
       break;
     default:
       return false;

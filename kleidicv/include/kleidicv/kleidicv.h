@@ -1212,7 +1212,7 @@ KLEIDICV_API_DECLARATION(kleidicv_canny_u8, const uint8_t *src,
 /// @param max_image_width   Maximum image width. `max_image_width *
 ///                          max_image_height` must not be more than @ref
 ///                          KLEIDICV_MAX_IMAGE_PIXELS.
-/// @param max_image_height  Maximum image height. m`ax_image_width *
+/// @param max_image_height  Maximum image height. `max_image_width *
 ///                          max_image_height` must not be more than @ref
 ///                          KLEIDICV_MAX_IMAGE_PIXELS.
 ///
