@@ -1075,16 +1075,18 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 ///                     Must be inline with the choosen upsizing operation, for
 ///                     example `src_height * 2` in case of 2x2.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_resize_linear_u8, const uint8_t *src,
-                         size_t src_stride, size_t src_width, size_t src_height,
-                         uint8_t *dst, size_t dst_stride, size_t dst_width,
-                         size_t dst_height);
+kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
+                                           size_t src_stride, size_t src_width,
+                                           size_t src_height, uint8_t *dst,
+                                           size_t dst_stride, size_t dst_width,
+                                           size_t dst_height);
 
 /// @copydoc kleidicv_resize_linear_u8
-KLEIDICV_API_DECLARATION(kleidicv_resize_linear_f32, const float *src,
-                         size_t src_stride, size_t src_width, size_t src_height,
-                         float *dst, size_t dst_stride, size_t dst_width,
-                         size_t dst_height);
+kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
+                                            size_t src_width, size_t src_height,
+                                            float *dst, size_t dst_stride,
+                                            size_t dst_width,
+                                            size_t dst_height);
 
 /// Calculates vertical derivative approximation with Sobel filter.
 ///
