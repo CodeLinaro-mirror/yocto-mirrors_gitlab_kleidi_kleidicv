@@ -126,8 +126,8 @@ int pyrdown(const uchar *src_data, size_t src_step, int src_width,
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height, int element_size);
 
-int sum(const uchar *src_data, size_t src_step, int src_type, size_t width,
-        size_t height, double *result);
+int sum(const uchar *src_data, size_t src_step, int src_type, int width,
+        int height, double *result);
 
 int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int angle);

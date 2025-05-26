@@ -1031,8 +1031,8 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
       static_cast<size_t>(element_size)));
 }
 
-int sum(const uchar *src_data, size_t src_step, int src_type, size_t width,
-        size_t height, double *result) {
+int sum(const uchar *src_data, size_t src_step, int src_type, int width,
+        int height, double *result) {
   size_t channels = (src_type >> CV_CN_SHIFT) + 1;
 
   if (channels != 1) {
@@ -1044,7 +1044,8 @@ int sum(const uchar *src_data, size_t src_step, int src_type, size_t width,
       float result_float = 0;
       kleidicv_error_t err =
           kleidicv_sum_f32(reinterpret_cast<const float *>(src_data), src_step,
-                           width, height, &result_float);
+                           static_cast<size_t>(width),
+                           static_cast<size_t>(height), &result_float);
       *result = result_float;
       return convert_error(err);
   }

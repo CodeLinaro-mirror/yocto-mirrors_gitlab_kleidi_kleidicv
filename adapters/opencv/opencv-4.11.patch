@@ -33,7 +33,7 @@ index 2b4035285f..402f2d451a 100644
      double scale[] = {alpha, beta};
      CV_Assert( func != 0 );
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
-index 474fe17393..9a43264a4b 100644
+index 474fe17393..985325375c 100644
 --- a/modules/core/src/hal_replacement.hpp
 +++ b/modules/core/src/hal_replacement.hpp
 @@ -307,9 +307,29 @@ Hamming distance between two vectors
@@ -66,18 +66,20 @@ index 474fe17393..9a43264a4b 100644
  //! @endcond
  
  /**
-@@ -1011,6 +1031,38 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
+@@ -1011,6 +1031,40 @@ inline int hal_ni_transpose2d(const uchar* src_data, size_t src_step, uchar* dst
  #define cv_hal_transpose2d hal_ni_transpose2d
  //! @endcond
  
 +/**
-+   @brief sum
-+   @param src_data,src_step,src_type Source image
-+   @param width,height Source image dimensions
-+   @param result Pointer to save the sum result to.
-+*/
-+inline int hal_ni_sum(const uchar *src_data, size_t src_step, int src_type, size_t width, size_t height, double *result) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
-+
++    @ brief sum
++    @param src_data Source image data
++    @param src_step Source image step
++    @param src_type Source image type
++    @param width, height Source image dimensions
++    @param result Pointer to save the sum result to.
++ */
++inline int hal_ni_sum(const uchar *src_data, size_t src_step, int src_type, int width, int height, double *result)
++{ return CV_HAL_ERROR_NOT_IMPLEMENTED; }
 +//! @cond IGNORED
 +#define cv_hal_sum hal_ni_sum
 +//! @endcond
