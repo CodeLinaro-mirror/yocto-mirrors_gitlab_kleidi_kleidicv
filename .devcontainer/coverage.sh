@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
 
 BUILD_ID="kleidicv-coverage" \
-CMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
+COVERAGE="ON" \
+CMAKE_CXX_FLAGS="--target=aarch64-linux-gnu" \
 CMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
 EXTRA_CMAKE_ARGS="-DKLEIDICV_ENABLE_SME2=ON -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF" \
 ./scripts/build.sh kleidicv-test

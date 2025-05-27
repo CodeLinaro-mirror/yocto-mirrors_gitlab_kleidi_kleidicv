@@ -42,7 +42,7 @@ cmake -S . -B build/ci/clang -G Ninja \
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy-20 \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
-  -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
+  -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld --coverage" \
   -DKLEIDICV_ENABLE_SME2=ON \
   -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
