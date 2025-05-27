@@ -23,6 +23,10 @@
 #ifndef KLEIDICV_H
 #define KLEIDICV_H
 
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
 #include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
 

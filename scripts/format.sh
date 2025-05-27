@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -35,7 +35,8 @@ SOURCES="$(find \
     "${KLEIDICV_ROOT_PATH}/kleidicv_thread" \
     "${KLEIDICV_ROOT_PATH}/test" \
     "${KLEIDICV_ROOT_PATH}/conformity/opencv" \
-    \( -name \*.cpp -o -name \*.h -o -name \*.h.in \) \
+    "${KLEIDICV_ROOT_PATH}/examples" \
+    \( -name \*.cpp -o -name \*.c -o -name \*.h -o -name \*.h.in \) \
     -print)"
 
 if [[ "${CHECK_ONLY}" == "ON" ]]; then

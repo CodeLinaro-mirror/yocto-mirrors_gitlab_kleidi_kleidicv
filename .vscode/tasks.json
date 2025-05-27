@@ -7,7 +7,8 @@
       "command": "${workspaceFolder}/scripts/build.sh",
       "problemMatcher": "$gcc",
       "args": [
-        "kleidicv-test"
+        "kleidicv-test",
+        "kleidicv-c-example"
       ],
       "options": {
         "env": {
@@ -48,7 +49,8 @@
       "command": "${workspaceFolder}/scripts/build.sh",
       "problemMatcher": "$gcc",
       "args": [
-        "kleidicv-test"
+        "kleidicv-test",
+        "kleidicv-c-example"
       ],
       "options": {
         "env": {
