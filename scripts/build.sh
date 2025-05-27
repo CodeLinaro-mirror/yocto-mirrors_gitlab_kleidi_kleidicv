@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-#
-# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+# SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Builds a given target.
 #
 # The build artifacts are placed in the `build` directory.
 #
 # Arguments:
-#   1: Target to build. Defaults to 'kleidicv'.
+#   Targets to build. Defaults to 'kleidicv'.
 #
 # To target Android devices the following command can be used:
 #   BUILD_ID=android \
@@ -59,7 +59,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 : "${EXTRA_CMAKE_ARGS:=}"
 : "${SOURCE_PATH:="$(realpath "${SCRIPT_PATH}"/../)"}"
 
-IFS=' ' read -r -a CMAKE_TARGETS <<< "${1:-kleidicv}"
+IFS=' ' read -r -a CMAKE_TARGETS <<< "${@:-kleidicv}"
 IFS=' ' read -r -a EXTRA_CMAKE_ARGS_ARRAY <<< "${EXTRA_CMAKE_ARGS}"
 
 # ------------------------------------------------------------------------------
