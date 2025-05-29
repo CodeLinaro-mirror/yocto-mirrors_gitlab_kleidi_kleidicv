@@ -263,9 +263,7 @@ std::array<uint8_t, 256> precalculate_scale_table_u8(float scale, float shift) {
 // Float implementation
 // -----------------------------------------------------------------------
 
-class AddFloat final : public UnrollTwice,
-                       public UnrollOnce,
-                       public TryToAvoidTailLoop {
+class AddFloat final : public UnrollTwice, public UnrollOnce {
  public:
   using ScalarType = float;
   using VecTraits = neon::VecTraits<ScalarType>;
@@ -284,9 +282,7 @@ class AddFloat final : public UnrollTwice,
   float32x4_t vshift_;
 };  // end of class AddFloat
 
-class ScaleFloat final : public UnrollTwice,
-                         public UnrollOnce,
-                         public TryToAvoidTailLoop {
+class ScaleFloat final : public UnrollTwice, public UnrollOnce {
  public:
   using ScalarType = float;
   using VecTraits = neon::VecTraits<ScalarType>;

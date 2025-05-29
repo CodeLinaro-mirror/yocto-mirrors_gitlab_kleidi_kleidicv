@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -93,14 +93,14 @@ class ScaleTestLinearBase {
   }
 
   // minimum_size set by caller to trigger the 'big' scale path.
-  void test_scalar(size_t minimum_size = 1) {
+  void test_scalar(size_t minimum_size = 1, bool in_place = false) {
     size_t width = test::Options::vector_length() - 1;
-    test_linear(width, minimum_size);
+    test_linear(width, minimum_size, in_place);
   }
 
-  void test_vector(size_t minimum_size = 1) {
+  void test_vector(size_t minimum_size = 1, bool in_place = false) {
     size_t width = test::Options::vector_length() * 2;
-    test_linear(width, minimum_size);
+    test_linear(width, minimum_size, in_place);
   }
 
  protected:
@@ -132,7 +132,7 @@ class ScaleTestLinearBase {
   // Number of padding bytes at the end of rows.
   size_t padding_{0};
 
-  void test_linear(size_t width, size_t minimum_size) {
+  void test_linear(size_t width, size_t minimum_size, bool in_place) {
     size_t image_size = std::max(
         minimum_size,
         std::min(saturating_cast<size_t, ElementType>(max() - lowest()),
@@ -153,11 +153,19 @@ class ScaleTestLinearBase {
 
     calculate_expected(source, expected);
 
-    ASSERT_EQ(KLEIDICV_OK,
-              scale_api<ElementType>()(source.data(), source.stride(),
-                                       actual.data(), actual.stride(), width,
-                                       height, scale(), shift()));
+    if (in_place) {
+      actual = source;
+      ASSERT_EQ(KLEIDICV_OK,
+                scale_api<ElementType>()(actual.data(), actual.stride(),
+                                         actual.data(), actual.stride(), width,
+                                         height, scale(), shift()));
 
+    } else {
+      ASSERT_EQ(KLEIDICV_OK,
+                scale_api<ElementType>()(source.data(), source.stride(),
+                                         actual.data(), actual.stride(), width,
+                                         height, scale(), shift()));
+    }
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
 
@@ -192,6 +200,12 @@ template <typename ElementType>
 class ScaleTestLinear3 final : public ScaleTestLinearBase<ElementType> {
   float scale() override { return 0.18; };
   float shift() override { return 1.41; };
+};
+
+template <typename ElementType>
+class ScaleTestLinear4 final : public ScaleTestLinearBase<ElementType> {
+  float scale() override { return 1.0; };
+  float shift() override { return -17.7; };
 };
 
 template <typename ElementType>
@@ -397,12 +411,12 @@ TYPED_TEST(ScaleTest, TestVector1) {
 }
 
 TYPED_TEST(ScaleTest, TestScalar1Tbx) {
-  ScaleTestLinear1<TypeParam>{}.test_scalar(2500);
-  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_scalar(2500);
+  ScaleTestLinear1<TypeParam>{}.test_scalar(700);
+  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_scalar(700);
 }
 TYPED_TEST(ScaleTest, TestVector1Tbx) {
-  ScaleTestLinear1<TypeParam>{}.test_vector(2500);
-  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_vector(2500);
+  ScaleTestLinear1<TypeParam>{}.test_vector(700);
+  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_vector(700);
 }
 
 TYPED_TEST(ScaleTest, TestScalar2) {
@@ -413,10 +427,10 @@ TYPED_TEST(ScaleTest, TestVector2) {
 }
 
 TYPED_TEST(ScaleTest, TestScalar2Tbx) {
-  ScaleTestLinear2<TypeParam>{}.test_scalar(2500);
+  ScaleTestLinear2<TypeParam>{}.test_scalar(700);
 }
 TYPED_TEST(ScaleTest, TestVector2Tbx) {
-  ScaleTestLinear2<TypeParam>{}.test_vector(2500);
+  ScaleTestLinear2<TypeParam>{}.test_vector(700);
 }
 
 TYPED_TEST(ScaleTest, TestScalar3) {
@@ -427,10 +441,23 @@ TYPED_TEST(ScaleTest, TestVector3) {
 }
 
 TYPED_TEST(ScaleTest, TestScalar3Tbx) {
-  ScaleTestLinear3<TypeParam>{}.test_scalar(2500);
+  ScaleTestLinear3<TypeParam>{}.test_scalar(700);
 }
 TYPED_TEST(ScaleTest, TestVector3Tbx) {
-  ScaleTestLinear3<TypeParam>{}.test_vector(2500);
+  ScaleTestLinear3<TypeParam>{}.test_vector(700);
+}
+
+TYPED_TEST(ScaleTest, InPlaceScalar2) {
+  ScaleTestLinear2<TypeParam>{}.test_scalar(1, true);
+}
+TYPED_TEST(ScaleTest, InPlaceVector2) {
+  ScaleTestLinear2<TypeParam>{}.test_vector(1, true);
+}
+TYPED_TEST(ScaleTest, InPlaceAddScalar) {
+  ScaleTestLinear4<TypeParam>{}.test_scalar(1, true);
+}
+TYPED_TEST(ScaleTest, InPlaceAddVector) {
+  ScaleTestLinear4<TypeParam>{}.test_vector(1, true);
 }
 
 TYPED_TEST(ScaleTest, TestAdd) {
