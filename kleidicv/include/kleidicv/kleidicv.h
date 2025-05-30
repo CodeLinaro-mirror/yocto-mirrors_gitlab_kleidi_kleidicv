@@ -2035,9 +2035,10 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
 ///                       `width * sizeof(type) * channels`, except for
 ///                       single-row images.
 /// @param width          Number of columns in the data. (One column consists of
-///                       `channels` number of elements.) Must be greater
-///                       than 4.
-/// @param height         Number of rows in the data. Must be greater than 4.
+///                       `channels` number of elements.) Must be greater than
+///                       or equal to `kernel_width - 1`.
+/// @param height         Number of rows in the data. Must be greater than or
+///                       equal to `kernel_height - 1`.
 /// @param channels       Number of channels in the data. Must not be more than
 ///                       @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param kernel_width   Width of the Median kernel. Must be 5 and equal to

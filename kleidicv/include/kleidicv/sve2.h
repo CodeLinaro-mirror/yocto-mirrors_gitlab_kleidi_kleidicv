@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -249,6 +249,30 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svptrue()
       KLEIDICV_STREAMING_COMPATIBLE {
     return svptrue_b64();
+  }
+
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b8(pat);
+  }
+
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b16(pat);
+  }
+
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b32(pat);
+  }
+
+  template <enum svpattern pat, typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svptrue_pat()
+      KLEIDICV_STREAMING_COMPATIBLE {
+    return svptrue_pat_b64(pat);
   }
 
   template <typename IndexType, typename T = ScalarType>
@@ -560,6 +584,17 @@ static inline void swap_scalable(T &a, T &b) KLEIDICV_STREAMING_COMPATIBLE {
   a = b;
   b = tmp;
 }
+
+// The following wrapper is used as a workaround to treat SVE variables as a 2D
+// array.
+template <typename VectorType, size_t Rows, size_t Cols>
+class ScalableVectorArray2D {
+ public:
+  std::reference_wrapper<VectorType> window[Rows][Cols];
+  VectorType &operator()(int row, int col) KLEIDICV_STREAMING_COMPATIBLE {
+    return window[row][col].get();
+  }
+};
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 

@@ -161,7 +161,7 @@ Notes on parameters:
 Applies median filter to a given image.
 
 Notes on parameters:
-* `src.cols`,`src.rows` - image width and height must be `>=5`.
+* `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1` (i.e. `>= 4` for 5x5).
 * `ksize` - must be 5, as KleidiCV only supports 5x5 kernel size.
 
 ### [`cv::transpose()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga46630ed6c0ea6254a35f447289bd7404)
