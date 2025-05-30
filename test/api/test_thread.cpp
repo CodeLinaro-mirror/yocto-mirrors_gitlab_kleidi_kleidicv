@@ -112,10 +112,11 @@ class Thread : public testing::TestWithParam<P> {
     auto [width, height, thread_count] = GetParam();
     (void)thread_count;
     size_t channels = 1;
-    size_t ksize = 5;
     kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
-    check_unary_op<T, T>(single_threaded_func, multithreaded_func, channels,
-                         channels, channels, ksize, ksize, border_type);
+    for (auto ksize : {5, 7}) {
+      check_unary_op<T, T>(single_threaded_func, multithreaded_func, channels,
+                           channels, channels, ksize, ksize, border_type);
+    }
   }
 
   template <typename T, typename SingleThreadedFunc, typename MultithreadedFunc,

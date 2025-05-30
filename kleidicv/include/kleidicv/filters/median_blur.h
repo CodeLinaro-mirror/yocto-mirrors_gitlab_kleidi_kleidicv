@@ -111,7 +111,8 @@ inline std::pair<kleidicv_error_t, FixedBorderType> median_blur_is_implemented(
   auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
   if ((src != dst) && (channels <= KLEIDICV_MAXIMUM_CHANNEL_COUNT) &&
       (kernel_width == kernel_height) && (height >= kernel_height - 1) &&
-      (width >= kernel_width - 1) && (kernel_width == 5) &&
+      (width >= kernel_width - 1) &&
+      ((kernel_width == 5) || (kernel_width == 7)) &&
       fixed_border_type.has_value()) {
     return std::make_pair(KLEIDICV_OK, *fixed_border_type);
   }

@@ -610,43 +610,57 @@ static void median_blur(benchmark::State& state, Function func) {
 }
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 1, , kleidicv_median_blur_u8)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 4, , kleidicv_median_blur_u8)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int8_t, 1, , kleidicv_median_blur_s8)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int8_t, 4, , kleidicv_median_blur_s8)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint16_t, 1, ,
                             kleidicv_median_blur_u16)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint16_t, 4, ,
                             kleidicv_median_blur_u16)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int16_t, 1, , kleidicv_median_blur_s16)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int16_t, 4, , kleidicv_median_blur_s16)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint32_t, 1, ,
                             kleidicv_median_blur_u32)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint32_t, 4, ,
                             kleidicv_median_blur_u32)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int32_t, 1, , kleidicv_median_blur_s32)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int32_t, 4, , kleidicv_median_blur_s32)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, float, 1, , kleidicv_median_blur_f32)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, float, 4, , kleidicv_median_blur_f32)
-    ->Arg(5);
+    ->Arg(5)
+    ->Arg(7);
 
 template <typename Function>
 static void sobel_filter(Function f, benchmark::State& state) {

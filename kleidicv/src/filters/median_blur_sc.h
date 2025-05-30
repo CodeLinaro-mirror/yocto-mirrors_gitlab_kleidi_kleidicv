@@ -11,11 +11,14 @@
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/filter_2d.h"
 #include "kleidicv/filters/filter_2d_5x5_sc.h"
+#include "kleidicv/filters/filter_2d_7x7_sc.h"
 #include "kleidicv/filters/median_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/border_5x5.h"
+#include "kleidicv/workspace/border_7x7.h"
 #include "median_blur_sorting_network_5x5.h"
+#include "median_blur_sorting_network_7x7.h"
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Primary template for Median Blur filters.
@@ -71,6 +74,28 @@ class MedianBlur<ScalarType, 5> : public MedianBlurBase<ScalarType> {
   }
 };  // end of class MedianBlur<ScalarType, 5>
 
+// Template for Median Blur 7x7 filters.
+template <typename ScalarType>
+class MedianBlur<ScalarType, 7> : public MedianBlurBase<ScalarType> {
+ public:
+  using SourceType = ScalarType;
+  using DestinationType = SourceType;
+  using SourceVecTraits =
+      typename KLEIDICV_TARGET_NAMESPACE::VecTraits<SourceType>;
+  using SourceVectorType = typename SourceVecTraits::VectorType;
+  using DestinationVectorType = typename KLEIDICV_TARGET_NAMESPACE::VecTraits<
+      DestinationType>::VectorType;
+  using VectorComparator =
+      typename MedianBlurBase<SourceType>::vectorized_comparator;
+
+  template <typename KernelWindowFunctor>
+  void vector_path(KernelWindowFunctor& KernelWindow,
+                   DestinationVectorType& output_vec,
+                   svbool_t& pg) const KLEIDICV_STREAMING_COMPATIBLE {
+    sorting_network7x7<VectorComparator>(KernelWindow, output_vec, pg);
+  }
+};  // end of class MedianBlur<ScalarType, 7>
+
 template <typename T>
 kleidicv_error_t median_blur_stripe_sc(
     const T* src, size_t src_stride, T* dst, size_t dst_stride, size_t width,
@@ -80,8 +105,16 @@ kleidicv_error_t median_blur_stripe_sc(
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
-  MedianBlur<T, 5> median_filter;
-  Filter2D5x5<MedianBlur<T, 5>> filter{median_filter};
+  if (kernel_width == 5) {
+    MedianBlur<T, 5> median_filter;
+    Filter2D5x5<MedianBlur<T, 5>> filter{median_filter};
+    process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
+                     filter);
+    return KLEIDICV_OK;
+  }
+
+  MedianBlur<T, 7> median_filter;
+  Filter2D7x7<MedianBlur<T, 7>> filter{median_filter};
   process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
                    filter);
   return KLEIDICV_OK;

@@ -79,7 +79,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Sobel (3x3)                                 |     |  x  |     |     |     |     |     |
 | Separable Filter 2D (5x5)                   |     |  x  |  x  |  x  |     |     |     |
 | Gaussian Blur (3x3, 5x5, 7x7, 15x15, 21x21) |     |  x  |     |     |     |     |     |
-| Median Blur (5x5)                           |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
+| Median Blur (5x5, 7x7)                      |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
 
 ## Resize to quarter
 |             | u8  |

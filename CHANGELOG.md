@@ -16,7 +16,7 @@ This changelog aims to follow the guiding principles of
 ## 0.5.0 - not yet released
 
 ### Added
-- Median Blur for 5x5 kernels.
+- Median Blur for 5x5 and 7x7 kernels.
 - Gaussian Blur for 21x21 kernels.
 
 ## 0.4.0 - 2025-03-25

@@ -11,7 +11,6 @@
 #include "kleidicv/traits.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
-
 // R. B. Kent and M. S. Pattichis, ''Design of high-speed multiway merge
 // sorting networks using fast single-stage N-sorters and N-filters,'' *IEEE
 // Access*, vol. 10, pp. 79565–79581, Jul. 2022,
@@ -137,7 +136,6 @@ void sorting_network5x5(KernelWindowFunctor& KernelWindow, T& output_vec,
   Comparator::max(KernelWindow(3, 0), KernelWindow(2, 2), context);
   output_vec = KernelWindow(2, 2);
 }
-
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
 #endif  // KLEIDICV_MEDIAN_BLUR_SORTING_NETWORK_5X5_H
