@@ -86,7 +86,7 @@ documentation for cross-building instructions.
 
 ## Prerequisites
 To successfully build and compile this project for AArch64 Linux, you'll need the following tools:
-- Either GCC 9.4 or higher, or Clang 12 or higher.
+- Either GCC 8.4 or higher, or Clang 12 or higher.
 - Binutils
 - [CMake](https://cmake.org) 3.16 or higher.
 - `make`

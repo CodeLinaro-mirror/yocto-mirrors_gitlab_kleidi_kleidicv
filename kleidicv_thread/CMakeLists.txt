@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -18,6 +18,16 @@ set(KLEIDICV_THREAD_CXX_FLAGS
   "-Wold-style-cast"
   "-Wno-shadow" # GCC's shadow declaration check is too sensitive for the library
 )
+
+# Some warnings are too sensitive in older GCC versions
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10)
+  list(APPEND KLEIDICV_THREAD_CXX_FLAGS
+    "-Wno-unused-parameter"
+    "-Wno-unused-but-set-parameter"
+    "-Wno-maybe-uninitialized"
+    "-Wno-unused-but-set-variable"
+  )
+endif()
 
 if (KLEIDICV_CHECK_BANNED_FUNCTIONS)
   # The `SHELL:` prefix is used to turn off de-duplication of compiler flags,

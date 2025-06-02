@@ -127,6 +127,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     "-flax-vector-conversions"
     "-Wno-unused-label"
   )
+  # Some warnings are too sensitive in older GCC versions
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10)
+    list(APPEND KLEIDICV_CXX_FLAGS
+      "-Wno-unused-parameter"
+      "-Wno-unused-but-set-parameter"
+      "-Wno-maybe-uninitialized"
+      "-Wno-unused-but-set-variable"
+    )
+  endif()
 endif()
 
 if (KLEIDICV_CHECK_BANNED_FUNCTIONS)
