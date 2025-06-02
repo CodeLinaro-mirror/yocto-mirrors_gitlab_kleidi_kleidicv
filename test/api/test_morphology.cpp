@@ -445,7 +445,7 @@ TYPED_TEST(Morphology, UnsupportedChannels) {
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
   const uint8_t border_value[] = {0, 0, 1, 1};
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_morphology_create(&context, small_rect, anchor, border,
                                        border_value, 5, 1, sizeof(TypeParam),
                                        small_rect));
@@ -522,7 +522,7 @@ TYPED_TEST(Morphology, InvalidChannelNumber) {
   kleidicv_morphology_context_t *context = nullptr;
   const uint8_t border_value[] = {};
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_morphology_create(
                 &context, kleidicv_rectangle_t{1, 1}, kleidicv_point_t{0, 0},
                 KLEIDICV_BORDER_TYPE_REPLICATE, border_value,

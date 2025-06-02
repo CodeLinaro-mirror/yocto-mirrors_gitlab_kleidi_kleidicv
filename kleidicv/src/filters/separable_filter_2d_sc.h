@@ -447,7 +447,7 @@ static kleidicv_error_t separable_filter_2d_checks(
   CHECK_IMAGE_SIZE(width, height);
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_RANGE;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   if (workspace->channels() < channels) {

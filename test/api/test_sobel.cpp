@@ -279,11 +279,11 @@ TYPED_TEST(Sobel, ChannelNumber) {
   typename KernelTestParams::OutputType dst[1];
   size_t validSize = 2;
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_horizontal<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), validSize, validSize,
                 KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1));
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             sobel_3x3_vertical<TypeParam>()(
                 src, sizeof(src), dst, sizeof(dst), validSize, validSize,
                 KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1));

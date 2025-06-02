@@ -729,7 +729,7 @@ TYPED_TEST(SeparableFilter2D, ChannelNumber) {
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
                                                         validSize, validSize));
   TypeParam src[1], dst[1], kernel[5] = {};
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
                 validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, kernel, 5,
@@ -864,7 +864,7 @@ TEST(FilterCreate, DifferentKernelSize) {
 TEST(FilterCreate, ChannelNumber) {
   kleidicv_filter_context_t *context = nullptr;
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_filter_context_create(
                 &context, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 1, 1, 1, 1));
   ASSERT_EQ(nullptr, context);

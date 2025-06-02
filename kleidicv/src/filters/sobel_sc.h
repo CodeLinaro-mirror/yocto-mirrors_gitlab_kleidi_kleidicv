@@ -129,7 +129,7 @@ static kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8_sc(
   CHECK_IMAGE_SIZE(width, height);
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_RANGE;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rectangle rect{width, height};
@@ -159,7 +159,7 @@ static kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8_sc(
   CHECK_IMAGE_SIZE(width, height);
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_RANGE;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rectangle rect{width, height};

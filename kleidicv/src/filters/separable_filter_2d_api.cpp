@@ -73,7 +73,7 @@ kleidicv_error_t kleidicv_filter_context_create(
   }
 
   if (max_channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_RANGE;
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   CHECK_IMAGE_SIZE(max_image_width, max_image_height);

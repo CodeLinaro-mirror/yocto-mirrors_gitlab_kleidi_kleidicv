@@ -1119,7 +1119,7 @@ TYPED_TEST(GaussianBlur, ChannelNumber) {
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 15, 15,
                                                         validSize, validSize));
   TypeParam src[1], dst[1];
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             gaussian_blur<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
                 validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 15, 15, 0.0, 0.0,
