@@ -19,6 +19,13 @@ This changelog aims to follow the guiding principles of
 - Median Blur for 5x5 and 7x7 kernels.
 - Gaussian Blur for 21x21 kernels.
 - Support for GCC 8.4.
+- C example.
+
+### Changed
+- Multithreaded dispatching in the OpenCV HAL of convertScale.
+
+### Fixed
+- Inplace operation of kleidicv_scale_f32.
 
 ## 0.4.0 - 2025-03-25
 
