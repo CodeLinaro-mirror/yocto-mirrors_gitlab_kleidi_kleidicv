@@ -107,7 +107,7 @@ In-place filtering is not supported i.e. `src` and `dst` must be different (non-
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
-* `src.cols`,`src.rows` - should be greater than or equal to the size of the kernel in the given direction.
+* `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1`
 * `ksize` - supported kernel sizes are 3x3, 5x5, 7x7, 15x15 and 21x21.
 * `sigmaX`, `sigmaY` - optimal performance is achieved if these are set to 0.
 * `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.11.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
@@ -120,12 +120,16 @@ Notes on parameters:
 ### [`cv::dilate()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c)
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
+* `src.rows` - image height must be greater than or equal to `kernel.rows - 1`
+* `src.cols` - image width must be greater than or equal to `kernel.cols - 1`
 * `kernel` - only support kernels where all values equal to 1, and having width and height of at least 5.
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
 ### [`cv::erode()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaeb1e0c1033e3f6b891a25d0511362aeb)
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
+* `src.rows` - image height must be greater than or equal to `kernel.rows - 1`
+* `src.cols` - image width must be greater than or equal to `kernel.cols - 1`
 * `kernel` - only support kernels where all values equal to 1, and having width and height of at least 5.
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
@@ -149,7 +153,7 @@ Applies Sobel gradient filter to a given image.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
-* `src.cols`,`src.rows` - image width and height should be `>=3`.
+* `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1`
 * `ddepth` - only supports `CV_16S` depth.
 * `dx`,`dy` - either vertical `{dx,dy} == {0,1}` or horizontal `{dx,dy} == {1,0}` operation is supported.
 * `ksize` - only supports 3x3 kernel size.
@@ -271,6 +275,7 @@ Blurs and downsamples an image.
 
 Notes on parameters:
 * `src.type()` - only supports `CV_8UC1`.
+* `src.cols`,`src.rows` - image width and height must be greater than or equal to `kernel size (== 5) - 1`
 * if `dstsize` is specified it must be equal to `Size((src.cols + 1) / 2, (src.rows + 1) / 2)`
 
 ### [`cv::buildOpticalFlowPyramid()`](https://docs.opencv.org/4.10.0/dc/d6b/group__video__track.html#ga86640c1c470f87b2660c096d2b22b2ce)

@@ -970,8 +970,11 @@ kleidicv_error_t kleidicv_morphology_release(
 ///                     start of the next row for the destination data. Must
 ///                     not be less than `width * channels * sizeof(uint8)`,
 ///                     except for single-row images.
-/// @param width        Number of pixels in a row.
-/// @param height       Number of rows in the data.
+/// @param width         Number of columns in the data. (One column consists of
+///                      `channels` number of elements.) Must be greater than
+///                      or equal to `kernel - 1`.
+/// @param height        Number of rows in the data. Must be greater than
+///                      or equal to `kernel - 1`.
 /// @param context      Pointer to morphology context.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_dilate_u8, const uint8_t *src,
@@ -1121,8 +1124,10 @@ kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
 ///                     sizeof(dst type) * channels`, except for single-row
 ///                     images.
 /// @param width        Number of columns in the data. (One column consists of
-///                     `channels` number of elements.)
-/// @param height       Number of rows in the data.
+///                     `channels` number of elements.) Must be greater than or
+///                     equal to kernel size (== 3) - 1.
+/// @param height       Number of rows in the data. Must be greater than or
+///                     equal to kernel size (== 3) - 1.
 /// @param channels     Number of channels in the data. Must be not more than
 ///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
@@ -1159,8 +1164,10 @@ kleidicv_error_t kleidicv_sobel_3x3_vertical_s16_u8(
 ///                     sizeof(dst type) * channels`, except for single-row
 ///                     images.
 /// @param width        Number of columns in the data. (One column consists of
-///                     `channels` number of elements.)
-/// @param height       Number of rows in the data.
+///                     `channels` number of elements.) Must be greater than or
+///                     equal to kernel size (== 3) - 1.
+/// @param height       Number of rows in the data. Must be greater than or
+///                     equal to kernel size (== 3) - 1.
 /// @param channels     Number of channels in the data. Must be not more than
 ///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
@@ -1264,8 +1271,10 @@ kleidicv_error_t kleidicv_filter_context_release(
 ///                      a multiple of `sizeof(type)` and no less than `width *
 ///                      sizeof(type) * channels`, except for single-row images.
 /// @param width         Number of columns in the data. (One column consists of
-///                      `channels` number of elements.)
-/// @param height        Number of rows in the data.
+///                      `channels` number of elements.) Must be greater than
+///                      or equal to `kernel_width - 1`.
+/// @param height        Number of rows in the data. Must be greater than
+///                      or equal to `kernel_height - 1`.
 /// @param channels      Number of channels in the data. Must be not more than
 ///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param kernel_x      Pointer to the horizontal 2D kernel values.
@@ -1325,8 +1334,10 @@ kleidicv_error_t kleidicv_separable_filter_2d_s16(
 ///                      a multiple of `sizeof(type)` and no less than `width *
 ///                      sizeof(type) * channels`, except for single-row images.
 /// @param width         Number of columns in the data. (One column consists of
-///                      `channels` number of elements.)
-/// @param height        Number of rows in the data.
+///                      `channels` number of elements.) Must be greater than
+///                      or equal to `kernel_width - 1`.
+/// @param height        Number of rows in the data. Must be greater than
+///                      or equal to `kernel_height - 1`.
 /// @param channels      Number of channels in the data. Must be not more than
 ///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param kernel_width  Width of the Gaussian kernel.
@@ -1385,7 +1396,11 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
 ///                      images.
 /// @param src_width     Number of columns in the source data. (One column
 ///                      consists of `channels` number of elements.)
+///                      Must be greater than or equal to kernel size (== 5)
+///                      - 1.
 /// @param src_height    Number of rows in the source data.
+///                      Must be greater than or equal to kernel size (== 5)
+///                      - 1.
 /// @param dst           Pointer to the destination data. Must be non-null.
 /// @param dst_stride    Distance in bytes from the start of one row to the
 ///                      start of the next row in the destination data. Must be
