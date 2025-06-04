@@ -76,6 +76,108 @@ cmake -S . -B build-kleidicv-android \
 cmake --build build-kleidicv-android --parallel
 ```
 
+# Building OpenCV & KleidiCV as an AAR package
+
+> **Last tested with OpenCV 4.11**
+
+The AAR package built from OpenCV can be conveniently used in an Android
+application. This
+[learning path](https://learn.arm.com/learning-paths/mobile-graphics-and-gaming/android_opencv_kleidicv/)
+can be checked as an example, but to use a locally built AAR package the project
+dependencies need to be updated, changing the
+`implementation("org.opencv:opencv:4.11.0")` line of `app/build.gradle.kts` to
+`implementation(files("</full/path/of/opencv_java_shared_4.11.0.aar>"))`. (The
+version number in the AAR package's filename might require an update if it was
+built from a different OpenCV version.)
+
+## Prerequisites
+This how-to assumes a headless x86 based Ubuntu 24.04 machine to execute the
+build on.
+
+## Build steps
+
+1. Install required packages:
+
+   ```
+   #!/bin/bash
+
+   sudo apt install openjdk-17-jdk openjdk-17-jre cmake ninja-build
+   ```
+
+2. Install the Android SDK and Build Tools. These are part of Android Studio,
+   but in a headless environment Command line tools can be downloaded from
+   [developer.android.com/studio](https://developer.android.com/studio). Once
+   downloaded follow these steps:
+
+   ```
+   #!/bin/bash
+
+   mkdir android-sdk
+   unzip commandlinetools-linux-*.zip -d android-sdk
+   ./android-sdk/cmdline-tools/bin/sdkmanager --install "build-tools;36.0.0" --sdk_root=$(readlink -f ./android-sdk)
+   <accept the Terms and Conditions>
+   ```
+
+3. Install and extract the Android NDK from
+   [developer.android.com/ndk/downloads/](https://developer.android.com/ndk/downloads/).
+
+4. Check out KleidiCV.
+
+5. Follow the steps described at
+   [Get and patch OpenCV source](#get-and-patch-opencv-source).
+
+6. Build the OpenCV Android SDK with OpenCV's `build-sdk.sh` script.
+
+   The script requires a configuration file, so create `kleidicv-config.py`
+   with the following content to build OpenCV with the checked out KleidiCV
+   source instead of the KleidiCV version shipped with OpenCV:
+
+   ```
+   ABIs = [
+    ABI("3", "arm64-v8a", None, 21, cmake_vars=dict(KLEIDICV_SOURCE_PATH='</full/path/of/KleidiCV>')),
+   ]
+   ```
+
+   The content is based on `opencv/platforms/android/ndk-18-api-level-21.config.py`
+   from OpenCV 4.11 and some description of this configuration file format can
+   be found
+   [here](https://github.com/opencv/opencv/wiki/Custom-OpenCV-Android-SDK-and-AAR-package-build#advanced-opencv-build-options).
+
+   Then OpenCV's `build-sdk.sh` can be called:
+
+   ```
+   #!/bin/bash
+
+   # 1st argument is the output folder
+   # 2nd argument is the patched OpenCV source path
+   python3 opencv/platforms/android/build_sdk.py \
+           ./OpenCV_Android_SDK_build \
+           ./opencv \
+           --ndk_path=</full/path/of/android-ndk> \
+           --sdk_path=</full/path/of/android-sdk> \
+           --config=</full/path/of/kleidicv_oob_config.py> \
+           --no_samples_build
+   ```
+
+8. Create the AAR package with OpenCV's `build_static_aar.py` script:
+
+   ```
+   #!/bin/bash
+
+   mkdir OpenCV_AAR_build
+   cd OpenCV_AAR_build
+
+   ANDROID_HOME=</full/path/of/android-sdk> \
+   python3 </full/path/of/patched/OpenCV>/platforms/android/build_java_shared_aar.py \
+           </full/path/of/OpenCV_Android_SDK_build>/OpenCV-android-sdk \
+           --ndk_location=</full/path/of/android-ndk>
+   ```
+
+At this point the AAR package should be available at
+`OpenCV_AAR_build/outputs/opencv_java_shared_4.11.0.aar`. (The version number
+in the AAR package's filename might be different based on the OpenCV version
+used for the build.)
+
 # Building KleidiCV for AArch64 Linux
 
 If your build machine is AArch64 Linux then you can build KleidiCV with the system toolchain.
