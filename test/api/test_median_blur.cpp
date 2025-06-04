@@ -80,7 +80,7 @@ class MedianBlurTest : public testing::Test {
                                channels, filter_sizes, border_types);
   }
 
-  static std::vector<TestParams> get_padded_test_Cases() {
+  static std::vector<TestParams> get_padded_test_cases() {
     std::vector<size_t> widths = {20};
     std::vector<size_t> src_paddings = {5};
     std::vector<size_t> dst_paddings = {13};
@@ -94,13 +94,14 @@ class MedianBlurTest : public testing::Test {
                                channels, filter_sizes, border_types);
   }
 
-  static std::vector<TestParams> get_small_image_test_Cases() {
-    std::vector<size_t> widths = {25};
+  static std::vector<TestParams> get_small_image_test_cases(
+      size_t filter_size) {
+    std::vector<size_t> widths = {25, filter_size - 1};
     std::vector<size_t> src_paddings = {0};
     std::vector<size_t> dst_paddings = {0};
-    std::vector<size_t> heights = {7};
+    std::vector<size_t> heights = {filter_size, filter_size - 1};
     std::vector<size_t> channels = {1, 2, 3, 4};
-    std::vector<size_t> filter_sizes = {5, 7};
+    std::vector<size_t> filter_sizes = {filter_size};
     std::vector<kleidicv_border_type_t> border_types = {
         KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
         KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
@@ -232,8 +233,10 @@ TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithoutPadding) {
 }
 
 TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithSmallImageSize) {
-  for (const auto& params : TestFixture::get_small_image_test_Cases()) {
-    this->run_test_case(params);
+  for (auto ksize : {5, 7}) {
+    for (const auto& params : TestFixture::get_small_image_test_cases(ksize)) {
+      this->run_test_case(params);
+    }
   }
 }
 
@@ -395,7 +398,7 @@ TYPED_TEST(MedianBlurByteStrideTest, RunAllParamCombinationsWithPadding) {
            "skipped";
   }
 
-  for (const auto& params : TestFixture::get_padded_test_Cases()) {
+  for (const auto& params : TestFixture::get_padded_test_cases()) {
     this->run_test_case(params);
   }
 }
