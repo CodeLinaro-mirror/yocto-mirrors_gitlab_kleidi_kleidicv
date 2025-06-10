@@ -13,7 +13,7 @@ KleidiCV uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 0.5.0 - not yet released
+## 0.5.0 - 2025-06-10
 
 ### Added
 - Median Blur for 5x5 and 7x7 kernels.
