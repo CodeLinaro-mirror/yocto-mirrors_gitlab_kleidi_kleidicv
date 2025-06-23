@@ -2,26 +2,26 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_FILTER_2D_7X7_BASE_H
-#define KLEIDICV_FILTER_2D_7X7_BASE_H
+#ifndef KLEIDICV_FILTER_2D_WINDOW_LOADER_7X7_H
+#define KLEIDICV_FILTER_2D_WINDOW_LOADER_7X7_H
 
 #include "kleidicv/workspace/border_7x7.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 template <typename SourceType>
-class Filter2D7x7Base {
- protected:
+class Filter2dWindowLoader7x7 {
+ public:
   using BorderInfoType =
       typename KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo7x7<SourceType>;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
   template <typename LoadArrayElementFunctionType, typename KernelWindowFunctor>
-  void load_window(KernelWindowFunctor& KernelWindow,
-                   LoadArrayElementFunctionType load_array_element,
-                   Rows<const SourceType> src_rows,
-                   BorderOffsets window_row_offsets,
-                   BorderOffsets window_col_offsets,
-                   size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
+  static void load_window(KernelWindowFunctor& KernelWindow,
+                          LoadArrayElementFunctionType load_array_element,
+                          Rows<const SourceType> src_rows,
+                          BorderOffsets window_row_offsets,
+                          BorderOffsets window_col_offsets,
+                          size_t index) KLEIDICV_STREAMING_COMPATIBLE {
     // first row
     KernelWindow(0, 0) = load_array_element(
         src_rows.at(window_row_offsets.c0(), window_col_offsets.c0())[index]);
@@ -132,4 +132,4 @@ class Filter2D7x7Base {
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // KLEIDICV_FILTER_2D_7X7_BASE_H
+#endif  // KLEIDICV_FILTER_2D_WINDOW_LOADER_7X7_H

@@ -15,6 +15,9 @@ This changelog aims to follow the guiding principles of
 
 ## 0.6.0 - not yet released
 
+### Added
+- Median Blur for 3x3 kernels.
+
 ## 0.5.0 - 2025-06-10
 
 ### Added

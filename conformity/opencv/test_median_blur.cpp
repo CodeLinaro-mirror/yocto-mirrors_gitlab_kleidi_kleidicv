@@ -43,6 +43,19 @@ bool test_median_blur(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& median_blur_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
+    TEST("Median 3x3, 1 channel (U8)",  (test_median_blur<3, uint8_t, 1>),  exec_median_blur<3>),
+    TEST("Median 3x3, 3 channel (U8)",  (test_median_blur<3, uint8_t, 3>),  exec_median_blur<3>),
+    TEST("Median 3x3, 4 channel (U8)",  (test_median_blur<3, uint8_t, 4>),  exec_median_blur<3>),
+    TEST("Median 3x3, 1 channel (U16)", (test_median_blur<3, uint16_t, 1>), exec_median_blur<3>),
+    TEST("Median 3x3, 3 channel (U16)", (test_median_blur<3, uint16_t, 3>), exec_median_blur<3>),
+    TEST("Median 3x3, 4 channel (U16)", (test_median_blur<3, uint16_t, 4>), exec_median_blur<3>),
+    TEST("Median 3x3, 1 channel (S16)", (test_median_blur<3, int16_t, 1>),  exec_median_blur<3>),
+    TEST("Median 3x3, 3 channel (S16)", (test_median_blur<3, int16_t, 3>),  exec_median_blur<3>),
+    TEST("Median 3x3, 4 channel (S16)", (test_median_blur<3, int16_t, 4>),  exec_median_blur<3>),
+    TEST("Median 3x3, 1 channel (F32)", (test_median_blur<3, float, 1>),    exec_median_blur<3>),
+    TEST("Median 3x3, 3 channel (F32)", (test_median_blur<3, float, 3>),    exec_median_blur<3>),
+    TEST("Median 3x3, 4 channel (F32)", (test_median_blur<3, float, 4>),    exec_median_blur<3>),
+
     TEST("Median 5x5, 1 channel (U8)",  (test_median_blur<5, uint8_t, 1>),  exec_median_blur<5>),
     TEST("Median 5x5, 3 channel (U8)",  (test_median_blur<5, uint8_t, 3>),  exec_median_blur<5>),
     TEST("Median 5x5, 4 channel (U8)",  (test_median_blur<5, uint8_t, 4>),  exec_median_blur<5>),

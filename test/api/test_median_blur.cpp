@@ -71,7 +71,7 @@ class MedianBlurTest : public testing::Test {
     std::vector<size_t> dst_paddings = {0};
     std::vector<size_t> heights = {30};
     std::vector<size_t> channels = {1, 4};
-    std::vector<size_t> filter_sizes = {5, 7};
+    std::vector<size_t> filter_sizes = {3, 5, 7};
     std::vector<kleidicv_border_type_t> border_types = {
         KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
         KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
@@ -86,7 +86,7 @@ class MedianBlurTest : public testing::Test {
     std::vector<size_t> dst_paddings = {13};
     std::vector<size_t> heights = {10};
     std::vector<size_t> channels = {1, 4};
-    std::vector<size_t> filter_sizes = {5, 7};
+    std::vector<size_t> filter_sizes = {3, 5, 7};
     std::vector<kleidicv_border_type_t> border_types = {
         KLEIDICV_BORDER_TYPE_REPLICATE};
 
@@ -136,8 +136,8 @@ class MedianBlurTest : public testing::Test {
   }
 
  private:
-  int handle_under_over_read(int index, int limit,
-                             kleidicv_border_type_t border_type) {
+  int get_physical_index(int index, int limit,
+                         kleidicv_border_type_t border_type) {
     int result = 0;
 
     if (index >= 0 && index < limit) {
@@ -163,11 +163,10 @@ class MedianBlurTest : public testing::Test {
         }
 
         case KLEIDICV_BORDER_TYPE_REVERSE: {
-          int period = 2 * limit - 2;
           if (index < 0) {
-            result = (-index) % period;
+            result = -index;
           } else {
-            result = period - (index % period);
+            result = 2 * limit - index - 2;
           }
           break;
         }
@@ -184,11 +183,11 @@ class MedianBlurTest : public testing::Test {
                            test::Array2D<ElementType>& dst, size_t filter_size,
                            kleidicv_border_type_t border_type) {
     const int half_kernel_size = static_cast<int>(filter_size) / 2;
-    const size_t height = src.height();
-    const size_t width = src.width() / src.channels();
+    const int height = static_cast<int>(src.height());
+    const int width = static_cast<int>(src.width() / src.channels());
 
-    for (size_t row = 0; row < height; ++row) {
-      for (size_t col = 0; col < width; ++col) {
+    for (int row = 0; row < height; ++row) {
+      for (int col = 0; col < width; ++col) {
         for (size_t channel = 0; channel < src.channels(); ++channel) {
           std::vector<ElementType> window;
 
@@ -197,9 +196,9 @@ class MedianBlurTest : public testing::Test {
             for (int window_col = -half_kernel_size;
                  window_col <= half_kernel_size; ++window_col) {
               int row_after_border_handling =
-                  handle_under_over_read(row + window_row, height, border_type);
+                  get_physical_index(row + window_row, height, border_type);
               int col_after_border_handling =
-                  handle_under_over_read(col + window_col, width, border_type);
+                  get_physical_index(col + window_col, width, border_type);
 
               window.push_back(*src.at(
                   row_after_border_handling,
@@ -233,7 +232,7 @@ TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithoutPadding) {
 }
 
 TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithSmallImageSize) {
-  for (auto ksize : {5, 7}) {
+  for (auto ksize : {3, 5, 7}) {
     for (const auto& params : TestFixture::get_small_image_test_cases(ksize)) {
       this->run_test_case(params);
     }

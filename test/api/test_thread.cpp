@@ -113,7 +113,7 @@ class Thread : public testing::TestWithParam<P> {
     (void)thread_count;
     size_t channels = 1;
     kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
-    for (auto ksize : {5, 7}) {
+    for (auto ksize : {3, 5, 7}) {
       check_unary_op<T, T>(single_threaded_func, multithreaded_func, channels,
                            channels, channels, ksize, ksize, border_type);
     }
@@ -408,10 +408,11 @@ void check_median_blur_not_implemented(MultithreadedFunc multithreaded_func) {
                          25, 25, 1, 5, 3, KLEIDICV_BORDER_TYPE_REPLICATE,
                          get_multithreading_fake(2)));
 
+  // Only odd kernel sizes are supported for median filtering
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       multithreaded_func(src1.data(), src1.stride(), dst1.data(), dst1.stride(),
-                         25, 25, 1, 3, 3, KLEIDICV_BORDER_TYPE_REPLICATE,
+                         25, 25, 1, 4, 4, KLEIDICV_BORDER_TYPE_REPLICATE,
                          get_multithreading_fake(2)));
 }
 
