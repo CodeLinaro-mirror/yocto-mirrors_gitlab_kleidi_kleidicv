@@ -18,6 +18,10 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Median Blur for 3x3 kernels.
 
+### Changed
+- Performance of Gaussian Blur is greatly improved in return for some accuracy.
+  (Except for binomial variants up to 7x7 kernel size.)
+
 ## 0.5.0 - 2025-06-10
 
 ### Added

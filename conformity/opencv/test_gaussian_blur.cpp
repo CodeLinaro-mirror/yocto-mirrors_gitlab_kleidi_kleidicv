@@ -57,11 +57,11 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
                                                        reply_queue, input);
 
       uint8_t threshold = 0;
-      // There are currently rounding differences sometimes
-      // between the OpenCV and KleidiCV implementations that use
-      // the 15x15 kernel size, so we ignore any non-matching
-      // values that fall within the specified threshold.
-      if constexpr (KernelSize >= 15) {
+      // Bit-exact operation is only guaranteed for kernels up to 7x7, and only
+      // if the binomial variant is used.
+      // For bigger kernels, and for all the CustomSigma variants, a small
+      // difference is allowed.
+      if constexpr (KernelSize > 7 || !Binomial) {
         threshold = 2;
       }
 

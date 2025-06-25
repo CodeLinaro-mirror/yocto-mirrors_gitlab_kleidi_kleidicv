@@ -35,20 +35,17 @@ class GaussianBlur<uint8_t, 3, true> {
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma)
-      KLEIDICV_STREAMING_COMPATIBLE {}
-
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
-                            svuint8_t src_2, BufferType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_0_2_b = svaddlb_u16(src_0, src_2);
-    svuint16_t acc_0_2_t = svaddlt_u16(src_0, src_2);
+  void vertical_vector_path(
+      svbool_t pg, std::reference_wrapper<svuint8_t> src[3],
+      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_0_2_b = svaddlb_u16(src[0], src[2]);
+    svuint16_t acc_0_2_t = svaddlt_u16(src[0], src[2]);
 
-    svuint16_t acc_1_b = svshllb_n_u16(src_1, 1);
-    svuint16_t acc_1_t = svshllt_n_u16(src_1, 1);
+    svuint16_t acc_1_b = svshllb_n_u16(src[1], 1);
+    svuint16_t acc_1_t = svshllt_n_u16(src[1], 1);
 
     svuint16_t acc_u16_b = svadd_u16_x(pg, acc_0_2_b, acc_1_b);
     svuint16_t acc_u16_t = svadd_u16_x(pg, acc_0_2_t, acc_1_t);
@@ -60,12 +57,12 @@ class GaussianBlur<uint8_t, 3, true> {
   // Applies horizontal filtering vector using SIMD operations.
   //
   // DST = 1/16 * [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_vector_path(svbool_t pg, svuint16_t src_0, svuint16_t src_1,
-                              svuint16_t src_2, DestinationType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_0_2 = svhadd_u16_x(pg, src_0, src_2);
+  void horizontal_vector_path(
+      svbool_t pg, std::reference_wrapper<svuint16_t> src[3],
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_0_2 = svhadd_u16_x(pg, src[0], src[2]);
 
-    svuint16_t acc = svadd_u16_x(pg, acc_0_2, src_1);
+    svuint16_t acc = svadd_u16_x(pg, acc_0_2, src[1]);
     acc = svrshr_x(pg, acc, 3);
 
     svst1b(pg, &dst[0], acc);
@@ -95,23 +92,19 @@ class GaussianBlur<uint8_t, 5, true> {
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma)
-      KLEIDICV_STREAMING_COMPATIBLE {}
-
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
-                            svuint8_t src_2, svuint8_t src_3, svuint8_t src_4,
-                            BufferType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_0_4_b = svaddlb_u16(src_0, src_4);
-    svuint16_t acc_0_4_t = svaddlt_u16(src_0, src_4);
-    svuint16_t acc_1_3_b = svaddlb_u16(src_1, src_3);
-    svuint16_t acc_1_3_t = svaddlt_u16(src_1, src_3);
+  void vertical_vector_path(
+      svbool_t pg, std::reference_wrapper<svuint8_t> src[5],
+      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_0_4_b = svaddlb_u16(src[0], src[4]);
+    svuint16_t acc_0_4_t = svaddlt_u16(src[0], src[4]);
+    svuint16_t acc_1_3_b = svaddlb_u16(src[1], src[3]);
+    svuint16_t acc_1_3_t = svaddlt_u16(src[1], src[3]);
 
-    svuint16_t acc_u16_b = svmlalb_n_u16(acc_0_4_b, src_2, 6);
-    svuint16_t acc_u16_t = svmlalt_n_u16(acc_0_4_t, src_2, 6);
+    svuint16_t acc_u16_b = svmlalb_n_u16(acc_0_4_b, src[2], 6);
+    svuint16_t acc_u16_t = svmlalt_n_u16(acc_0_4_t, src[2], 6);
     acc_u16_b = svmla_n_u16_x(pg, acc_u16_b, acc_1_3_b, 4);
     acc_u16_t = svmla_n_u16_x(pg, acc_u16_t, acc_1_3_t, 4);
 
@@ -122,13 +115,12 @@ class GaussianBlur<uint8_t, 5, true> {
   // Applies horizontal filtering vector using SIMD operations.
   //
   // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void horizontal_vector_path(svbool_t pg, svuint16_t src_0, svuint16_t src_1,
-                              svuint16_t src_2, svuint16_t src_3,
-                              svuint16_t src_4, DestinationType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_0_4 = svadd_x(pg, src_0, src_4);
-    svuint16_t acc_1_3 = svadd_x(pg, src_1, src_3);
-    svuint16_t acc = svmla_n_u16_x(pg, acc_0_4, src_2, 6);
+  void horizontal_vector_path(
+      svbool_t pg, std::reference_wrapper<svuint16_t> src[5],
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_0_4 = svadd_x(pg, src[0], src[4]);
+    svuint16_t acc_1_3 = svadd_x(pg, src[1], src[3]);
+    svuint16_t acc = svmla_n_u16_x(pg, acc_0_4, src[2], 6);
     acc = svmla_n_u16_x(pg, acc, acc_1_3, 4);
     acc = svrshr_x(pg, acc, 8);
     svst1b(pg, &dst[0], acc);
@@ -168,28 +160,24 @@ class GaussianBlur<uint8_t, 7, true> {
   using BufferType = uint16_t;
   using DestinationType = uint8_t;
 
-  explicit GaussianBlur([[maybe_unused]] float sigma)
-      KLEIDICV_STREAMING_COMPATIBLE {}
-
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6 ] *
   //     * [ 2, 7, 14, 18, 14, 7, 2 ]T
   void vertical_vector_path(
-      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
-      svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
+      svbool_t pg, std::reference_wrapper<svuint8_t> src[7],
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_0_6_b = svaddlb_u16(src_0, src_6);
-    svuint16_t acc_0_6_t = svaddlt_u16(src_0, src_6);
+    svuint16_t acc_0_6_b = svaddlb_u16(src[0], src[6]);
+    svuint16_t acc_0_6_t = svaddlt_u16(src[0], src[6]);
 
-    svuint16_t acc_1_5_b = svaddlb_u16(src_1, src_5);
-    svuint16_t acc_1_5_t = svaddlt_u16(src_1, src_5);
+    svuint16_t acc_1_5_b = svaddlb_u16(src[1], src[5]);
+    svuint16_t acc_1_5_t = svaddlt_u16(src[1], src[5]);
 
-    svuint16_t acc_2_4_b = svaddlb_u16(src_2, src_4);
-    svuint16_t acc_2_4_t = svaddlt_u16(src_2, src_4);
+    svuint16_t acc_2_4_b = svaddlb_u16(src[2], src[4]);
+    svuint16_t acc_2_4_t = svaddlt_u16(src[2], src[4]);
 
-    svuint16_t acc_3_b = svmovlb_u16(src_3);
-    svuint16_t acc_3_t = svmovlt_u16(src_3);
+    svuint16_t acc_3_b = svmovlb_u16(src[3]);
+    svuint16_t acc_3_t = svmovlt_u16(src[3]);
 
     svuint16_t acc_0_2_4_6_b = svmla_n_u16_x(pg, acc_0_6_b, acc_2_4_b, 7);
     svuint16_t acc_0_2_4_6_t = svmla_n_u16_x(pg, acc_0_6_t, acc_2_4_t, 7);
@@ -214,22 +202,21 @@ class GaussianBlur<uint8_t, 7, true> {
   // DST = 1/4096 * [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6 ] *
   //              * [ 2, 7, 14, 18, 14, 7, 2 ]T
   void horizontal_vector_path(
-      svbool_t pg, svuint16_t src_0, svuint16_t src_1, svuint16_t src_2,
-      svuint16_t src_3, svuint16_t src_4, svuint16_t src_5, svuint16_t src_6,
+      svbool_t pg, std::reference_wrapper<svuint16_t> src[7],
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint32_t acc_0_6_b = svaddlb_u32(src_0, src_6);
-    svuint32_t acc_0_6_t = svaddlt_u32(src_0, src_6);
+    svuint32_t acc_0_6_b = svaddlb_u32(src[0], src[6]);
+    svuint32_t acc_0_6_t = svaddlt_u32(src[0], src[6]);
 
-    svuint32_t acc_1_5_b = svaddlb_u32(src_1, src_5);
-    svuint32_t acc_1_5_t = svaddlt_u32(src_1, src_5);
+    svuint32_t acc_1_5_b = svaddlb_u32(src[1], src[5]);
+    svuint32_t acc_1_5_t = svaddlt_u32(src[1], src[5]);
 
-    svuint16_t acc_2_4 = svadd_u16_x(pg, src_2, src_4);
+    svuint16_t acc_2_4 = svadd_u16_x(pg, src[2], src[4]);
 
     svuint32_t acc_0_2_4_6_b = svmlalb_n_u32(acc_0_6_b, acc_2_4, 7);
     svuint32_t acc_0_2_4_6_t = svmlalt_n_u32(acc_0_6_t, acc_2_4, 7);
 
-    svuint32_t acc_0_2_3_4_6_b = svmlalb_n_u32(acc_0_2_4_6_b, src_3, 9);
-    svuint32_t acc_0_2_3_4_6_t = svmlalt_n_u32(acc_0_2_4_6_t, src_3, 9);
+    svuint32_t acc_0_2_3_4_6_b = svmlalb_n_u32(acc_0_2_4_6_b, src[3], 9);
+    svuint32_t acc_0_2_3_4_6_t = svmlalt_n_u32(acc_0_2_4_6_t, src[3], 9);
 
     acc_0_2_3_4_6_b = svlsl_n_u32_x(pg, acc_0_2_3_4_6_b, 1);
     acc_0_2_3_4_6_t = svlsl_n_u32_x(pg, acc_0_2_3_4_6_t, 1);
@@ -259,750 +246,88 @@ class GaussianBlur<uint8_t, 7, true> {
   }
 };  // end of class GaussianBlur<uint8_t, 7, true>
 
-// Template for 15x15 Gaussian Blur binomial filters.
-//
-//                  [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
-//                  [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
-//                  [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
-//                  [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
-//  F = 1/1048576 * [  |     |     |     |  ...   |     |     |    |  ] =
-//                  [ 192,  528, 1200, 2304 ... 2304, 1200,  528, 192 ]
-//                  [ 100,  275,  625, 1200 ... 1200,  625,  275, 100 ]
-//                  [  44,  121,  275,  528 ...  528,  275,  121,  44 ]
-//                  [  16,   44,  100,  192 ...  192,  100,   44,  16 ]
-//
-//                  [   4 ]
-//                  [  11 ]
-//                  [  25 ]
-//                  [  48 ]
-//                  [  81 ]
-//                  [ 118 ]
-//                  [ 146 ]
-//  = 1/1048576  *  [ 158 ] * [4,11,25,48,81,118,146,158,146,118,81,48,25,11,4]
-//                  [ 146 ]
-//                  [ 118 ]
-//                  [  81 ]
-//                  [  48 ]
-//                  [  25 ]
-//                  [  11 ]
-//                  [   4 ]
-template <>
-class GaussianBlur<uint8_t, 15, true> {
- public:
-  using SourceType = uint8_t;
-  using BufferType = uint32_t;
-  using DestinationType = uint8_t;
-
-  explicit GaussianBlur([[maybe_unused]] float sigma)
-      KLEIDICV_STREAMING_COMPATIBLE {}
-
-  // Applies vertical filtering vector using SIMD operations.
-  //
-  // DST = [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
-  //     * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
-  void vertical_vector_path(
-      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
-      svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
-      svuint8_t src_7, svuint8_t src_8, svuint8_t src_9, svuint8_t src_10,
-      svuint8_t src_11, svuint8_t src_12, svuint8_t src_13, svuint8_t src_14,
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_7_b = svmovlb_u16(src_7);
-    svuint16_t acc_7_t = svmovlt_u16(src_7);
-
-    svuint16_t acc_1_13_b = svaddlb_u16(src_1, src_13);
-    svuint16_t acc_1_13_t = svaddlt_u16(src_1, src_13);
-
-    svuint16_t acc_2_12_b = svaddlb_u16(src_2, src_12);
-    svuint16_t acc_2_12_t = svaddlt_u16(src_2, src_12);
-
-    svuint16_t acc_6_8_b = svaddlb_u16(src_6, src_8);
-    svuint16_t acc_6_8_t = svaddlt_u16(src_6, src_8);
-
-    svuint16_t acc_5_9_b = svaddlb_u16(src_5, src_9);
-    svuint16_t acc_5_9_t = svaddlt_u16(src_5, src_9);
-
-    svuint16_t acc_0_14_b = svaddlb_u16(src_0, src_14);
-    svuint16_t acc_0_14_t = svaddlt_u16(src_0, src_14);
-
-    svuint16_t acc_3_11_b = svaddlb_u16(src_3, src_11);
-    svuint16_t acc_3_11_t = svaddlt_u16(src_3, src_11);
-
-    svuint16_t acc_4_10_b = svaddlb_u16(src_4, src_10);
-    svuint16_t acc_4_10_t = svaddlt_u16(src_4, src_10);
-
-    acc_0_14_b = svlsl_n_u16_x(pg, acc_0_14_b, 2);
-    acc_0_14_t = svlsl_n_u16_x(pg, acc_0_14_t, 2);
-
-    acc_3_11_b = svlsl_n_u16_x(pg, acc_3_11_b, 2);
-    acc_3_11_t = svlsl_n_u16_x(pg, acc_3_11_t, 2);
-
-    acc_4_10_b = svmul_n_u16_x(pg, acc_4_10_b, 81);
-    acc_4_10_t = svmul_n_u16_x(pg, acc_4_10_t, 81);
-
-    svuint16_t acc_1_3_11_13_b = svadd_u16_x(pg, acc_3_11_b, acc_1_13_b);
-    svuint16_t acc_1_3_11_13_t = svadd_u16_x(pg, acc_3_11_t, acc_1_13_t);
-    acc_1_3_11_13_b = svmla_n_u16_x(pg, acc_3_11_b, acc_1_3_11_13_b, 11);
-    acc_1_3_11_13_t = svmla_n_u16_x(pg, acc_3_11_t, acc_1_3_11_13_t, 11);
-
-    svuint16_t acc_0_1_3_11_13_14_b =
-        svadd_u16_x(pg, acc_1_3_11_13_b, acc_0_14_b);
-    svuint16_t acc_0_1_3_11_13_14_t =
-        svadd_u16_x(pg, acc_1_3_11_13_t, acc_0_14_t);
-
-    svuint16_t acc_2_4_10_12_b = svmla_n_u16_x(pg, acc_4_10_b, acc_2_12_b, 25);
-    svuint16_t acc_2_4_10_12_t = svmla_n_u16_x(pg, acc_4_10_t, acc_2_12_t, 25);
-
-    svuint32_t acc_b_b = svaddlb_u32(acc_2_4_10_12_b, acc_0_1_3_11_13_14_b);
-    svuint32_t acc_b_t = svaddlb_u32(acc_2_4_10_12_t, acc_0_1_3_11_13_14_t);
-    svuint32_t acc_t_b = svaddlt_u32(acc_2_4_10_12_b, acc_0_1_3_11_13_14_b);
-    svuint32_t acc_t_t = svaddlt_u32(acc_2_4_10_12_t, acc_0_1_3_11_13_14_t);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_6_8_b, 146);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_6_8_t, 146);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_6_8_b, 146);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_6_8_t, 146);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_5_9_b, 118);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_5_9_t, 118);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_5_9_b, 118);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_5_9_t, 118);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_7_b, 158);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_7_t, 158);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_7_b, 158);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_7_t, 158);
-
-    svuint32x4_t interleaved =
-        svcreate4_u32(acc_b_b, acc_b_t, acc_t_b, acc_t_t);
-    svst4_u32(pg, &dst[0], interleaved);
-  }
-
-  // Applies horizontal filtering vector using SIMD operations.
-  //
-  // DST = 1/1048576 * [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
-  //                 * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
-  void horizontal_vector_path(
-      svbool_t pg, svuint32_t src_0, svuint32_t src_1, svuint32_t src_2,
-      svuint32_t src_3, svuint32_t src_4, svuint32_t src_5, svuint32_t src_6,
-      svuint32_t src_7, svuint32_t src_8, svuint32_t src_9, svuint32_t src_10,
-      svuint32_t src_11, svuint32_t src_12, svuint32_t src_13,
-      svuint32_t src_14,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint32_t acc_1_13 = svadd_u32_x(pg, src_1, src_13);
-    svuint32_t acc_2_12 = svadd_u32_x(pg, src_2, src_12);
-    svuint32_t acc_6_8 = svadd_u32_x(pg, src_6, src_8);
-    svuint32_t acc_5_9 = svadd_u32_x(pg, src_5, src_9);
-    svuint32_t acc_0_14 = svadd_u32_x(pg, src_0, src_14);
-    svuint32_t acc_3_11 = svadd_u32_x(pg, src_3, src_11);
-    svuint32_t acc_4_10 = svadd_u32_x(pg, src_4, src_10);
-
-    acc_0_14 = svlsl_n_u32_x(pg, acc_0_14, 2);
-    acc_3_11 = svlsl_n_u32_x(pg, acc_3_11, 2);
-    acc_4_10 = svmul_n_u32_x(pg, acc_4_10, 81);
-
-    svuint32_t acc_1_3_11_13 = svadd_u32_x(pg, acc_3_11, acc_1_13);
-    acc_1_3_11_13 = svmla_n_u32_x(pg, acc_3_11, acc_1_3_11_13, 11);
-    svuint32_t acc_0_1_3_11_13_14 = svadd_u32_x(pg, acc_1_3_11_13, acc_0_14);
-    svuint32_t acc_2_4_10_12 = svmla_n_u32_x(pg, acc_4_10, acc_2_12, 25);
-
-    svuint32_t acc = svadd_u32_x(pg, acc_2_4_10_12, acc_0_1_3_11_13_14);
-    acc = svmla_n_u32_x(pg, acc, acc_6_8, 146);
-    acc = svmla_n_u32_x(pg, acc, acc_5_9, 118);
-    acc = svmla_n_u32_x(pg, acc, src_7, 158);
-    acc = svrshr_n_u32_x(pg, acc, 20);
-    svst1b_u32(pg, &dst[0], acc);
-  }
-
-  // Applies horizontal filtering vector using scalar operations.
-  //
-  // DST = 1/1048576 * [ SRC0, SRC1, SRC2, SRC3...SRC11, SRC12, SRC13, SRC14 ] *
-  //                 * [ 4, 11, 25, 48 ... 48, 25, 11, 4 ]T
-  void horizontal_scalar_path(const BufferType src[15], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = (static_cast<uint32_t>(src[3]) + src[11]) * 4;
-    acc += (acc + src[1] + src[13]) * 11;
-    acc += (src[0] + src[14]) * 4 + (src[2] + src[12]) * 25 +
-           (src[4] + src[10]) * 81;
-    acc += (src[5] + src[9]) * 118 + (src[6] + src[8]) * 146 + src[7] * 158;
-    dst[0] = rounding_shift_right(acc, 20);
-  }
-};  // end of class GaussianBlur<uint8_t, 15, true>
-
-template <typename ScalarType, size_t KernelSize>
-class GaussianBlurNonBinomialBase;
-
+// CustomSigma variant
 template <size_t KernelSize>
-class GaussianBlurNonBinomialBase<uint8_t, KernelSize> {
- protected:
-  explicit GaussianBlurNonBinomialBase(float sigma)
-      KLEIDICV_STREAMING_COMPATIBLE
-      : half_kernel_(
-            generate_gaussian_half_kernel<get_half_kernel_size(KernelSize)>(
-                sigma)) {}
-
-  const std::array<uint16_t, get_half_kernel_size(KernelSize)> half_kernel_;
-};
-
-template <>
-class GaussianBlur<uint8_t, 3, false> final
-    : public GaussianBlurNonBinomialBase<uint8_t, 3> {
+class GaussianBlur<uint8_t, KernelSize, false> {
  public:
   using SourceType = uint8_t;
-  using BufferType = uint32_t;
+  using BufferType = uint8_t;
   using DestinationType = uint8_t;
+  using SourceVecTraits =
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<SourceType>;
+  using SourceVectorType = typename SourceVecTraits::VectorType;
 
-  explicit GaussianBlur(float sigma) KLEIDICV_STREAMING_COMPATIBLE
-      : GaussianBlurNonBinomialBase<uint8_t, 3>(sigma) {}
+  static constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
 
-  void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
-                            svuint8_t src_2, BufferType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    // 1
-    svuint16_t acc_1_b = svmovlb_u16(src_1);
-    svuint16_t acc_1_t = svmovlt_u16(src_1);
-
-    svuint32_t acc_b_b = svmullb_n_u32(acc_1_b, half_kernel_[1]);
-    svuint32_t acc_b_t = svmullb_n_u32(acc_1_t, half_kernel_[1]);
-    svuint32_t acc_t_b = svmullt_n_u32(acc_1_b, half_kernel_[1]);
-    svuint32_t acc_t_t = svmullt_n_u32(acc_1_t, half_kernel_[1]);
-
-    // 0 - 2
-    svuint16_t acc_0_2_b = svaddlb_u16(src_0, src_2);
-    svuint16_t acc_0_2_t = svaddlt_u16(src_0, src_2);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_0_2_b, half_kernel_[0]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_0_2_t, half_kernel_[0]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_0_2_b, half_kernel_[0]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_0_2_t, half_kernel_[0]);
-
-    svuint32x4_t interleaved = svcreate4(acc_b_b, acc_b_t, acc_t_b, acc_t_t);
-    svst4(pg, &dst[0], interleaved);
-  }
-
-  void horizontal_vector_path(svbool_t pg, svuint32_t src_0, svuint32_t src_1,
-                              svuint32_t src_2, DestinationType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    // 1
-    svuint32_t acc = svmul_n_u32_x(pg, src_1, half_kernel_[1]);
-
-    // 0 - 2
-    svuint32_t acc_0_2 = svadd_u32_x(pg, src_0, src_2);
-    acc = svmla_n_u32_x(pg, acc, acc_0_2, half_kernel_[0]);
-
-    acc = svrshr_n_u32_x(pg, acc, 16);
-    svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * half_kernel_[0] + src[1] * half_kernel_[1] +
-                   src[2] * half_kernel_[0];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
-  }
-};  // end of class GaussianBlur<uint8_t, 3, false>
-
-template <>
-class GaussianBlur<uint8_t, 5, false> final
-    : public GaussianBlurNonBinomialBase<uint8_t, 5> {
- public:
-  using SourceType = uint8_t;
-  using BufferType = uint32_t;
-  using DestinationType = uint8_t;
-
-  explicit GaussianBlur(float sigma) KLEIDICV_STREAMING_COMPATIBLE
-      : GaussianBlurNonBinomialBase<uint8_t, 5>(sigma) {}
-
-  void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
-                            svuint8_t src_2, svuint8_t src_3, svuint8_t src_4,
-                            BufferType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    // 2
-    svuint16_t acc_2_b = svmovlb_u16(src_2);
-    svuint16_t acc_2_t = svmovlt_u16(src_2);
-
-    svuint32_t acc_b_b = svmullb_n_u32(acc_2_b, half_kernel_[2]);
-    svuint32_t acc_b_t = svmullb_n_u32(acc_2_t, half_kernel_[2]);
-    svuint32_t acc_t_b = svmullt_n_u32(acc_2_b, half_kernel_[2]);
-    svuint32_t acc_t_t = svmullt_n_u32(acc_2_t, half_kernel_[2]);
-
-    // 1 - 3
-    svuint16_t acc_1_3_b = svaddlb_u16(src_1, src_3);
-    svuint16_t acc_1_3_t = svaddlt_u16(src_1, src_3);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_1_3_b, half_kernel_[1]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_1_3_t, half_kernel_[1]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_1_3_b, half_kernel_[1]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_1_3_t, half_kernel_[1]);
-
-    // 0 - 4
-    svuint16_t acc_0_4_b = svaddlb_u16(src_0, src_4);
-    svuint16_t acc_0_4_t = svaddlt_u16(src_0, src_4);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_0_4_b, half_kernel_[0]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_0_4_t, half_kernel_[0]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_0_4_b, half_kernel_[0]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_0_4_t, half_kernel_[0]);
-
-    svuint32x4_t interleaved = svcreate4(acc_b_b, acc_b_t, acc_t_b, acc_t_t);
-    svst4(pg, &dst[0], interleaved);
-  }
-
-  void horizontal_vector_path(svbool_t pg, svuint32_t src_0, svuint32_t src_1,
-                              svuint32_t src_2, svuint32_t src_3,
-                              svuint32_t src_4, DestinationType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    // 2
-    svuint32_t acc = svmul_n_u32_x(pg, src_2, half_kernel_[2]);
-
-    // 1 - 3
-    svuint32_t acc_1_3 = svadd_u32_x(pg, src_1, src_3);
-    acc = svmla_n_u32_x(pg, acc, acc_1_3, half_kernel_[1]);
-
-    // 0 - 4
-    svuint32_t acc_0_4 = svadd_u32_x(pg, src_0, src_4);
-    acc = svmla_n_u32_x(pg, acc, acc_0_4, half_kernel_[0]);
-
-    acc = svrshr_n_u32_x(pg, acc, 16);
-    svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * half_kernel_[0] + src[1] * half_kernel_[1] +
-                   src[2] * half_kernel_[2] + src[3] * half_kernel_[1] +
-                   src[4] * half_kernel_[0];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
-  }
-};  // end of class GaussianBlur<uint8_t, 5, false>
-
-template <>
-class GaussianBlur<uint8_t, 7, false> final
-    : public GaussianBlurNonBinomialBase<uint8_t, 7> {
- public:
-  using SourceType = uint8_t;
-  using BufferType = uint32_t;
-  using DestinationType = uint8_t;
-
-  explicit GaussianBlur(float sigma) KLEIDICV_STREAMING_COMPATIBLE
-      : GaussianBlurNonBinomialBase<uint8_t, 7>(sigma) {}
+  explicit GaussianBlur(const std::array<uint16_t, kHalfKernelSize> half_kernel)
+      : half_kernel_(half_kernel) {}
 
   void vertical_vector_path(
-      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
-      svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
+      svbool_t pg, std::reference_wrapper<SourceVectorType> src[KernelSize],
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    // 3
-    svuint16_t acc_3_b = svmovlb_u16(src_3);
-    svuint16_t acc_3_t = svmovlt_u16(src_3);
+    common_vector_path(pg, src, dst);
+  }
 
-    svuint32_t acc_b_b = svmullb_n_u32(acc_3_b, half_kernel_[3]);
-    svuint32_t acc_b_t = svmullb_n_u32(acc_3_t, half_kernel_[3]);
-    svuint32_t acc_t_b = svmullt_n_u32(acc_3_b, half_kernel_[3]);
-    svuint32_t acc_t_t = svmullt_n_u32(acc_3_t, half_kernel_[3]);
+  void vertical_scalar_path(const SourceType src[KernelSize], BufferType *dst)
+      const KLEIDICV_STREAMING_COMPATIBLE {
+    uint32_t acc = static_cast<uint32_t>(src[kHalfKernelSize - 1]) *
+                   half_kernel_[kHalfKernelSize - 1];
 
-    // 2 - 4
-    svuint16_t acc_2_4_b = svaddlb_u16(src_2, src_4);
-    svuint16_t acc_2_4_t = svaddlt_u16(src_2, src_4);
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 0; i < kHalfKernelSize - 1; i++) {
+      acc += (static_cast<uint32_t>(src[i]) +
+              static_cast<uint32_t>(src[KernelSize - i - 1])) *
+             half_kernel_[i];
+    }
 
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_2_4_b, half_kernel_[2]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_2_4_t, half_kernel_[2]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_2_4_b, half_kernel_[2]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_2_4_t, half_kernel_[2]);
-
-    // 1 - 5
-    svuint16_t acc_1_5_b = svaddlb_u16(src_1, src_5);
-    svuint16_t acc_1_5_t = svaddlt_u16(src_1, src_5);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_1_5_b, half_kernel_[1]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_1_5_t, half_kernel_[1]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_1_5_b, half_kernel_[1]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_1_5_t, half_kernel_[1]);
-
-    // 0 - 6
-    svuint16_t acc_0_6_b = svaddlb_u16(src_0, src_6);
-    svuint16_t acc_0_6_t = svaddlt_u16(src_0, src_6);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_0_6_b, half_kernel_[0]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_0_6_t, half_kernel_[0]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_0_6_b, half_kernel_[0]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_0_6_t, half_kernel_[0]);
-
-    svuint32x4_t interleaved = svcreate4(acc_b_b, acc_b_t, acc_t_b, acc_t_t);
-    svst4(pg, &dst[0], interleaved);
+    dst[0] = static_cast<BufferType>(rounding_shift_right(acc, 8));
   }
 
   void horizontal_vector_path(
-      svbool_t pg, svuint32_t src_0, svuint32_t src_1, svuint32_t src_2,
-      svuint32_t src_3, svuint32_t src_4, svuint32_t src_5, svuint32_t src_6,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    // 3
-    svuint32_t acc = svmul_n_u32_x(pg, src_3, half_kernel_[3]);
-
-    // 2 - 4
-    svuint32_t acc_2_4 = svadd_u32_x(pg, src_2, src_4);
-    acc = svmla_n_u32_x(pg, acc, acc_2_4, half_kernel_[2]);
-
-    // 1 - 5
-    svuint32_t acc_1_5 = svadd_u32_x(pg, src_1, src_5);
-    acc = svmla_n_u32_x(pg, acc, acc_1_5, half_kernel_[1]);
-
-    // 0 - 6
-    svuint32_t acc_0_6 = svadd_u32_x(pg, src_0, src_6);
-    acc = svmla_n_u32_x(pg, acc, acc_0_6, half_kernel_[0]);
-
-    acc = svrshr_n_u32_x(pg, acc, 16);
-    svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(const BufferType src[7], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * half_kernel_[0] + src[1] * half_kernel_[1] +
-                   src[2] * half_kernel_[2] + src[3] * half_kernel_[3] +
-                   src[4] * half_kernel_[2] + src[5] * half_kernel_[1] +
-                   src[6] * half_kernel_[0];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
-  }
-};  // end of class GaussianBlur<uint8_t, 7, false>
-
-template <>
-class GaussianBlur<uint8_t, 15, false> final
-    : public GaussianBlurNonBinomialBase<uint8_t, 15> {
- public:
-  using SourceType = uint8_t;
-  using BufferType = uint32_t;
-  using DestinationType = uint8_t;
-
-  explicit GaussianBlur(float sigma) KLEIDICV_STREAMING_COMPATIBLE
-      : GaussianBlurNonBinomialBase<uint8_t, 15>(sigma) {}
-
-  void vertical_vector_path(
-      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
-      svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
-      svuint8_t src_7, svuint8_t src_8, svuint8_t src_9, svuint8_t src_10,
-      svuint8_t src_11, svuint8_t src_12, svuint8_t src_13, svuint8_t src_14,
+      svbool_t pg, std::reference_wrapper<SourceVectorType> src[KernelSize],
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    // 7
-    svuint16_t acc_7_b = svmovlb_u16(src_7);
-    svuint16_t acc_7_t = svmovlt_u16(src_7);
-
-    svuint32_t acc_b_b = svmullb_n_u32(acc_7_b, half_kernel_[7]);
-    svuint32_t acc_b_t = svmullb_n_u32(acc_7_t, half_kernel_[7]);
-    svuint32_t acc_t_b = svmullt_n_u32(acc_7_b, half_kernel_[7]);
-    svuint32_t acc_t_t = svmullt_n_u32(acc_7_t, half_kernel_[7]);
-
-    // 6 - 8
-    svuint16_t acc_6_8_b = svaddlb_u16(src_6, src_8);
-    svuint16_t acc_6_8_t = svaddlt_u16(src_6, src_8);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_6_8_b, half_kernel_[6]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_6_8_t, half_kernel_[6]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_6_8_b, half_kernel_[6]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_6_8_t, half_kernel_[6]);
-
-    // 5 - 9
-    svuint16_t acc_5_9_b = svaddlb_u16(src_5, src_9);
-    svuint16_t acc_5_9_t = svaddlt_u16(src_5, src_9);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_5_9_b, half_kernel_[5]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_5_9_t, half_kernel_[5]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_5_9_b, half_kernel_[5]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_5_9_t, half_kernel_[5]);
-
-    // 4 - 10
-    svuint16_t acc_4_10_b = svaddlb_u16(src_4, src_10);
-    svuint16_t acc_4_10_t = svaddlt_u16(src_4, src_10);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_4_10_b, half_kernel_[4]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_4_10_t, half_kernel_[4]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_4_10_b, half_kernel_[4]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_4_10_t, half_kernel_[4]);
-
-    // 3 - 11
-    svuint16_t acc_3_11_b = svaddlb_u16(src_3, src_11);
-    svuint16_t acc_3_11_t = svaddlt_u16(src_3, src_11);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_3_11_b, half_kernel_[3]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_3_11_t, half_kernel_[3]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_3_11_b, half_kernel_[3]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_3_11_t, half_kernel_[3]);
-
-    // 2 - 12
-    svuint16_t acc_2_12_b = svaddlb_u16(src_2, src_12);
-    svuint16_t acc_2_12_t = svaddlt_u16(src_2, src_12);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_2_12_b, half_kernel_[2]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_2_12_t, half_kernel_[2]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_2_12_b, half_kernel_[2]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_2_12_t, half_kernel_[2]);
-
-    // 1 - 13
-    svuint16_t acc_1_13_b = svaddlb_u16(src_1, src_13);
-    svuint16_t acc_1_13_t = svaddlt_u16(src_1, src_13);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_1_13_b, half_kernel_[1]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_1_13_t, half_kernel_[1]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_1_13_b, half_kernel_[1]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_1_13_t, half_kernel_[1]);
-
-    // 0 - 14
-    svuint16_t acc_0_14_b = svaddlb_u16(src_0, src_14);
-    svuint16_t acc_0_14_t = svaddlt_u16(src_0, src_14);
-
-    acc_b_b = svmlalb_n_u32(acc_b_b, acc_0_14_b, half_kernel_[0]);
-    acc_b_t = svmlalb_n_u32(acc_b_t, acc_0_14_t, half_kernel_[0]);
-    acc_t_b = svmlalt_n_u32(acc_t_b, acc_0_14_b, half_kernel_[0]);
-    acc_t_t = svmlalt_n_u32(acc_t_t, acc_0_14_t, half_kernel_[0]);
-
-    svuint32x4_t interleaved = svcreate4(acc_b_b, acc_b_t, acc_t_b, acc_t_t);
-    svst4(pg, &dst[0], interleaved);
+    common_vector_path(pg, src, dst);
   }
 
-  void horizontal_vector_path(
-      svbool_t pg, svuint32_t src_0, svuint32_t src_1, svuint32_t src_2,
-      svuint32_t src_3, svuint32_t src_4, svuint32_t src_5, svuint32_t src_6,
-      svuint32_t src_7, svuint32_t src_8, svuint32_t src_9, svuint32_t src_10,
-      svuint32_t src_11, svuint32_t src_12, svuint32_t src_13,
-      svuint32_t src_14,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    // 7
-    svuint32_t acc = svmul_n_u32_x(pg, src_7, half_kernel_[7]);
-
-    // 6 - 8
-    svuint32_t acc_6_8 = svadd_u32_x(pg, src_6, src_8);
-    acc = svmla_n_u32_x(pg, acc, acc_6_8, half_kernel_[6]);
-
-    // 5 - 9
-    svuint32_t acc_5_9 = svadd_u32_x(pg, src_5, src_9);
-    acc = svmla_n_u32_x(pg, acc, acc_5_9, half_kernel_[5]);
-
-    // 4 - 10
-    svuint32_t acc_4_10 = svadd_u32_x(pg, src_4, src_10);
-    acc = svmla_n_u32_x(pg, acc, acc_4_10, half_kernel_[4]);
-
-    // 3 - 11
-    svuint32_t acc_3_11 = svadd_u32_x(pg, src_3, src_11);
-    acc = svmla_n_u32_x(pg, acc, acc_3_11, half_kernel_[3]);
-
-    // 2 - 12
-    svuint32_t acc_2_12 = svadd_u32_x(pg, src_2, src_12);
-    acc = svmla_n_u32_x(pg, acc, acc_2_12, half_kernel_[2]);
-
-    // 1 - 13
-    svuint32_t acc_1_13 = svadd_u32_x(pg, src_1, src_13);
-    acc = svmla_n_u32_x(pg, acc, acc_1_13, half_kernel_[1]);
-
-    // 0 - 14
-    svuint32_t acc_0_14 = svadd_u32_x(pg, src_0, src_14);
-    acc = svmla_n_u32_x(pg, acc, acc_0_14, half_kernel_[0]);
-
-    acc = svrshr_n_u32_x(pg, acc, 16);
-    svst1b_u32(pg, &dst[0], acc);
+  void horizontal_scalar_path(const BufferType src[KernelSize],
+                              DestinationType *dst) const
+      KLEIDICV_STREAMING_COMPATIBLE {
+    vertical_scalar_path(src, dst);
   }
 
-  void horizontal_scalar_path(const BufferType src[15], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = src[0] * half_kernel_[0] + src[1] * half_kernel_[1] +
-                   src[2] * half_kernel_[2] + src[3] * half_kernel_[3] +
-                   src[4] * half_kernel_[4] + src[5] * half_kernel_[5] +
-                   src[6] * half_kernel_[6] + src[7] * half_kernel_[7] +
-                   src[8] * half_kernel_[6] + src[9] * half_kernel_[5] +
-                   src[10] * half_kernel_[4] + src[11] * half_kernel_[3] +
-                   src[12] * half_kernel_[2] + src[13] * half_kernel_[1] +
-                   src[14] * half_kernel_[0];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
-  }
-};  // end of class GaussianBlur<uint8_t, 15, false>
-
-template <>
-class GaussianBlur<uint8_t, 21, false> final
-    : public GaussianBlurNonBinomialBase<uint8_t, 21> {
- public:
-  using SourceType = uint8_t;
-  using BufferType = uint32_t;
-  using DestinationType = uint8_t;
-
-  explicit GaussianBlur(float sigma) KLEIDICV_STREAMING_COMPATIBLE
-      : GaussianBlurNonBinomialBase<uint8_t, 21>(sigma) {}
-
-  void vertical_vector_path(
-      svbool_t pg, svuint8_t src_0, svuint8_t src_1, svuint8_t src_2,
-      svuint8_t src_3, svuint8_t src_4, svuint8_t src_5, svuint8_t src_6,
-      svuint8_t src_7, svuint8_t src_8, svuint8_t src_9, svuint8_t src_10,
-      svuint8_t src_11, svuint8_t src_12, svuint8_t src_13, svuint8_t src_14,
-      svuint8_t src_15, svuint8_t src_16, svuint8_t src_17, svuint8_t src_18,
-      svuint8_t src_19, svuint8_t src_20,
+ private:
+  void common_vector_path(
+      svbool_t pg, std::reference_wrapper<SourceVectorType> src[KernelSize],
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svbool_t pg16all = svptrue_b16();
+    svbool_t pg16_all = svptrue_b16();
+    svuint16_t acc_b = svmullb_n_u16(src[kHalfKernelSize - 1],
+                                     half_kernel_[kHalfKernelSize - 1]);
+    svuint16_t acc_t = svmullt_n_u16(src[kHalfKernelSize - 1],
+                                     half_kernel_[kHalfKernelSize - 1]);
 
-    // (10) + (9 + 11)
-    // Need to calculate them in 32 bits, for small sigmas they can be large
-    svuint16_t acc_10_0 = svmovlb_u16(src_10);
-    svuint16_t acc_10_1 = svmovlt_u16(src_10);
+    // Optimization to avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 0; i < kHalfKernelSize - 1; i++) {
+      const size_t j = KernelSize - i - 1;
+      svuint16_t vec_b = svaddlb_u16(src[i], src[j]);
+      svuint16_t vec_t = svaddlt_u16(src[i], src[j]);
 
-    svuint32_t acc3_00 = svmullb_n_u32(acc_10_0, half_kernel_[10]);
-    svuint32_t acc3_10 = svmullt_n_u32(acc_10_0, half_kernel_[10]);
-    svuint32_t acc3_01 = svmullb_n_u32(acc_10_1, half_kernel_[10]);
-    svuint32_t acc3_11 = svmullt_n_u32(acc_10_1, half_kernel_[10]);
+      acc_b = svmla_n_u16_x(pg16_all, acc_b, vec_b, half_kernel_[i]);
+      acc_t = svmla_n_u16_x(pg16_all, acc_t, vec_t, half_kernel_[i]);
+    }
 
-    svuint16_t acc_9_0 = svaddlb_u16(src_9, src_11);
-    svuint16_t acc_9_1 = svaddlt_u16(src_9, src_11);
-
-    acc3_00 = svmlalb_n_u32(acc3_00, acc_9_0, half_kernel_[9]);
-    acc3_10 = svmlalt_n_u32(acc3_10, acc_9_0, half_kernel_[9]);
-    acc3_01 = svmlalb_n_u32(acc3_01, acc_9_1, half_kernel_[9]);
-    acc3_11 = svmlalt_n_u32(acc3_11, acc_9_1, half_kernel_[9]);
-
-    // (8 + 12) + (7 + 13) + (6 + 14)
-    // 16bits are enough for these products, for any sigma
-    svuint16_t acc_8_0 = svaddlb_u16(src_8, src_12);
-    svuint16_t acc_8_1 = svaddlt_u16(src_8, src_12);
-
-    svuint16_t mul8_0 = svmul_n_u16_x(pg16all, acc_8_0, half_kernel_[8]);
-    svuint16_t mul8_1 = svmul_n_u16_x(pg16all, acc_8_1, half_kernel_[8]);
-
-    svuint16_t acc_7_0 = svaddlb_u16(src_7, src_13);
-    svuint16_t acc_7_1 = svaddlt_u16(src_7, src_13);
-
-    svuint16_t mul7_0 = svmul_n_u16_x(pg16all, acc_7_0, half_kernel_[7]);
-    svuint16_t mul7_1 = svmul_n_u16_x(pg16all, acc_7_1, half_kernel_[7]);
-
-    svuint16_t acc_6_0 = svaddlb_u16(src_6, src_14);
-    svuint16_t acc_6_1 = svaddlt_u16(src_6, src_14);
-
-    svuint16_t mul6_0 = svmul_n_u16_x(pg16all, acc_6_0, half_kernel_[6]);
-    svuint16_t mul6_1 = svmul_n_u16_x(pg16all, acc_6_1, half_kernel_[6]);
-
-    svuint32_t acc2_00 = svaddlb_u32(mul6_0, mul7_0);
-    svuint32_t acc2_10 = svaddlt_u32(mul6_0, mul7_0);
-    svuint32_t acc2_01 = svaddlb_u32(mul6_1, mul7_1);
-    svuint32_t acc2_11 = svaddlt_u32(mul6_1, mul7_1);
-
-    svbool_t pg32all = svptrue_b32();
-    acc2_00 = svadd_u32_x(pg32all, acc2_00, svmovlb_u32(mul8_0));
-    acc2_10 = svadd_u32_x(pg32all, acc2_10, svmovlt_u32(mul8_0));
-    acc2_01 = svadd_u32_x(pg32all, acc2_01, svmovlb_u32(mul8_1));
-    acc2_11 = svadd_u32_x(pg32all, acc2_11, svmovlt_u32(mul8_1));
-
-    // (5 + 15) + (4 + 14) + (3 + 17)
-    // these fit into 16 bits together with acc0 too, we can save some cycles
-    svuint16_t acc_5_0 = svaddlb_u16(src_5, src_15);
-    svuint16_t acc_5_1 = svaddlt_u16(src_5, src_15);
-
-    svuint16_t acc1_0 = svmul_n_u16_x(pg16all, acc_5_0, half_kernel_[5]);
-    svuint16_t acc1_1 = svmul_n_u16_x(pg16all, acc_5_1, half_kernel_[5]);
-
-    svuint16_t acc_4_0 = svaddlb_u16(src_4, src_16);
-    svuint16_t acc_4_1 = svaddlt_u16(src_4, src_16);
-
-    acc1_0 = svmla_n_u16_x(pg16all, acc1_0, acc_4_0, half_kernel_[4]);
-    acc1_1 = svmla_n_u16_x(pg16all, acc1_1, acc_4_1, half_kernel_[4]);
-
-    svuint16_t acc_3_0 = svaddlb_u16(src_3, src_17);
-    svuint16_t acc_3_1 = svaddlt_u16(src_3, src_17);
-
-    acc1_0 = svmla_n_u16_x(pg16all, acc1_0, acc_3_0, half_kernel_[3]);
-    acc1_1 = svmla_n_u16_x(pg16all, acc1_1, acc_3_1, half_kernel_[3]);
-
-    // (2 + 18) + (1 + 19) + (0 + 20)
-    // these fit into 16 bits together with acc1 too, we can save some cycles
-    svuint16_t acc_2_0 = svaddlb_u16(src_2, src_18);
-    svuint16_t acc_2_1 = svaddlt_u16(src_2, src_18);
-
-    svuint16_t acc0_0 = svmul_n_u16_x(pg16all, acc_2_0, half_kernel_[2]);
-    svuint16_t acc0_1 = svmul_n_u16_x(pg16all, acc_2_1, half_kernel_[2]);
-
-    svuint16_t acc_1_0 = svaddlb_u16(src_1, src_19);
-    svuint16_t acc_1_1 = svaddlt_u16(src_1, src_19);
-
-    acc0_0 = svmla_n_u16_x(pg16all, acc0_0, acc_1_0, half_kernel_[1]);
-    acc0_1 = svmla_n_u16_x(pg16all, acc0_1, acc_1_1, half_kernel_[1]);
-
-    svuint16_t acc_0_0 = svaddlb_u16(src_0, src_20);
-    svuint16_t acc_0_1 = svaddlt_u16(src_0, src_20);
-
-    acc0_0 = svmla_n_u16_x(pg16all, acc0_0, acc_0_0, half_kernel_[0]);
-    acc0_1 = svmla_n_u16_x(pg16all, acc0_1, acc_0_1, half_kernel_[0]);
-
-    // Sum them up
-    svuint32_t acc_second_00 = svadd_u32_x(pg32all, acc3_00, acc2_00);
-    svuint32_t acc_second_10 = svadd_u32_x(pg32all, acc3_10, acc2_10);
-    svuint32_t acc_second_01 = svadd_u32_x(pg32all, acc3_01, acc2_01);
-    svuint32_t acc_second_11 = svadd_u32_x(pg32all, acc3_11, acc2_11);
-
-    svuint32_t acc_first_00 = svaddlb_u32(acc1_0, acc0_0);
-    svuint32_t acc_first_10 = svaddlt_u32(acc1_0, acc0_0);
-    svuint32_t acc_first_01 = svaddlb_u32(acc1_1, acc0_1);
-    svuint32_t acc_first_11 = svaddlt_u32(acc1_1, acc0_1);
-
-    svuint32_t acc_00 = svadd_u32_x(pg32all, acc_first_00, acc_second_00);
-    svuint32_t acc_10 = svadd_u32_x(pg32all, acc_first_10, acc_second_10);
-    svuint32_t acc_01 = svadd_u32_x(pg32all, acc_first_01, acc_second_01);
-    svuint32_t acc_11 = svadd_u32_x(pg32all, acc_first_11, acc_second_11);
-
-    svuint32x4_t interleaved = svcreate4(acc_00, acc_01, acc_10, acc_11);
-    svst4(pg, &dst[0], interleaved);
+    // Rounding before narrowing
+    acc_b = svqadd_n_u16(acc_b, 128);
+    acc_t = svqadd_n_u16(acc_t, 128);
+    // Keep only the highest 8 bits
+    svuint8_t result =
+        svtrn2_u8(svreinterpret_u8_u16(acc_b), svreinterpret_u8_u16(acc_t));
+    svst1(pg, &dst[0], result);
   }
 
-  void horizontal_vector_path(
-      svbool_t pg, svuint32_t src_0, svuint32_t src_1, svuint32_t src_2,
-      svuint32_t src_3, svuint32_t src_4, svuint32_t src_5, svuint32_t src_6,
-      svuint32_t src_7, svuint32_t src_8, svuint32_t src_9, svuint32_t src_10,
-      svuint32_t src_11, svuint32_t src_12, svuint32_t src_13,
-      svuint32_t src_14, svuint32_t src_15, svuint32_t src_16,
-      svuint32_t src_17, svuint32_t src_18, svuint32_t src_19,
-      svuint32_t src_20,
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svuint32_t acc = svmul_n_u32_x(pg, src_10, half_kernel_[10]);
-
-    svuint32_t acc_9_11 = svadd_u32_x(pg, src_9, src_11);
-    acc = svmla_n_u32_x(pg, acc, acc_9_11, half_kernel_[9]);
-
-    svuint32_t acc_8_12 = svadd_u32_x(pg, src_8, src_12);
-    acc = svmla_n_u32_x(pg, acc, acc_8_12, half_kernel_[8]);
-
-    svuint32_t acc_7_13 = svadd_u32_x(pg, src_7, src_13);
-    acc = svmla_n_u32_x(pg, acc, acc_7_13, half_kernel_[7]);
-
-    svuint32_t acc_6_14 = svadd_u32_x(pg, src_6, src_14);
-    acc = svmla_n_u32_x(pg, acc, acc_6_14, half_kernel_[6]);
-
-    svuint32_t acc_5_15 = svadd_u32_x(pg, src_5, src_15);
-    acc = svmla_n_u32_x(pg, acc, acc_5_15, half_kernel_[5]);
-
-    svuint32_t acc_4_16 = svadd_u32_x(pg, src_4, src_16);
-    acc = svmla_n_u32_x(pg, acc, acc_4_16, half_kernel_[4]);
-
-    svuint32_t acc_3_17 = svadd_u32_x(pg, src_3, src_17);
-    acc = svmla_n_u32_x(pg, acc, acc_3_17, half_kernel_[3]);
-
-    svuint32_t acc_2_18 = svadd_u32_x(pg, src_2, src_18);
-    acc = svmla_n_u32_x(pg, acc, acc_2_18, half_kernel_[2]);
-
-    svuint32_t acc_1_19 = svadd_u32_x(pg, src_1, src_19);
-    acc = svmla_n_u32_x(pg, acc, acc_1_19, half_kernel_[1]);
-
-    svuint32_t acc_0_20 = svadd_u32_x(pg, src_0, src_20);
-    acc = svmla_n_u32_x(pg, acc, acc_0_20, half_kernel_[0]);
-
-    acc = svrshr_n_u32_x(pg, acc, 16);
-    svst1b_u32(pg, &dst[0], acc);
-  }
-
-  void horizontal_scalar_path(const BufferType src[15], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
-    uint32_t acc = (src[0] + src[20]) * half_kernel_[0] +
-                   (src[1] + src[19]) * half_kernel_[1] +
-                   (src[2] + src[18]) * half_kernel_[2] +
-                   (src[3] + src[17]) * half_kernel_[3] +
-                   (src[4] + src[16]) * half_kernel_[4] +
-                   (src[5] + src[15]) * half_kernel_[5] +
-                   (src[6] + src[14]) * half_kernel_[6] +
-                   (src[7] + src[13]) * half_kernel_[7] +
-                   (src[8] + src[12]) * half_kernel_[8] +
-                   (src[9] + src[11]) * half_kernel_[9] +
-                   src[10] * half_kernel_[10];
-    dst[0] = static_cast<uint8_t>(rounding_shift_right(acc, 16));
-  }
-};  // end of class GaussianBlur<uint8_t, 21, false>
+  const std::array<uint16_t, kHalfKernelSize> half_kernel_;
+};  // end of class GaussianBlur<uint8_t, KernelSize, false>
 
 template <size_t KernelSize, bool IsBinomial, typename ScalarType>
 static kleidicv_error_t gaussian_blur_fixed_kernel_size(
@@ -1012,15 +337,35 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
   using GaussianBlurFilter = GaussianBlur<ScalarType, KernelSize, IsBinomial>;
 
-  GaussianBlurFilter blur{sigma};
-  SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
-
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     border_type, filter);
 
-  return KLEIDICV_OK;
+  if constexpr (IsBinomial) {
+    GaussianBlurFilter blur;
+    SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+    workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                       border_type, filter);
+
+    return KLEIDICV_OK;
+  } else {
+    constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
+    auto half_kernel = generate_gaussian_half_kernel<kHalfKernelSize>(sigma);
+    // If sigma is so small that the middle point gets all the weights, it's
+    // just a copy
+    if (half_kernel[kHalfKernelSize - 1] < 256) {
+      GaussianBlurFilter blur(half_kernel);
+      SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+      workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                         border_type, filter);
+    } else {
+      for (size_t row = y_begin; row < y_end; ++row) {
+        std::memcpy(static_cast<void *>(&dst_rows.at(row)[0]),
+                    static_cast<const void *>(&src_rows.at(row)[0]),
+                    rect.width() * sizeof(ScalarType) * dst_rows.channels());
+      }
+    }
+    return KLEIDICV_OK;
+  }
 }
 
 template <bool IsBinomial, typename ScalarType>
@@ -1043,7 +388,8 @@ static kleidicv_error_t gaussian_blur(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
           sigma, border_type, workspace);
     case 15:
-      return gaussian_blur_fixed_kernel_size<15, IsBinomial>(
+      // 15x15 does not have a binomial variant
+      return gaussian_blur_fixed_kernel_size<15, false>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
           sigma, border_type, workspace);
     case 21:

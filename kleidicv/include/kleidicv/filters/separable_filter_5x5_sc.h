@@ -104,8 +104,9 @@ class SeparableFilter<FilterType, 5UL> {
         svld1(pg, &src_rows.at(border_offsets.c3())[index]);
     SourceVectorType src_4 =
         svld1(pg, &src_rows.at(border_offsets.c4())[index]);
-    filter_.vertical_vector_path(pg, src_0, src_1, src_2, src_3, src_4,
-                                 &dst_rows[index]);
+    std::reference_wrapper<SourceVectorType> sources[5] = {src_0, src_1, src_2,
+                                                           src_3, src_4};
+    filter_.vertical_vector_path(pg, sources, &dst_rows[index]);
   }
 
   void horizontal_vector_path_2x(
@@ -128,12 +129,13 @@ class SeparableFilter<FilterType, 5UL> {
     BufferVectorType src_1_3 = svld1_vnum(pg, &src_3[0], 1);
     BufferVectorType src_0_4 = svld1(pg, &src_4[0]);
     BufferVectorType src_1_4 = svld1_vnum(pg, &src_4[0], 1);
-
-    filter_.horizontal_vector_path(pg, src_0_0, src_0_1, src_0_2, src_0_3,
-                                   src_0_4, &dst_rows[index]);
+    std::reference_wrapper<BufferVectorType> sources_0[5] = {
+        src_0_0, src_0_1, src_0_2, src_0_3, src_0_4};
+    filter_.horizontal_vector_path(pg, sources_0, &dst_rows[index]);
+    std::reference_wrapper<BufferVectorType> sources_1[5] = {
+        src_1_0, src_1_1, src_1_2, src_1_3, src_1_4};
     filter_.horizontal_vector_path(
-        pg, src_1_0, src_1_1, src_1_2, src_1_3, src_1_4,
-        &dst_rows[index + BufferVecTraits::num_lanes()]);
+        pg, sources_1, &dst_rows[index + BufferVecTraits::num_lanes()]);
   }
 
   void horizontal_vector_path(svbool_t pg, Rows<const BufferType> src_rows,
@@ -150,8 +152,9 @@ class SeparableFilter<FilterType, 5UL> {
         svld1(pg, &src_rows.at(0, border_offsets.c3())[index]);
     BufferVectorType src_4 =
         svld1(pg, &src_rows.at(0, border_offsets.c4())[index]);
-    filter_.horizontal_vector_path(pg, src_0, src_1, src_2, src_3, src_4,
-                                   &dst_rows[index]);
+    std::reference_wrapper<BufferVectorType> sources[5] = {src_0, src_1, src_2,
+                                                           src_3, src_4};
+    filter_.horizontal_vector_path(pg, sources, &dst_rows[index]);
   }
 
   void process_horizontal_border(

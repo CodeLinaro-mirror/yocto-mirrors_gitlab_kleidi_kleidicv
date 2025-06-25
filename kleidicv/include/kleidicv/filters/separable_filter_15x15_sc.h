@@ -124,9 +124,11 @@ class SeparableFilter<FilterType, 15UL> {
         svld1(pg, &src_rows.at(border_offsets.c13())[index]);
     SourceVectorType src_14 =
         svld1(pg, &src_rows.at(border_offsets.c14())[index]);
-    filter_.vertical_vector_path(pg, src_0, src_1, src_2, src_3, src_4, src_5,
-                                 src_6, src_7, src_8, src_9, src_10, src_11,
-                                 src_12, src_13, src_14, &dst_rows[index]);
+
+    std::reference_wrapper<SourceVectorType> sources[15] = {
+        src_0, src_1, src_2,  src_3,  src_4,  src_5,  src_6, src_7,
+        src_8, src_9, src_10, src_11, src_12, src_13, src_14};
+    filter_.vertical_vector_path(pg, sources, &dst_rows[index]);
   }
 
   void horizontal_vector_path_2x(
@@ -180,14 +182,17 @@ class SeparableFilter<FilterType, 15UL> {
     BufferVectorType src_0_14 = svld1(pg, &src_14[0]);
     BufferVectorType src_1_14 = svld1_vnum(pg, &src_14[0], 1);
 
-    filter_.horizontal_vector_path(pg, src_0_0, src_0_1, src_0_2, src_0_3,
-                                   src_0_4, src_0_5, src_0_6, src_0_7, src_0_8,
-                                   src_0_9, src_0_10, src_0_11, src_0_12,
-                                   src_0_13, src_0_14, &dst_rows[index]);
+    std::reference_wrapper<BufferVectorType> sources_0[15] = {
+        src_0_0,  src_0_1,  src_0_2,  src_0_3,  src_0_4,
+        src_0_5,  src_0_6,  src_0_7,  src_0_8,  src_0_9,
+        src_0_10, src_0_11, src_0_12, src_0_13, src_0_14};
+    filter_.horizontal_vector_path(pg, sources_0, &dst_rows[index]);
+    std::reference_wrapper<BufferVectorType> sources_1[15] = {
+        src_1_0,  src_1_1,  src_1_2,  src_1_3,  src_1_4,
+        src_1_5,  src_1_6,  src_1_7,  src_1_8,  src_1_9,
+        src_1_10, src_1_11, src_1_12, src_1_13, src_1_14};
     filter_.horizontal_vector_path(
-        pg, src_1_0, src_1_1, src_1_2, src_1_3, src_1_4, src_1_5, src_1_6,
-        src_1_7, src_1_8, src_1_9, src_1_10, src_1_11, src_1_12, src_1_13,
-        src_1_14, &dst_rows[index + BufferVecTraits::num_lanes()]);
+        pg, sources_1, &dst_rows[index + BufferVecTraits::num_lanes()]);
   }
 
   void horizontal_vector_path(svbool_t pg, Rows<const BufferType> src_rows,
@@ -224,9 +229,10 @@ class SeparableFilter<FilterType, 15UL> {
         svld1(pg, &src_rows.at(0, border_offsets.c13())[index]);
     BufferVectorType src_14 =
         svld1(pg, &src_rows.at(0, border_offsets.c14())[index]);
-    filter_.horizontal_vector_path(pg, src_0, src_1, src_2, src_3, src_4, src_5,
-                                   src_6, src_7, src_8, src_9, src_10, src_11,
-                                   src_12, src_13, src_14, &dst_rows[index]);
+    std::reference_wrapper<BufferVectorType> sources[15] = {
+        src_0, src_1, src_2,  src_3,  src_4,  src_5,  src_6, src_7,
+        src_8, src_9, src_10, src_11, src_12, src_13, src_14};
+    filter_.horizontal_vector_path(pg, sources, &dst_rows[index]);
   }
 
   void process_horizontal_border(

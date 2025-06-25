@@ -48,34 +48,33 @@ class SeparableFilter2D<uint8_t, 5> {
         kernel_y_4_u8_(kernel_y_4_u8) {}
 
   void vertical_vector_path(
-      svbool_t pg, SourceVectorType src_0, SourceVectorType src_1,
-      SourceVectorType src_2, SourceVectorType src_3, SourceVectorType src_4,
+      svbool_t pg, std::reference_wrapper<SourceVectorType> src[5],
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    BufferVectorType acc_b = svmullb_u16(src_0, kernel_y_0_u8_);
-    BufferVectorType acc_t = svmullt_u16(src_0, kernel_y_0_u8_);
+    BufferVectorType acc_b = svmullb_u16(src[0], kernel_y_0_u8_);
+    BufferVectorType acc_t = svmullt_u16(src[0], kernel_y_0_u8_);
 
     // 1
-    BufferVectorType vec_b = svmullb_u16(src_1, kernel_y_1_u8_);
-    BufferVectorType vec_t = svmullt_u16(src_1, kernel_y_1_u8_);
+    BufferVectorType vec_b = svmullb_u16(src[1], kernel_y_1_u8_);
+    BufferVectorType vec_t = svmullt_u16(src[1], kernel_y_1_u8_);
     acc_b = svqadd_u16_x(pg, acc_b, vec_b);
     acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
     // 2
-    vec_b = svmullb_u16(src_2, kernel_y_2_u8_);
-    vec_t = svmullt_u16(src_2, kernel_y_2_u8_);
+    vec_b = svmullb_u16(src[2], kernel_y_2_u8_);
+    vec_t = svmullt_u16(src[2], kernel_y_2_u8_);
     acc_b = svqadd_u16_x(pg, acc_b, vec_b);
     acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
     // 3
-    vec_b = svmullb_u16(src_3, kernel_y_3_u8_);
-    vec_t = svmullt_u16(src_3, kernel_y_3_u8_);
+    vec_b = svmullb_u16(src[3], kernel_y_3_u8_);
+    vec_t = svmullt_u16(src[3], kernel_y_3_u8_);
     acc_b = svqadd_u16_x(pg, acc_b, vec_b);
     acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
     // 4
-    vec_b = svmullb_u16(src_4, kernel_y_4_u8_);
-    vec_t = svmullt_u16(src_4, kernel_y_4_u8_);
+    vec_b = svmullb_u16(src[4], kernel_y_4_u8_);
+    vec_t = svmullt_u16(src[4], kernel_y_4_u8_);
     acc_b = svqadd_u16_x(pg, acc_b, vec_b);
     acc_t = svqadd_u16_x(pg, acc_t, vec_t);
 
@@ -84,28 +83,27 @@ class SeparableFilter2D<uint8_t, 5> {
   }
 
   void horizontal_vector_path(
-      svbool_t pg, BufferVectorType src_0, BufferVectorType src_1,
-      BufferVectorType src_2, BufferVectorType src_3, BufferVectorType src_4,
+      svbool_t pg, std::reference_wrapper<BufferVectorType> src[5],
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    svuint32_t acc_b = svmullb_u32(src_0, kernel_x_0_u16_);
-    svuint32_t acc_t = svmullt_u32(src_0, kernel_x_0_u16_);
+    svuint32_t acc_b = svmullb_u32(src[0], kernel_x_0_u16_);
+    svuint32_t acc_t = svmullt_u32(src[0], kernel_x_0_u16_);
 
     // 1
-    acc_b = svmlalb_u32(acc_b, src_1, kernel_x_1_u16_);
-    acc_t = svmlalt_u32(acc_t, src_1, kernel_x_1_u16_);
+    acc_b = svmlalb_u32(acc_b, src[1], kernel_x_1_u16_);
+    acc_t = svmlalt_u32(acc_t, src[1], kernel_x_1_u16_);
 
     // 2
-    acc_b = svmlalb_u32(acc_b, src_2, kernel_x_2_u16_);
-    acc_t = svmlalt_u32(acc_t, src_2, kernel_x_2_u16_);
+    acc_b = svmlalb_u32(acc_b, src[2], kernel_x_2_u16_);
+    acc_t = svmlalt_u32(acc_t, src[2], kernel_x_2_u16_);
 
     // 3
-    acc_b = svmlalb_u32(acc_b, src_3, kernel_x_3_u16_);
-    acc_t = svmlalt_u32(acc_t, src_3, kernel_x_3_u16_);
+    acc_b = svmlalb_u32(acc_b, src[3], kernel_x_3_u16_);
+    acc_t = svmlalt_u32(acc_t, src[3], kernel_x_3_u16_);
 
     // 4
-    acc_b = svmlalb_u32(acc_b, src_4, kernel_x_4_u16_);
-    acc_t = svmlalt_u32(acc_t, src_4, kernel_x_4_u16_);
+    acc_b = svmlalb_u32(acc_b, src[4], kernel_x_4_u16_);
+    acc_t = svmlalt_u32(acc_t, src[4], kernel_x_4_u16_);
 
     svuint16_t acc_u16_b = svqxtnb_u32(acc_b);
     svuint16_t acc_u16 = svqxtnt_u32(acc_u16_b, acc_t);
@@ -188,34 +186,33 @@ class SeparableFilter2D<uint16_t, 5> {
         kernel_y_4_u16_(kernel_y_4_u16) {}
 
   void vertical_vector_path(
-      svbool_t pg, SourceVectorType src_0, SourceVectorType src_1,
-      SourceVectorType src_2, SourceVectorType src_3, SourceVectorType src_4,
+      svbool_t pg, std::reference_wrapper<SourceVectorType> src[5],
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    BufferVectorType acc_b = svmullb_u32(src_0, kernel_y_0_u16_);
-    BufferVectorType acc_t = svmullt_u32(src_0, kernel_y_0_u16_);
+    BufferVectorType acc_b = svmullb_u32(src[0], kernel_y_0_u16_);
+    BufferVectorType acc_t = svmullt_u32(src[0], kernel_y_0_u16_);
 
     // 1
-    BufferVectorType vec_b = svmullb_u32(src_1, kernel_y_1_u16_);
-    BufferVectorType vec_t = svmullt_u32(src_1, kernel_y_1_u16_);
+    BufferVectorType vec_b = svmullb_u32(src[1], kernel_y_1_u16_);
+    BufferVectorType vec_t = svmullt_u32(src[1], kernel_y_1_u16_);
     acc_b = svqadd_u32_x(pg, acc_b, vec_b);
     acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
     // 2
-    vec_b = svmullb_u32(src_2, kernel_y_2_u16_);
-    vec_t = svmullt_u32(src_2, kernel_y_2_u16_);
+    vec_b = svmullb_u32(src[2], kernel_y_2_u16_);
+    vec_t = svmullt_u32(src[2], kernel_y_2_u16_);
     acc_b = svqadd_u32_x(pg, acc_b, vec_b);
     acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
     // 3
-    vec_b = svmullb_u32(src_3, kernel_y_3_u16_);
-    vec_t = svmullt_u32(src_3, kernel_y_3_u16_);
+    vec_b = svmullb_u32(src[3], kernel_y_3_u16_);
+    vec_t = svmullt_u32(src[3], kernel_y_3_u16_);
     acc_b = svqadd_u32_x(pg, acc_b, vec_b);
     acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
     // 4
-    vec_b = svmullb_u32(src_4, kernel_y_4_u16_);
-    vec_t = svmullt_u32(src_4, kernel_y_4_u16_);
+    vec_b = svmullb_u32(src[4], kernel_y_4_u16_);
+    vec_t = svmullt_u32(src[4], kernel_y_4_u16_);
     acc_b = svqadd_u32_x(pg, acc_b, vec_b);
     acc_t = svqadd_u32_x(pg, acc_t, vec_t);
 
@@ -224,28 +221,27 @@ class SeparableFilter2D<uint16_t, 5> {
   }
 
   void horizontal_vector_path(
-      svbool_t pg, BufferVectorType src_0, BufferVectorType src_1,
-      BufferVectorType src_2, BufferVectorType src_3, BufferVectorType src_4,
+      svbool_t pg, std::reference_wrapper<BufferVectorType> src[5],
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    svuint64_t acc_b = svmullb_u64(src_0, kernel_x_0_u32_);
-    svuint64_t acc_t = svmullt_u64(src_0, kernel_x_0_u32_);
+    svuint64_t acc_b = svmullb_u64(src[0], kernel_x_0_u32_);
+    svuint64_t acc_t = svmullt_u64(src[0], kernel_x_0_u32_);
 
     // 1
-    acc_b = svmlalb_u64(acc_b, src_1, kernel_x_1_u32_);
-    acc_t = svmlalt_u64(acc_t, src_1, kernel_x_1_u32_);
+    acc_b = svmlalb_u64(acc_b, src[1], kernel_x_1_u32_);
+    acc_t = svmlalt_u64(acc_t, src[1], kernel_x_1_u32_);
 
     // 2
-    acc_b = svmlalb_u64(acc_b, src_2, kernel_x_2_u32_);
-    acc_t = svmlalt_u64(acc_t, src_2, kernel_x_2_u32_);
+    acc_b = svmlalb_u64(acc_b, src[2], kernel_x_2_u32_);
+    acc_t = svmlalt_u64(acc_t, src[2], kernel_x_2_u32_);
 
     // 3
-    acc_b = svmlalb_u64(acc_b, src_3, kernel_x_3_u32_);
-    acc_t = svmlalt_u64(acc_t, src_3, kernel_x_3_u32_);
+    acc_b = svmlalb_u64(acc_b, src[3], kernel_x_3_u32_);
+    acc_t = svmlalt_u64(acc_t, src[3], kernel_x_3_u32_);
 
     // 4
-    acc_b = svmlalb_u64(acc_b, src_4, kernel_x_4_u32_);
-    acc_t = svmlalt_u64(acc_t, src_4, kernel_x_4_u32_);
+    acc_b = svmlalb_u64(acc_b, src[4], kernel_x_4_u32_);
+    acc_t = svmlalt_u64(acc_t, src[4], kernel_x_4_u32_);
 
     svuint32_t acc_u32_b = svqxtnb_u64(acc_b);
     svuint32_t acc_u32 = svqxtnt_u64(acc_u32_b, acc_t);
@@ -328,34 +324,33 @@ class SeparableFilter2D<int16_t, 5> {
         kernel_y_4_s16_(kernel_y_4_s16) {}
 
   void vertical_vector_path(
-      svbool_t pg, SourceVectorType src_0, SourceVectorType src_1,
-      SourceVectorType src_2, SourceVectorType src_3, SourceVectorType src_4,
+      svbool_t pg, std::reference_wrapper<SourceVectorType> src[5],
       BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    BufferVectorType acc_b = svmullb_s32(src_0, kernel_y_0_s16_);
-    BufferVectorType acc_t = svmullt_s32(src_0, kernel_y_0_s16_);
+    BufferVectorType acc_b = svmullb_s32(src[0], kernel_y_0_s16_);
+    BufferVectorType acc_t = svmullt_s32(src[0], kernel_y_0_s16_);
 
     // 1
-    BufferVectorType vec_b = svmullb_s32(src_1, kernel_y_1_s16_);
-    BufferVectorType vec_t = svmullt_s32(src_1, kernel_y_1_s16_);
+    BufferVectorType vec_b = svmullb_s32(src[1], kernel_y_1_s16_);
+    BufferVectorType vec_t = svmullt_s32(src[1], kernel_y_1_s16_);
     acc_b = svqadd_s32_x(pg, acc_b, vec_b);
     acc_t = svqadd_s32_x(pg, acc_t, vec_t);
 
     // 2
-    vec_b = svmullb_s32(src_2, kernel_y_2_s16_);
-    vec_t = svmullt_s32(src_2, kernel_y_2_s16_);
+    vec_b = svmullb_s32(src[2], kernel_y_2_s16_);
+    vec_t = svmullt_s32(src[2], kernel_y_2_s16_);
     acc_b = svqadd_s32_x(pg, acc_b, vec_b);
     acc_t = svqadd_s32_x(pg, acc_t, vec_t);
 
     // 3
-    vec_b = svmullb_s32(src_3, kernel_y_3_s16_);
-    vec_t = svmullt_s32(src_3, kernel_y_3_s16_);
+    vec_b = svmullb_s32(src[3], kernel_y_3_s16_);
+    vec_t = svmullt_s32(src[3], kernel_y_3_s16_);
     acc_b = svqadd_s32_x(pg, acc_b, vec_b);
     acc_t = svqadd_s32_x(pg, acc_t, vec_t);
 
     // 4
-    vec_b = svmullb_s32(src_4, kernel_y_4_s16_);
-    vec_t = svmullt_s32(src_4, kernel_y_4_s16_);
+    vec_b = svmullb_s32(src[4], kernel_y_4_s16_);
+    vec_t = svmullt_s32(src[4], kernel_y_4_s16_);
     acc_b = svqadd_s32_x(pg, acc_b, vec_b);
     acc_t = svqadd_s32_x(pg, acc_t, vec_t);
 
@@ -364,28 +359,27 @@ class SeparableFilter2D<int16_t, 5> {
   }
 
   void horizontal_vector_path(
-      svbool_t pg, BufferVectorType src_0, BufferVectorType src_1,
-      BufferVectorType src_2, BufferVectorType src_3, BufferVectorType src_4,
+      svbool_t pg, std::reference_wrapper<BufferVectorType> src[5],
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
     // 0
-    svint64_t acc_b = svmullb_s64(src_0, kernel_x_0_s32_);
-    svint64_t acc_t = svmullt_s64(src_0, kernel_x_0_s32_);
+    svint64_t acc_b = svmullb_s64(src[0], kernel_x_0_s32_);
+    svint64_t acc_t = svmullt_s64(src[0], kernel_x_0_s32_);
 
     // 1
-    acc_b = svmlalb_s64(acc_b, src_1, kernel_x_1_s32_);
-    acc_t = svmlalt_s64(acc_t, src_1, kernel_x_1_s32_);
+    acc_b = svmlalb_s64(acc_b, src[1], kernel_x_1_s32_);
+    acc_t = svmlalt_s64(acc_t, src[1], kernel_x_1_s32_);
 
     // 2
-    acc_b = svmlalb_s64(acc_b, src_2, kernel_x_2_s32_);
-    acc_t = svmlalt_s64(acc_t, src_2, kernel_x_2_s32_);
+    acc_b = svmlalb_s64(acc_b, src[2], kernel_x_2_s32_);
+    acc_t = svmlalt_s64(acc_t, src[2], kernel_x_2_s32_);
 
     // 3
-    acc_b = svmlalb_s64(acc_b, src_3, kernel_x_3_s32_);
-    acc_t = svmlalt_s64(acc_t, src_3, kernel_x_3_s32_);
+    acc_b = svmlalb_s64(acc_b, src[3], kernel_x_3_s32_);
+    acc_t = svmlalt_s64(acc_t, src[3], kernel_x_3_s32_);
 
     // 4
-    acc_b = svmlalb_s64(acc_b, src_4, kernel_x_4_s32_);
-    acc_t = svmlalt_s64(acc_t, src_4, kernel_x_4_s32_);
+    acc_b = svmlalb_s64(acc_b, src[4], kernel_x_4_s32_);
+    acc_t = svmlalt_s64(acc_t, src[4], kernel_x_4_s32_);
 
     svint32_t acc_s32_b = svqxtnb_s64(acc_b);
     svint32_t acc_s32 = svqxtnt_s64(acc_s32_b, acc_t);

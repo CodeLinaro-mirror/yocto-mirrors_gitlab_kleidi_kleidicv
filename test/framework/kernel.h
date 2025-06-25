@@ -74,7 +74,8 @@ class KernelTest {
   using IntermediateType = typename KernelTestParams::IntermediateType;
   using OutputType = typename KernelTestParams::OutputType;
 
-  KernelTest() : debug_{false} {}
+  explicit KernelTest(size_t tolerance = 0)
+      : debug_{false}, tolerance_{tolerance} {}
 
   // Enables debug mode.
   KernelTest<KernelTestParams>& with_debug() {
@@ -277,7 +278,7 @@ class KernelTest {
     EXPECT_EQ(KLEIDICV_OK, err);
 
     // Check that the actual result matches the expectation.
-    EXPECT_EQ_ARRAY2D(expected_, actual_);
+    EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(tolerance_, expected_, actual_);
   }
 
   // Input operand for the operation.
@@ -290,6 +291,8 @@ class KernelTest {
   Array2D<OutputType> actual_;
   // Enables debug mode.
   bool debug_;
+  // Error tolerance, absolute value
+  size_t tolerance_;
 };  // end of class KernelTest<KernelTestParams>
 
 }  // namespace test

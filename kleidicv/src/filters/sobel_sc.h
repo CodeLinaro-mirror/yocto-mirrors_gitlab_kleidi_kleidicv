@@ -34,13 +34,13 @@ class HorizontalSobel3x3<uint8_t> {
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t src_1,
-                            svuint8_t src_2, BufferType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_u16_b = svaddlb(src_0, src_2);
-    svuint16_t acc_u16_t = svaddlt(src_0, src_2);
-    acc_u16_b = svmlalb(acc_u16_b, src_1, svdup_n_u8(2));
-    acc_u16_t = svmlalt(acc_u16_t, src_1, svdup_n_u8(2));
+  void vertical_vector_path(
+      svbool_t pg, std::reference_wrapper<svuint8_t> src[3],
+      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_u16_b = svaddlb(src[0], src[2]);
+    svuint16_t acc_u16_t = svaddlt(src[0], src[2]);
+    acc_u16_b = svmlalb(acc_u16_b, src[1], svdup_n_u8(2));
+    acc_u16_t = svmlalt(acc_u16_t, src[1], svdup_n_u8(2));
 
     svint16x2_t interleaved =
         svcreate2(svreinterpret_s16(acc_u16_b), svreinterpret_s16(acc_u16_t));
@@ -51,9 +51,9 @@ class HorizontalSobel3x3<uint8_t> {
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
   void horizontal_vector_path(
-      svbool_t pg, svint16_t src_0, svint16_t /* src_1 */, svint16_t src_2,
+      svbool_t pg, std::reference_wrapper<svint16_t> src[3],
       DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
-    svst1(pg, &dst[0], svsub_x(pg, src_2, src_0));
+    svst1(pg, &dst[0], svsub_x(pg, src[2], src[0]));
   }
 
   // Applies horizontal filtering vector using scalar operations.
@@ -87,11 +87,11 @@ class VerticalSobel3x3<uint8_t> {
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void vertical_vector_path(svbool_t pg, svuint8_t src_0, svuint8_t /* src_1 */,
-                            svuint8_t src_2, BufferType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    svuint16_t acc_u16_b = svsublb(src_2, src_0);
-    svuint16_t acc_u16_t = svsublt(src_2, src_0);
+  void vertical_vector_path(
+      svbool_t pg, std::reference_wrapper<svuint8_t> src[3],
+      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svuint16_t acc_u16_b = svsublb(src[2], src[0]);
+    svuint16_t acc_u16_t = svsublt(src[2], src[0]);
 
     svint16x2_t interleaved =
         svcreate2(svreinterpret_s16(acc_u16_b), svreinterpret_s16(acc_u16_t));
@@ -101,11 +101,11 @@ class VerticalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_vector_path(svbool_t pg, svint16_t src_0, svint16_t src_1,
-                              svint16_t src_2, DestinationType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
-    svint16_t acc = svadd_x(pg, src_0, src_2);
-    acc = svmad_s16_x(pg, src_1, svdup_n_s16(2), acc);
+  void horizontal_vector_path(
+      svbool_t pg, std::reference_wrapper<svint16_t> src[3],
+      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+    svint16_t acc = svadd_x(pg, src[0], src[2]);
+    acc = svmad_s16_x(pg, src[1], svdup_n_s16(2), acc);
     svst1(pg, &dst[0], acc);
   }
 

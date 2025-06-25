@@ -39,6 +39,8 @@ static constexpr std::array<kleidicv_border_type_t, 4> kAllBorders = {
     KLEIDICV_BORDER_TYPE_REVERSE,
 };
 
+static constexpr size_t kToleranceOne = 1;
+
 // Test for GaussianBlur operator.
 template <class KernelTestParams,
           typename ArrayLayoutsGetterType = decltype(test::small_array_layouts),
@@ -50,17 +52,25 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
   using typename test::KernelTest<KernelTestParams>::OutputType;
   using ArrayContainerType =
       std::invoke_result_t<ArrayLayoutsGetterType, size_t, size_t>;
+  static constexpr size_t kKernelSize = KernelTestParams::kKernelSize;
 
  public:
   explicit GaussianBlurTest(
       KernelTestParams,
       ArrayLayoutsGetterType array_layouts_getter = test::small_array_layouts,
-      BorderContainerType border_types = kAllBorders)
-      : array_layouts_{array_layouts_getter(KernelTestParams::kKernelSize - 1,
+      BorderContainerType border_types = kAllBorders, size_t tolerance = 0)
+      : test::KernelTest<KernelTestParams>{tolerance},
+        array_layouts_{array_layouts_getter(KernelTestParams::kKernelSize - 1,
                                             KernelTestParams::kKernelSize - 1)},
         border_types_{border_types},
         array_layout_generator_{array_layouts_},
-        border_type_generator_{border_types_} {}
+        border_type_generator_{border_types_},
+        sigma_{0.0} {}
+
+  GaussianBlurTest &with_sigma(float sigma) {
+    sigma_ = sigma;
+    return *this;
+  }
 
   void test(const test::Array2D<IntermediateType> &mask) {
     test::Kernel kernel{mask};
@@ -70,6 +80,27 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
     test::PseudoRandomNumberGenerator<InputType> element_generator;
     Base::test(kernel, array_layout_generator_, border_type_generator_,
                tested_border_values, element_generator);
+  }
+
+  void test_with_generated_mask() {
+    test::Array2D<IntermediateType> mask{kKernelSize, kKernelSize};
+    calculate_mask(mask);
+    test(mask);
+  }
+
+  void calculate_mask(test::Array2D<IntermediateType> &mask) {
+    constexpr size_t kHalfKernelSize =
+        kleidicv::get_half_kernel_size(kKernelSize);
+    auto half_kernel =
+        kleidicv::generate_gaussian_half_kernel<kHalfKernelSize>(sigma_);
+    for (size_t row = 0; row < kKernelSize; ++row) {
+      for (size_t column = 0; column < kKernelSize; ++column) {
+        *mask.at(row, column) =
+            half_kernel[row >= kHalfKernelSize ? kKernelSize - 1 - row : row] *
+            half_kernel[column >= kHalfKernelSize ? kKernelSize - 1 - column
+                                                  : column];
+      }
+    }
   }
 
  private:
@@ -89,8 +120,8 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
     ret = gaussian_blur<InputType>()(
         input->data(), input->stride(), output->data(), output->stride(),
         input->width() / input->channels(), input->height(), input->channels(),
-        KernelTestParams::kKernelSize, KernelTestParams::kKernelSize, 0.0, 0.0,
-        border_type, context);
+        KernelTestParams::kKernelSize, KernelTestParams::kKernelSize, sigma_,
+        sigma_, border_type, context);
     auto releaseRet = kleidicv_filter_context_release(context);
     if (releaseRet != KLEIDICV_OK) {
       return releaseRet;
@@ -102,27 +133,25 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
   // Apply rounding to nearest integer division.
   IntermediateType scale_result(const test::Kernel<IntermediateType> &,
                                 IntermediateType result) override {
-    if constexpr (KernelTestParams::kKernelSize == 3) {
-      return (result + 8) / 16;
+    if (sigma_ == 0.0) {
+      if constexpr (KernelTestParams::kKernelSize == 3) {
+        return (result + 8) / 16;
+      }
+      if constexpr (KernelTestParams::kKernelSize == 5) {
+        return (result + 128) / 256;
+      }
+      if constexpr (KernelTestParams::kKernelSize == 7) {
+        return (result + 2048) / 4096;
+      }
     }
-    if constexpr (KernelTestParams::kKernelSize == 5) {
-      return (result + 128) / 256;
-    }
-    if constexpr (KernelTestParams::kKernelSize == 7) {
-      return (result + 2048) / 4096;
-    }
-    if constexpr (KernelTestParams::kKernelSize == 15) {
-      return (result + 524288) / 1048576;
-    }
-    if constexpr (KernelTestParams::kKernelSize == 21) {
-      return (result + 32768) / 65536;
-    }
+    return (result + 32768) / 65536;
   }
 
   const ArrayContainerType array_layouts_;
   const BorderContainerType border_types_;
   test::SequenceGenerator<ArrayContainerType> array_layout_generator_;
   test::SequenceGenerator<BorderContainerType> border_type_generator_;
+  float sigma_;
 };  // end of class GaussianBlurTest<KernelTestParams, ArrayLayoutsGetterType,
     // BorderContainerType>
 
@@ -193,296 +222,105 @@ TYPED_TEST(GaussianBlur, 7x7) {
   GaussianBlurTest{KernelTestParams{}}.test(mask);
 }
 
-// Tests gaussian_blur_15x15_<input_type> API.
-TYPED_TEST(GaussianBlur, 15x15) {
-  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 15>;
-  // 15x15 GaussianBlur operator.
-  test::Array2D<typename KernelTestParams::IntermediateType> mask{15, 15};
-  // clang-format off
-  mask.set(0, 0,  {  16,   44,  100,  192,   324,   472,   584,   632,   584,   472,   324,  192,  100,   44,  16 });
-  mask.set(1, 0,  {  44,  121,  275,  528,   891,  1298,  1606,  1738,  1606,  1298,   891,  528,  275,  121,  44 });
-  mask.set(2, 0,  { 100,  275,  625, 1200,  2025,  2950,  3650,  3950,  3650,  2950,  2025, 1200,  625,  275, 100 });
-  mask.set(3, 0,  { 192,  528, 1200, 2304,  3888,  5664,  7008,  7584,  7008,  5664,  3888, 2304, 1200,  528, 192 });
-  mask.set(4, 0,  { 324,  891, 2025, 3888,  6561,  9558, 11826, 12798, 11826,  9558,  6561, 3888, 2025,  891, 324 });
-  mask.set(5, 0,  { 472, 1298, 2950, 5664,  9558, 13924, 17228, 18644, 17228, 13924,  9558, 5664, 2950, 1298, 472 });
-  mask.set(6, 0,  { 584, 1606, 3650, 7008, 11826, 17228, 21316, 23068, 21316, 17228, 11826, 7008, 3650, 1606, 584 });
-  mask.set(7, 0,  { 632, 1738, 3950, 7584, 12798, 18644, 23068, 24964, 23068, 18644, 12798, 7584, 3950, 1738, 632 });
-  mask.set(8, 0,  { 584, 1606, 3650, 7008, 11826, 17228, 21316, 23068, 21316, 17228, 11826, 7008, 3650, 1606, 584 });
-  mask.set(9, 0,  { 472, 1298, 2950, 5664,  9558, 13924, 17228, 18644, 17228, 13924,  9558, 5664, 2950, 1298, 472 });
-  mask.set(10, 0, { 324,  891, 2025, 3888,  6561,  9558, 11826, 12798, 11826,  9558,  6561, 3888, 2025,  891, 324 });
-  mask.set(11, 0, { 192,  528, 1200, 2304,  3888,  5664,  7008,  7584,  7008,  5664,  3888, 2304, 1200,  528, 192 });
-  mask.set(12, 0, { 100,  275,  625, 1200,  2025,  2950,  3650,  3950,  3650,  2950,  2025, 1200,  625,  275, 100 });
-  mask.set(13, 0, {  44,  121,  275,  528,   891,  1298,  1606,  1738,  1606,  1298,   891,  528,  275,  121,  44 });
-  mask.set(14, 0, {  16,   44,  100,  192,   324,   472,   584,   632,   584,   472,   324,  192,  100,   44,  16 });
-  // clang-format on
-  GaussianBlurTest{KernelTestParams{}}.test(mask);
-}
-
-// Tests gaussian_blur_21x21_<input_type> API.
-TYPED_TEST(GaussianBlur, 21x21) {
-  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 21>;
-  test::Array2D<typename KernelTestParams::IntermediateType> mask{21, 21};
-  // clang-format off
-  mask.set(0, 0,  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
-  mask.set(1, 0,  {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
-  mask.set(2, 0,  {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
-  mask.set(3, 0,  {0, 8, 8, 16, 24, 44, 60, 80, 100, 112, 120, 112, 100, 80, 60, 44, 24, 16, 8, 8, 0});
-  mask.set(4, 0,  {0, 12, 12, 24, 36, 66, 90, 120, 150, 168, 180, 168, 150, 120, 90, 66, 36, 24, 12, 12, 0});
-  mask.set(5, 0,  {0, 22, 22, 44, 66, 121, 165, 220, 275, 308, 330, 308, 275, 220, 165, 121, 66, 44, 22, 22, 0});
-  mask.set(6, 0,  {0, 30, 30, 60, 90, 165, 225, 300, 375, 420, 450, 420, 375, 300, 225, 165, 90, 60, 30, 30, 0});
-  mask.set(7, 0,  {0, 40, 40, 80, 120, 220, 300, 400, 500, 560, 600, 560, 500, 400, 300, 220, 120, 80, 40, 40, 0});
-  mask.set(8, 0,  {0, 50, 50, 100, 150, 275, 375, 500, 625, 700, 750, 700, 625, 500, 375, 275, 150, 100, 50, 50, 0});
-  mask.set(9, 0,  {0, 56, 56, 112, 168, 308, 420, 560, 700, 784, 840, 784, 700, 560, 420, 308, 168, 112, 56, 56, 0});
-  mask.set(10, 0, {0, 60, 60, 120, 180, 330, 450, 600, 750, 840, 900, 840, 750, 600, 450, 330, 180, 120, 60, 60, 0});
-  mask.set(11, 0, {0, 56, 56, 112, 168, 308, 420, 560, 700, 784, 840, 784, 700, 560, 420, 308, 168, 112, 56, 56, 0});
-  mask.set(12, 0, {0, 50, 50, 100, 150, 275, 375, 500, 625, 700, 750, 700, 625, 500, 375, 275, 150, 100, 50, 50, 0});
-  mask.set(13, 0, {0, 40, 40, 80, 120, 220, 300, 400, 500, 560, 600, 560, 500, 400, 300, 220, 120, 80, 40, 40, 0});
-  mask.set(14, 0, {0, 30, 30, 60, 90, 165, 225, 300, 375, 420, 450, 420, 375, 300, 225, 165, 90, 60, 30, 30, 0});
-  mask.set(15, 0, {0, 22, 22, 44, 66, 121, 165, 220, 275, 308, 330, 308, 275, 220, 165, 121, 66, 44, 22, 22, 0});
-  mask.set(16, 0, {0, 12, 12, 24, 36, 66, 90, 120, 150, 168, 180, 168, 150, 120, 90, 66, 36, 24, 12, 12, 0});
-  mask.set(17, 0, {0, 8, 8, 16, 24, 44, 60, 80, 100, 112, 120, 112, 100, 80, 60, 44, 24, 16, 8, 8, 0});
-  mask.set(18, 0, {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
-  mask.set(19, 0, {0, 4, 4, 8, 12, 22, 30, 40, 50, 56, 60, 56, 50, 40, 30, 22, 12, 8, 4, 4, 0});
-  mask.set(20, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
-
-  // clang-format on
-  auto array_layouts = [](size_t w, size_t h) {
-    size_t vl = test::Options::vector_length();
-    size_t margin = w / 2;
-    // two borders + one for the tail, so the NEON scalar path activates
-    size_t small_width = 2 * margin + 1;
-    // two borders + unrollonce + one for the tail
-    size_t medium_width = 2 * margin + vl / 4 + 1;
-    // two borders + unrolltwice + one for the tail
-    size_t big_width = 2 * margin + 2 * vl / 4 + 1;
-    return std::array<test::ArrayLayout, 3>{{
-        {small_width, 2 * margin + 1, 1, 1},
-        {medium_width, h, 1, 1},
-        {big_width, h, 1, 1},
-    }};
-  };
-
-  GaussianBlurTest{KernelTestParams{}, array_layouts}.test(mask);
-}
+const auto minimal_array_layouts = [](size_t w, size_t h) {
+  size_t vl = test::Options::vector_length();
+  size_t margin = w / 2;
+  // two borders + one for the tail, so the NEON scalar path activates
+  size_t small_width = 2 * margin + 1;
+  // two borders + unrolltwice + unrollonce + one for the tail
+  size_t big_width = 2 * margin + 3 * vl + 1;
+  return std::array<test::ArrayLayout, 2>{{
+      {small_width, 2 * margin + 1, 1, 1},
+      {big_width, h, 1, 1},
+  }};
+};
 
 TYPED_TEST(GaussianBlur, 3x3_CustomSigma) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 15, 15, 18, 8));
-  test::Array2D<TypeParam> src{18, 8, test::Options::vector_length()};
-  // clang-format off
-  src.set(0, 0, { 11, 22,  33,  44,  55,  66,  77,  88,  99, 111, 222, 33, 44, 55, 66, 77, 88, 99});
-  src.set(1, 0, { 22, 33,  44,  55,  66,  77,  88,  99, 111, 222,  33, 44, 55, 66, 77, 88, 99, 11});
-  src.set(2, 0, { 33, 44,  55,  66,  77,  88,  99, 111, 222,  33,  44, 55, 66, 77, 88, 99, 11, 22});
-  src.set(3, 0, { 44, 55,  66,  77,  88,  99, 111, 222,  33,  44,  55, 66, 77, 88, 99, 11, 22, 33});
-  src.set(4, 0, { 55, 66,  77,  88,  99, 111, 222,  33,  44,  55,  66, 77, 88, 99, 11, 22, 33, 44});
-  src.set(5, 0, { 66, 77,  88,  99, 111, 222,  33,  44,  55,  66,  77, 88, 99, 11, 22, 33, 44, 55});
-  src.set(6, 0, { 77, 88,  99, 111, 222,  33,  44,  55,  66,  77,  88, 99, 11, 22, 33, 44, 55, 66});
-  src.set(7, 0, { 88, 99, 111, 222,  33,  44,  55,  66,  77,  88,  99, 11, 22, 33, 44, 55, 66, 77});
-  // clang-format on
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(2.2)
+      .test_with_generated_mask();
+}
 
-  test::Array2D<TypeParam> dst{18, 8, test::Options::vector_length()};
-  EXPECT_EQ(KLEIDICV_OK,
-            gaussian_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
-                                       dst.stride(), 18, 8, 1, 3, 3, 4.56, 4.56,
-                                       KLEIDICV_BORDER_TYPE_WRAP, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
-
-  test::Array2D<TypeParam> dst_expected{18, 8, test::Options::vector_length()};
-  // clang-format off
-  dst_expected.set(0, 0, { 51, 51,  73,  74,  73,  62,  73,  84, 107, 118, 96, 63, 40, 51, 62, 73, 73, 62});
-  dst_expected.set(1, 0, { 33, 33,  44,  55,  66,  77,  88, 110, 122, 122, 89, 66, 55, 66, 77, 77, 66, 44});
-  dst_expected.set(2, 0, { 33, 44,  55,  66,  77,  88, 110, 122, 122,  89, 66, 55, 66, 77, 77, 66, 44, 33});
-  dst_expected.set(3, 0, { 44, 55,  66,  77,  88, 110, 122, 122,  89,  66, 55, 66, 77, 77, 66, 44, 33, 33});
-  dst_expected.set(4, 0, { 55, 66,  77,  88, 110, 122, 122,  89,  66,  55, 66, 77, 77, 66, 44, 33, 33, 44});
-  dst_expected.set(5, 0, { 66, 77,  88, 110, 122, 122,  89,  66,  55,  66, 77, 77, 66, 44, 33, 33, 44, 55});
-  dst_expected.set(6, 0, { 77, 88, 110, 122, 122,  89,  66,  55,  66,  77, 77, 66, 44, 33, 33, 44, 55, 66});
-  dst_expected.set(7, 0, { 70, 70,  92, 103,  92,  70,  59,  70,  81, 103, 92, 70, 37, 37, 48, 59, 70, 70});
-  // clang-format on
-  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+TYPED_TEST(GaussianBlur, 3x3_TinySigma) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(0.01)
+      .test_with_generated_mask();
 }
 
 TYPED_TEST(GaussianBlur, 5x5_CustomSigma) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 15, 15, 20, 8));
-  test::Array2D<TypeParam> src{20, 8, test::Options::vector_length()};
-  // clang-format off
-  src.set(0, 0, { 11, 22,  33,  44,  55,  66,  77,  88,  99, 111, 222, 33, 44, 55, 66, 77, 88, 99, 11, 22});
-  src.set(1, 0, { 22, 33,  44,  55,  66,  77,  88,  99, 111, 222,  33, 44, 55, 66, 77, 88, 99, 11, 22, 33});
-  src.set(2, 0, { 33, 44,  55,  66,  77,  88,  99, 111, 222,  33,  44, 55, 66, 77, 88, 99, 11, 22, 33, 44});
-  src.set(3, 0, { 44, 55,  66,  77,  88,  99, 111, 222,  33,  44,  55, 66, 77, 88, 99, 11, 22, 33, 44, 55});
-  src.set(4, 0, { 55, 66,  77,  88,  99, 111, 222,  33,  44,  55,  66, 77, 88, 99, 11, 22, 33, 44, 55, 66});
-  src.set(5, 0, { 66, 77,  88,  99, 111, 222,  33,  44,  55,  66,  77, 88, 99, 11, 22, 33, 44, 55, 66, 77});
-  src.set(6, 0, { 77, 88,  99, 111, 222,  33,  44,  55,  66,  77,  88, 99, 11, 22, 33, 44, 55, 66, 77, 88});
-  src.set(7, 0, { 88, 99, 111, 222,  33,  44,  55,  66,  77,  88,  99, 11, 22, 33, 44, 55, 66, 77, 88, 99});
-  // clang-format on
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(2.2)
+      .test_with_generated_mask();
+}
 
-  test::Array2D<TypeParam> dst{20, 8, test::Options::vector_length()};
-  EXPECT_EQ(KLEIDICV_OK,
-            gaussian_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
-                                       dst.stride(), 20, 8, 1, 5, 5, 4.56, 4.56,
-                                       KLEIDICV_BORDER_TYPE_WRAP, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
-
-  test::Array2D<TypeParam> dst_expected{20, 8, test::Options::vector_length()};
-  // clang-format off
-  dst_expected.set(0, 0, { 54, 65, 72,  75,  78,  81,  84,  88,  96, 91, 82, 68, 59, 54, 58, 61, 60, 59, 54, 52});
-  dst_expected.set(1, 0, { 48, 58, 61,  68,  75,  86,  90,  98, 101, 92, 79, 70, 64, 60, 64, 62, 57, 52, 47, 45});
-  dst_expected.set(2, 0, { 42, 48, 55,  66,  81,  92, 100, 103, 102, 89, 80, 74, 70, 66, 65, 59, 51, 45, 40, 39});
-  dst_expected.set(3, 0, { 53, 59, 66,  81,  92, 100, 103, 102,  89, 80, 74, 70, 66, 65, 59, 51, 45, 44, 43, 46});
-  dst_expected.set(4, 0, { 64, 70, 81,  92, 100, 103, 102,  89,  80, 74, 70, 66, 65, 59, 51, 45, 44, 48, 51, 57});
-  dst_expected.set(5, 0, { 75, 85, 92, 100, 103, 102,  89,  80,  74, 70, 66, 65, 59, 51, 45, 44, 48, 55, 62, 68});
-  dst_expected.set(6, 0, { 69, 79, 87,  94,  97,  91,  82,  76,  79, 76, 75, 69, 60, 48, 46, 50, 53, 61, 63, 66});
-  dst_expected.set(7, 0, { 62, 73, 80,  87,  86,  84,  79,  81,  86, 85, 80, 71, 58, 49, 52, 56, 59, 62, 61, 59});
-  // clang-format on
-  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+TYPED_TEST(GaussianBlur, 5x5_TinySigma) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(0.01)
+      .test_with_generated_mask();
 }
 
 TYPED_TEST(GaussianBlur, 7x7_CustomSigma) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 15, 15, 23, 8));
-  test::Array2D<TypeParam> src{23, 8, test::Options::vector_length()};
-  // clang-format off
-  src.set(0, 0, { 11, 22,  33,  44,  55,  66,  77,  88,  99, 111, 222, 33, 44, 55, 66, 77, 88, 99, 11, 22,  33,  44,  55});
-  src.set(1, 0, { 22, 33,  44,  55,  66,  77,  88,  99, 111, 222,  33, 44, 55, 66, 77, 88, 99, 11, 22, 33,  44,  55,  66});
-  src.set(2, 0, { 33, 44,  55,  66,  77,  88,  99, 111, 222,  33,  44, 55, 66, 77, 88, 99, 11, 22, 33, 44,  55,  66,  77});
-  src.set(3, 0, { 44, 55,  66,  77,  88,  99, 111, 222,  33,  44,  55, 66, 77, 88, 99, 11, 22, 33, 44, 55,  66,  77,  88});
-  src.set(4, 0, { 55, 66,  77,  88,  99, 111, 222,  33,  44,  55,  66, 77, 88, 99, 11, 22, 33, 44, 55, 66,  77,  88,  99});
-  src.set(5, 0, { 66, 77,  88,  99, 111, 222,  33,  44,  55,  66,  77, 88, 99, 11, 22, 33, 44, 55, 66, 77,  88,  99, 111});
-  src.set(6, 0, { 77, 88,  99, 111, 222,  33,  44,  55,  66,  77,  88, 99, 11, 22, 33, 44, 55, 66, 77, 88,  99, 111, 222});
-  src.set(7, 0, { 88, 99, 111, 222,  33,  44,  55,  66,  77,  88,  99, 11, 22, 33, 44, 55, 66, 77, 88, 99, 111, 222,  33});
-  // clang-format on
-
-  test::Array2D<TypeParam> dst{23, 8, test::Options::vector_length()};
-  EXPECT_EQ(KLEIDICV_OK,
-            gaussian_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
-                                       dst.stride(), 23, 8, 1, 7, 7, 4.56, 4.56,
-                                       KLEIDICV_BORDER_TYPE_WRAP, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
-
-  test::Array2D<TypeParam> dst_expected{23, 8, test::Options::vector_length()};
-  // clang-format off
-  dst_expected.set(0, 0, { 76, 78, 77, 76, 82, 87, 90, 90, 85, 81, 77, 71, 65, 60, 56, 55, 56, 58, 62, 67, 68, 69, 71});
-  dst_expected.set(1, 0, { 73, 75, 73, 75, 83, 88, 91, 91, 87, 83, 77, 72, 66, 61, 56, 55, 55, 56, 60, 65, 65, 66, 69});
-  dst_expected.set(2, 0, { 69, 70, 72, 76, 84, 89, 92, 92, 89, 83, 78, 72, 67, 62, 57, 55, 54, 54, 58, 61, 61, 62, 65});
-  dst_expected.set(3, 0, { 69, 73, 77, 78, 86, 91, 93, 93, 88, 83, 78, 72, 67, 61, 57, 53, 52, 52, 55, 62, 63, 64, 67});
-  dst_expected.set(4, 0, { 82, 85, 85, 86, 91, 93, 93, 88, 83, 78, 72, 67, 61, 57, 53, 52, 52, 55, 62, 70, 72, 76, 78});
-  dst_expected.set(5, 0, { 82, 85, 85, 85, 90, 92, 90, 88, 83, 77, 72, 67, 62, 58, 53, 52, 53, 56, 64, 72, 74, 76, 78});
-  dst_expected.set(6, 0, { 81, 84, 83, 83, 87, 88, 89, 88, 83, 78, 73, 68, 64, 58, 54, 53, 54, 57, 65, 72, 73, 74, 77});
-  dst_expected.set(7, 0, { 78, 81, 80, 80, 83, 87, 89, 88, 84, 79, 74, 70, 64, 59, 54, 54, 55, 58, 65, 70, 70, 72, 74});
-  // clang-format on
-  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 7>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(2.2)
+      .test_with_generated_mask();
 }
 
+TYPED_TEST(GaussianBlur, 7x7_TinySigma) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 7>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(0.01)
+      .test_with_generated_mask();
+}
+
+// Tests gaussian_blur_15x15_<input_type> API. It always uses CustomSigma.
 TYPED_TEST(GaussianBlur, 15x15_CustomSigma) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 15, 15, 40, 22));
-  test::Array2D<TypeParam> src{40, 22, test::Options::vector_length()};
-  // clang-format off
-  src.set(0, 0,  {  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,
-                    33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44});
-  src.set(1, 0,  {  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,
-                    44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55});
-  src.set(2, 0,  {  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,
-                    55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66});
-  src.set(3, 0,  {  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,
-                    66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77});
-  src.set(4, 0,  {  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,
-                    77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88});
-  src.set(5, 0,  {  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,
-                    88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99});
-  src.set(6, 0,  {  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,
-                    99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111});
-  src.set(7, 0,  {  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99,
-                   111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222});
-  src.set(8, 0,  {  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111,
-                   222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33});
-  src.set(9, 0,  { 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,
-                    33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44});
-  src.set(10, 0, { 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,
-                    44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55});
-  src.set(11, 0, {  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,
-                    55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66});
-  src.set(12, 0, {  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,
-                    66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77});
-  src.set(13, 0, {  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,
-                    77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88});
-  src.set(14, 0, {  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,
-                    88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99});
-  src.set(15, 0, {  77,  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,
-                    99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11});
-  src.set(16, 0, {  88,  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,
-                    11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22});
-  src.set(17, 0, {  99,  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,
-                    22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33});
-  src.set(18, 0, {  11,  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,
-                    33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44});
-  src.set(19, 0, {  22,  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,
-                    44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55});
-  src.set(20, 0, {  33,  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,
-                    55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66});
-  src.set(21, 0, {  44,  55,  66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,
-                    66,  77,  88,  99, 111, 222,  33,  44,  55,  66,  77,  88,  99,  11,  22,  33,  44,  55,  66,  77});
-  // clang-format on
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 15>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .test_with_generated_mask();
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(2.2)
+      .test_with_generated_mask();
+}
 
-  test::Array2D<TypeParam> dst{40, 22, test::Options::vector_length()};
-  EXPECT_EQ(KLEIDICV_OK,
-            gaussian_blur<TypeParam>()(
-                src.data(), src.stride(), dst.data(), dst.stride(), 40, 22, 1,
-                15, 15, 4.56, 4.56, KLEIDICV_BORDER_TYPE_WRAP, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+TYPED_TEST(GaussianBlur, 15x15_TinySigma) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 15>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(0.01)
+      .test_with_generated_mask();
+}
 
-  test::Array2D<TypeParam> dst_expected{40, 22, test::Options::vector_length()};
-  // clang-format off
-  dst_expected.set(0, 0,  { 60, 63, 67, 71, 74, 77, 79, 81, 81, 81, 79, 77, 73, 70, 66, 64, 62, 61, 63, 65,
-                            68, 71, 74, 76, 79, 81, 81, 81, 79, 77, 73, 70, 66, 63, 60, 57, 56, 56, 56, 58});
-  dst_expected.set(1, 0,  { 63, 66, 70, 74, 77, 79, 80, 81, 81, 80, 78, 75, 71, 68, 65, 63, 62, 62, 64, 66,
-                            69, 73, 75, 78, 79, 81, 81, 80, 78, 75, 71, 68, 65, 62, 59, 58, 57, 58, 59, 60});
-  dst_expected.set(2, 0,  { 67, 70, 73, 76, 79, 80, 81, 80, 80, 78, 76, 73, 70, 67, 64, 63, 62, 63, 65, 68,
-                            71, 74, 76, 78, 80, 80, 80, 78, 76, 73, 70, 67, 64, 62, 60, 59, 59, 60, 62, 64});
-  dst_expected.set(3, 0,  { 71, 74, 76, 79, 80, 80, 80, 79, 78, 76, 74, 71, 68, 66, 64, 63, 63, 65, 67, 70,
-                            73, 76, 77, 79, 79, 79, 78, 76, 74, 71, 68, 66, 64, 62, 61, 62, 62, 64, 66, 68});
-  dst_expected.set(4, 0,  { 74, 77, 79, 80, 80, 80, 79, 78, 77, 74, 72, 69, 67, 65, 64, 64, 65, 67, 69, 72,
-                            75, 77, 78, 79, 79, 78, 77, 74, 72, 69, 67, 65, 64, 63, 63, 64, 66, 68, 70, 72});
-  dst_expected.set(5, 0,  { 77, 79, 80, 80, 80, 79, 78, 76, 74, 72, 70, 68, 66, 65, 65, 66, 67, 69, 71, 74,
-                            76, 77, 78, 78, 77, 76, 74, 72, 70, 68, 66, 65, 65, 65, 66, 67, 69, 71, 73, 75});
-  dst_expected.set(6, 0,  { 79, 80, 81, 80, 79, 78, 76, 74, 72, 70, 68, 67, 66, 66, 66, 67, 69, 71, 73, 75,
-                            77, 77, 77, 77, 76, 74, 72, 70, 68, 67, 66, 66, 66, 67, 68, 70, 72, 74, 76, 78});
-  dst_expected.set(7, 0,  { 81, 81, 80, 79, 78, 76, 74, 72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76,
-                            77, 77, 76, 75, 74, 72, 70, 69, 67, 66, 66, 67, 68, 69, 71, 73, 75, 77, 79, 80});
-  dst_expected.set(8, 0,  { 81, 81, 80, 78, 77, 74, 72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76, 77,
-                            77, 76, 75, 74, 72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 76, 78, 79, 81, 81});
-  dst_expected.set(9, 0,  { 81, 80, 78, 76, 74, 72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76, 77, 77,
-                            76, 75, 74, 72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 76, 78, 79, 81, 81, 81});
-  dst_expected.set(10, 0, { 79, 78, 76, 74, 72, 70, 68, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76, 77, 77, 76,
-                            75, 74, 72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 77, 79, 80, 81, 81, 80});
-  dst_expected.set(11, 0, { 77, 75, 73, 71, 69, 68, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76, 77, 77, 76, 75,
-                            74, 72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 77, 78, 79, 80, 80, 79, 78});
-  dst_expected.set(12, 0, { 73, 71, 70, 68, 67, 66, 66, 66, 67, 68, 70, 71, 73, 75, 76, 77, 77, 76, 75, 74,
-                            72, 70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76, 78, 78, 79, 78, 78, 76, 75});
-  dst_expected.set(13, 0, { 70, 68, 67, 66, 65, 65, 66, 67, 68, 70, 71, 73, 75, 76, 77, 77, 76, 75, 74, 72,
-                            70, 69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76, 77, 78, 78, 77, 76, 75, 73, 72});
-  dst_expected.set(14, 0, { 66, 65, 64, 64, 64, 65, 66, 68, 70, 71, 73, 75, 76, 77, 77, 76, 75, 74, 72, 70,
-                            69, 67, 66, 66, 67, 68, 70, 71, 73, 75, 76, 77, 77, 77, 76, 75, 74, 72, 70, 68});
-  dst_expected.set(15, 0, { 63, 62, 62, 62, 63, 65, 67, 69, 71, 73, 75, 77, 78, 78, 77, 76, 74, 72, 70, 68,
-                            67, 66, 66, 66, 68, 69, 71, 73, 75, 77, 78, 78, 77, 76, 74, 72, 70, 68, 66, 64});
-  dst_expected.set(16, 0, { 60, 59, 60, 61, 63, 66, 68, 71, 73, 76, 77, 78, 78, 78, 76, 74, 72, 70, 68, 66,
-                            66, 65, 66, 67, 69, 71, 73, 76, 77, 78, 78, 78, 76, 74, 72, 69, 67, 64, 62, 60});
-  dst_expected.set(17, 0, { 57, 58, 59, 62, 64, 67, 70, 73, 76, 78, 79, 79, 79, 77, 75, 73, 70, 67, 66, 65,
-                            65, 65, 66, 68, 70, 73, 76, 78, 79, 79, 79, 77, 75, 72, 69, 66, 63, 61, 59, 58});
-  dst_expected.set(18, 0, { 56, 57, 59, 62, 66, 69, 72, 75, 78, 79, 80, 80, 78, 76, 74, 71, 68, 65, 64, 64,
-                            64, 66, 67, 70, 72, 75, 78, 79, 80, 80, 78, 76, 74, 70, 67, 63, 60, 58, 57, 56});
-  dst_expected.set(19, 0, { 56, 58, 60, 64, 68, 71, 74, 77, 79, 81, 81, 80, 78, 75, 72, 68, 65, 63, 63, 63,
-                            64, 66, 69, 71, 74, 77, 79, 81, 81, 80, 78, 75, 72, 68, 64, 61, 58, 56, 55, 55});
-  dst_expected.set(20, 0, { 56, 59, 62, 66, 70, 73, 76, 79, 81, 81, 81, 79, 76, 73, 70, 66, 64, 62, 62, 63,
-                            65, 68, 70, 73, 76, 79, 81, 81, 81, 79, 76, 73, 70, 66, 62, 59, 57, 55, 55, 55});
-  dst_expected.set(21, 0, { 58, 60, 64, 68, 72, 75, 78, 80, 81, 81, 80, 78, 75, 72, 68, 65, 63, 62, 62, 64,
-                            66, 69, 72, 75, 78, 80, 81, 81, 80, 78, 75, 72, 68, 64, 60, 58, 56, 55, 55, 55});
-  // clang-format on
-  EXPECT_EQ_ARRAY2D(dst_expected, dst);
+// Tests gaussian_blur_21x21_<input_type> API. It always uses CustomSigma.
+TYPED_TEST(GaussianBlur, 21x21_CustomSigma) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 21>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .test_with_generated_mask();
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(2.2)
+      .test_with_generated_mask();
+}
+
+TYPED_TEST(GaussianBlur, 21x21_TinySigma) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 21>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts, kAllBorders,
+                   kToleranceOne}
+      .with_sigma(0.01)
+      .test_with_generated_mask();
 }
 
 TYPED_TEST(GaussianBlur, UnsupportedBorderType3x3) {
@@ -864,7 +702,7 @@ TYPED_TEST(GaussianBlur, ValidImageSize5x5) {
   expected.set(1, 0, {8, 9, 9, 10});
   expected.set(2, 0, {9, 9, 10, 11});
   expected.set(3, 0, {10, 11, 12, 12});
-  EXPECT_EQ_ARRAY2D(expected, dst);
+  EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, expected, dst);
 
   EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
@@ -911,80 +749,7 @@ TYPED_TEST(GaussianBlur, ValidImageSize7x7) {
   expected.set(3, 0, {18, 18, 19, 19, 19, 19});
   expected.set(4, 0, {22, 22, 23, 23, 23, 23});
   expected.set(5, 0, {24, 24, 24, 24, 24, 24});
-  EXPECT_EQ_ARRAY2D(expected, dst);
-
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
-}
-
-TYPED_TEST(GaussianBlur, ValidImageSize15x15) {
-  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 15>;
-  kleidicv_filter_context_t *context = nullptr;
-  size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 15, 15,
-                                                        validSize, validSize));
-  test::Array2D<TypeParam> src{validSize, validSize,
-                               test::Options::vector_length()};
-  src.set(0, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(1, 0, {28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15});
-  src.set(2, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(3, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(4, 0, {28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15});
-  src.set(5, 0, {28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15});
-  src.set(6, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(7, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(8, 0, {28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15});
-  src.set(9, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(10, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(11, 0, {247, 207, 167, 127, 87, 47, 7, 3, 7, 47, 87, 127, 167, 207});
-  src.set(12, 0, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14});
-  src.set(
-      13, 0,
-      {255, 254, 253, 252, 251, 250, 249, 248, 247, 246, 245, 244, 243, 242});
-
-  test::Array2D<TypeParam> dst{validSize, validSize,
-                               test::Options::vector_length()};
-  test::Array2D<TypeParam> expected{validSize, validSize,
-                                    test::Options::vector_length()};
-
-  EXPECT_EQ(KLEIDICV_OK, gaussian_blur<TypeParam>()(
-                             src.data(), src.stride(), dst.data(), dst.stride(),
-                             validSize, validSize, 1, 15, 15, 0.0, 0.0,
-                             KLEIDICV_BORDER_TYPE_REVERSE, context));
-  expected.set(0, 0, {13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(1, 0, {13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(2, 0, {13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(3, 0, {13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(4, 0, {14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 15, 15, 15});
-  expected.set(5, 0, {15, 15, 15, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15});
-  expected.set(6, 0, {17, 17, 17, 16, 16, 15, 15, 15, 16, 16, 17, 17, 18, 18});
-  expected.set(7, 0, {21, 21, 20, 20, 19, 18, 17, 17, 18, 19, 20, 21, 21, 22});
-  expected.set(8, 0, {29, 29, 28, 26, 24, 22, 21, 21, 22, 23, 25, 27, 28, 29});
-  expected.set(9, 0, {40, 40, 38, 35, 32, 30, 28, 28, 29, 31, 33, 36, 38, 38});
-  expected.set(10, 0, {54, 53, 50, 47, 43, 39, 37, 36, 38, 40, 44, 47, 49, 50});
-  expected.set(11, 0, {67, 66, 63, 58, 54, 50, 47, 46, 47, 50, 54, 58, 61, 62});
-  expected.set(12, 0, {76, 75, 72, 67, 62, 57, 54, 53, 54, 58, 62, 67, 70, 71});
-  expected.set(13, 0, {80, 79, 76, 71, 65, 60, 57, 56, 57, 61, 66, 70, 73, 75});
-  EXPECT_EQ_ARRAY2D(expected, dst);
-
-  EXPECT_EQ(KLEIDICV_OK, gaussian_blur<TypeParam>()(
-                             src.data(), src.stride(), dst.data(), dst.stride(),
-                             validSize, validSize, 1, 15, 15, 2.25, 2.25,
-                             KLEIDICV_BORDER_TYPE_REVERSE, context));
-  expected.set(0, 0, {13, 13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14});
-  expected.set(1, 0, {13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(2, 0, {13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(3, 0, {13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(4, 0, {14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14});
-  expected.set(5, 0, {15, 15, 15, 15, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15});
-  expected.set(6, 0, {15, 15, 15, 15, 14, 14, 14, 14, 14, 15, 15, 16, 16, 16});
-  expected.set(7, 0, {19, 19, 19, 18, 17, 16, 16, 16, 16, 17, 18, 19, 20, 20});
-  expected.set(8, 0, {26, 26, 25, 23, 21, 19, 18, 18, 19, 20, 22, 24, 26, 26});
-  expected.set(9, 0, {38, 37, 35, 32, 29, 26, 24, 24, 25, 27, 30, 34, 36, 37});
-  expected.set(10, 0, {55, 54, 51, 46, 42, 37, 35, 34, 35, 39, 43, 47, 51, 52});
-  expected.set(11, 0, {71, 70, 66, 61, 55, 49, 46, 45, 47, 51, 56, 61, 65, 67});
-  expected.set(12, 0, {85, 83, 79, 73, 66, 60, 57, 55, 57, 61, 67, 73, 77, 79});
-  expected.set(13, 0, {89, 88, 83, 77, 71, 65, 61, 60, 62, 66, 72, 77, 82, 83});
-  EXPECT_EQ_ARRAY2D(expected, dst);
+  EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1, expected, dst);
 
   EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
@@ -1252,6 +1017,7 @@ static std::array<uint16_t, Size> generate_reference_kernel(float sigma) {
 
   return kernel_to_return;
 }
+
 template <size_t Size>
 void test_sigma() {
   const std::array<uint16_t, Size> expected_half_kernel =
