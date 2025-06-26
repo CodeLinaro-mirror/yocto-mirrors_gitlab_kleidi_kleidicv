@@ -58,7 +58,7 @@ option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny al
 
 # Continuous load and store NEON instructions produce suboptimal code generation on GCC version <= 11,
 # and these instructions are not supported on GCC version <=8.
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11 OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") 
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11 OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS ON)
 else()
   set(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS OFF)
@@ -177,7 +177,7 @@ if(KLEIDICV_ENABLE_SME2)
   set_target_properties(kleidicv_sme2 PROPERTIES CXX_STANDARD 17)
   target_compile_options(kleidicv_sme2 PRIVATE
     ${KLEIDICV_CXX_FLAGS}
-    "-march=armv9-a+sve2+sme2+nosimd"
+    "-march=armv9-a+sve2+sme2"
     "-DKLEIDICV_TARGET_SME2=1"
   )
 endif()
