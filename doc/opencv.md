@@ -165,8 +165,11 @@ Notes on parameters:
 Applies median filter to a given image.
 
 Notes on parameters:
-* `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1` (i.e. `>= 4` for 5x5).
-* `ksize` - only values 3, 5 and 7 are supported (i.e. 3x3, 5×5 and 7×7 kernels).
+* `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1` (e.g., `>= 4` for 5x5, `>= 14` for 15x15).
+* `ksize`
+  - for `CV_8U`, supported kernel sizes are 3x3, 5×5, 7×7, 9×9, 11×11, 13×13, and 15×15.
+  - For other types, only 3x3, 5×5 and 7×7 are supported.
+
 
 ### [`cv::transpose()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga46630ed6c0ea6254a35f447289bd7404)
 Transposes a matrix.

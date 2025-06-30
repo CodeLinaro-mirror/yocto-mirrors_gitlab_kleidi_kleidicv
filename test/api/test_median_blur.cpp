@@ -98,7 +98,7 @@ class MedianBlurTest : public testing::Test {
       size_t filter_size) {
     std::vector<size_t> widths = {25, filter_size - 1};
     std::vector<size_t> src_paddings = {0};
-    std::vector<size_t> dst_paddings = {0};
+    std::vector<size_t> dst_paddings = {3};
     std::vector<size_t> heights = {filter_size, filter_size - 1};
     std::vector<size_t> channels = {1, 2, 3, 4};
     std::vector<size_t> filter_sizes = {filter_size};
@@ -106,6 +106,20 @@ class MedianBlurTest : public testing::Test {
         KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
         KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
 
+    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
+                               channels, filter_sizes, border_types);
+  }
+
+  static std::vector<TestParams> get_mid_range_filter_test_cases() {
+    std::vector<size_t> widths = {50};
+    std::vector<size_t> src_paddings = {0};
+    std::vector<size_t> dst_paddings = {5};
+    std::vector<size_t> heights = {20};
+    std::vector<size_t> channels = {1, 4};
+    std::vector<size_t> filter_sizes = {9, 15};
+    std::vector<kleidicv_border_type_t> border_types = {
+        KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
+        KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
     return generate_test_cases(widths, src_paddings, dst_paddings, heights,
                                channels, filter_sizes, border_types);
   }
@@ -259,20 +273,20 @@ TYPED_TEST(MedianBlurTest, BorderNotImplemented) {
 }
 
 TYPED_TEST(MedianBlurTest, HeightTooSmall) {
-  test::Array2D<TypeParam> src{100, 3};
-  test::Array2D<TypeParam> dst{100, 3};
+  test::Array2D<TypeParam> src{100, 4};
+  test::Array2D<TypeParam> dst{100, 4};
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
-                                     dst.stride(), 100, 3, 1, 5, 5,
+                                     dst.stride(), 100, 3, 1, 7, 7,
                                      KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(MedianBlurTest, WidthTooSmall) {
-  test::Array2D<TypeParam> src{3, 100};
-  test::Array2D<TypeParam> dst{3, 100};
+  test::Array2D<TypeParam> src{4, 100};
+  test::Array2D<TypeParam> dst{4, 100};
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
-                                     dst.stride(), 3, 100, 1, 5, 5,
+                                     dst.stride(), 3, 100, 1, 7, 7,
                                      KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
@@ -309,22 +323,52 @@ TYPED_TEST(MedianBlurTest, OversizeImage) {
                                5, 5, KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
-TYPED_TEST(MedianBlurTest, UnsupportedLargeFilterSize) {
+TYPED_TEST(MedianBlurTest, UnsupportedFilterSizes) {
   test::Array2D<TypeParam> src{100, 100};
   test::Array2D<TypeParam> dst{100, 100};
+
+  // Test unsupported large square filter
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
                                      dst.stride(), 100, 100, 1, 100, 100,
                                      KLEIDICV_BORDER_TYPE_REPLICATE));
-}
 
-TYPED_TEST(MedianBlurTest, NonSquareFilterSizeWithValidHeight) {
-  test::Array2D<TypeParam> src{100, 100};
-  test::Array2D<TypeParam> dst{100, 100};
+  // Test non-square filter with valid height
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
                                      dst.stride(), 100, 100, 1, 100, 5,
                                      KLEIDICV_BORDER_TYPE_REPLICATE));
+
+  // Test non-square filter with valid width
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 100, 1, 5, 100,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+
+  // Test unsupported small filter
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 100, 1, 1, 1,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+
+  // Test unsupported even filter
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 100, 1, 4, 4,
+                                     KLEIDICV_BORDER_TYPE_REPLICATE));
+
+  // Test mid-range square filters that are not implemented
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                     dst.stride(), 100, 100, 1, 9, 9,
+                                     KLEIDICV_BORDER_TYPE_TRANSPARENT));
+
+  if (!std::is_same_v<TypeParam, uint8_t>) {
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              median_blur<TypeParam>()(src.data(), src.stride(), dst.data(),
+                                       dst.stride(), 100, 100, 1, 9, 9,
+                                       KLEIDICV_BORDER_TYPE_REPLICATE));
+  }
 }
 
 TYPED_TEST(MedianBlurTest, NonSquareFilterSizeWithValidWidth) {
@@ -398,6 +442,16 @@ TYPED_TEST(MedianBlurByteStrideTest, RunAllParamCombinationsWithPadding) {
   }
 
   for (const auto& params : TestFixture::get_padded_test_cases()) {
+    this->run_test_case(params);
+  }
+}
+
+template <typename ElementType>
+class MedianBlurMidRangeTest : public MedianBlurTest<ElementType> {};
+using ByteType = ::testing::Types<uint8_t>;
+TYPED_TEST_SUITE(MedianBlurMidRangeTest, ByteType);
+TYPED_TEST(MedianBlurMidRangeTest, RunAllParamCombinationsWithMidRangeFilters) {
+  for (const auto& params : TestFixture::get_mid_range_filter_test_cases()) {
     this->run_test_case(params);
   }
 }

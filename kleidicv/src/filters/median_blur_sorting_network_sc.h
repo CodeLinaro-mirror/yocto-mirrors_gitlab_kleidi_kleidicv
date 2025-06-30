@@ -23,7 +23,7 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Primary template for Median Blur filters.
 template <typename ScalarType, size_t KernelSize>
-class MedianBlur;
+class MedianBlurSortingNetwork;
 
 template <typename ScalarType>
 class VectorComparator {
@@ -61,7 +61,7 @@ class VectorComparator {
 
 // Template for Median Blur 3x3 filters.
 template <typename ScalarType>
-class MedianBlur<ScalarType, 3> {
+class MedianBlurSortingNetwork<ScalarType, 3> {
  public:
   using SourceType = ScalarType;
   using DestinationType = SourceType;
@@ -84,11 +84,11 @@ class MedianBlur<ScalarType, 3> {
     sorting_network3x3_dual_rows<VectorComparator<ScalarType>>(
         KernelWindow, output_vec_0, output_vec_1, pg);
   }
-};  // end of class MedianBlur<ScalarType, 3>
+};  // end of class MedianBlurSortingNetwork<ScalarType, 3>
 
 // Template for Median Blur 5x5 filters.
 template <typename ScalarType>
-class MedianBlur<ScalarType, 5> {
+class MedianBlurSortingNetwork<ScalarType, 5> {
  public:
   using SourceType = ScalarType;
   using DestinationType = SourceType;
@@ -97,7 +97,6 @@ class MedianBlur<ScalarType, 5> {
   using SourceVectorType = typename SourceVecTraits::VectorType;
   using DestinationVectorType = typename KLEIDICV_TARGET_NAMESPACE::VecTraits<
       DestinationType>::VectorType;
-
   template <typename KernelWindowFunctor>
   void vector_path(svbool_t& pg, KernelWindowFunctor& KernelWindow,
                    DestinationVectorType& output_vec) const
@@ -105,11 +104,11 @@ class MedianBlur<ScalarType, 5> {
     sorting_network5x5<VectorComparator<ScalarType>>(KernelWindow, output_vec,
                                                      pg);
   }
-};  // end of class MedianBlur<ScalarType, 5>
+};  // end of class MedianBlurSortingNetworkSortingNetwork<ScalarType, 5>
 
 // Template for Median Blur 7x7 filters.
 template <typename ScalarType>
-class MedianBlur<ScalarType, 7> {
+class MedianBlurSortingNetwork<ScalarType, 7> {
  public:
   using SourceType = ScalarType;
   using DestinationType = SourceType;
@@ -126,36 +125,41 @@ class MedianBlur<ScalarType, 7> {
     sorting_network7x7<VectorComparator<ScalarType>>(KernelWindow, output_vec,
                                                      pg);
   }
-};  // end of class MedianBlur<ScalarType, 7>
+};  // end of class MedianBlurSortingNetworkSortingNetwork<ScalarType, 7>
 
 template <typename T>
-kleidicv_error_t median_blur_stripe_sc(
+kleidicv_error_t median_blur_sorting_network_stripe_sc(
     const T* src, size_t src_stride, T* dst, size_t dst_stride, size_t width,
     size_t height, size_t y_begin, size_t y_end, size_t channels,
-    [[maybe_unused]] size_t kernel_width, [[maybe_unused]] size_t kernel_height,
+    size_t kernel_width, [[maybe_unused]] size_t kernel_height,
     FixedBorderType border_type) KLEIDICV_STREAMING_COMPATIBLE {
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
+
   if (kernel_width == 3) {
-    MedianBlur<T, 3> median_filter;
-    Filter2D3x3<MedianBlur<T, 3>> filter{median_filter};
+    MedianBlurSortingNetwork<T, 3> median_filter;
+    Filter2D3x3<MedianBlurSortingNetwork<T, 3>> filter{median_filter};
     process_filter2d_by_dual_rows(rect, y_begin, y_end, src_rows, dst_rows,
                                   border_type, filter);
-  } else if (kernel_width == 5) {
-    MedianBlur<T, 5> median_filter;
-    Filter2D5x5<MedianBlur<T, 5>> filter{median_filter};
+    return KLEIDICV_OK;
+  }
+  if (kernel_width == 5) {
+    MedianBlurSortingNetwork<T, 5> median_filter;
+    Filter2D5x5<MedianBlurSortingNetwork<T, 5>> filter{median_filter};
     process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
                      filter);
     return KLEIDICV_OK;
-  } else {
-    MedianBlur<T, 7> median_filter;
-    Filter2D7x7<MedianBlur<T, 7>> filter{median_filter};
+  }
+  if (kernel_width == 7) {
+    MedianBlurSortingNetwork<T, 7> median_filter;
+    Filter2D7x7<MedianBlurSortingNetwork<T, 7>> filter{median_filter};
     process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
                      filter);
+    return KLEIDICV_OK;
   }
 
-  return KLEIDICV_OK;
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE

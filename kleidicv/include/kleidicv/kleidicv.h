@@ -2056,11 +2056,14 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
 ///                       equal to `kernel_height - 1`.
 /// @param channels       Number of channels in the data. Must not be more than
 ///                       @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
-/// @param kernel_width   Width of the Median kernel. Must be 3 or 5 or 7 and
-///                       equal to `kernel_height`.
-/// @param kernel_height  Height of the Median kernel. Must be 3 or 5 or 7 and
-///                       equal to `kernel_width`.
-///
+/// @param kernel_width   Width of the Median kernel. Must be odd and equal to
+///                      `kernel_height`.
+///                       For `uint8_t`, values 3 to 15 are supported. For other
+///                       types, only 3, 5 and 7.
+/// @param kernel_height  Height of the Median kernel. Must be odd and equal to
+///                       `kernel_width`.
+///                       For `uint8_t`, values 3 to 15 are supported. For other
+///                       types, only 3, 5 and 7.
 /// @param border_type    Way of handling the border. The supported border types
 ///                       are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE \n

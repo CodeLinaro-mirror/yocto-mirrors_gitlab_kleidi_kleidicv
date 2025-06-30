@@ -113,7 +113,8 @@ class Thread : public testing::TestWithParam<P> {
     (void)thread_count;
     size_t channels = 1;
     kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
-    for (auto ksize : {3, 5, 7}) {
+    const auto &filter_size = std::vector<size_t>{3, 5, 7, 9};
+    for (auto ksize : filter_size) {
       check_unary_op<T, T>(single_threaded_func, multithreaded_func, channels,
                            channels, channels, ksize, ksize, border_type);
     }
@@ -413,6 +414,18 @@ void check_median_blur_not_implemented(MultithreadedFunc multithreaded_func) {
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       multithreaded_func(src1.data(), src1.stride(), dst1.data(), dst1.stride(),
                          25, 25, 1, 4, 4, KLEIDICV_BORDER_TYPE_REPLICATE,
+                         get_multithreading_fake(2)));
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      multithreaded_func(src1.data(), src1.stride(), dst1.data(), dst1.stride(),
+                         25, 25, 1, 4, 4, KLEIDICV_BORDER_TYPE_REPLICATE,
+                         get_multithreading_fake(2)));
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      multithreaded_func(src1.data(), src1.stride(), dst1.data(), dst1.stride(),
+                         25, 25, 1, 9, 9, KLEIDICV_BORDER_TYPE_TRANSPARENT,
                          get_multithreading_fake(2)));
 }
 

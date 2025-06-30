@@ -17,6 +17,7 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Median Blur for 3x3 kernels.
+- Median Blur for 9x9, 11x11, 13x13 and 15x15 kernels, Neon backend only.
 
 ### Changed
 - Performance of Gaussian Blur is greatly improved in return for some accuracy.

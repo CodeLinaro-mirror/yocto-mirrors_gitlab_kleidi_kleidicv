@@ -612,11 +612,19 @@ static void median_blur(benchmark::State& state, Function func) {
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 1, , kleidicv_median_blur_u8)
     ->Arg(3)
     ->Arg(5)
-    ->Arg(7);
+    ->Arg(7)
+    ->Arg(9)
+    ->Arg(11)
+    ->Arg(13)
+    ->Arg(15);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 4, , kleidicv_median_blur_u8)
     ->Arg(3)
     ->Arg(5)
-    ->Arg(7);
+    ->Arg(7)
+    ->Arg(9)
+    ->Arg(11)
+    ->Arg(13)
+    ->Arg(15);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int8_t, 1, , kleidicv_median_blur_s8)
     ->Arg(3)

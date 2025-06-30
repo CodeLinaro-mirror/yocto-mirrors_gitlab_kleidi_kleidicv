@@ -54,10 +54,12 @@ namespace kleidicv::neon {
 
 // Alphabetical order
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vaddq);
+NEON_BINARY_OP_Q_B8_B16_B32_B64(vceqq);
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vcleq);
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vcgeq);
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vqaddq);
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vqsubq);
+NEON_BINARY_OP_Q_B8_B16_B32_B64(vsubq);
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vtrn1q);
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vtrn2q);
 NEON_BINARY_OP_Q_B8_B16_B32_B64(vuzp1q);
@@ -250,6 +252,21 @@ template <int n> static inline int16x4_t  vrshrn_n(int32x4_t  vec) { return vrsh
 template <int n> static inline uint16x4_t vrshrn_n(uint32x4_t vec) { return vrshrn_n_u32(vec, n); }
 template <int n> static inline int32x2_t  vrshrn_n(int64x2_t  vec) { return vrshrn_n_s64(vec, n); }
 template <int n> static inline uint32x2_t vrshrn_n(uint64x2_t vec) { return vrshrn_n_u64(vec, n); }
+
+// -----------------------------------------------------------------------------
+// vshrq_n*
+// -----------------------------------------------------------------------------
+
+template <int n> static inline int8x16_t  vshrq_n(int8x16_t  vec) { return vshrq_n_s8(vec, n); }
+template <int n> static inline uint8x16_t vshrq_n(uint8x16_t vec) { return vshrq_n_u8(vec, n); }
+template <int n> static inline int16x8_t  vshrq_n(int16x8_t  vec) { return vshrq_n_s16(vec, n); }
+template <int n> static inline uint16x8_t vshrq_n(uint16x8_t vec) { return vshrq_n_u16(vec, n); }
+template <int n> static inline int32x4_t  vshrq_n(int32x4_t  vec) { return vshrq_n_s32(vec, n); }
+template <int n> static inline uint32x4_t vshrq_n(uint32x4_t vec) { return vshrq_n_u32(vec, n); }
+template <int n> static inline int64x2_t  vshrq_n(int64x2_t  vec) { return vshrq_n_s64(vec, n); }
+template <int n> static inline uint64x2_t vshrq_n(uint64x2_t vec) { return vshrq_n_u64(vec, n); }
+
+// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // vshll_n*

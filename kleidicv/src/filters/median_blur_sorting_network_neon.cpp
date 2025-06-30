@@ -19,7 +19,7 @@ namespace kleidicv::neon {
 
 // Primary template for Median Blur filters.
 template <typename ScalarType, size_t KernelSize>
-class MedianBlur;
+class MedianBlurSortingNetwork;
 
 template <typename ScalarType>
 class VectorizedComparator {
@@ -78,7 +78,7 @@ class ScalarComparator {
 
 // Template for Median Blur 3x3 filters.
 template <typename ScalarType>
-class MedianBlur<ScalarType, 3> {
+class MedianBlurSortingNetwork<ScalarType, 3> {
  public:
   using SourceType = ScalarType;
   using DestinationType = SourceType;
@@ -118,11 +118,11 @@ class MedianBlur<ScalarType, 3> {
     sorting_network3x3_dual_rows<ScalarComparator<ScalarType>>(
         KernelWindow, output_vec0, output_vec1, ctx);
   }
-};  // end of class MedianBlur<ScalarType, 3>
+};  // end of class MedianBlurSortingNetwork<ScalarType, 3>
 
 // Template for Median Blur 5x5 filters.
 template <typename ScalarType>
-class MedianBlur<ScalarType, 5> {
+class MedianBlurSortingNetwork<ScalarType, 5> {
  public:
   using SourceType = ScalarType;
   using DestinationType = SourceType;
@@ -143,11 +143,11 @@ class MedianBlur<ScalarType, 5> {
     Monostate ctx;
     sorting_network5x5<ScalarComparator<ScalarType>>(KernelWindow, dst, ctx);
   }
-};  // end of class MedianBlur<ScalarType, 5>
+};  // end of class MedianBlurSortingNetwork<ScalarType, 5>
 
 // Template for Median Blur 7x7 filters.
 template <typename ScalarType>
-class MedianBlur<ScalarType, 7> {
+class MedianBlurSortingNetwork<ScalarType, 7> {
  public:
   using SourceType = ScalarType;
   using DestinationType = SourceType;
@@ -168,45 +168,49 @@ class MedianBlur<ScalarType, 7> {
     Monostate ctx;
     sorting_network7x7<ScalarComparator<ScalarType>>(KernelWindow, dst, ctx);
   }
-};  // end of class MedianBlur<ScalarType, 7>
+};  // end of class MedianBlurSortingNetworkSortingNetwork<ScalarType, 7>
 
 template <typename T>
-kleidicv_error_t median_blur_stripe(const T* src, size_t src_stride, T* dst,
-                                    size_t dst_stride, size_t width,
-                                    size_t height, size_t y_begin, size_t y_end,
-                                    size_t channels, size_t kernel_width,
-                                    [[maybe_unused]] size_t kernel_height,
-                                    FixedBorderType border_type) {
+kleidicv_error_t median_blur_sorting_network_stripe(
+    const T* src, size_t src_stride, T* dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    size_t kernel_width, [[maybe_unused]] size_t kernel_height,
+    FixedBorderType border_type) {
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
 
   if (kernel_width == 3) {
-    MedianBlur<T, 3> median_filter;
-    Filter2D3x3<MedianBlur<T, 3>> filter{median_filter};
+    MedianBlurSortingNetwork<T, 3> median_filter;
+    Filter2D3x3<MedianBlurSortingNetwork<T, 3>> filter{median_filter};
     process_filter2d_by_dual_rows(rect, y_begin, y_end, src_rows, dst_rows,
                                   border_type, filter);
-  } else if (kernel_width == 5) {
-    MedianBlur<T, 5> median_filter;
-    Filter2D5x5<MedianBlur<T, 5>> filter{median_filter};
+    return KLEIDICV_OK;
+  }
+  if (kernel_width == 5) {
+    MedianBlurSortingNetwork<T, 5> median_filter;
+    Filter2D5x5<MedianBlurSortingNetwork<T, 5>> filter{median_filter};
     process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
                      filter);
     return KLEIDICV_OK;
-  } else {
-    MedianBlur<T, 7> median_filter;
-    Filter2D7x7<MedianBlur<T, 7>> filter{median_filter};
+  }
+  if (kernel_width == 7) {
+    MedianBlurSortingNetwork<T, 7> median_filter;
+    Filter2D7x7<MedianBlurSortingNetwork<T, 7>> filter{median_filter};
     process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
                      filter);
+    return KLEIDICV_OK;
   }
 
-  return KLEIDICV_OK;
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
-#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                                    \
-  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t median_blur_stripe<type>( \
-      const type* src, size_t src_stride, type* dst, size_t dst_stride,        \
-      size_t width, size_t height, size_t y_begin, size_t y_end,               \
-      size_t channels, size_t kernel_width, size_t kernel_height,              \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(type)                             \
+  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t                    \
+  median_blur_sorting_network_stripe<type>(                             \
+      const type* src, size_t src_stride, type* dst, size_t dst_stride, \
+      size_t width, size_t height, size_t y_begin, size_t y_end,        \
+      size_t channels, size_t kernel_width, size_t kernel_height,       \
       FixedBorderType border_type)
 
 KLEIDICV_INSTANTIATE_TEMPLATE(int8_t);
