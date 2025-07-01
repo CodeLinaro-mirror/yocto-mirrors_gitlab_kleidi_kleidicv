@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,7 +9,7 @@
 # The build artifacts are placed in the `build` directory.
 #
 # Arguments:
-#   1: Target to build. Defaults to default target'.
+#   Targets to build. Defaults to default target'.
 #
 # To target Android devices the following command can be used:
 #   BUILD_ID=opencv-android \
@@ -71,7 +71,7 @@ if [[ -z "${OPENCV_PATH:-}" ]]; then
   exit 1
 fi
 
-IFS=' ' read -r -a CMAKE_TARGETS <<< "${1:-}"
+IFS=' ' read -r -a CMAKE_TARGETS <<< "${@:-}"
 IFS=' ' read -r -a EXTRA_CMAKE_ARGS_ARRAY <<< "${EXTRA_CMAKE_ARGS}"
 
 # ------------------------------------------------------------------------------
