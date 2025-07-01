@@ -33,10 +33,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     -Wl,--whole-archive
     kleidicv
     -Wl,--no-whole-archive
+    m
   )
 else()
   target_link_libraries(
     kleidicv-c-example
     kleidicv
+    m
   )
 endif()
