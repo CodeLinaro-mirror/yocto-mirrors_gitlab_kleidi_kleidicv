@@ -144,6 +144,7 @@ kleidicv_error_t median_blur_sorting_network_stripe_sc(
                                   border_type, filter);
     return KLEIDICV_OK;
   }
+
   if (kernel_width == 5) {
     MedianBlurSortingNetwork<T, 5> median_filter;
     Filter2D5x5<MedianBlurSortingNetwork<T, 5>> filter{median_filter};
@@ -151,15 +152,12 @@ kleidicv_error_t median_blur_sorting_network_stripe_sc(
                      filter);
     return KLEIDICV_OK;
   }
-  if (kernel_width == 7) {
-    MedianBlurSortingNetwork<T, 7> median_filter;
-    Filter2D7x7<MedianBlurSortingNetwork<T, 7>> filter{median_filter};
-    process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
-                     filter);
-    return KLEIDICV_OK;
-  }
 
-  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  MedianBlurSortingNetwork<T, 7> median_filter;
+  Filter2D7x7<MedianBlurSortingNetwork<T, 7>> filter{median_filter};
+  process_filter2d(rect, y_begin, y_end, src_rows, dst_rows, border_type,
+                   filter);
+  return KLEIDICV_OK;
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE

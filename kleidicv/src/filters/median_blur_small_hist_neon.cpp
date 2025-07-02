@@ -6,49 +6,9 @@
 #include "kleidicv/filters/median_blur.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "median_blur_border_handling.h"
 
 namespace kleidicv::neon {
-
-static ptrdiff_t get_physical_index(size_t index, size_t limit,
-                                    FixedBorderType border_type) {
-  int result = 0;
-  int signed_index = static_cast<int>(index);
-  int signed_limit = static_cast<int>(limit);
-
-  if (signed_index >= 0 && signed_index < signed_limit) {
-    return static_cast<ptrdiff_t>(index);
-  }
-  switch (border_type) {
-    case FixedBorderType::REPLICATE: {
-      result = std::clamp(signed_index, 0, signed_limit - 1);
-      break;
-    }
-    case FixedBorderType::REFLECT: {
-      if (signed_index < 0) {
-        result = -signed_index - 1;
-      } else {
-        result = 2 * signed_limit - signed_index - 1;
-      }
-      break;
-    }
-
-    case FixedBorderType::WRAP: {
-      result = (signed_index + signed_limit) % signed_limit;
-      break;
-    }
-
-    case FixedBorderType::REVERSE: {
-      if (signed_index < 0) {
-        result = std::min(-signed_index, signed_limit - 1);
-      } else {
-        result = 2 * signed_limit - signed_index - 2;
-      }
-      break;
-    }
-  }
-
-  return static_cast<ptrdiff_t>(result);
-}
 
 // B. Weiss, "Fast Median and Bilateral Filtering," in *ACM SIGGRAPH 2006
 // Papers*, ACM, New York, NY, USA, pp. 519–526, 2006.
@@ -62,7 +22,7 @@ class MedianBlurSmallHist {
       Rectangle image_dimensions, Point starting_coordinates,
       Point ending_coordinates, Rows<const uint8_t> src_rows,
       Rows<uint8_t> dst_rows, size_t ksize, FixedBorderType border_type) {
-    const size_t KMargin = ksize / 2;
+    const size_t kMargin = ksize / 2;
 
     for (size_t w = starting_coordinates.x(); w < ending_coordinates.x(); w++) {
       for (ptrdiff_t ch = 0; ch < static_cast<ptrdiff_t>(src_rows.channels());
@@ -76,10 +36,10 @@ class MedianBlurSmallHist {
         for (size_t r = 0; r < ksize; r++) {
           for (size_t c = 0; c < ksize; c++) {
             const ptrdiff_t valid_h =
-                get_physical_index(starting_coordinates.y() + r - KMargin,
+                get_physical_index(starting_coordinates.y() + r - kMargin,
                                    image_dimensions.height(), border_type);
             const ptrdiff_t valid_w = get_physical_index(
-                w + c - KMargin, image_dimensions.width(), border_type);
+                w + c - kMargin, image_dimensions.width(), border_type);
 
             uint8_t pixel = src_rows.at(valid_h, valid_w)[ch];
 
@@ -95,14 +55,14 @@ class MedianBlurSmallHist {
         for (size_t h = starting_coordinates.y() + 1;
              h < ending_coordinates.y(); h++) {
           const ptrdiff_t valid_new_h = get_physical_index(
-              h + KMargin, image_dimensions.height(), border_type);
+              h + kMargin, image_dimensions.height(), border_type);
 
           const ptrdiff_t valid_old_h = get_physical_index(
-              h - KMargin - 1, image_dimensions.height(), border_type);
+              h - kMargin - 1, image_dimensions.height(), border_type);
 
           for (size_t c = 0; c < ksize; c++) {
             const ptrdiff_t valid_w = get_physical_index(
-                w + c - KMargin, image_dimensions.width(), border_type);
+                w + c - kMargin, image_dimensions.width(), border_type);
 
             uint8_t incoming_pixel = src_rows.at(valid_new_h, valid_w)[ch];
 
@@ -382,7 +342,7 @@ class MedianBlurSmallHist {
   }
 };
 
-kleidicv_error_t median_blur_small_hist_stripe_u8(
+KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t median_blur_small_hist_stripe_u8(
     const uint8_t* src, size_t src_stride, uint8_t* dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, FixedBorderType border_type) {
@@ -390,11 +350,11 @@ kleidicv_error_t median_blur_small_hist_stripe_u8(
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
   MedianBlurSmallHist median_filter;
-  const size_t KMargin = kernel_width / 2;
+  const size_t kMargin = kernel_width / 2;
 
   // Process left border
   size_t starting_width = 0;
-  const size_t processing_left_width = KMargin;
+  const size_t processing_left_width = kMargin;
   Point starting_left_coordinates{starting_width, y_begin};
   Point ending_left_coordinates{starting_width + processing_left_width, y_end};
 
@@ -405,12 +365,12 @@ kleidicv_error_t median_blur_small_hist_stripe_u8(
   // Process center region
   starting_width = processing_left_width;
   // Compute the width of the center region that can be processed with NEON
-  // instructions. Subtract 2 * KMargin to exclude left and right borders, which
+  // instructions. Subtract 2 * kMargin to exclude left and right borders, which
   // are handled separately using scalar code due to varying border modes (e.g.,
   // REPLICATE, REFLECT, WRAP, REVERSE). Align the remaining width down to the
   // nearest multiple of 16 to match NEON's 128-bit register width (16 bytes for
   // uint8x16_t).
-  const size_t processing_center_width = ((width - 2 * KMargin) / 16) * 16;
+  const size_t processing_center_width = ((width - 2 * kMargin) / 16) * 16;
   Point starting_center_coordinates{starting_width * channels, y_begin};
   Point ending_center_coordinates{
       (processing_center_width + starting_width) * channels, y_end};

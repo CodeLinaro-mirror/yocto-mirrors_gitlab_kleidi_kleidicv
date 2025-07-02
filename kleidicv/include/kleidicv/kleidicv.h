@@ -2058,12 +2058,12 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
 ///                       @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 /// @param kernel_width   Width of the Median kernel. Must be odd and equal to
 ///                      `kernel_height`.
-///                       For `uint8_t`, values 3 to 15 are supported. For other
-///                       types, only 3, 5 and 7.
+///                       For `uint8_t`, values 3 to 255 are supported. For
+///                       other types, only 3, 5 and 7.
 /// @param kernel_height  Height of the Median kernel. Must be odd and equal to
 ///                       `kernel_width`.
-///                       For `uint8_t`, values 3 to 15 are supported. For other
-///                       types, only 3, 5 and 7.
+///                       For `uint8_t`, values 3 to 255 are supported. For
+///                       other types, only 3, 5 and 7.
 /// @param border_type    Way of handling the border. The supported border types
 ///                       are: \n
 ///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE \n

@@ -113,7 +113,7 @@ class Thread : public testing::TestWithParam<P> {
     (void)thread_count;
     size_t channels = 1;
     kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
-    const auto &filter_size = std::vector<size_t>{3, 5, 7, 9};
+    const auto &filter_size = std::vector<size_t>{3, 5, 7, 9, 17};
     for (auto ksize : filter_size) {
       check_unary_op<T, T>(single_threaded_func, multithreaded_func, channels,
                            channels, channels, ksize, ksize, border_type);
@@ -957,7 +957,7 @@ INSTANTIATE_TEST_SUITE_P(
                     P{1, 7, 4}, P{12, 34, 5}, P{1, 16, 1}, P{1, 32, 1},
                     P{1, 32, 2}, P{2, 16, 2}, P{2, 32, 1}, P{1, 48, 2},
                     P{2, 48, 1}, P{6, 64, 1}, P{4, 80, 2}, P{2, 96, 3},
-                    P{1, 112, 4}, P{12, 34, 5}));
+                    P{1, 112, 4}, P{12, 34, 5}, P{40, 34, 5}));
 
 TEST(ThreadScaleU8, NotImplemented) {
   test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);

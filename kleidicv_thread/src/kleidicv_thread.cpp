@@ -593,7 +593,16 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
     return checks_result;
   }
 
-  if (kernel_width > 7) {
+  if (kernel_width <= 7) {
+    auto callback = [=](unsigned y_begin, unsigned y_end) {
+      return kleidicv_median_blur_sorting_network_stripe_u8(
+          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+          channels, kernel_width, kernel_height, fixed_border_type);
+    };
+    return parallel_batches(callback, mt, height);
+  }
+
+  if (kernel_width > 7 && kernel_width <= 15) {
     auto callback = [=](unsigned y_begin, unsigned y_end) {
       return kleidicv_median_blur_small_hist_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -603,7 +612,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
   }
 
   auto callback = [=](unsigned y_begin, unsigned y_end) {
-    return kleidicv_median_blur_sorting_network_stripe_u8(
+    return kleidicv_median_blur_large_hist_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, fixed_border_type);
   };

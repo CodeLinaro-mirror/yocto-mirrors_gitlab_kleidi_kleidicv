@@ -19,9 +19,23 @@ bool test_median_blur(int index, RecreatedMessageQueue& request_queue,
                       RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
-  for (size_t x = 5; x <= 16; ++x) {
-    for (size_t y = 5; y <= 16; ++y) {
-      cv::Mat input(x, y, get_opencv_matrix_type<TypeParam, Channels>());
+  size_t size_min{0};
+  size_t size_max{0};
+  size_t step{0};
+
+  if constexpr (KernelSize <= 15) {
+    size_min = KernelSize - 1;
+    size_max = 2 * KernelSize + 16;
+    step = 1;
+  } else {
+    size_min = KernelSize - 1;
+    size_max = KernelSize + 16;
+    step = 16;
+  }
+
+  for (size_t w = size_min; w <= size_max; w += step) {
+    for (size_t h = size_min; h <= size_max; h += step) {
+      cv::Mat input(w, h, get_opencv_matrix_type<TypeParam, Channels>());
       rng.fill(input, cv::RNG::UNIFORM, std::numeric_limits<TypeParam>::min(),
                std::numeric_limits<TypeParam>::max());
 
@@ -30,7 +44,7 @@ bool test_median_blur(int index, RecreatedMessageQueue& request_queue,
                                                        reply_queue, input);
 
       if (are_matrices_different<TypeParam>(0, actual, expected)) {
-        fail_print_matrices(x, y, input, actual, expected);
+        fail_print_matrices(w, h, input, actual, expected);
         return true;
       }
     }
@@ -82,6 +96,18 @@ std::vector<test>& median_blur_tests_get() {
     TEST("Median 15x15, 1 channel (U8)",  (test_median_blur<15, uint8_t, 1>),  exec_median_blur<15>),
     TEST("Median 15x15, 3 channel (U8)",  (test_median_blur<15, uint8_t, 3>),  exec_median_blur<15>),
     TEST("Median 15x15, 4 channel (U8)",  (test_median_blur<15, uint8_t, 4>),  exec_median_blur<15>),
+    TEST("Median 17x17, 1 channel (U8)",  (test_median_blur<17, uint8_t, 1>),  exec_median_blur<17>),
+    TEST("Median 17x17, 3 channel (U8)",  (test_median_blur<17, uint8_t, 3>),  exec_median_blur<17>),
+    TEST("Median 17x17, 4 channel (U8)",  (test_median_blur<17, uint8_t, 4>),  exec_median_blur<17>),
+    TEST("Median 27x27, 1 channel (U8)",  (test_median_blur<27, uint8_t, 1>),  exec_median_blur<27>),
+    TEST("Median 27x27, 3 channel (U8)",  (test_median_blur<27, uint8_t, 3>),  exec_median_blur<27>),
+    TEST("Median 27x27, 4 channel (U8)",  (test_median_blur<27, uint8_t, 4>),  exec_median_blur<27>),
+    TEST("Median 35x35, 1 channel (U8)",  (test_median_blur<35, uint8_t, 1>),  exec_median_blur<35>),
+    TEST("Median 35x35, 3 channel (U8)",  (test_median_blur<35, uint8_t, 3>),  exec_median_blur<35>),
+    TEST("Median 35x35, 4 channel (U8)",  (test_median_blur<35, uint8_t, 4>),  exec_median_blur<35>),
+    TEST("Median 255x255, 1 channel (U8)",  (test_median_blur<255, uint8_t, 1>),  exec_median_blur<255>),
+    TEST("Median 255x255, 3 channel (U8)",  (test_median_blur<255, uint8_t, 3>),  exec_median_blur<255>),
+    TEST("Median 255x255, 4 channel (U8)",  (test_median_blur<255, uint8_t, 4>),  exec_median_blur<255>),
   };
   // clang-format on
   return tests;

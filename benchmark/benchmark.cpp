@@ -616,7 +616,10 @@ BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 1, , kleidicv_median_blur_u8)
     ->Arg(9)
     ->Arg(11)
     ->Arg(13)
-    ->Arg(15);
+    ->Arg(15)
+    ->Arg(17)
+    ->Arg(27)
+    ->Arg(35);
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 4, , kleidicv_median_blur_u8)
     ->Arg(3)
     ->Arg(5)
@@ -624,7 +627,10 @@ BENCHMARK_TEMPLATE2_CAPTURE(median_blur, uint8_t, 4, , kleidicv_median_blur_u8)
     ->Arg(9)
     ->Arg(11)
     ->Arg(13)
-    ->Arg(15);
+    ->Arg(15)
+    ->Arg(17)
+    ->Arg(27)
+    ->Arg(35);
 
 BENCHMARK_TEMPLATE2_CAPTURE(median_blur, int8_t, 1, , kleidicv_median_blur_s8)
     ->Arg(3)

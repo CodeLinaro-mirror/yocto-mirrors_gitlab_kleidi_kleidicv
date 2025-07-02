@@ -33,6 +33,10 @@ KLEIDICV_MULTIVERSION_C_API(kleidicv_median_blur_small_hist_stripe_u8,
                             &kleidicv::neon::median_blur_small_hist_stripe_u8,
                             nullptr, nullptr);
 
+KLEIDICV_MULTIVERSION_C_API(kleidicv_median_blur_large_hist_stripe_u8,
+                            &kleidicv::neon::median_blur_large_hist_stripe_u8,
+                            nullptr, nullptr);
+
 extern "C" {
 
 kleidicv_error_t kleidicv_median_blur_s8(const int8_t *src, size_t src_stride,
@@ -70,13 +74,19 @@ kleidicv_error_t kleidicv_median_blur_u8(const uint8_t *src, size_t src_stride,
     return checks_result;
   }
 
-  if (kernel_width > 7) {
+  if (kernel_width <= 7) {
+    return kleidicv_median_blur_sorting_network_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, 0, height, channels,
+        kernel_width, kernel_height, fixed_border_type);
+  }
+
+  if (kernel_width > 7 && kernel_width <= 15) {
     return kleidicv_median_blur_small_hist_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, 0, height, channels,
         kernel_width, kernel_height, fixed_border_type);
   }
 
-  return kleidicv_median_blur_sorting_network_stripe_u8(
+  return kleidicv_median_blur_large_hist_stripe_u8(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
       kernel_width, kernel_height, fixed_border_type);
 }

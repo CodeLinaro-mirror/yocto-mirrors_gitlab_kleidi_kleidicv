@@ -80,7 +80,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Separable Filter 2D (5x5)                   |     |  x  |  x  |  x  |     |     |     |
 | Gaussian Blur (3x3, 5x5, 7x7, 15x15, 21x21) |     |  x  |     |     |     |     |     |
 | Median Blur (3x3, 5x5, 7x7)                 |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Median Blur (9x9, 11x11, 13x13, 15x15)      |     |  x  |     |     |     |     |     |
+| Median Blur (generic imp, max size 255x255) |     |  x  |     |     |     |     |     |
 
 
 ## Resize to quarter
