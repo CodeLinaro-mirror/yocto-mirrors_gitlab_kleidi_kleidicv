@@ -5,8 +5,6 @@
 #ifndef KLEIDICV_RESIZE_LINEAR_SC_H
 #define KLEIDICV_RESIZE_LINEAR_SC_H
 
-#include <arm_sve.h>
-
 #include <cassert>
 
 #include "kleidicv/kleidicv.h"

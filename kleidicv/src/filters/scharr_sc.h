@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <arm_sve.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
