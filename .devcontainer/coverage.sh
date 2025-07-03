@@ -6,7 +6,9 @@
 
 set -eu
 
-BUILD_ID="kleidicv-coverage" \
+BUILD_ID="kleidicv-coverage"
+
+BUILD_ID="${BUILD_ID}" \
 COVERAGE="ON" \
 CMAKE_CXX_FLAGS="--target=aarch64-linux-gnu" \
 CMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
@@ -26,4 +28,4 @@ qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
 qemu-aarch64 -cpu max,sve128=on,sme512=on build/kleidicv-coverage/test/api/kleidicv-api-test --vector-length=64
 
 # Generate test coverage report
-LLVM_COV=llvm-cov scripts/generate_coverage_report.py
+LLVM_COV=llvm-cov scripts/generate_coverage_report.py "build/${BUILD_ID}"
