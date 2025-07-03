@@ -49,8 +49,10 @@ GaussianBlur7x7:   opencv_perf_imgproc '*gaussianBlur7x7/*'   '($PIXEL_FORMAT, 8
 GaussianBlur3x3_CustomSigma:   opencv_perf_imgproc '*gaussianBlur3x3_CustomSigma/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
 GaussianBlur5x5_CustomSigma:   opencv_perf_imgproc '*gaussianBlur5x5_CustomSigma/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
 GaussianBlur7x7_CustomSigma:   opencv_perf_imgproc '*gaussianBlur7x7_CustomSigma/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
+GaussianBlur9x9_CustomSigma:   opencv_perf_imgproc '*gaussianBlur9x9_CustomSigma/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
 GaussianBlur15x15_CustomSigma: opencv_perf_imgproc '*gaussianBlur15x15_CustomSigma/*' '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
 GaussianBlur21x21_CustomSigma: opencv_perf_imgproc '*gaussianBlur21x21_CustomSigma/*' '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
+GaussianBlur49x49_CustomSigma:   opencv_perf_imgproc '*gaussianBlur49x49_CustomSigma/*'   '($PIXEL_FORMAT, 8UC1, BORDER_REPLICATE)'
 
 Sobel_Gx: opencv_perf_imgproc '*Border3x3_sobelFilter.sobelFilter/*' '($PIXEL_FORMAT, 16SC1, (1, 0), BORDER_REPLICATE)'
 Sobel_Gy: opencv_perf_imgproc '*Border3x3_sobelFilter.sobelFilter/*' '($PIXEL_FORMAT, 16SC1, (0, 1), BORDER_REPLICATE)'

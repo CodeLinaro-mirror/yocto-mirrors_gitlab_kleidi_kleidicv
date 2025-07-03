@@ -5,11 +5,11 @@
 #ifndef KLEIDICV_WORKSPACE_SEPARABLE_H
 #define KLEIDICV_WORKSPACE_SEPARABLE_H
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <memory>
 
-#include "border_types.h"
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
@@ -152,6 +152,49 @@ class SeparableFilterWorkspace {
       // Process in the horizontal direction last.
       process_horizontal(rect.width(), buffer_rows, dst_rows.at(vertical_index),
                          filter, horizontal_border);
+    }
+  }
+
+  // Processes rows vertically first along the full width
+  template <typename FilterType>
+  void process_arbitrary(Rectangle rect, size_t kernel_size, size_t y_begin,
+                         size_t y_end,
+                         Rows<const typename FilterType::SourceType> src_rows,
+                         Rows<typename FilterType::DestinationType> dst_rows,
+                         size_t channels,
+                         typename FilterType::BorderType /* border_type */,
+                         FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+    // Buffer rows which hold intermediate widened data.
+    auto buffer_rows = Rows{reinterpret_cast<typename FilterType::BufferType *>(
+                                &data_[buffer_rows_offset_]),
+                            buffer_rows_stride_, channels};
+    size_t margin = kernel_size / 2;
+
+    // Process top rows, affected by border
+    for (size_t row_index = y_begin; row_index < std::max(y_begin, margin);
+         ++row_index) {
+      filter.process_arbitrary_border_vertical(rect.width(), src_rows,
+                                               row_index, buffer_rows);
+      filter.process_arbitrary_horizontal(rect.width(), kernel_size,
+                                          buffer_rows, dst_rows.at(row_index));
+    }
+
+    // Process middle rows that are not affected by any borders
+    for (size_t row_index = std::max(y_begin, margin);
+         row_index < std::min(y_end, rect.height() - margin); ++row_index) {
+      filter.process_arbitrary_vertical(rect.width(), src_rows.at(row_index),
+                                        buffer_rows);
+      filter.process_arbitrary_horizontal(rect.width(), kernel_size,
+                                          buffer_rows, dst_rows.at(row_index));
+    }
+
+    // Process bottom rows, affected by border
+    for (size_t row_index = std::min(y_end, rect.height() - margin);
+         row_index < y_end; ++row_index) {
+      filter.process_arbitrary_border_vertical(rect.width(), src_rows,
+                                               row_index, buffer_rows);
+      filter.process_arbitrary_horizontal(rect.width(), kernel_size,
+                                          buffer_rows, dst_rows.at(row_index));
     }
   }
 

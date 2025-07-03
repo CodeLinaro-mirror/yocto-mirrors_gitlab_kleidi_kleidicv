@@ -598,9 +598,11 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
   }
 
   // Check for not-implemented before allocating a context
-  if (!kleidicv::gaussian_blur_is_implemented(width, height, kernel_size,
-                                              kernel_size, 0, 0) ||
-      !kleidicv::get_fixed_border_type(kleidicv_border_type)) {
+  auto fixed_border_type =
+      kleidicv::get_fixed_border_type(kleidicv_border_type);
+  if (!fixed_border_type || !kleidicv::gaussian_blur_is_implemented(
+                                width, height, kernel_size, kernel_size, 0, 0,
+                                cn, *fixed_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -651,9 +653,11 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
   }
 
   // Check for not-implemented before allocating a context
-  if (!kleidicv::gaussian_blur_is_implemented(
-          width, height, kernel_width, kernel_height, sigma_x, sigma_y) ||
-      !kleidicv::get_fixed_border_type(kleidicv_border_type)) {
+  auto fixed_border_type =
+      kleidicv::get_fixed_border_type(kleidicv_border_type);
+  if (!fixed_border_type || !kleidicv::gaussian_blur_is_implemented(
+                                width, height, kernel_width, kernel_height,
+                                sigma_x, sigma_y, cn, *fixed_border_type)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 

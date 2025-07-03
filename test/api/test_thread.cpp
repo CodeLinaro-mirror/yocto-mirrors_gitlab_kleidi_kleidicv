@@ -278,6 +278,25 @@ class Thread : public testing::TestWithParam<P> {
     EXPECT_EQ(KLEIDICV_OK, multi_result);
     EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
   }
+
+  void check_gaussian_blur_u8(unsigned width, unsigned height,
+                              size_t kernel_size) {
+    size_t channels = 1;
+    size_t kernel_width = kernel_size;
+    size_t kernel_height = kernel_size;
+    float sigma_x = 0.0F, sigma_y = 0.0F;
+    kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
+    kleidicv_filter_context_t *context = nullptr;
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_filter_context_create(&context, channels, kernel_width,
+                                             kernel_height, width, height));
+    check_unary_op<uint8_t, uint8_t>(
+        kleidicv_gaussian_blur_u8, kleidicv_thread_gaussian_blur_u8,
+        channels /*src_channels*/, channels /*dst_channels*/,
+        /*remaining arguments passed to gaussian_blur_u8 functions*/ channels,
+        kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
+    ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  }
 };
 
 #define TEST_UNARY_OP(suffix, SrcT, DstT, ...)                              \
@@ -348,25 +367,18 @@ TEST_BINARY_OP(compare_equal_u8, uint8_t, 1, 1);
 TEST_BINARY_OP(compare_greater_u8, uint8_t, 1, 1);
 TEST_BINARY_OP(saturating_add_abs_with_threshold_s16, int16_t, 1, 1, 123);
 
-TEST_P(Thread, gaussian_blur_u8) {
+TEST_P(Thread, gaussian_blur_fixed_u8) {
   unsigned width = 0, height = 0, thread_count = 0;
   std::tie(width, height, thread_count) = GetParam();
   (void)thread_count;
-  size_t channels = 1;
-  size_t kernel_width = 5;
-  size_t kernel_height = kernel_width;
-  float sigma_x = 0.0F, sigma_y = 0.0F;
-  kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, channels, kernel_width,
-                                           kernel_height, width, height));
-  check_unary_op<uint8_t, uint8_t>(
-      kleidicv_gaussian_blur_u8, kleidicv_thread_gaussian_blur_u8,
-      channels /*src_channels*/, channels /*dst_channels*/,
-      /*remaining arguments passed to gaussian_blur_u8 functions*/ channels,
-      kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  check_gaussian_blur_u8(width, height, 5);
+}
+
+TEST_P(Thread, gaussian_blur_arbitrary_u8) {
+  unsigned width = 0, height = 0, thread_count = 0;
+  std::tie(width, height, thread_count) = GetParam();
+  (void)thread_count;
+  check_gaussian_blur_u8(width, height, 11);
 }
 
 template <typename T, typename MultithreadedFunc>

@@ -7,7 +7,7 @@
 
 #include <optional>
 
-#include "kleidicv/kleidicv.h"
+#include "kleidicv/ctypes.h"
 
 namespace kleidicv {
 

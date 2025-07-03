@@ -72,15 +72,16 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Rotate (90 degrees clockwise) |   x   |    x   |    x   |    x   |
 
 ## Image filters
-|                                             | s8  | u8  | s16 | u16 | s32 | u32 | f32 |
-|---------------------------------------------|-----|-----|-----|-----|-----|-----|-----|
-| Erode                                       |     |  x  |     |     |     |     |     |
-| Dilate                                      |     |  x  |     |     |     |     |     |
-| Sobel (3x3)                                 |     |  x  |     |     |     |     |     |
-| Separable Filter 2D (5x5)                   |     |  x  |  x  |  x  |     |     |     |
-| Gaussian Blur (3x3, 5x5, 7x7, 15x15, 21x21) |     |  x  |     |     |     |     |     |
-| Median Blur (3x3, 5x5, 7x7)                 |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
-| Median Blur (generic imp, max size 255x255) |     |  x  |     |     |     |     |     |
+|                                                   | s8  | u8  | s16 | u16 | s32 | u32 | f32 |
+|---------------------------------------------------|-----|-----|-----|-----|-----|-----|-----|
+| Erode                                             |     |  x  |     |     |     |     |     |
+| Dilate                                            |     |  x  |     |     |     |     |     |
+| Sobel (3x3)                                       |     |  x  |     |     |     |     |     |
+| Separable Filter 2D (5x5)                         |     |  x  |  x  |  x  |     |     |     |
+| Gaussian Blur (3x3, 5x5, 7x7, 15x15, 21x21)       |     |  x  |     |     |     |     |     |
+| Gaussian Blur any kernel size, Replicated Borders |     |  x  |     |     |     |     |     |
+| Median Blur (3x3, 5x5, 7x7)                       |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
+| Median Blur (generic imp, max size 255x255)       |     |  x  |     |     |     |     |     |
 
 
 ## Resize to quarter

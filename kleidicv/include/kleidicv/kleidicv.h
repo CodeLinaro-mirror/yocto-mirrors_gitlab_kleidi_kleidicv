@@ -1335,7 +1335,9 @@ kleidicv_error_t kleidicv_separable_filter_2d_s16(
 ///                      sizeof(type) * channels`, except for single-row images.
 /// @param width         Number of columns in the data. (One column consists of
 ///                      `channels` number of elements.) Must be greater than
-///                      or equal to `kernel_width - 1`.
+///                      or equal to `kernel_width - 1` (if kernel_width is
+///                      3,5,7,15,21), or `(kernel_width/2) rounded up to 8,
+///                      plus kernel_width/2` (for other kernel sizes).
 /// @param height        Number of rows in the data. Must be greater than
 ///                      or equal to `kernel_height - 1`.
 /// @param channels      Number of channels in the data. Must be not more than

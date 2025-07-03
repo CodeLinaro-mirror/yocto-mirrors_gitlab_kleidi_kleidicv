@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -8,13 +8,13 @@
 #include <array>
 #include <cassert>
 
+#include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/separable_filter_15x15_sc.h"
 #include "kleidicv/filters/separable_filter_21x21_sc.h"
 #include "kleidicv/filters/separable_filter_3x3_sc.h"
 #include "kleidicv/filters/separable_filter_5x5_sc.h"
 #include "kleidicv/filters/separable_filter_7x7_sc.h"
 #include "kleidicv/filters/sigma.h"
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/workspace/separable.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
@@ -259,7 +259,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   static constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
 
-  explicit GaussianBlur(const std::array<uint16_t, kHalfKernelSize> half_kernel)
+  explicit GaussianBlur(const uint16_t *half_kernel)
       : half_kernel_(half_kernel) {}
 
   void vertical_vector_path(
@@ -326,7 +326,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
     svst1(pg, &dst[0], result);
   }
 
-  const std::array<uint16_t, kHalfKernelSize> half_kernel_;
+  const uint16_t *half_kernel_;
 };  // end of class GaussianBlur<uint8_t, KernelSize, false>
 
 template <size_t KernelSize, bool IsBinomial, typename ScalarType>
@@ -349,7 +349,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     return KLEIDICV_OK;
   } else {
     constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
-    auto half_kernel = generate_gaussian_half_kernel<kHalfKernelSize>(sigma);
+    uint16_t half_kernel[128];
+    generate_gaussian_half_kernel(half_kernel, kHalfKernelSize, sigma);
     // If sigma is so small that the middle point gets all the weights, it's
     // just a copy
     if (half_kernel[kHalfKernelSize - 1] < 256) {
@@ -406,36 +407,7 @@ static kleidicv_error_t gaussian_blur(
   }
 }
 
-// Does not include checks for whether the operation is implemented.
-// This must be done earlier, by gaussian_blur_is_implemented.
-template <typename T>
-static kleidicv_error_t gaussian_blur_checks(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, size_t channels,
-    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
-  CHECK_POINTERS(workspace);
-
-  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
-  CHECK_IMAGE_SIZE(width, height);
-
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if (workspace->channels() < channels) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  const Rectangle &context_rect = workspace->image_size();
-  if (context_rect.width() < width || context_rect.height() < height) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  return KLEIDICV_OK;
-}
-
-static kleidicv_error_t gaussian_blur_stripe_u8_sc(
+static kleidicv_error_t gaussian_blur_fixed_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t /*kernel_height*/, float sigma_x,

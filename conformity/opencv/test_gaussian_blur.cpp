@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <algorithm>
 #include <vector>
 
 #include "tests.h"
@@ -27,12 +28,8 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
                         RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
-  size_t size_min = 5;
-  size_t size_max = 16;
-  if constexpr (KernelSize >= 15) {
-    size_min = KernelSize - 1;
-    size_max = 2 * KernelSize + 2;
-  }
+  size_t size_min = std::max<size_t>(4, KernelSize - 1);
+  size_t size_max = std::max<size_t>(16, 2 * KernelSize + 2);
 
   for (size_t y = size_min; y <= size_max; ++y) {
     for (size_t x = size_min; x <= size_max; ++x) {
@@ -62,7 +59,7 @@ bool test_gaussian_blur(int index, RecreatedMessageQueue& request_queue,
       // For bigger kernels, and for all the CustomSigma variants, a small
       // difference is allowed.
       if constexpr (KernelSize > 7 || !Binomial) {
-        threshold = 2;
+        threshold = 1;
       }
 
       if (are_matrices_different<uint8_t>(threshold, actual, expected)) {
@@ -203,6 +200,12 @@ std::vector<test>& gaussian_blur_tests_get() {
     TEST("Gaussian blur 21x21, BORDER_REPLICATE, 2 channel", (test_gaussian_blur<21, cv::BORDER_REPLICATE, 2>), (exec_gaussian_blur<21, cv::BORDER_REPLICATE>)),
     TEST("Gaussian blur 21x21, BORDER_REPLICATE, 3 channel", (test_gaussian_blur<21, cv::BORDER_REPLICATE, 3>), (exec_gaussian_blur<21, cv::BORDER_REPLICATE>)),
     TEST("Gaussian blur 21x21, BORDER_REPLICATE, 4 channel", (test_gaussian_blur<21, cv::BORDER_REPLICATE, 4>), (exec_gaussian_blur<21, cv::BORDER_REPLICATE>)),
+
+    // Generic kernel size
+    TEST("Gaussian blur 9x9, BORDER_REPLICATE, 1 channel, random sigma", (test_gaussian_blur<9, cv::BORDER_REPLICATE, 1, false>), (exec_gaussian_blur<9, cv::BORDER_REPLICATE>)),
+    TEST("Gaussian blur 9x9, BORDER_REPLICATE, 2 channel, random sigma", (test_gaussian_blur<9, cv::BORDER_REPLICATE, 2, false>), (exec_gaussian_blur<9, cv::BORDER_REPLICATE>)),
+    TEST("Gaussian blur 9x9, BORDER_REPLICATE, 3 channel, random sigma", (test_gaussian_blur<9, cv::BORDER_REPLICATE, 3, false>), (exec_gaussian_blur<9, cv::BORDER_REPLICATE>)),
+    TEST("Gaussian blur 9x9, BORDER_REPLICATE, 4 channel, random sigma", (test_gaussian_blur<9, cv::BORDER_REPLICATE, 4, false>), (exec_gaussian_blur<9, cv::BORDER_REPLICATE>)),
   };
   // clang-format on
   return tests;

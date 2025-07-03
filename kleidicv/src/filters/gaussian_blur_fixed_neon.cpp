@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <array>
 #include <cassert>
+#include <cstddef>
 
+#include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/separable_filter_15x15_neon.h"
@@ -13,8 +14,8 @@
 #include "kleidicv/filters/separable_filter_5x5_neon.h"
 #include "kleidicv/filters/separable_filter_7x7_neon.h"
 #include "kleidicv/filters/sigma.h"
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/workspace/border_types.h"
 #include "kleidicv/workspace/separable.h"
 
 namespace kleidicv::neon {
@@ -301,7 +302,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   static constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
 
-  explicit GaussianBlur(const std::array<uint16_t, kHalfKernelSize> half_kernel)
+  explicit GaussianBlur(const uint16_t *half_kernel)
       : half_kernel_(half_kernel) {}
 
   void vertical_vector_path(uint8x16_t src[KernelSize], BufferType *dst) const {
@@ -362,7 +363,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
     neon::VecTraits<uint8_t>::store(result, &dst[0]);
   }
 
-  const std::array<uint16_t, kHalfKernelSize> half_kernel_;
+  const uint16_t *half_kernel_;
 };  // end of class GaussianBlur<uint8_t, KernelSize, false>
 
 template <size_t KernelSize, bool IsBinomial, typename ScalarType>
@@ -385,7 +386,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     return KLEIDICV_OK;
   } else {
     constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
-    auto half_kernel = generate_gaussian_half_kernel<kHalfKernelSize>(sigma);
+    uint16_t half_kernel[128];
+    generate_gaussian_half_kernel(half_kernel, kHalfKernelSize, sigma);
     // If sigma is so small that the middle point gets all the weights, it's
     // just a copy
     if (half_kernel[kHalfKernelSize - 1] < 256) {
@@ -405,13 +407,11 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
 }
 
 template <bool IsBinomial, typename ScalarType>
-static kleidicv_error_t gaussian_blur(size_t kernel_size, const ScalarType *src,
-                                      size_t src_stride, ScalarType *dst,
-                                      size_t dst_stride, Rectangle &rect,
-                                      size_t y_begin, size_t y_end,
-                                      size_t channels, float sigma,
-                                      FixedBorderType border_type,
-                                      SeparableFilterWorkspace *workspace) {
+static kleidicv_error_t gaussian_blur_fixed(
+    size_t kernel_size, const ScalarType *src, size_t src_stride,
+    ScalarType *dst, size_t dst_stride, Rectangle &rect, size_t y_begin,
+    size_t y_end, size_t channels, float sigma, FixedBorderType border_type,
+    SeparableFilterWorkspace *workspace) {
   switch (kernel_size) {
     case 3:
       return gaussian_blur_fixed_kernel_size<3, IsBinomial>(
@@ -444,37 +444,8 @@ static kleidicv_error_t gaussian_blur(size_t kernel_size, const ScalarType *src,
   }
 }
 
-// Does not include checks for whether the operation is implemented.
-// This must be done earlier, by gaussian_blur_is_implemented.
-template <typename T>
-static kleidicv_error_t gaussian_blur_checks(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, size_t channels, SeparableFilterWorkspace *workspace) {
-  CHECK_POINTERS(workspace);
-
-  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
-  CHECK_IMAGE_SIZE(width, height);
-
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if (workspace->channels() < channels) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  Rectangle rect{width, height};
-  const Rectangle &context_rect = workspace->image_size();
-  if (context_rect.width() < width || context_rect.height() < height) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  return KLEIDICV_OK;
-}
-
 KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t gaussian_blur_stripe_u8(
+kleidicv_error_t gaussian_blur_fixed_stripe_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t /*kernel_height*/, float sigma_x,
@@ -491,14 +462,14 @@ kleidicv_error_t gaussian_blur_stripe_u8(
   Rectangle rect{width, height};
 
   if (sigma_x == 0.0) {
-    return gaussian_blur<true>(kernel_width, src, src_stride, dst, dst_stride,
-                               rect, y_begin, y_end, channels, sigma_x,
-                               fixed_border_type, workspace);
+    return gaussian_blur_fixed<true>(kernel_width, src, src_stride, dst,
+                                     dst_stride, rect, y_begin, y_end, channels,
+                                     sigma_x, fixed_border_type, workspace);
   }
 
-  return gaussian_blur<false>(kernel_width, src, src_stride, dst, dst_stride,
-                              rect, y_begin, y_end, channels, sigma_x,
-                              fixed_border_type, workspace);
+  return gaussian_blur_fixed<false>(kernel_width, src, src_stride, dst,
+                                    dst_stride, rect, y_begin, y_end, channels,
+                                    sigma_x, fixed_border_type, workspace);
 }
 
 }  // namespace kleidicv::neon

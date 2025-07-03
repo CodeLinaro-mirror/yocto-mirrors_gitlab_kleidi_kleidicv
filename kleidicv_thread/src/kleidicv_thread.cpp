@@ -435,19 +435,32 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
     size_t kernel_height, float sigma_x, float sigma_y,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
-  if (!kleidicv::gaussian_blur_is_implemented(
-          width, height, kernel_width, kernel_height, sigma_x, sigma_y)) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
   auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
   if (!fixed_border_type) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
+  if (!kleidicv::gaussian_blur_is_implemented(width, height, kernel_width,
+                                              kernel_height, sigma_x, sigma_y,
+                                              channels, *fixed_border_type)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (kernel_width <= 7 || kernel_width == 15 || kernel_width == 21) {
+    auto callback = [=](size_t y_begin, size_t y_end,
+                        kleidicv_filter_context_t *thread_context) {
+      return kleidicv_gaussian_blur_fixed_stripe_u8(
+          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+          channels, kernel_width, kernel_height, sigma_x, sigma_y,
+          *fixed_border_type, thread_context);
+    };
+    return kleidicv_thread_filter(callback, width, height, channels,
+                                  kernel_width, kernel_height, context, mt);
+  }
+
   auto callback = [=](size_t y_begin, size_t y_end,
                       kleidicv_filter_context_t *thread_context) {
-    return kleidicv_gaussian_blur_stripe_u8(
+    return kleidicv_gaussian_blur_arbitrary_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, sigma_x, sigma_y,
         *fixed_border_type, thread_context);
