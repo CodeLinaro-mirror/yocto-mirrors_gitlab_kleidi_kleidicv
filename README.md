@@ -19,3 +19,4 @@ It is designed to be simple to integrate into a wide variety of projects.
 * [Benchmarking](doc/benchmark.md)
 * [Testing](doc/test.md)
 * [Contributing](doc/contributing.md)
+* [Integration](doc/integration.md)

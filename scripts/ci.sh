@@ -111,6 +111,11 @@ cmake -S . -B build/ci/build-benchmark -G Ninja \
   -DKLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS=OFF
 ninja -C build/ci/build-benchmark kleidicv-benchmark
 
+# Build examples to prevent bitrot.
+cmake -S ./examples/extract_one_operation -B build/ci/extract_example -G Ninja \
+  -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -fuse-ld=lld"
+ninja -C build/ci/extract_example
+
 # TODO: Cross-build OpenCV
 if [[ $(dpkg --print-architecture) = arm64 ]]; then
   # Check OpenCV-KleidiCV integration
