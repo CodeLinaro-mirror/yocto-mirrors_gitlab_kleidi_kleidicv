@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,6 +13,10 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
+
+#if KLEIDICV_TARGET_SME2
+#include <arm_sme.h>
+#endif
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -58,9 +62,15 @@ class MorphologyWorkspace final {
     constexpr void operator()(Rows<const T> src_rows, Rows<T> dst_rows,
                               size_t length) const
         KLEIDICV_STREAMING_COMPATIBLE {
+#if KLEIDICV_TARGET_SME2
+      __arm_sc_memcpy(static_cast<void *>(&dst_rows[0]),
+                      static_cast<const void *>(&src_rows[0]),
+                      length * sizeof(T) * dst_rows.channels());
+#else
       std::memcpy(static_cast<void *>(&dst_rows[0]),
                   static_cast<const void *>(&src_rows[0]),
                   length * sizeof(T) * dst_rows.channels());
+#endif
     }
   };
 

@@ -17,6 +17,10 @@
 #include "kleidicv/filters/sigma.h"
 #include "kleidicv/workspace/separable.h"
 
+#if KLEIDICV_TARGET_SME2
+#include <arm_sme.h>
+#endif
+
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Primary template for Gaussian Blur filters.
@@ -360,9 +364,16 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
                          border_type, filter);
     } else {
       for (size_t row = y_begin; row < y_end; ++row) {
+#if KLEIDICV_TARGET_SME2
+        __arm_sc_memcpy(
+            static_cast<void *>(&dst_rows.at(row)[0]),
+            static_cast<const void *>(&src_rows.at(row)[0]),
+            rect.width() * sizeof(ScalarType) * dst_rows.channels());
+#else
         std::memcpy(static_cast<void *>(&dst_rows.at(row)[0]),
                     static_cast<const void *>(&src_rows.at(row)[0]),
                     rect.width() * sizeof(ScalarType) * dst_rows.channels());
+#endif
       }
     }
     return KLEIDICV_OK;

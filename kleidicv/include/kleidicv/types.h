@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,6 +12,10 @@
 #include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/utils.h"
+
+#if KLEIDICV_TARGET_SME2
+#include <arm_sme.h>
+#endif
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -524,8 +528,15 @@ class CopyRows final {
  public:
   void process_row(size_t length, Columns<const T> src,
                    Columns<T> dst) KLEIDICV_STREAMING_COMPATIBLE {
-    memmove(static_cast<void *>(&dst[0]), static_cast<const void *>(&src[0]),
-            length * sizeof(T) * dst.channels());
+#if KLEIDICV_TARGET_SME2
+    __arm_sc_memmove(static_cast<void *>(&dst[0]),
+                     static_cast<const void *>(&src[0]),
+                     length * sizeof(T) * dst.channels());
+#else
+    std::memmove(static_cast<void *>(&dst[0]),
+                 static_cast<const void *>(&src[0]),
+                 length * sizeof(T) * dst.channels());
+#endif
   }
 
   template <typename S, typename D>
@@ -542,8 +553,15 @@ class CopyNonOverlappingRows final {
  public:
   void process_row(size_t length, Columns<const T> src,
                    Columns<T> dst) KLEIDICV_STREAMING_COMPATIBLE {
-    memcpy(static_cast<void *>(&dst[0]), static_cast<const void *>(&src[0]),
-           length * sizeof(T) * dst.channels());
+#if KLEIDICV_TARGET_SME2
+    __arm_sc_memcpy(static_cast<void *>(&dst[0]),
+                    static_cast<const void *>(&src[0]),
+                    length * sizeof(T) * dst.channels());
+#else
+    std::memcpy(static_cast<void *>(&dst[0]),
+                static_cast<const void *>(&src[0]),
+                length * sizeof(T) * dst.channels());
+#endif
   }
 
   static void copy_rows(Rectangle rect, Rows<const T> src,
@@ -562,7 +580,11 @@ void make_zero_border_border(Rectangle rect, Rows<T> rows, Margin margin) {
   if (margin.left()) {
     size_t margin_width_in_bytes = margin.left() * sizeof(T) * rows.channels();
     for (size_t index = 0; index < rect.height(); ++index) {
-      memset(&rows.at(index)[0], 0, margin_width_in_bytes);
+#if KLEIDICV_TARGET_SME2
+      __arm_sc_memset(&rows.at(index)[0], 0, margin_width_in_bytes);
+#else
+      std::memset(&rows.at(index)[0], 0, margin_width_in_bytes);
+#endif
     }
   }
 
@@ -570,15 +592,24 @@ void make_zero_border_border(Rectangle rect, Rows<T> rows, Margin margin) {
     size_t top_width = rect.width() - margin.left() - margin.right();
     size_t top_width_in_bytes = top_width * sizeof(T) * rows.channels();
     for (size_t index = 0; index < margin.top(); ++index) {
-      memset(&rows.at(index, margin.left())[0], 0, top_width_in_bytes);
+#if KLEIDICV_TARGET_SME2
+      __arm_sc_memset(&rows.at(index, margin.left())[0], 0, top_width_in_bytes);
+#else
+      std::memset(&rows.at(index, margin.left())[0], 0, top_width_in_bytes);
+#endif
     }
   }
 
   if (margin.right()) {
     size_t margin_width_in_bytes = margin.right() * sizeof(T) * rows.channels();
     for (size_t index = 0; index < rect.height(); ++index) {
-      memset(&rows.at(index, rect.width() - margin.right())[0], 0,
-             margin_width_in_bytes);
+#if KLEIDICV_TARGET_SME2
+      __arm_sc_memset(&rows.at(index, rect.width() - margin.right())[0], 0,
+                      margin_width_in_bytes);
+#else
+      std::memset(&rows.at(index, rect.width() - margin.right())[0], 0,
+                  margin_width_in_bytes);
+#endif
     }
   }
 
@@ -587,7 +618,12 @@ void make_zero_border_border(Rectangle rect, Rows<T> rows, Margin margin) {
     size_t bottom_width_in_bytes = bottom_width * sizeof(T) * rows.channels();
     for (size_t index = rect.height() - margin.bottom(); index < rect.height();
          ++index) {
-      memset(&rows.at(index, margin.left())[0], 0, bottom_width_in_bytes);
+#if KLEIDICV_TARGET_SME2
+      __arm_sc_memset(&rows.at(index, margin.left())[0], 0,
+                      bottom_width_in_bytes);
+#else
+      std::memset(&rows.at(index, margin.left())[0], 0, bottom_width_in_bytes);
+#endif
     }
   }
 }
