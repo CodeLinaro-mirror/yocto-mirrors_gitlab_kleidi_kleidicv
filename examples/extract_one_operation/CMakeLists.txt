@@ -11,7 +11,7 @@ add_library(
   sme_gaussian_blur
   SHARED
   sme_gaussian_blur.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../kleidicv/src/filters/gaussian_blur_fixed_sme2.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../kleidicv/src/filters/gaussian_blur_fixed_sme.cpp
 )
 
 set_target_properties(

@@ -96,8 +96,8 @@ file(GLOB KLEIDICV_SVE2_SOURCES
 )
 
 file(GLOB KLEIDICV_SME_SOURCES
-  "${CMAKE_CURRENT_LIST_DIR}/src/*_sme2.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sme2.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/*_sme.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sme.cpp"
 )
 
 set(KLEIDICV_INCLUDE_DIRS
