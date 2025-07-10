@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -51,7 +51,7 @@ kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
 
 }  // namespace sve2
 
-namespace sme2 {
+namespace sme {
 
 kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -59,7 +59,7 @@ kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
     size_t channels, FixedBorderType fixed_border_type,
     kleidicv_filter_context_t *context);
 
-}  // namespace sme2
+}  // namespace sme
 
 }  // namespace kleidicv
 

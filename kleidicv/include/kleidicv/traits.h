@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -17,7 +17,7 @@ class Monostate {};
 template <typename FnType>
 class remove_streaming_compatible;
 
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
 template <typename Ret, typename Impl, typename... Args>
 class remove_streaming_compatible<Ret (Impl::*)(Args...)
                                       KLEIDICV_STREAMING_COMPATIBLE> {

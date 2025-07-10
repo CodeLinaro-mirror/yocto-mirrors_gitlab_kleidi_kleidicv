@@ -13,7 +13,7 @@
 #include "kleidicv/ctypes.h"
 #include "kleidicv/utils.h"
 
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
 #include <arm_sme.h>
 #endif
 
@@ -528,7 +528,7 @@ class CopyRows final {
  public:
   void process_row(size_t length, Columns<const T> src,
                    Columns<T> dst) KLEIDICV_STREAMING_COMPATIBLE {
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
     __arm_sc_memmove(static_cast<void *>(&dst[0]),
                      static_cast<const void *>(&src[0]),
                      length * sizeof(T) * dst.channels());
@@ -553,7 +553,7 @@ class CopyNonOverlappingRows final {
  public:
   void process_row(size_t length, Columns<const T> src,
                    Columns<T> dst) KLEIDICV_STREAMING_COMPATIBLE {
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
     __arm_sc_memcpy(static_cast<void *>(&dst[0]),
                     static_cast<const void *>(&src[0]),
                     length * sizeof(T) * dst.channels());
@@ -580,7 +580,7 @@ void make_zero_border_border(Rectangle rect, Rows<T> rows, Margin margin) {
   if (margin.left()) {
     size_t margin_width_in_bytes = margin.left() * sizeof(T) * rows.channels();
     for (size_t index = 0; index < rect.height(); ++index) {
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
       __arm_sc_memset(&rows.at(index)[0], 0, margin_width_in_bytes);
 #else
       std::memset(&rows.at(index)[0], 0, margin_width_in_bytes);
@@ -592,7 +592,7 @@ void make_zero_border_border(Rectangle rect, Rows<T> rows, Margin margin) {
     size_t top_width = rect.width() - margin.left() - margin.right();
     size_t top_width_in_bytes = top_width * sizeof(T) * rows.channels();
     for (size_t index = 0; index < margin.top(); ++index) {
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
       __arm_sc_memset(&rows.at(index, margin.left())[0], 0, top_width_in_bytes);
 #else
       std::memset(&rows.at(index, margin.left())[0], 0, top_width_in_bytes);
@@ -603,7 +603,7 @@ void make_zero_border_border(Rectangle rect, Rows<T> rows, Margin margin) {
   if (margin.right()) {
     size_t margin_width_in_bytes = margin.right() * sizeof(T) * rows.channels();
     for (size_t index = 0; index < rect.height(); ++index) {
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
       __arm_sc_memset(&rows.at(index, rect.width() - margin.right())[0], 0,
                       margin_width_in_bytes);
 #else
@@ -618,7 +618,7 @@ void make_zero_border_border(Rectangle rect, Rows<T> rows, Margin margin) {
     size_t bottom_width_in_bytes = bottom_width * sizeof(T) * rows.channels();
     for (size_t index = rect.height() - margin.bottom(); index < rect.height();
          ++index) {
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
       __arm_sc_memset(&rows.at(index, margin.left())[0], 0,
                       bottom_width_in_bytes);
 #else

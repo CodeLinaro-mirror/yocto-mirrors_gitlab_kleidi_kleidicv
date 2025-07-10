@@ -14,7 +14,7 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
 
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
 #include <arm_sme.h>
 #endif
 
@@ -62,7 +62,7 @@ class MorphologyWorkspace final {
     constexpr void operator()(Rows<const T> src_rows, Rows<T> dst_rows,
                               size_t length) const
         KLEIDICV_STREAMING_COMPATIBLE {
-#if KLEIDICV_TARGET_SME2
+#if KLEIDICV_TARGET_SME
       __arm_sc_memcpy(static_cast<void *>(&dst_rows[0]),
                       static_cast<const void *>(&src_rows[0]),
                       length * sizeof(T) * dst_rows.channels());

@@ -29,7 +29,7 @@ to demonstrate the usage of the created shared library.
 
 Generally, in KleidiCV one operation is implemented by one C++ source file, so
 the example library uses one `.cpp` file,
-`kleidicv/src/filters/gaussian_blur_fixed_sme2.cpp` from the KleidiCV source
+`kleidicv/src/filters/gaussian_blur_fixed_sme.cpp` from the KleidiCV source
 tree, and all the included header files.
 `examples/extract_one_operation/sme_gaussian_blur.cpp` is needed to glue the
 example library's public API with the implementation. The example library's
@@ -47,7 +47,7 @@ cmake -S kleidicv/examples/extract_one_operation \
 ```
 
 If make was used as the generator for CMake
-`build/extract/CMakeFiles/sme_gaussian_blur.dir/path/to/kleidicv/kleidicv/src/filters/gaussian_blur_fixed_sme2.cpp.o.d`
+`build/extract/CMakeFiles/sme_gaussian_blur.dir/path/to/kleidicv/kleidicv/src/filters/gaussian_blur_fixed_sme.cpp.o.d`
 contains which header files were used from KleidiCV. (But it also contains used system headers.)
 
 To try the example just run:

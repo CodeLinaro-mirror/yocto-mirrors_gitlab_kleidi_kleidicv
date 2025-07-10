@@ -24,6 +24,8 @@ This changelog aims to follow the guiding principles of
 ### Changed
 - Performance of Gaussian Blur is greatly improved in return for some accuracy.
   (Except for binomial variants up to 7x7 kernel size.)
+- Separate SME only implementations from ones using SME2 and add the build options
+  `KLEIDICV_ENABLE_SME` and `KLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS`.
 
 ## 0.5.0 - 2025-06-10
 

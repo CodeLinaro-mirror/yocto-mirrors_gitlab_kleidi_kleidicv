@@ -1,10 +1,10 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include "float_conv_sc.h"
 
-namespace kleidicv::sme2 {
+namespace kleidicv::sme {
 
 template <typename InputType, typename OutputType>
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
@@ -25,4 +25,4 @@ KLEIDICV_INSTANTIATE_TEMPLATE(float, uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int8_t, float);
 KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t, float);
 
-}  // namespace kleidicv::sme2
+}  // namespace kleidicv::sme

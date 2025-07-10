@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include "kleidicv/filters/scharr.h"
 #include "scharr_sc.h"
 
-namespace kleidicv::sme2 {
+namespace kleidicv::sme {
 
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
 kleidicv_scharr_interleaved_stripe_s16_u8(const uint8_t *src, size_t src_stride,
@@ -18,4 +18,4 @@ kleidicv_scharr_interleaved_stripe_s16_u8(const uint8_t *src, size_t src_stride,
       y_begin, y_end);
 }
 
-}  // namespace kleidicv::sme2
+}  // namespace kleidicv::sme

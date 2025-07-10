@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -65,7 +65,7 @@ export EXTRA_CMAKE_ARGS="\
     ${COMMON_EXTRA_CMAKE_ARGS:-} \
     -DWITH_KLEIDICV=ON \
     -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
-    -DKLEIDICV_ENABLE_SME2=ON \
+    -DKLEIDICV_ENABLE_SME=ON \
     ${KLEIDICV_EXTRA_CMAKE_OPTIONS:-} \
 "
 
@@ -83,7 +83,7 @@ export EXTRA_CMAKE_ARGS="\
     ${COMMON_EXTRA_CMAKE_ARGS:-} \
     -DWITH_KLEIDICV=ON \
     -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
-    -DKLEIDICV_ENABLE_SME2=ON \
+    -DKLEIDICV_ENABLE_SME=ON \
     ${CUSTOM_CMAKE_OPTIONS} \
 "
 

@@ -11,7 +11,7 @@
       name, &kleidicv::neon::median_blur_sorting_network_stripe<type>, \
       KLEIDICV_SVE2_IMPL_IF(                                           \
           kleidicv::sve2::median_blur_sorting_network_stripe<type>),   \
-      &kleidicv::sme2::median_blur_sorting_network_stripe<type>)
+      &kleidicv::sme::median_blur_sorting_network_stripe<type>)
 
 KLEIDICV_DEFINE_C_API(kleidicv_median_blur_sorting_network_stripe_s8, int8_t);
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -130,7 +130,7 @@ kleidicv_error_t yuv_sp_to_bgra_u8(const uint8_t *src_y, size_t src_y_stride,
                                    size_t width, size_t height, bool is_nv21);
 }  // namespace sve2
 
-namespace sme2 {
+namespace sme {
 kleidicv_error_t yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
                                   const uint8_t *src_uv, size_t src_uv_stride,
                                   uint8_t *dst, size_t dst_stride, size_t width,
@@ -150,7 +150,7 @@ kleidicv_error_t yuv_sp_to_bgra_u8(const uint8_t *src_y, size_t src_y_stride,
                                    const uint8_t *src_uv, size_t src_uv_stride,
                                    uint8_t *dst, size_t dst_stride,
                                    size_t width, size_t height, bool is_nv21);
-}  // namespace sme2
+}  // namespace sme
 
 }  // namespace kleidicv
 

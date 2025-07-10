@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -36,7 +36,7 @@ kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
 
 }  // namespace sve2
 
-namespace sme2 {
+namespace sme {
 
 template <typename T>
 kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
@@ -48,7 +48,7 @@ kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
                        kleidicv_morphology_context_t *context);
 
-}  // namespace sme2
+}  // namespace sme
 
 }  // namespace kleidicv
 
@@ -112,7 +112,7 @@ kleidicv_error_t kleidicv_morphology_release(
   KLEIDICV_MULTIVERSION_C_API(                             \
       name, &kleidicv::neon::tname<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::tname<type>), \
-      &kleidicv::sme2::tname<type>)
+      &kleidicv::sme::tname<type>)
 
 KLEIDICV_DEFINE_C_API(kleidicv_dilate_u8, dilate, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_erode_u8, erode, uint8_t);

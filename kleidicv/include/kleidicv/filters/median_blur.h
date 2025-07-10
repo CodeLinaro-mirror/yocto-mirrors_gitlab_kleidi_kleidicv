@@ -135,7 +135,7 @@ kleidicv_error_t median_blur_sorting_network_stripe(
 
 }  // namespace sve2
 
-namespace sme2 {
+namespace sme {
 
 template <typename T>
 kleidicv_error_t median_blur_sorting_network_stripe(
@@ -143,7 +143,7 @@ kleidicv_error_t median_blur_sorting_network_stripe(
     size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, FixedBorderType border_type);
 
-}  // namespace sme2
+}  // namespace sme
 
 template <typename T>
 inline kleidicv_error_t check_ptrs_strides_imagesizes(const T *src,

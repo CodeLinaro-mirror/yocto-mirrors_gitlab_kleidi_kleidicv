@@ -1,10 +1,10 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include "yuv_sp_to_rgb_sc.h"
 
-namespace kleidicv::sme2 {
+namespace kleidicv::sme {
 
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
 yuv_sp_to_rgb_u8(const uint8_t *src_y, size_t src_y_stride,
@@ -40,4 +40,4 @@ yuv_sp_to_bgra_u8(const uint8_t *src_y, size_t src_y_stride,
                               dst_stride, width, height, is_nv21);
 }
 
-}  // namespace kleidicv::sme2
+}  // namespace kleidicv::sme

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,7 +11,7 @@
   KLEIDICV_MULTIVERSION_C_API(                             \
       name, &kleidicv::neon::partialname,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname), \
-      &kleidicv::sme2::partialname)
+      &kleidicv::sme::partialname)
 
 KLEIDICV_DEFINE_C_API(kleidicv_rgb_to_bgr_u8, rgb_to_bgr_u8);
 KLEIDICV_DEFINE_C_API(kleidicv_rgba_to_bgra_u8, rgba_to_bgra_u8);

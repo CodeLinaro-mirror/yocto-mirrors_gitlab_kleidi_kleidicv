@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -38,10 +38,6 @@ kleidicv_error_t rotate(const void *src, size_t src_stride, size_t width,
                         size_t height, void *dst, size_t dst_stride, int angle,
                         size_t element_size);
 }  // namespace neon
-
-namespace sve2 {}  // namespace sve2
-
-namespace sme2 {}  // namespace sme2
 
 }  // namespace kleidicv
 

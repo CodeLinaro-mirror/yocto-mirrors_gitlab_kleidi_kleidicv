@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -8,7 +8,7 @@
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/border_7x7.h"
 
-// It is used by SVE2 and SME2, the actual namespace will reflect it.
+// It is used by SVE2 and SME, the actual namespace will reflect it.
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Template for drivers of separable NxM filters.

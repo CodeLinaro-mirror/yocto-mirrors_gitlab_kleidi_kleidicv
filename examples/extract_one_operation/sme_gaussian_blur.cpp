@@ -27,9 +27,9 @@ static kleidicv_error_t filter_context_create(
   // As we cannot predict the intermediate size based on the parameters given,
   // just use the largest possible size out of all available operations.
   constexpr size_t intermediate_size = sizeof(uint32_t);
-  auto workspace = kleidicv::sme2::SeparableFilterWorkspace::create(
-      kleidicv::sme2::Rectangle{max_image_width, max_image_height},
-      max_channels, intermediate_size);
+  auto workspace = kleidicv::sme::SeparableFilterWorkspace::create(
+      kleidicv::sme::Rectangle{max_image_width, max_image_height}, max_channels,
+      intermediate_size);
   if (!workspace) {
     *context = nullptr;
     return KLEIDICV_ERROR_ALLOCATION;
@@ -47,8 +47,8 @@ static kleidicv_error_t filter_context_release(
   // Deliberately create and immediately destroy a unique_ptr to delete the
   // workspace.
   // NOLINTBEGIN(bugprone-unused-raii)
-  kleidicv::sme2::SeparableFilterWorkspace::Pointer{
-      reinterpret_cast<kleidicv::sme2::SeparableFilterWorkspace *>(context)};
+  kleidicv::sme::SeparableFilterWorkspace::Pointer{
+      reinterpret_cast<kleidicv::sme::SeparableFilterWorkspace *>(context)};
   // NOLINTEND(bugprone-unused-raii)
   return KLEIDICV_OK;
 }
@@ -85,7 +85,7 @@ kleidicv_error_t sme_gaussian_blur_u8(const uint8_t *src, size_t src_stride,
       return create_err;
     }
 
-    kleidicv_error_t blur_err = kleidicv::sme2::gaussian_blur_fixed_stripe_u8(
+    kleidicv_error_t blur_err = kleidicv::sme::gaussian_blur_fixed_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, 0, height, channels,
         kernel_width, kernel_height, sigma_x, sigma_y, *fixed_border_type,
         context);

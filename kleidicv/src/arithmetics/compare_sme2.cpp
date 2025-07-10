@@ -1,10 +1,10 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include "compare_sc.h"
 
-namespace kleidicv::sme2 {
+namespace kleidicv::sme {
 
 template <typename ScalarType>
 KLEIDICV_LOCALLY_STREAMING kleidicv_error_t
@@ -33,4 +33,4 @@ compare_greater(const ScalarType *src_a, size_t src_a_stride,
 KLEIDICV_INSTANTIATE_TEMPLATE(compare_equal, uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(compare_greater, uint8_t);
 
-}  // namespace kleidicv::sme2
+}  // namespace kleidicv::sme

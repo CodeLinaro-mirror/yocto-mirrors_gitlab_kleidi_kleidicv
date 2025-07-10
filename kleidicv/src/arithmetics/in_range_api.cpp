@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -21,12 +21,12 @@ kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
                           T lower_bound, T upper_bound);
 }  // namespace sve2
 
-namespace sme2 {
+namespace sme {
 template <typename T>
 kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
                           size_t dst_stride, size_t width, size_t height,
                           T lower_bound, T upper_bound);
-}  // namespace sme2
+}  // namespace sme
 
 }  // namespace kleidicv
 
@@ -34,7 +34,7 @@ kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
   KLEIDICV_MULTIVERSION_C_API(                                \
       name, &kleidicv::neon::in_range<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::in_range<type>), \
-      KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::in_range<type>))
+      KLEIDICV_SME_IMPL_IF(&kleidicv::sme::in_range<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_in_range_u8, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_in_range_f32, float);

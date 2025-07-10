@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "separable_filter_2d_sc.h"
 
-namespace kleidicv::sme2 {
+namespace kleidicv::sme {
 
 template <typename T>
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
@@ -34,4 +34,4 @@ KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
 
-}  // namespace kleidicv::sme2
+}  // namespace kleidicv::sme

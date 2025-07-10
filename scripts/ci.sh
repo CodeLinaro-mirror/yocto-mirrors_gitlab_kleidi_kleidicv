@@ -43,8 +43,8 @@ cmake -S . -B build/ci/clang -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy-20 \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
   -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld --coverage" \
-  -DKLEIDICV_ENABLE_SME2=ON \
-  -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
+  -DKLEIDICV_ENABLE_SME=ON \
+  -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_CHECK_BANNED_FUNCTIONS=ON
 
@@ -89,7 +89,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
   cmake -S . -B build/ci/sanitize -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-    -DKLEIDICV_ENABLE_SME2=OFF \
+    -DKLEIDICV_ENABLE_SME=OFF \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
   ninja -C build/ci/sanitize kleidicv-api-test
   build/ci/sanitize/test/api/kleidicv-api-test
@@ -105,8 +105,8 @@ cmake -S . -B build/ci/build-benchmark -G Ninja \
   -DCMAKE_SYSTEM_NAME=Linux \
   -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
   -DKLEIDICV_BENCHMARK=ON \
-  -DKLEIDICV_ENABLE_SME2=ON \
-  -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
+  -DKLEIDICV_ENABLE_SME=ON \
+  -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS=OFF
 ninja -C build/ci/build-benchmark kleidicv-benchmark

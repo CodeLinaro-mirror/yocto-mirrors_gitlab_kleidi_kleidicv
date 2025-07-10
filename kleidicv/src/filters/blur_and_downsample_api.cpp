@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -10,7 +10,7 @@ KLEIDICV_MULTIVERSION_C_API(
     kleidicv_blur_and_downsample_stripe_u8,
     &kleidicv::neon::kleidicv_blur_and_downsample_stripe_u8,
     &kleidicv::sve2::kleidicv_blur_and_downsample_stripe_u8,
-    &kleidicv::sme2::kleidicv_blur_and_downsample_stripe_u8);
+    &kleidicv::sme::kleidicv_blur_and_downsample_stripe_u8);
 
 extern "C" {
 

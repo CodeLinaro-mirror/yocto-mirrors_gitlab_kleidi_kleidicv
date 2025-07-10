@@ -62,7 +62,7 @@
       "preLaunchTask": "Build KleidiCV for debug",
     },
     {
-      "name": "SME2 API tests",
+      "name": "SME API tests",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test",

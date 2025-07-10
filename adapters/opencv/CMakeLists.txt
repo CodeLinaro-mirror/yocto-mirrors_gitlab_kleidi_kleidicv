@@ -55,8 +55,8 @@ if(NOT BUILD_SHARED_LIBS)
       COMPONENT dev
     )
   endif()
-  if(KLEIDICV_ENABLE_SME2)
-    ocv_install_target(kleidicv_sme2
+  if(KLEIDICV_ENABLE_SME)
+    ocv_install_target(kleidicv_sme
       EXPORT OpenCVModules
       ARCHIVE
       DESTINATION ${OPENCV_3P_LIB_INSTALL_PATH}

@@ -24,14 +24,20 @@ endif()
 
 option(KLEIDICV_ENABLE_SVE2 "Enable SVE2 code paths" ${KLEIDICV_ENABLE_SVE2_DEFAULT})
 
-# KleidiCV's SME2 support is known to be compatible with Clang 19.1 but
+# KleidiCV's SME support is known to be compatible with Clang 19.1 but
 # it is disabled by default while the ACLE SME specification is in beta.
 # https://github.com/ARM-software/acle/blob/main/main/acle.md#sme-language-extensions-and-intrinsics
+# If SME2 is enabled than SME is also enabled by default.
 option(KLEIDICV_ENABLE_SME2 "Enable SME2 code paths" OFF)
+if(KLEIDICV_ENABLE_SME2)
+  option(KLEIDICV_ENABLE_SME "Enable SME code paths" ON)
+else()
+  option(KLEIDICV_ENABLE_SME "Enable SME code paths" OFF)
+endif()
 
 option(
-  KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS
-  "Limits SME2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SME2 is false."
+  KLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS
+  "Limits SME code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SME is false."
   ON
 )
 option(
@@ -64,8 +70,8 @@ else()
   set(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS OFF)
 endif()
 
-if(KLEIDICV_ENABLE_SME2 AND NOT KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS)
-  set(KLEIDICV_ALWAYS_ENABLE_SME2 ON)
+if(KLEIDICV_ENABLE_SME AND NOT KLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS)
+  set(KLEIDICV_ALWAYS_ENABLE_SME ON)
 endif()
 
 if(KLEIDICV_ENABLE_SVE2 AND NOT KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS)
@@ -89,7 +95,7 @@ file(GLOB KLEIDICV_SVE2_SOURCES
   "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sve2.cpp"
 )
 
-file(GLOB KLEIDICV_SME2_SOURCES
+file(GLOB KLEIDICV_SME_SOURCES
   "${CMAKE_CURRENT_LIST_DIR}/src/*_sme2.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sme2.cpp"
 )
@@ -171,14 +177,14 @@ if(KLEIDICV_ENABLE_SVE2)
   )
 endif()
 
-if(KLEIDICV_ENABLE_SME2)
-  add_library(kleidicv_sme2 OBJECT ${KLEIDICV_SME2_SOURCES})
-  target_include_directories(kleidicv_sme2 PRIVATE ${KLEIDICV_INCLUDE_DIRS})
-  set_target_properties(kleidicv_sme2 PROPERTIES CXX_STANDARD 17)
-  target_compile_options(kleidicv_sme2 PRIVATE
+if(KLEIDICV_ENABLE_SME)
+  add_library(kleidicv_sme OBJECT ${KLEIDICV_SME_SOURCES})
+  target_include_directories(kleidicv_sme PRIVATE ${KLEIDICV_INCLUDE_DIRS})
+  set_target_properties(kleidicv_sme PROPERTIES CXX_STANDARD 17)
+  target_compile_options(kleidicv_sme PRIVATE
     ${KLEIDICV_CXX_FLAGS}
-    "-march=armv9-a+sve2+sme2"
-    "-DKLEIDICV_TARGET_SME2=1"
+    "-march=armv9-a+sve2+sme"
+    "-DKLEIDICV_TARGET_SME=1"
   )
 endif()
 
@@ -193,7 +199,7 @@ if(KLEIDICV_ENABLE_SVE2)
   target_link_libraries(kleidicv PRIVATE kleidicv_sve2)
 endif()
 
-if(KLEIDICV_ENABLE_SME2)
-  target_compile_definitions(kleidicv PRIVATE KLEIDICV_HAVE_SME2)
-  target_link_libraries(kleidicv PRIVATE kleidicv_sme2)
+if(KLEIDICV_ENABLE_SME)
+  target_compile_definitions(kleidicv PRIVATE KLEIDICV_HAVE_SME)
+  target_link_libraries(kleidicv PRIVATE kleidicv_sme)
 endif()

@@ -30,8 +30,8 @@ target_include_directories(
 target_compile_options(sme_gaussian_blur
   PRIVATE
   "-march=armv9-a+sme"
-  "-DKLEIDICV_TARGET_SME2=1"
-  "-DKLEIDICV_TARGET_NAMESPACE=kleidicv::sme2"
+  "-DKLEIDICV_TARGET_SME=1"
+  "-DKLEIDICV_TARGET_NAMESPACE=kleidicv::sme"
   "-DKLEIDICV_TARGET_FN_ATTRS="
 )
 

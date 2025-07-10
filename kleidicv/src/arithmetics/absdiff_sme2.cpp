@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 
-namespace kleidicv::sme2 {
+namespace kleidicv::sme {
 
 template <typename ScalarType, typename VectorType,
           std::enable_if_t<std::is_signed<ScalarType>::value, bool> = true>
@@ -66,4 +66,4 @@ KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int32_t);
 
-}  // namespace kleidicv::sme2
+}  // namespace kleidicv::sme

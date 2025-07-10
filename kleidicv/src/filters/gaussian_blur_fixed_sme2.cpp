@@ -4,7 +4,7 @@
 
 #include "gaussian_blur_fixed_sc.h"
 
-namespace kleidicv::sme2 {
+namespace kleidicv::sme {
 
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
 gaussian_blur_fixed_stripe_u8(const uint8_t *src, size_t src_stride,
@@ -19,4 +19,4 @@ gaussian_blur_fixed_stripe_u8(const uint8_t *src, size_t src_stride,
       kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
 }
 
-}  // namespace kleidicv::sme2
+}  // namespace kleidicv::sme

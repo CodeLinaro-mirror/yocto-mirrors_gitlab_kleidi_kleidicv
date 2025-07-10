@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -28,7 +28,7 @@ kleidicv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
 
 }  // namespace sve2
 
-// namespace sme2 {
+// namespace sme {
 
 // template <typename T>
 // kleidicv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
@@ -36,7 +36,7 @@ kleidicv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
 //               size_t src_b_stride, T *dst, size_t dst_stride,
 //               size_t width, size_t height, double scale);
 
-// } // namespace sme2
+// } // namespace sme
 
 }  // namespace kleidicv
 

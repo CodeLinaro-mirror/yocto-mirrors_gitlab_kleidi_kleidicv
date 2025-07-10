@@ -12,7 +12,7 @@
 #include "kleidicv/operations.h"
 #include "kleidicv/utils.h"
 
-// It is used by SVE2 and SME2, the actual namespace will reflect it.
+// It is used by SVE2 and SME, the actual namespace will reflect it.
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 // Context associated with SVE operations.
