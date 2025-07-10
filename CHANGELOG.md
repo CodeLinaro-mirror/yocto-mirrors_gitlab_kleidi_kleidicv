@@ -19,6 +19,7 @@ This changelog aims to follow the guiding principles of
 - Median Blur for 3x3 kernels.
 - Median Blur for generic kernels (odd-sized only, max kernel size 255x255), Neon backend only.
 - Gaussian Blur for any odd kernel size (up to 255x255) with replicated borders
+- Conversion from packed YUV 4:4:4 (interleaved and non-subsampled) to RGBA/BGRA.
 
 ### Changed
 - Performance of Gaussian Blur is greatly improved in return for some accuracy.

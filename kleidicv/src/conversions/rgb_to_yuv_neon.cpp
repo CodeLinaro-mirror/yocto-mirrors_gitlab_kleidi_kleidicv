@@ -19,7 +19,7 @@ class RGBToYUVAll final : public UnrollOnce, public TryToAvoidTailLoop {
 
   explicit RGBToYUVAll() = default;
 
-  // Returns the number of channels in the output image.
+  // Returns the number of channels in the input image.
   static constexpr size_t input_channels() {
     return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
   }

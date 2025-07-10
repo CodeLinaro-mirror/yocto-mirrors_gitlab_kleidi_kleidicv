@@ -12,7 +12,8 @@
 
 class YuvToRgbTest final {
  public:
-  explicit YuvToRgbTest(bool switch_blue) : switch_blue_(switch_blue) {}
+  explicit YuvToRgbTest(size_t channels, bool switch_blue)
+      : kDstChannels{channels}, switch_blue_(switch_blue) {}
 
   template <typename F>
   void execute_scalar_test(F impl) {
@@ -31,7 +32,7 @@ class YuvToRgbTest final {
   }
 
  private:
-  static const size_t kDstChannels = 3;
+  size_t kDstChannels;
   bool switch_blue_;
 
   template <typename F>
@@ -99,29 +100,54 @@ class YuvToRgbTest final {
         uint8_t c0_u8 = saturate_cast_s32_to_u8(switch_blue_ ? b : r);
         uint8_t c1_u8 = saturate_cast_s32_to_u8(g);
         uint8_t c2_u8 = saturate_cast_s32_to_u8(switch_blue_ ? r : b);
-
-        exp_arr.set(vindex, hindex * kDstChannels, {c0_u8, c1_u8, c2_u8});
+        if (kDstChannels == 3) {
+          exp_arr.set(vindex, hindex * kDstChannels, {c0_u8, c1_u8, c2_u8});
+        } else {
+          exp_arr.set(
+              vindex, hindex * kDstChannels,
+              {c0_u8, c1_u8, c2_u8, std::numeric_limits<uint8_t>::max()});
+        }
       }
     }
   }
 };
 
 TEST(YuvToRgb, YuvRgbScalar) {
-  YuvToRgbTest yuv2rgb_test(false);
+  YuvToRgbTest yuv2rgb_test(3, false);
   yuv2rgb_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8);
 }
 
 TEST(YuvToRgb, YuvRgbVector) {
-  YuvToRgbTest yuv2rgb_test(false);
+  YuvToRgbTest yuv2rgb_test(3, false);
   yuv2rgb_test.execute_vector_test(kleidicv_yuv_to_rgb_u8);
 }
 
 TEST(YuvToRgb, YuvBgrScalar) {
-  YuvToRgbTest yuv2rgb_test(true);
+  YuvToRgbTest yuv2rgb_test(3, true);
   yuv2rgb_test.execute_scalar_test(kleidicv_yuv_to_bgr_u8);
 }
 
 TEST(YuvToRgb, YuvBgrVector) {
-  YuvToRgbTest yuv2rgb_test(true);
+  YuvToRgbTest yuv2rgb_test(3, true);
   yuv2rgb_test.execute_vector_test(kleidicv_yuv_to_bgr_u8);
+}
+
+TEST(YuvToRgb, YuvRgbaScalar) {
+  YuvToRgbTest yuv2rgb_test(4, false);
+  yuv2rgb_test.execute_scalar_test(kleidicv_yuv_to_rgba_u8);
+}
+
+TEST(YuvToRgb, YuvRgbaVector) {
+  YuvToRgbTest yuv2rgb_test(4, false);
+  yuv2rgb_test.execute_vector_test(kleidicv_yuv_to_rgba_u8);
+}
+
+TEST(YuvToRgb, YuvBgraScalar) {
+  YuvToRgbTest yuv2rgb_test(4, true);
+  yuv2rgb_test.execute_scalar_test(kleidicv_yuv_to_bgra_u8);
+}
+
+TEST(YuvToRgb, YuvBgraVector) {
+  YuvToRgbTest yuv2rgb_test(4, true);
+  yuv2rgb_test.execute_vector_test(kleidicv_yuv_to_bgra_u8);
 }

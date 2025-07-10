@@ -24,6 +24,8 @@ BGRA2YUV:   opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, CX_BGRA2YUV
 
 YUV2RGB:    opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, COLOR_YUV2RGB)'
 YUV2BGR:    opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, COLOR_YUV2BGR)'
+YUV2RGBA:    opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, COLOR_YUV2RGBA)'
+YUV2BGRA:    opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, COLOR_YUV2BGRA)'
 
 BinaryThreshold: opencv_perf_imgproc '*ThreshFixture_Threshold.Threshold/*' '($PIXEL_FORMAT, 8UC1, THRESH_BINARY)'
 

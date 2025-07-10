@@ -246,22 +246,39 @@ int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                bool swapBlue, bool isCbCr) {
   const bool is_bgr = !swapBlue;
 
-  if (depth != CV_8U || isCbCr || dcn != 3) {
+  if (depth != CV_8U || isCbCr) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
   auto mt = get_multithreading();
+  if (dcn == 3) {
+    if (is_bgr) {
+      return convert_error(kleidicv_thread_yuv_to_bgr_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step,
+          static_cast<size_t>(width), static_cast<size_t>(height), mt));
+    }
 
-  if (is_bgr) {
-    return convert_error(kleidicv_thread_yuv_to_bgr_u8(
+    return convert_error(kleidicv_thread_yuv_to_rgb_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step,
         static_cast<size_t>(width), static_cast<size_t>(height), mt));
   }
-  return convert_error(kleidicv_thread_yuv_to_rgb_u8(
-      reinterpret_cast<const uint8_t *>(src_data), src_step,
-      reinterpret_cast<uint8_t *>(dst_data), dst_step,
-      static_cast<size_t>(width), static_cast<size_t>(height), mt));
+
+  if (dcn == 4) {
+    if (is_bgr) {
+      return convert_error(kleidicv_thread_yuv_to_bgra_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step,
+          static_cast<size_t>(width), static_cast<size_t>(height), mt));
+    }
+
+    return convert_error(kleidicv_thread_yuv_to_rgba_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step,
+        static_cast<size_t>(width), static_cast<size_t>(height), mt));
+  }
+  return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
 int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,

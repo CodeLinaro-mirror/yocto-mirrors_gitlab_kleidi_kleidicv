@@ -43,6 +43,8 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | YUV420-RGBA  |  x  |
 | YUV-BGR      |  x  |
 | YUV-RGB      |  x  |
+| YUV-BGRA     |  x  |
+| YUV-RGBA     |  x  |
 | RGB-YUV      |  x  |
 | RGBA-YUV     |  x  |
 | BGR-YUV      |  x  |

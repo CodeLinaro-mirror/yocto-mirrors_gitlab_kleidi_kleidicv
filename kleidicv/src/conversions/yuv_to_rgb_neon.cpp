@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,18 +11,25 @@
 
 namespace kleidicv::neon {
 
-template <bool BGR>
+template <bool BGR, bool ALPHA>
 class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
  public:
   using VecTraits = neon::VecTraits<uint8_t>;
   using ScalarType = VecTraits::ScalarType;
   using VectorType = VecTraits::VectorType;
   using Vector3Type = VecTraits::Vector3Type;
+  using RawDestinationVectorType =
+      typename std::conditional<ALPHA, uint8x16x4_t, uint8x16x3_t>::type;
 
   explicit YUVToRGBAll()
       : b_delta4_(vdupq_n_u32(kBDelta4)),
         g_delta4_(vdupq_n_u32(kGDelta4)),
         r_delta4_(vdupq_n_u32(kRDelta4)) {}
+
+  // Returns the number of channels in the output image.
+  static constexpr size_t output_channels() {
+    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+  }
 
   void vector_path(const ScalarType *src, ScalarType *dst) {
     // Load deinterleaved
@@ -100,13 +107,18 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
       r = vcombine_u8(vqmovun_s16(r_l), vqmovun_s16(r_h));
     }
 
-    uint8x16x3_t rgb;
+    RawDestinationVectorType rgb;
     rgb.val[r_index_] = r;
     rgb.val[g_index_] = g;
     rgb.val[b_index_] = b;
-
-    // Store interleaved RGB pixels to memory.
-    vst3q_u8(dst, rgb);
+    if constexpr (ALPHA) {
+      rgb.val[alpha_index_] = vdupq_n_u8(alpha_value);
+      // Store interleaved RGBA pixels to memory.
+      vst4q_u8(dst, rgb);
+    } else {
+      // Store interleaved RGB pixels to memory.
+      vst3q_u8(dst, rgb);
+    }
   }
 
   void scalar_path(const ScalarType *src, ScalarType *dst) {
@@ -121,12 +133,17 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
     dst[r_index_] = saturating_cast<int32_t, uint8_t>(r);
     dst[g_index_] = saturating_cast<int32_t, uint8_t>(g);
     dst[b_index_] = saturating_cast<int32_t, uint8_t>(b);
+    if constexpr (ALPHA) {
+      dst[alpha_index_] = alpha_value;
+    }
   }
 
  private:
   static constexpr size_t r_index_ = BGR ? 2 : 0;
   static constexpr size_t g_index_ = 1;
   static constexpr size_t b_index_ = BGR ? 0 : 2;
+  static constexpr size_t alpha_index_ = 3;
+  static constexpr uint8_t alpha_value = std::numeric_limits<uint8_t>::max();
   int32x4_t b_delta4_, g_delta4_, r_delta4_;
 };  // end of class YUVToRGBAll<bool BGR>
 
@@ -141,14 +158,16 @@ kleidicv_error_t yuv2rgb_operation(OperationType &operation,
 
   Rectangle rect{width, height};
   Rows src_rows{src, src_stride, 3};
-  Rows dst_rows{dst, dst_stride, 3};
+  Rows dst_rows{dst, dst_stride, operation.output_channels()};
 
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return KLEIDICV_OK;
 }
 
-using YUVToRGB = YUVToRGBAll<false>;
-using YUVToBGR = YUVToRGBAll<true>;
+using YUVToRGB = YUVToRGBAll<false, false>;
+using YUVToRGBA = YUVToRGBAll<false, true>;
+using YUVToBGR = YUVToRGBAll<true, false>;
+using YUVToBGRA = YUVToRGBAll<true, true>;
 
 KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t yuv_to_rgb_u8(const uint8_t *src, size_t src_stride,
@@ -160,10 +179,28 @@ kleidicv_error_t yuv_to_rgb_u8(const uint8_t *src, size_t src_stride,
 }
 
 KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t yuv_to_rgba_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height) {
+  YUVToRGBA operation;
+  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
+                           height);
+}
+
+KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t yuv_to_bgr_u8(const uint8_t *src, size_t src_stride,
                                uint8_t *dst, size_t dst_stride, size_t width,
                                size_t height) {
   YUVToBGR operation;
+  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
+                           height);
+}
+
+KLEIDICV_TARGET_FN_ATTRS
+kleidicv_error_t yuv_to_bgra_u8(const uint8_t *src, size_t src_stride,
+                                uint8_t *dst, size_t dst_stride, size_t width,
+                                size_t height) {
+  YUVToBGRA operation;
   return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }

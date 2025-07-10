@@ -78,11 +78,11 @@ Notes on parameters:
 * `dst.channels()` - supports 3 for RGB and 4 for RGBA.
 
 #### [`COLOR_YUV2RGB`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab09d8186a9e5aaac83acd157a1be43b0),[`COLOR_YUV2BGR`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab053f0cf23ae1b0bfee1964fd9a182c9)
-YUV to RGB image conversion, 3 channels to 3 channels, no subsampling.\
+YUV to RGB image conversion, 3 channels to 3 or 4 channels, no subsampling.\
 All supported permutations are listed in the table below.
-|   | RGB | BGR |
-|---|-----|-----|
-|YUV|  x  |  x  |
+|   | RGB | BGR | RGBA | BGRA |
+|---|-----|-----|------|------|
+|YUV|  x  |  x  |  x   |  x   |
 
 #### [`COLOR_RGB2YUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0adc0f8a1354c98d1701caad4b384e0d18),[`COLOR_BGR2YUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a611d58d4a431fdbc294b4c79701f3d1a)
 RGB/RGBA to YUV image conversion, 3 or 4 channels to 3 channels, no subsampling.\

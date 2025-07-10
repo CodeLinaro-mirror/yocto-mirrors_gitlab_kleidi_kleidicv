@@ -1,9 +1,11 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #ifndef KLEIDICV_YUV_TO_RGB_SC_H
 #define KLEIDICV_YUV_TO_RGB_SC_H
+
+#include <limits>
 
 #include "kleidicv/conversions/yuv_to_rgb.h"
 #include "kleidicv/kleidicv.h"
@@ -11,7 +13,7 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-template <bool BGR>
+template <bool BGR, bool ALPHA>
 class YUVToRGB : public UnrollOnce {
  public:
   using ContextType = Context;
@@ -19,6 +21,13 @@ class YUVToRGB : public UnrollOnce {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = VecTraits::VectorType;
   using Vector3Type = VecTraits::Vector3Type;
+  using RawDestinationVectorType =
+      typename std::conditional<ALPHA, svuint8x4_t, svuint8x3_t>::type;
+
+  // Returns the number of channels in the output image.
+  static constexpr size_t output_channels() KLEIDICV_STREAMING_COMPATIBLE {
+    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+  }
 
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
@@ -105,17 +114,29 @@ class YUVToRGB : public UnrollOnce {
       r = svqxtunt(svqxtunb(r_0), r_1);
     }
 
-    // Narrow the results to 8 bits
-    svuint8x3_t rgb;
-    if constexpr (BGR) {
-      rgb = svcreate3(b, g, r);
-    } else {
-      rgb = svcreate3(r, g, b);
-    }
+    if constexpr (ALPHA) {
+      RawDestinationVectorType rgb;
+      if constexpr (BGR) {
+        rgb = svcreate4(b, g, r, svdup_u8(alpha_value));
+      } else {
+        rgb = svcreate4(r, g, b, svdup_u8(alpha_value));
+      }
 
-    // Store interleaved RGB pixels to memory.
-    svst3_u8(pg, dst, rgb);
+      // Narrow to 8 bits and store the pixels with deinterleaving.
+      svst4_u8(pg, dst, rgb);
+    } else {
+      RawDestinationVectorType rgb;
+      if constexpr (BGR) {
+        rgb = svcreate3(b, g, r);
+      } else {
+        rgb = svcreate3(r, g, b);
+      }
+
+      // Narrow to 8 bits and store the pixels with deinterleaving.
+      svst3_u8(pg, dst, rgb);
+    }
   }
+  static constexpr uint8_t alpha_value = std::numeric_limits<uint8_t>::max();
 };  // end of class YUVToRGB<bool BGR>
 
 template <typename OperationType, typename ScalarType>
@@ -129,7 +150,7 @@ kleidicv_error_t yuv2rgb_operation(
 
   Rectangle rect{width, height};
   Rows src_rows{src, src_stride, 3};
-  Rows dst_rows{dst, dst_stride, 3};
+  Rows dst_rows{dst, dst_stride, operation.output_channels()};
 
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   return KLEIDICV_OK;
@@ -139,7 +160,16 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t yuv_to_rgb_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
-  YUVToRGB<false> operation;
+  YUVToRGB<false, false> operation;
+  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
+                           height);
+}
+
+KLEIDICV_TARGET_FN_ATTRS
+static kleidicv_error_t yuv_to_rgba_u8_sc(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+  YUVToRGB<false, true> operation;
   return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }
@@ -148,7 +178,16 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t yuv_to_bgr_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
-  YUVToRGB<true> operation;
+  YUVToRGB<true, false> operation;
+  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
+                           height);
+}
+
+KLEIDICV_TARGET_FN_ATTRS
+static kleidicv_error_t yuv_to_bgra_u8_sc(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+  YUVToRGB<true, true> operation;
   return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }
