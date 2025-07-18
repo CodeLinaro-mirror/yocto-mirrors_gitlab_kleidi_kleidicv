@@ -7,4 +7,4 @@
 #include "kleidicv/kleidicv.h"
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_split, &kleidicv::neon::split, nullptr,
-                            nullptr);
+                            nullptr, nullptr);

@@ -112,7 +112,7 @@ kleidicv_error_t kleidicv_morphology_release(
   KLEIDICV_MULTIVERSION_C_API(                             \
       name, &kleidicv::neon::tname<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::tname<type>), \
-      &kleidicv::sme::tname<type>)
+      &kleidicv::sme::tname<type>, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_dilate_u8, dilate, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_erode_u8, erode, uint8_t);

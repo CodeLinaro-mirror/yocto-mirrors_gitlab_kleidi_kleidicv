@@ -7,4 +7,4 @@
 #include "kleidicv/kleidicv.h"
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_transpose, &kleidicv::neon::transpose,
-                            nullptr, nullptr);
+                            nullptr, nullptr, nullptr);

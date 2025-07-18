@@ -10,7 +10,7 @@
   KLEIDICV_MULTIVERSION_C_API(                             \
       name, &kleidicv::neon::partialname,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname), \
-      &kleidicv::sme::partialname)
+      &kleidicv::sme::partialname, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_yuv_to_rgb_u8, yuv_to_rgb_u8);
 KLEIDICV_DEFINE_C_API(kleidicv_yuv_to_bgr_u8, yuv_to_bgr_u8);

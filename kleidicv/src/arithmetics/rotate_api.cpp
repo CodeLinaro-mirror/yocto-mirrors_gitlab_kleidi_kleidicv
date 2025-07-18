@@ -7,4 +7,4 @@
 #include "kleidicv/kleidicv.h"
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_rotate, &kleidicv::neon::rotate, nullptr,
-                            nullptr);
+                            nullptr, nullptr);

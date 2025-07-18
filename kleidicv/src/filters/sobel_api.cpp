@@ -10,7 +10,7 @@
   KLEIDICV_MULTIVERSION_C_API(                             \
       name, &kleidicv::neon::partialname,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname), \
-      &kleidicv::sme::partialname)
+      &kleidicv::sme::partialname, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_sobel_3x3_horizontal_stripe_s16_u8,
                       sobel_3x3_horizontal_stripe_s16_u8);

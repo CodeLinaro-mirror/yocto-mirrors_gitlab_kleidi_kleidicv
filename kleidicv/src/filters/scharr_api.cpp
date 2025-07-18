@@ -11,7 +11,7 @@ KLEIDICV_MULTIVERSION_C_API(
     &kleidicv::neon::kleidicv_scharr_interleaved_stripe_s16_u8,
     KLEIDICV_SVE2_IMPL_IF(
         &kleidicv::sve2::kleidicv_scharr_interleaved_stripe_s16_u8),
-    &kleidicv::sme::kleidicv_scharr_interleaved_stripe_s16_u8);
+    &kleidicv::sme::kleidicv_scharr_interleaved_stripe_s16_u8, nullptr);
 
 extern "C" {
 

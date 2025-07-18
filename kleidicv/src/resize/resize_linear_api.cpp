@@ -9,13 +9,13 @@
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_resize_linear_stripe_u8, &kleidicv::neon::resize_linear_stripe_u8,
     KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::resize_linear_stripe_u8),
-    &kleidicv::sme::resize_linear_stripe_u8);
+    &kleidicv::sme::resize_linear_stripe_u8, nullptr);
 
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_resize_linear_stripe_f32,
     &kleidicv::neon::resize_linear_stripe_f32,
     KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::resize_linear_stripe_f32),
-    &kleidicv::sme::resize_linear_stripe_f32);
+    &kleidicv::sme::resize_linear_stripe_f32, nullptr);
 
 extern "C" {
 

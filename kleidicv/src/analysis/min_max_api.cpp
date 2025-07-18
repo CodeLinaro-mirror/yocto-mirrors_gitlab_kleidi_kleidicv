@@ -41,7 +41,7 @@ kleidicv_error_t min_max(const T *src, size_t src_stride, size_t width,
   KLEIDICV_MULTIVERSION_C_API(                               \
       name, &kleidicv::neon::min_max<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::min_max<type>), \
-      &kleidicv::sme::min_max<type>)
+      &kleidicv::sme::min_max<type>, nullptr)
 
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_u8, uint8_t);
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_s8, int8_t);
@@ -52,6 +52,6 @@ KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_f32, float);
 
 #define KLEIDICV_DEFINE_MINMAXLOC_API(name, type)                       \
   KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::min_max_loc<type>, \
-                              nullptr, nullptr)
+                              nullptr, nullptr, nullptr)
 
 KLEIDICV_DEFINE_MINMAXLOC_API(kleidicv_min_max_loc_u8, uint8_t);

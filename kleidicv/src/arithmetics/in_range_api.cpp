@@ -34,7 +34,7 @@ kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
   KLEIDICV_MULTIVERSION_C_API(                                \
       name, &kleidicv::neon::in_range<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::in_range<type>), \
-      KLEIDICV_SME_IMPL_IF(&kleidicv::sme::in_range<type>))
+      KLEIDICV_SME_IMPL_IF(&kleidicv::sme::in_range<type>), nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_in_range_u8, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_in_range_f32, float);

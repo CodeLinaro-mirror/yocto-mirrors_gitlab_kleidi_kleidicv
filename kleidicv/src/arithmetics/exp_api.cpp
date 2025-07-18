@@ -37,6 +37,6 @@ kleidicv_error_t exp(const T* src, size_t src_stride, T* dst, size_t dst_stride,
 #define KLEIDICV_DEFINE_C_API(name, type)                       \
   KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::exp<type>, \
                               &kleidicv::sve2::exp<type>,       \
-                              &kleidicv::sme::exp<type>)
+                              &kleidicv::sme::exp<type>, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_exp_f32, float);

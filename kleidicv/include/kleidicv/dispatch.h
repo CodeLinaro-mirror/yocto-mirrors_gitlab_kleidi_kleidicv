@@ -7,7 +7,8 @@
 
 #include "kleidicv/config.h"
 
-#if defined(KLEIDICV_HAVE_SVE2) || defined(KLEIDICV_HAVE_SME)
+#if defined(KLEIDICV_HAVE_SVE2) || defined(KLEIDICV_HAVE_SME) || \
+    defined(KLEIDICV_HAVE_SME2)
 #include <sys/auxv.h>
 
 #include <cstdint>
@@ -55,12 +56,29 @@ static inline bool hwcaps_has_sme(HwCaps hwcaps) {
 #define KLEIDICV_SME_RESOLVE(x)
 #endif  // KLEIDICV_HAVE_SME
 
+#ifdef KLEIDICV_HAVE_SME2
+static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
+  const int kSME2Bit = 37;
+  return hwcaps.hwcap2 & (1UL << kSME2Bit);
+}
+
+#define KLEIDICV_SME2_RESOLVE(sme2_impl)                    \
+  if (!std::is_null_pointer_v<decltype(sme2_impl)> &&       \
+      KLEIDICV_TARGET_NAMESPACE::hwcaps_has_sme2(hwcaps)) { \
+    return sme2_impl;                                       \
+  }
+#else
+#define KLEIDICV_SME2_RESOLVE(x)
+#endif  // KLEIDICV_HAVE_SME2
+
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl) \
+#define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl, \
+                                    sme2_impl)                                \
   static decltype(neon_impl) api_name##_resolver() {                          \
     [[maybe_unused]] KLEIDICV_TARGET_NAMESPACE::HwCaps hwcaps =               \
         KLEIDICV_TARGET_NAMESPACE::get_hwcaps();                              \
+    KLEIDICV_SME2_RESOLVE(sme2_impl);                                         \
     KLEIDICV_SME_RESOLVE(sme_impl);                                           \
     KLEIDICV_SVE2_RESOLVE(sve2_impl);                                         \
     return neon_impl;                                                         \
@@ -69,15 +87,22 @@ static inline bool hwcaps_has_sme(HwCaps hwcaps) {
   decltype(neon_impl) api_name = api_name##_resolver();                       \
   }
 
-#else  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME
+#else  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME || KLEIDICV_HAVE_SME2
 
-#define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl) \
+#define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl, \
+                                    sme2_impl)                                \
                                                                               \
   extern "C" {                                                                \
   decltype(neon_impl) api_name = neon_impl;                                   \
   }
 
-#endif  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME
+#endif  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME || KLEIDICV_HAVE_SME2
+
+#if KLEIDICV_ALWAYS_ENABLE_SME2
+#define KLEIDICV_SME2_IMPL_IF(func) func
+#else
+#define KLEIDICV_SME2_IMPL_IF(func) nullptr
+#endif  // KLEIDICV_ALWAYS_ENABLE_SME2
 
 #if KLEIDICV_ALWAYS_ENABLE_SME
 #define KLEIDICV_SME_IMPL_IF(func) func

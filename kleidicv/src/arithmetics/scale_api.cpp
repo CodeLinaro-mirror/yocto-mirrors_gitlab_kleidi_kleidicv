@@ -36,8 +36,8 @@ kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
 }  // namespace kleidicv
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8, &kleidicv::neon::scale<uint8_t>,
-                            nullptr, nullptr);
+                            nullptr, nullptr, nullptr);
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_scale_f32, &kleidicv::neon::scale<float>,
     KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::scale<float>),
-    KLEIDICV_SME_IMPL_IF(&kleidicv::sme::scale<float>));
+    KLEIDICV_SME_IMPL_IF(&kleidicv::sme::scale<float>), nullptr);

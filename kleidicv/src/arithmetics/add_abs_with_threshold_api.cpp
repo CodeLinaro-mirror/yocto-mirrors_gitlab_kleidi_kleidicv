@@ -39,6 +39,6 @@ kleidicv_error_t saturating_add_abs_with_threshold(
       name, &kleidicv::neon::saturating_add_abs_with_threshold<type>, \
       KLEIDICV_SVE2_IMPL_IF(                                          \
           &kleidicv::sve2::saturating_add_abs_with_threshold<type>),  \
-      &kleidicv::sme::saturating_add_abs_with_threshold<type>)
+      &kleidicv::sme::saturating_add_abs_with_threshold<type>, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_saturating_add_abs_with_threshold_s16, int16_t);

@@ -34,6 +34,6 @@ kleidicv_error_t threshold_binary(const T *src, size_t src_stride, T *dst,
   KLEIDICV_MULTIVERSION_C_API(                                        \
       name, &kleidicv::neon::threshold_binary<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::threshold_binary<type>), \
-      &kleidicv::sme::threshold_binary<type>)
+      &kleidicv::sme::threshold_binary<type>, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_threshold_binary_u8, uint8_t);

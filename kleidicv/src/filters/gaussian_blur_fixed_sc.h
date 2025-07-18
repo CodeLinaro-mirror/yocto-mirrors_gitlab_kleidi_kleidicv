@@ -17,7 +17,7 @@
 #include "kleidicv/filters/sigma.h"
 #include "kleidicv/workspace/separable.h"
 
-#if KLEIDICV_TARGET_SME
+#if KLEIDICV_TARGET_SME || KLEIDICV_TARGET_SME2
 #include <arm_sme.h>
 #endif
 

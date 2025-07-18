@@ -44,7 +44,7 @@ kleidicv_error_t saturating_multiply(const T *src_a, size_t src_a_stride,
   KLEIDICV_MULTIVERSION_C_API(                                           \
       name, &kleidicv::neon::saturating_multiply<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_multiply<type>), \
-      nullptr)
+      nullptr, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_saturating_multiply_u8, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_saturating_multiply_s8, int8_t);

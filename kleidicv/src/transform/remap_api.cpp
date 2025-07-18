@@ -8,25 +8,30 @@
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16_u8,
                             &kleidicv::neon::remap_s16<uint8_t>,
-                            &kleidicv::sve2::remap_s16<uint8_t>, nullptr);
+                            &kleidicv::sve2::remap_s16<uint8_t>, nullptr,
+                            nullptr);
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16_u16,
                             &kleidicv::neon::remap_s16<uint16_t>,
-                            &kleidicv::sve2::remap_s16<uint16_t>, nullptr);
+                            &kleidicv::sve2::remap_s16<uint16_t>, nullptr,
+                            nullptr);
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16point5_u8,
                             &kleidicv::neon::remap_s16point5<uint8_t>,
-                            &kleidicv::sve2::remap_s16point5<uint8_t>, nullptr);
+                            &kleidicv::sve2::remap_s16point5<uint8_t>, nullptr,
+                            nullptr);
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_s16point5_u16,
                             &kleidicv::neon::remap_s16point5<uint16_t>,
-                            &kleidicv::sve2::remap_s16point5<uint16_t>,
+                            &kleidicv::sve2::remap_s16point5<uint16_t>, nullptr,
                             nullptr);
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_f32_u8,
                             &kleidicv::neon::remap_f32<uint8_t>,
-                            &kleidicv::sve2::remap_f32<uint8_t>, nullptr);
+                            &kleidicv::sve2::remap_f32<uint8_t>, nullptr,
+                            nullptr);
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_remap_f32_u16,
                             &kleidicv::neon::remap_f32<uint16_t>,
-                            &kleidicv::sve2::remap_f32<uint16_t>, nullptr);
+                            &kleidicv::sve2::remap_f32<uint16_t>, nullptr,
+                            nullptr);
