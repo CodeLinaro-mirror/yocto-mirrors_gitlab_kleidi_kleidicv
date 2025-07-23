@@ -381,8 +381,6 @@ class InRangeTest final {
     inputs_padding_.fill(0);
     outputs_padding_.fill(0);
   }
-
-  virtual ~InRangeTest() = default;
 };
 
 template <typename ElementType>

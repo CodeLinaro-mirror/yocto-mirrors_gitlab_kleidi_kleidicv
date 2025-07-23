@@ -565,21 +565,21 @@ static void gaussian_blur(benchmark::State& state) {
   (void)kleidicv_filter_context_release(context);
 }
 
-#define BENCH_GAUSSIAN_BLUR(kernel_size, channel_number)                                    \
-  static void                                                                               \
-      gaussian_blur_binomial_u8##_##kernel_size##x##kernel_size##_##channel_number##ch(     \
-          benchmark::State& state) {                                                        \
-    gaussian_blur<uint8_t, kernel_size, channel_number, true>(state);                       \
-  }                                                                                         \
-  BENCHMARK(                                                                                \
-      gaussian_blur_binomial_u8##_##kernel_size##x##kernel_size##_##channel_number##ch);    \
-                                                                                            \
-  static void                                                                               \
-      gaussian_blur_custom_sigma_u8##_##kernel_size##x##kernel_size##_##channel_number##ch( \
-          benchmark::State& state) {                                                        \
-    gaussian_blur<uint8_t, kernel_size, channel_number, false>(state);                      \
-  }                                                                                         \
-  BENCHMARK(                                                                                \
+#define BENCH_GAUSSIAN_BLUR(kernel_size, channel_number)                                 \
+  static void                                                                            \
+  gaussian_blur_binomial_u8##_##kernel_size##x##kernel_size##_##channel_number##ch(      \
+      benchmark::State& state) {                                                         \
+    gaussian_blur<uint8_t, kernel_size, channel_number, true>(state);                    \
+  }                                                                                      \
+  BENCHMARK(                                                                             \
+      gaussian_blur_binomial_u8##_##kernel_size##x##kernel_size##_##channel_number##ch); \
+                                                                                         \
+  static void                                                                            \
+  gaussian_blur_custom_sigma_u8##_##kernel_size##x##kernel_size##_##channel_number##ch(  \
+      benchmark::State& state) {                                                         \
+    gaussian_blur<uint8_t, kernel_size, channel_number, false>(state);                   \
+  }                                                                                      \
+  BENCHMARK(                                                                             \
       gaussian_blur_custom_sigma_u8##_##kernel_size##x##kernel_size##_##channel_number##ch);
 
 BENCH_GAUSSIAN_BLUR(3, 1);
