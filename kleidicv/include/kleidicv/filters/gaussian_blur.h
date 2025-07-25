@@ -90,7 +90,7 @@ kleidicv_error_t gaussian_blur_checks(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, size_t channels,
     const KLEIDICV_TARGET_NAMESPACE::SeparableFilterWorkspace *workspace)
-    KLEIDICV_STREAMING_COMPATIBLE {
+    KLEIDICV_STREAMING {
   CHECK_POINTERS(workspace);
 
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);

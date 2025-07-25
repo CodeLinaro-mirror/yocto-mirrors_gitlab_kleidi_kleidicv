@@ -15,12 +15,11 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst,
-    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_stride) KLEIDICV_STREAMING {
   size_t dst_width = src_width * 2;
   size_t dst_height = src_height * 2;
 
-  auto lerp1d_vector = [](svuint8_t near,
-                          svuint8_t far) KLEIDICV_STREAMING_COMPATIBLE {
+  auto lerp1d_vector = [](svuint8_t near, svuint8_t far) KLEIDICV_STREAMING {
     // near * 3
     svuint16_t near3b = svmullb(near, uint8_t{3});
     svuint16_t near3t = svmullt(near, uint8_t{3});
@@ -40,8 +39,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
   };
 
   auto lerp2d_vector = [](svbool_t pg, svuint8_t near, svuint8_t mid_a,
-                          svuint8_t mid_b,
-                          svuint8_t far) KLEIDICV_STREAMING_COMPATIBLE {
+                          svuint8_t mid_b, svuint8_t far) KLEIDICV_STREAMING {
     // near * 9
     svuint16_t near9b = svmullb(near, uint8_t{9});
     svuint16_t near9t = svmullt(near, uint8_t{9});
@@ -69,12 +67,10 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
     return near9_mid3_far_8_div16;
   };
 
-  // Work-around for clang-format oddness.
-#define KSC KLEIDICV_STREAMING_COMPATIBLE
-
   // Handle top or bottom edge
   auto process_edge_row = [src_width, dst_width, lerp1d_vector](
-                              const uint8_t *src_row, uint8_t *dst_row) KSC {
+                              const uint8_t *src_row,
+                              uint8_t *dst_row) KLEIDICV_STREAMING {
     // Left element
     dst_row[0] = src_row[0];
 
@@ -99,7 +95,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
   auto process_row = [src_width, dst_width, lerp1d_vector, lerp2d_vector](
                          const uint8_t *src_row0, const uint8_t *src_row1,
                          uint8_t *dst_row0,
-                         uint8_t *dst_row1) KLEIDICV_STREAMING_COMPATIBLE {
+                         uint8_t *dst_row1) KLEIDICV_STREAMING {
     // Left elements
     svbool_t pg1 = svptrue_pat_b8(SV_VL1);  // read/write 1 element
     {
@@ -164,30 +160,32 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst,
-    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_stride) KLEIDICV_STREAMING {
   size_t dst_width = src_width * 4;
   size_t dst_height = src_height * 4;
 
-  auto lerp1d_vector = [](uint8_t p, svuint8_t a, uint8_t q, svuint8_t b) KSC {
-    // bias
-    svuint16_t top = svdup_u16(4);
+  auto lerp1d_vector = [](uint8_t p, svuint8_t a, uint8_t q, svuint8_t b)
+                           KLEIDICV_STREAMING {
+                             // bias
+                             svuint16_t top = svdup_u16(4);
 
-    // bias + a * p
-    svuint16_t bot = svmlalb(top, a, p);
-    top = svmlalt(top, a, p);
+                             // bias + a * p
+                             svuint16_t bot = svmlalb(top, a, p);
+                             top = svmlalt(top, a, p);
 
-    // bias + a * p + b * q
-    bot = svmlalb(bot, b, q);
-    top = svmlalt(top, b, q);
+                             // bias + a * p + b * q
+                             bot = svmlalb(bot, b, q);
+                             top = svmlalt(top, b, q);
 
-    // (bias + a * p + b * q) / 8
-    svuint8_t result = svshrnb(bot, 3ULL);
-    result = svshrnt(result, top, 3ULL);
-    return result;
-  };
+                             // (bias + a * p + b * q) / 8
+                             svuint8_t result = svshrnb(bot, 3ULL);
+                             result = svshrnt(result, top, 3ULL);
+                             return result;
+                           };
 
   auto lerp2d_vector = [](uint8_t p, svuint8_t a, uint8_t q, svuint8_t b,
-                          uint8_t r, svuint8_t c, uint8_t s, svuint8_t d) KSC {
+                          uint8_t r, svuint8_t c, uint8_t s,
+                          svuint8_t d) KLEIDICV_STREAMING {
     // bias
     svuint16_t top = svdup_u16(32);
 
@@ -214,7 +212,8 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
 
   // Handle top or bottom edge
   auto process_edge_row = [src_width, dst_width, lerp1d_vector](
-                              const uint8_t *src_row, uint8_t *dst_row) KSC {
+                              const uint8_t *src_row,
+                              uint8_t *dst_row) KLEIDICV_STREAMING {
     // Left elements
     dst_row[1] = dst_row[0] = src_row[0];
 
@@ -237,7 +236,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
                          const uint8_t *src_row0, const uint8_t *src_row1,
                          uint8_t *dst_row0, uint8_t *dst_row1,
                          uint8_t *dst_row2,
-                         uint8_t *dst_row3) KLEIDICV_STREAMING_COMPATIBLE {
+                         uint8_t *dst_row3) KLEIDICV_STREAMING {
     // Left elements
     svbool_t pg1 = svptrue_pat_b8(SV_VL1);  // read 1 element
     svbool_t pg2 = svptrue_pat_b8(SV_VL2);  // write 2 elements
@@ -294,7 +293,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
   };
 
   auto copy_dst_row = [src_width](const uint8_t *dst_from,
-                                  uint8_t *dst_to) KSC {
+                                  uint8_t *dst_to) KLEIDICV_STREAMING {
     for (size_t i = 0; i < src_width; i += svcntb()) {
       svbool_t pg = svwhilelt_b8(i, src_width);
       svst4(pg, dst_to + i * 4, svld4(pg, dst_from + i * 4));
@@ -334,19 +333,19 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, float *dst,
-    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_stride) KLEIDICV_STREAMING {
   size_t dst_width = src_width * 2;
   src_stride /= sizeof(float);
   dst_stride /= sizeof(float);
 
   auto lerp1d_vector = [](svbool_t pg, svfloat32_t near,
-                          svfloat32_t far) KLEIDICV_STREAMING_COMPATIBLE {
+                          svfloat32_t far) KLEIDICV_STREAMING {
     return svmla_n_f32_x(pg, svmul_n_f32_x(pg, near, 0.75F), far, 0.25F);
   };
 
   auto lerp2d_vector = [](svbool_t pg, svfloat32_t near, svfloat32_t mid_a,
                           svfloat32_t mid_b,
-                          svfloat32_t far) KLEIDICV_STREAMING_COMPATIBLE {
+                          svfloat32_t far) KLEIDICV_STREAMING {
     return svmla_n_f32_x(
         pg,
         svmla_n_f32_x(
@@ -356,12 +355,10 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
         far, 0.0625F);
   };
 
-  // Work-around for clang-format oddness.
-#define KSC KLEIDICV_STREAMING_COMPATIBLE
-
   // Handle top or bottom edge
   auto process_edge_row = [src_width, dst_width, lerp1d_vector](
-                              const float *src_row, float *dst_row) KSC {
+                              const float *src_row,
+                              float *dst_row) KLEIDICV_STREAMING {
     // Left element
     dst_row[0] = src_row[0];
 
@@ -384,7 +381,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
 
   auto process_row = [src_width, dst_width, lerp1d_vector, lerp2d_vector](
                          const float *src_row0, const float *src_row1,
-                         float *dst_row0, float *dst_row1) KSC {
+                         float *dst_row0, float *dst_row1) KLEIDICV_STREAMING {
     // Left elements
     svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read/write 1 element
     {
@@ -447,19 +444,20 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, float *dst,
-    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_stride) KLEIDICV_STREAMING {
   size_t dst_width = src_width * 4;
   size_t dst_height = src_height * 4;
   src_stride /= sizeof(float);
   dst_stride /= sizeof(float);
 
-  auto lerp1d_vector =
-      [](svbool_t pg, float p, svfloat32_t a, float q, svfloat32_t b)
-          KSC { return svmla_n_f32_x(pg, svmul_n_f32_x(pg, a, p), b, q); };
+  auto lerp1d_vector = [](svbool_t pg, float p, svfloat32_t a, float q,
+                          svfloat32_t b) KLEIDICV_STREAMING {
+    return svmla_n_f32_x(pg, svmul_n_f32_x(pg, a, p), b, q);
+  };
 
   auto lerp2d_vector = [](svbool_t pg, float p, svfloat32_t a, float q,
                           svfloat32_t b, float r, svfloat32_t c, float s,
-                          svfloat32_t d) KSC {
+                          svfloat32_t d) KLEIDICV_STREAMING {
     return svmla_n_f32_x(
         pg,
         svmla_n_f32_x(pg, svmla_n_f32_x(pg, svmul_n_f32_x(pg, a, p), b, q), c,
@@ -469,7 +467,8 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
 
   // Handle top or bottom edge
   auto process_edge_row = [src_width, dst_width, dst_stride, lerp1d_vector](
-                              const float *src_row, float *dst_row) KSC {
+                              const float *src_row,
+                              float *dst_row) KLEIDICV_STREAMING {
     // Left elements
     dst_row[1] = dst_row[0] = dst_row[dst_stride + 1] = dst_row[dst_stride] =
         src_row[0];
@@ -497,7 +496,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
   auto process_row = [src_width, dst_width, lerp1d_vector, lerp2d_vector](
                          const float *src_row0, const float *src_row1,
                          float *dst_row0, float *dst_row1, float *dst_row2,
-                         float *dst_row3) KSC {
+                         float *dst_row3) KLEIDICV_STREAMING {
     // Left elements
     svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
     svbool_t pg2 = svptrue_pat_b32(SV_VL2);  // write 2 elements
@@ -603,7 +602,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, float *dst,
-    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_stride) KLEIDICV_STREAMING {
   size_t dst_width = src_width * 8;
   size_t dst_height = src_height * 8;
   src_stride /= sizeof(float);
@@ -619,13 +618,12 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
   svfloat32_t coeffs_b1 = svld1(svptrue_b32(), &coeffs_b[4]);
 
   auto lerp1d_vector_n = [](svbool_t pg, float p, svfloat32_t a, float q,
-                            svfloat32_t b) KLEIDICV_STREAMING_COMPATIBLE {
+                            svfloat32_t b) KLEIDICV_STREAMING {
     return svmla_n_f32_x(pg, svmul_n_f32_x(pg, a, p), b, q);
   };
 
   auto lerp1d_vector = [](svbool_t pg, svfloat32_t p, svfloat32_t a,
-                          svfloat32_t q,
-                          svfloat32_t b) KLEIDICV_STREAMING_COMPATIBLE {
+                          svfloat32_t q, svfloat32_t b) KLEIDICV_STREAMING {
     return svmla_f32_x(pg, svmul_f32_x(pg, a, p), b, q);
   };
 
@@ -633,7 +631,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
   auto process_edge_row =
       [src_width, dst_width, lerp1d_vector, &coeffs_a0, &coeffs_a1, &coeffs_b0,
        &coeffs_b1](const float *src_row, float *dst_row, size_t dst_stride)
-          KLEIDICV_STREAMING_COMPATIBLE {
+          KLEIDICV_STREAMING {
             // Left elements
             float left = src_row[0];
             float *dst = dst_row;
@@ -691,7 +689,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
   auto lerp2d_vector = [](svbool_t pg, svfloat32_t a, svfloat32_t p,
                           svfloat32_t b, svfloat32_t q, svfloat32_t c,
                           svfloat32_t r, svfloat32_t d,
-                          svfloat32_t s) KLEIDICV_STREAMING_COMPATIBLE {
+                          svfloat32_t s) KLEIDICV_STREAMING {
     return svmla_f32_x(
         pg, svmla_f32_x(pg, svmla_f32_x(pg, svmul_f32_x(pg, a, p), b, q), c, r),
         d, s);
@@ -699,10 +697,10 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
 
   auto process_row = [src_width, lerp2d_vector, lerp1d_vector_n, &coeffs_p0,
                       &coeffs_q0, &coeffs_r0, &coeffs_s0, &coeffs_p1,
-                      &coeffs_q1, &coeffs_r1, &coeffs_s1](
-                         const float *src_row0, const float *src_row1,
-                         float *dst_row0,
-                         size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+                      &coeffs_q1, &coeffs_r1,
+                      &coeffs_s1](const float *src_row0, const float *src_row1,
+                                  float *dst_row0,
+                                  size_t dst_stride) KLEIDICV_STREAMING {
     // Left elements
     svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
     svbool_t pg4 = svptrue_pat_b32(SV_VL4);  // write 4 elements
@@ -823,7 +821,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, float *dst,
-    size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_stride) KLEIDICV_STREAMING {
   size_t dst_width = src_width * 8;
   size_t dst_height = src_height * 8;
   src_stride /= sizeof(float);
@@ -864,13 +862,15 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
     coeffs_b = svdiv_n_f32_x(svptrue_b32(), repetitive_float, 16.0F);
     coeffs_a = svsub_x(svptrue_b32(), svdup_f32(1.0F), coeffs_b);
   }
-  auto lerp1d_vector =
-      [](svbool_t pg, float p, svfloat32_t a, float q, svfloat32_t b)
-          KSC { return svmla_n_f32_x(pg, svmul_n_f32_x(pg, a, p), b, q); };
+  auto lerp1d_vector = [](svbool_t pg, float p, svfloat32_t a, float q,
+                          svfloat32_t b) KLEIDICV_STREAMING {
+    return svmla_n_f32_x(pg, svmul_n_f32_x(pg, a, p), b, q);
+  };
 
   auto index_and_lerp1d = [&coeffs_a, &coeffs_b](
                               svbool_t pg, svuint32_t indices_a,
-                              svuint32_t indices_b, svfloat32_t src) KSC {
+                              svuint32_t indices_b,
+                              svfloat32_t src) KLEIDICV_STREAMING {
     return svmla_f32_x(pg, svmul_f32_x(pg, svtbl(src, indices_a), coeffs_a),
                        svtbl(src, indices_b), coeffs_b);
   };
@@ -880,7 +880,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
                            &indices_0b, &indices_1a, &indices_1b, &indices_2a,
                            &indices_2b, &indices_3a,
                            &indices_3b](const float *src_row, float *dst_row,
-                                        size_t dst_stride) KSC {
+                                        size_t dst_stride) KLEIDICV_STREAMING {
     // Left elements
     float left = src_row[0];
     float *dst = dst_row;
@@ -952,7 +952,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
   auto index_and_lerp2d = [&coeffs_p, &coeffs_q, &coeffs_r, &coeffs_s](
                               svbool_t pg, svuint32_t indices_a,
                               svuint32_t indices_b, svfloat32_t src0,
-                              svfloat32_t src1) KSC {
+                              svfloat32_t src1) KLEIDICV_STREAMING {
     return svmla_f32_x(
         pg,
         svmla_f32_x(
@@ -967,8 +967,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
                       &indices_0a, &indices_0b, &indices_1a, &indices_1b,
                       &indices_2a, &indices_2b, &indices_3a, &indices_3b](
                          const float *src_row0, const float *src_row1,
-                         float *dst_row,
-                         size_t dst_stride) KLEIDICV_STREAMING_COMPATIBLE {
+                         float *dst_row, size_t dst_stride) KLEIDICV_STREAMING {
     // Left edge
     svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
     svbool_t pg4 = svptrue_pat_b32(SV_VL4);  // write 4 elements
@@ -1113,7 +1112,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
-    size_t dst_width, size_t dst_height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_width, size_t dst_height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
@@ -1139,7 +1138,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_u8_sc(
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_linear_stripe_f32_sc(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, float *dst, size_t dst_stride,
-    size_t dst_width, size_t dst_height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_width, size_t dst_height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);

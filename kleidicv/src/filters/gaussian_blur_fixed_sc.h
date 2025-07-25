@@ -42,9 +42,9 @@ class GaussianBlur<uint8_t, 3, true> {
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint8_t> src[3],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<svuint8_t> src[3],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     svuint16_t acc_0_2_b = svaddlb_u16(src[0], src[2]);
     svuint16_t acc_0_2_t = svaddlt_u16(src[0], src[2]);
 
@@ -61,9 +61,9 @@ class GaussianBlur<uint8_t, 3, true> {
   // Applies horizontal filtering vector using SIMD operations.
   //
   // DST = 1/16 * [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint16_t> src[3],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<svuint16_t> src[3],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     svuint16_t acc_0_2 = svhadd_u16_x(pg, src[0], src[2]);
 
     svuint16_t acc = svadd_u16_x(pg, acc_0_2, src[1]);
@@ -75,8 +75,8 @@ class GaussianBlur<uint8_t, 3, true> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = 1/16 * [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[3],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     auto acc = src[0] + 2 * src[1] + src[2];
     dst[0] = rounding_shift_right(acc, 4);
   }
@@ -99,9 +99,9 @@ class GaussianBlur<uint8_t, 5, true> {
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint8_t> src[5],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<svuint8_t> src[5],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     svuint16_t acc_0_4_b = svaddlb_u16(src[0], src[4]);
     svuint16_t acc_0_4_t = svaddlt_u16(src[0], src[4]);
     svuint16_t acc_1_3_b = svaddlb_u16(src[1], src[3]);
@@ -119,9 +119,9 @@ class GaussianBlur<uint8_t, 5, true> {
   // Applies horizontal filtering vector using SIMD operations.
   //
   // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint16_t> src[5],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<svuint16_t> src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     svuint16_t acc_0_4 = svadd_x(pg, src[0], src[4]);
     svuint16_t acc_1_3 = svadd_x(pg, src[1], src[3]);
     svuint16_t acc = svmla_n_u16_x(pg, acc_0_4, src[2], 6);
@@ -133,8 +133,8 @@ class GaussianBlur<uint8_t, 5, true> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     auto acc = src[0] + src[4] + 4 * (src[1] + src[3]) + 6 * src[2];
     dst[0] = rounding_shift_right(acc, 8);
   }
@@ -168,9 +168,9 @@ class GaussianBlur<uint8_t, 7, true> {
   //
   // DST = [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6 ] *
   //     * [ 2, 7, 14, 18, 14, 7, 2 ]T
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint8_t> src[7],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<svuint8_t> src[7],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     svuint16_t acc_0_6_b = svaddlb_u16(src[0], src[6]);
     svuint16_t acc_0_6_t = svaddlt_u16(src[0], src[6]);
 
@@ -205,9 +205,9 @@ class GaussianBlur<uint8_t, 7, true> {
   //
   // DST = 1/4096 * [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6 ] *
   //              * [ 2, 7, 14, 18, 14, 7, 2 ]T
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint16_t> src[7],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<svuint16_t> src[7],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     svuint32_t acc_0_6_b = svaddlb_u32(src[0], src[6]);
     svuint32_t acc_0_6_t = svaddlt_u32(src[0], src[6]);
 
@@ -242,8 +242,8 @@ class GaussianBlur<uint8_t, 7, true> {
   //
   // DST = 1/4096 * [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6 ] *
   //              * [ 2, 7, 14, 18, 14, 7, 2 ]T
-  void horizontal_scalar_path(const BufferType src[7], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[7],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     uint32_t acc = src[0] * 2 + src[1] * 7 + src[2] * 14 + src[3] * 18 +
                    src[4] * 14 + src[5] * 7 + src[6] * 2;
     dst[0] = rounding_shift_right(acc, 12);
@@ -268,12 +268,12 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   void vertical_vector_path(
       svbool_t pg, std::reference_wrapper<SourceVectorType> src[KernelSize],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+      BufferType *dst) const KLEIDICV_STREAMING {
     common_vector_path(pg, src, dst);
   }
 
-  void vertical_scalar_path(const SourceType src[KernelSize], BufferType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_scalar_path(const SourceType src[KernelSize],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     uint32_t acc = static_cast<uint32_t>(src[kHalfKernelSize - 1]) *
                    half_kernel_[kHalfKernelSize - 1];
 
@@ -290,20 +290,19 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   void horizontal_vector_path(
       svbool_t pg, std::reference_wrapper<SourceVectorType> src[KernelSize],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+      BufferType *dst) const KLEIDICV_STREAMING {
     common_vector_path(pg, src, dst);
   }
 
   void horizontal_scalar_path(const BufferType src[KernelSize],
-                              DestinationType *dst) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     vertical_scalar_path(src, dst);
   }
 
  private:
   void common_vector_path(
       svbool_t pg, std::reference_wrapper<SourceVectorType> src[KernelSize],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+      BufferType *dst) const KLEIDICV_STREAMING {
     svbool_t pg16_all = svptrue_b16();
     svuint16_t acc_b = svmullb_n_u16(src[kHalfKernelSize - 1],
                                      half_kernel_[kHalfKernelSize - 1]);
@@ -338,7 +337,7 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     const ScalarType *src, size_t src_stride, ScalarType *dst,
     size_t dst_stride, Rectangle &rect, size_t y_begin, size_t y_end,
     size_t channels, float sigma, FixedBorderType border_type,
-    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
+    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING {
   using GaussianBlurFilter = GaussianBlur<ScalarType, KernelSize, IsBinomial>;
 
   Rows<const ScalarType> src_rows{src, src_stride, channels};
@@ -385,7 +384,7 @@ static kleidicv_error_t gaussian_blur(
     size_t kernel_size, const ScalarType *src, size_t src_stride,
     ScalarType *dst, size_t dst_stride, Rectangle &rect, size_t y_begin,
     size_t y_end, size_t channels, float sigma, FixedBorderType border_type,
-    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
+    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING {
   switch (kernel_size) {
     case 3:
       return gaussian_blur_fixed_kernel_size<3, IsBinomial>(
@@ -423,7 +422,7 @@ static kleidicv_error_t gaussian_blur_fixed_stripe_u8_sc(
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t /*kernel_height*/, float sigma_x,
     float /*sigma_y*/, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
+    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
   kleidicv_error_t checks_result = gaussian_blur_checks(
       src, src_stride, dst, dst_stride, width, height, channels, workspace);

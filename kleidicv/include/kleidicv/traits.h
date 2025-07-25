@@ -19,8 +19,7 @@ class remove_streaming_compatible;
 
 #if KLEIDICV_TARGET_SME || KLEIDICV_TARGET_SME2
 template <typename Ret, typename Impl, typename... Args>
-class remove_streaming_compatible<Ret (Impl::*)(Args...)
-                                      KLEIDICV_STREAMING_COMPATIBLE> {
+class remove_streaming_compatible<Ret (Impl::*)(Args...) KLEIDICV_STREAMING> {
  public:
   using type = Ret (Impl::*)(Args...);
 };

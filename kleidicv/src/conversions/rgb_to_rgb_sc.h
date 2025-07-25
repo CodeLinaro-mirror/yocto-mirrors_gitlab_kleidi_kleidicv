@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -24,7 +24,7 @@ class RGBToBGR final :
 
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE || !KLEIDICV_ASSUME_128BIT_SVE2
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x3_t src_vect = svld3(pg, src);
     svuint8x3_t dst_vect = svcreate3(svget3(src_vect, 2), svget3(src_vect, 1),
@@ -34,20 +34,20 @@ class RGBToBGR final :
   }
 #else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE ||
         // !KLEIDICV_ASSUME_128BIT_SVE2
-  explicit RGBToBGR(svuint8x4_t &indices) KLEIDICV_STREAMING_COMPATIBLE
+  explicit RGBToBGR(svuint8x4_t &indices) KLEIDICV_STREAMING
       : indices_{indices} {
     initialize_indices();
   }
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     // Call the common vector path.
     auto pg = ctx.predicate();
     common_vector_path(pg, pg, pg, src, dst);
   }
 
   void tail_path(ContextType ctx, const ScalarType *src,
-                 ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                 ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     // Predicates for consecutive stores.
     svbool_t pg_0, pg_1, pg_2;
@@ -59,7 +59,7 @@ class RGBToBGR final :
  private:
   void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
                           const ScalarType *src,
-                          ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                          ScalarType *dst) KLEIDICV_STREAMING {
     VectorType src_0 = svld1(pg_0, &src[0]);
     VectorType src_1 = svld1_vnum(pg_1, &src[0], 1);
     VectorType src_2 = svld1_vnum(pg_2, &src[0], 2);
@@ -78,7 +78,7 @@ class RGBToBGR final :
     svst1_vnum(pg_2, &dst[0], 2, dst_vec_2);
   }
 
-  void initialize_indices() KLEIDICV_STREAMING_COMPATIBLE {
+  void initialize_indices() KLEIDICV_STREAMING {
     svbool_t pg = VecTraits::svptrue();
     indices_ = svcreate4(svld1(pg, &kTableIndices[0]),
                          svld1_vnum(pg, &kTableIndices[0], 1),
@@ -105,7 +105,7 @@ class RGBAToBGRA final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x4_t src_vect = svld4(pg, src);
     svuint8x4_t dst_vect = svcreate4(svget4(src_vect, 2), svget4(src_vect, 1),
@@ -122,7 +122,7 @@ class RGBToBGRA final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x3_t src_vect = svld3(pg, src);
     svuint8x4_t dst_vect = svcreate4(svget3(src_vect, 2), svget3(src_vect, 1),
@@ -139,7 +139,7 @@ class RGBToRGBA final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x3_t src_vect = svld3(pg, src);
     svuint8x4_t dst_vect = svcreate4(svget3(src_vect, 0), svget3(src_vect, 1),
@@ -156,7 +156,7 @@ class RGBAToBGR final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x4_t src_vect = svld4(pg, src);
     svuint8x3_t dst_vect = svcreate3(svget4(src_vect, 2), svget4(src_vect, 1),
@@ -173,7 +173,7 @@ class RGBAToRGB final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x4_t src_vect = svld4(pg, src);
     svuint8x3_t dst_vect = svcreate3(svget4(src_vect, 0), svget4(src_vect, 1),
@@ -185,7 +185,7 @@ class RGBAToRGB final : public UnrollTwice {
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t rgb_to_bgr_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t width, size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -204,9 +204,10 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t rgb_to_bgr_u8_sc(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgba_to_bgra_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t rgba_to_bgra_u8_sc(const uint8_t *src,
+                                           size_t src_stride, uint8_t *dst,
+                                           size_t dst_stride, size_t width,
+                                           size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -220,9 +221,10 @@ static kleidicv_error_t rgba_to_bgra_u8_sc(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgb_to_bgra_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t rgb_to_bgra_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -236,9 +238,10 @@ static kleidicv_error_t rgb_to_bgra_u8_sc(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgb_to_rgba_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t rgb_to_rgba_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -252,9 +255,10 @@ static kleidicv_error_t rgb_to_rgba_u8_sc(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgba_to_bgr_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t rgba_to_bgr_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -268,9 +272,10 @@ static kleidicv_error_t rgba_to_bgr_u8_sc(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgba_to_rgb_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t rgba_to_rgb_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

@@ -25,12 +25,12 @@ class YUVToRGB : public UnrollOnce {
       typename std::conditional<ALPHA, svuint8x4_t, svuint8x3_t>::type;
 
   // Returns the number of channels in the output image.
-  static constexpr size_t output_channels() KLEIDICV_STREAMING_COMPATIBLE {
+  static constexpr size_t output_channels() KLEIDICV_STREAMING {
     return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     Vector3Type svsrc = svld3(pg, src);
     svint16_t y_0 = svreinterpret_s16_u16(svshllb_n_u16(svget3(svsrc, 0), 0));
@@ -140,10 +140,11 @@ class YUVToRGB : public UnrollOnce {
 };  // end of class YUVToRGB<bool BGR>
 
 template <typename OperationType, typename ScalarType>
-kleidicv_error_t yuv2rgb_operation(
-    OperationType operation, const ScalarType *src, size_t src_stride,
-    ScalarType *dst, size_t dst_stride, size_t width,
-    size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+kleidicv_error_t yuv2rgb_operation(OperationType operation,
+                                   const ScalarType *src, size_t src_stride,
+                                   ScalarType *dst, size_t dst_stride,
+                                   size_t width,
+                                   size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -157,36 +158,40 @@ kleidicv_error_t yuv2rgb_operation(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_to_rgb_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t yuv_to_rgb_u8_sc(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width,
+                                         size_t height) KLEIDICV_STREAMING {
   YUVToRGB<false, false> operation;
   return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_to_rgba_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t yuv_to_rgba_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   YUVToRGB<false, true> operation;
   return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_to_bgr_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t yuv_to_bgr_u8_sc(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width,
+                                         size_t height) KLEIDICV_STREAMING {
   YUVToRGB<true, false> operation;
   return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_to_bgra_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t yuv_to_bgra_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   YUVToRGB<true, true> operation;
   return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);

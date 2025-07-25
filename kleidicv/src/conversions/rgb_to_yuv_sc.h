@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -25,7 +25,7 @@ class RGBToYUVBase : public UnrollOnce {
   void vector_calculation_path(svbool_t pg, svint16_t r_0, svint16_t r_1,
                                svint16_t g_0, svint16_t g_1, svint16_t b_0,
                                svint16_t b_1,
-                               ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                               ScalarType *dst) KLEIDICV_STREAMING {
     // Compute Y value in 32-bit precision
     svint16_t y_0, y_1;
     {
@@ -102,8 +102,8 @@ class RGBToYUVBase : public UnrollOnce {
   static constexpr size_t b_index_ = BGR ? 0 : 2;
   static constexpr uint32_t half_ =
       (std::numeric_limits<uint8_t>::max() / 2 + 1U) << kWeightScale;
-  static svint16_t combine_scaled_s16(svint32_t even, svint32_t odd)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static svint16_t combine_scaled_s16(svint32_t even,
+                                      svint32_t odd) KLEIDICV_STREAMING {
     return svqrshrnt(svqrshrnb(even, kWeightScale), odd, kWeightScale);
   }
 };  // end of class RGBToYUVBase<bool BGR>
@@ -117,12 +117,10 @@ class RGBToYUV final : public RGBToYUVBase<BGR> {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
   // Returns the number of channels in the output image.
-  static constexpr size_t input_channels() KLEIDICV_STREAMING_COMPATIBLE {
-    return 3;
-  }
+  static constexpr size_t input_channels() KLEIDICV_STREAMING { return 3; }
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x3_t svsrc = svld3(pg, src);
     svint16_t r_0 = svreinterpret_s16_u16(svmovlb(svget3(svsrc, r_index_)));
@@ -149,7 +147,7 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
   using ScalarType = uint8_t;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
-  explicit RGBAToYUV(svuint8x4_t &sv4) KLEIDICV_STREAMING_COMPATIBLE
+  explicit RGBAToYUV(svuint8x4_t &sv4) KLEIDICV_STREAMING
       : deinterleave16_indices_(sv4) {
     // clang-format off
     // From the unzipped RGBA -> RBRBRBRB..., take it apart to even and odd
@@ -167,18 +165,16 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
   }
 
   // Returns the number of channels in the output image.
-  static constexpr size_t input_channels() KLEIDICV_STREAMING_COMPATIBLE {
-    return 4;
-  }
+  static constexpr size_t input_channels() KLEIDICV_STREAMING { return 4; }
 
   void vector_path(ContextType ctx, const ScalarType *src,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     common_vector_path(pg, pg, pg, pg, pg, src, dst);
   }
 
   void tail_path(ContextType ctx, const ScalarType *src,
-                 ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                 ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svbool_t pg_0, pg_1, pg_2, pg_3;
     VecTraits::make_consecutive_predicates(pg, pg_0, pg_1, pg_2, pg_3);
@@ -188,7 +184,7 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
  private:
   void common_vector_path(svbool_t pg, svbool_t pg_0, svbool_t pg_1,
                           svbool_t pg_2, svbool_t pg_3, const ScalarType *src,
-                          ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                          ScalarType *dst) KLEIDICV_STREAMING {
     svint16_t r_0, r_1, g_0, g_1, b_0, b_1;
 
     svuint8_t src0 = svld1(pg_0, src);
@@ -247,10 +243,11 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
 };  // end of class RGBAToYUV<bool BGR>
 
 template <typename OperationType, typename ScalarType>
-kleidicv_error_t rgb2yuv_operation(
-    OperationType operation, const ScalarType *src, size_t src_stride,
-    ScalarType *dst, size_t dst_stride, size_t width,
-    size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+kleidicv_error_t rgb2yuv_operation(OperationType operation,
+                                   const ScalarType *src, size_t src_stride,
+                                   ScalarType *dst, size_t dst_stride,
+                                   size_t width,
+                                   size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -264,18 +261,20 @@ kleidicv_error_t rgb2yuv_operation(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgb_to_yuv_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t rgb_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width,
+                                         size_t height) KLEIDICV_STREAMING {
   RGBToYUV<false> operation;
   return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgba_to_yuv_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t rgba_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   svuint8x4_t indices;
   RGBAToYUV<false> operation(indices);
   return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
@@ -283,18 +282,20 @@ static kleidicv_error_t rgba_to_yuv_u8_sc(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t bgr_to_yuv_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t bgr_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width,
+                                         size_t height) KLEIDICV_STREAMING {
   RGBToYUV<true> operation;
   return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t bgra_to_yuv_u8_sc(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t bgra_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
+                                          uint8_t *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   svuint8x4_t indices;
   RGBAToYUV<true> operation(indices);
   return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,

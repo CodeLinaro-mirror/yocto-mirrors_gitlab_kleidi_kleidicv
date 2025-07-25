@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -24,26 +24,26 @@ class GrayToRGB final :
 
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8x3_t dst_vect = svcreate3(src_vect, src_vect, src_vect);
     svst3(pg, dst, dst_vect);
   }
 #else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  explicit GrayToRGB(svuint8x3_t &indices) KLEIDICV_STREAMING_COMPATIBLE
+  explicit GrayToRGB(svuint8x3_t &indices) KLEIDICV_STREAMING
       : indices_{indices} {
     initialize_indices();
   }
 
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     // Call the common vector path.
     auto pg = ctx.predicate();
     common_vector_path(pg, pg, pg, src_vect, dst);
   }
 
   void tail_path(ContextType ctx, VectorType src_vect,
-                 ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                 ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     // Predicates for consecutive stores.
     svbool_t pg_0, pg_1, pg_2;
@@ -55,7 +55,7 @@ class GrayToRGB final :
  private:
   void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
                           VectorType src_vect,
-                          ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                          ScalarType *dst) KLEIDICV_STREAMING {
     // Convert from gray to RGB using table-lookups.
     VectorType dst_vec_0 = svtbl(src_vect, svget3(indices_, 0));
     VectorType dst_vec_1 = svtbl(src_vect, svget3(indices_, 1));
@@ -66,7 +66,7 @@ class GrayToRGB final :
     svst1_vnum(pg_2, &dst[0], 2, dst_vec_2);
   }
 
-  void initialize_indices() KLEIDICV_STREAMING_COMPATIBLE {
+  void initialize_indices() KLEIDICV_STREAMING {
     // All-true predicate to shorten code.
     svbool_t pg_all = VecTraits::svptrue();
     // Constant used for division by 3.
@@ -109,7 +109,7 @@ class GrayToRGBAWithInterleaving final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     svuint8_t alpha = svdup_u8(0xff);
     svuint8x4_t dst_vect = svcreate4(src_vect, src_vect, src_vect, alpha);
@@ -126,20 +126,20 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
-  explicit GrayToRGBAWithLookUpTable(svuint8x4_t &indices)
-      KLEIDICV_STREAMING_COMPATIBLE : indices_{indices} {
+  explicit GrayToRGBAWithLookUpTable(svuint8x4_t &indices) KLEIDICV_STREAMING
+      : indices_{indices} {
     initialize_indices();
   }
 
   void vector_path(ContextType ctx, VectorType src_vect,
-                   ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   ScalarType *dst) KLEIDICV_STREAMING {
     // Call the common vector path.
     auto pg = ctx.predicate();
     common_vector_path(pg, pg, pg, pg, src_vect, dst);
   }
 
   void tail_path(ContextType ctx, VectorType src_vect,
-                 ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                 ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     // Predicates for consecutive stores.
     svbool_t pg_0, pg_1, pg_2, pg_3;
@@ -151,7 +151,7 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
  private:
   void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
                           svbool_t pg_3, VectorType src_vect,
-                          ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                          ScalarType *dst) KLEIDICV_STREAMING {
     svuint8x2_t src_and_alpha = svcreate2(src_vect, VecTraits::svdup(-1));
 
     // Convert from gray to RGBA using table-lookups.
@@ -166,7 +166,7 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
     svst1_vnum(pg_3, &dst[0], 3, dst_vec_3);
   }
 
-  void initialize_indices() KLEIDICV_STREAMING_COMPATIBLE {
+  void initialize_indices() KLEIDICV_STREAMING {
     // Number of four-tuple elements.
     uint64_t num_four_tuples = VecTraits::num_lanes() / 4;
     // Index of alpha.
@@ -203,7 +203,7 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgb_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t width, size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -223,7 +223,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgb_u8_sc(
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgba_u8_sc(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t width, size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

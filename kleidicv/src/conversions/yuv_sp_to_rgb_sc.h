@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -17,11 +17,11 @@ class YUVSpToRGBxOrBGRx final {
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<uint8_t>;
 
-  explicit YUVSpToRGBxOrBGRx(bool is_nv21) KLEIDICV_STREAMING_COMPATIBLE
+  explicit YUVSpToRGBxOrBGRx(bool is_nv21) KLEIDICV_STREAMING
       : is_nv21_(is_nv21) {}
 
   // Returns the number of channels in the output image.
-  static constexpr size_t output_channels() KLEIDICV_STREAMING_COMPATIBLE {
+  static constexpr size_t output_channels() KLEIDICV_STREAMING {
     return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
@@ -30,7 +30,7 @@ class YUVSpToRGBxOrBGRx final {
   void vector_path(ContextType ctx, const uint8_t *y_row_0,
                    const uint8_t *y_row_1, const uint8_t *uv_row,
                    uint8_t *rgbx_row_0,
-                   uint8_t *rgbx_row_1) KLEIDICV_STREAMING_COMPATIBLE {
+                   uint8_t *rgbx_row_1) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
 
     // Both the rounding shift right constant and the -128 value are included.
@@ -189,8 +189,7 @@ template <typename OperationType, typename ScalarType>
 kleidicv_error_t yuv2rgbx_operation(
     OperationType &operation, const ScalarType *src_y, size_t src_y_stride,
     const ScalarType *src_uv, size_t src_uv_stride, ScalarType *dst,
-    size_t dst_stride, size_t width,
-    size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t dst_stride, size_t width, size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src_y, src_y_stride, height);
   CHECK_POINTER_AND_STRIDE(src_uv, src_uv_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
@@ -215,7 +214,7 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t yuv_sp_to_rgb_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t height, bool is_nv21) KLEIDICV_STREAMING {
   YUVSpToRGB operation{is_nv21};
   return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
                             src_uv_stride, dst, dst_stride, width, height);
@@ -225,7 +224,7 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t yuv_sp_to_rgba_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t height, bool is_nv21) KLEIDICV_STREAMING {
   YUVSpToRGBA operation{is_nv21};
   return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
                             src_uv_stride, dst, dst_stride, width, height);
@@ -235,7 +234,7 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t yuv_sp_to_bgr_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t height, bool is_nv21) KLEIDICV_STREAMING {
   YUVSpToBGR operation{is_nv21};
   return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
                             src_uv_stride, dst, dst_stride, width, height);
@@ -245,7 +244,7 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t yuv_sp_to_bgra_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t height, bool is_nv21) KLEIDICV_STREAMING {
   YUVSpToBGRA operation{is_nv21};
   return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
                             src_uv_stride, dst, dst_stride, width, height);

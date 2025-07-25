@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 static constexpr size_t get_half_kernel_size(size_t kernel_size)
-    KLEIDICV_STREAMING_COMPATIBLE {
+    KLEIDICV_STREAMING {
   // since kernel sizes are odd, "half" here means that
   // the extra element is included
   return (kernel_size >> 1) + 1;

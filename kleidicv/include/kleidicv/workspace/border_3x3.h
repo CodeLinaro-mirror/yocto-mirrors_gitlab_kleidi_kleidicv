@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -41,7 +41,7 @@ class FixedBorderInfo<T, 3UL> final {
 
   // Returns offsets for columns affected by left border.
   Offsets offsets_with_left_border(size_t /* column_index */) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
       case FixedBorderType::REFLECT:
@@ -63,7 +63,7 @@ class FixedBorderInfo<T, 3UL> final {
 
   // Returns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t /* column_index */) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
       case FixedBorderType::REFLECT:
@@ -85,7 +85,7 @@ class FixedBorderInfo<T, 3UL> final {
 
   // Returns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     if (row_or_column_index == 0U) {
       // Rows and columns have the same offsets.
       return offsets_with_left_border(row_or_column_index);

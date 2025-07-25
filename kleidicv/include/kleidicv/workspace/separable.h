@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -20,8 +20,7 @@ class SeparableFilterWorkspace;
 // Deleter for SeparableFilterWorkspace instances.
 class SeparableFilterWorkspaceDeleter {
  public:
-  void operator()(SeparableFilterWorkspace *ptr) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+  void operator()(SeparableFilterWorkspace *ptr) const KLEIDICV_STREAMING {
     std::free(ptr);
   };
 };
@@ -82,8 +81,7 @@ class SeparableFilterWorkspace {
 
   // Creates a workspace on the heap.
   static Pointer create(Rectangle rect, size_t channels,
-                        size_t intermediate_size)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                        size_t intermediate_size) KLEIDICV_STREAMING {
     size_t buffer_rows_number_of_elements = rect.width() * channels;
     // Adding more elements because of SVE, where interleaving stores are
     // governed by one predicate. For example, if a predicate requires 7 uint8_t
@@ -129,7 +127,7 @@ class SeparableFilterWorkspace {
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
                size_t channels, typename FilterType::BorderType border_type,
-               FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+               FilterType filter) KLEIDICV_STREAMING {
     // Border helper which calculates border offsets.
     typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                         border_type};
@@ -163,7 +161,7 @@ class SeparableFilterWorkspace {
                          Rows<typename FilterType::DestinationType> dst_rows,
                          size_t channels,
                          typename FilterType::BorderType /* border_type */,
-                         FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+                         FilterType filter) KLEIDICV_STREAMING {
     // Buffer rows which hold intermediate widened data.
     auto buffer_rows = Rows{reinterpret_cast<typename FilterType::BufferType *>(
                                 &data_[buffer_rows_offset_]),
@@ -205,7 +203,7 @@ class SeparableFilterWorkspace {
                           Rows<typename FilterType::DestinationType> dst_rows,
                           FilterType filter,
                           typename FilterType::BorderInfoType horizontal_border)
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     // Margin associated with the filter.
     constexpr size_t margin = filter.margin;
 

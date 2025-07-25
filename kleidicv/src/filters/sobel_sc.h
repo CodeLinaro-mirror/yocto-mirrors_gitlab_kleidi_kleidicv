@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -34,9 +34,9 @@ class HorizontalSobel3x3<uint8_t> {
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint8_t> src[3],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<svuint8_t> src[3],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     svuint16_t acc_u16_b = svaddlb(src[0], src[2]);
     svuint16_t acc_u16_t = svaddlt(src[0], src[2]);
     acc_u16_b = svmlalb(acc_u16_b, src[1], svdup_n_u8(2));
@@ -50,17 +50,17 @@ class HorizontalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<svint16_t> src[3],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<svint16_t> src[3],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     svst1(pg, &dst[0], svsub_x(pg, src[2], src[0]));
   }
 
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[3],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     // Explicitly narrow. Overflow is permitted.
     dst[0] = static_cast<DestinationType>(src[2] - src[0]);
   }
@@ -87,9 +87,9 @@ class VerticalSobel3x3<uint8_t> {
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ -1, 0, 1 ]T
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<svuint8_t> src[3],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<svuint8_t> src[3],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     svuint16_t acc_u16_b = svsublb(src[2], src[0]);
     svuint16_t acc_u16_t = svsublt(src[2], src[0]);
 
@@ -101,9 +101,9 @@ class VerticalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<svint16_t> src[3],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<svint16_t> src[3],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     svint16_t acc = svadd_x(pg, src[0], src[2]);
     acc = svmad_s16_x(pg, src[1], svdup_n_s16(2), acc);
     svst1(pg, &dst[0], acc);
@@ -112,8 +112,8 @@ class VerticalSobel3x3<uint8_t> {
   // Applies horizontal filtering vector using scalar operations.
   //
   // DST = [ SRC0, SRC1, SRC2 ] * [ 1, 2, 1 ]T
-  void horizontal_scalar_path(const BufferType src[3], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[3],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     // Explicitly narrow. Overflow is permitted.
     dst[0] = static_cast<DestinationType>(src[0] + 2 * src[1] + src[2]);
   }
@@ -123,7 +123,7 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end,
-    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t channels) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -153,7 +153,7 @@ KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end,
-    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t channels) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

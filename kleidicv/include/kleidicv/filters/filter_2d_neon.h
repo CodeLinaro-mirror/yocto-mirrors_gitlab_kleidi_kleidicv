@@ -94,7 +94,7 @@ class Filter2d {
   void process_one_pixel_with_horizontal_borders(
       Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets,
-      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
+      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
       disable_loop_vectorization();
       process_one_element_with_horizontal_borders(
@@ -119,16 +119,15 @@ class Filter2d {
   void process_one_element_with_horizontal_borders(
       Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets, BorderOffsets window_col_offsets,
-      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
+      size_t index) const KLEIDICV_STREAMING {
     SourceType src[KSize][KSize];
 
-    auto KernelWindow = [&](size_t row, size_t col)
-                            KLEIDICV_STREAMING_COMPATIBLE -> SourceType& {
-      return src[row][col];
-    };
+    auto KernelWindow =
+        [&](size_t row, size_t col)
+            KLEIDICV_STREAMING -> SourceType& { return src[row][col]; };
 
     auto load_array_element = [&](const SourceType& x)
-                                  KLEIDICV_STREAMING_COMPATIBLE { return x; };
+                                  KLEIDICV_STREAMING { return x; };
 
     WindowLoaderType::load_window(KernelWindow, load_array_element, src_rows,
                                   window_row_offsets, window_col_offsets,

@@ -20,16 +20,17 @@ class SaturatingAdd final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
   VectorType vector_path(ContextType ctx, VectorType src_a,
-                         VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                         VectorType src_b) KLEIDICV_STREAMING {
     return svqadd_m(ctx.predicate(), src_a, src_b);
   }
 };  // end of class SaturatingAdd<ScalarType>
 
 template <typename T>
-static kleidicv_error_t saturating_add_sc(
-    const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
-    T *dst, size_t dst_stride, size_t width,
-    size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t saturating_add_sc(const T *src_a, size_t src_a_stride,
+                                          const T *src_b, size_t src_b_stride,
+                                          T *dst, size_t dst_stride,
+                                          size_t width,
+                                          size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src_a, src_a_stride, height);
   CHECK_POINTER_AND_STRIDE(src_b, src_b_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);

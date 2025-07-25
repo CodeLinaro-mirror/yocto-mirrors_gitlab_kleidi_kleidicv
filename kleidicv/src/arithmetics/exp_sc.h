@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -20,8 +20,7 @@ class Exp<float, TryShortPath> final : public UnrollOnce {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
   using VectorType = typename VecTraits::VectorType;
 
-  VectorType vector_path(ContextType ctx,
-                         VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+  VectorType vector_path(ContextType ctx, VectorType src) KLEIDICV_STREAMING {
     svfloat32_t n, r, poly, z;
     svuint32_t e;
 
@@ -56,7 +55,7 @@ class Exp<float, TryShortPath> final : public UnrollOnce {
 
  private:
   static svfloat32_t specialcase(svbool_t pg, svfloat32_t poly, svfloat32_t n,
-                                 svuint32_t e) KLEIDICV_STREAMING_COMPATIBLE {
+                                 svuint32_t e) KLEIDICV_STREAMING {
     /* 2^n may overflow, break it up into s1*s2.  */
     svuint32_t b = svsel(svcmple(pg, n, svdup_f32(0.0F)),
                          svdup_u32(0x83000000U), svdup_u32(0.0F));
@@ -79,7 +78,7 @@ using ExpTryShortPath = Exp<T, true>;
 template <typename T, typename Operation>
 static kleidicv_error_t exp_sc(const T* src, size_t src_stride, T* dst,
                                size_t dst_stride, size_t width,
-                               size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+                               size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

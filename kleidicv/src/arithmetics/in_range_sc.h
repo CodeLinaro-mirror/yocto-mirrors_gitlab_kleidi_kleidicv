@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -25,13 +25,12 @@ class InRange<uint8_t> : public UnrollTwice {
   using SignedVectorType = typename SignedVecTraits::VectorType;
 
   InRange(VectorType &vec_lower_bound,
-          VectorType &vec_upper_bound) KLEIDICV_STREAMING_COMPATIBLE
+          VectorType &vec_upper_bound) KLEIDICV_STREAMING
       : vec_lower_bound_(vec_lower_bound),
         vec_upper_bound_(vec_upper_bound) {}
 
   // NOLINTBEGIN(readability-make-member-function-const)
-  VectorType vector_path(ContextType ctx,
-                         VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+  VectorType vector_path(ContextType ctx, VectorType src) KLEIDICV_STREAMING {
     svbool_t pg = ctx.predicate();
 
     VectorType diff_low = svsub_x(pg, src, vec_lower_bound_);
@@ -69,14 +68,14 @@ class InRange<float> {
   using DstVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<uint8_t>;
   using DstVectorType = typename DstVecTraits::VectorType;
 
-  InRange(float lower_bound, float upper_bound) KLEIDICV_STREAMING_COMPATIBLE
+  InRange(float lower_bound, float upper_bound) KLEIDICV_STREAMING
       : lower_bound_(lower_bound),
         upper_bound_(upper_bound) {}
 
   void process_row(size_t width, Columns<const float> src,
-                   Columns<uint8_t> dst) KLEIDICV_STREAMING_COMPATIBLE {
+                   Columns<uint8_t> dst) KLEIDICV_STREAMING {
     LoopUnroll{width, SrcVecTraits::num_lanes()}
-        .unroll_n_times<4>([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
+        .unroll_n_times<4>([&](size_t step) KLEIDICV_STREAMING {
           svbool_t pg_src = SrcVecTraits::svptrue();
           SrcVectorType src_v0 = svld1(pg_src, &src[0]);
           SrcVectorType src_v1 = svld1_vnum(pg_src, &src[0], 1);
@@ -89,7 +88,7 @@ class InRange<float> {
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
         })
-        .remaining([&](size_t length, size_t) KLEIDICV_STREAMING_COMPATIBLE {
+        .remaining([&](size_t length, size_t) KLEIDICV_STREAMING {
           size_t index = 0;
           svbool_t pg = SrcVecTraits::svwhilelt(index, length);
           while (svptest_first(SrcVecTraits::svptrue(), pg)) {
@@ -108,7 +107,7 @@ class InRange<float> {
   // NOLINTBEGIN(readability-make-member-function-const)
   DstVectorType vector_path(svbool_t full_pg, SrcVectorType fsrc0,
                             SrcVectorType fsrc1, SrcVectorType fsrc2,
-                            SrcVectorType fsrc3) KLEIDICV_STREAMING_COMPATIBLE {
+                            SrcVectorType fsrc3) KLEIDICV_STREAMING {
     svbool_t pred0 = svand_z(full_pg, svcmpge(full_pg, fsrc0, lower_bound_),
                              svcmple(full_pg, fsrc0, upper_bound_));
     auto res00 = svsel(pred0, svdup_u32(0xFF), svdup_u32(0));
@@ -134,8 +133,8 @@ class InRange<float> {
   // NOLINTEND(readability-make-member-function-const)
 
   // NOLINTBEGIN(readability-make-member-function-const)
-  DstVectorType remaining_path(svbool_t &pg, SrcVectorType src)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  DstVectorType remaining_path(svbool_t &pg,
+                               SrcVectorType src) KLEIDICV_STREAMING {
     svbool_t predicate = svand_z(pg, svcmpge(pg, src, lower_bound_),
                                  svcmple(pg, src, upper_bound_));
     return svsel(predicate, DstVecTraits::svdup(0xFF), DstVecTraits::svdup(0));
@@ -149,8 +148,7 @@ class InRange<float> {
 template <typename T>
 kleidicv_error_t in_range_sc(const T *src, size_t src_stride, uint8_t *dst,
                              size_t dst_stride, size_t width, size_t height,
-                             T lower_bound,
-                             T upper_bound) KLEIDICV_STREAMING_COMPATIBLE {
+                             T lower_bound, T upper_bound) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

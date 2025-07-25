@@ -17,7 +17,7 @@ class SaturatingSub final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
   VectorType vector_path(ContextType ctx, VectorType src_a,
-                         VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                         VectorType src_b) KLEIDICV_STREAMING {
     return svqsub_m(ctx.predicate(), src_a, src_b);
   }
 };  // end of class SaturatingSub<ScalarType>

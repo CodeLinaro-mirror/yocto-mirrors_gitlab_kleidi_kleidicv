@@ -63,7 +63,7 @@ class FixedBorderInfo<T, 21UL> final {
       : width_(width), border_type_(border_type) {}
 
   // Returns offsets without the influence of any border.
-  Offsets offsets_without_border() const KLEIDICV_STREAMING_COMPATIBLE {
+  Offsets offsets_without_border() const KLEIDICV_STREAMING {
     return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7,
                8, 9, 10);
   }
@@ -71,7 +71,7 @@ class FixedBorderInfo<T, 21UL> final {
   // NOLINTBEGIN(readability-function-cognitive-complexity)
   // Returns offsets for columns affected by left border.
   Offsets offsets_with_left_border(size_t column_index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == 0) {
@@ -222,7 +222,7 @@ class FixedBorderInfo<T, 21UL> final {
 
   // Returns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t column_index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == (width_ - 10)) {
@@ -374,7 +374,7 @@ class FixedBorderInfo<T, 21UL> final {
 
   // Returns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     if (row_or_column_index < 10U) {
       // Rows and columns have the same offsets.
       return offsets_with_left_border(row_or_column_index);
@@ -393,7 +393,7 @@ class FixedBorderInfo<T, 21UL> final {
               ptrdiff_t o8, ptrdiff_t o9, ptrdiff_t o10, ptrdiff_t o11,
               ptrdiff_t o12, ptrdiff_t o13, ptrdiff_t o14, ptrdiff_t o15,
               ptrdiff_t o16, ptrdiff_t o17, ptrdiff_t o18, ptrdiff_t o19,
-              ptrdiff_t o20) const KLEIDICV_STREAMING_COMPATIBLE {
+              ptrdiff_t o20) const KLEIDICV_STREAMING {
     return Offsets{o0,  o1,  o2,  o3,  o4,  o5,  o6,  o7,  o8,  o9, o10,
                    o11, o12, o13, o14, o15, o16, o17, o18, o19, o20};
   }

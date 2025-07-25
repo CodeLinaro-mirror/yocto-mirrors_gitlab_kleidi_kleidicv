@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -26,13 +26,12 @@ class Sum<float, double> final : public UnrollTwice {
       KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarTypeInternal>;
   using VectorTypeInternal = typename VecTraitsInternal::VectorType;
 
-  explicit Sum(VectorTypeInternal &accumulator) KLEIDICV_STREAMING_COMPATIBLE
+  explicit Sum(VectorTypeInternal &accumulator) KLEIDICV_STREAMING
       : accumulator_{accumulator} {
     accumulator_ = VecTraitsInternal::svdup(0);
   }
 
-  void vector_path(ContextType ctx,
-                   VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+  void vector_path(ContextType ctx, VectorType src) KLEIDICV_STREAMING {
     VectorTypeInternal src_widened_evens =
         svcvt_f64_f32_x(VecTraits::svptrue(), src);
     VectorTypeInternal src_widened_odds =
@@ -42,7 +41,7 @@ class Sum<float, double> final : public UnrollTwice {
                 svadd_m(ctx.predicate(), src_widened_evens, src_widened_odds));
   }
 
-  ScalarType get_sum() const KLEIDICV_STREAMING_COMPATIBLE {
+  ScalarType get_sum() const KLEIDICV_STREAMING {
     ScalarTypeInternal accumulator_final[VecTraitsInternal::max_num_lanes()] = {
         0};
     svst1(VecTraitsInternal::svptrue(), accumulator_final, accumulator_);
@@ -60,7 +59,7 @@ class Sum<float, double> final : public UnrollTwice {
 
 template <typename T, typename TInternal>
 kleidicv_error_t sum_sc(const T *src, size_t src_stride, size_t width,
-                        size_t height, T *sum) KLEIDICV_STREAMING_COMPATIBLE {
+                        size_t height, T *sum) KLEIDICV_STREAMING {
   using VecTraitsInternal = KLEIDICV_TARGET_NAMESPACE::VecTraits<TInternal>;
   using VectorTypeInternal = typename VecTraitsInternal::VectorType;
 

@@ -13,10 +13,10 @@
 namespace kleidicv {
 
 template <typename T>
-inline bool remap_s16_is_implemented(
-    size_t src_stride, size_t src_width, size_t src_height, size_t dst_width,
-    kleidicv_border_type_t border_type,
-    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
+inline bool remap_s16_is_implemented(size_t src_stride, size_t src_width,
+                                     size_t src_height, size_t dst_width,
+                                     kleidicv_border_type_t border_type,
+                                     size_t channels) KLEIDICV_STREAMING {
   if constexpr (std::is_same<T, uint8_t>::value ||
                 std::is_same<T, uint16_t>::value) {
     return (src_stride / sizeof(T) <= std::numeric_limits<uint16_t>::max() &&
@@ -32,10 +32,10 @@ inline bool remap_s16_is_implemented(
 }
 
 template <typename T>
-inline bool remap_s16point5_is_implemented(
-    size_t src_stride, size_t src_width, size_t src_height, size_t dst_width,
-    kleidicv_border_type_t border_type,
-    size_t channels) KLEIDICV_STREAMING_COMPATIBLE {
+inline bool remap_s16point5_is_implemented(size_t src_stride, size_t src_width,
+                                           size_t src_height, size_t dst_width,
+                                           kleidicv_border_type_t border_type,
+                                           size_t channels) KLEIDICV_STREAMING {
   if constexpr (std::is_same<T, uint8_t>::value ||
                 std::is_same<T, uint16_t>::value) {
     return (src_stride / sizeof(T) <=
@@ -55,7 +55,7 @@ template <typename T>
 inline bool remap_f32_is_implemented(
     size_t src_stride, size_t src_width, size_t src_height, size_t dst_width,
     size_t dst_height, kleidicv_border_type_t border_type, size_t channels,
-    kleidicv_interpolation_type_t interpolation) KLEIDICV_STREAMING_COMPATIBLE {
+    kleidicv_interpolation_type_t interpolation) KLEIDICV_STREAMING {
   if constexpr (std::is_same<T, uint8_t>::value ||
                 std::is_same<T, uint16_t>::value) {
     return (src_stride <= std::numeric_limits<uint32_t>::max() &&

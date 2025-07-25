@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -47,9 +47,9 @@ class SeparableFilter2D<uint8_t, 5> {
         kernel_y_3_u8_(kernel_y_3_u8),
         kernel_y_4_u8_(kernel_y_4_u8) {}
 
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<SourceVectorType> src[5],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<SourceVectorType> src[5],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     // 0
     BufferVectorType acc_b = svmullb_u16(src[0], kernel_y_0_u8_);
     BufferVectorType acc_t = svmullt_u16(src[0], kernel_y_0_u8_);
@@ -82,9 +82,9 @@ class SeparableFilter2D<uint8_t, 5> {
     svst2(pg, &dst[0], interleaved);
   }
 
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<BufferVectorType> src[5],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<BufferVectorType> src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     // 0
     svuint32_t acc_b = svmullb_u32(src[0], kernel_x_0_u16_);
     svuint32_t acc_t = svmullt_u32(src[0], kernel_x_0_u16_);
@@ -116,8 +116,8 @@ class SeparableFilter2D<uint8_t, 5> {
     svst1b_u16(pg, &dst[0], acc_u16);
   }
 
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     SourceType acc;  // NOLINT
     if (__builtin_mul_overflow(src[0], kernel_x_[0], &acc)) {
       dst[0] = std::numeric_limits<SourceType>::max();
@@ -185,9 +185,9 @@ class SeparableFilter2D<uint16_t, 5> {
         kernel_y_3_u16_(kernel_y_3_u16),
         kernel_y_4_u16_(kernel_y_4_u16) {}
 
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<SourceVectorType> src[5],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<SourceVectorType> src[5],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     // 0
     BufferVectorType acc_b = svmullb_u32(src[0], kernel_y_0_u16_);
     BufferVectorType acc_t = svmullt_u32(src[0], kernel_y_0_u16_);
@@ -220,9 +220,9 @@ class SeparableFilter2D<uint16_t, 5> {
     svst2(pg, &dst[0], interleaved);
   }
 
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<BufferVectorType> src[5],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<BufferVectorType> src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     // 0
     svuint64_t acc_b = svmullb_u64(src[0], kernel_x_0_u32_);
     svuint64_t acc_t = svmullt_u64(src[0], kernel_x_0_u32_);
@@ -254,8 +254,8 @@ class SeparableFilter2D<uint16_t, 5> {
     svst1h_u32(pg, &dst[0], acc_u32);
   }
 
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     SourceType acc;  // Avoid cppcoreguidelines-init-variables. NOLINT
     if (__builtin_mul_overflow(src[0], kernel_x_[0], &acc)) {
       dst[0] = std::numeric_limits<SourceType>::max();
@@ -323,9 +323,9 @@ class SeparableFilter2D<int16_t, 5> {
         kernel_y_3_s16_(kernel_y_3_s16),
         kernel_y_4_s16_(kernel_y_4_s16) {}
 
-  void vertical_vector_path(
-      svbool_t pg, std::reference_wrapper<SourceVectorType> src[5],
-      BufferType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<SourceVectorType> src[5],
+                            BufferType *dst) const KLEIDICV_STREAMING {
     // 0
     BufferVectorType acc_b = svmullb_s32(src[0], kernel_y_0_s16_);
     BufferVectorType acc_t = svmullt_s32(src[0], kernel_y_0_s16_);
@@ -358,9 +358,9 @@ class SeparableFilter2D<int16_t, 5> {
     svst2(pg, &dst[0], interleaved);
   }
 
-  void horizontal_vector_path(
-      svbool_t pg, std::reference_wrapper<BufferVectorType> src[5],
-      DestinationType *dst) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<BufferVectorType> src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     // 0
     svint64_t acc_b = svmullb_s64(src[0], kernel_x_0_s32_);
     svint64_t acc_t = svmullt_s64(src[0], kernel_x_0_s32_);
@@ -397,8 +397,8 @@ class SeparableFilter2D<int16_t, 5> {
     svst1h_s32(pg, &dst[0], acc_s32);
   }
 
-  void horizontal_scalar_path(const BufferType src[5], DestinationType *dst)
-      const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_scalar_path(const BufferType src[5],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
     int64_t acc = static_cast<int64_t>(src[0]) * kernel_x_[0];
     for (size_t i = 1; i < 5; i++) {
       acc += static_cast<int64_t>(src[i]) * kernel_x_[i];
@@ -433,7 +433,7 @@ template <typename T>
 static kleidicv_error_t separable_filter_2d_checks(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, size_t channels, const T *kernel_x, const T *kernel_y,
-    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
+    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING {
   CHECK_POINTERS(workspace, kernel_x, kernel_y);
 
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
@@ -462,7 +462,7 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
     size_t height, size_t y_begin, size_t y_end, size_t channels,
     const T *kernel_x, size_t /*kernel_width*/, const T *kernel_y,
     size_t /*kernel_height*/, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
+    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
   auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
   kleidicv_error_t checks_result = separable_filter_2d_checks(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_x,

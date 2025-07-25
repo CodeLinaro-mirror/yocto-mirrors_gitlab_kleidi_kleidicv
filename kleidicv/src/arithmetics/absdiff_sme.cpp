@@ -10,7 +10,7 @@ namespace kleidicv::sme {
 template <typename ScalarType, typename VectorType,
           std::enable_if_t<std::is_signed<ScalarType>::value, bool> = true>
 VectorType vector_path_impl(svbool_t pg, VectorType src_a,
-                            VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                            VectorType src_b) KLEIDICV_STREAMING {
   // Results of SABD may be outside the signed range so use two
   // saturating instructions instead.
   return svqabs_x(pg, svqsub_m(pg, src_a, src_b));
@@ -19,7 +19,7 @@ VectorType vector_path_impl(svbool_t pg, VectorType src_a,
 template <typename ScalarType, typename VectorType,
           std::enable_if_t<std::is_unsigned<ScalarType>::value, bool> = true>
 VectorType vector_path_impl(svbool_t pg, VectorType src_a,
-                            VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                            VectorType src_b) KLEIDICV_STREAMING {
   return svabd_m(pg, src_a, src_b);
 }
 
@@ -31,7 +31,7 @@ class SaturatingAbsDiff final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
   VectorType vector_path(ContextType ctx, VectorType src_a,
-                         VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                         VectorType src_b) KLEIDICV_STREAMING {
     return vector_path_impl<ScalarType>(ctx.predicate(), src_a, src_b);
   }
 };  // end of class SaturatingAbsDiff<ScalarType>

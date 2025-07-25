@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -18,7 +18,7 @@ class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
                size_t channels, typename FilterType::BorderType border_type,
-               FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+               FilterType filter) KLEIDICV_STREAMING {
     // Border helper which calculates border offsets.
     typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                         border_type};
@@ -52,7 +52,7 @@ class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
                           Rows<typename FilterType::DestinationType> dst_rows,
                           FilterType filter,
                           typename FilterType::BorderInfoType horizontal_border)
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     // Margin associated with the filter.
     constexpr size_t margin = filter.margin;
 

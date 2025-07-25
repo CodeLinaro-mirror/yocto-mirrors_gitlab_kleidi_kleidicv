@@ -76,7 +76,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
 
   void process_arbitrary_horizontal(
       size_t width, size_t kernel_size, Rows<BufferType> buffer_rows,
-      Rows<DestinationType> dst_rows) KLEIDICV_STREAMING_COMPATIBLE {
+      Rows<DestinationType> dst_rows) KLEIDICV_STREAMING {
     size_t x = 0;
     // Assume that there is always a widening when calculating, so the
     // horizontal vector path processes double-width vectors

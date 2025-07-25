@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,15 +23,14 @@ class CopyDataSVE2 {
     using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<T>;
     using VectorType = typename VecTraits::VectorType;
 
-    VectorType vector_path(ContextType,
-                           VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+    VectorType vector_path(ContextType, VectorType src) KLEIDICV_STREAMING {
       return src;
     }
   };  // end of class CopyOperation
 
  public:
   void operator()(Rows<const T> src_rows, Rows<T> dst_rows,
-                  size_t length) const KLEIDICV_STREAMING_COMPATIBLE {
+                  size_t length) const KLEIDICV_STREAMING {
     // 'apply_operation_by_rows' can only handle one channel well
     // so width must be multiplied in order to copy all the data
     Rectangle rect{length * dst_rows.channels(), std::size_t{1}};
@@ -47,12 +46,12 @@ class VerticalOp final {
  public:
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
-  VerticalOp(Rectangle rect, Rectangle kernel) KLEIDICV_STREAMING_COMPATIBLE
+  VerticalOp(Rectangle rect, Rectangle kernel) KLEIDICV_STREAMING
       : rect_(rect),
         kernel_(kernel) {}
 
   void process_rows(IndirectRows<ScalarType> src_rows,
-                    Rows<ScalarType> dst_rows) KLEIDICV_STREAMING_COMPATIBLE {
+                    Rows<ScalarType> dst_rows) KLEIDICV_STREAMING {
     if (KLEIDICV_UNLIKELY(kernel_.height()) == 1) {
       CopyRows<ScalarType>::copy_rows(rect_, src_rows, dst_rows);
       return;
@@ -65,13 +64,13 @@ class VerticalOp final {
       LoopUnroll2 loop{rect_.width() * src_rows.channels(),
                        VecTraits::num_lanes()};
       // clang-format off
-      loop.unroll_four_times([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+      loop.unroll_four_times([&](size_t index) KLEIDICV_STREAMING {
             vector_path_4x(src_rows, dst_rows, index, height);
           })
-          .unroll_twice([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+          .unroll_twice([&](size_t index) KLEIDICV_STREAMING {
             vector_path_2x(src_rows, dst_rows, index, height);
           })
-          .remaining([&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
+          .remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
             svbool_t pg = VecTraits::svwhilelt(index, length);
             while (svptest_first(VecTraits::svptrue(), pg)) {
               vector_path(pg, src_rows, dst_rows, index, height);
@@ -88,7 +87,7 @@ class VerticalOp final {
  private:
   void vector_path_4x(IndirectRows<ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index,
-                      const size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+                      const size_t height) KLEIDICV_STREAMING {
     const ScalarType *src_row = &src_rows[index];
     auto first_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto first_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
@@ -105,7 +104,7 @@ class VerticalOp final {
 
     LoopUnroll loop{kernel_.height() - 2, 2};
 
-    loop.unroll_once([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t step) KLEIDICV_STREAMING {
       const ScalarType *src_row0 = &src_rows.at(0)[index];
       const ScalarType *src_row1 = &src_rows.at(1)[index];
       auto row00 = svld1(VecTraits::svptrue(), src_row0);
@@ -128,7 +127,7 @@ class VerticalOp final {
     });
 
     loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
-              KLEIDICV_STREAMING_COMPATIBLE {
+              KLEIDICV_STREAMING {
                 const ScalarType *src_row = &src_rows[index];
                 auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
                 auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
@@ -188,7 +187,7 @@ class VerticalOp final {
 
   void vector_path_2x(IndirectRows<ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index,
-                      const size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+                      const size_t height) KLEIDICV_STREAMING {
     const ScalarType *src_row = &src_rows[index];
     auto first_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto first_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
@@ -201,7 +200,7 @@ class VerticalOp final {
 
     LoopUnroll loop{kernel_.height() - 2, 2};
 
-    loop.unroll_once([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t step) KLEIDICV_STREAMING {
       const ScalarType *src_row0 = &src_rows.at(0)[index];
       const ScalarType *src_row1 = &src_rows.at(1)[index];
       auto row00 = svld1(VecTraits::svptrue(), src_row0);
@@ -216,7 +215,7 @@ class VerticalOp final {
     });
 
     loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
-              KLEIDICV_STREAMING_COMPATIBLE {
+              KLEIDICV_STREAMING {
                 const ScalarType *src_row = &src_rows[index];
                 auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
                 auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
@@ -259,7 +258,7 @@ class VerticalOp final {
 
   void vector_path(svbool_t pg, IndirectRows<ScalarType> src_rows,
                    Rows<ScalarType> dst_rows, const size_t index,
-                   const size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+                   const size_t height) KLEIDICV_STREAMING {
     auto first_row = svld1(pg, &src_rows[index]);
     ++src_rows;
 
@@ -268,7 +267,7 @@ class VerticalOp final {
 
     LoopUnroll loop{kernel_.height() - 2, 2};
 
-    loop.unroll_once([&](size_t step) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t step) KLEIDICV_STREAMING {
       auto row0 = svld1(pg, &src_rows.at(0)[index]);
       auto row1 = svld1(pg, &src_rows.at(1)[index]);
       acc = O::operation(pg, acc, O::operation(pg, row0, row1));
@@ -276,7 +275,7 @@ class VerticalOp final {
     });
 
     loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
-              KLEIDICV_STREAMING_COMPATIBLE {
+              KLEIDICV_STREAMING {
                 auto row = svld1(pg, &src_rows[index]);
                 acc = O::operation(pg, acc, row);
                 ++src_rows;
@@ -312,25 +311,25 @@ class HorizontalOp final {
  public:
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
-  HorizontalOp(Rectangle rect, Rectangle kernel) KLEIDICV_STREAMING_COMPATIBLE
+  HorizontalOp(Rectangle rect, Rectangle kernel) KLEIDICV_STREAMING
       : rect_(rect),
         kernel_(kernel) {}
 
   void process_rows(Rows<const ScalarType> src_rows,
-                    Rows<ScalarType> dst_rows) KLEIDICV_STREAMING_COMPATIBLE {
+                    Rows<ScalarType> dst_rows) KLEIDICV_STREAMING {
     // Iterate across the rows from top to bottom.
     for (size_t height = 0; height < rect_.height(); ++height) {
       // Iterate across the columns from left to right.
       LoopUnroll2 loop{rect_.width() * src_rows.channels(),
                        VecTraits::num_lanes()};
       // clang-format off
-      loop.unroll_four_times([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+      loop.unroll_four_times([&](size_t index) KLEIDICV_STREAMING {
             vector_path_4x(src_rows, dst_rows, index);
           })
-          .unroll_twice([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+          .unroll_twice([&](size_t index) KLEIDICV_STREAMING {
             vector_path_2x(src_rows, dst_rows, index);
           })
-          .remaining([&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
+          .remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
             svbool_t pg = VecTraits::svwhilelt(index, length);
             while (svptest_first(VecTraits::svptrue(), pg)) {
               vector_path(pg, src_rows, dst_rows, index);
@@ -347,7 +346,7 @@ class HorizontalOp final {
  private:
   void vector_path_4x(Rows<const ScalarType> src_rows,
                       Rows<ScalarType> dst_rows,
-                      const size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+                      const size_t index) KLEIDICV_STREAMING {
     const auto *src_row = &src_rows[index];
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
@@ -375,7 +374,7 @@ class HorizontalOp final {
 
   void vector_path_2x(Rows<const ScalarType> src_rows,
                       Rows<ScalarType> dst_rows,
-                      const size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+                      const size_t index) KLEIDICV_STREAMING {
     const auto *src_row = &src_rows[index];
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
@@ -395,7 +394,7 @@ class HorizontalOp final {
 
   void vector_path(svbool_t pg, Rows<const ScalarType> src_rows,
                    Rows<ScalarType> dst_rows,
-                   const size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+                   const size_t index) KLEIDICV_STREAMING {
     auto acc = svld1(pg, &src_rows[index]);
 
     for (size_t width = 1; width < kernel_.width(); ++width) {
@@ -417,7 +416,7 @@ class Min final {
   using VectorType = typename VecTraits::VectorType;
 
   static VectorType operation(svbool_t pg, VectorType lhs,
-                              VectorType rhs) KLEIDICV_STREAMING_COMPATIBLE {
+                              VectorType rhs) KLEIDICV_STREAMING {
     return svmin_x(pg, lhs, rhs);
   }
 };  // end of class Min<ScalarType>
@@ -429,7 +428,7 @@ class Max final {
   using VectorType = typename VecTraits::VectorType;
 
   static VectorType operation(svbool_t pg, VectorType lhs,
-                              VectorType rhs) KLEIDICV_STREAMING_COMPATIBLE {
+                              VectorType rhs) KLEIDICV_STREAMING {
     return svmax_x(pg, lhs, rhs);
   }
 };  // end of class Max<ScalarType>
@@ -452,18 +451,16 @@ class DilateOperation final {
   using DestinationType = ScalarType;
   using CopyData = CopyDataOperation;
 
-  explicit DilateOperation(Rectangle kernel) KLEIDICV_STREAMING_COMPATIBLE
+  explicit DilateOperation(Rectangle kernel) KLEIDICV_STREAMING
       : kernel_{kernel} {}
 
   void process_horizontal(Rectangle rect, Rows<const SourceType> src_rows,
-                          Rows<BufferType> dst_rows)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                          Rows<BufferType> dst_rows) KLEIDICV_STREAMING {
     HorizontalMax<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
   void process_vertical(Rectangle rect, IndirectRows<BufferType> src_rows,
-                        Rows<DestinationType> dst_rows)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                        Rows<DestinationType> dst_rows) KLEIDICV_STREAMING {
     VerticalMax<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
@@ -474,8 +471,7 @@ class DilateOperation final {
 template <typename T, typename CopyOperation>
 static kleidicv_error_t dilate_sc(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height,
-    kleidicv_morphology_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t height, kleidicv_morphology_context_t *context) KLEIDICV_STREAMING {
   CHECK_POINTERS(context);
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
@@ -524,18 +520,16 @@ class ErodeOperation final {
   using DestinationType = ScalarType;
   using CopyData = CopyDataOperation;
 
-  explicit ErodeOperation(Rectangle kernel) KLEIDICV_STREAMING_COMPATIBLE
+  explicit ErodeOperation(Rectangle kernel) KLEIDICV_STREAMING
       : kernel_{kernel} {}
 
   void process_horizontal(Rectangle rect, Rows<const SourceType> src_rows,
-                          Rows<BufferType> dst_rows)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                          Rows<BufferType> dst_rows) KLEIDICV_STREAMING {
     HorizontalMin<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
   void process_vertical(Rectangle rect, IndirectRows<BufferType> src_rows,
-                        Rows<DestinationType> dst_rows)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                        Rows<DestinationType> dst_rows) KLEIDICV_STREAMING {
     VerticalMin<ScalarType>{rect, kernel_}.process_rows(src_rows, dst_rows);
   }
 
@@ -544,10 +538,9 @@ class ErodeOperation final {
 };  // end of class ErodeOperation<ScalarType>
 
 template <typename T, typename CopyOperation>
-static kleidicv_error_t erode_sc(const T *src, size_t src_stride, T *dst,
-                                 size_t dst_stride, size_t width, size_t height,
-                                 kleidicv_morphology_context_t *context)
-    KLEIDICV_STREAMING_COMPATIBLE {
+static kleidicv_error_t erode_sc(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, kleidicv_morphology_context_t *context) KLEIDICV_STREAMING {
   CHECK_POINTERS(context);
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);

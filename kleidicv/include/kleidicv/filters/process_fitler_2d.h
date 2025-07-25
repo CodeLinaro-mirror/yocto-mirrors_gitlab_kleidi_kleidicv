@@ -20,7 +20,7 @@ void process_filter2d(Rectangle rect, size_t y_begin, size_t y_end,
                       Rows<const typename FilterType::SourceType> src_rows,
                       Rows<typename FilterType::DestinationType> dst_rows,
                       typename FilterType::BorderType border_type,
-                      FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+                      FilterType filter) KLEIDICV_STREAMING {
   // Border helper which calculates border offsets.
   typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                       border_type};
@@ -73,7 +73,7 @@ void process_filter2d_by_dual_rows(
     Rows<const typename FilterType::SourceType> src_rows,
     Rows<typename FilterType::DestinationType> dst_rows,
     typename FilterType::BorderType border_type,
-    FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+    FilterType filter) KLEIDICV_STREAMING {
   // Border helper which calculates border offsets.
   typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                       border_type};

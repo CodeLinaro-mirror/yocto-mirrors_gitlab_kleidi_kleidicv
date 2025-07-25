@@ -31,7 +31,7 @@ class VectorComparator {
   using SourceVectorType = typename VecTraits<ScalarType>::VectorType;
 
   static void compare_and_swap(SourceVectorType& left, SourceVectorType& right,
-                               svbool_t& pg) KLEIDICV_STREAMING_COMPATIBLE {
+                               svbool_t& pg) KLEIDICV_STREAMING {
     SourceVectorType max_value = svmax_m(pg, left, right);
     SourceVectorType min_value = svmin_m(pg, left, right);
     left = min_value;
@@ -39,22 +39,22 @@ class VectorComparator {
   }
 
   static void min(SourceVectorType& left, SourceVectorType& right,
-                  svbool_t& pg) KLEIDICV_STREAMING_COMPATIBLE {
+                  svbool_t& pg) KLEIDICV_STREAMING {
     left = svmin_m(pg, left, right);
   }
 
   static void max(SourceVectorType& left, SourceVectorType& right,
-                  svbool_t& pg) KLEIDICV_STREAMING_COMPATIBLE {
+                  svbool_t& pg) KLEIDICV_STREAMING {
     right = svmax_m(pg, left, right);
   }
   static SourceVectorType get_min(SourceVectorType& left,
                                   SourceVectorType& right,
-                                  svbool_t& pg) KLEIDICV_STREAMING_COMPATIBLE {
+                                  svbool_t& pg) KLEIDICV_STREAMING {
     return svmin_m(pg, left, right);
   }
   static SourceVectorType get_max(SourceVectorType& left,
                                   SourceVectorType& right,
-                                  svbool_t& pg) KLEIDICV_STREAMING_COMPATIBLE {
+                                  svbool_t& pg) KLEIDICV_STREAMING {
     return svmax_m(pg, left, right);
   }
 };
@@ -70,8 +70,7 @@ class MedianBlurSortingNetwork<ScalarType, 3> {
 
   template <typename KernelWindowFunctor>
   void vector_path(svbool_t& pg, KernelWindowFunctor& KernelWindow,
-                   DestinationVectorType& output_vec) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+                   DestinationVectorType& output_vec) const KLEIDICV_STREAMING {
     sorting_network3x3_single_row<VectorComparator<ScalarType>>(KernelWindow,
                                                                 output_vec, pg);
   }
@@ -80,7 +79,7 @@ class MedianBlurSortingNetwork<ScalarType, 3> {
   void vector_path_for_dual_row_handling(
       svbool_t& pg, KernelWindowFunctor& KernelWindow,
       DestinationVectorType& output_vec_0,
-      DestinationVectorType& output_vec_1) const KLEIDICV_STREAMING_COMPATIBLE {
+      DestinationVectorType& output_vec_1) const KLEIDICV_STREAMING {
     sorting_network3x3_dual_rows<VectorComparator<ScalarType>>(
         KernelWindow, output_vec_0, output_vec_1, pg);
   }
@@ -99,8 +98,7 @@ class MedianBlurSortingNetwork<ScalarType, 5> {
       DestinationType>::VectorType;
   template <typename KernelWindowFunctor>
   void vector_path(svbool_t& pg, KernelWindowFunctor& KernelWindow,
-                   DestinationVectorType& output_vec) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+                   DestinationVectorType& output_vec) const KLEIDICV_STREAMING {
     sorting_network5x5<VectorComparator<ScalarType>>(KernelWindow, output_vec,
                                                      pg);
   }
@@ -120,8 +118,7 @@ class MedianBlurSortingNetwork<ScalarType, 7> {
 
   template <typename KernelWindowFunctor>
   void vector_path(svbool_t& pg, KernelWindowFunctor& KernelWindow,
-                   DestinationVectorType& output_vec) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+                   DestinationVectorType& output_vec) const KLEIDICV_STREAMING {
     sorting_network7x7<VectorComparator<ScalarType>>(KernelWindow, output_vec,
                                                      pg);
   }
@@ -132,7 +129,7 @@ kleidicv_error_t median_blur_sorting_network_stripe_sc(
     const T* src, size_t src_stride, T* dst, size_t dst_stride, size_t width,
     size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, [[maybe_unused]] size_t kernel_height,
-    FixedBorderType border_type) KLEIDICV_STREAMING_COMPATIBLE {
+    FixedBorderType border_type) KLEIDICV_STREAMING {
   Rectangle rect{width, height};
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};

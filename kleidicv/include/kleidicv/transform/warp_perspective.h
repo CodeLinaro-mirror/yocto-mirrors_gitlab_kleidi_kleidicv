@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -30,7 +30,7 @@ template <typename T>
 inline bool warp_perspective_is_implemented(
     size_t dst_width, size_t channels,
     kleidicv_interpolation_type_t interpolation,
-    kleidicv_border_type_t border_type) KLEIDICV_STREAMING_COMPATIBLE {
+    kleidicv_border_type_t border_type) KLEIDICV_STREAMING {
   if constexpr (std::is_same<T, uint8_t>::value) {
     return (dst_width >= 8 &&
             (interpolation == KLEIDICV_INTERPOLATION_NEAREST ||

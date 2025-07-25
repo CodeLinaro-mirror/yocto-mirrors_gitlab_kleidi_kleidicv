@@ -33,56 +33,54 @@ class SeparableFilter<FilterType, 15UL> {
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
 
-  explicit SeparableFilter(FilterType filter) KLEIDICV_STREAMING_COMPATIBLE
+  explicit SeparableFilter(FilterType filter) KLEIDICV_STREAMING
       : filter_{filter} {}
 
   static constexpr size_t margin = 7UL;
 
-  void process_vertical(
-      size_t width, Rows<const SourceType> src_rows, Rows<BufferType> dst_rows,
-      BorderOffsets border_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
+  void process_vertical(size_t width, Rows<const SourceType> src_rows,
+                        Rows<BufferType> dst_rows,
+                        BorderOffsets border_offsets) const KLEIDICV_STREAMING {
     LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
 
-    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING {
       svbool_t pg_all = SourceVecTraits::svptrue();
       vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
     });
 
-    loop.remaining(
-        [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
-          svbool_t pg = SourceVecTraits::svwhilelt(index, length);
-          vertical_vector_path(pg, src_rows, dst_rows, border_offsets, index);
-        });
+    loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
+      svbool_t pg = SourceVecTraits::svwhilelt(index, length);
+      vertical_vector_path(pg, src_rows, dst_rows, border_offsets, index);
+    });
   }
 
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
                           BorderOffsets border_offsets) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     svbool_t pg_all = BufferVecTraits::svptrue();
     LoopUnroll2 loop{width * src_rows.channels(), BufferVecTraits::num_lanes()};
 
-    loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING {
       horizontal_vector_path_2x(pg_all, src_rows, dst_rows, border_offsets,
                                 index);
     });
 
-    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING {
       horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
     });
 
-    loop.remaining(
-        [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
-          svbool_t pg = BufferVecTraits::svwhilelt(index, length);
-          horizontal_vector_path(pg, src_rows, dst_rows, border_offsets, index);
-        });
+    loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
+      svbool_t pg = BufferVecTraits::svwhilelt(index, length);
+      horizontal_vector_path(pg, src_rows, dst_rows, border_offsets, index);
+    });
   }
 
   // Processing of horizontal borders is always scalar because border offsets
   // change for each and every element in the border.
   void process_horizontal_borders(
       Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
-      BorderOffsets border_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
+      BorderOffsets border_offsets) const KLEIDICV_STREAMING {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
       disable_loop_vectorization();
       process_horizontal_border(src_rows, dst_rows, border_offsets, index);
@@ -93,7 +91,7 @@ class SeparableFilter<FilterType, 15UL> {
   void vertical_vector_path(svbool_t pg, Rows<const SourceType> src_rows,
                             Rows<BufferType> dst_rows,
                             BorderOffsets border_offsets,
-                            size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
+                            size_t index) const KLEIDICV_STREAMING {
     SourceVectorType src_0 =
         svld1(pg, &src_rows.at(border_offsets.c0())[index]);
     SourceVectorType src_1 =
@@ -131,10 +129,10 @@ class SeparableFilter<FilterType, 15UL> {
     filter_.vertical_vector_path(pg, sources, &dst_rows[index]);
   }
 
-  void horizontal_vector_path_2x(
-      svbool_t pg, Rows<const BufferType> src_rows,
-      Rows<DestinationType> dst_rows, BorderOffsets border_offsets,
-      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
+  void horizontal_vector_path_2x(svbool_t pg, Rows<const BufferType> src_rows,
+                                 Rows<DestinationType> dst_rows,
+                                 BorderOffsets border_offsets,
+                                 size_t index) const KLEIDICV_STREAMING {
     auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
     auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
     auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
@@ -197,8 +195,8 @@ class SeparableFilter<FilterType, 15UL> {
 
   void horizontal_vector_path(svbool_t pg, Rows<const BufferType> src_rows,
                               Rows<DestinationType> dst_rows,
-                              BorderOffsets border_offsets, size_t index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+                              BorderOffsets border_offsets,
+                              size_t index) const KLEIDICV_STREAMING {
     BufferVectorType src_0 =
         svld1(pg, &src_rows.at(0, border_offsets.c0())[index]);
     BufferVectorType src_1 =
@@ -235,10 +233,10 @@ class SeparableFilter<FilterType, 15UL> {
     filter_.horizontal_vector_path(pg, sources, &dst_rows[index]);
   }
 
-  void process_horizontal_border(
-      Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
-      BorderOffsets border_offsets,
-      size_t index) const KLEIDICV_STREAMING_COMPATIBLE {
+  void process_horizontal_border(Rows<const BufferType> src_rows,
+                                 Rows<DestinationType> dst_rows,
+                                 BorderOffsets border_offsets,
+                                 size_t index) const KLEIDICV_STREAMING {
     BufferType src[15];
     src[0] = src_rows.at(0, border_offsets.c0())[index];
     src[1] = src_rows.at(0, border_offsets.c1())[index];

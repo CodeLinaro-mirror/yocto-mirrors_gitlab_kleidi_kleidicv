@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -44,13 +44,13 @@ class ScharrInterleaved {
  public:
   ScharrInterleaved(Rows<int16_t> hori_deriv_buffer,
                     Rows<int16_t> vert_deriv_buffer,
-                    size_t width) KLEIDICV_STREAMING_COMPATIBLE
+                    size_t width) KLEIDICV_STREAMING
       : hori_deriv_buffer_(hori_deriv_buffer),
         vert_deriv_buffer_(vert_deriv_buffer),
         width_(width) {}
 
   void process(Rows<const uint8_t> src_rows, Rows<int16_t> dst_rows,
-               size_t y_begin, size_t y_end) KLEIDICV_STREAMING_COMPATIBLE {
+               size_t y_begin, size_t y_end) KLEIDICV_STREAMING {
     for (size_t i = y_begin; i < y_end; ++i) {
       process_vertical(src_rows.at(static_cast<ptrdiff_t>(i)));
       process_horizontal(dst_rows.at(static_cast<ptrdiff_t>(i)));
@@ -59,7 +59,7 @@ class ScharrInterleaved {
 
  private:
   void vertical_vector_path(svbool_t pg, Rows<const uint8_t> src_rows,
-                            ptrdiff_t index) KLEIDICV_STREAMING_COMPATIBLE {
+                            ptrdiff_t index) KLEIDICV_STREAMING {
     SourceVectorType src_0 = svld1(pg, &src_rows.at(0)[index]);
     SourceVectorType src_1 = svld1(pg, &src_rows.at(1)[index]);
     SourceVectorType src_2 = svld1(pg, &src_rows.at(2)[index]);
@@ -87,25 +87,23 @@ class ScharrInterleaved {
     svst2(pg, &vert_deriv_buffer_[index], vert_interleaved);
   }
 
-  void process_vertical(Rows<const uint8_t> src_rows)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  void process_vertical(Rows<const uint8_t> src_rows) KLEIDICV_STREAMING {
     LoopUnroll2 loop{width_ * src_rows.channels(),
                      SourceVecTraits::num_lanes()};
     svbool_t pg_all = SourceVecTraits::svptrue();
 
-    loop.unroll_once([&](ptrdiff_t index) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](ptrdiff_t index) KLEIDICV_STREAMING {
       vertical_vector_path(pg_all, src_rows, index);
     });
 
-    loop.remaining(
-        [&](ptrdiff_t index, ptrdiff_t length) KLEIDICV_STREAMING_COMPATIBLE {
-          svbool_t pg = SourceVecTraits::svwhilelt(index, length);
-          vertical_vector_path(pg, src_rows, index);
-        });
+    loop.remaining([&](ptrdiff_t index, ptrdiff_t length) KLEIDICV_STREAMING {
+      svbool_t pg = SourceVecTraits::svwhilelt(index, length);
+      vertical_vector_path(pg, src_rows, index);
+    });
   }
 
   void horizontal_vector_path(svbool_t pg, Rows<int16_t> dst_rows,
-                              ptrdiff_t index) KLEIDICV_STREAMING_COMPATIBLE {
+                              ptrdiff_t index) KLEIDICV_STREAMING {
     // Horizontal derivative approximation
     BufferVectorType hori_buff_0 = svld1(pg, &hori_deriv_buffer_[index]);
     BufferVectorType hori_buff_2 = svld1(pg, &hori_deriv_buffer_[index + 2]);
@@ -126,22 +124,20 @@ class ScharrInterleaved {
     svst2(pg, &dst_rows.at(0, index)[0], interleaved_result);
   }
 
-  void process_horizontal(Rows<int16_t> dst_rows)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  void process_horizontal(Rows<int16_t> dst_rows) KLEIDICV_STREAMING {
     // width is decremented by 2 as the result has less columns.
     LoopUnroll2 loop{(width_ - 2) * hori_deriv_buffer_.channels(),
                      BufferVecTraits::num_lanes()};
     svbool_t pg_all = BufferVecTraits::svptrue();
 
-    loop.unroll_once([&](ptrdiff_t index) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](ptrdiff_t index) KLEIDICV_STREAMING {
       horizontal_vector_path(pg_all, dst_rows, index);
     });
 
-    loop.remaining(
-        [&](ptrdiff_t index, ptrdiff_t length) KLEIDICV_STREAMING_COMPATIBLE {
-          svbool_t pg = BufferVecTraits::svwhilelt(index, length);
-          horizontal_vector_path(pg, dst_rows, index);
-        });
+    loop.remaining([&](ptrdiff_t index, ptrdiff_t length) KLEIDICV_STREAMING {
+      svbool_t pg = BufferVecTraits::svwhilelt(index, length);
+      horizontal_vector_path(pg, dst_rows, index);
+    });
   }
 
   Rows<int16_t> hori_deriv_buffer_;
@@ -157,7 +153,7 @@ class ScharrBufferDeleter {
 static kleidicv_error_t kleidicv_scharr_interleaved_stripe_s16_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t src_channels, int16_t *dst, size_t dst_stride, size_t y_begin,
-    size_t y_end) KLEIDICV_STREAMING_COMPATIBLE {
+    size_t y_end) KLEIDICV_STREAMING {
   // Does not include checks for whether the operation is implemented.
   // This must be done earlier, by scharr_interleaved_is_implemented.
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);

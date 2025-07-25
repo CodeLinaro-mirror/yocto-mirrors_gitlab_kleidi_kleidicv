@@ -24,8 +24,7 @@ class Filter2D3x3VectorOperations {
   static void process_one_element_with_vector_operation(
       svbool_t pg, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets, BorderOffsets window_col_offsets,
-      size_t index,
-      const InnerFilterType& filter_) KLEIDICV_STREAMING_COMPATIBLE {
+      size_t index, const InnerFilterType& filter_) KLEIDICV_STREAMING {
     SourceVectorType src_0_0, src_0_1, src_0_2, src_1_0, src_1_1, src_1_2,
         src_2_0, src_2_1, src_2_2, dst_vec;
     ScalableVectorArray2D<SourceVectorType, 3, 3> KernelWindow = {{
@@ -34,9 +33,8 @@ class Filter2D3x3VectorOperations {
         {std::ref(src_2_0), std::ref(src_2_1), std::ref(src_2_2)},
     }};
 
-    auto load_array_element =
-        [&](const SourceType& x)
-            KLEIDICV_STREAMING_COMPATIBLE { return svld1(pg, &x); };
+    auto load_array_element = [&](const SourceType& x)
+                                  KLEIDICV_STREAMING { return svld1(pg, &x); };
 
     WindowLoaderType::load_window(KernelWindow, load_array_element, src_rows,
                                   window_row_offsets, window_col_offsets,
@@ -51,7 +49,7 @@ class Filter2D3x3VectorOperations {
       svbool_t pg, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets_0, BorderOffsets window_row_offsets_1,
       BorderOffsets window_col_offsets, size_t index,
-      const InnerFilterType& filter_) KLEIDICV_STREAMING_COMPATIBLE {
+      const InnerFilterType& filter_) KLEIDICV_STREAMING {
     SourceVectorType src_0_0, src_0_1, src_0_2, src_1_0, src_1_1, src_1_2,
         src_2_0, src_2_1, src_2_2, src_3_0, src_3_1, src_3_2, dst_vec_0,
         dst_vec_1;
@@ -63,9 +61,8 @@ class Filter2D3x3VectorOperations {
         {std::ref(src_3_0), std::ref(src_3_1), std::ref(src_3_2)},
     }};
 
-    auto load_array_element =
-        [&](const SourceType& x)
-            KLEIDICV_STREAMING_COMPATIBLE { return svld1(pg, &x); };
+    auto load_array_element = [&](const SourceType& x)
+                                  KLEIDICV_STREAMING { return svld1(pg, &x); };
 
     WindowLoaderType::load_window_to_handle_dual_rows(
         KernelWindow, load_array_element, src_rows, window_row_offsets_0,
@@ -90,8 +87,7 @@ class Filter2D5x5VectorOperations {
   static void process_one_element_with_vector_operation(
       svbool_t pg, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets, BorderOffsets window_col_offsets,
-      size_t index,
-      const InnerFilterType& filter_) KLEIDICV_STREAMING_COMPATIBLE {
+      size_t index, const InnerFilterType& filter_) KLEIDICV_STREAMING {
     SourceVectorType src_0_0, src_0_1, src_0_2, src_0_3, src_0_4, src_1_0,
         src_1_1, src_1_2, src_1_3, src_1_4, src_2_0, src_2_1, src_2_2, src_2_3,
         src_2_4, src_3_0, src_3_1, src_3_2, src_3_3, src_3_4, src_4_0, src_4_1,
@@ -111,9 +107,8 @@ class Filter2D5x5VectorOperations {
          std::ref(src_4_3), std::ref(src_4_4)},
     }};
 
-    auto load_array_element =
-        [&](const SourceType& x)
-            KLEIDICV_STREAMING_COMPATIBLE { return svld1(pg, &x); };
+    auto load_array_element = [&](const SourceType& x)
+                                  KLEIDICV_STREAMING { return svld1(pg, &x); };
 
     WindowLoaderType::load_window(KernelWindow, load_array_element, src_rows,
                                   window_row_offsets, window_col_offsets,
@@ -134,8 +129,7 @@ class Filter2D7x7VectorOperations {
   static void process_one_element_with_vector_operation(
       svbool_t pg, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets, BorderOffsets window_col_offsets,
-      size_t index,
-      const InnerFilterType& filter_) KLEIDICV_STREAMING_COMPATIBLE {
+      size_t index, const InnerFilterType& filter_) KLEIDICV_STREAMING {
     SourceVectorType src_0_0, src_0_1, src_0_2, src_0_3, src_0_4, src_0_5,
         src_0_6, src_1_0, src_1_1, src_1_2, src_1_3, src_1_4, src_1_5, src_1_6,
         src_2_0, src_2_1, src_2_2, src_2_3, src_2_4, src_2_5, src_2_6, src_3_0,
@@ -169,9 +163,8 @@ class Filter2D7x7VectorOperations {
          std::ref(src_6_6)},
     }};
 
-    auto load_array_element =
-        [&](const SourceType& x)
-            KLEIDICV_STREAMING_COMPATIBLE { return svld1(pg, &x); };
+    auto load_array_element = [&](const SourceType& x)
+                                  KLEIDICV_STREAMING { return svld1(pg, &x); };
 
     WindowLoaderType::load_window(KernelWindow, load_array_element, src_rows,
                                   window_row_offsets, window_col_offsets,
@@ -196,16 +189,16 @@ class Filter2d {
   using BorderOffsets = typename BorderInfoType::Offsets;
   // using Base = VectorOperationProviderType<SourceType>;
   static constexpr size_t kMargin = KSize / 2UL;
-  explicit Filter2d(InnerFilterType filter) KLEIDICV_STREAMING_COMPATIBLE
+  explicit Filter2d(InnerFilterType filter) KLEIDICV_STREAMING
       : filter_{filter} {}
 
   void process_pixels_without_horizontal_borders(
       size_t width, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets,
-      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
+      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING {
     LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
 
-    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING {
       svbool_t pg = SourceVecTraits::svptrue();
       VectorOperationProviderType::
           template process_one_element_with_vector_operation<InnerFilterType,
@@ -214,8 +207,7 @@ class Filter2d {
               index, filter_);
     });
 
-    loop.remaining([&](size_t index,
-                       size_t length) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
       svbool_t pg = SourceVecTraits::svwhilelt(index, length);
       VectorOperationProviderType::
           template process_one_element_with_vector_operation<InnerFilterType,
@@ -228,7 +220,7 @@ class Filter2d {
   void process_one_pixel_with_horizontal_borders(
       Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets,
-      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
+      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
       VectorOperationProviderType::
           template process_one_element_with_vector_operation<InnerFilterType,
@@ -241,9 +233,9 @@ class Filter2d {
   void process_pixels_of_dual_rows_without_horizontal_borders(
       size_t width, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets_0, BorderOffsets window_row_offsets_1,
-      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
+      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING {
     LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
-    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING {
       svbool_t pg = SourceVecTraits::svptrue();
       VectorOperationProviderType::
           template process_two_elements_with_vector_operation<InnerFilterType,
@@ -252,8 +244,7 @@ class Filter2d {
               window_row_offsets_1, window_col_offsets, index, filter_);
     });
 
-    loop.remaining([&](size_t index,
-                       size_t length) KLEIDICV_STREAMING_COMPATIBLE {
+    loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
       svbool_t pg = SourceVecTraits::svwhilelt(index, length);
       VectorOperationProviderType::
           template process_two_elements_with_vector_operation<InnerFilterType,
@@ -267,7 +258,7 @@ class Filter2d {
   void process_two_pixels_with_horizontal_borders(
       Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
       BorderOffsets window_row_offsets_0, BorderOffsets window_row_offsets_1,
-      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
+      BorderOffsets window_col_offsets) const KLEIDICV_STREAMING {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
       VectorOperationProviderType::
           template process_two_elements_with_vector_operation<InnerFilterType,

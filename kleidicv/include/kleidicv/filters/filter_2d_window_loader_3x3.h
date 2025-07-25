@@ -22,7 +22,7 @@ class Filter2dWindowLoader3x3 {
                           Rows<const SourceType> src_rows,
                           BorderOffsets window_row_offsets,
                           BorderOffsets window_col_offsets,
-                          size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+                          size_t index) KLEIDICV_STREAMING {
     KernelWindow(0, 0) = load_array_element(
         src_rows.at(window_row_offsets.c0(), window_col_offsets.c0())[index]);
     KernelWindow(0, 1) = load_array_element(
@@ -51,7 +51,7 @@ class Filter2dWindowLoader3x3 {
       LoadArrayElementFunctionType load_array_element,
       Rows<const SourceType> src_rows, BorderOffsets window_row_offsets_0,
       BorderOffsets window_row_offsets_1, BorderOffsets window_col_offsets,
-      size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+      size_t index) KLEIDICV_STREAMING {
     load_window(KernelWindow, load_array_element, src_rows,
                 window_row_offsets_0, window_col_offsets, index);
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -56,14 +56,14 @@ class FixedBorderInfo<T, 15UL> final {
       : height_(height), border_type_(border_type) {}
 
   // Returns offsets without the influence of any border.
-  Offsets offsets_without_border() const KLEIDICV_STREAMING_COMPATIBLE {
+  Offsets offsets_without_border() const KLEIDICV_STREAMING {
     return get(-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7);
   }
 
   // NOLINTBEGIN(readability-function-cognitive-complexity)
   // Returns offsets for columns affected by left border.
   Offsets offsets_with_left_border(size_t column_index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == 0) {
@@ -152,7 +152,7 @@ class FixedBorderInfo<T, 15UL> final {
 
   // Returns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t column_index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == (height_ - 7)) {
@@ -242,7 +242,7 @@ class FixedBorderInfo<T, 15UL> final {
 
   // Returns offsets for rows or columns affected by any border.
   Offsets offsets_with_border(size_t row_or_column_index) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     if (row_or_column_index <= 6U) {
       // Rows and columns have the same offsets.
       return offsets_with_left_border(row_or_column_index);
@@ -260,7 +260,7 @@ class FixedBorderInfo<T, 15UL> final {
               ptrdiff_t o4, ptrdiff_t o5, ptrdiff_t o6, ptrdiff_t o7,
               ptrdiff_t o8, ptrdiff_t o9, ptrdiff_t o10, ptrdiff_t o11,
               ptrdiff_t o12, ptrdiff_t o13,
-              ptrdiff_t o14) const KLEIDICV_STREAMING_COMPATIBLE {
+              ptrdiff_t o14) const KLEIDICV_STREAMING {
     return Offsets{o0, o1, o2,  o3,  o4,  o5,  o6, o7,
                    o8, o9, o10, o11, o12, o13, o14};
   }

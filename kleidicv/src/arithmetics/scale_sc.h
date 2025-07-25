@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,12 +16,11 @@ class AddFloat final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
   using VectorType = typename VecTraits::VectorType;
 
-  explicit AddFloat(const svfloat32_t &svshift) KLEIDICV_STREAMING_COMPATIBLE
+  explicit AddFloat(const svfloat32_t &svshift) KLEIDICV_STREAMING
       : svshift_{svshift} {}
 
   // NOLINTBEGIN(readability-make-member-function-const)
-  VectorType vector_path(ContextType ctx,
-                         VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+  VectorType vector_path(ContextType ctx, VectorType src) KLEIDICV_STREAMING {
     return svadd_x(ctx.predicate(), src, svshift_);
   }
   // NOLINTEND(readability-make-member-function-const)
@@ -37,13 +36,12 @@ class ScaleFloat final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
   ScaleFloat(const svfloat32_t &svscale,
-             const svfloat32_t &svshift) KLEIDICV_STREAMING_COMPATIBLE
+             const svfloat32_t &svshift) KLEIDICV_STREAMING
       : svscale_{svscale},
         svshift_{svshift} {}
 
   // NOLINTBEGIN(readability-make-member-function-const)
-  VectorType vector_path(ContextType ctx,
-                         VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+  VectorType vector_path(ContextType ctx, VectorType src) KLEIDICV_STREAMING {
     return svmla_x(ctx.predicate(), svshift_, src, svscale_);
   }
   // NOLINTEND(readability-make-member-function-const)
@@ -55,15 +53,13 @@ class ScaleFloat final : public UnrollTwice {
 template <typename T>
 kleidicv_error_t scale_sc(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          float scale,
-                          float shift) KLEIDICV_STREAMING_COMPATIBLE;
+                          float scale, float shift) KLEIDICV_STREAMING;
 
 // Specialization for float
 template <>
 kleidicv_error_t scale_sc(const float *src, size_t src_stride, float *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          float scale,
-                          float shift) KLEIDICV_STREAMING_COMPATIBLE {
+                          float scale, float shift) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

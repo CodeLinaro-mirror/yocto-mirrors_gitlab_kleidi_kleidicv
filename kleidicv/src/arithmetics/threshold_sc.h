@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -17,13 +17,11 @@ class BinaryThreshold final : public UnrollTwice {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
-  BinaryThreshold(ScalarType threshold,
-                  ScalarType value) KLEIDICV_STREAMING_COMPATIBLE
+  BinaryThreshold(ScalarType threshold, ScalarType value) KLEIDICV_STREAMING
       : threshold_(threshold),
         value_(value) {}
 
-  VectorType vector_path(ContextType ctx,
-                         VectorType src) KLEIDICV_STREAMING_COMPATIBLE {
+  VectorType vector_path(ContextType ctx, VectorType src) KLEIDICV_STREAMING {
     svbool_t predicate = svcmpgt(ctx.predicate(), src, threshold_);
     return svsel_u8(predicate, svdup_u8(value_), svdup_u8(0));
   }
@@ -37,7 +35,7 @@ template <typename T>
 kleidicv_error_t threshold_binary_sc(const T *src, size_t src_stride, T *dst,
                                      size_t dst_stride, size_t width,
                                      size_t height, T threshold,
-                                     T value) KLEIDICV_STREAMING_COMPATIBLE {
+                                     T value) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

@@ -26,8 +26,7 @@ class MorphologyWorkspace;
 // Deleter for MorphologyWorkspace instances.
 class MorphologyWorkspaceDeleter {
  public:
-  void operator()(MorphologyWorkspace *ptr) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+  void operator()(MorphologyWorkspace *ptr) const KLEIDICV_STREAMING {
     std::free(ptr);
   };
 };
@@ -45,7 +44,7 @@ class MorphologyWorkspace final {
   };
 
   static std::optional<BorderType> get_border_type(
-      kleidicv_border_type_t border_type) KLEIDICV_STREAMING_COMPATIBLE {
+      kleidicv_border_type_t border_type) KLEIDICV_STREAMING {
     switch (border_type) {
       case KLEIDICV_BORDER_TYPE_REPLICATE:
         return BorderType::REPLICATE;
@@ -60,8 +59,7 @@ class MorphologyWorkspace final {
   class CopyDataMemcpy {
    public:
     constexpr void operator()(Rows<const T> src_rows, Rows<T> dst_rows,
-                              size_t length) const
-        KLEIDICV_STREAMING_COMPATIBLE {
+                              size_t length) const KLEIDICV_STREAMING {
 #if KLEIDICV_TARGET_SME
       __arm_sc_memcpy(static_cast<void *>(&dst_rows[0]),
                       static_cast<const void *>(&src_rows[0]),
@@ -82,7 +80,7 @@ class MorphologyWorkspace final {
       Pointer &workspace, kleidicv_rectangle_t kernel, kleidicv_point_t anchor,
       BorderType border_type, const uint8_t *border_value, size_t channels,
       size_t iterations, size_t type_size,
-      kleidicv_rectangle_t image) KLEIDICV_STREAMING_COMPATIBLE {
+      kleidicv_rectangle_t image) KLEIDICV_STREAMING {
     // These values are arbitrarily choosen.
     const size_t rows_per_iteration = std::max(2 * kernel.height, 32UL);
     // To avoid load/store penalties.
@@ -180,8 +178,7 @@ class MorphologyWorkspace final {
   template <typename O>
   void process(Rectangle rect, Rows<const typename O::SourceType> src_rows,
                Rows<typename O::DestinationType> dst_rows, Margin margin,
-               BorderType border_type,
-               O operation) KLEIDICV_STREAMING_COMPATIBLE {
+               BorderType border_type, O operation) KLEIDICV_STREAMING {
     using S = typename O::SourceType;
     using B = typename O::BufferType;
     typename O::CopyData copy_data{};
@@ -325,16 +322,14 @@ class MorphologyWorkspace final {
 
  private:
   // The number of wide rows to process in the next iteration.
-  [[nodiscard]] size_t get_next_horizontal_height()
-      KLEIDICV_STREAMING_COMPATIBLE {
+  [[nodiscard]] size_t get_next_horizontal_height() KLEIDICV_STREAMING {
     size_t height = std::min(horizontal_height_, rows_per_iteration_);
     horizontal_height_ -= height;
     return height;
   }
 
   // The number of indirect rows to process in the next iteration.
-  [[nodiscard]] size_t get_next_vertical_height()
-      KLEIDICV_STREAMING_COMPATIBLE {
+  [[nodiscard]] size_t get_next_vertical_height() KLEIDICV_STREAMING {
     size_t height = std::min(vertical_height_, rows_per_iteration_);
     vertical_height_ -= height;
     return height;
@@ -342,7 +337,7 @@ class MorphologyWorkspace final {
 
   template <typename T>
   void make_constant_border(Rows<T> dst_rows, size_t dst_index,
-                            size_t count) KLEIDICV_STREAMING_COMPATIBLE {
+                            size_t count) KLEIDICV_STREAMING {
     auto dst = &dst_rows.at(0, dst_index)[0];
     for (size_t index = 0; index < count; ++index) {
       for (size_t channel = 0; channel < dst_rows.channels(); ++channel) {
@@ -354,7 +349,7 @@ class MorphologyWorkspace final {
   template <typename T>
   void replicate_border(Rows<const T> src_rows, Rows<T> dst_rows,
                         size_t src_index, size_t dst_index,
-                        size_t count) KLEIDICV_STREAMING_COMPATIBLE {
+                        size_t count) KLEIDICV_STREAMING {
     if (!count) {
       return;
     }

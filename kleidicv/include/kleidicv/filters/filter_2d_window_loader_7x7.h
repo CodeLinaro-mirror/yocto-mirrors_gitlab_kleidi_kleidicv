@@ -21,7 +21,7 @@ class Filter2dWindowLoader7x7 {
                           Rows<const SourceType> src_rows,
                           BorderOffsets window_row_offsets,
                           BorderOffsets window_col_offsets,
-                          size_t index) KLEIDICV_STREAMING_COMPATIBLE {
+                          size_t index) KLEIDICV_STREAMING {
     // first row
     KernelWindow(0, 0) = load_array_element(
         src_rows.at(window_row_offsets.c0(), window_col_offsets.c0())[index]);

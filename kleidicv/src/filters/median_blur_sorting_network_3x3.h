@@ -14,8 +14,8 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 template <class Comparator, typename KernelWindowFunctor, typename T,
           typename ContextType>
 void sorting_network3x3_single_row(KernelWindowFunctor& KernelWindow,
-                                   T& output_vec, ContextType& context)
-    KLEIDICV_STREAMING_COMPATIBLE {
+                                   T& output_vec,
+                                   ContextType& context) KLEIDICV_STREAMING {
   // full sort row
   Comparator::compare_and_swap(KernelWindow(0, 0), KernelWindow(0, 2), context);
   Comparator::compare_and_swap(KernelWindow(0, 0), KernelWindow(0, 1), context);
@@ -50,9 +50,9 @@ void sorting_network3x3_single_row(KernelWindowFunctor& KernelWindow,
 
 template <class Comparator, typename KernelWindowFunctor, typename T,
           typename ContextType>
-void sorting_network3x3_dual_rows(
-    KernelWindowFunctor& KernelWindow, T& output_vec_0, T& output_vec_1,
-    ContextType& context) KLEIDICV_STREAMING_COMPATIBLE {
+void sorting_network3x3_dual_rows(KernelWindowFunctor& KernelWindow,
+                                  T& output_vec_0, T& output_vec_1,
+                                  ContextType& context) KLEIDICV_STREAMING {
   // full sort row
   Comparator::compare_and_swap(KernelWindow(0, 0), KernelWindow(0, 2), context);
   Comparator::compare_and_swap(KernelWindow(0, 0), KernelWindow(0, 1), context);

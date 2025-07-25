@@ -18,13 +18,13 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 // Context associated with SVE operations.
 class Context {
  public:
-  explicit Context(svbool_t &pg) KLEIDICV_STREAMING_COMPATIBLE : pg_{pg} {}
+  explicit Context(svbool_t &pg) KLEIDICV_STREAMING : pg_{pg} {}
 
   // Sets the predicate associated with the context to a given predicate.
-  void set_predicate(svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE { pg_ = pg; }
+  void set_predicate(svbool_t pg) KLEIDICV_STREAMING { pg_ = pg; }
 
   // Returns predicate associated with the context.
-  svbool_t predicate() const KLEIDICV_STREAMING_COMPATIBLE { return pg_; }
+  svbool_t predicate() const KLEIDICV_STREAMING { return pg_; }
 
  protected:
   // Hold a reference to an svbool_t because a sizeless type cannot be a member.
@@ -142,160 +142,160 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   using typename VectorTypes<ScalarType>::VectorType;
 
   // Number of lanes in a vector.
-  static inline size_t num_lanes() KLEIDICV_STREAMING_COMPATIBLE {
+  static inline size_t num_lanes() KLEIDICV_STREAMING {
     return static_cast<size_t>(svcnt());
   }
 
   // Maximum number of lanes in a vector.
-  static constexpr size_t max_num_lanes() KLEIDICV_STREAMING_COMPATIBLE {
+  static constexpr size_t max_num_lanes() KLEIDICV_STREAMING {
     return 256 / sizeof(ScalarType);
   }
 
   // Loads a single vector from 'src'.
   static inline void load(Context ctx, const ScalarType *src,
-                          VectorType &vec) KLEIDICV_STREAMING_COMPATIBLE {
+                          VectorType &vec) KLEIDICV_STREAMING {
     vec = svld1(ctx.predicate(), &src[0]);
   }
 
   // Loads two consecutive vectors from 'src'.
   static inline void load_consecutive(Context ctx, const ScalarType *src,
-                                      VectorType &vec_0, VectorType &vec_1)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                                      VectorType &vec_0,
+                                      VectorType &vec_1) KLEIDICV_STREAMING {
     vec_0 = svld1(ctx.predicate(), &src[0]);
     vec_1 = svld1_vnum(ctx.predicate(), &src[0], 1);
   }
 
   // Stores a single vector to 'dst'.
   static inline void store(Context ctx, VectorType vec,
-                           ScalarType *dst) KLEIDICV_STREAMING_COMPATIBLE {
+                           ScalarType *dst) KLEIDICV_STREAMING {
     svst1(ctx.predicate(), &dst[0], vec);
   }
 
   // Stores two consecutive vectors to 'dst'.
   static inline void store_consecutive(Context ctx, VectorType vec_0,
-                                       VectorType vec_1, ScalarType *dst)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                                       VectorType vec_1,
+                                       ScalarType *dst) KLEIDICV_STREAMING {
     svst1(ctx.predicate(), &dst[0], vec_0);
     svst1_vnum(ctx.predicate(), &dst[0], 1, vec_1);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), uint64_t> svcnt()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svcntb();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), uint64_t> svcnt()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svcnth();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), uint64_t> svcnt()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svcntw();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), uint64_t> svcnt()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svcntd();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), uint64_t> svcntp(
-      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING {
     return svcntp_b8(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), uint64_t> svcntp(
-      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING {
     return svcntp_b16(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), uint64_t> svcntp(
-      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING {
     return svcntp_b32(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), uint64_t> svcntp(
-      svbool_t pg) KLEIDICV_STREAMING_COMPATIBLE {
+      svbool_t pg) KLEIDICV_STREAMING {
     return svcntp_b64(pg, pg);
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svptrue()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_b8();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svptrue()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_b16();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svptrue()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_b32();
   }
 
   template <typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svptrue()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_b64();
   }
 
   template <enum svpattern pat, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svptrue_pat()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_pat_b8(pat);
   }
 
   template <enum svpattern pat, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svptrue_pat()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_pat_b16(pat);
   }
 
   template <enum svpattern pat, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svptrue_pat()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_pat_b32(pat);
   }
 
   template <enum svpattern pat, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svptrue_pat()
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return svptrue_pat_b64(pat);
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING {
     return svwhilelt_b8(index, max_index);
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING {
     return svwhilelt_b16(index, max_index);
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING {
     return svwhilelt_b32(index, max_index);
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svwhilelt(
-      IndexType index, IndexType max_index) KLEIDICV_STREAMING_COMPATIBLE {
+      IndexType index, IndexType max_index) KLEIDICV_STREAMING {
     return svwhilelt_b64(index, max_index);
   }
 
@@ -303,8 +303,8 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   // used for consecutive operations. The input predicate can only have
   // consecutive ones starting at the lowest element.
   static void make_consecutive_predicates(svbool_t pg, svbool_t &pg_0,
-                                          svbool_t &pg_1, svbool_t &pg_2)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                                          svbool_t &pg_1,
+                                          svbool_t &pg_2) KLEIDICV_STREAMING {
     // Length of data. Must be signed because of the unconditional subtraction
     // of fixed values.
     int64_t length = 3 * svcntp(pg);
@@ -324,9 +324,9 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   // Transforms a single predicate into four other predicates that then can be
   // used for consecutive operations. The input predicate can only have
   // consecutive ones starting at the lowest element.
-  static void make_consecutive_predicates(
-      svbool_t pg, svbool_t &pg_0, svbool_t &pg_1, svbool_t &pg_2,
-      svbool_t &pg_3) KLEIDICV_STREAMING_COMPATIBLE {
+  static void make_consecutive_predicates(svbool_t pg, svbool_t &pg_0,
+                                          svbool_t &pg_1, svbool_t &pg_2,
+                                          svbool_t &pg_3) KLEIDICV_STREAMING {
     // Length of data. Must be signed because of the unconditional subtraction
     // of fixed values.
     int64_t length = 4 * svcntp(pg);
@@ -356,15 +356,14 @@ class VecTraits : public VecTraitsBase<ScalarType> {};
 template <>
 class VecTraits<int8_t> : public VecTraitsBase<int8_t> {
  public:
-  static inline svint8_t svdup(int8_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint8_t svdup(int8_t v) KLEIDICV_STREAMING {
     return svdup_s8(v);
   }
-  static inline svint8_t svreinterpret(svuint8_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint8_t svreinterpret(svuint8_t v) KLEIDICV_STREAMING {
     return svreinterpret_s8(v);
   }
   static inline svint8_t svasr_n(svbool_t pg, svint8_t v,
-                                 uint8_t s) KLEIDICV_STREAMING_COMPATIBLE {
+                                 uint8_t s) KLEIDICV_STREAMING {
     return svasr_n_s8_x(pg, v, s);
   }
 };  // end of class VecTraits<int8_t>
@@ -372,19 +371,18 @@ class VecTraits<int8_t> : public VecTraitsBase<int8_t> {
 template <>
 class VecTraits<uint8_t> : public VecTraitsBase<uint8_t> {
  public:
-  static inline svuint8_t svdup(uint8_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint8_t svdup(uint8_t v) KLEIDICV_STREAMING {
     return svdup_u8(v);
   }
-  static inline svuint8_t svreinterpret(svint8_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint8_t svreinterpret(svint8_t v) KLEIDICV_STREAMING {
     return svreinterpret_u8(v);
   }
   static inline svuint8_t svsub(svbool_t pg, svuint8_t v,
-                                svuint8_t u) KLEIDICV_STREAMING_COMPATIBLE {
+                                svuint8_t u) KLEIDICV_STREAMING {
     return svsub_u8_x(pg, v, u);
   }
   static inline svuint8_t svhsub(svbool_t pg, svuint8_t v,
-                                 svuint8_t u) KLEIDICV_STREAMING_COMPATIBLE {
+                                 svuint8_t u) KLEIDICV_STREAMING {
     return svhsub_u8_x(pg, v, u);
   }
 };  // end of class VecTraits<uint8_t>
@@ -392,11 +390,10 @@ class VecTraits<uint8_t> : public VecTraitsBase<uint8_t> {
 template <>
 class VecTraits<int16_t> : public VecTraitsBase<int16_t> {
  public:
-  static inline svint16_t svdup(int16_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint16_t svdup(int16_t v) KLEIDICV_STREAMING {
     return svdup_s16(v);
   }
-  static inline svint16_t svreinterpret(svuint16_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint16_t svreinterpret(svuint16_t v) KLEIDICV_STREAMING {
     return svreinterpret_s16(v);
   }
 };  // end of class VecTraits<int16_t>
@@ -404,11 +401,10 @@ class VecTraits<int16_t> : public VecTraitsBase<int16_t> {
 template <>
 class VecTraits<uint16_t> : public VecTraitsBase<uint16_t> {
  public:
-  static inline svuint16_t svdup(uint16_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint16_t svdup(uint16_t v) KLEIDICV_STREAMING {
     return svdup_u16(v);
   }
-  static inline svuint16_t svreinterpret(svint16_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint16_t svreinterpret(svint16_t v) KLEIDICV_STREAMING {
     return svreinterpret_u16(v);
   }
 };  // end of class VecTraits<uint16_t>
@@ -416,11 +412,10 @@ class VecTraits<uint16_t> : public VecTraitsBase<uint16_t> {
 template <>
 class VecTraits<int32_t> : public VecTraitsBase<int32_t> {
  public:
-  static inline svint32_t svdup(int32_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint32_t svdup(int32_t v) KLEIDICV_STREAMING {
     return svdup_s32(v);
   }
-  static inline svint32_t svreinterpret(svuint32_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint32_t svreinterpret(svuint32_t v) KLEIDICV_STREAMING {
     return svreinterpret_s32(v);
   }
 };  // end of class VecTraits<int32_t>
@@ -428,11 +423,10 @@ class VecTraits<int32_t> : public VecTraitsBase<int32_t> {
 template <>
 class VecTraits<uint32_t> : public VecTraitsBase<uint32_t> {
  public:
-  static inline svuint32_t svdup(uint32_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint32_t svdup(uint32_t v) KLEIDICV_STREAMING {
     return svdup_u32(v);
   }
-  static inline svuint32_t svreinterpret(svint32_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint32_t svreinterpret(svint32_t v) KLEIDICV_STREAMING {
     return svreinterpret_u32(v);
   }
 };  // end of class VecTraits<uint32_t>
@@ -440,11 +434,10 @@ class VecTraits<uint32_t> : public VecTraitsBase<uint32_t> {
 template <>
 class VecTraits<int64_t> : public VecTraitsBase<int64_t> {
  public:
-  static inline svint64_t svdup(int64_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint64_t svdup(int64_t v) KLEIDICV_STREAMING {
     return svdup_s64(v);
   }
-  static inline svint64_t svreinterpret(svuint64_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svint64_t svreinterpret(svuint64_t v) KLEIDICV_STREAMING {
     return svreinterpret_s64(v);
   }
 };  // end of class VecTraits<int64_t>
@@ -452,11 +445,10 @@ class VecTraits<int64_t> : public VecTraitsBase<int64_t> {
 template <>
 class VecTraits<uint64_t> : public VecTraitsBase<uint64_t> {
  public:
-  static inline svuint64_t svdup(uint64_t v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint64_t svdup(uint64_t v) KLEIDICV_STREAMING {
     return svdup_u64(v);
   }
-  static inline svuint64_t svreinterpret(svint64_t v)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svuint64_t svreinterpret(svint64_t v) KLEIDICV_STREAMING {
     return svreinterpret_u64(v);
   }
 };  // end of class VecTraits<uint64_t>
@@ -464,11 +456,11 @@ class VecTraits<uint64_t> : public VecTraitsBase<uint64_t> {
 template <>
 class VecTraits<float> : public VecTraitsBase<float> {
  public:
-  static inline svfloat32_t svdup(float v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svfloat32_t svdup(float v) KLEIDICV_STREAMING {
     return svdup_f32(v);
   }
   static inline svfloat32_t svsub(svbool_t pg, svfloat32_t v,
-                                  svfloat32_t u) KLEIDICV_STREAMING_COMPATIBLE {
+                                  svfloat32_t u) KLEIDICV_STREAMING {
     return svsub_f32_x(pg, v, u);
   }
 };  // end of class VecTraits<float>
@@ -476,7 +468,7 @@ class VecTraits<float> : public VecTraitsBase<float> {
 template <>
 class VecTraits<double> : public VecTraitsBase<double> {
  public:
-  static inline svfloat64_t svdup(double v) KLEIDICV_STREAMING_COMPATIBLE {
+  static inline svfloat64_t svdup(double v) KLEIDICV_STREAMING {
     return svdup_f64(v);
   }
 };  // end of class VecTraits<double>
@@ -492,12 +484,12 @@ class OperationContextAdapter : public OperationBase<OperationType> {
   using ContextType = Context;
   using VecTraits = typename OperationBase<OperationType>::VecTraits;
 
-  explicit OperationContextAdapter(OperationType &operation)
-      KLEIDICV_STREAMING_COMPATIBLE : OperationBase<OperationType>(operation) {}
+  explicit OperationContextAdapter(OperationType &operation) KLEIDICV_STREAMING
+      : OperationBase<OperationType>(operation) {}
 
   // Forwards vector_path_2x() calls to the inner operation.
   template <typename... ArgTypes>
-  void vector_path_2x(ArgTypes &&...args) KLEIDICV_STREAMING_COMPATIBLE {
+  void vector_path_2x(ArgTypes &&...args) KLEIDICV_STREAMING {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
     ctx.set_predicate(VecTraits::svptrue());
@@ -506,7 +498,7 @@ class OperationContextAdapter : public OperationBase<OperationType> {
 
   // Forwards vector_path() calls to the inner operation.
   template <typename... ArgTypes>
-  void vector_path(ArgTypes &&...args) KLEIDICV_STREAMING_COMPATIBLE {
+  void vector_path(ArgTypes &&...args) KLEIDICV_STREAMING {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
     ctx.set_predicate(VecTraits::svptrue());
@@ -517,7 +509,7 @@ class OperationContextAdapter : public OperationBase<OperationType> {
   // operation is unrolled once.
   template <typename... ColumnTypes, typename T = OperationType>
   std::enable_if_t<T::is_unrolled_once()> remaining_path(
-      size_t length, ColumnTypes &&...columns) KLEIDICV_STREAMING_COMPATIBLE {
+      size_t length, ColumnTypes &&...columns) KLEIDICV_STREAMING {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
     ctx.set_predicate(VecTraits::svwhilelt(size_t{0}, length));
@@ -528,7 +520,7 @@ class OperationContextAdapter : public OperationBase<OperationType> {
   // operation is not unrolled once.
   template <typename... ColumnTypes, typename T = OperationType>
   std::enable_if_t<!T::is_unrolled_once()> remaining_path(
-      size_t length, ColumnTypes... columns) KLEIDICV_STREAMING_COMPATIBLE {
+      size_t length, ColumnTypes... columns) KLEIDICV_STREAMING {
     svbool_t ctx_pg;
     ContextType ctx{ctx_pg};
 
@@ -549,13 +541,13 @@ class RemainingPathAdapter : public OperationBase<OperationType> {
  public:
   using ContextType = Context;
 
-  explicit RemainingPathAdapter(OperationType &operation)
-      KLEIDICV_STREAMING_COMPATIBLE : OperationBase<OperationType>(operation) {}
+  explicit RemainingPathAdapter(OperationType &operation) KLEIDICV_STREAMING
+      : OperationBase<OperationType>(operation) {}
 
   // Forwards remaining_path() to either vector_path() or tail_path() of the
   // inner operation depending on what is requested by the innermost operation.
   template <typename... ArgTypes>
-  void remaining_path(ArgTypes... args) KLEIDICV_STREAMING_COMPATIBLE {
+  void remaining_path(ArgTypes... args) KLEIDICV_STREAMING {
     if constexpr (OperationType::uses_tail_path()) {
       this->operation().tail_path(std::forward<ArgTypes>(args)...);
     } else {
@@ -567,7 +559,7 @@ class RemainingPathAdapter : public OperationBase<OperationType> {
 // Shorthand for applying a generic unrolled SVE2 operation.
 template <typename OperationType, typename... ArgTypes>
 void apply_operation_by_rows(OperationType &operation,
-                             ArgTypes &&...args) KLEIDICV_STREAMING_COMPATIBLE {
+                             ArgTypes &&...args) KLEIDICV_STREAMING {
   ForwardingOperation forwarding_operation{operation};
   OperationAdapter operation_adapter{forwarding_operation};
   RemainingPathAdapter remaining_path_adapter{operation_adapter};
@@ -579,7 +571,7 @@ void apply_operation_by_rows(OperationType &operation,
 // Swap two variables, since some C++ Standard Library implementations do not
 // allow using std::swap for SVE vectors.
 template <typename T>
-static inline void swap_scalable(T &a, T &b) KLEIDICV_STREAMING_COMPATIBLE {
+static inline void swap_scalable(T &a, T &b) KLEIDICV_STREAMING {
   T tmp = a;
   a = b;
   b = tmp;
@@ -591,7 +583,7 @@ template <typename VectorType, size_t Rows, size_t Cols>
 class ScalableVectorArray2D {
  public:
   std::reference_wrapper<VectorType> window[Rows][Cols];
-  VectorType &operator()(int row, int col) KLEIDICV_STREAMING_COMPATIBLE {
+  VectorType &operator()(int row, int col) KLEIDICV_STREAMING {
     return window[row][col].get();
   }
 };

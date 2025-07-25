@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,7 +23,7 @@ class ComparatorEqual : public UnrollTwice {
 
   // NOLINTBEGIN(readability-make-member-function-const)
   VectorType vector_path(ContextType ctx, VectorType src_a,
-                         VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                         VectorType src_b) KLEIDICV_STREAMING {
     svbool_t pg = ctx.predicate();
     svbool_t predicate = svcmpeq(pg, src_a, src_b);
     return svsel(predicate, VecTraits::svdup(255), VecTraits::svdup(0));
@@ -44,7 +44,7 @@ class ComparatorGreater : public UnrollTwice {
 
   // NOLINTBEGIN(readability-make-member-function-const)
   VectorType vector_path(ContextType ctx, VectorType src_a,
-                         VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                         VectorType src_b) KLEIDICV_STREAMING {
     svbool_t pg = ctx.predicate();
     svbool_t predicate = svcmpgt(pg, src_a, src_b);
     return svsel(predicate, VecTraits::svdup(255), VecTraits::svdup(0));
@@ -56,7 +56,7 @@ template <typename Comparator, typename ScalarType>
 kleidicv_error_t compare_sc(const ScalarType *src_a, size_t src_a_stride,
                             const ScalarType *src_b, size_t src_b_stride,
                             ScalarType *dst, size_t dst_stride, size_t width,
-                            size_t height) KLEIDICV_STREAMING_COMPATIBLE {
+                            size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src_a, src_a_stride, height);
   CHECK_POINTER_AND_STRIDE(src_b, src_b_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);

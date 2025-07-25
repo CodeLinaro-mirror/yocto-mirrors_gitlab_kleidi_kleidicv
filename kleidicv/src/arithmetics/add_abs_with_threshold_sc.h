@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -20,10 +20,10 @@ class SaturatingAddAbsWithThreshold final : public UnrollTwice {
   using VectorType = typename VecTraits::VectorType;
 
   explicit SaturatingAddAbsWithThreshold(ScalarType threshold)
-      KLEIDICV_STREAMING_COMPATIBLE : threshold_(threshold) {}
+      KLEIDICV_STREAMING : threshold_(threshold) {}
 
   VectorType vector_path(ContextType ctx, VectorType src_a,
-                         VectorType src_b) KLEIDICV_STREAMING_COMPATIBLE {
+                         VectorType src_b) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
     VectorType add_abs = svqadd_x(pg, svqabs_x(pg, src_a), svqabs_x(pg, src_b));
     svbool_t predicate = svcmpgt(pg, add_abs, threshold_);
@@ -38,7 +38,7 @@ template <typename T>
 kleidicv_error_t saturating_add_abs_with_threshold_sc(
     const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
     T *dst, size_t dst_stride, size_t width, size_t height,
-    T threshold) KLEIDICV_STREAMING_COMPATIBLE {
+    T threshold) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src_a, src_a_stride, height);
   CHECK_POINTER_AND_STRIDE(src_b, src_b_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);

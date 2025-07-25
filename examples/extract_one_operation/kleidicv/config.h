@@ -6,7 +6,7 @@
 // needs of the example.
 
 #define KLEIDICV_LOCALLY_STREAMING __arm_locally_streaming
-#define KLEIDICV_STREAMING_COMPATIBLE __arm_streaming_compatible
+#define KLEIDICV_STREAMING __arm_streaming
 
 #define KLEIDICV_UNLIKELY(cond) __builtin_expect((cond), 0)
 
