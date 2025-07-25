@@ -29,18 +29,6 @@ option(KLEIDICV_ENABLE_SVE2 "Enable SVE2 code paths" ${KLEIDICV_ENABLE_SVE2_DEFA
 # https://github.com/ARM-software/acle/blob/main/main/acle.md#sme-language-extensions-and-intrinsics
 # If SME2 is enabled than SME is also enabled by default.
 option(KLEIDICV_ENABLE_SME2 "Enable SME2 code paths" OFF)
-
-# Temporary while there is no SME2 code
-file(GLOB KLEIDICV_SME2_SOURCES
-  "${CMAKE_CURRENT_LIST_DIR}/src/*_sme2.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sme2.cpp"
-)
-
-if (NOT KLEIDICV_SME2_SOURCES)
-  set(KLEIDICV_ENABLE_SME2 OFF)
-  message("KLEIDICV_ENABLE_SME2 was disabled since there is no SME2 sources")
-endif()
-
 if(KLEIDICV_ENABLE_SME2)
   option(KLEIDICV_ENABLE_SME "Enable SME code paths" ON)
 else()
@@ -78,6 +66,8 @@ option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector 
 option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
+# Marked experimental while CI does not test SME2 version of saturating add.
+option(KLEIDICV_EXPERIMENTAL_FEATURE_ADD_SME2 "Internal - Enable SME2 version of saturating add" OFF)
 
 # Continuous load and store NEON instructions produce suboptimal code generation on GCC version <= 11,
 # and these instructions are not supported on GCC version <=8.
@@ -119,6 +109,11 @@ file(GLOB KLEIDICV_SVE2_SOURCES
 file(GLOB KLEIDICV_SME_SOURCES
   "${CMAKE_CURRENT_LIST_DIR}/src/*_sme.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sme.cpp"
+)
+
+file(GLOB KLEIDICV_SME2_SOURCES
+  "${CMAKE_CURRENT_LIST_DIR}/src/*_sme2.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/**/*_sme2.cpp"
 )
 
 set(KLEIDICV_INCLUDE_DIRS

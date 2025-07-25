@@ -140,6 +140,7 @@ template <typename ScalarType>
 class VecTraitsBase : public VectorTypes<ScalarType> {
  public:
   using typename VectorTypes<ScalarType>::VectorType;
+  using typename VectorTypes<ScalarType>::Vector2Type;
 
   // Number of lanes in a vector.
   static inline size_t num_lanes() KLEIDICV_STREAMING {
@@ -161,8 +162,17 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   static inline void load_consecutive(Context ctx, const ScalarType *src,
                                       VectorType &vec_0,
                                       VectorType &vec_1) KLEIDICV_STREAMING {
+#if KLEIDICV_TARGET_SME2
+    // Assuming that ctx contains a full predicate.
+    (void)ctx;
+    svcount_t p_counter = svptrue_c();
+    Vector2Type v = svld1_x2(p_counter, &src[0]);
+    vec_0 = svget2(v, 0);
+    vec_1 = svget2(v, 1);
+#else
     vec_0 = svld1(ctx.predicate(), &src[0]);
     vec_1 = svld1_vnum(ctx.predicate(), &src[0], 1);
+#endif
   }
 
   // Stores a single vector to 'dst'.
@@ -175,8 +185,16 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   static inline void store_consecutive(Context ctx, VectorType vec_0,
                                        VectorType vec_1,
                                        ScalarType *dst) KLEIDICV_STREAMING {
+#if KLEIDICV_TARGET_SME2
+    // Assuming that ctx contains a full predicate.
+    (void)ctx;
+    svcount_t p_counter = svptrue_c();
+    Vector2Type v = svcreate2(vec_0, vec_1);
+    svst1(p_counter, &dst[0], v);
+#else
     svst1(ctx.predicate(), &dst[0], vec_0);
     svst1_vnum(ctx.predicate(), &dst[0], 1, vec_1);
+#endif
   }
 
   template <typename T = ScalarType>
@@ -250,6 +268,32 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
       KLEIDICV_STREAMING {
     return svptrue_b64();
   }
+
+#if KLEIDICV_TARGET_SME2
+  template <typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int8_t), svcount_t> svptrue_c()
+      KLEIDICV_STREAMING {
+    return svptrue_c8();
+  }
+
+  template <typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int16_t), svcount_t> svptrue_c()
+      KLEIDICV_STREAMING {
+    return svptrue_c16();
+  }
+
+  template <typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int32_t), svcount_t> svptrue_c()
+      KLEIDICV_STREAMING {
+    return svptrue_c32();
+  }
+
+  template <typename T = ScalarType>
+  static std::enable_if_t<sizeof(T) == sizeof(int64_t), svcount_t> svptrue_c()
+      KLEIDICV_STREAMING {
+    return svptrue_c64();
+  }
+#endif  // KLEIDICV_TARGET_SME2
 
   template <enum svpattern pat, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svptrue_pat()
