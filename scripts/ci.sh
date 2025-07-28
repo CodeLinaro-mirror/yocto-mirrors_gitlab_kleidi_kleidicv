@@ -39,6 +39,7 @@ doxygen
 
 # Build with Clang
 cmake -S . -B build/ci/clang -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy-20 \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
