@@ -117,6 +117,15 @@ class GenericBorderVertical final {
   ptrdiff_t height_;
 };  // end of class GenericBorderVertical<BorderType>
 
+// Dummy
+template <typename ScalarType>
+class BorderMaker {
+ public:
+  // Replicate only
+  void decorate(Rows<ScalarType>, size_t,
+                size_t) KLEIDICV_STREAMING_COMPATIBLE {}
+};
+
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
 #endif  // KLEIDICV_WORKSPACE_BORDER_GENERIC_NEON_H

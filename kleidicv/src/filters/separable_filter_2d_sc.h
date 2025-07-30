@@ -7,6 +7,7 @@
 
 #include <limits>
 
+#include "border_generic_sc.h"
 #include "kleidicv/filters/separable_filter_5x5_sc.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
@@ -501,8 +502,11 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
+  KLEIDICV_TARGET_NAMESPACE::DummyBorderMaker<
+      typename SeparableFilterClass::BufferType>
+      border_maker;
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     fixed_border_type, filter);
+                     fixed_border_type, filter, border_maker);
 
   return KLEIDICV_OK;
 }

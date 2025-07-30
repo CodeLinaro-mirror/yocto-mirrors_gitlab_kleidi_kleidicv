@@ -82,8 +82,8 @@ class SeparableFilterWorkspace {
 
   // Creates a workspace on the heap.
   static Pointer create(Rectangle rect, size_t channels,
-                        size_t intermediate_size)
-      KLEIDICV_STREAMING_COMPATIBLE {
+                        size_t intermediate_size,
+                        size_t kernel_width) KLEIDICV_STREAMING_COMPATIBLE {
     size_t buffer_rows_number_of_elements = rect.width() * channels;
     // Adding more elements because of SVE, where interleaving stores are
     // governed by one predicate. For example, if a predicate requires 7 uint8_t
@@ -91,6 +91,10 @@ class SeparableFilterWorkspace {
     // interleaving store will still be governed by the same predicate, thus
     // storing 8 elements. Choosing '3' to account for svst4().
     buffer_rows_number_of_elements += 3;
+
+    // Add the border elements, at front and end
+    size_t margin = (kernel_width - 1) / 2;
+    buffer_rows_number_of_elements += channels * margin * 2;
 
     size_t buffer_rows_stride =
         buffer_rows_number_of_elements * intermediate_size;
@@ -123,13 +127,21 @@ class SeparableFilterWorkspace {
   Rectangle image_size() const { return image_size_; }
   size_t intermediate_size() const { return intermediate_size_; }
 
+  template <typename T>
+  class DummyBorderMaker {
+    void decorate(Rows<T>, size_t, size_t) KLEIDICV_STREAMING_COMPATIBLE {}
+  };
+
   // Processes rows vertically first along the full width
-  template <typename FilterType>
+  template <typename FilterType, typename BorderMakerType>
   void process(Rectangle rect, size_t y_begin, size_t y_end,
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
                size_t channels, typename FilterType::BorderType border_type,
-               FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+               FilterType filter,
+               BorderMakerType border =
+                   DummyBorderMaker<typename FilterType::SourceType>())
+      KLEIDICV_STREAMING_COMPATIBLE {
     // Border helper which calculates border offsets.
     typename FilterType::BorderInfoType vertical_border{rect.height(),
                                                         border_type};
@@ -148,10 +160,13 @@ class SeparableFilterWorkspace {
       auto offsets = vertical_border.offsets_with_border(vertical_index);
       // Process in the vertical direction first.
       filter.process_vertical(rect.width(), src_rows.at(vertical_index),
-                              buffer_rows, offsets);
+                              buffer_rows.at(0, filter.margin), offsets);
+      border.decorate(buffer_rows.at(0, filter.margin), filter.margin,
+                      rect.width());
       // Process in the horizontal direction last.
-      process_horizontal(rect.width(), buffer_rows, dst_rows.at(vertical_index),
-                         filter, horizontal_border);
+      process_horizontal(rect.width(), buffer_rows.at(0, filter.margin),
+                         dst_rows.at(vertical_index), filter,
+                         horizontal_border);
     }
   }
 
@@ -206,38 +221,37 @@ class SeparableFilterWorkspace {
                           FilterType filter,
                           typename FilterType::BorderInfoType horizontal_border)
       KLEIDICV_STREAMING_COMPATIBLE {
-    // Margin associated with the filter.
-    constexpr size_t margin = filter.margin;
+    /*
+            // Margin associated with the filter.
+        constexpr size_t margin = filter.margin;
 
-    // Process data affected by left border.
-    KLEIDICV_FORCE_LOOP_UNROLL
-    for (size_t horizontal_index = 0; horizontal_index < margin;
-         ++horizontal_index) {
-      auto offsets =
-          horizontal_border.offsets_with_left_border(horizontal_index);
-      filter.process_horizontal_borders(buffer_rows.at(0, horizontal_index),
-                                        dst_rows.at(0, horizontal_index),
-                                        offsets);
-    }
-
+        // Process data affected by left border.
+        KLEIDICV_FORCE_LOOP_UNROLL
+        for (size_t horizontal_index = 0; horizontal_index < margin;
+             ++horizontal_index) {
+          auto offsets =
+              horizontal_border.offsets_with_left_border(horizontal_index);
+          filter.process_horizontal_borders(buffer_rows.at(0, horizontal_index),
+                                            dst_rows.at(0, horizontal_index),
+                                            offsets);
+        }
+    */
     // Process data which is not affected by any borders in bulk.
     {
-      size_t width_without_borders = width - (2 * margin);
+      //      size_t width_without_borders = width - (2 * margin);
       auto offsets = horizontal_border.offsets_without_border();
-      filter.process_horizontal(width_without_borders,
-                                buffer_rows.at(0, margin),
-                                dst_rows.at(0, margin), offsets);
+      filter.process_horizontal(width, buffer_rows, dst_rows, offsets);
     }
-
-    // Process data affected by right border.
-    KLEIDICV_FORCE_LOOP_UNROLL
-    for (size_t horizontal_index = 0; horizontal_index < margin;
-         ++horizontal_index) {
-      size_t index = width - margin + horizontal_index;
-      auto offsets = horizontal_border.offsets_with_right_border(index);
-      filter.process_horizontal_borders(buffer_rows.at(0, index),
-                                        dst_rows.at(0, index), offsets);
-    }
+    /*
+        // Process data affected by right border.
+        KLEIDICV_FORCE_LOOP_UNROLL
+        for (size_t horizontal_index = 0; horizontal_index < margin;
+             ++horizontal_index) {
+          size_t index = width - margin + horizontal_index;
+          auto offsets = horizontal_border.offsets_with_right_border(index);
+          filter.process_horizontal_borders(buffer_rows.at(0, index),
+                                            dst_rows.at(0, index), offsets);
+        }*/
   }
 
   // Offset in bytes to the buffer rows from &data_[0].

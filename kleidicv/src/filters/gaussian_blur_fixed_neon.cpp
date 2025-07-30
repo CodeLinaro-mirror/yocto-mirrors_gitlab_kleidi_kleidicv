@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstddef>
 
+#include "border_generic_neon.h"
 #include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
@@ -376,12 +377,15 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
 
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
+  KLEIDICV_TARGET_NAMESPACE::BorderMaker<
+      typename GaussianBlurFilter::BufferType>
+      border_maker;
 
   if constexpr (IsBinomial) {
     GaussianBlurFilter blur;
     SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
     workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                       border_type, filter);
+                       border_type, filter, border_maker);
 
     return KLEIDICV_OK;
   } else {
@@ -394,7 +398,7 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                         border_type, filter);
+                         border_type, filter, border_maker);
     } else {
       for (size_t row = y_begin; row < y_end; ++row) {
         std::memcpy(static_cast<void *>(&dst_rows.at(row)[0]),
