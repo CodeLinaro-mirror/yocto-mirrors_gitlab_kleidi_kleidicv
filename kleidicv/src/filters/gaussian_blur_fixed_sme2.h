@@ -114,10 +114,10 @@ class GaussianBlurMatmul {
   // [row_start, col_start]x[row_start + horizontal_row_step, col_start +
   // horizontal_col_step] block of output matrix
   template <size_t Channels, bool EnableBorderTranslation>
-  void vertical_path(
-      Rows<const SourceType> src, Rows<BufferType> dst, Rectangle rect,
-      Rectangle padded_rect, size_t col_start, size_t row_start,
-      BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void vertical_path(Rows<const SourceType> src, Rows<BufferType> dst,
+                     Rectangle rect, Rectangle padded_rect, size_t col_start,
+                     size_t row_start, BorderInfoType border_info)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     svbool_t pred_row = svwhilelt_b8(col_start, rect.width() * Channels);
     const ptrdiff_t row = static_cast<ptrdiff_t>(row_start) - kBorderSize;
     const ptrdiff_t col = static_cast<ptrdiff_t>(col_start);
@@ -171,10 +171,10 @@ class GaussianBlurMatmul {
   }
 
   template <bool EnableBorderTranslation>
-  void horizontal_fma_part(
-      ptrdiff_t kernel_block_row, ptrdiff_t col,
-      Rows<SourceType> transposed_rows,
-      BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void horizontal_fma_part(ptrdiff_t kernel_block_row, ptrdiff_t col,
+                           Rows<SourceType> transposed_rows,
+                           BorderInfoType border_info)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     // Kernel data is already prepared for use in build_kernel_helper_buffer.
     // No additional zip is needed.
     svuint8_t svkern =
@@ -215,10 +215,10 @@ class GaussianBlurMatmul {
   }
 
   template <bool EnableBorderTranslation>
-  void vertical_fma_part(
-      ptrdiff_t kernel_block_row, ptrdiff_t row, ptrdiff_t col,
-      svbool_t pred_row, Rows<const SourceType> src,
-      BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void vertical_fma_part(ptrdiff_t kernel_block_row, ptrdiff_t row,
+                         ptrdiff_t col, svbool_t pred_row,
+                         Rows<const SourceType> src, BorderInfoType border_info)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     // Kernel data is already prepared for use in build_kernel_helper_buffer.
     // No additional zip is needed.
     svuint8_t svkern =
@@ -258,14 +258,14 @@ class GaussianBlurMatmul {
   // stripes, while 3/4 channels processed by SVLW stripes and need additional
   // interleaved stores/zips to respect elements order.
   template <size_t Channels>
-  void horizontal_store_part(
-      Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA;
+  void horizontal_store_part(Rows<BufferType> dst, Rectangle rect, size_t col,
+                             size_t row_start)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA;
 
   template <>
-  void horizontal_store_part<1>(
-      Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void horizontal_store_part<1>(Rows<BufferType> dst, Rectangle rect,
+                                size_t col, size_t row_start)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t za32_tiles_count = 4;
     horizontal_1_channel_store_all_za_tiles(
         std::make_index_sequence<za32_tiles_count>{}, dst, rect, row_start, col,
@@ -275,7 +275,8 @@ class GaussianBlurMatmul {
   template <size_t... I>
   void horizontal_1_channel_store_all_za_tiles(
       std::index_sequence<I...>, Rows<DestinationType> dst, Rectangle rect,
-      size_t row_start, size_t col, svbool_t col_pred) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+      size_t row_start, size_t col,
+      svbool_t col_pred) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     (horizontal_1_channel_store_single_za_tile<I>(dst, rect, row_start, col,
                                                   col_pred),
      ...);
@@ -296,9 +297,9 @@ class GaussianBlurMatmul {
   }
 
   template <>
-  void horizontal_store_part<3>(
-      Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void horizontal_store_part<3>(Rows<BufferType> dst, Rectangle rect,
+                                size_t col, size_t row_start)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t channels = 3;
     svbool_t col_pred = svwhilelt_b8(channels * col, channels * rect.width());
     // Current implementation underutilizes tiles for 3 channels and
@@ -348,9 +349,9 @@ class GaussianBlurMatmul {
   }
 
   template <>
-  void horizontal_store_part<4>(
-      Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void horizontal_store_part<4>(Rows<BufferType> dst, Rectangle rect,
+                                size_t col, size_t row_start)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t channels = 4;
     svbool_t col_pred = svwhilelt_b8(channels * col, channels * rect.width());
     for (size_t row = 0; row < svcntw() && row_start + row < rect.height();
@@ -374,9 +375,9 @@ class GaussianBlurMatmul {
   }
 
   template <size_t Channels>
-  void vertical_store_part(
-      Rows<DestinationType> dst, Rectangle rect, size_t col_start,
-      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void vertical_store_part(Rows<DestinationType> dst, Rectangle rect,
+                           size_t col_start, size_t row_start)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     size_t svl = svcntw();
     svbool_t pred_row0 =
         svwhilelt_b32(col_start + 0 * svcntw(), rect.width() * Channels);
@@ -414,13 +415,13 @@ class GaussianBlurMatmul {
     }
   }
 
-  svuint32_t
-  postprocess_vector_no_clamp(svuint32_t v) KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
+  svuint32_t postprocess_vector_no_clamp(svuint32_t v)
+      KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
     return svrshr_n_u32_x(svptrue_b32(), v, 8);
   }
 
   svuint32_t postprocess_vector(svuint32_t v)
-     KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
+      KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
     return svclamp_u32(svdup_u32(0), svdup_u32(255),
                        postprocess_vector_no_clamp(v));
   }
@@ -450,9 +451,9 @@ class Transposer {
   //    not used (consequently last tile won't be used for processing).
   template <typename SourceType>
   void transpose(Rows<const SourceType> src_rows,
-                                            Rows<SourceType> transpose_buffer,
-                                            Rectangle rect, size_t row_start,
-                                            size_t rows) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+                 Rows<SourceType> transpose_buffer, Rectangle rect,
+                 size_t row_start,
+                 size_t rows) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     const size_t svlb = svcntb();
     const size_t za_channel_padding = svlb >> 2;
 

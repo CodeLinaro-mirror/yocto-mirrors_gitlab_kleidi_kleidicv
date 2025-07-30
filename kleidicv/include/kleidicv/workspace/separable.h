@@ -103,8 +103,8 @@ class SeparableFilterWorkspace {
   // Creates a workspace on the heap.
   template <class BufferAllocationPolicy>
   static Pointer create(Rectangle rect, size_t channels,
-                        size_t intermediate_size, BufferAllocationPolicy policy)
-      KLEIDICV_STREAMING {
+                        size_t intermediate_size,
+                        BufferAllocationPolicy policy) KLEIDICV_STREAMING {
     size_t buffer_rows_size =
         (policy.compute_buffer_size() + kAlignment - 1) * intermediate_size;
 
