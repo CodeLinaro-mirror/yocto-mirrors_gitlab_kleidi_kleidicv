@@ -8,12 +8,9 @@
 
 namespace kleidicv::sme2 {
 
-KLEIDICV_TARGET_FN_ATTRS void *
-create_separable_filter_workspace(size_t max_image_width,
-                                  size_t max_image_height,
-                                  size_t max_kernel_width,
-                                  size_t max_kernel_height, size_t max_channels,
-                                  size_t intermediate_size) {
+KLEIDICV_TARGET_FN_ATTRS void *create_separable_filter_workspace(
+    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
+    size_t max_kernel_height, size_t max_channels, size_t intermediate_size) {
   Rectangle max_rect(max_image_width, max_image_height);
   Rectangle max_kernel(max_kernel_width, max_kernel_height);
   SeparableFilterWorkspace::Pointer workspace;
