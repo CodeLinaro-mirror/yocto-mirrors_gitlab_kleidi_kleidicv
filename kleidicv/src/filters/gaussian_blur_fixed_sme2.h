@@ -93,10 +93,10 @@ class GaussianBlurMatmul {
   // [row_start, col_start]x[row_start + horizontal_row_step, col_start +
   // horizontal_col_step] block of output matrix
   template <size_t Channels, bool EnableBorderTranslation>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_path(
+  void horizontal_path(
       Rows<SourceType> transposed_rows, Rows<BufferType> dst_rows,
       Rectangle rect, size_t col_start, size_t row_start,
-      BorderInfoType border_info) KLEIDICV_INOUT_ZA {
+      BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     const ptrdiff_t col = static_cast<ptrdiff_t>(col_start) - kBorderSize;
     const size_t block_size = kernel_block_size();
 
@@ -114,10 +114,10 @@ class GaussianBlurMatmul {
   // [row_start, col_start]x[row_start + horizontal_row_step, col_start +
   // horizontal_col_step] block of output matrix
   template <size_t Channels, bool EnableBorderTranslation>
-  KLEIDICV_LOCALLY_STREAMING void vertical_path(
+  void vertical_path(
       Rows<const SourceType> src, Rows<BufferType> dst, Rectangle rect,
       Rectangle padded_rect, size_t col_start, size_t row_start,
-      BorderInfoType border_info) KLEIDICV_INOUT_ZA {
+      BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     svbool_t pred_row = svwhilelt_b8(col_start, rect.width() * Channels);
     const ptrdiff_t row = static_cast<ptrdiff_t>(row_start) - kBorderSize;
     const ptrdiff_t col = static_cast<ptrdiff_t>(col_start);
@@ -171,10 +171,10 @@ class GaussianBlurMatmul {
   }
 
   template <bool EnableBorderTranslation>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_fma_part(
+  void horizontal_fma_part(
       ptrdiff_t kernel_block_row, ptrdiff_t col,
       Rows<SourceType> transposed_rows,
-      BorderInfoType border_info) KLEIDICV_INOUT_ZA {
+      BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     // Kernel data is already prepared for use in build_kernel_helper_buffer.
     // No additional zip is needed.
     svuint8_t svkern =
@@ -215,10 +215,10 @@ class GaussianBlurMatmul {
   }
 
   template <bool EnableBorderTranslation>
-  KLEIDICV_LOCALLY_STREAMING void vertical_fma_part(
+  void vertical_fma_part(
       ptrdiff_t kernel_block_row, ptrdiff_t row, ptrdiff_t col,
       svbool_t pred_row, Rows<const SourceType> src,
-      BorderInfoType border_info) KLEIDICV_INOUT_ZA {
+      BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     // Kernel data is already prepared for use in build_kernel_helper_buffer.
     // No additional zip is needed.
     svuint8_t svkern =
@@ -258,14 +258,14 @@ class GaussianBlurMatmul {
   // stripes, while 3/4 channels processed by SVLW stripes and need additional
   // interleaved stores/zips to respect elements order.
   template <size_t Channels>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_store_part(
+  void horizontal_store_part(
       Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_INOUT_ZA;
+      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA;
 
   template <>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_store_part<1>(
+  void horizontal_store_part<1>(
       Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_INOUT_ZA {
+      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t za32_tiles_count = 4;
     horizontal_1_channel_store_all_za_tiles(
         std::make_index_sequence<za32_tiles_count>{}, dst, rect, row_start, col,
@@ -273,18 +273,18 @@ class GaussianBlurMatmul {
   }
 
   template <size_t... I>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_1_channel_store_all_za_tiles(
+  void horizontal_1_channel_store_all_za_tiles(
       std::index_sequence<I...>, Rows<DestinationType> dst, Rectangle rect,
-      size_t row_start, size_t col, svbool_t col_pred) KLEIDICV_INOUT_ZA {
+      size_t row_start, size_t col, svbool_t col_pred) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     (horizontal_1_channel_store_single_za_tile<I>(dst, rect, row_start, col,
                                                   col_pred),
      ...);
   }
 
   template <size_t I>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_1_channel_store_single_za_tile(
+  void horizontal_1_channel_store_single_za_tile(
       Rows<DestinationType> dst, Rectangle rect, size_t row_start, size_t col,
-      svbool_t col_pred) KLEIDICV_INOUT_ZA {
+      svbool_t col_pred) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     for (size_t row = I * svcntw();
          row < (I + 1) * svcntw() && row_start + row < rect.height(); row++) {
       svuint32_t res = postprocess_vector(
@@ -296,9 +296,9 @@ class GaussianBlurMatmul {
   }
 
   template <>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_store_part<3>(
+  void horizontal_store_part<3>(
       Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_INOUT_ZA {
+      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t channels = 3;
     svbool_t col_pred = svwhilelt_b8(channels * col, channels * rect.width());
     // Current implementation underutilizes tiles for 3 channels and
@@ -348,9 +348,9 @@ class GaussianBlurMatmul {
   }
 
   template <>
-  KLEIDICV_LOCALLY_STREAMING void horizontal_store_part<4>(
+  void horizontal_store_part<4>(
       Rows<BufferType> dst, Rectangle rect, size_t col,
-      size_t row_start) KLEIDICV_INOUT_ZA {
+      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t channels = 4;
     svbool_t col_pred = svwhilelt_b8(channels * col, channels * rect.width());
     for (size_t row = 0; row < svcntw() && row_start + row < rect.height();
@@ -374,9 +374,9 @@ class GaussianBlurMatmul {
   }
 
   template <size_t Channels>
-  KLEIDICV_LOCALLY_STREAMING void vertical_store_part(
+  void vertical_store_part(
       Rows<DestinationType> dst, Rectangle rect, size_t col_start,
-      size_t row_start) KLEIDICV_INOUT_ZA {
+      size_t row_start) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     size_t svl = svcntw();
     svbool_t pred_row0 =
         svwhilelt_b32(col_start + 0 * svcntw(), rect.width() * Channels);
@@ -414,13 +414,13 @@ class GaussianBlurMatmul {
     }
   }
 
-  KLEIDICV_LOCALLY_STREAMING svuint32_t
-  postprocess_vector_no_clamp(svuint32_t v) KLEIDICV_PRESERVES_ZA {
+  svuint32_t
+  postprocess_vector_no_clamp(svuint32_t v) KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
     return svrshr_n_u32_x(svptrue_b32(), v, 8);
   }
 
-  KLEIDICV_LOCALLY_STREAMING svuint32_t postprocess_vector(svuint32_t v)
-      KLEIDICV_PRESERVES_ZA {
+  svuint32_t postprocess_vector(svuint32_t v)
+     KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
     return svclamp_u32(svdup_u32(0), svdup_u32(255),
                        postprocess_vector_no_clamp(v));
   }
@@ -449,10 +449,10 @@ class Transposer {
   //  SVLW elements are
   //    not used (consequently last tile won't be used for processing).
   template <typename SourceType>
-  KLEIDICV_LOCALLY_STREAMING void transpose(Rows<const SourceType> src_rows,
+  void transpose(Rows<const SourceType> src_rows,
                                             Rows<SourceType> transpose_buffer,
                                             Rectangle rect, size_t row_start,
-                                            size_t rows) KLEIDICV_INOUT_ZA {
+                                            size_t rows) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     const size_t svlb = svcntb();
     const size_t za_channel_padding = svlb >> 2;
 
