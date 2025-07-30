@@ -6,7 +6,7 @@
 
 namespace kleidicv::sve2 {
 
-KLEIDICV_TARGET_FN_ATTRS SeparableFilterWorkspace *
+KLEIDICV_TARGET_FN_ATTRS void *
 create_separable_filter_workspace(size_t max_image_width,
                                   size_t max_image_height, size_t, size_t,
                                   size_t max_channels,
