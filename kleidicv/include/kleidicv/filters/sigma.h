@@ -5,6 +5,7 @@
 #ifndef KLEIDICV_SIGMA_H
 #define KLEIDICV_SIGMA_H
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>

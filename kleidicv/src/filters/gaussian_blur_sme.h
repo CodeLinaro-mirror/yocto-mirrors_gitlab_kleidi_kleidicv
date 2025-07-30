@@ -156,7 +156,8 @@ class GaussianBlurMatmul {
                          kKernelIterationStep * kKernelIterationStep;
 
     size_t index = 0;
-    for (size_t row = 0; row < kernel_buffer_size; row += kKernelIterationStep) {
+    for (size_t row = 0; row < kernel_buffer_size;
+         row += kKernelIterationStep) {
       size_t row_start = row;
       for (size_t col = 0; col < svlw; col++) {
         for (size_t r = 0; r < kKernelIterationStep; r++) {

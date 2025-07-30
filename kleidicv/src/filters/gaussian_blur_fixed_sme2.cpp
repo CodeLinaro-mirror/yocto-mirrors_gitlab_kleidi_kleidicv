@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "gaussian_blur_fixed_sme2.h"
+
 #include "kleidicv/filters/gaussian_blur.h"
 
 namespace kleidicv::sme2 {
