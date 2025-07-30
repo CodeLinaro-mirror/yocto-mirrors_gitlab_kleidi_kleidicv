@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <utility>
 
-#include "gaussian_blur_sc.h"
+#include "gaussian_blur_fixed_sc.h"
 #include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/matmul.h"
@@ -582,7 +582,7 @@ static kleidicv_error_t call_gaussian_blur(
   return exec_result;
 }
 
-static kleidicv_error_t gaussian_blur_fixed_stripe_u8_sme(
+static kleidicv_error_t gaussian_blur_fixed_stripe_u8_sme2(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,

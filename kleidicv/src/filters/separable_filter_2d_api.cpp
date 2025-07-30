@@ -53,6 +53,11 @@ kleidicv_error_t separable_filter_2d_stripe(
     size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
 
+SeparableFilterWorkspace *create_separable_filter_workspace(
+    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
+    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
+void release_separable_filter_workspace(void *workspace);
+
 }  // namespace sme
 
 namespace sme2 {
@@ -79,12 +84,14 @@ KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_s16, int16_t);
 KLEIDICV_MULTIVERSION_C_API(create_separable_filter_workspace,
                             &kleidicv::neon::create_separable_filter_workspace,
                             &kleidicv::sve2::create_separable_filter_workspace,
+                            &kleidicv::sme::create_separable_filter_workspace,
                             &kleidicv::sme2::create_separable_filter_workspace);
 
 KLEIDICV_MULTIVERSION_C_API(
     release_separable_filter_workspace,
     &kleidicv::neon::release_separable_filter_workspace,
     &kleidicv::sve2::release_separable_filter_workspace,
+    &kleidicv::sme::release_separable_filter_workspace,
     &kleidicv::sme2::release_separable_filter_workspace);
 
 extern "C" {
