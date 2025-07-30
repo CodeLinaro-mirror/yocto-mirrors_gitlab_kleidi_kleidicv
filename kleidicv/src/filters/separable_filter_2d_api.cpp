@@ -6,6 +6,7 @@
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/workspace/separable.h"
+#include "kleidicv/workspace/workspace_factory.h"
 
 namespace kleidicv {
 
@@ -19,11 +20,6 @@ kleidicv_error_t separable_filter_2d_stripe(
     size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
 
-void *create_separable_filter_workspace(
-    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
-    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
-
-void release_separable_filter_workspace(void *workspace);
 }  // namespace neon
 
 namespace sve2 {
@@ -35,11 +31,6 @@ kleidicv_error_t separable_filter_2d_stripe(
     const T *kernel_x, size_t kernel_width, const T *kernel_y,
     size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
-
-void *create_separable_filter_workspace(
-    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
-    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
-void release_separable_filter_workspace(void *workspace);
 
 }  // namespace sve2
 
@@ -53,21 +44,7 @@ kleidicv_error_t separable_filter_2d_stripe(
     size_t kernel_height, FixedBorderType border_type,
     kleidicv_filter_context_t *context);
 
-void *create_separable_filter_workspace(
-    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
-    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
-void release_separable_filter_workspace(void *workspace);
-
 }  // namespace sme
-
-namespace sme2 {
-
-void *create_separable_filter_workspace(
-    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
-    size_t max_kernel_height, size_t max_channels, size_t intermediate_size);
-void release_separable_filter_workspace(void *workspace);
-
-}  // namespace sme2
 
 }  // namespace kleidicv
 

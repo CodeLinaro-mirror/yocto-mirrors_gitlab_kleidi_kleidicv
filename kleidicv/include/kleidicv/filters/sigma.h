@@ -85,10 +85,10 @@ template <size_t KernelSize>
 static std::array<uint8_t, KernelSize> generate_gaussian_float_kernel(
     float sigma) {
   constexpr size_t half_kernel_size = KernelSize / 2 + 1;
-  std::array<uint16_t, half_kernel_size> half_kernel;
+  std::array<uint16_t, half_kernel_size> half_kernel{};
   generate_gaussian_half_kernel(half_kernel.data(), half_kernel_size, sigma);
 
-  std::array<uint8_t, KernelSize> kernel;
+  std::array<uint8_t, KernelSize> kernel{};
   uint16_t max_value = std::numeric_limits<uint8_t>::max();
   for (size_t i = 0; i <= KernelSize / 2; i++) {
     kernel[i] = std::min(max_value, half_kernel[i]);

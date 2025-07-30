@@ -67,16 +67,15 @@ class MatmulFilter {
         kernel_block_border_padding < 0 ? 0 : kernel_block_border_padding;
 
     for (size_t row = 0; row < rect.height(); row += row_iteration_step) {
-      size_t row_batch = row_iteration_step;
+      size_t batch = row_iteration_step;
       // Regular branch instead of ternary operator
       // to avoid csel. Relying on branch predictor
       // since branch is predictable.
-      if (row_batch > padded_rect.height() - row) {  // NOLINT
-        row_batch = padded_rect.height() - row;
+      if (batch > padded_rect.height() - row) {  // NOLINT
+        batch = padded_rect.height() - row;
       }
 
-      transposer_.transpose(src_rows, transpose_buffer_rows, rect, row,
-                            row_batch);
+      transposer_.transpose(src_rows, transpose_buffer_rows, rect, row, batch);
 
       for (size_t col = 0; col < border_size; col += col_iteration_step) {
         filter_.template horizontal_path<Channels, true>(

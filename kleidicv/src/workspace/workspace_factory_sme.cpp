@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "kleidicv/workspace/separable.h"
+#include "kleidicv/workspace/workspace_factory.h"
 
 namespace kleidicv::sme {
 

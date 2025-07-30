@@ -5,6 +5,7 @@
 #include "kleidicv/filters/matmul_filter_checks.h"
 #include "kleidicv/workspace/matmul.h"
 #include "kleidicv/workspace/separable.h"
+#include "kleidicv/workspace/workspace_factory.h"
 
 namespace kleidicv::sme2 {
 
