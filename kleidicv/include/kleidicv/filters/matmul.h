@@ -53,8 +53,8 @@ class MatmulFilter {
       Rows<const typename FilterType::SourceType> src_rows,
       Rows<typename FilterType::SourceType> transpose_buffer_rows,
       Rows<typename FilterType::BufferType> dst_rows, Rectangle rect,
-      Rectangle padded_rect,
-      typename FilterType::BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+      Rectangle padded_rect, typename FilterType::BorderInfoType border_info)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     typename FilterType::template IterationsInfo<Channels> iterations_info;
     const size_t col_iteration_step = iterations_info.horizontal_col_step();
     const size_t row_iteration_step = iterations_info.horizontal_row_step();
@@ -96,10 +96,11 @@ class MatmulFilter {
     }
   }
 
-  void vertical_process(
-      Rows<const typename FilterType::SourceType> src_rows,
-      Rows<typename FilterType::BufferType> dst_rows, Rectangle rect,
-      Rectangle padded_rect, BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
+  void vertical_process(Rows<const typename FilterType::SourceType> src_rows,
+                        Rows<typename FilterType::BufferType> dst_rows,
+                        Rectangle rect, Rectangle padded_rect,
+                        BorderInfoType border_info)
+      KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     typename FilterType::template IterationsInfo<Channels> iterations_info;
     const size_t col_iteration_step = iterations_info.vertical_col_step();
     const size_t row_iteration_step = iterations_info.vertical_row_step();
