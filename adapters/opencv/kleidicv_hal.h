@@ -38,6 +38,10 @@ int yuv_to_bgr_sp_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
                      int dst_width, int dst_height, int dcn, bool swapBlue,
                      int uIdx);
 
+int yuv_to_bgr_p(const uchar *src_data, size_t src_step, uchar *dst_data,
+                 size_t dst_step, int dst_width, int dst_height, int dcn,
+                 bool swapBlue, int uIdx);
+
 int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int dcn,
                bool swapBlue, bool isCbCr);
@@ -237,6 +241,17 @@ static inline int kleidicv_yuv_to_bgr_sp_ex_with_fallback(
 }
 #undef cv_hal_cvtTwoPlaneYUVtoBGREx
 #define cv_hal_cvtTwoPlaneYUVtoBGREx kleidicv_yuv_to_bgr_sp_ex_with_fallback
+
+// yuv_to_bgr_p
+static inline int kleidicv_yuv_to_bgr_p_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int dst_width, int dst_height, int dcn, bool swapBlue, int uIdx) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      yuv_to_bgr_p, cv_hal_cvtTwoPlaneYUVtoBGR, src_data, src_step, dst_data,
+      dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
+}
+#undef cv_hal_cvtThreePlaneYUVtoBGR
+#define cv_hal_cvtThreePlaneYUVtoBGR kleidicv_yuv_to_bgr_p_with_fallback
 
 // yuv_to_bgr
 static inline int kleidicv_yuv_to_bgr_with_fallback(

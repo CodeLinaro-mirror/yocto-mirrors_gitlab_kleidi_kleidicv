@@ -241,6 +241,42 @@ int yuv_to_bgr_sp_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
+int yuv_to_bgr_p(const uchar *src_data, size_t src_step, uchar *dst_data,
+                 size_t dst_step, int dst_width, int dst_height, int dcn,
+                 bool swapBlue, int uIdx) {
+  const bool is_bgr = !swapBlue;
+  const bool is_nv21 = (uIdx != 0);
+  auto mt = get_multithreading();
+
+  if (dcn == 3) {
+    if (is_bgr) {
+      return convert_error(kleidicv_thread_yuv_p_to_bgr_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
+          dst_height, is_nv21, mt));
+    }
+    return convert_error(kleidicv_thread_yuv_p_to_rgb_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
+        is_nv21, mt));
+  }
+
+  if (dcn == 4) {
+    if (is_bgr) {
+      return convert_error(kleidicv_thread_yuv_p_to_bgra_u8(
+          reinterpret_cast<const uint8_t *>(src_data), src_step,
+          reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width,
+          dst_height, is_nv21, mt));
+    }
+    return convert_error(kleidicv_thread_yuv_p_to_rgba_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
+        is_nv21, mt));
+  }
+
+  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+}
+
 int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int dcn,
                bool swapBlue, bool isCbCr) {

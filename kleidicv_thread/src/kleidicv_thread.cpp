@@ -13,6 +13,7 @@
 
 #include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/arithmetics/scale.h"
+#include "kleidicv/conversions/yuv_420_to_rgb.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
@@ -248,6 +249,54 @@ kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,
         dst_stride, angle, element_size);
   };
   return parallel_batches(callback, mt, width, 64);
+}
+
+kleidicv_error_t kleidicv_thread_yuv_p_to_bgr_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool v_first,
+    kleidicv_thread_multithreading mt) {
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_yuv_p_to_bgr_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, v_first,
+        static_cast<size_t>(begin), static_cast<size_t>(end));
+  };
+  return parallel_batches(callback, mt, (height + 1) / 2);
+}
+
+kleidicv_error_t kleidicv_thread_yuv_p_to_bgra_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool v_first,
+    kleidicv_thread_multithreading mt) {
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_yuv_p_to_bgra_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, v_first,
+        static_cast<size_t>(begin), static_cast<size_t>(end));
+  };
+  return parallel_batches(callback, mt, (height + 1) / 2);
+}
+
+kleidicv_error_t kleidicv_thread_yuv_p_to_rgb_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool v_first,
+    kleidicv_thread_multithreading mt) {
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_yuv_p_to_rgb_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, v_first,
+        static_cast<size_t>(begin), static_cast<size_t>(end));
+  };
+  return parallel_batches(callback, mt, (height + 1) / 2);
+}
+
+kleidicv_error_t kleidicv_thread_yuv_p_to_rgba_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool v_first,
+    kleidicv_thread_multithreading mt) {
+  auto callback = [=](unsigned begin, unsigned end) {
+    return kleidicv_yuv_p_to_rgba_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, v_first,
+        static_cast<size_t>(begin), static_cast<size_t>(end));
+  };
+  return parallel_batches(callback, mt, (height + 1) / 2);
 }
 
 template <typename F>

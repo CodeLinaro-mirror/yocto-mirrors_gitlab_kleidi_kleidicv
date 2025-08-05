@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -33,7 +33,8 @@ bool test_cvtcolor(int index, RecreatedMessageQueue& request_queue,
     return false;
   };
 
-  // OpenCV only accepts two-plane images with an even number of columns & rows.
+  // OpenCV only accepts images with an even number of columns & rows to some
+  // YUV formats like YUV420.
   for (size_t x = 4; x <= 16; x += 2) {
     for (size_t y = 2; y <= 16; y += 2) {
       if (check(x, y)) {
@@ -58,6 +59,14 @@ bool test_cvtcolor(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& cvtcolor_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
+    CVTCOLOR_TEST(YUV2BGR_YV12),
+    CVTCOLOR_TEST(YUV2BGRA_YV12),
+    CVTCOLOR_TEST(YUV2RGB_YV12),
+    CVTCOLOR_TEST(YUV2RGBA_YV12),
+    CVTCOLOR_TEST(YUV2BGR_IYUV),
+    CVTCOLOR_TEST(YUV2BGRA_IYUV),
+    CVTCOLOR_TEST(YUV2RGB_IYUV),
+    CVTCOLOR_TEST(YUV2RGBA_IYUV),
     CVTCOLOR_TEST(YUV2BGR_NV12),
     CVTCOLOR_TEST(YUV2RGB_NV12),
     CVTCOLOR_TEST(YUV2BGRA_NV12),

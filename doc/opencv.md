@@ -67,12 +67,13 @@ Notes on parameters:
 * `src.channels()` - supports 3 for RGB and 4 for RGBA.
 * `dst.channels()` - supports 3 for RGB and 4 for RGBA.
 
-#### [`COLOR_YUV2RGB_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9),[`COLOR_YUV2BGR_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a305e5da3816c78b3d1ffa0498424e94f),[`COLOR_YUV2RGBA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a18346327c937bca2aa2856914ff11507),[`COLOR_YUV2BGRA_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a0ffa81c19231ddd2e9cee8616a3a4673)
-YUV420 to RGB/RGBA image conversion (semi-planar). Function accepts Y plane and UV planes separately.\
-All supported permutations are listed in the table below.
-|   | RGB | BGR | RGBA | BGRA |
-|---|-----|-----|------|------|
-|YUV|  x  |  x  |   x  |  x   |
+#### [`COLOR_YUV2RGB_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9:~:text=V%2C%20see%20color_convert_rgb_yuv_42x-,COLOR_YUV2RGB_I420,-Python%3A%20cv.COLOR_YUV2RGB_I420), [`COLOR_YUV2RGB_NV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9:~:text=Python%3A%20cv.COLOR_YUV2RGB-,COLOR_YUV2RGB_NV12,-Python%3A%20cv.COLOR_YUV2RGB_NV12)
+YUV420 to RGB/RGBA image conversion supporting **both planar (I420/YV12)** and **semi-planar (NV12/NV21)** layouts.  
+All supported permutations are shown below:
+| YUV Layout    | RGB | BGR | RGBA | BGRA |
+|---------------|-----|-----|------|------|
+| Planar        |  x  |  x  |  x   |  x   |
+| Semi-planar   |  x  |  x  |  x   |  x   |
 
 Notes on parameters:
 * `dst.channels()` - supports 3 for RGB and 4 for RGBA.

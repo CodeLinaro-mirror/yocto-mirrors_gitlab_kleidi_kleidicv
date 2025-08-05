@@ -715,10 +715,11 @@ template <size_t OutChannels, typename Function>
 static void yuv_sp(Function f, benchmark::State& state) {
   bench_functor(state, [f]() {
     (void)f(get_source_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
-            get_source_buffer_b<uint8_t, 2>(),
+            get_source_buffer_b<uint8_t, 1>(),
             (image_width / 2) * sizeof(uint8_t),
             get_destination_buffer_a<uint8_t, OutChannels>(),
-            image_width * sizeof(uint8_t), image_width, image_height, true);
+            image_width * OutChannels * sizeof(uint8_t), image_width,
+            image_height, true);
   });
 }
 
@@ -741,6 +742,36 @@ static void yuv_sp_to_bgra(benchmark::State& state) {
   yuv_sp<4>(kleidicv_yuv_sp_to_bgra_u8, state);
 }
 BENCHMARK(yuv_sp_to_bgra);
+
+template <size_t OutChannels, typename Function>
+static void yuv_p(Function f, benchmark::State& state) {
+  bench_functor(state, [f]() {
+    (void)f(get_source_buffer_a<uint8_t, 2>(), image_width * sizeof(uint8_t),
+            get_destination_buffer_a<uint8_t, OutChannels>(),
+            image_width * OutChannels * sizeof(uint8_t), image_width,
+            image_height, true);
+  });
+}
+
+static void yuv_p_to_rgb(benchmark::State& state) {
+  yuv_p<3>(kleidicv_yuv_p_to_rgb_u8, state);
+}
+BENCHMARK(yuv_p_to_rgb);
+
+static void yuv_p_to_bgr(benchmark::State& state) {
+  yuv_p<3>(kleidicv_yuv_p_to_bgr_u8, state);
+}
+BENCHMARK(yuv_p_to_bgr);
+
+static void yuv_p_to_rgba(benchmark::State& state) {
+  yuv_p<4>(kleidicv_yuv_p_to_rgba_u8, state);
+}
+BENCHMARK(yuv_p_to_rgba);
+
+static void yuv_p_to_bgra(benchmark::State& state) {
+  yuv_p<4>(kleidicv_yuv_p_to_bgra_u8, state);
+}
+BENCHMARK(yuv_p_to_bgra);
 
 template <typename T, size_t KernelSize, typename Function>
 static void morphology(Function f, benchmark::State& state) {
