@@ -129,7 +129,12 @@ class SeparableFilterWorkspace {
 
   template <typename T>
   class DummyBorderMaker {
+   public:
     void decorate(Rows<T>, size_t, size_t) KLEIDICV_STREAMING_COMPATIBLE {}
+    void decorate_from_left(Rows<T>, size_t,
+                            size_t) KLEIDICV_STREAMING_COMPATIBLE {}
+    void decorate_from_right(Rows<T>, size_t,
+                             size_t) KLEIDICV_STREAMING_COMPATIBLE {}
   };
 
   // Processes rows vertically first along the full width
@@ -160,13 +165,16 @@ class SeparableFilterWorkspace {
       auto offsets = vertical_border.offsets_with_border(vertical_index);
       // Process in the vertical direction first.
       filter.process_vertical(rect.width(), src_rows.at(vertical_index),
-                              buffer_rows.at(0, filter.margin), offsets);
-      border.decorate(buffer_rows.at(0, filter.margin), filter.margin,
-                      rect.width());
+                              buffer_rows.at(0, filter.margin), offsets,
+                              border);
+      // Nope, decorate now runs in vertical / horizontal
+      //      border.decorate(buffer_rows.at(0, filter.margin), filter.margin,
+      //      rect.width());
+
       // Process in the horizontal direction last.
       process_horizontal(rect.width(), buffer_rows.at(0, filter.margin),
-                         dst_rows.at(vertical_index), filter,
-                         horizontal_border);
+                         dst_rows.at(vertical_index), filter, horizontal_border,
+                         border);
     }
   }
 
@@ -214,13 +222,12 @@ class SeparableFilterWorkspace {
   }
 
  protected:
-  template <typename FilterType>
-  void process_horizontal(size_t width,
-                          Rows<typename FilterType::BufferType> buffer_rows,
-                          Rows<typename FilterType::DestinationType> dst_rows,
-                          FilterType filter,
-                          typename FilterType::BorderInfoType horizontal_border)
-      KLEIDICV_STREAMING_COMPATIBLE {
+  template <typename FilterType, typename BorderMakerType>
+  void process_horizontal(
+      size_t width, Rows<typename FilterType::BufferType> buffer_rows,
+      Rows<typename FilterType::DestinationType> dst_rows, FilterType filter,
+      typename FilterType::BorderInfoType horizontal_border,
+      BorderMakerType border) KLEIDICV_STREAMING_COMPATIBLE {
     /*
             // Margin associated with the filter.
         constexpr size_t margin = filter.margin;
@@ -240,7 +247,7 @@ class SeparableFilterWorkspace {
     {
       //      size_t width_without_borders = width - (2 * margin);
       auto offsets = horizontal_border.offsets_without_border();
-      filter.process_horizontal(width, buffer_rows, dst_rows, offsets);
+      filter.process_horizontal(width, buffer_rows, dst_rows, offsets, border);
     }
     /*
         // Process data affected by right border.

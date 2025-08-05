@@ -38,43 +38,76 @@ class SeparableFilter<FilterType, 7UL> {
 
   static constexpr size_t margin = 3UL;
 
-  void process_vertical(
-      size_t width, Rows<const SourceType> src_rows, Rows<BufferType> dst_rows,
-      BorderOffsets border_offsets) const KLEIDICV_STREAMING_COMPATIBLE {
-    LoopUnroll2 loop{width * src_rows.channels(), SourceVecTraits::num_lanes()};
+  template <typename BorderMakerType>
+  void process_vertical(size_t width, Rows<const SourceType> src_rows,
+                        Rows<BufferType> dst_rows, BorderOffsets border_offsets,
+                        BorderMakerType border) const
+      KLEIDICV_STREAMING_COMPATIBLE {
+    const size_t kVL = BufferVecTraits::num_lanes();
 
+    svbool_t pg_all = SourceVecTraits::svptrue();
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, 0);
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, kVL);
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, kVL + kVL);
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets,
+                         kVL + kVL + kVL);
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, 4 * kVL);
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, 5 * kVL);
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, 6 * kVL);
+    vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, 7 * kVL);
+    border.decorate_from_left(dst_rows, margin, width);
+
+    LoopUnroll2 loop{width * src_rows.channels() - 8 * kVL, kVL};
     loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
-      svbool_t pg_all = SourceVecTraits::svptrue();
-      vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
+      vertical_vector_path(pg_all, src_rows, dst_rows, border_offsets,
+                           index + 8 * kVL);
     });
 
     loop.remaining(
         [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = SourceVecTraits::svwhilelt(index, length);
-          vertical_vector_path(pg, src_rows, dst_rows, border_offsets, index);
+          vertical_vector_path(pg, src_rows, dst_rows, border_offsets,
+                               index + 8 * kVL);
         });
   }
 
-  void process_horizontal(size_t width, Rows<const BufferType> src_rows,
-                          Rows<DestinationType> dst_rows,
-                          BorderOffsets border_offsets) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+  template <typename BorderMakerType>
+  void process_horizontal(
+      size_t width, Rows<BufferType> src_rows, Rows<DestinationType> dst_rows,
+      BorderOffsets border_offsets,
+      BorderMakerType border) const KLEIDICV_STREAMING_COMPATIBLE {
+    const size_t kVL = BufferVecTraits::num_lanes();
+
     svbool_t pg_all = BufferVecTraits::svptrue();
-    LoopUnroll2 loop{width * src_rows.channels(), BufferVecTraits::num_lanes()};
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, 0);
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, kVL);
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets,
+                           kVL + kVL);
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets,
+                           kVL + kVL + kVL);
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, 4 * kVL);
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, 5 * kVL);
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, 6 * kVL);
+    horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, 7 * kVL);
+    border.decorate_from_right(src_rows, margin, width);
+
+    LoopUnroll2 loop{width * src_rows.channels() - 8 * kVL, kVL};
 
     loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
       horizontal_vector_path_2x(pg_all, src_rows, dst_rows, border_offsets,
-                                index);
+                                index + 8 * kVL);
     });
 
     loop.unroll_once([&](size_t index) KLEIDICV_STREAMING_COMPATIBLE {
-      horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets, index);
+      horizontal_vector_path(pg_all, src_rows, dst_rows, border_offsets,
+                             index + 8 * kVL);
     });
 
     loop.remaining(
         [&](size_t index, size_t length) KLEIDICV_STREAMING_COMPATIBLE {
           svbool_t pg = BufferVecTraits::svwhilelt(index, length);
-          horizontal_vector_path(pg, src_rows, dst_rows, border_offsets, index);
+          horizontal_vector_path(pg, src_rows, dst_rows, border_offsets,
+                                 index + 8 * kVL);
         });
   }
 

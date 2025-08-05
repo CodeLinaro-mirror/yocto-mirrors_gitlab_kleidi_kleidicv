@@ -34,9 +34,10 @@ class SeparableFilter<FilterType, 21UL> {
 
   static constexpr size_t margin = 10UL;
 
+  template <typename BorderMakerType>
   void process_vertical(size_t width, Rows<const SourceType> src_rows,
-                        Rows<BufferType> dst_rows,
-                        BorderOffsets border_offsets) const {
+                        Rows<BufferType> dst_rows, BorderOffsets border_offsets,
+                        BorderMakerType) const {
     LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
                                          SourceVecTraits::num_lanes()};
 
@@ -71,9 +72,10 @@ class SeparableFilter<FilterType, 21UL> {
     // and the NEON vector length is 16 which is smaller than that).
   }
 
+  template <typename BorderMakerType>
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
-                          BorderOffsets border_offsets) const {
+                          BorderOffsets border_offsets, BorderMakerType) const {
     LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
                                          BufferVecTraits::num_lanes()};
 

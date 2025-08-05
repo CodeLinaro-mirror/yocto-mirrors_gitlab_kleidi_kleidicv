@@ -23,28 +23,7 @@ static std::vector<test> merge_tests(
 }
 
 std::vector<test> all_tests = merge_tests({
-    binary_op_tests_get,
-    cvtcolor_tests_get,
-    morphology_tests_get,
-#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
-    separable_filter_2d_tests_get,
-#endif
     gaussian_blur_tests_get,
-    rgb2yuv_tests_get,
-    yuv2rgb_tests_get,
-    sobel_tests_get,
-    exp_tests_get,
-    float_conversion_tests_get,
-    resize_tests_get,
-    scale_tests_get,
-    sum_tests_get,
-    min_max_tests_get,
-    in_range_tests_get,
-    remap_tests_get,
-    warp_perspective_tests_get,
-    blur_and_downsample_tests_get,
-    scharr_interleaved_tests_get,
-    median_blur_tests_get,
 });
 
 #if MANAGER

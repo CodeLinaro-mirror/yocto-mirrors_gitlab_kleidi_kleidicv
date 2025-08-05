@@ -121,12 +121,14 @@ class GenericBorder final {
 };  // end of class GenericBorder<BorderType>
 
 // Dummy
-template <typename ScalarType>
+template <typename T>
 class DummyBorderMaker {
  public:
-  // Replicate only
-  void decorate(Rows<ScalarType>, size_t,
-                size_t) KLEIDICV_STREAMING_COMPATIBLE {}
+  void decorate(Rows<T>, size_t, size_t) KLEIDICV_STREAMING_COMPATIBLE {}
+  void decorate_from_left(Rows<T>, size_t,
+                          size_t) KLEIDICV_STREAMING_COMPATIBLE {}
+  void decorate_from_right(Rows<T>, size_t,
+                           size_t) KLEIDICV_STREAMING_COMPATIBLE {}
 };
 
 template <typename ScalarType>
@@ -307,13 +309,35 @@ class BorderMakerFixed3ch {
     svbool_t pg_ch = svptrue_pat_b8(SV_VL3);
     svbool_t pgtrue = svptrue_b8();
 
+    // left border
+    svuint8_t data = svld1_u8(pg_ch, &rows[0]);
+    decorate_one_side(rows, data, -margin * 3, kVL, pgtrue);
+
     // right border
+    data = svld1_u8(pg_ch, &rows[(width - 1) * 3]);
+    decorate_one_side(rows, data, width * 3, kVL, pgtrue);
+  }
+
+  void decorate_from_left(Rows<ScalarType> rows, ptrdiff_t margin,
+                          ptrdiff_t) KLEIDICV_STREAMING_COMPATIBLE {
+    const ptrdiff_t kVL = static_cast<ptrdiff_t>(VecTraits::num_lanes());
+    svbool_t pg_ch = svptrue_pat_b8(SV_VL3);
+    svbool_t pgtrue = svptrue_b8();
+
+    // from pixels on the left border
+    svuint8_t data = svld1_u8(pg_ch, &rows[0]);
+    decorate_one_side(rows, data, -margin * 3, kVL, pgtrue);
+  }
+
+  void decorate_from_right(Rows<ScalarType> rows, ptrdiff_t,
+                           ptrdiff_t width) KLEIDICV_STREAMING_COMPATIBLE {
+    const ptrdiff_t kVL = static_cast<ptrdiff_t>(VecTraits::num_lanes());
+    svbool_t pg_ch = svptrue_pat_b8(SV_VL3);
+    svbool_t pgtrue = svptrue_b8();
+
+    // from pixels on the right border
     svuint8_t data = svld1_u8(pg_ch, &rows[(width - 1) * 3]);
     decorate_one_side(rows, data, width * 3, kVL, pgtrue);
-
-    // left border
-    data = svld1_u8(pg_ch, &rows[0]);
-    decorate_one_side(rows, data, -margin * 3, kVL, pgtrue);
   }
 
  private:
@@ -389,13 +413,33 @@ class BorderMakerFixed124ch {
     const size_t kVL = VecTraits::num_lanes();
     svbool_t pgtrue = svptrue_b8();
 
+    // left border
+    svuint8_t data = svld1_u8(pg_ch_, &rows[0]);
+    decorate_one_side(rows, data, left_margin_start_, kVL, pgtrue);
+
     // right border
+    data = svld1_u8(pg_ch_, &rows[last_column_]);
+    decorate_one_side(rows, data, right_margin_start_, kVL, pgtrue);
+  }
+
+  void decorate_from_left(Rows<ScalarType> rows, ptrdiff_t,
+                          ptrdiff_t) KLEIDICV_STREAMING_COMPATIBLE {
+    const size_t kVL = VecTraits::num_lanes();
+    svbool_t pgtrue = svptrue_b8();
+
+    // from pixels on the left border
+    svuint8_t data = svld1_u8(pg_ch_, &rows[0]);
+    decorate_one_side(rows, data, left_margin_start_, kVL, pgtrue);
+  }
+
+  void decorate_from_right(Rows<ScalarType> rows, ptrdiff_t,
+                           ptrdiff_t) KLEIDICV_STREAMING_COMPATIBLE {
+    const size_t kVL = VecTraits::num_lanes();
+    svbool_t pgtrue = svptrue_b8();
+
+    // from pixels on the right border
     svuint8_t data = svld1_u8(pg_ch_, &rows[last_column_]);
     decorate_one_side(rows, data, right_margin_start_, kVL, pgtrue);
-
-    // left border
-    data = svld1_u8(pg_ch_, &rows[0]);
-    decorate_one_side(rows, data, left_margin_start_, kVL, pgtrue);
   }
 
  private:

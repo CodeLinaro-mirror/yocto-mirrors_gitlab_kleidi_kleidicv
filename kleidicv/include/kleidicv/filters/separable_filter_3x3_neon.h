@@ -35,9 +35,10 @@ class SeparableFilter<FilterType, 3UL> {
 
   static constexpr size_t margin = 1UL;
 
+  template <typename BorderMakerType>
   void process_vertical(size_t width, Rows<const SourceType> src_rows,
-                        Rows<BufferType> dst_rows,
-                        BorderOffsets border_offsets) const {
+                        Rows<BufferType> dst_rows, BorderOffsets border_offsets,
+                        BorderMakerType) const {
     LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
                                          SourceVecTraits::num_lanes()};
 
@@ -83,9 +84,10 @@ class SeparableFilter<FilterType, 3UL> {
     });
   }
 
+  template <typename BorderMakerType>
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
-                          BorderOffsets border_offsets) const {
+                          BorderOffsets border_offsets, BorderMakerType) const {
     LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
                                          BufferVecTraits::num_lanes()};
 
