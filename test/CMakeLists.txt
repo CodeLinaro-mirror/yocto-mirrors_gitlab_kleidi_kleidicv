@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -56,18 +56,20 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(api)
+add_subdirectory(library)
 add_subdirectory(framework)
 
 # Target to build all tests.
 add_custom_target(
   kleidicv-test
-  DEPENDS kleidicv-framework-test kleidicv-api-test
+  DEPENDS kleidicv-framework-test kleidicv-library-test kleidicv-api-test
 )
 
 # Target to build and run all tests.
 add_custom_target(
   check-kleidicv
   COMMAND kleidicv-framework-test
+  COMMAND kleidicv-library-test
   COMMAND kleidicv-api-test
   DEPENDS kleidicv-test
   USES_TERMINAL

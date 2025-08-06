@@ -83,7 +83,7 @@ kleidicv_error_t kleidicv_filter_context_create(
   constexpr size_t intermediate_size = sizeof(uint32_t);
   auto workspace = SeparableFilterWorkspace::create(
       Rectangle{max_image_width, max_image_height}, max_channels,
-      intermediate_size);
+      intermediate_size, max_kernel_width);
   if (!workspace) {
     *context = nullptr;
     return KLEIDICV_ERROR_ALLOCATION;
