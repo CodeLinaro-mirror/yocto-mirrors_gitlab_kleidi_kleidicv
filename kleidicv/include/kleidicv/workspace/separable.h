@@ -80,8 +80,10 @@ class SeparableFilterWorkspace {
   SeparableFilterWorkspace() = delete;
 
   // Creates a workspace on the heap.
+  //
   static Pointer create(Rectangle rect, size_t channels,
-                        size_t intermediate_size) KLEIDICV_STREAMING {
+                        size_t intermediate_size,
+                        size_t kernel_width = 0) KLEIDICV_STREAMING {
     size_t buffer_rows_number_of_elements = rect.width() * channels;
     // Adding more elements because of SVE, where interleaving stores are
     // governed by one predicate. For example, if a predicate requires 7 uint8_t
@@ -89,6 +91,10 @@ class SeparableFilterWorkspace {
     // interleaving store will still be governed by the same predicate, thus
     // storing 8 elements. Choosing '3' to account for svst4().
     buffer_rows_number_of_elements += 3;
+
+    // Add the border elements, at front and end, if needed
+    size_t margin = kernel_width == 0 ? 0 : (kernel_width - 1) / 2;
+    buffer_rows_number_of_elements += channels * margin * 2;
 
     size_t buffer_rows_stride =
         buffer_rows_number_of_elements * intermediate_size;
@@ -148,6 +154,42 @@ class SeparableFilterWorkspace {
       filter.process_vertical(rect.width(), src_rows.at(vertical_index),
                               buffer_rows, offsets);
       // Process in the horizontal direction last.
+      process_horizontal_with_borderhandling(rect.width(), buffer_rows,
+                                             dst_rows.at(vertical_index),
+                                             filter, horizontal_border);
+    }
+  }
+
+  // Processes rows vertically first along the full width
+  template <typename FilterType, typename BorderMakerType>
+  void process_using_bordermaker(
+      Rectangle rect, size_t y_begin, size_t y_end,
+      Rows<const typename FilterType::SourceType> src_rows,
+      Rows<typename FilterType::DestinationType> dst_rows, size_t channels,
+      typename FilterType::BorderType border_type, FilterType filter,
+      BorderMakerType border) KLEIDICV_STREAMING {
+    // Border helper which calculates border offsets.
+    typename FilterType::BorderInfoType vertical_border{rect.height(),
+                                                        border_type};
+    typename FilterType::BorderInfoType horizontal_border{rect.width(),
+                                                          border_type};
+
+    // Buffer rows which hold intermediate widened data.
+    auto buffer_rows = Rows{reinterpret_cast<typename FilterType::BufferType *>(
+                                &data_[buffer_rows_offset_]) +
+                                filter.margin * channels,
+                            buffer_rows_stride_, channels};
+
+    // Vertical processing loop.
+    for (size_t vertical_index = y_begin; vertical_index < y_end;
+         ++vertical_index) {
+      // Recalculate vertical border offsets.
+      auto offsets = vertical_border.offsets_with_border(vertical_index);
+      // Process in the vertical direction first.
+      filter.process_vertical(rect.width(), src_rows.at(vertical_index),
+                              buffer_rows, offsets);
+      border.make(buffer_rows, filter.margin, rect.width());
+      // Process in the horizontal direction last.
       process_horizontal(rect.width(), buffer_rows, dst_rows.at(vertical_index),
                          filter, horizontal_border);
     }
@@ -198,11 +240,10 @@ class SeparableFilterWorkspace {
 
  protected:
   template <typename FilterType>
-  void process_horizontal(size_t width,
-                          Rows<typename FilterType::BufferType> buffer_rows,
-                          Rows<typename FilterType::DestinationType> dst_rows,
-                          FilterType filter,
-                          typename FilterType::BorderInfoType horizontal_border)
+  void process_horizontal_with_borderhandling(
+      size_t width, Rows<typename FilterType::BufferType> buffer_rows,
+      Rows<typename FilterType::DestinationType> dst_rows, FilterType filter,
+      typename FilterType::BorderInfoType horizontal_border)
       KLEIDICV_STREAMING {
     // Margin associated with the filter.
     constexpr size_t margin = filter.margin;
@@ -236,6 +277,17 @@ class SeparableFilterWorkspace {
       filter.process_horizontal_borders(buffer_rows.at(0, index),
                                         dst_rows.at(0, index), offsets);
     }
+  }
+
+  template <typename FilterType>
+  void process_horizontal(size_t width,
+                          Rows<typename FilterType::BufferType> buffer_rows,
+                          Rows<typename FilterType::DestinationType> dst_rows,
+                          FilterType filter,
+                          typename FilterType::BorderInfoType horizontal_border)
+      KLEIDICV_STREAMING {
+    auto offsets = horizontal_border.offsets_without_border();
+    filter.process_horizontal(width, buffer_rows, dst_rows, offsets);
   }
 
   // Offset in bytes to the buffer rows from &data_[0].

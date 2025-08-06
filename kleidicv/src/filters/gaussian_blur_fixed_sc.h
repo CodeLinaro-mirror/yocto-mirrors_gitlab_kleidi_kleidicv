@@ -8,6 +8,8 @@
 #include <array>
 #include <cassert>
 
+#include "border_generic_sc.h"
+#include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/separable_filter_15x15_sc.h"
 #include "kleidicv/filters/separable_filter_21x21_sc.h"
@@ -15,6 +17,7 @@
 #include "kleidicv/filters/separable_filter_5x5_sc.h"
 #include "kleidicv/filters/separable_filter_7x7_sc.h"
 #include "kleidicv/filters/sigma.h"
+#include "kleidicv/sve2.h"
 #include "kleidicv/workspace/separable.h"
 
 #if KLEIDICV_TARGET_SME || KLEIDICV_TARGET_SME2
@@ -274,18 +277,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   void vertical_scalar_path(const SourceType src[KernelSize],
                             BufferType *dst) const KLEIDICV_STREAMING {
-    uint32_t acc = static_cast<uint32_t>(src[kHalfKernelSize - 1]) *
-                   half_kernel_[kHalfKernelSize - 1];
-
-    // Optimization to avoid unnecessary branching in vector code.
-    KLEIDICV_FORCE_LOOP_UNROLL
-    for (size_t i = 0; i < kHalfKernelSize - 1; i++) {
-      acc += (static_cast<uint32_t>(src[i]) +
-              static_cast<uint32_t>(src[KernelSize - i - 1])) *
-             half_kernel_[i];
-    }
-
-    dst[0] = static_cast<BufferType>(rounding_shift_right(acc, 8));
+    common_scalar_path(src, dst);
   }
 
   void horizontal_vector_path(
@@ -296,7 +288,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   void horizontal_scalar_path(const BufferType src[KernelSize],
                               DestinationType *dst) const KLEIDICV_STREAMING {
-    vertical_scalar_path(src, dst);
+    common_scalar_path(src, dst);
   }
 
  private:
@@ -329,6 +321,22 @@ class GaussianBlur<uint8_t, KernelSize, false> {
     svst1(pg, &dst[0], result);
   }
 
+  void common_scalar_path(const SourceType src[KernelSize],
+                          BufferType *dst) const KLEIDICV_STREAMING {
+    uint32_t acc = static_cast<uint32_t>(src[kHalfKernelSize - 1]) *
+                   half_kernel_[kHalfKernelSize - 1];
+
+    // Avoid unnecessary branching in vector code.
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (size_t i = 0; i < kHalfKernelSize - 1; i++) {
+      acc += (static_cast<uint32_t>(src[i]) +
+              static_cast<uint32_t>(src[KernelSize - i - 1])) *
+             half_kernel_[i];
+    }
+
+    dst[0] = static_cast<BufferType>(rounding_shift_right(acc, 8));
+  }
+
   const uint16_t *half_kernel_;
 };  // end of class GaussianBlur<uint8_t, KernelSize, false>
 
@@ -345,6 +353,7 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
 
   if constexpr (IsBinomial) {
     GaussianBlurFilter blur;
+    // TODO uint16_t BorderMaker
     SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
     workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                        border_type, filter);
@@ -359,8 +368,26 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     if (half_kernel[kHalfKernelSize - 1] < 256) {
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+#if KLEIDICV_TARGET_SME
+      if (channels == 3) {
+        svuint8_t sv0, sv1, sv2;
+        KLEIDICV_TARGET_NAMESPACE::BorderMaker3ch<uint8_t> border_maker(
+            sv0, sv1, sv2);
+        workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
+                                             dst_rows, channels, border_type,
+                                             filter, border_maker);
+      } else {
+        svuint8_t sv;
+        KLEIDICV_TARGET_NAMESPACE::BorderMaker124ch<uint8_t> border_maker(
+            static_cast<ptrdiff_t>(channels), sv);
+        workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
+                                             dst_rows, channels, border_type,
+                                             filter, border_maker);
+      }
+#else
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                          border_type, filter);
+#endif
     } else {
       for (size_t row = y_begin; row < y_end; ++row) {
 #if KLEIDICV_TARGET_SME

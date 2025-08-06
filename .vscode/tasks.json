@@ -112,6 +112,68 @@
       }
     },
     {
+      "label": "SVE2 library tests, 128 bits",
+      "type": "process",
+      "command": "qemu-aarch64",
+      "args": [
+        "-cpu",
+        "max,sve128=on,sme=off",
+        "${workspaceFolder}/build/kleidicv/test/library/kleidicv-library-test",
+        "--vector-length=16"
+      ],
+      "dependsOn": [
+        "Build KleidiCV"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
+      "label": "SVE2 library tests, 512 bits",
+      "type": "process",
+      "command": "qemu-aarch64",
+      "args": [
+        "-cpu",
+        "max,sve512=on,sve-default-vector-length=64,sme=off",
+        "${workspaceFolder}/build/kleidicv/test/library/kleidicv-library-test",
+        "--vector-length=64"
+      ],
+      "dependsOn": [
+        "Build KleidiCV"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
+      "label": "SVE2 library tests, 2048 bits",
+      "type": "process",
+      "command": "qemu-aarch64",
+      "args": [
+        "-cpu",
+        "max,sve2048=on,sve-default-vector-length=256,sme=off",
+        "${workspaceFolder}/build/kleidicv/test/library/kleidicv-library-test",
+        "--vector-length=256"
+      ],
+      "dependsOn": [
+        "Build KleidiCV"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
+      "label": "All library tests",
+      "dependsOn": [
+        "SVE2 library tests, 128 bits",
+        "SVE2 library tests, 512 bits",
+        "SVE2 library tests, 2048 bits",
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
       "label": "NEON API tests",
       "type": "process",
       "command": "qemu-aarch64",
