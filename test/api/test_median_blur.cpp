@@ -5,7 +5,6 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <cstdio>
 #include <vector>
 
 #include "framework/array.h"

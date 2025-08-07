@@ -146,11 +146,12 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
 
     loop.unroll_once([&](size_t index) KLEIDICV_STREAMING {
       svbool_t pg = svptrue_b8();
-      svbool_t pg_half = svptrue_b8();
+      svbool_t pg_half = svwhilelt_b8(0UL, svcntb() / 2);
+
       svuint8_t u8_vec = svld1(pg_half, u + (index >> 1));
       svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
 
-      svuint8_t v8_vec = svld1(pg, v + (index >> 1));
+      svuint8_t v8_vec = svld1(pg_half, v + (index >> 1));
       svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
 
       svuint8_t y0_vec = svld1(pg, y0 + index);
@@ -161,11 +162,9 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
     });
 
     loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
-      size_t min_width = length - index;
-      size_t half_min_width = (min_width + 1) / 2;
-      svbool_t pg = svwhilelt_b8(int64_t(0), static_cast<int64_t>(min_width));
-      svbool_t pg_half =
-          svwhilelt_b8(int64_t(0), static_cast<int64_t>(half_min_width));
+      svbool_t pg = svwhilelt_b8(index, length);
+      svbool_t pg_half = svwhilelt_b8((index + 1) >> 1, (length + 1) >> 1);
+
       svuint8_t u8_vec = svld1(pg_half, u + (index >> 1));
       svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
 

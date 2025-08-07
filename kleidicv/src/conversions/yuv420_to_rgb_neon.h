@@ -5,8 +5,6 @@
 #ifndef KLEIDICV_YUV420_TO_RGB_NEON_H
 #define KLEIDICV_YUV420_TO_RGB_NEON_H
 
-#include <stdio.h>
-
 #include <algorithm>
 #include <utility>
 
