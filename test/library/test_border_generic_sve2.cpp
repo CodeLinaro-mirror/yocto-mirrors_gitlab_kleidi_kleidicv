@@ -8,6 +8,7 @@
 #include "../../kleidicv/src/filters/border_generic_sc.h"
 #include "framework/array.h"
 #include "framework/utils.h"
+#include "kleidicv/workspace/border_types.h"
 
 template <typename ElementType>
 void test_sve_border(size_t width, size_t margin, size_t channels,
@@ -26,13 +27,15 @@ void test_sve_border(size_t width, size_t margin, size_t channels,
                                    channels);
   if (channels == 3) {
     svuint8_t sv0, sv1, sv2;
-    KLEIDICV_TARGET_NAMESPACE::BorderMaker3ch<ElementType> border(sv0, sv1,
-                                                                  sv2);
+    KLEIDICV_TARGET_NAMESPACE::BorderMaker3ch<
+        ElementType, kleidicv::FixedBorderType::REPLICATE>
+        border(sv0, sv1, sv2);
     border.make(rows, margin, width);
   } else {
     svuint8_t sv;
-    KLEIDICV_TARGET_NAMESPACE::BorderMaker124ch<uint8_t> border(
-        static_cast<ptrdiff_t>(channels), sv);
+    KLEIDICV_TARGET_NAMESPACE::BorderMaker124ch<
+        ElementType, kleidicv::FixedBorderType::REPLICATE>
+        border(static_cast<ptrdiff_t>(channels), sv);
     border.make(rows, margin, width);
   }
 
