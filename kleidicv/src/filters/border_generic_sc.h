@@ -229,6 +229,107 @@ class BorderMaker124ch {
   svuint8_t& indices_;
 };
 
+template <typename ScalarType>
+class BorderMakerArbitrary {
+  using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+
+ public:
+  // OK this is specialized for uint8_t :o
+  BorderMakerArbitrary(ptrdiff_t channels, svuint8_t& sv0, svuint8_t& sv1,
+                       svuint8_t& sv2) KLEIDICV_STREAMING : channels_(channels),
+                                                            indices0_(sv0),
+                                                            indices1_(sv1),
+                                                            indices2_(sv2) {
+    if (channels_ == 3) {
+      size_t kVL = VecTraits::num_lanes();
+      indices0_ = svindex_u8(0, 1);
+      indices1_ = svindex_u8(kVL % 3, 1);
+      indices2_ = svindex_u8((kVL + kVL) % 3, 1);
+      // Decrease by 3 while they are >= 3 --> so we get the modulo
+      size_t steps = (kVL - 1) / 3;
+      for (size_t i = 0; i < steps; ++i) {
+        indices0_ = svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), indices0_, 3),
+                                 indices0_, 3);
+        indices1_ = svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), indices1_, 3),
+                                 indices1_, 3);
+        indices2_ = svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), indices2_, 3),
+                                 indices2_, 3);
+      }
+    } else {
+      indices0_ = svindex_u8(0, 1);
+      // It does the same as the modulo for 1,2 and 4
+      indices0_ = svand_n_u8_x(svptrue_b8(), indices0_, channels_ - 1);
+    }
+  }
+  // Replicate only
+  void make(Rows<ScalarType> rows, ptrdiff_t margin,
+            ptrdiff_t width) KLEIDICV_STREAMING {
+    const size_t kVL = VecTraits::num_lanes();
+    svbool_t pg_ch = VecTraits::svwhilelt(0UL, rows.channels());
+
+    // right border
+    svuint8_t data = svld1_u8(pg_ch, &rows[(width - 1) * rows.channels()]);
+    if (rows.channels() == 3) {
+      svuint8_t data0 = svtbl_u8(data, indices0_);
+      svuint8_t data1 = svtbl_u8(data, indices1_);
+      svuint8_t data2 = svtbl_u8(data, indices2_);
+      ptrdiff_t width_plus = (width + margin) * 3;
+      for (ptrdiff_t x = width * 3; x < width_plus;) {
+        svbool_t pg = VecTraits::svwhilelt(x, width_plus);
+        svst1(pg, &rows[x], data0);
+        x += kVL;
+        pg = VecTraits::svwhilelt(x, width_plus);
+        svst1(pg, &rows[x], data1);
+        x += kVL;
+        pg = VecTraits::svwhilelt(x, width_plus);
+        svst1(pg, &rows[x], data2);
+        x += kVL;
+      }
+    } else {
+      data = svtbl_u8(data, indices0_);
+      ptrdiff_t width_plus = (width + margin) * rows.channels();
+      for (ptrdiff_t x = width * rows.channels(); x < width_plus;) {
+        svbool_t pg = VecTraits::svwhilelt(x, width_plus);
+        svst1(pg, &rows[x], data);
+        x += kVL;
+      }
+    }
+
+    // left border
+    data = svld1_u8(pg_ch, &rows[0]);
+    if (rows.channels() == 3) {
+      svuint8_t data0 = svtbl_u8(data, indices0_);
+      svuint8_t data1 = svtbl_u8(data, indices1_);
+      svuint8_t data2 = svtbl_u8(data, indices2_);
+      ptrdiff_t mwidth = margin * 3;
+      for (ptrdiff_t x = 0; x < mwidth;) {
+        svbool_t pg = VecTraits::svwhilelt(x, mwidth);
+        svst1(pg, &rows[x - mwidth], data0);
+        x += kVL;
+        pg = VecTraits::svwhilelt(x, mwidth);
+        svst1(pg, &rows[x - mwidth], data1);
+        x += kVL;
+        pg = VecTraits::svwhilelt(x, mwidth);
+        svst1(pg, &rows[x - mwidth], data2);
+        x += kVL;
+      }
+    } else {
+      data = svtbl_u8(data, indices0_);
+      ptrdiff_t mwidth = margin * rows.channels();
+      for (ptrdiff_t x = 0; x < mwidth;) {
+        svbool_t pg = VecTraits::svwhilelt(x, mwidth);
+        svst1(pg, &rows[x - mwidth], data);
+        x += kVL;
+      }
+    }
+  }
+
+ private:
+  ptrdiff_t channels_;
+  svuint8_t &indices0_, &indices1_, &indices2_;
+};
+
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
 #endif  // KLEIDICV_WORKSPACE_BORDER_GENERIC_NEON_H

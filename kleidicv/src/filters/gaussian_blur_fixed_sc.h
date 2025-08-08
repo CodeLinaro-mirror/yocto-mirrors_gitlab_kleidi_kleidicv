@@ -369,6 +369,13 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
 #if KLEIDICV_TARGET_SME
+      svuint8_t sv0, sv1, sv2;
+      KLEIDICV_TARGET_NAMESPACE::BorderMakerArbitrary<uint8_t> border_maker(
+          static_cast<ptrdiff_t>(channels), sv0, sv1, sv2);
+      workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
+                                           dst_rows, channels, border_type,
+                                           filter, border_maker);
+/*
       if (channels == 3) {
         svuint8_t sv0, sv1, sv2;
         KLEIDICV_TARGET_NAMESPACE::BorderMaker3ch<uint8_t> border_maker(
@@ -383,7 +390,7 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
         workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
                                              dst_rows, channels, border_type,
                                              filter, border_maker);
-      }
+      }*/
 #else
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                          border_type, filter);
