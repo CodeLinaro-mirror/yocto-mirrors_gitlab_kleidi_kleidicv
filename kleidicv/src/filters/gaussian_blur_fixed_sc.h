@@ -369,37 +369,39 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     if (half_kernel[kHalfKernelSize - 1] < 256) {
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
-      // #if KLEIDICV_TARGET_SME
-      /* arbitrary
-            svuint8_t sv0, sv1, sv2;
-            KLEIDICV_TARGET_NAMESPACE::BorderMakerArbitrary<uint8_t>
-         border_maker( static_cast<ptrdiff_t>(channels), sv0, sv1, sv2);
-            workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
-                                                 dst_rows, channels,
-         border_type, filter, border_maker);
-      */
-      if (channels == 3) {
-        svuint8_t sv0, sv1, sv2;
-        KLEIDICV_TARGET_NAMESPACE::BorderMaker3ch<uint8_t,
-                                                  FixedBorderType::REPLICATE>
-            border_maker(sv0, sv1, sv2);
-        workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
-                                             dst_rows, channels, border_type,
-                                             filter, border_maker);
-      } else {
-        svuint8_t sv;
-        KLEIDICV_TARGET_NAMESPACE::BorderMaker124ch<uint8_t,
+#if KLEIDICV_TARGET_SME
+      if (border_type == FixedBorderType::REPLICATE) {
+        if (channels == 3) {
+          svuint8_t sv0, sv1, sv2;
+          KLEIDICV_TARGET_NAMESPACE::BorderMaker3ch<uint8_t,
                                                     FixedBorderType::REPLICATE>
-            border_maker(static_cast<ptrdiff_t>(channels), sv);
+              border_maker(sv0, sv1, sv2);
+          workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
+                                               dst_rows, channels, border_type,
+                                               filter, border_maker);
+        } else {
+          svuint8_t sv;
+          KLEIDICV_TARGET_NAMESPACE::BorderMaker124ch<
+              uint8_t, FixedBorderType::REPLICATE>
+              border_maker(static_cast<ptrdiff_t>(channels), sv);
+          workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
+                                               dst_rows, channels, border_type,
+                                               filter, border_maker);
+        }
+      } else if (border_type == FixedBorderType::REVERSE) {
+        svuint8_t sv;
+        svbool_t pg;
+        KLEIDICV_TARGET_NAMESPACE::BorderMaker<uint8_t,
+                                               FixedBorderType::REVERSE>
+            border_maker(static_cast<ptrdiff_t>(channels), sv, pg);
         workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
                                              dst_rows, channels, border_type,
                                              filter, border_maker);
       }
-      // #else
-      //       workspace->process(rect, y_begin, y_end, src_rows, dst_rows,
-      //       channels,
-      //                          border_type, filter);
-      // #endif
+#else
+      workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                         border_type, filter);
+#endif
     } else {
       for (size_t row = y_begin; row < y_end; ++row) {
 #if KLEIDICV_TARGET_SME && defined(__ANDROID__)

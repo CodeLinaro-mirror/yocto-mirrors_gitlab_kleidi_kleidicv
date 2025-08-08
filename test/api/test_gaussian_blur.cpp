@@ -36,6 +36,12 @@ struct GaussianBlurKernelTestParams<uint8_t, KernelSize> {
 static constexpr std::array<kleidicv_border_type_t, 1> kReplicateBorder = {
     KLEIDICV_BORDER_TYPE_REPLICATE};
 
+static constexpr std::array<kleidicv_border_type_t, 2>
+    kReplicateAndReverseBorder = {
+        KLEIDICV_BORDER_TYPE_REPLICATE,
+        KLEIDICV_BORDER_TYPE_REVERSE,
+};
+
 static constexpr std::array<kleidicv_border_type_t, 4> kAllBorders = {
     KLEIDICV_BORDER_TYPE_REPLICATE,
     KLEIDICV_BORDER_TYPE_REFLECT,
@@ -275,11 +281,11 @@ size_t minimumValidWidth(size_t kernel_size, size_t vector_length) {
 TYPED_TEST(GaussianBlur, 3x3_CustomSigma) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 3>;
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(2.2)
       .test_with_generated_mask();
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(0.01)
       .test_with_generated_mask();
 }
@@ -287,11 +293,11 @@ TYPED_TEST(GaussianBlur, 3x3_CustomSigma) {
 TYPED_TEST(GaussianBlur, 5x5_CustomSigma) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 5>;
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(2.2)
       .test_with_generated_mask();
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(0.01)
       .test_with_generated_mask();
 }
@@ -299,11 +305,11 @@ TYPED_TEST(GaussianBlur, 5x5_CustomSigma) {
 TYPED_TEST(GaussianBlur, 7x7_CustomSigma) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 7>;
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(2.2)
       .test_with_generated_mask();
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(0.01)
       .test_with_generated_mask();
 }
@@ -329,14 +335,14 @@ TYPED_TEST(GaussianBlur, 11x11_CustomSigma) {
 TYPED_TEST(GaussianBlur, 15x15_CustomSigma) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 15>;
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .test_with_generated_mask();
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(2.2)
       .test_with_generated_mask();
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(0.01)
       .test_with_generated_mask();
 }
@@ -344,16 +350,16 @@ TYPED_TEST(GaussianBlur, 15x15_CustomSigma) {
 // Tests gaussian_blur_21x21_<input_type> API. It always uses CustomSigma.
 TYPED_TEST(GaussianBlur, 21x21_CustomSigma) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 21>;
-  // TODO kReplicateBorder is temporary until we implement all borders
+  // TODO kReplicateAndReverseBorder is temporary until we implement all borders
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .test_with_generated_mask();
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(2.2)
       .test_with_generated_mask();
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
-                   kReplicateBorder, kToleranceOne}
+                   kReplicateAndReverseBorder, kToleranceOne}
       .with_sigma(0.01)
       .test_with_generated_mask();
 }

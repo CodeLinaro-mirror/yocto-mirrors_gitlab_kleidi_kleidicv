@@ -5,11 +5,12 @@
 #ifndef KLEIDICV_WORKSPACE_BORDER_GENERIC_SC_H
 #define KLEIDICV_WORKSPACE_BORDER_GENERIC_SC_H
 
+#include <arm_sve.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 
-#include "kleidicv/ctypes.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/types.h"
 #include "kleidicv/workspace/border_types.h"
@@ -127,6 +128,9 @@ class BorderMaker3ch;
 template <typename ScalarType, FixedBorderType Border>
 class BorderMaker124ch;
 
+template <typename ScalarType, FixedBorderType Border>
+class BorderMaker;
+
 template <>
 class BorderMaker3ch<uint8_t, FixedBorderType::REPLICATE> {
   using ScalarType = uint8_t;
@@ -174,7 +178,6 @@ class BorderMaker3ch<uint8_t, FixedBorderType::REPLICATE> {
     }
   }
 
-  // Replicate only
   void make(Rows<ScalarType> rows, ptrdiff_t margin,
             ptrdiff_t width) const KLEIDICV_STREAMING {
     svbool_t pg_ch = svptrue_pat_b8(SV_VL3);
@@ -199,7 +202,6 @@ class BorderMaker124ch<uint8_t, FixedBorderType::REPLICATE> {
   using VectorType = typename VecTraits::VectorType;
 
  public:
-  // OK this is specialized for uint8_t :o
   BorderMaker124ch(ptrdiff_t channels, VectorType& sv) KLEIDICV_STREAMING
       : indices_(sv) {
     indices_ = svindex_u8(0, 1);
@@ -208,36 +210,116 @@ class BorderMaker124ch<uint8_t, FixedBorderType::REPLICATE> {
   }
 
   void make_one_side(Rows<ScalarType> rows, VectorType data, ptrdiff_t offset,
-                     ptrdiff_t margin) KLEIDICV_STREAMING {
-    ptrdiff_t kVL = VecTraits::num_lanes();
+                     ptrdiff_t margin) const KLEIDICV_STREAMING {
+    size_t kVL = VecTraits::num_lanes();
     svuint8_t filled_data = svtbl_u8(data, indices_);
-    ptrdiff_t xmax = offset + margin * rows.channels();
+    ptrdiff_t xmax = offset + margin * static_cast<ptrdiff_t>(rows.channels());
     for (ptrdiff_t x = offset; x < xmax;) {
       svbool_t pg = VecTraits::svwhilelt(x, xmax);
       svst1(pg, &rows[x], filled_data);
-      x += kVL;
+      x += static_cast<ptrdiff_t>(kVL);
     }
   }
 
-  // Replicate only
   void make(Rows<ScalarType> rows, ptrdiff_t margin,
-            ptrdiff_t width) KLEIDICV_STREAMING {
-    svbool_t pg_ch = VecTraits::svwhilelt(0UL, rows.channels());
+            ptrdiff_t width) const KLEIDICV_STREAMING {
+    ptrdiff_t ch = static_cast<ptrdiff_t>(rows.channels());
+    svbool_t pg_ch = VecTraits::svwhilelt(0L, ch);
 
     // right border
-    svuint8_t data = svld1_u8(pg_ch, &rows[(width - 1) * rows.channels()]);
-    make_one_side(rows, data, static_cast<ptrdiff_t>(width * rows.channels()),
-                  margin);
+    svuint8_t data = svld1_u8(pg_ch, &rows[(width - 1) * ch]);
+    make_one_side(rows, data, width * ch, margin);
 
     // left border
     data = svld1_u8(pg_ch, &rows[0]);
-    make_one_side(rows, data, -static_cast<ptrdiff_t>(margin * rows.channels()),
-                  margin);
+    make_one_side(rows, data, -margin * ch, margin);
   }
 
  private:
   VectorType& indices_;
 };
+
+//////////////////////////////////////////////////////////////////////////////////
+
+template <>
+class BorderMaker<uint8_t, FixedBorderType::REVERSE> {
+  using ScalarType = uint8_t;
+  using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+
+ public:
+  BorderMaker(size_t channels, VectorType& sv, svbool_t& pg) KLEIDICV_STREAMING
+      : indices_(sv),
+        pg_(pg),
+        pixels_per_vector_(static_cast<ptrdiff_t>(VecTraits::num_lanes() /
+                                                  channels)) {
+    uint8_t ix[256];
+    for (ptrdiff_t i = 0; i < pixels_per_vector_; ++i) {
+      size_t i_base = i * channels;
+      size_t ix_base = (pixels_per_vector_ - i - 1) * channels;
+      for (size_t ch = 0; ch < channels; ++ch) {
+        ix[i_base + ch] = ix_base + ch;
+      }
+    }
+    indices_ = svld1(svptrue_b8(), ix);
+    // Full true for 1,2,4, but not for 3 channels
+    pg_ = svwhilelt_b8(0UL, pixels_per_vector_ * channels);
+  }
+
+  void make_one_side(Rows<ScalarType> rows, VectorType data, ptrdiff_t offset,
+                     ptrdiff_t margin) const KLEIDICV_STREAMING {
+    size_t kVL = VecTraits::num_lanes();
+    svuint8_t filled_data = svtbl_u8(data, indices_);
+    ptrdiff_t xmax = offset + margin * static_cast<ptrdiff_t>(rows.channels());
+    for (ptrdiff_t x = offset; x < xmax;) {
+      svbool_t pg = VecTraits::svwhilelt(x, xmax);
+      svst1(pg, &rows[x], filled_data);
+      x += static_cast<ptrdiff_t>(kVL);
+    }
+  }
+
+  void make(Rows<ScalarType> rows, ptrdiff_t margin,
+            ptrdiff_t width) const KLEIDICV_STREAMING {
+    // left border
+    ptrdiff_t ch = static_cast<ptrdiff_t>(rows.channels());
+    ptrdiff_t x = 0;
+    ptrdiff_t remaining_elements = (margin % pixels_per_vector_) * ch;
+    svbool_t pg_last_front = svwhilelt_b8(0L, remaining_elements);
+    svuint8_t increasing = svindex_u8(0, 1);
+    svbool_t pg_last_end = svcmpge_n_u8(
+        pg_, increasing,
+        static_cast<uint8_t>(pixels_per_vector_ * ch - remaining_elements));
+    for (; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
+      svuint8_t data = svld1_u8(pg_, &rows[(1 + x) * ch]);
+      svuint8_t reversed = svtbl_u8(data, indices_);
+      svst1_u8(pg_, &rows[(-x - pixels_per_vector_) * ch], reversed);
+    }
+    // last one is predicated
+    svuint8_t data = svld1_u8(pg_last_front, &rows[(1 + x) * ch]);
+    svuint8_t reversed = svtbl_u8(data, indices_);
+    svst1_u8(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], reversed);
+
+    // right border
+    for (x = 0; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
+      svuint8_t data =
+          svld1_u8(pg_, &rows[(width - (x + 1) - pixels_per_vector_) * ch]);
+      svuint8_t reversed = svtbl_u8(data, indices_);
+      svst1_u8(pg_, &rows[(width + x) * ch], reversed);
+    }
+    // last one is predicated
+    data = svld1_u8(pg_last_end,
+                    &rows[(width - (x + 1) - pixels_per_vector_) * ch]);
+    reversed = svtbl_u8(data, indices_);
+    svst1_u8(pg_last_front, &rows[(width + x) * ch], reversed);
+  }
+
+ private:
+  VectorType& indices_;
+  svbool_t& pg_;
+  ptrdiff_t pixels_per_vector_;
+};
+
+//////////////////////////////////////////////////////////////////////////////////
 
 template <typename ScalarType>
 class BorderMakerArbitrary {
