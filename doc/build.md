@@ -29,20 +29,20 @@ For details of which OpenCV function are accelerated by KleidiCV see
 
 ### Get and patch OpenCV source
 
-This version of KleidiCV is compatible with [OpenCV](https://opencv.org) version 4.11 and later.
+This version of KleidiCV is compatible with [OpenCV](https://opencv.org) version 4.12 and later.
 Earlier versions of KleidiCV are compatible with earlier versions of OpenCV.
 OpenCV 5.x support is experimental.
 
 Integration consists of the following steps:
 1. Download OpenCV sources:
 ```
-wget https://github.com/opencv/opencv/archive/refs/tags/4.11.0.tar.gz
-tar xf 4.11.0.tar.gz
-cd opencv-4.11.0
+wget https://github.com/opencv/opencv/archive/refs/tags/4.12.0.tar.gz
+tar xf 4.12.0.tar.gz
+cd opencv-4.12.0
 ```
 2. Patch OpenCV:
 ```
-patch -p1</path/to/kleidicv/adapters/opencv/opencv-4.11.patch
+patch -p1</path/to/kleidicv/adapters/opencv/opencv-4.12.patch
 ```
 
 ### Build
@@ -78,7 +78,7 @@ cmake --build build-kleidicv-android --parallel
 
 # Building OpenCV & KleidiCV as an AAR package
 
-> **Last tested with OpenCV 4.11**
+> **Last tested with OpenCV 4.12**
 
 The AAR package built from OpenCV can be conveniently used in an Android
 application. This
@@ -86,7 +86,7 @@ application. This
 can be checked as an example, but to use a locally built AAR package the project
 dependencies need to be updated, changing the
 `implementation("org.opencv:opencv:4.11.0")` line of `app/build.gradle.kts` to
-`implementation(files("</full/path/of/opencv_java_shared_4.11.0.aar>"))`. (The
+`implementation(files("</full/path/of/opencv_java_shared_4.12.0.aar>"))`. (The
 version number in the AAR package's filename might require an update if it was
 built from a different OpenCV version.)
 
@@ -139,7 +139,7 @@ build on.
    ```
 
    The content is based on `opencv/platforms/android/ndk-18-api-level-21.config.py`
-   from OpenCV 4.11 and some description of this configuration file format can
+   from OpenCV 4.12 and some description of this configuration file format can
    be found
    [here](https://github.com/opencv/opencv/wiki/Custom-OpenCV-Android-SDK-and-AAR-package-build#advanced-opencv-build-options).
 
@@ -174,7 +174,7 @@ build on.
    ```
 
 At this point the AAR package should be available at
-`OpenCV_AAR_build/outputs/opencv_java_shared_4.11.0.aar`. (The version number
+`OpenCV_AAR_build/outputs/opencv_java_shared_4.12.0.aar`. (The version number
 in the AAR package's filename might be different based on the OpenCV version
 used for the build.)
 

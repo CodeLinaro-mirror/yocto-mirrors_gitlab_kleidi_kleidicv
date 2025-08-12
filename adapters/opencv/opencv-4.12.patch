@@ -1,0 +1,68 @@
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: Copyright (C) 2000-2022, Intel Corporation, all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2009-2016, NVIDIA Corporation, all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2010-2013, Advanced Micro Devices, Inc., all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2015-2023, OpenCV Foundation, all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2008-2016, Itseez Inc., all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2019-2023, Xperience AI, all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2019-2022, Shenzhen Institute of Artificial Intelligence and Robotics for Society, all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2022-2023, Southern University of Science And Technology, all rights reserved.
+// SPDX-FileCopyrightText: Third party copyrights are property of their respective owners.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+diff --git a/modules/core/src/arithm.cpp b/modules/core/src/arithm.cpp
+index 01a1a02900..5c1033be81 100644
+--- a/modules/core/src/arithm.cpp
++++ b/modules/core/src/arithm.cpp
+@@ -2113,6 +2113,18 @@ void cv::inRange(InputArray _src, InputArray _lowerb,
+ 
+         convertAndUnrollScalar( lb, src.type(), lbuf, blocksize );
+         convertAndUnrollScalar( ub, src.type(), ubuf, blocksize );
++
++        if (depth == CV_8U && src.dims <= 2) {
++            uint8_t lb_scalar = lbuf[0];
++            uint8_t ub_scalar = ubuf[0];
++            CALL_HAL(inRange_u8, cv_hal_inRange8u, src.data, src.step, dst.data, dst.step, dst.depth(), src.cols, src.rows, src.channels(),
++                lb_scalar, ub_scalar);
++        } else if (depth == CV_32F && src.dims <= 2) {
++            double lb_scalar = lb.ptr<double>(0)[0];
++            double ub_scalar = ub.ptr<double>(0)[0];
++            CALL_HAL(inRange_f32, cv_hal_inRange32f, src.data, src.step, dst.data, dst.step, dst.depth(), src.cols, src.rows, src.channels(),
++                lb_scalar, ub_scalar);
++        }
+     }
+ 
+     for( size_t i = 0; i < it.nplanes; i++, ++it )
+diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
+index c48f1163bb..4e9e522b38 100644
+--- a/modules/core/src/hal_replacement.hpp
++++ b/modules/core/src/hal_replacement.hpp
+@@ -1138,6 +1138,26 @@ inline int hal_ni_sum(const uchar *src_data, size_t src_step, int src_type, int
+ #define cv_hal_sum hal_ni_sum
+ //! @endcond
+ 
++/**
++   @brief inRange
++   @param src_data,src_step,src_depth Source image
++   @param dst_data,dst_step,dst_depth Destination image
++   @param width,height Source image dimensions
++   @param cn number of channels
++   @param lower_bound,upper_bound Dst values = (lower_bound <= src_value) && (src_value <= upper_bound) ? 255 : 0
++*/
++inline int hal_ni_inRange8u(const uchar *src_data, size_t src_step,
++              uchar *dst_data, size_t dst_step, int dst_depth, int width,
++              int height, int cn, uchar lower_bound, uchar upper_bound) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++inline int hal_ni_inRange32f(const uchar *src_data, size_t src_step,
++              uchar *dst_data, size_t dst_step, int dst_depth, int width,
++              int height, int cn, double lower_bound, double upper_bound) { return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++
++//! @cond IGNORED
++#define cv_hal_inRange8u hal_ni_inRange8u
++#define cv_hal_inRange32f hal_ni_inRange32f
++//! @endcond
++
+ //! @}
+ 
+ #if defined(__clang__)

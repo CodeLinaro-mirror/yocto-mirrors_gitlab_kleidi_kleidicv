@@ -24,6 +24,7 @@ This changelog aims to follow the guiding principles of
 - Conversion from YUV 4:2:0 planar (IYUV/YV12) to RGBA/BGRA.
 - Conversion from RGBA/BGRA to YUV 4:2:0 (planar/semi-planar).
 - Added a multi-threaded implementation of InRange.
+- Support for OpenCV 4.12.
 
 ### Changed
 - Performance of Gaussian Blur is greatly improved in return for some accuracy.

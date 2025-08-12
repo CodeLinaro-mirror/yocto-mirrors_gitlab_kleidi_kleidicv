@@ -11,7 +11,7 @@ set -exu
 # Ensure we're at the root of the repo.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-export OPENCV_VERSION="4.11.0"
+export OPENCV_VERSION="4.12.0"
 
 # ------------------------------------------------------------------------------
 # Try to build unpatched OpenCV with KleidiCV
@@ -61,7 +61,7 @@ EXTRA_CMAKE_ARGS="\
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_CXX_FLAGS=-Wno-nontrivial-memcall" \
 ./scripts/build-opencv.sh
-# OpenCV 4.11.0 has a warning with latest clang, so the specific warning is turned off.
+# OpenCV 4.12.0 has a warning with latest clang, so the specific warning is turned off.
 
 # ------------------------------------------------------------------------------
 # Run OpenCV conformity checks
