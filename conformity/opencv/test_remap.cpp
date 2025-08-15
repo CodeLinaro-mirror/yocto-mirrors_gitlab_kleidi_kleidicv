@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <cmath>
+#include <cstdint>
 #include <limits>
 #include <type_traits>
 #include <vector>
@@ -196,41 +198,27 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
       cv::Mat expected_mat = get_expected_from_subordinate(
           index, request_queue, reply_queue, map_mat);
 
-      // clang-format off
-      // Reference algorithm in OpenCV uses integer interpolation with 5 bits
-      // fractional part. That means that the maximum error between that and the
-      // exact result in one dimension can be as big as 2^data_bits / 2^5 / 2
-      // (we cannot have more than 2^32 different results), for two dimensions
-      // it is the double, which is 8 for u8 and 2048 for u16.
-      //
-      // Example in 16 bits:
-      // Source height = 36, width = 32;
-      // mapx = 31.17005, mapy = 35.326836
-      // so this is a corner case (bottom right corner):
-      //    65469  123
-      //      123  123    (constant border)
-      //
-      // Interpolation:
-      // xfrac = 0.17005, yfrac = 0.326836
-      // line0 = 65469 * (1 - 0.17005) + 123 * 0.17005 = 54356.9127
-      // line1 = 123
-      // EXACT RESULT calculated in float:
-      //       54356.9127 * (1 - 0.326836) + 123 * 0.326836 = 36631.3176087828
-      //
-      // WITH 5-bit fractional part:
-      // xfrac is rounded to 0.15625  (5/32)
-      // line0 = 65469 * (1 - 0.15625) + 123 * 0.15625 = 55258.6875
-      // (diff is less than 1024, as provisioned)
-      // 2nd dimension: line1 = 123
-      // yfrac is rounded to 0.3125 (10/32)
-      // 5BIT RESULT:
-      // 55258.6875 * (1 - 0.3125) + 123 * 0.3125 = 38028.78515625
-      // clang-format on
-      bool success =
-          (CV_MAT_DEPTH(Format) == CV_8U &&
-           !are_matrices_different<uint8_t>(8, actual_mat, expected_mat)) ||
-          (CV_MAT_DEPTH(Format) == CV_16U &&
-           !are_matrices_different<uint16_t>(2048, actual_mat, expected_mat));
+      bool success = false;
+
+      if constexpr (Interpolation == cv::INTER_NEAREST) {
+        success =
+            (CV_MAT_DEPTH(Format) == CV_8U &&
+             !are_matrices_different<uint8_t>(0, actual_mat, expected_mat)) ||
+            (CV_MAT_DEPTH(Format) == CV_16U &&
+             !are_matrices_different<uint16_t>(0, actual_mat, expected_mat));
+      } else {
+        // Reference algorithm in OpenCV uses integer interpolation with 5 bits
+        // fractional part while KleidiCV uses float arithmetic. That means
+        // KleidiCV has better accuracy, so a difference is expected between
+        // OpenCV and KleidiCV results. Please check the remap accuracy test in
+        // this file for more details.
+        success =
+            (CV_MAT_DEPTH(Format) == CV_8U &&
+             !are_matrices_different<uint8_t>(8, actual_mat, expected_mat)) ||
+            (CV_MAT_DEPTH(Format) == CV_16U &&
+             !are_matrices_different<uint16_t>(2032, actual_mat, expected_mat));
+      }
+
       if (!success) {
         fail_print_matrices(w, h, source_mat, actual_mat, expected_mat);
         std::cout << "=== mapx_mat:" << std::endl;
@@ -244,6 +232,101 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
   return false;
 }
 
+#endif
+
+template <typename T>
+cv::Mat exec_remap_f32_linear_accuracy(cv::Mat& map) {
+  // These vaules can trigger biggest difference in the result.
+  cv::Mat source =
+      (cv::Mat_<T>(2, 2) << 0, 0, 0, std::numeric_limits<T>::max());
+  cv::Mat result;
+  // Same map used for both x and y directions.
+  remap(source, result, map, map, cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+
+  return result;
+}
+
+#if MANAGER
+// Reference algorithm in OpenCV uses integer interpolation with 5 bits
+// fractional part while KleidiCV uses float arithmetic for the linear
+// extrapolation.
+//
+// The maximum difference between the implementations can be obtained by:
+// granularity = 1 / 2^5
+// map_value (to trigger maximal difference ) = 1 - granularity / 2
+//
+// Results in one dimension:
+// KleidiCV's result = RoundToNearestInt(<max element value> * map_value)
+// OpenCV's result = <max element value>
+//
+// Results in two dimensions:
+// KleidiCV's result =
+//   RoundToNearestInt(<max element value> * map_value * map_value)
+// OpenCV's result = <max element value>
+//
+// That means the maximum error (difference between the results) is:
+//  * 8 in case u8.
+//  * 2032 in case of u16.
+template <typename T>
+bool test_remap_f32_linear_accuracy(int index,
+                                    RecreatedMessageQueue& request_queue,
+                                    RecreatedMessageQueue& reply_queue) {
+  // Map value to trigger biggest possible difference as described above.
+  float granularity = 1 / pow(2.0f, 5.0f);
+  float map_value = (1 - granularity / 2);
+
+  // If the width of the result image is less than 4 then KleidiCV rejects the
+  // operation and fallback happens to OpenCV's implementation. But for this
+  // accurecy test only the first pixel counts. This map is used for both x and
+  // y directions.
+  cv::Mat map = (cv::Mat_<float>(1, 4) << map_value, 0, 0, 0);
+
+  // KleidiCV results after float calculations
+  T expected_kleidicv_value = std::is_same_v<T, uint8_t> ? 247 : 63503;
+  // OpenCV still returns with max element value
+  T expected_opencv_value = std::numeric_limits<T>::max();
+
+  // Check results
+  cv::Mat opencv_result =
+      get_expected_from_subordinate(index, request_queue, reply_queue, map);
+  if (opencv_result.at<T>(0, 0) != expected_opencv_value) {
+    std::cout << "Error! Unexpected OpenCV value at " << __FILE__ << ':'
+              << __LINE__ << "\n\n";
+    return true;
+  }
+  cv::Mat kleidicv_result = exec_remap_f32_linear_accuracy<T>(map);
+  if (kleidicv_result.at<T>(0, 0) != expected_kleidicv_value) {
+    std::cout << "Error! Unexpected KleidiCV value at " << __FILE__ << ':'
+              << __LINE__ << "\n\n";
+    return true;
+  }
+
+  // Map value is decreased by the smallest possible value to trigger the change
+  // of OpenCV results.
+  map_value = std::nextafterf(map_value, 0.0);
+  map = (cv::Mat_<float>(1, 4) << map_value, 0, 0, 0);
+
+  // New expected OpenCV results
+  expected_opencv_value = std::is_same_v<T, uint8_t> ? 239 : 61503;
+  // No need to update expected KleidiCV results
+
+  // Check results
+  opencv_result =
+      get_expected_from_subordinate(index, request_queue, reply_queue, map);
+  if (opencv_result.at<T>(0, 0) != expected_opencv_value) {
+    std::cout << "Error! Unexpected OpenCV value at " << __FILE__ << ':'
+              << __LINE__ << "\n\n";
+    return true;
+  }
+  kleidicv_result = exec_remap_f32_linear_accuracy<T>(map);
+  if (kleidicv_result.at<T>(0, 0) != expected_kleidicv_value) {
+    std::cout << "Error! Unexpected KleidiCV value at " << __FILE__ << ':'
+              << __LINE__ << "\n\n";
+    return true;
+  }
+
+  return false;
+}
 #endif
 
 std::vector<test>& remap_tests_get() {
@@ -280,6 +363,9 @@ std::vector<test>& remap_tests_get() {
     TEST("RemapF32 uint16 Replicate Nearest 2ch", (test_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
     TEST("RemapF32 uint8 Constant Nearest 2ch", (test_remap_f32<uint8_t, CV_8UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>), (exec_remap_f32<uint8_t, CV_8UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 12321>)),
     TEST("RemapF32 uint16 Constant Nearest 2ch", (test_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>), (exec_remap_f32<uint16_t, CV_16UC2, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 123210>)),
+
+    TEST("RemapF32 Linear uint8 accuracy", test_remap_f32_linear_accuracy<uint8_t>, exec_remap_f32_linear_accuracy<uint8_t>),
+    TEST("RemapF32 Linear uint16 accuracy", test_remap_f32_linear_accuracy<uint16_t>, exec_remap_f32_linear_accuracy<uint16_t>)
   };
   // clang-format on
   return tests;
