@@ -69,14 +69,14 @@ class RGBxorBGRxToYUV420 {
       });
 
       loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
-        svbool_t pg = svwhilelt_b8(index, length);
-        svbool_t pg_half = svwhilelt_b8((index + 1) / 2, (length + 1) / 2);
+        svbool_t pg = svwhilelt_b8_u64(index, length);
+        svbool_t pg_half = svwhilelt_b8_u64((index + 1) / 2, (length + 1) / 2);
         while (svptest_first(svptrue_b8(), pg)) {
           vector_path(src_row, y_row, u_row, v_row, v_first, index, evenRow, pg,
                       pg_half);
           index += kVectorLength;
-          pg = svwhilelt_b8(index, length);
-          pg_half = svwhilelt_b8((index + 1) / 2, (length + 1) / 2);
+          pg = svwhilelt_b8_u64(index, length);
+          pg_half = svwhilelt_b8_u64((index + 1) / 2, (length + 1) / 2);
         }
       });
     }

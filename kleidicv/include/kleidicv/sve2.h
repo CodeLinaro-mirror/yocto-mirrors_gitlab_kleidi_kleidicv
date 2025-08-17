@@ -322,25 +322,49 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int8_t), svbool_t> svwhilelt(
       IndexType index, IndexType max_index) KLEIDICV_STREAMING {
-    return svwhilelt_b8(index, max_index);
+    if constexpr (std::is_same_v<IndexType, size_t>) {
+      return svwhilelt_b8_u64(index, max_index);
+    } else if constexpr (std::is_same_v<IndexType, ptrdiff_t>) {
+      return svwhilelt_b8_s64(index, max_index);
+    } else {
+      return svwhilelt_b8(index, max_index);
+    }
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int16_t), svbool_t> svwhilelt(
       IndexType index, IndexType max_index) KLEIDICV_STREAMING {
-    return svwhilelt_b16(index, max_index);
+    if constexpr (std::is_same_v<IndexType, size_t>) {
+      return svwhilelt_b16_u64(index, max_index);
+    } else if constexpr (std::is_same_v<IndexType, ptrdiff_t>) {
+      return svwhilelt_b16_s64(index, max_index);
+    } else {
+      return svwhilelt_b16(index, max_index);
+    }
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int32_t), svbool_t> svwhilelt(
       IndexType index, IndexType max_index) KLEIDICV_STREAMING {
-    return svwhilelt_b32(index, max_index);
+    if constexpr (std::is_same_v<IndexType, size_t>) {
+      return svwhilelt_b32_u64(index, max_index);
+    } else if constexpr (std::is_same_v<IndexType, ptrdiff_t>) {
+      return svwhilelt_b32_s64(index, max_index);
+    } else {
+      return svwhilelt_b32(index, max_index);
+    }
   }
 
   template <typename IndexType, typename T = ScalarType>
   static std::enable_if_t<sizeof(T) == sizeof(int64_t), svbool_t> svwhilelt(
       IndexType index, IndexType max_index) KLEIDICV_STREAMING {
-    return svwhilelt_b64(index, max_index);
+    if constexpr (std::is_same_v<IndexType, size_t>) {
+      return svwhilelt_b64_u64(index, max_index);
+    } else if constexpr (std::is_same_v<IndexType, ptrdiff_t>) {
+      return svwhilelt_b64_s64(index, max_index);
+    } else {
+      return svwhilelt_b64(index, max_index);
+    }
   }
 
   // Transforms a single predicate into three other predicates that then can be

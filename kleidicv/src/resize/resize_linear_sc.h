@@ -80,7 +80,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 2 + 1;
 
-      svbool_t pg = svwhilelt_b8(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b8_u64(src_x + 1, src_width);
 
       svuint8_t src_left = svld1_u8(pg, src_row + src_x);
       svuint8_t src_right = svld1_u8(pg, src_row + src_x + 1);
@@ -109,7 +109,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8_sc(
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 2 + 1;
 
-      svbool_t pg = svwhilelt_b8(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b8_u64(src_x + 1, src_width);
 
       svuint8_t src_tl = svld1_u8(pg, src_row0 + src_x);
       svuint8_t src_tr = svld1_u8(pg, src_row0 + src_x + 1);
@@ -223,7 +223,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 4 + 2;
-      svbool_t pg = svwhilelt_b8(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b8_u64(src_x + 1, src_width);
       svuint8_t a = svld1_u8(pg, src_row + src_x);
       svuint8_t b = svld1_u8(pg, src_row + src_x + 1);
       svst4_u8(pg, dst_row + dst_x,
@@ -253,7 +253,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntb()) {
       size_t dst_x = src_x * 4 + 2;
 
-      svbool_t pg = svwhilelt_b8(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b8_u64(src_x + 1, src_width);
 
       svuint8_t a = svld1_u8(pg, src_row0 + src_x);
       svuint8_t b = svld1_u8(pg, src_row0 + src_x + 1);
@@ -295,7 +295,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8_sc(
   auto copy_dst_row = [src_width](const uint8_t *dst_from,
                                   uint8_t *dst_to) KLEIDICV_STREAMING {
     for (size_t i = 0; i < src_width; i += svcntb()) {
-      svbool_t pg = svwhilelt_b8(i, src_width);
+      svbool_t pg = svwhilelt_b8_u64(i, src_width);
       svst4(pg, dst_to + i * 4, svld4(pg, dst_from + i * 4));
     }
   };
@@ -366,7 +366,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 2 + 1;
 
-      svbool_t pg = svwhilelt_b32(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b32_u64(src_x + 1, src_width);
 
       svfloat32_t a = svld1_f32(pg, src_row + src_x);
       svfloat32_t b = svld1_f32(pg, src_row + src_x + 1);
@@ -395,7 +395,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32_sc(
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 2 + 1;
 
-      svbool_t pg = svwhilelt_b32(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b32_u64(src_x + 1, src_width);
 
       svfloat32_t a = svld1_f32(pg, src_row0 + src_x);
       svfloat32_t b = svld1_f32(pg, src_row0 + src_x + 1);
@@ -481,7 +481,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 4 + 2;
-      svbool_t pg = svwhilelt_b32(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b32_u64(src_x + 1, src_width);
       svfloat32_t a = svld1_f32(pg, src_row + src_x);
       svfloat32_t b = svld1_f32(pg, src_row + src_x + 1);
       svfloat32x4_t result = svcreate4(lerp1d_vector(pg, 0.875F, a, 0.125F, b),
@@ -511,7 +511,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_f32_sc(
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw()) {
       size_t dst_x = src_x * 4 + 2;
 
-      svbool_t pg = svwhilelt_b32(src_x + 1, src_width);
+      svbool_t pg = svwhilelt_b32_u64(src_x + 1, src_width);
 
       svfloat32_t a = svld1_f32(pg, src_row0 + src_x);
       svfloat32_t b = svld1_f32(pg, src_row0 + src_x + 1);
@@ -894,14 +894,14 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
 
     // Middle elements
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw() / 2) {
-      svbool_t pg = svwhilelt_b32(src_x, src_width);
+      svbool_t pg = svwhilelt_b32_u64(src_x, src_width);
       svfloat32_t svsrc = svld1_f32(pg, src_row + src_x);
 
       size_t dst_length = 8 * (src_width - src_x - 1);
-      svbool_t pg_1 = svwhilelt_b32(0UL, dst_length);
-      svbool_t pg_2 = svwhilelt_b32(svcntw(), dst_length);
-      svbool_t pg_3 = svwhilelt_b32(2 * svcntw(), dst_length);
-      svbool_t pg_4 = svwhilelt_b32(3 * svcntw(), dst_length);
+      svbool_t pg_1 = svwhilelt_b32_u64(0UL, dst_length);
+      svbool_t pg_2 = svwhilelt_b32_u64(svcntw(), dst_length);
+      svbool_t pg_3 = svwhilelt_b32_u64(2 * svcntw(), dst_length);
+      svbool_t pg_4 = svwhilelt_b32_u64(3 * svcntw(), dst_length);
 
       float *dst_row0 = dst_row + src_x * 8 + 4;
       float *dst_row1 = dst_row0 + dst_stride;
@@ -985,15 +985,15 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
     for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw() / 2) {
       size_t dst_x = src_x * 8 + 4;
 
-      svbool_t pg = svwhilelt_b32(src_x, src_width);
+      svbool_t pg = svwhilelt_b32_u64(src_x, src_width);
       svfloat32_t src_0 = svld1_f32(pg, src_row0 + src_x);
       svfloat32_t src_1 = svld1_f32(pg, src_row1 + src_x);
 
       size_t dst_length = 8 * (src_width - src_x - 1);
-      svbool_t pg_1 = svwhilelt_b32(0UL, dst_length);
-      svbool_t pg_2 = svwhilelt_b32(svcntw(), dst_length);
-      svbool_t pg_3 = svwhilelt_b32(2 * svcntw(), dst_length);
-      svbool_t pg_4 = svwhilelt_b32(3 * svcntw(), dst_length);
+      svbool_t pg_1 = svwhilelt_b32_u64(0UL, dst_length);
+      svbool_t pg_2 = svwhilelt_b32_u64(svcntw(), dst_length);
+      svbool_t pg_3 = svwhilelt_b32_u64(2 * svcntw(), dst_length);
+      svbool_t pg_4 = svwhilelt_b32_u64(3 * svcntw(), dst_length);
 
       float *dst_row0 = dst_row + dst_x;
       float *dst_row1 = dst_row0 + dst_stride;

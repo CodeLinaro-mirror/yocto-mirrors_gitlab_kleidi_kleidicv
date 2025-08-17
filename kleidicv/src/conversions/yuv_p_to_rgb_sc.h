@@ -162,8 +162,8 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
     });
 
     loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
-      svbool_t pg = svwhilelt_b8(index, length);
-      svbool_t pg_half = svwhilelt_b8((index + 1) / 2, (length + 1) >> 1);
+      svbool_t pg = svwhilelt_b8_u64(index, length);
+      svbool_t pg_half = svwhilelt_b8_u64((index + 1) / 2, (length + 1) >> 1);
 
       svuint8_t u8_vec = svld1(pg_half, u + index / 2);
       svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
