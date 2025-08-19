@@ -616,6 +616,8 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
   svfloat32_t coeffs_a1 = svld1(svptrue_b32(), &coeffs_a[4]);
   svfloat32_t coeffs_b0 = svld1(svptrue_b32(), &coeffs_b[0]);
   svfloat32_t coeffs_b1 = svld1(svptrue_b32(), &coeffs_b[4]);
+  std::reference_wrapper<svfloat32_t> coeffs_ab[4] = {coeffs_a0, coeffs_a1,
+                                                      coeffs_b0, coeffs_b1};
 
   auto lerp1d_vector_n = [](svbool_t pg, float p, svfloat32_t a, float q,
                             svfloat32_t b) KLEIDICV_STREAMING {
@@ -629,53 +631,53 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
 
   // Handle top or bottom edge
   auto process_edge_row =
-      [src_width, dst_width, lerp1d_vector, &coeffs_a0, &coeffs_a1, &coeffs_b0,
-       &coeffs_b1](const float *src_row, float *dst_row, size_t dst_stride)
-          KLEIDICV_STREAMING {
-            // Left elements
-            float left = src_row[0];
-            float *dst = dst_row;
-            for (size_t i = 0; i < 4; ++i) {
-              *dst++ = left;
-              *dst++ = left;
-              *dst++ = left;
-              *dst = left;
-              dst += dst_stride - 3;
-            }
+      [src_width, dst_width, lerp1d_vector](
+          const float *src_row, float *dst_row, size_t dst_stride,
+          std::reference_wrapper<svfloat32_t> coeffs_ab[4]) KLEIDICV_STREAMING {
+        // Left elements
+        float left = src_row[0];
+        float *dst = dst_row;
+        for (size_t i = 0; i < 4; ++i) {
+          *dst++ = left;
+          *dst++ = left;
+          *dst++ = left;
+          *dst = left;
+          dst += dst_stride - 3;
+        }
 
-            // Middle elements
-            svfloat32_t a, b = svdup_n_f32(src_row[0]);
-            for (size_t src_x = 0; src_x + 1 < src_width; src_x++) {
-              a = b;
-              b = svdup_n_f32(src_row[src_x + 1]);
-              float *dst_row0 = dst_row + src_x * 8 + 4;
-              float *dst_row1 = dst_row0 + dst_stride;
-              float *dst_row2 = dst_row1 + dst_stride;
-              float *dst_row3 = dst_row2 + dst_stride;
-              svfloat32_t dst =
-                  lerp1d_vector(svptrue_b32(), coeffs_a0, a, coeffs_b0, b);
-              svst1(svptrue_b32(), dst_row0, dst);
-              svst1(svptrue_b32(), dst_row1, dst);
-              svst1(svptrue_b32(), dst_row2, dst);
-              svst1(svptrue_b32(), dst_row3, dst);
-              dst = lerp1d_vector(svptrue_b32(), coeffs_a1, a, coeffs_b1, b);
-              svst1(svptrue_b32(), dst_row0 + 4, dst);
-              svst1(svptrue_b32(), dst_row1 + 4, dst);
-              svst1(svptrue_b32(), dst_row2 + 4, dst);
-              svst1(svptrue_b32(), dst_row3 + 4, dst);
-            }
+        // Middle elements
+        svfloat32_t a, b = svdup_n_f32(src_row[0]);
+        for (size_t src_x = 0; src_x + 1 < src_width; src_x++) {
+          a = b;
+          b = svdup_n_f32(src_row[src_x + 1]);
+          float *dst_row0 = dst_row + src_x * 8 + 4;
+          float *dst_row1 = dst_row0 + dst_stride;
+          float *dst_row2 = dst_row1 + dst_stride;
+          float *dst_row3 = dst_row2 + dst_stride;
+          svfloat32_t dst =
+              lerp1d_vector(svptrue_b32(), coeffs_ab[0], a, coeffs_ab[2], b);
+          svst1(svptrue_b32(), dst_row0, dst);
+          svst1(svptrue_b32(), dst_row1, dst);
+          svst1(svptrue_b32(), dst_row2, dst);
+          svst1(svptrue_b32(), dst_row3, dst);
+          dst = lerp1d_vector(svptrue_b32(), coeffs_ab[1], a, coeffs_ab[3], b);
+          svst1(svptrue_b32(), dst_row0 + 4, dst);
+          svst1(svptrue_b32(), dst_row1 + 4, dst);
+          svst1(svptrue_b32(), dst_row2 + 4, dst);
+          svst1(svptrue_b32(), dst_row3 + 4, dst);
+        }
 
-            // Right elements
-            dst = dst_row + dst_width - 4;
-            float right = src_row[src_width - 1];
-            for (size_t i = 0; i < 4; ++i) {
-              *dst++ = right;
-              *dst++ = right;
-              *dst++ = right;
-              *dst = right;
-              dst += dst_stride - 3;
-            }
-          };
+        // Right elements
+        dst = dst_row + dst_width - 4;
+        float right = src_row[src_width - 1];
+        for (size_t i = 0; i < 4; ++i) {
+          *dst++ = right;
+          *dst++ = right;
+          *dst++ = right;
+          *dst = right;
+          dst += dst_stride - 3;
+        }
+      };
 
   svfloat32_t coeffs_p0 = svmul_n_f32_x(svptrue_b32(), coeffs_a0, 15.0 / 16);
   svfloat32_t coeffs_q0 = svmul_n_f32_x(svptrue_b32(), coeffs_b0, 15.0 / 16);
@@ -686,6 +688,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
   svfloat32_t coeffs_r1 = svmul_n_f32_x(svptrue_b32(), coeffs_a1, 1.0 / 16);
   svfloat32_t coeffs_s1 = svmul_n_f32_x(svptrue_b32(), coeffs_b1, 1.0 / 16);
 
+  std::reference_wrapper<svfloat32_t> coeffs_pqrs[8] = {
+      coeffs_p0, coeffs_p1, coeffs_q0, coeffs_q1,
+      coeffs_r0, coeffs_r1, coeffs_s0, coeffs_s1,
+  };
+
   auto lerp2d_vector = [](svbool_t pg, svfloat32_t a, svfloat32_t p,
                           svfloat32_t b, svfloat32_t q, svfloat32_t c,
                           svfloat32_t r, svfloat32_t d,
@@ -695,12 +702,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
         d, s);
   };
 
-  auto process_row = [src_width, lerp2d_vector, lerp1d_vector_n, &coeffs_p0,
-                      &coeffs_q0, &coeffs_r0, &coeffs_s0, &coeffs_p1,
-                      &coeffs_q1, &coeffs_r1,
-                      &coeffs_s1](const float *src_row0, const float *src_row1,
-                                  float *dst_row0,
-                                  size_t dst_stride) KLEIDICV_STREAMING {
+  auto process_row = [src_width, lerp2d_vector, lerp1d_vector_n](
+                         const float *src_row0, const float *src_row1,
+                         float *dst_row0, size_t dst_stride,
+                         std::reference_wrapper<svfloat32_t>
+                             coeffs_pqrs[8]) KLEIDICV_STREAMING {
     // Left elements
     svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
     svbool_t pg4 = svptrue_pat_b32(SV_VL4);  // write 4 elements
@@ -730,11 +736,13 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
       b = svdup_lane(svld1(pg1, src_row0 + src_x + 1), 0);
       c = d;
       d = svdup_lane(svld1(pg1, src_row1 + src_x + 1), 0);
-      svfloat32_t dst_0 = lerp2d_vector(svptrue_b32(), coeffs_p0, a, coeffs_q0,
-                                        b, coeffs_r0, c, coeffs_s0, d);
+      svfloat32_t dst_0 =
+          lerp2d_vector(svptrue_b32(), coeffs_pqrs[0], a, coeffs_pqrs[2], b,
+                        coeffs_pqrs[4], c, coeffs_pqrs[6], d);
       svst1(svptrue_b32(), dst_row0, dst_0);
-      svfloat32_t dst_7 = lerp2d_vector(svptrue_b32(), coeffs_r0, a, coeffs_s0,
-                                        b, coeffs_p0, c, coeffs_q0, d);
+      svfloat32_t dst_7 =
+          lerp2d_vector(svptrue_b32(), coeffs_pqrs[4], a, coeffs_pqrs[6], b,
+                        coeffs_pqrs[0], c, coeffs_pqrs[2], d);
       svst1(svptrue_b32(), dst_row7, dst_7);
       svst1(svptrue_b32(), dst_row1,
             lerp1d_vector_n(svptrue_b32(), 6.0 / 7, dst_0, 1.0 / 7, dst_7));
@@ -756,11 +764,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
       dst_row5 += 4;
       dst_row6 += 4;
       dst_row7 += 4;
-      dst_0 = lerp2d_vector(svptrue_b32(), coeffs_p1, a, coeffs_q1, b,
-                            coeffs_r1, c, coeffs_s1, d);
+      dst_0 = lerp2d_vector(svptrue_b32(), coeffs_pqrs[1], a, coeffs_pqrs[3], b,
+                            coeffs_pqrs[5], c, coeffs_pqrs[7], d);
       svst1(svptrue_b32(), dst_row0, dst_0);
-      dst_7 = lerp2d_vector(svptrue_b32(), coeffs_r1, a, coeffs_s1, b,
-                            coeffs_p1, c, coeffs_q1, d);
+      dst_7 = lerp2d_vector(svptrue_b32(), coeffs_pqrs[5], a, coeffs_pqrs[7], b,
+                            coeffs_pqrs[1], c, coeffs_pqrs[3], d);
       svst1(svptrue_b32(), dst_row7, dst_7);
       svst1(svptrue_b32(), dst_row1,
             lerp1d_vector_n(svptrue_b32(), 6.0 / 7, dst_0, 1.0 / 7, dst_7));
@@ -798,7 +806,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
 
   // Top rows
   if (KLEIDICV_LIKELY(y_begin == 0)) {
-    process_edge_row(src, dst, dst_stride);
+    process_edge_row(src, dst, dst_stride, coeffs_ab);
   }
 
   // Middle rows
@@ -806,13 +814,15 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve128_sc(
     size_t dst_y = src_y * 8 + 4;
     const float *src_row0 = src + src_stride * src_y;
     const float *src_row1 = src_row0 + src_stride;
-    process_row(src_row0, src_row1, dst + dst_stride * dst_y, dst_stride);
+    process_row(src_row0, src_row1, dst + dst_stride * dst_y, dst_stride,
+                coeffs_pqrs);
   }
 
   // Bottom rows
   if (KLEIDICV_LIKELY(y_end == src_height)) {
     process_edge_row(src + src_stride * (src_height - 1),
-                     dst + dst_stride * (dst_height - 4), dst_stride);
+                     dst + dst_stride * (dst_height - 4), dst_stride,
+                     coeffs_ab);
   }
 
   return KLEIDICV_OK;
@@ -852,6 +862,9 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
     indices_2b = svzip1(tmp_4x, tmp_4x);
     indices_3b = svzip2(tmp_4x, tmp_4x);
   }
+  std::reference_wrapper<svuint32_t> indices[8] = {
+      indices_0a, indices_0b, indices_1a, indices_1b,
+      indices_2a, indices_2b, indices_3a, indices_3b};
 
   svfloat32_t coeffs_a, coeffs_b;
   {
@@ -862,112 +875,123 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
     coeffs_b = svdiv_n_f32_x(svptrue_b32(), repetitive_float, 16.0F);
     coeffs_a = svsub_x(svptrue_b32(), svdup_f32(1.0F), coeffs_b);
   }
+  std::reference_wrapper<svfloat32_t> coeffs_ab[2] = {coeffs_a, coeffs_b};
+
   auto lerp1d_vector = [](svbool_t pg, float p, svfloat32_t a, float q,
                           svfloat32_t b) KLEIDICV_STREAMING {
     return svmla_n_f32_x(pg, svmul_n_f32_x(pg, a, p), b, q);
   };
 
-  auto index_and_lerp1d = [&coeffs_a, &coeffs_b](
-                              svbool_t pg, svuint32_t indices_a,
-                              svuint32_t indices_b,
-                              svfloat32_t src) KLEIDICV_STREAMING {
-    return svmla_f32_x(pg, svmul_f32_x(pg, svtbl(src, indices_a), coeffs_a),
-                       svtbl(src, indices_b), coeffs_b);
+  auto index_and_lerp1d = [](svbool_t pg, svuint32_t indices_a,
+                             svuint32_t indices_b,
+                             std::reference_wrapper<svfloat32_t> coeffs_ab[2],
+                             svfloat32_t src) KLEIDICV_STREAMING {
+    return svmla_f32_x(pg, svmul_f32_x(pg, svtbl(src, indices_a), coeffs_ab[0]),
+                       svtbl(src, indices_b), coeffs_ab[1]);
   };
 
   // Handle top or bottom edge
-  auto process_edge_row = [src_width, dst_width, index_and_lerp1d, &indices_0a,
-                           &indices_0b, &indices_1a, &indices_1b, &indices_2a,
-                           &indices_2b, &indices_3a,
-                           &indices_3b](const float *src_row, float *dst_row,
-                                        size_t dst_stride) KLEIDICV_STREAMING {
-    // Left elements
-    float left = src_row[0];
-    float *dst = dst_row;
-    for (size_t i = 0; i < 4; ++i) {
-      *dst++ = left;
-      *dst++ = left;
-      *dst++ = left;
-      *dst = left;
-      dst += dst_stride - 3;
-    }
+  auto process_edge_row =
+      [src_width, dst_width, index_and_lerp1d](
+          const float *src_row, float *dst_row, size_t dst_stride,
+          std::reference_wrapper<svuint32_t> indices[8],
+          std::reference_wrapper<svfloat32_t> coeffs_ab[2]) KLEIDICV_STREAMING {
+        // Left elements
+        float left = src_row[0];
+        float *dst = dst_row;
+        for (size_t i = 0; i < 4; ++i) {
+          *dst++ = left;
+          *dst++ = left;
+          *dst++ = left;
+          *dst = left;
+          dst += dst_stride - 3;
+        }
 
-    // Middle elements
-    for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw() / 2) {
-      svbool_t pg = svwhilelt_b32_u64(src_x, src_width);
-      svfloat32_t svsrc = svld1_f32(pg, src_row + src_x);
+        // Middle elements
+        for (size_t src_x = 0; src_x + 1 < src_width; src_x += svcntw() / 2) {
+          svbool_t pg = svwhilelt_b32_u64(src_x, src_width);
+          svfloat32_t svsrc = svld1_f32(pg, src_row + src_x);
 
-      size_t dst_length = 8 * (src_width - src_x - 1);
-      svbool_t pg_1 = svwhilelt_b32_u64(0UL, dst_length);
-      svbool_t pg_2 = svwhilelt_b32_u64(svcntw(), dst_length);
-      svbool_t pg_3 = svwhilelt_b32_u64(2 * svcntw(), dst_length);
-      svbool_t pg_4 = svwhilelt_b32_u64(3 * svcntw(), dst_length);
+          size_t dst_length = 8 * (src_width - src_x - 1);
+          svbool_t pg_1 = svwhilelt_b32_u64(0UL, dst_length);
+          svbool_t pg_2 = svwhilelt_b32_u64(svcntw(), dst_length);
+          svbool_t pg_3 = svwhilelt_b32_u64(2 * svcntw(), dst_length);
+          svbool_t pg_4 = svwhilelt_b32_u64(3 * svcntw(), dst_length);
 
-      float *dst_row0 = dst_row + src_x * 8 + 4;
-      float *dst_row1 = dst_row0 + dst_stride;
-      float *dst_row2 = dst_row1 + dst_stride;
-      float *dst_row3 = dst_row2 + dst_stride;
-      svfloat32_t dst = index_and_lerp1d(pg_1, indices_0a, indices_0b, svsrc);
-      svst1(pg_1, dst_row0, dst);
-      svst1(pg_1, dst_row1, dst);
-      svst1(pg_1, dst_row2, dst);
-      svst1(pg_1, dst_row3, dst);
+          float *dst_row0 = dst_row + src_x * 8 + 4;
+          float *dst_row1 = dst_row0 + dst_stride;
+          float *dst_row2 = dst_row1 + dst_stride;
+          float *dst_row3 = dst_row2 + dst_stride;
+          svfloat32_t dst =
+              index_and_lerp1d(pg_1, indices[0], indices[1], coeffs_ab, svsrc);
+          svst1(pg_1, dst_row0, dst);
+          svst1(pg_1, dst_row1, dst);
+          svst1(pg_1, dst_row2, dst);
+          svst1(pg_1, dst_row3, dst);
 
-      dst = index_and_lerp1d(pg_2, indices_1a, indices_1b, svsrc);
-      svst1_vnum(pg_2, dst_row0, 1, dst);
-      svst1_vnum(pg_2, dst_row1, 1, dst);
-      svst1_vnum(pg_2, dst_row2, 1, dst);
-      svst1_vnum(pg_2, dst_row3, 1, dst);
+          dst =
+              index_and_lerp1d(pg_2, indices[2], indices[3], coeffs_ab, svsrc);
+          svst1_vnum(pg_2, dst_row0, 1, dst);
+          svst1_vnum(pg_2, dst_row1, 1, dst);
+          svst1_vnum(pg_2, dst_row2, 1, dst);
+          svst1_vnum(pg_2, dst_row3, 1, dst);
 
-      dst = index_and_lerp1d(pg_3, indices_2a, indices_2b, svsrc);
-      svst1_vnum(pg_3, dst_row0, 2, dst);
-      svst1_vnum(pg_3, dst_row1, 2, dst);
-      svst1_vnum(pg_3, dst_row2, 2, dst);
-      svst1_vnum(pg_3, dst_row3, 2, dst);
+          dst =
+              index_and_lerp1d(pg_3, indices[4], indices[5], coeffs_ab, svsrc);
+          svst1_vnum(pg_3, dst_row0, 2, dst);
+          svst1_vnum(pg_3, dst_row1, 2, dst);
+          svst1_vnum(pg_3, dst_row2, 2, dst);
+          svst1_vnum(pg_3, dst_row3, 2, dst);
 
-      dst = index_and_lerp1d(pg_4, indices_3a, indices_3b, svsrc);
-      svst1_vnum(pg_4, dst_row0, 3, dst);
-      svst1_vnum(pg_4, dst_row1, 3, dst);
-      svst1_vnum(pg_4, dst_row2, 3, dst);
-      svst1_vnum(pg_4, dst_row3, 3, dst);
-    }
+          dst =
+              index_and_lerp1d(pg_4, indices[6], indices[7], coeffs_ab, svsrc);
+          svst1_vnum(pg_4, dst_row0, 3, dst);
+          svst1_vnum(pg_4, dst_row1, 3, dst);
+          svst1_vnum(pg_4, dst_row2, 3, dst);
+          svst1_vnum(pg_4, dst_row3, 3, dst);
+        }
 
-    // Right elements
-    dst = dst_row + dst_width - 4;
-    float right = src_row[src_width - 1];
-    for (size_t i = 0; i < 4; ++i) {
-      *dst++ = right;
-      *dst++ = right;
-      *dst++ = right;
-      *dst = right;
-      dst += dst_stride - 3;
-    }
-  };
+        // Right elements
+        dst = dst_row + dst_width - 4;
+        float right = src_row[src_width - 1];
+        for (size_t i = 0; i < 4; ++i) {
+          *dst++ = right;
+          *dst++ = right;
+          *dst++ = right;
+          *dst = right;
+          dst += dst_stride - 3;
+        }
+      };
 
   svfloat32_t coeffs_p = svmul_n_f32_x(svptrue_b32(), coeffs_a, 15.0 / 16);
   svfloat32_t coeffs_q = svmul_n_f32_x(svptrue_b32(), coeffs_b, 15.0 / 16);
   svfloat32_t coeffs_r = svmul_n_f32_x(svptrue_b32(), coeffs_a, 1.0 / 16);
   svfloat32_t coeffs_s = svmul_n_f32_x(svptrue_b32(), coeffs_b, 1.0 / 16);
+  std::reference_wrapper<svfloat32_t> coeffs_pqrs[4] = {coeffs_p, coeffs_q,
+                                                        coeffs_r, coeffs_s};
 
-  auto index_and_lerp2d = [&coeffs_p, &coeffs_q, &coeffs_r, &coeffs_s](
-                              svbool_t pg, svuint32_t indices_a,
-                              svuint32_t indices_b, svfloat32_t src0,
-                              svfloat32_t src1) KLEIDICV_STREAMING {
+  auto index_and_lerp2d = [](svbool_t pg, svuint32_t indices_a,
+                             svuint32_t indices_b,
+                             std::reference_wrapper<svfloat32_t> coeffs_pqrs[4],
+                             svfloat32_t src0,
+                             svfloat32_t src1) KLEIDICV_STREAMING {
     return svmla_f32_x(
         pg,
         svmla_f32_x(
             pg,
-            svmla_f32_x(pg, svmul_f32_x(pg, svtbl(src0, indices_a), coeffs_p),
-                        svtbl(src0, indices_b), coeffs_q),
-            svtbl(src1, indices_a), coeffs_r),
-        svtbl(src1, indices_b), coeffs_s);
+            svmla_f32_x(pg,
+                        svmul_f32_x(pg, svtbl(src0, indices_a), coeffs_pqrs[0]),
+                        svtbl(src0, indices_b), coeffs_pqrs[1]),
+            svtbl(src1, indices_a), coeffs_pqrs[2]),
+        svtbl(src1, indices_b), coeffs_pqrs[3]);
   };
 
-  auto process_row = [src_width, dst_width, index_and_lerp2d, lerp1d_vector,
-                      &indices_0a, &indices_0b, &indices_1a, &indices_1b,
-                      &indices_2a, &indices_2b, &indices_3a, &indices_3b](
+  auto process_row = [src_width, dst_width, index_and_lerp2d, lerp1d_vector](
                          const float *src_row0, const float *src_row1,
-                         float *dst_row, size_t dst_stride) KLEIDICV_STREAMING {
+                         float *dst_row, size_t dst_stride,
+                         std::reference_wrapper<svuint32_t> indices[8],
+                         std::reference_wrapper<svfloat32_t>
+                             coeffs_pqrs[4]) KLEIDICV_STREAMING {
     // Left edge
     svbool_t pg1 = svptrue_pat_b32(SV_VL1);  // read 1 element
     svbool_t pg4 = svptrue_pat_b32(SV_VL4);  // write 4 elements
@@ -1004,11 +1028,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
       float *dst_row6 = dst_row5 + dst_stride;
       float *dst_row7 = dst_row6 + dst_stride;
 
-      svfloat32_t dst_0 =
-          index_and_lerp2d(pg_1, indices_0a, indices_0b, src_0, src_1);
+      svfloat32_t dst_0 = index_and_lerp2d(pg_1, indices[0], indices[1],
+                                           coeffs_pqrs, src_0, src_1);
       svst1(pg_1, dst_row0, dst_0);
-      svfloat32_t dst_7 =
-          index_and_lerp2d(pg_1, indices_0a, indices_0b, src_1, src_0);
+      svfloat32_t dst_7 = index_and_lerp2d(pg_1, indices[0], indices[1],
+                                           coeffs_pqrs, src_1, src_0);
       svst1(pg_1, dst_row7, dst_7);
       svst1(pg_1, dst_row1,
             lerp1d_vector(pg_1, 6.0 / 7, dst_0, 1.0 / 7, dst_7));
@@ -1023,9 +1047,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
       svst1(pg_1, dst_row6,
             lerp1d_vector(pg_1, 1.0 / 7, dst_0, 6.0 / 7, dst_7));
 
-      dst_0 = index_and_lerp2d(pg_2, indices_1a, indices_1b, src_0, src_1);
+      dst_0 = index_and_lerp2d(pg_2, indices[2], indices[3], coeffs_pqrs, src_0,
+                               src_1);
       svst1_vnum(pg_2, dst_row0, 1, dst_0);
-      dst_7 = index_and_lerp2d(pg_2, indices_1a, indices_1b, src_1, src_0);
+      dst_7 = index_and_lerp2d(pg_2, indices[2], indices[3], coeffs_pqrs, src_1,
+                               src_0);
       svst1_vnum(pg_2, dst_row7, 1, dst_7);
       svst1_vnum(pg_2, dst_row1, 1,
                  lerp1d_vector(pg_2, 6.0 / 7, dst_0, 1.0 / 7, dst_7));
@@ -1040,9 +1066,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
       svst1_vnum(pg_2, dst_row6, 1,
                  lerp1d_vector(pg_2, 1.0 / 7, dst_0, 6.0 / 7, dst_7));
 
-      dst_0 = index_and_lerp2d(pg_3, indices_2a, indices_2b, src_0, src_1);
+      dst_0 = index_and_lerp2d(pg_3, indices[4], indices[5], coeffs_pqrs, src_0,
+                               src_1);
       svst1_vnum(pg_3, dst_row0, 2, dst_0);
-      dst_7 = index_and_lerp2d(pg_3, indices_2a, indices_2b, src_1, src_0);
+      dst_7 = index_and_lerp2d(pg_3, indices[4], indices[5], coeffs_pqrs, src_1,
+                               src_0);
       svst1_vnum(pg_3, dst_row7, 2, dst_7);
       svst1_vnum(pg_3, dst_row1, 2,
                  lerp1d_vector(pg_3, 6.0 / 7, dst_0, 1.0 / 7, dst_7));
@@ -1057,9 +1085,11 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
       svst1_vnum(pg_3, dst_row6, 2,
                  lerp1d_vector(pg_3, 1.0 / 7, dst_0, 6.0 / 7, dst_7));
 
-      dst_0 = index_and_lerp2d(pg_4, indices_3a, indices_3b, src_0, src_1);
+      dst_0 = index_and_lerp2d(pg_4, indices[6], indices[7], coeffs_pqrs, src_0,
+                               src_1);
       svst1_vnum(pg_4, dst_row0, 3, dst_0);
-      dst_7 = index_and_lerp2d(pg_4, indices_3a, indices_3b, src_1, src_0);
+      dst_7 = index_and_lerp2d(pg_4, indices[6], indices[7], coeffs_pqrs, src_1,
+                               src_0);
       svst1_vnum(pg_4, dst_row7, 3, dst_7);
       svst1_vnum(pg_4, dst_row1, 3,
                  lerp1d_vector(pg_4, 6.0 / 7, dst_0, 1.0 / 7, dst_7));
@@ -1089,7 +1119,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
 
   // Top rows
   if (KLEIDICV_LIKELY(y_begin == 0)) {
-    process_edge_row(src, dst, dst_stride);
+    process_edge_row(src, dst, dst_stride, indices, coeffs_ab);
   }
 
   // Middle rows
@@ -1097,13 +1127,15 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32_sve256plus_sc(
     size_t dst_y = src_y * 8 + 4;
     const float *src_row0 = src + src_stride * src_y;
     const float *src_row1 = src_row0 + src_stride;
-    process_row(src_row0, src_row1, dst + dst_stride * dst_y, dst_stride);
+    process_row(src_row0, src_row1, dst + dst_stride * dst_y, dst_stride,
+                indices, coeffs_pqrs);
   }
 
   // Bottom rows
   if (KLEIDICV_LIKELY(y_end == src_height)) {
     process_edge_row(src + src_stride * (src_height - 1),
-                     dst + dst_stride * (dst_height - 4), dst_stride);
+                     dst + dst_stride * (dst_height - 4), dst_stride, indices,
+                     coeffs_ab);
   }
 
   return KLEIDICV_OK;
