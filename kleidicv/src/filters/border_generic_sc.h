@@ -376,6 +376,59 @@ class BorderMaker<uint8_t, FixedBorderType::REFLECT> {
 
 //////////////////////////////////////////////////////////////////////////////////
 
+template <>
+class BorderMaker<uint8_t, FixedBorderType::WRAP> {
+  using ScalarType = uint8_t;
+  using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+
+ public:
+  BorderMaker(size_t channels, svbool_t& pg) KLEIDICV_STREAMING
+      : pg_(pg),
+        pixels_per_vector_(static_cast<ptrdiff_t>(VecTraits::num_lanes() /
+                                                  channels)) {
+    // Full true for 1,2,4, but not for 3 channels
+    pg_ = svwhilelt_b8(0UL, pixels_per_vector_ * channels);
+  }
+
+  void make(Rows<ScalarType> rows, ptrdiff_t margin,
+            ptrdiff_t width) const KLEIDICV_STREAMING {
+    // left border
+    ptrdiff_t ch = static_cast<ptrdiff_t>(rows.channels());
+    ptrdiff_t x = 0;
+    ptrdiff_t remaining_elements = (margin % pixels_per_vector_) * ch;
+    svbool_t pg_last_front = svwhilelt_b8(0L, remaining_elements);
+    svuint8_t increasing = svindex_u8(0, 1);
+    svbool_t pg_last_end = svcmpge_n_u8(
+        pg_, increasing,
+        static_cast<uint8_t>(pixels_per_vector_ * ch - remaining_elements));
+    for (; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
+      svuint8_t data =
+          svld1_u8(pg_, &rows[(width - x - pixels_per_vector_) * ch]);
+      svst1_u8(pg_, &rows[(-x - pixels_per_vector_) * ch], data);
+    }
+    // last one is predicated
+    svuint8_t data =
+        svld1_u8(pg_last_end, &rows[(width - x - pixels_per_vector_) * ch]);
+    svst1_u8(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], data);
+
+    // right border
+    for (x = 0; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
+      svuint8_t data = svld1_u8(pg_, &rows[x * ch]);
+      svst1_u8(pg_, &rows[(width + x) * ch], data);
+    }
+    // last one is predicated
+    data = svld1_u8(pg_last_front, &rows[x * ch]);
+    svst1_u8(pg_last_front, &rows[(width + x) * ch], data);
+  }
+
+ private:
+  svbool_t& pg_;
+  ptrdiff_t pixels_per_vector_;
+};
+
+//////////////////////////////////////////////////////////////////////////////////
+
 template <typename ScalarType>
 class BorderMakerArbitrary {
   using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;

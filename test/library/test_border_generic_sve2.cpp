@@ -54,6 +54,12 @@ void test_sve_border(size_t width, size_t margin, size_t channels,
                                            kleidicv::FixedBorderType::REFLECT>
         border(static_cast<ptrdiff_t>(channels), sv, pg);
     border.make(rows, margin, width);
+  } else if (border_type == kleidicv::FixedBorderType::WRAP) {
+    svbool_t pg;
+    KLEIDICV_TARGET_NAMESPACE::BorderMaker<ElementType,
+                                           kleidicv::FixedBorderType::WRAP>
+        border(static_cast<ptrdiff_t>(channels), pg);
+    border.make(rows, margin, width);
   }
 
   EXPECT_EQ_ARRAY2D(expected, actual);
@@ -374,4 +380,117 @@ TEST(BorderMaker, Reflect_4Ch_5Elements) {
        1,  2,  3,  4,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
        13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 21, 22, 23, 24,
        17, 18, 19, 20, 13, 14, 15, 16, 9,  10, 11, 12, 5,  6,  7,  8});
+}
+
+////////////////////// WRAP //////////////////////
+
+/*      if (column_index == 0) {
+
+      case FixedBorderType::REFLECT:
+          return get(6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7);
+
+      case FixedBorderType::WRAP:
+          return get(height_ - 7, height_ - 6, height_ - 5, height_ - 4,
+                     height_ - 3, height_ - 2, height_ - 1, 0, 1, 2, 3, 4, 5, 6,
+                     7);
+
+      case FixedBorderType::REVERSE:
+          return get(7, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, 6, 7);
+*/
+
+TEST(BorderMaker, Wrap_1Ch_1Element) {
+  test_sve_border<uint8_t>(6, 1, 1, kleidicv::FixedBorderType::WRAP,
+                           {6, 1, 2, 3, 4, 5, 6, 1});
+}
+
+TEST(BorderMaker, Wrap_1Ch_2Elements) {
+  test_sve_border<uint8_t>(6, 2, 1, kleidicv::FixedBorderType::WRAP,
+                           {5, 6, 1, 2, 3, 4, 5, 6, 1, 2});
+}
+
+TEST(BorderMaker, Wrap_1Ch_3Elements) {
+  test_sve_border<uint8_t>(6, 3, 1, kleidicv::FixedBorderType::WRAP,
+                           {4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3});
+}
+
+TEST(BorderMaker, Wrap_1Ch_9Elements) {
+  test_sve_border<uint8_t>(10, 9, 1, kleidicv::FixedBorderType::WRAP,
+                           {2, 3, 4, 5, 6,  7, 8, 9, 10, 1, 2, 3, 4, 5,
+                            6, 7, 8, 9, 10, 1, 2, 3, 4,  5, 6, 7, 8, 9});
+}
+
+TEST(BorderMaker, Wrap_2Ch_1Element) {
+  test_sve_border<uint8_t>(3, 1, 2, kleidicv::FixedBorderType::WRAP,
+                           {5, 6, 1, 2, 3, 4, 5, 6, 1, 2});
+}
+
+TEST(BorderMaker, Wrap_2Ch_2Elements) {
+  test_sve_border<uint8_t>(3, 2, 2, kleidicv::FixedBorderType::WRAP,
+                           {3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4});
+}
+
+TEST(BorderMaker, Wrap_2Ch_3Elements) {
+  test_sve_border<uint8_t>(
+      4, 3, 2, kleidicv::FixedBorderType::WRAP,
+      {3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6});
+}
+
+TEST(BorderMaker, Wrap_2Ch_5Elements) {
+  test_sve_border<uint8_t>(
+      6, 5, 2, kleidicv::FixedBorderType::WRAP,
+      {3, 4, 5, 6,  7,  8,  9, 10, 11, 12, 1, 2, 3, 4, 5, 6,
+       7, 8, 9, 10, 11, 12, 1, 2,  3,  4,  5, 6, 7, 8, 9, 10});
+}
+
+TEST(BorderMaker, Wrap_3Ch_1Element) {
+  test_sve_border<uint8_t>(3, 1, 3, kleidicv::FixedBorderType::WRAP,
+                           {7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3});
+}
+
+TEST(BorderMaker, Wrap_3Ch_2Elements) {
+  test_sve_border<uint8_t>(
+      3, 2, 3, kleidicv::FixedBorderType::WRAP,
+      {4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6});
+}
+
+TEST(BorderMaker, Wrap_3Ch_3Elements) {
+  test_sve_border<uint8_t>(4, 3, 3, kleidicv::FixedBorderType::WRAP,
+                           {4, 5, 6, 7,  8,  9,  10, 11, 12, 1, 2, 3, 4, 5, 6,
+                            7, 8, 9, 10, 11, 12, 1,  2,  3,  4, 5, 6, 7, 8, 9});
+}
+
+TEST(BorderMaker, Wrap_3Ch_5Elements) {
+  test_sve_border<uint8_t>(
+      6, 5, 3, kleidicv::FixedBorderType::WRAP,
+      {4,  5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 1,
+       2,  3, 4, 5, 6, 7, 8,  9,  10, 11, 12, 13, 14, 15, 16, 17,
+       18, 1, 2, 3, 4, 5, 6,  7,  8,  9,  10, 11, 12, 13, 14, 15});
+}
+
+TEST(BorderMaker, Wrap_4Ch_1Element) {
+  test_sve_border<uint8_t>(
+      3, 1, 4, kleidicv::FixedBorderType::WRAP,
+      {9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4});
+}
+
+TEST(BorderMaker, Wrap_4Ch_2Elements) {
+  test_sve_border<uint8_t>(3, 2, 4, kleidicv::FixedBorderType::WRAP,
+                           {5, 6, 7, 8,  9,  10, 11, 12, 1, 2, 3, 4, 5, 6,
+                            7, 8, 9, 10, 11, 12, 1,  2,  3, 4, 5, 6, 7, 8});
+}
+
+TEST(BorderMaker, Wrap_4Ch_3Elements) {
+  test_sve_border<uint8_t>(4, 3, 4, kleidicv::FixedBorderType::WRAP,
+                           {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1,  2,
+                            3, 4, 5, 6, 7, 8,  9,  10, 11, 12, 13, 14, 15, 16,
+                            1, 2, 3, 4, 5, 6,  7,  8,  9,  10, 11, 12});
+}
+
+TEST(BorderMaker, Wrap_4Ch_5Elements) {
+  test_sve_border<uint8_t>(
+      6, 5, 4, kleidicv::FixedBorderType::WRAP,
+      {5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+       21, 22, 23, 24, 1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+       13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 1,  2,  3,  4,
+       5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
 }
