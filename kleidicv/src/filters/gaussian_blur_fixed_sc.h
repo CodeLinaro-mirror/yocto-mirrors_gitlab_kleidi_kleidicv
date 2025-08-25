@@ -397,6 +397,15 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
         workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
                                              dst_rows, channels, border_type,
                                              filter, border_maker);
+      } else if (border_type == FixedBorderType::REFLECT) {
+        svuint8_t sv;
+        svbool_t pg;
+        KLEIDICV_TARGET_NAMESPACE::BorderMaker<uint8_t,
+                                               FixedBorderType::REFLECT>
+            border_maker(static_cast<ptrdiff_t>(channels), sv, pg);
+        workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
+                                             dst_rows, channels, border_type,
+                                             filter, border_maker);
       }
 #else
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
