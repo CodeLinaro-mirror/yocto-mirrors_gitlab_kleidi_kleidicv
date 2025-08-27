@@ -12,19 +12,19 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-template <bool BGR, bool ALPHA>
-class YUVSpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, ALPHA> {
+template <bool BGR, bool kAlpha>
+class YUVSpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha> {
  public:
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<uint8_t>;
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::yuv420x_to_rgb;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::yuv420x_to_rgb;
 
   explicit YUVSpToRGBxOrBGRx(bool v_first) KLEIDICV_STREAMING
-      : YUV420XToRGBxOrBGRx<BGR, ALPHA>(v_first) {}
+      : YUV420XToRGBxOrBGRx<BGR, kAlpha>(v_first) {}
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() KLEIDICV_STREAMING {
-    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+    return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
   // Processes 2 * 16 bytes (even and odd rows) of the input YUV data, and

@@ -11,7 +11,7 @@
 
 namespace kleidicv::neon {
 
-template <bool BGR, bool ALPHA>
+template <bool BGR, bool kAlpha>
 class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
  public:
   using VecTraits = neon::VecTraits<uint8_t>;
@@ -19,7 +19,7 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
   using VectorType = VecTraits::VectorType;
   using Vector3Type = VecTraits::Vector3Type;
   using RawDestinationVectorType =
-      typename std::conditional<ALPHA, uint8x16x4_t, uint8x16x3_t>::type;
+      typename std::conditional<kAlpha, uint8x16x4_t, uint8x16x3_t>::type;
 
   explicit YUVToRGBAll()
       : b_delta4_(vdupq_n_u32(kBDelta4)),
@@ -28,7 +28,7 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() {
-    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+    return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
   void vector_path(const ScalarType *src, ScalarType *dst) {
@@ -111,7 +111,7 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
     rgb.val[r_index_] = r;
     rgb.val[g_index_] = g;
     rgb.val[b_index_] = b;
-    if constexpr (ALPHA) {
+    if constexpr (kAlpha) {
       rgb.val[alpha_index_] = vdupq_n_u8(alpha_value);
       // Store interleaved RGBA pixels to memory.
       vst4q_u8(dst, rgb);
@@ -133,7 +133,7 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
     dst[r_index_] = saturating_cast<int32_t, uint8_t>(r);
     dst[g_index_] = saturating_cast<int32_t, uint8_t>(g);
     dst[b_index_] = saturating_cast<int32_t, uint8_t>(b);
-    if constexpr (ALPHA) {
+    if constexpr (kAlpha) {
       dst[alpha_index_] = alpha_value;
     }
   }

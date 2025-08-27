@@ -724,19 +724,19 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
 #define KLEIDICV_OP_YUVP_TO_RGB(name)                                        \
   kleidicv_error_t name(const uint8_t *src, size_t src_stride, uint8_t *dst, \
                         size_t dst_stride, size_t width, size_t height,      \
-                        bool v_first)
+                        bool is_yv12)
 
 /// Converts a planar YUV420 image (I420 or YV12 layout) to RGB, RGBA, BGR, or
 /// BGRA format. All channels are 8-bit wide. If the output format includes an
 /// alpha channel, the alpha value is set to 0xFF.
 ///
-/// ### Source format: Planar YUV420
+/// Source format: Planar YUV420
 /// The input buffer consists of three planes stored sequentially in memory:
 /// - Y plane:   full resolution, size = width × height
 /// - U plane:   quarter resolution, size = (width / 2) × (height / 2)
 /// - V plane:   quarter resolution, size = (width / 2) × (height / 2)
 ///
-/// ### Destination format
+/// Destination format
 /// Destination data uses interleaved pixel layout with 3 or 4 channels per
 /// pixel:
 /// - R, G, B
@@ -751,24 +751,21 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
 /// exceed @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
 /// @param src         Pointer to the source buffer containing Y + U + V or Y +
-///                    V + U in sequential planes.
-///                    Must be non-null.
-/// @param src_stride  Stride (in bytes) between rows in the Y plane.
-///                    Must be at least `width`. This same stride is reused to
-///                    compute row access in the U and V planes, which follow
-///                    the Y plane in memory. In such memory layouts
-///                    (e.g., OpenCV’s I420/YV12), the U and V planes are
-///                    located directly after the Y plane, and their row
-///                    stepping can be expressed as: `uvsteps[2] = { width / 2,
-///                    src_stride - width / 2 }`. This ensures correct row
-///                    traversal across the subsampled chroma planes.
+///                    V + U in sequential planes. Must be non-null.
+/// @param src_stride  Byte offset between the start of one row in the Y plane
+///                    of the output and the next. Must be at least `width`.
+///                    This same stride is reused to compute row stepping in the
+///                    U and V planes, which are stored sequentially after the
+///                    Y plane. Their row stepping alternates between these two
+///                    values:
+///                    `uvsteps[2] = { width / 2, dst_stride - width / 2 }`.
 /// @param dst         Pointer to the destination data. Must be non-null.
 /// @param dst_stride  Byte offset between the start of one destination row and
 ///                    the next. Must be at least `(destination channel count) *
 ///                    width`, unless the image has only one row.
 /// @param width       Number of pixels in a row.
 /// @param height      Number of rows in the data.
-/// @param v_first    If true, treat the layout as YV12 (Y + V + U). Otherwise,
+/// @param is_yv12     If true, treat the layout as YV12 (Y + V + U). Otherwise,
 ///                    I420 (Y + U + V).
 KLEIDICV_OP_YUVP_TO_RGB(kleidicv_yuv_p_to_rgb_u8);
 /// @copydoc kleidicv_yuv_p_to_rgb_u8
@@ -867,6 +864,136 @@ KLEIDICV_API_DECLARATION(kleidicv_bgra_to_yuv_u8, const uint8_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_rgba_to_yuv_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
+
+#define KLEIDICV_OP_RGB_TO_YUV420P(name)                                     \
+  kleidicv_error_t name(const uint8_t *src, size_t src_stride, uint8_t *dst, \
+                        size_t dst_stride, size_t width, size_t height,      \
+                        bool is_yv12);
+
+/// Converts an interleaved RGB, RGBA, BGR, or BGRA image to planar YUV420
+/// format (IYUV or YV12 layout). All channels are 8-bit wide. If the input
+/// format includes an alpha channel, it is ignored.
+///
+/// Source format
+/// Source data has 3 or 4 interleaved channels per pixel:
+/// - R, G, B
+/// - B, G, R
+/// - R, G, B, Alpha
+/// - B, G, R, Alpha
+///
+/// One pixel occupies 3 or 4 bytes, depending on the format. There is no
+/// padding between pixels.
+///
+/// Destination format: Planar YUV420
+/// The output buffer consists of three planes concatenated in memory:
+/// - Y plane:   full resolution, size = width × height
+/// - U plane:   quarter resolution, size = (width / 2) × (height / 2)
+/// - V plane:   quarter resolution, size = (width / 2) × (height / 2)
+///
+/// Chroma (U and V) are subsampled by a factor of 2 in both horizontal and
+/// vertical directions. Only even rows and even columns from the RGB image
+/// are used to compute U and V values. If the input image has an odd width or
+/// height, the chroma resolution is rounded up. For example, a height of 9
+/// will result in 5 chroma rows (since 9 / 2 = 4.5 -> rounded up). The same
+/// applies to the width. This behavior matches OpenCV's implementation.
+///
+/// If `is_yv12 == false`, the format is `IYUV`: Y + U + V
+/// If `is_yv12 == true`,  the format is `YV12`: Y + V + U
+///
+/// Width and height refer to the logical image dimensions, i.e., number of
+/// pixels per row and number of rows. The total number of pixels must not
+/// exceed @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src         Pointer to the source buffer containing interleaved
+///                    RGBX/BGRX data. Must be non-null.
+/// @param src_stride  Byte offset between the start of one source row and the
+///                    next. Must be at least `(source channel count) * width`,
+///                    unless the image has only one row.
+/// @param dst         Pointer to the destination buffer to store Y + U + V or Y
+///                    + V + U data. Must be non-null.
+/// @param dst_stride  Byte offset between the start of one row in the Y plane
+///                    of the output and the next. Must be at least `width`.
+///                    This same stride is reused to compute row stepping in the
+///                    U and V planes, which are stored sequentially after the
+///                    Y plane. Their row stepping alternates between these two
+///                    values:
+///                    `uvsteps[2] = { width / 2, dst_stride - width / 2 }`.
+/// @param width       Number of pixels in a row.
+/// @param height      Number of rows in the image.
+/// @param is_yv12     If true, use YV12 layout (Y + V + U). Otherwise,
+///                    use I420 layout (Y + U + V).
+KLEIDICV_OP_RGB_TO_YUV420P(kleidicv_rgb_to_yuv420_p_u8);
+/// @copydoc kleidicv_rgb_to_yuv420_p_u8
+KLEIDICV_OP_RGB_TO_YUV420P(kleidicv_rgba_to_yuv420_p_u8);
+/// @copydoc kleidicv_rgb_to_yuv420_p_u8
+KLEIDICV_OP_RGB_TO_YUV420P(kleidicv_bgr_to_yuv420_p_u8);
+/// @copydoc kleidicv_rgb_to_yuv420_p_u8
+KLEIDICV_OP_RGB_TO_YUV420P(kleidicv_bgra_to_yuv420_p_u8);
+
+#define KLEIDICV_OP_RGB_TO_YUV420SP(name)                                      \
+  kleidicv_error_t name(const uint8_t *src, size_t src_stride, uint8_t *y_dst, \
+                        size_t y_stride, uint8_t *uv_dst, size_t uv_stride,    \
+                        size_t width, size_t height, bool is_nv21);
+
+/// Converts an interleaved RGB, RGBA, BGR, or BGRA image to semi-planar
+/// YUV420 format (NV12 or NV21 layout). All channels are 8-bit wide.
+/// If the input format includes an alpha channel, it is ignored.
+///
+/// Source format
+/// Source data has 3 or 4 interleaved channels per pixel:
+/// - R, G, B
+/// - B, G, R
+/// - R, G, B, Alpha
+/// - B, G, R, Alpha
+///
+/// Each pixel occupies 3 or 4 bytes, depending on the format. There is no
+/// padding between pixels.
+///
+/// Destination format: Semi-Planar YUV420
+/// The output consists of two planes:
+/// - Y plane: full resolution, size = width × height
+/// - UV plane: interleaved chroma (U and V) at quarter resolution,
+///             size = (width / 2) × (height / 2) × 2 bytes per chroma sample
+///             pair
+///
+/// Chroma (U and V) are subsampled by a factor of 2 in both horizontal and
+/// vertical directions. Only even rows and even columns from the RGB image
+/// are used to compute U and V values. If the input image has an odd width or
+/// height, the chroma resolution is rounded up. For example, a height of 9
+/// will result in 5 chroma rows (since 9 / 2 = 4.5 -> rounded up). The same
+/// applies to the width. This behavior matches OpenCV's implementation.
+///
+/// If `is_nv21 == false`, the format is `NV12`: Y + interleaved UV
+/// If `is_nv21 == true`,  the format is `NV21`: Y + interleaved VU
+///
+/// Width and height refer to the logical image dimensions, i.e., number of
+/// pixels per row and number of rows. The total number of pixels must not
+/// exceed @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src          Pointer to the source buffer containing interleaved
+///                     RGBX/BGRX data. Must be non-null.
+/// @param src_stride   Byte offset between the start of one source row and the
+///                     next. Must be at least `(source channel count) * width`,
+///                     unless the image has only one row.
+/// @param y_dst        Pointer to the destination Y plane. Must be non-null.
+/// @param y_stride     Byte offset between the start of one row in the Y plane
+///                     and the next. Must be at least `width`.
+/// @param uv_dst       Pointer to the destination UV plane (interleaved).
+///                     Must be non-null.
+/// @param uv_stride    Byte offset between the start of one row in the UV plane
+///                     and the next. Must be at least
+///                     `__builtin_align_up(width, 2)`.
+/// @param width        Number of pixels per row in the image.
+/// @param height       Number of rows in the image.
+/// @param is_nv21      If true, UV plane is written in VU order (NV21).
+///                     Otherwise, UV plane is written in UV order (NV12).
+KLEIDICV_OP_RGB_TO_YUV420SP(kleidicv_rgb_to_yuv420_sp_u8);
+/// @copydoc kleidicv_rgb_to_yuv420_sp_u8
+KLEIDICV_OP_RGB_TO_YUV420SP(kleidicv_rgba_to_yuv420_sp_u8);
+/// @copydoc kleidicv_rgb_to_yuv420_sp_u8
+KLEIDICV_OP_RGB_TO_YUV420SP(kleidicv_bgr_to_yuv420_sp_u8);
+/// @copydoc kleidicv_rgb_to_yuv420_sp_u8
+KLEIDICV_OP_RGB_TO_YUV420SP(kleidicv_bgra_to_yuv420_sp_u8);
 
 /// Performs a comparison of each element's value in `src` with respect to a
 /// caller defined threshold. The strictly larger elements are set to

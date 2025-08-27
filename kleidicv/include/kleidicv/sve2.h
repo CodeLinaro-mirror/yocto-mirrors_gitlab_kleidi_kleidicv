@@ -632,6 +632,15 @@ class ScalableVectorArray2D {
   }
 };
 
+template <typename VectorType, size_t element_size>
+class ScalableVectorArray1D {
+ public:
+  std::reference_wrapper<VectorType> window[element_size];
+  VectorType &operator()(int index) KLEIDICV_STREAMING {
+    return window[index].get();
+  }
+};
+
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
 #endif  // KLEIDICV_SVE2_H

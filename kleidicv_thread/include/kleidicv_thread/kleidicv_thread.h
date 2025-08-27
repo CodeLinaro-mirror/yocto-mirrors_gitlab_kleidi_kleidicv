@@ -82,7 +82,7 @@ KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_u8_to_f32, uint8_t, float);
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_yuv_p_to_bgr_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool v_first, kleidicv_thread_multithreading);
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
@@ -90,7 +90,7 @@ kleidicv_error_t kleidicv_thread_yuv_p_to_bgr_u8(
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_yuv_p_to_bgra_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool v_first, kleidicv_thread_multithreading);
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
@@ -98,7 +98,7 @@ kleidicv_error_t kleidicv_thread_yuv_p_to_bgra_u8(
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_yuv_p_to_rgb_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool v_first, kleidicv_thread_multithreading);
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
@@ -106,7 +106,75 @@ kleidicv_error_t kleidicv_thread_yuv_p_to_rgb_u8(
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_yuv_p_to_rgba_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool v_first, kleidicv_thread_multithreading);
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_rgb_to_yuv420_p_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_rgb_to_yuv420_p_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_rgba_to_yuv420_p_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_rgba_to_yuv420_p_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_bgr_to_yuv420_p_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_bgr_to_yuv420_p_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_bgra_to_yuv420_p_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_bgra_to_yuv420_p_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, bool is_yv12, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_rgb_to_yuv420_sp_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_rgb_to_yuv420_sp_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
+    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
+    bool is_nv21, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_rgba_to_yuv420_sp_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_rgba_to_yuv420_sp_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
+    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
+    bool is_nv21, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_bgr_to_yuv420_sp_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_bgr_to_yuv420_sp_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
+    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
+    bool is_nv21, kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_bgra_to_yuv420_sp_u8 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_bgra_to_yuv420_sp_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
+    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
+    bool is_nv21, kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///

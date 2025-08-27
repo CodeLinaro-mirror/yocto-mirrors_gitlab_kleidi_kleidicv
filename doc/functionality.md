@@ -29,30 +29,30 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Bitwise And                  |  x  |
 
 ## Color conversions
-|                              | u8  |
-|------------------------------|-----|
-| Gray-RGB                     |  x  |
-| Gray-RGBA                    |  x  |
-| RGB-BGR                      |  x  |
-| BGR-RGB                      |  x  |
-| RGBA-BGRA                    |  x  |
-| BGRA-RGBA                    |  x  |
-| YUV420 (planar) - BGR        |  x  |
-| YUV420 (planar) - BGRA       |  x  |
-| YUV420 (planar) - RGB        |  x  |
-| YUV420 (planar) - RGBA       |  x  |
-| YUV420 (semi-planar) - BGR   |  x  |
-| YUV420 (semi-planar) - BGRA  |  x  |
-| YUV420 (semi-planar) - RGB   |  x  |
-| YUV420 (semi-planar) - RGBA  |  x  |
-| YUV-BGR                      |  x  |
-| YUV-RGB                      |  x  |
-| YUV-BGRA                     |  x  |
-| YUV-RGBA                     |  x  |
-| RGB-YUV                      |  x  |
-| RGBA-YUV                     |  x  |
-| BGR-YUV                      |  x  |
-| BGRA-YUV                     |  x  |
+|                                      | u8  |
+|--------------------------------------|-----|
+| Gray-RGB                             |  x  |
+| Gray-RGBA                            |  x  |
+| RGB-BGR                              |  x  |
+| BGR-RGB                              |  x  |
+| RGBA-BGRA                            |  x  |
+| BGRA-RGBA                            |  x  |
+| YUV420 (planar & semi-planar) - BGR  |  x  |
+| YUV420 (planar & semi-planar) - BGRA |  x  |
+| YUV420 (planar & semi-planar) - RGB  |  x  |
+| YUV420 (planar & semi-planar) - RGBA |  x  |
+| YUV-BGR                              |  x  |
+| YUV-RGB                              |  x  |
+| YUV-BGRA                             |  x  |
+| YUV-RGBA                             |  x  |
+| RGB-YUV                              |  x  |
+| RGBA-YUV                             |  x  |
+| BGR-YUV                              |  x  |
+| BGRA-YUV                             |  x  |
+| RGB-YUV420  (planar & semi-planar)   |  x  |
+| RGBA-YUV420 (planar & semi-planar)   |  x  |
+| BGR-YUV420  (planar & semi-planar)   |  x  |
+| BGRA-YUV420 (planar & semi-planar)   |  x  |
 
 ## Data type conversions
 |            | u8  | s8  | f32 |

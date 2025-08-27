@@ -44,31 +44,31 @@ class YuvpThread : public testing::TestWithParam<P> {
   }
 
   template <typename Func>
-  void run_unsupported(Func impl, size_t channels, bool is_nv21) {
+  void run_unsupported(Func impl, size_t channels, bool is_yv12) {
     test::Array2D<uint8_t> src{20, (10 * 3 + 1) / 2};
 
     test::Array2D<uint8_t> dst{20 * channels, 10, 0, channels};
 
     test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width(), dst.height(), is_nv21,
+                         dst.stride(), dst.width(), dst.height(), is_yv12,
                          get_multithreading_fake(2));
 
     EXPECT_EQ(KLEIDICV_OK,
               impl(src.data(), src.stride(), dst.data(), dst.stride(), 0, 1,
-                   is_nv21, get_multithreading_fake(2)));
+                   is_yv12, get_multithreading_fake(2)));
 
     EXPECT_EQ(KLEIDICV_OK,
               impl(src.data(), src.stride(), dst.data(), dst.stride(), 1, 0,
-                   is_nv21, get_multithreading_fake(2)));
+                   is_yv12, get_multithreading_fake(2)));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(src.data(), src.stride(), dst.data(), dst.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, is_nv21,
+                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, is_yv12,
                    get_multithreading_fake(2)));
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(src.data(), src.stride(), dst.data(), dst.stride(),
                    KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
-                   is_nv21, get_multithreading_fake(2)));
+                   is_yv12, get_multithreading_fake(2)));
   }
 };
 

@@ -7,10 +7,11 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
+#include "yuv420_coefficients.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-template <bool BGR, bool ALPHA>
+template <bool BGR, bool kAlpha>
 class YUV420XToRGBxOrBGRx {
  public:
   const bool v_first_;
@@ -136,7 +137,7 @@ class YUV420XToRGBxOrBGRx {
     b1_t = svsra(svdup_n_s16(0), b1_t, kWeightScale - 16);
     svuint8_t b1 = svqxtunt(svqxtunb(b1_b), b1_t);
 
-    if constexpr (ALPHA) {
+    if constexpr (kAlpha) {
       svuint8x4_t rgba0 =
           svcreate4(BGR ? b0 : r0, g0, BGR ? r0 : b0, svdup_n_u8(0xFF));
       svuint8x4_t rgba1 =

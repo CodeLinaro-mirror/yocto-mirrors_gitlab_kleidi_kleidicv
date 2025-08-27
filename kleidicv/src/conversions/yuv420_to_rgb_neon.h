@@ -10,10 +10,11 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/traits.h"
+#include "yuv420_coefficients.h"
 
 namespace kleidicv::neon {
 
-template <bool BGR, bool ALPHA>
+template <bool BGR, bool kAlpha>
 class YUV420XToRGBxOrBGRx {
  public:
   using ScalarType = uint8_t;
@@ -27,7 +28,7 @@ class YUV420XToRGBxOrBGRx {
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() {
-    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+    return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
   static int16x8_t combine_scaled_s16(int32x4_t a, int32x4_t b) {
@@ -178,7 +179,7 @@ class YUV420XToRGBxOrBGRx {
     uint8x8x2_t b0 = vzip_u8(vqmovun_s16(b0_even), vqmovun_s16(b0_odd));
     uint8x8x2_t b1 = vzip_u8(vqmovun_s16(b1_even), vqmovun_s16(b1_odd));
 
-    if constexpr (ALPHA) {
+    if constexpr (kAlpha) {
       uint8x16x4_t rgba0, rgba1;
       // Red channel
       rgba0.val[0] = vcombine_u8(r0.val[0], r0.val[1]);
@@ -245,11 +246,11 @@ class YUV420XToRGBxOrBGRx {
       rgbx_rows[selector][1] = saturating_cast<int32_t, uint8_t>(g);
       rgbx_rows[selector][2] = saturating_cast<int32_t, uint8_t>(b);
 
-      if constexpr (ALPHA) {
+      if constexpr (kAlpha) {
         rgbx_rows[selector][3] = 0xFF;
       }
 
-      rgbx_rows[selector] += ALPHA ? 4 : 3;
+      rgbx_rows[selector] += kAlpha ? 4 : 3;
     }
   }
 };

@@ -21,6 +21,11 @@ YUVP2BGRA:  opencv_perf_imgproc '*cvtColorYUV420/*' '($PIXEL_FORMAT, COLOR_YUV2B
 YUVP2RGB:   opencv_perf_imgproc '*cvtColorYUV420/*' '($PIXEL_FORMAT, COLOR_YUV2RGB_YV12)'
 YUVP2RGBA:  opencv_perf_imgproc '*cvtColorYUV420/*' '($PIXEL_FORMAT, COLOR_YUV2RGBA_YV12)'
 
+RGB2YUVP:  opencv_perf_imgproc '*cvtColorRGB2YUV420p/*' '($PIXEL_FORMAT, COLOR_RGB2YUV_YV12)'
+RGBA2YUVP: opencv_perf_imgproc '*cvtColorRGB2YUV420p/*' '($PIXEL_FORMAT, COLOR_RGBA2YUV_YV12)'
+BGR2YUVP:  opencv_perf_imgproc '*cvtColorRGB2YUV420p/*' '($PIXEL_FORMAT, COLOR_BGR2YUV_YV12)'
+BGRA2YUVP: opencv_perf_imgproc '*cvtColorRGB2YUV420p/*' '($PIXEL_FORMAT, COLOR_BGRA2YUV_YV12)'
+
 RGB2YUV:    opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, COLOR_RGB2YUV)'
 BGR2YUV:    opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, COLOR_BGR2YUV)'
 RGBA2YUV:   opencv_perf_imgproc '*cvtColor8u/*'     '($PIXEL_FORMAT, CX_RGBA2YUV)'

@@ -8,26 +8,26 @@
 
 namespace kleidicv::neon {
 
-template <bool BGR, bool ALPHA>
+template <bool BGR, bool kAlpha>
 class RGBToYUVAll final : public UnrollOnce, public TryToAvoidTailLoop {
  public:
   using VecTraits = neon::VecTraits<uint8_t>;
   using ScalarType = VecTraits::ScalarType;
   using VectorType = VecTraits::VectorType;
   using RawSourceVectorType =
-      typename std::conditional<ALPHA, uint8x16x4_t, uint8x16x3_t>::type;
+      typename std::conditional<kAlpha, uint8x16x4_t, uint8x16x3_t>::type;
 
   explicit RGBToYUVAll() = default;
 
   // Returns the number of channels in the input image.
   static constexpr size_t input_channels() {
-    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+    return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
   void vector_path(const ScalarType *src, ScalarType *dst) {
     RawSourceVectorType vsrc;
     int16x8_t r_l, r_h, g_l, g_h, b_l, b_h;
-    if constexpr (ALPHA) {
+    if constexpr (kAlpha) {
       VecTraits::load(src, vsrc);
 
       uint16x8_t rb_l = vuzp1q_u8(vsrc.val[0], vsrc.val[1]);
@@ -146,14 +146,14 @@ class RGBToYUVAll final : public UnrollOnce, public TryToAvoidTailLoop {
   static constexpr size_t r_index_ = BGR ? 2 : 0;
   static constexpr size_t g_index_ = 1;
   static constexpr size_t b_index_ = BGR ? 0 : 2;
-  static constexpr size_t step_ = ALPHA ? 4 : 3;
+  static constexpr size_t step_ = kAlpha ? 4 : 3;
   static constexpr uint32_t half_ =
       (std::numeric_limits<uint8_t>::max() / 2 + 1U) << kWeightScale;
 
   static int16x8_t combine_scaled_s16(int32x4_t a, int32x4_t b) {
     return vrshrn_high_n_s32(vrshrn_n_s32(a, kWeightScale), b, kWeightScale);
   }
-};  // end of class RGBToYUVAll<bool BGR, bool ALPHA>
+};  // end of class RGBToYUVAll<bool BGR, bool kAlpha>
 
 template <typename OperationType, typename ScalarType>
 kleidicv_error_t rgb2yuv_operation(OperationType &operation,

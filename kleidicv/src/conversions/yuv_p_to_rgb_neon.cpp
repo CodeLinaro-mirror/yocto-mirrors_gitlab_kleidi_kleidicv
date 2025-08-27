@@ -10,20 +10,20 @@
 #include "yuv420_to_rgb_neon.h"
 
 namespace kleidicv::neon {
-template <bool BGR, bool ALPHA>
-class YUVpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, ALPHA>,
+template <bool BGR, bool kAlpha>
+class YUVpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha>,
                                public UnrollOnce,
                                public TryToAvoidTailLoop {
  public:
   using VecTraits = neon::VecTraits<uint8_t>;
   using ScalarType = VecTraits::ScalarType;
   using VectorType = VecTraits::VectorType;
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::de_interleave_indices_;
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::yuv420x_to_rgb;
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::v_first_;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::de_interleave_indices_;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::yuv420x_to_rgb;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::v_first_;
 
-  explicit YUVpToRGBxOrBGRx(bool v_first)
-      : YUV420XToRGBxOrBGRx<BGR, ALPHA>(v_first) {}
+  explicit YUVpToRGBxOrBGRx(bool is_yv12)
+      : YUV420XToRGBxOrBGRx<BGR, kAlpha>(is_yv12) {}
 
   void vector_path(VectorType &y0, VectorType &y1, VectorType &y2,
                    VectorType &y3, VectorType &u, VectorType &v,
@@ -54,7 +54,7 @@ class YUVpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, ALPHA>,
     int32x4_t v_hi_lo = vreinterpretq_s32_u8(vqtbl1q_u8(v, index_hi_lo));
     int32x4_t v_hi_hi = vreinterpretq_s32_u8(vqtbl1q_u8(v, index_hi_hi));
 
-    constexpr size_t step = ALPHA ? 4 * 16 : 3 * 16;
+    constexpr size_t step = kAlpha ? 4 * 16 : 3 * 16;
 
     yuv420x_to_rgb(y0, y1, u_lo_lo, u_lo_hi, v_lo_lo, v_lo_hi, rgbx_row_0,
                    rgbx_row_1);
@@ -160,7 +160,6 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
   v = v + row_uv * src_stride / 2;
 
   size_t dcn = operation.output_channels();
-  const size_t vsize = 16;
   for (size_t h = row_begin; h < row_end; h += 2) {
     ScalarType *row0 = dst + dst_stride * h;
     ScalarType *row1 = dst + dst_stride * (h + 1);
@@ -174,15 +173,15 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
       y1 = y0;
     }
 
-    LoopUnroll2 loop{width, vsize};
+    LoopUnroll2 loop{width, kVectorLength};
 
     loop.unroll_twice([&](size_t index) {
-      uint8x16_t u_vec = vld1q_u8(u + (index >> 1));
-      uint8x16_t v_vec = vld1q_u8(v + (index >> 1));
+      uint8x16_t u_vec = vld1q_u8(u + index / 2);
+      uint8x16_t v_vec = vld1q_u8(v + index / 2);
       uint8x16_t y0_vec = vld1q_u8(y0 + index);
       uint8x16_t y1_vec = vld1q_u8(y1 + index);
-      uint8x16_t y2_vec = vld1q_u8(y0 + index + 16);
-      uint8x16_t y3_vec = vld1q_u8(y1 + index + 16);
+      uint8x16_t y2_vec = vld1q_u8(y0 + index + kVectorLength);
+      uint8x16_t y3_vec = vld1q_u8(y1 + index + kVectorLength);
 
       operation.vector_path(y0_vec, y1_vec, y2_vec, y3_vec, u_vec, v_vec,
                             &row0[index * dcn], &row1[index * dcn]);
@@ -190,8 +189,8 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
 
     loop.remaining([&](size_t index, size_t length) {
       operation.scalar_path(length - index, y0 + index, y1 + index,
-                            u + (index >> 1), v + (index >> 1),
-                            &row0[index * dcn], &row1[index * dcn]);
+                            u + index / 2, v + index / 2, &row0[index * dcn],
+                            &row1[index * dcn]);
     });
 
     y0 += src_stride * 2;
@@ -206,9 +205,9 @@ KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t yuv_p_to_rgb_stripe_u8(const uint8_t *src, size_t src_stride,
                                         uint8_t *dst, size_t dst_stride,
                                         size_t width, size_t height,
-                                        bool v_first, size_t begin,
+                                        bool is_yv12, size_t begin,
                                         size_t end) {
-  YUVpToRGB operation{v_first};
+  YUVpToRGB operation{is_yv12};
   return yuv2rgbx_operation(operation, src, src_stride, dst, dst_stride, width,
                             height, begin, end);
 }
@@ -217,9 +216,9 @@ KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t yuv_p_to_rgba_stripe_u8(const uint8_t *src, size_t src_stride,
                                          uint8_t *dst, size_t dst_stride,
                                          size_t width, size_t height,
-                                         bool v_first, size_t begin,
+                                         bool is_yv12, size_t begin,
                                          size_t end) {
-  YUVpToRGBA operation{v_first};
+  YUVpToRGBA operation{is_yv12};
   return yuv2rgbx_operation(operation, src, src_stride, dst, dst_stride, width,
                             height, begin, end);
 }
@@ -228,9 +227,9 @@ KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t yuv_p_to_bgr_stripe_u8(const uint8_t *src, size_t src_stride,
                                         uint8_t *dst, size_t dst_stride,
                                         size_t width, size_t height,
-                                        bool v_first, size_t begin,
+                                        bool is_yv12, size_t begin,
                                         size_t end) {
-  YUVpToBGR operation{v_first};
+  YUVpToBGR operation{is_yv12};
   return yuv2rgbx_operation(operation, src, src_stride, dst, dst_stride, width,
                             height, begin, end);
 }
@@ -239,9 +238,9 @@ KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t yuv_p_to_bgra_stripe_u8(const uint8_t *src, size_t src_stride,
                                          uint8_t *dst, size_t dst_stride,
                                          size_t width, size_t height,
-                                         bool v_first, size_t begin,
+                                         bool is_yv12, size_t begin,
                                          size_t end) {
-  YUVpToBGRA operation{v_first};
+  YUVpToBGRA operation{is_yv12};
   return yuv2rgbx_operation(operation, src, src_stride, dst, dst_stride, width,
                             height, begin, end);
 }

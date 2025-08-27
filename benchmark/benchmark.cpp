@@ -773,6 +773,68 @@ static void yuv_p_to_bgra(benchmark::State& state) {
 }
 BENCHMARK(yuv_p_to_bgra);
 
+template <size_t InChannels, typename Function>
+static void rgb_to_yuv420_p_imp(Function f, benchmark::State& state) {
+  bench_functor(state, [f]() {
+    (void)f(get_source_buffer_a<uint8_t, InChannels>(),
+            InChannels * image_width * sizeof(uint8_t),
+            get_destination_buffer_a<uint8_t, 3>(),
+            image_width * sizeof(uint8_t), image_width, image_height, true);
+  });
+}
+
+static void rgb_to_yuv_p(benchmark::State& state) {
+  rgb_to_yuv420_p_imp<3>(kleidicv_rgb_to_yuv420_p_u8, state);
+}
+BENCHMARK(rgb_to_yuv_p);
+
+static void rgba_to_yuv_p(benchmark::State& state) {
+  rgb_to_yuv420_p_imp<4>(kleidicv_rgba_to_yuv420_p_u8, state);
+}
+BENCHMARK(rgba_to_yuv_p);
+
+static void bgr_to_yuv_p(benchmark::State& state) {
+  rgb_to_yuv420_p_imp<3>(kleidicv_bgr_to_yuv420_p_u8, state);
+}
+BENCHMARK(bgr_to_yuv_p);
+
+static void bgra_to_yuv_p(benchmark::State& state) {
+  rgb_to_yuv420_p_imp<4>(kleidicv_bgra_to_yuv420_p_u8, state);
+}
+BENCHMARK(bgra_to_yuv_p);
+
+template <size_t InChannels, typename Function>
+static void rgb_to_yuv420_sp_imp(Function f, benchmark::State& state) {
+  bench_functor(state, [f]() {
+    (void)f(
+        get_source_buffer_a<uint8_t, InChannels>(),
+        InChannels * image_width * sizeof(uint8_t),
+        get_destination_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
+        get_destination_buffer_b<uint8_t, 2>(),
+        (image_width / 2) * sizeof(uint8_t), image_width, image_height, true);
+  });
+}
+
+static void rgb_to_yuv_sp(benchmark::State& state) {
+  rgb_to_yuv420_sp_imp<3>(kleidicv_rgb_to_yuv420_sp_u8, state);
+}
+BENCHMARK(rgb_to_yuv_sp);
+
+static void rgba_to_yuv_sp(benchmark::State& state) {
+  rgb_to_yuv420_sp_imp<4>(kleidicv_rgba_to_yuv420_sp_u8, state);
+}
+BENCHMARK(rgba_to_yuv_sp);
+
+static void bgr_to_yuv_sp(benchmark::State& state) {
+  rgb_to_yuv420_sp_imp<3>(kleidicv_bgr_to_yuv420_sp_u8, state);
+}
+BENCHMARK(bgr_to_yuv_sp);
+
+static void bgra_to_yuv_sp(benchmark::State& state) {
+  rgb_to_yuv420_sp_imp<4>(kleidicv_bgra_to_yuv420_sp_u8, state);
+}
+BENCHMARK(bgra_to_yuv_sp);
+
 template <typename T, size_t KernelSize, typename Function>
 static void morphology(Function f, benchmark::State& state) {
   kleidicv_morphology_context_t* context = nullptr;

@@ -14,17 +14,17 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-template <bool BGR, bool ALPHA>
-class YUVpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, ALPHA> {
+template <bool BGR, bool kAlpha>
+class YUVpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha> {
  public:
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::yuv420x_to_rgb;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::yuv420x_to_rgb;
 
   explicit YUVpToRGBxOrBGRx(bool v_first) KLEIDICV_STREAMING
-      : YUV420XToRGBxOrBGRx<BGR, ALPHA>(v_first) {}
+      : YUV420XToRGBxOrBGRx<BGR, kAlpha>(v_first) {}
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() KLEIDICV_STREAMING {
-    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+    return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
   // Processes 2 * 16 bytes (even and odd rows) of the input YUV data, and
@@ -105,7 +105,7 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
   v = v + row_uv * src_stride / 2;
 
   size_t dcn = operation.output_channels();
-  const size_t vsize = svcntb();
+  const size_t kVectorLength = svcntb();
   for (size_t h = row_begin; h < row_end; h += 2) {
     ScalarType *row0 = dst + dst_stride * h;
     ScalarType *row1 = dst + dst_stride * (h + 1);
@@ -123,35 +123,35 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
 
     loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING {
       svbool_t pg = svptrue_b8();
-      svuint8_t u8_vec = svld1(pg, u + (index >> 1));
+      svuint8_t u8_vec = svld1(pg, u + index / 2);
       svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
       svint16_t u_vec_hi = svreinterpret_s16_u16(svunpkhi_u16(u8_vec));
 
-      svuint8_t v8_vec = svld1(pg, v + (index >> 1));
+      svuint8_t v8_vec = svld1(pg, v + index / 2);
       svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
       svint16_t v_vec_hi = svreinterpret_s16_u16(svunpkhi_u16(v8_vec));
 
       svuint8_t y0_vec = svld1(pg, y0 + index);
       svuint8_t y1_vec = svld1(pg, y1 + index);
-      svuint8_t y2_vec = svld1(pg, y0 + index + vsize);
-      svuint8_t y3_vec = svld1(pg, y1 + index + vsize);
+      svuint8_t y2_vec = svld1(pg, y0 + index + kVectorLength);
+      svuint8_t y3_vec = svld1(pg, y1 + index + kVectorLength);
 
       operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
                             &row0[index * dcn], &row1[index * dcn]);
 
       operation.vector_path(pg, y2_vec, y3_vec, u_vec_hi, v_vec_hi,
-                            &row0[(index + vsize) * dcn],
-                            &row1[(index + vsize) * dcn]);
+                            &row0[(index + kVectorLength) * dcn],
+                            &row1[(index + kVectorLength) * dcn]);
     });
 
     loop.unroll_once([&](size_t index) KLEIDICV_STREAMING {
       svbool_t pg = svptrue_b8();
       svbool_t pg_half = svwhilelt_b8(0UL, svcntb() / 2);
 
-      svuint8_t u8_vec = svld1(pg_half, u + (index >> 1));
+      svuint8_t u8_vec = svld1(pg_half, u + index / 2);
       svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
 
-      svuint8_t v8_vec = svld1(pg_half, v + (index >> 1));
+      svuint8_t v8_vec = svld1(pg_half, v + index / 2);
       svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
 
       svuint8_t y0_vec = svld1(pg, y0 + index);
@@ -163,12 +163,12 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
 
     loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
       svbool_t pg = svwhilelt_b8(index, length);
-      svbool_t pg_half = svwhilelt_b8((index + 1) >> 1, (length + 1) >> 1);
+      svbool_t pg_half = svwhilelt_b8((index + 1) / 2, (length + 1) >> 1);
 
-      svuint8_t u8_vec = svld1(pg_half, u + (index >> 1));
+      svuint8_t u8_vec = svld1(pg_half, u + index / 2);
       svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
 
-      svuint8_t v8_vec = svld1(pg_half, v + (index >> 1));
+      svuint8_t v8_vec = svld1(pg_half, v + index / 2);
       svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
 
       svuint8_t y0_vec = svld1(pg, y0 + index);

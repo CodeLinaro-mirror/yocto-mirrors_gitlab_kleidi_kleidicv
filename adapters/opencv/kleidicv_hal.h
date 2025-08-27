@@ -29,6 +29,14 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int scn,
                int dcn, bool swapBlue);
 
+int bgr_to_yuv420_p(const uchar *src_data, size_t src_step, uchar *dst_data,
+                    size_t dst_step, int width, int height, int scn,
+                    bool swapBlue, int uIdx);
+
+int bgr_to_yuv420_sp(const uchar *src_data, size_t src_step, uchar *y_data,
+                     size_t y_step, uchar *uv_data, size_t uv_step, int width,
+                     int height, int scn, bool swapBlue, int uIdx);
+
 int yuv_to_bgr_sp(const uchar *src_data, size_t src_step, uchar *dst_data,
                   size_t dst_step, int dst_width, int dst_height, int dcn,
                   bool swapBlue, int uIdx);
@@ -218,6 +226,31 @@ static inline int kleidicv_bgr_to_bgr_with_fallback(
 }
 #undef cv_hal_cvtBGRtoBGR
 #define cv_hal_cvtBGRtoBGR kleidicv_bgr_to_bgr_with_fallback
+
+// bgr_to_yuv420_p
+static inline int kleidicv_bgr_to_yuv420_p_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int width, int height, int scn, bool swapBlue, int uIdx) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      bgr_to_yuv420_p, cv_hal_cvtBGRtoThreePlaneYUV, src_data, src_step,
+      dst_data, dst_step, width, height, scn, swapBlue, uIdx);
+}
+
+#undef cv_hal_cvtBGRtoThreePlaneYUV
+#define cv_hal_cvtBGRtoThreePlaneYUV kleidicv_bgr_to_yuv420_p_with_fallback
+
+// bgr_to_yuv420_sp
+static inline int kleidicv_bgr_to_yuv420sp_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *y_data, size_t y_step,
+    uchar *uv_data, size_t uv_step, int width, int height, int scn,
+    bool swapBlue, int uIdx) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      bgr_to_yuv420_sp, cv_hal_cvtBGRtoTwoPlaneYUV, src_data, src_step, y_data,
+      y_step, uv_data, uv_step, width, height, scn, swapBlue, uIdx);
+}
+
+#undef cv_hal_cvtBGRtoTwoPlaneYUV
+#define cv_hal_cvtBGRtoTwoPlaneYUV kleidicv_bgr_to_yuv420sp_with_fallback
 
 // yuv_to_bgr_sp
 static inline int kleidicv_yuv_to_bgr_sp_with_fallback(

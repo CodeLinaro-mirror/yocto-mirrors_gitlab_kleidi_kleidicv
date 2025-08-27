@@ -21,7 +21,8 @@ This changelog aims to follow the guiding principles of
 - Gaussian Blur for any odd kernel size (up to 255x255) with replicated borders
 - Conversion from packed YUV 4:4:4 (interleaved and non-subsampled) to RGBA/BGRA.
 - Add SME2 version of saturating add with multivector loads and stores. It is marked as experimental as it is not covered by CI as of now.
-- Conversion from YUV 4:2:0 planar (I420/YV12) to RGBA/BGRA.
+- Conversion from YUV 4:2:0 planar (IYUV/YV12) to RGBA/BGRA.
+- Conversion from RGBA/BGRA to YUV 4:2:0 (planar/semi-planar).
 
 ### Changed
 - Performance of Gaussian Blur is greatly improved in return for some accuracy.

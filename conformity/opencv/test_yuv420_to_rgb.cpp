@@ -13,8 +13,8 @@ static cv::Mat exec_cvtcolor(cv::Mat& input) {
 
 #if MANAGER
 template <int Code>
-bool test_cvtcolor(int index, RecreatedMessageQueue& request_queue,
-                   RecreatedMessageQueue& reply_queue) {
+bool test_yuv420_to_rgb(int index, RecreatedMessageQueue& request_queue,
+                        RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
 
   auto check = [&](size_t x, size_t y) -> bool {
@@ -53,10 +53,11 @@ bool test_cvtcolor(int index, RecreatedMessageQueue& request_queue,
 }
 #endif
 
-#define CVTCOLOR_TEST(code) \
-  TEST(#code, test_cvtcolor<cv::COLOR_##code>, exec_cvtcolor<cv::COLOR_##code>)
+#define CVTCOLOR_TEST(code)                         \
+  TEST(#code, test_yuv420_to_rgb<cv::COLOR_##code>, \
+       exec_cvtcolor<cv::COLOR_##code>)
 
-std::vector<test>& cvtcolor_tests_get() {
+std::vector<test>& yuv420_to_rgb_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
     CVTCOLOR_TEST(YUV2BGR_YV12),

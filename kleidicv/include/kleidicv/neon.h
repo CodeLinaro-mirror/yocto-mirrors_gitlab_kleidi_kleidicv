@@ -153,6 +153,9 @@ class VectorTypes<double> {
   using Vector4Type = float64x2x4_t;
 };  // end of class VectorTypes<double>
 
+// NEON vector length in bytes.
+static constexpr size_t kVectorLength = 16;
+
 // Base class for all NEON vector traits.
 template <typename ScalarType>
 class VecTraitsBase : public VectorTypes<ScalarType> {
@@ -161,9 +164,6 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
   using typename VectorTypes<ScalarType>::Vector2Type;
   using typename VectorTypes<ScalarType>::Vector3Type;
   using typename VectorTypes<ScalarType>::Vector4Type;
-
-  // Vector length in bytes.
-  static constexpr size_t kVectorLength = 16;
 
   // Number of lanes in a vector.
   static constexpr size_t num_lanes() {

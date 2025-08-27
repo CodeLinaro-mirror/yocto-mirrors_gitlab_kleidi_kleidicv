@@ -99,6 +99,21 @@ Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.channels()` - supports 3 for RGB/BGR and 4 for RGBA/BGRA.
 
+
+#### [`COLOR_RGB2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGR2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_RGBA2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGRA2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_RGB2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGR2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_RGBA2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGRA2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5)
+
+RGB/BGR to YUV420 planar (IYUV or YV12) conversion.  
+This transformation outputs three separate planes: Y, U, and V, where chroma channels (U and V) are subsampled by 2 in both horizontal and vertical directions.  
+The difference between the two formats is the layout order of U and V:  
+- IYUV: Y is followed by U, then V  
+- YV12: Y is followed by V, then U
+
+Notes on parameters:
+- `src.depth()` — only supports `CV_8U` depth.  
+- `src.channels()` — supports 3 (RGB/BGR), 4 (RGBA/BGRA). For RGBA/BGRA, the A channel is ignored.  
+- `dst` — output is a single image containing the Y plane followed by U and V planes (IYUV layout) or V and U planes (YV12 layout).
+
+
 ### [`cv::GaussianBlur()`](https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#gae8bdcd9154ed5ca3cbc1766d960f45c1)
 > ⚠️ **The operation is not bitexact with OpenCV due to rounding differences even if ALGO_HINT_ACCURATE is used as the hint parameter.**
 

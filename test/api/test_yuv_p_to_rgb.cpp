@@ -20,7 +20,7 @@ class YUV420p2RGBTest : public testing::Test {
     size_t dst_padding;
     size_t height;
     size_t channels;
-    bool v_first;
+    bool is_yv12;
     bool is_bgr;
   };
 
@@ -80,7 +80,7 @@ class YUV420p2RGBTest : public testing::Test {
 
     calculate_referenc(src.data(), src.stride(), expected_dst.data(),
                        expected_dst.stride(), params.width, params.height,
-                       params.v_first, params.is_bgr, params.channels);
+                       params.is_yv12, params.is_bgr, params.channels);
 
     auto status = KLEIDICV_OK;
 
@@ -88,11 +88,11 @@ class YUV420p2RGBTest : public testing::Test {
       if (!params.is_bgr) {
         status = kleidicv_yuv_p_to_rgb_u8(src.data(), src.stride(), dst.data(),
                                           dst.stride(), params.width,
-                                          params.height, params.v_first);
+                                          params.height, params.is_yv12);
       } else {
         status = kleidicv_yuv_p_to_bgr_u8(src.data(), src.stride(), dst.data(),
                                           dst.stride(), params.width,
-                                          params.height, params.v_first);
+                                          params.height, params.is_yv12);
       }
     }
 
@@ -100,11 +100,11 @@ class YUV420p2RGBTest : public testing::Test {
       if (!params.is_bgr) {
         status = kleidicv_yuv_p_to_rgba_u8(src.data(), src.stride(), dst.data(),
                                            dst.stride(), params.width,
-                                           params.height, params.v_first);
+                                           params.height, params.is_yv12);
       } else {
         status = kleidicv_yuv_p_to_bgra_u8(src.data(), src.stride(), dst.data(),
                                            dst.stride(), params.width,
-                                           params.height, params.v_first);
+                                           params.height, params.is_yv12);
       }
     }
 
@@ -113,27 +113,27 @@ class YUV420p2RGBTest : public testing::Test {
   }
 
   template <typename Func>
-  void run_unsupported(Func impl, size_t channels, bool v_first) {
+  void run_unsupported(Func impl, size_t channels, bool is_yv12) {
     test::Array2D<uint8_t> src{20, (10 * 3 + 1) / 2};
 
     test::Array2D<uint8_t> dst{20 * channels, 10, 0, channels};
 
     test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width(), dst.height(), v_first);
+                         dst.stride(), dst.width(), dst.height(), is_yv12);
 
     EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), dst.data(),
-                                dst.stride(), 0, 1, v_first));
+                                dst.stride(), 0, 1, is_yv12));
 
     EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), dst.data(),
-                                dst.stride(), 1, 0, v_first));
+                                dst.stride(), 1, 0, is_yv12));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(src.data(), src.stride(), dst.data(), dst.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, v_first));
+                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, is_yv12));
     EXPECT_EQ(
         KLEIDICV_ERROR_RANGE,
         impl(src.data(), src.stride(), dst.data(), dst.stride(),
-             KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, v_first));
+             KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, is_yv12));
   }
 
  private:
@@ -144,7 +144,7 @@ class YUV420p2RGBTest : public testing::Test {
   }
   void calculate_referenc(const uint8_t* src, size_t src_stride, uint8_t* dst,
                           size_t dst_stride, size_t width, size_t height,
-                          bool v_first, bool BGR, size_t channels) {
+                          bool is_yv12, bool BGR, size_t channels) {
     // this will the pointer to u plane
     const uint8_t* u = src + src_stride * height;
     // this will the pointer to v plane
@@ -167,7 +167,7 @@ class YUV420p2RGBTest : public testing::Test {
         u -= 128;
         int32_t v = v1[w >> 1];
         v -= 128;
-        if (v_first) {
+        if (is_yv12) {
           std::swap(u, v);
         }
         int32_t r = ((1220542 * y) + (1673527 * v) + (1 << 19)) >> 20;

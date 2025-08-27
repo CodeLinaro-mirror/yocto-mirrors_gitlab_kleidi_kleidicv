@@ -10,20 +10,20 @@
 #include "yuv420_to_rgb_neon.h"
 
 namespace kleidicv::neon {
-template <bool BGR, bool ALPHA>
-class YUVSpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, ALPHA>,
+template <bool BGR, bool kAlpha>
+class YUVSpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha>,
                                 public UnrollOnce,
                                 public TryToAvoidTailLoop {
  public:
   using VecTraits = neon::VecTraits<uint8_t>;
   using ScalarType = VecTraits::ScalarType;
   using VectorType = VecTraits::VectorType;
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::de_interleave_indices_;
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::yuv420x_to_rgb;
-  using YUV420XToRGBxOrBGRx<BGR, ALPHA>::v_first_;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::de_interleave_indices_;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::yuv420x_to_rgb;
+  using YUV420XToRGBxOrBGRx<BGR, kAlpha>::v_first_;
 
   explicit YUVSpToRGBxOrBGRx(bool v_first)
-      : YUV420XToRGBxOrBGRx<BGR, ALPHA>(v_first) {}
+      : YUV420XToRGBxOrBGRx<BGR, kAlpha>(v_first) {}
 
   // Processes 2 * 16 bytes (even and odd rows) of the input YUV data, and
   // outputs 2 * 3 (or 4) * 16 bytes of RGB (or RGBA) data per loop iteration.

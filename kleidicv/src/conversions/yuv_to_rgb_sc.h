@@ -13,7 +13,7 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-template <bool BGR, bool ALPHA>
+template <bool BGR, bool kAlpha>
 class YUVToRGB : public UnrollOnce {
  public:
   using ContextType = Context;
@@ -22,11 +22,11 @@ class YUVToRGB : public UnrollOnce {
   using VectorType = VecTraits::VectorType;
   using Vector3Type = VecTraits::Vector3Type;
   using RawDestinationVectorType =
-      typename std::conditional<ALPHA, svuint8x4_t, svuint8x3_t>::type;
+      typename std::conditional<kAlpha, svuint8x4_t, svuint8x3_t>::type;
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() KLEIDICV_STREAMING {
-    return ALPHA ? /* RGBA */ 4 : /* RGB */ 3;
+    return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
   void vector_path(ContextType ctx, const ScalarType *src,
@@ -114,7 +114,7 @@ class YUVToRGB : public UnrollOnce {
       r = svqxtunt(svqxtunb(r_0), r_1);
     }
 
-    if constexpr (ALPHA) {
+    if constexpr (kAlpha) {
       RawDestinationVectorType rgb;
       if constexpr (BGR) {
         rgb = svcreate4(b, g, r, svdup_u8(alpha_value));
