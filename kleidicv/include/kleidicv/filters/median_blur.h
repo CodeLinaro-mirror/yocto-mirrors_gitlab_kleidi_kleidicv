@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -28,6 +28,16 @@ KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_s8,
 // Find a median across an image.
 // The stripe is defined by the range (y_begin, y_end].
 KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_u8,
+                         const uint8_t *src, size_t src_stride, uint8_t *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t y_begin, size_t y_end, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         kleidicv::FixedBorderType border_type);
+
+// For internal use only. See instead kleidicv_median_blur_u8.
+// Find a median across an image.
+// The stripe is defined by the range (y_begin, y_end].
+KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_u8_sme,
                          const uint8_t *src, size_t src_stride, uint8_t *dst,
                          size_t dst_stride, size_t width, size_t height,
                          size_t y_begin, size_t y_end, size_t channels,
