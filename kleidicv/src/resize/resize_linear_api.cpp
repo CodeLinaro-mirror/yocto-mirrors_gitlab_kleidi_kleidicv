@@ -188,8 +188,12 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
-// Explicit instantiation is needed for kleidicv_thread_resize_linear_u8
+// Explicit instantiations are needed for kleidicv_thread_resize_linear_u8
 template kleidicv_error_t resize_linear_stripe_u8<false>(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
+    size_t dst_width, size_t dst_height, size_t channels);
+template kleidicv_error_t resize_linear_stripe_u8<true>(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
     size_t dst_width, size_t dst_height, size_t channels);
