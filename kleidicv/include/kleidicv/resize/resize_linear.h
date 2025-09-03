@@ -200,6 +200,13 @@ extern kleidicv_error_t (*kleidicv_resize_linear_stripe_f32)(
     size_t y_begin, size_t y_end, float *dst, size_t dst_stride,
     size_t dst_width, size_t dst_height);
 
+/// Internal - not part of the public API and its direct use is not
+/// supported. It is used by the multithreaded function.
+extern kleidicv_error_t (*kleidicv_resize_linear_stripe_f32_sme)(
+    const float *src, size_t src_stride, size_t src_width, size_t src_height,
+    size_t y_begin, size_t y_end, float *dst, size_t dst_stride,
+    size_t dst_width, size_t dst_height);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

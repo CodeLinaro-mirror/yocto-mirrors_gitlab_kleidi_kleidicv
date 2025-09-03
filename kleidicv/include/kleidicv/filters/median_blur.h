@@ -54,10 +54,30 @@ KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_s16,
                          size_t kernel_width, size_t kernel_height,
                          kleidicv::FixedBorderType border_type);
 
+// For internal use only. See instead kleidicv_median_blur_s16.
+// Find a median across an image.
+// The stripe is defined by the range (y_begin, y_end].
+KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_s16_sme,
+                         const int16_t *src, size_t src_stride, int16_t *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t y_begin, size_t y_end, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         kleidicv::FixedBorderType border_type);
+
 // For internal use only. See instead kleidicv_median_blur_u16.
 // Find a median across an image.
 // The stripe is defined by the range (y_begin, y_end].
 KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_u16,
+                         const uint16_t *src, size_t src_stride, uint16_t *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t y_begin, size_t y_end, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         kleidicv::FixedBorderType border_type);
+
+// For internal use only. See instead kleidicv_median_blur_u16.
+// Find a median across an image.
+// The stripe is defined by the range (y_begin, y_end].
+KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_u16_sme,
                          const uint16_t *src, size_t src_stride, uint16_t *dst,
                          size_t dst_stride, size_t width, size_t height,
                          size_t y_begin, size_t y_end, size_t channels,
@@ -88,6 +108,16 @@ KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_u32,
 // Find a median across an image.
 // The stripe is defined by the range (y_begin, y_end].
 KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_f32,
+                         const float *src, size_t src_stride, float *dst,
+                         size_t dst_stride, size_t width, size_t height,
+                         size_t y_begin, size_t y_end, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         kleidicv::FixedBorderType border_type);
+
+// For internal use only. See instead kleidicv_median_blur_f32.
+// Find a median across an image.
+// The stripe is defined by the range (y_begin, y_end].
+KLEIDICV_API_DECLARATION(kleidicv_median_blur_sorting_network_stripe_f32_sme,
                          const float *src, size_t src_stride, float *dst,
                          size_t dst_stride, size_t width, size_t height,
                          size_t y_begin, size_t y_end, size_t channels,

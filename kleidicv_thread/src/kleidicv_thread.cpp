@@ -605,6 +605,30 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
   }
 
   if (kernel_width <= 9 || kernel_width == 15 || kernel_width == 21) {
+#if KLEIDICV_ENABLE_SME
+    if (kHwCapsHasSme) {
+      auto callback = [=](unsigned y_begin, unsigned y_end) {
+        auto sme_callback = [=]() {
+          return kleidicv_gaussian_blur_fixed_stripe_u8_sme(
+              src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+              channels, kernel_width, kernel_height, sigma_x, sigma_y,
+              *fixed_border_type);
+        };
+
+        auto sme_call_result_pair =
+            SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+        if (sme_call_result_pair.first) {
+          return sme_call_result_pair.second;
+        }
+
+        return kleidicv_gaussian_blur_fixed_stripe_u8(
+            src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+            channels, kernel_width, kernel_height, sigma_x, sigma_y,
+            *fixed_border_type);
+      };
+      return parallel_batches(callback, mt, height);
+    }
+#endif
     auto callback = [=](size_t y_begin, size_t y_end) {
       return kleidicv_gaussian_blur_fixed_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -700,6 +724,29 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
+#if KLEIDICV_ENABLE_SME
+  if (kHwCapsHasSme) {
+    auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto sme_callback = [=]() {
+        return kleidicv_sobel_3x3_horizontal_stripe_s16_u8_sme(
+            src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+            channels);
+      };
+
+      auto sme_call_result_pair =
+          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.first) {
+        return sme_call_result_pair.second;
+      }
+
+      return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
+          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+          channels);
+    };
+    return parallel_batches(callback, mt, height);
+  }
+#endif
+
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -787,6 +834,29 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
     return checks_result;
   }
 
+#if KLEIDICV_ENABLE_SME
+  if (kHwCapsHasSme) {
+    auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto sme_callback = [=]() {
+        return kleidicv_median_blur_sorting_network_stripe_s16_sme(
+            src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+            channels, kernel_width, kernel_height, fixed_border_type);
+      };
+
+      auto sme_call_result_pair =
+          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.first) {
+        return sme_call_result_pair.second;
+      }
+
+      return kleidicv_median_blur_sorting_network_stripe_s16(
+          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+          channels, kernel_width, kernel_height, fixed_border_type);
+    };
+    return parallel_batches(callback, mt, height);
+  }
+#endif
+
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_median_blur_sorting_network_stripe_s16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -809,6 +879,29 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
   if (checks_result != KLEIDICV_OK) {
     return checks_result;
   }
+
+#if KLEIDICV_ENABLE_SME
+  if (kHwCapsHasSme) {
+    auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto sme_callback = [=]() {
+        return kleidicv_median_blur_sorting_network_stripe_u16_sme(
+            src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+            channels, kernel_width, kernel_height, fixed_border_type);
+      };
+
+      auto sme_call_result_pair =
+          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.first) {
+        return sme_call_result_pair.second;
+      }
+
+      return kleidicv_median_blur_sorting_network_stripe_u16(
+          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+          channels, kernel_width, kernel_height, fixed_border_type);
+    };
+    return parallel_batches(callback, mt, height);
+  }
+#endif
 
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_median_blur_sorting_network_stripe_u16(
@@ -833,6 +926,28 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
     return checks_result;
   }
 
+#if KLEIDICV_ENABLE_SME
+  if (kHwCapsHasSme) {
+    auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto sme_callback = [=]() {
+        return kleidicv_median_blur_sorting_network_stripe_f32_sme(
+            src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+            channels, kernel_width, kernel_height, fixed_border_type);
+      };
+
+      auto sme_call_result_pair =
+          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.first) {
+        return sme_call_result_pair.second;
+      }
+
+      return kleidicv_median_blur_sorting_network_stripe_f32(
+          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+          channels, kernel_width, kernel_height, fixed_border_type);
+    };
+    return parallel_batches(callback, mt, height);
+  }
+#endif
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_median_blur_sorting_network_stripe_f32(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -848,6 +963,29 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
   if (!kleidicv::sobel_is_implemented(width, height, 3)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+
+#if KLEIDICV_ENABLE_SME
+  if (kHwCapsHasSme) {
+    auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto sme_callback = [=]() {
+        return kleidicv_sobel_3x3_vertical_stripe_s16_u8_sme(
+            src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+            channels);
+      };
+
+      auto sme_call_result_pair =
+          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.first) {
+        return sme_call_result_pair.second;
+      }
+
+      return kleidicv_sobel_3x3_vertical_stripe_s16_u8(
+          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+          channels);
+    };
+    return parallel_batches(callback, mt, height);
+  }
+#endif
 
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_sobel_3x3_vertical_stripe_s16_u8(src, src_stride, dst,
@@ -885,25 +1023,52 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
+  size_t job_count = dst_height;
+  bool need_to_align_y_end = false;
+
   // Specialized upscale operations iterate by source rows
   if (((dst_width == src_width * 2 && dst_height == src_height * 2) ||
        (dst_width == src_width * 4 && dst_height == src_height * 4)) &&
       channels == 1) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
-      return kleidicv::resize_linear_stripe_u8<false>(
-          src, src_stride, src_width, src_height, y_begin,
-          std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
-          dst_height, channels);
-    };
-    return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
+    job_count = std::max<size_t>(1, src_height - 1);
+    need_to_align_y_end = true;
   }
-  // Others iterate by destination rows
+
+  auto y_end_formula = [&](size_t y_end_in) {
+    return need_to_align_y_end ? std::min<size_t>(src_height, y_end_in + 1)
+                               : y_end_in;
+  };
+
+#if KLEIDICV_ENABLE_SME
+  if (kHwCapsHasSme) {
+    auto callback = [&](unsigned y_begin, unsigned y_end) {
+      auto sme_callback = [&]() {
+        return kleidicv::resize_linear_stripe_u8<true>(
+            src, src_stride, src_width, src_height, y_begin,
+            y_end_formula(y_end), dst, dst_stride, dst_width, dst_height,
+            channels);
+      };
+
+      auto sme_call_result_pair =
+          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.first) {
+        return sme_call_result_pair.second;
+      }
+
+      return kleidicv::resize_linear_stripe_u8<false>(
+          src, src_stride, src_width, src_height, y_begin, y_end_formula(y_end),
+          dst, dst_stride, dst_width, dst_height, channels);
+    };
+    return parallel_batches(callback, mt, job_count);
+  }
+#endif
+
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv::resize_linear_stripe_u8<false>(
-        src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
-        dst_width, dst_height, channels);
+        src, src_stride, src_width, src_height, y_begin, y_end_formula(y_end),
+        dst, dst_stride, dst_width, dst_height, channels);
   };
-  return parallel_batches(callback, mt, dst_height);
+  return parallel_batches(callback, mt, job_count);
 }
 
 kleidicv_error_t kleidicv_thread_resize_linear_f32(
@@ -914,6 +1079,32 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
           src_width, src_height, dst_width, dst_height, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+
+#if KLEIDICV_ENABLE_SME
+  if (kHwCapsHasSme) {
+    auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto sme_callback = [=]() {
+        return kleidicv_resize_linear_stripe_f32_sme(
+            src, src_stride, src_width, src_height, y_begin,
+            std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
+            dst_height);
+      };
+
+      auto sme_call_result_pair =
+          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.first) {
+        return sme_call_result_pair.second;
+      }
+
+      return kleidicv_resize_linear_stripe_f32(
+          src, src_stride, src_width, src_height, y_begin,
+          std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
+          dst_height);
+    };
+    return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
+  }
+#endif
+
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv_resize_linear_stripe_f32(
         src, src_stride, src_width, src_height, y_begin,
