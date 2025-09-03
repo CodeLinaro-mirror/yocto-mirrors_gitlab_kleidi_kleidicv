@@ -280,7 +280,7 @@ static inline int kleidicv_yuv_to_bgr_p_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
     int dst_width, int dst_height, int dcn, bool swapBlue, int uIdx) {
   return KLEIDICV_HAL_FALLBACK_FORWARD(
-      yuv_to_bgr_p, cv_hal_cvtTwoPlaneYUVtoBGR, src_data, src_step, dst_data,
+      yuv_to_bgr_p, cv_hal_cvtThreePlaneYUVtoBGR, src_data, src_step, dst_data,
       dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
 }
 #undef cv_hal_cvtThreePlaneYUVtoBGR
