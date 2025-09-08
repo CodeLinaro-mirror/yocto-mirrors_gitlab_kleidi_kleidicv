@@ -140,6 +140,19 @@ KLEIDICV_THREAD_UNARY_OP_IMPL(f32_to_u8, float, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(s8_to_f32, int8_t, float);
 KLEIDICV_THREAD_UNARY_OP_IMPL(u8_to_f32, uint8_t, float);
 
+#define KLEIDICV_THREAD_INRANGE_OP_IMPL(suffix, src_type, dst_type)          \
+  kleidicv_error_t kleidicv_thread_##suffix(                                 \
+      const src_type *src, size_t src_stride, dst_type *dst,                 \
+      size_t dst_stride, size_t width, size_t height, src_type lower_bound,  \
+      src_type upper_bound, kleidicv_thread_multithreading mt) {             \
+    return kleidicv_thread_unary_op_impl(kleidicv_##suffix, mt, src,         \
+                                         src_stride, dst, dst_stride, width, \
+                                         height, lower_bound, upper_bound);  \
+  }
+
+KLEIDICV_THREAD_INRANGE_OP_IMPL(in_range_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_INRANGE_OP_IMPL(in_range_f32, float, uint8_t);
+
 kleidicv_error_t kleidicv_thread_threshold_binary_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, uint8_t threshold, uint8_t value,

@@ -29,6 +29,8 @@ namespace kleidicv::hal {
 // Images with fewer elements than this tend to perform better with KleidiCV's
 // single-threaded implementation than its multi-threaded implementation.
 enum {
+  MULTITHREAD_MIN_ELEMENTS_INRANGE_U8 = 139160,  // 497x280
+  MULTITHREAD_MIN_ELEMENTS_INRANGE_F32 = 45440,  // 284x160
   MULTITHREAD_MIN_ELEMENTS_GRAY_TO_RGB_U8 = 180000,
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_LOC_U8 = 100000,
   MULTITHREAD_MIN_ELEMENTS_MIN_MAX_S8 = 180000,
@@ -1456,10 +1458,19 @@ int inRange_u8(const uchar *src_data, size_t src_step, uchar *dst_data,
   if (dst_depth != CV_8U || cn != 1) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
-  return convert_error(kleidicv_in_range_u8(
-      reinterpret_cast<const uint8_t *>(src_data), src_step,
-      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-      static_cast<uint8_t>(lower_bound), static_cast<uint8_t>(upper_bound)));
+  auto mt = get_multithreading();
+  return convert_error(
+      width * height < MULTITHREAD_MIN_ELEMENTS_INRANGE_U8
+          ? kleidicv_in_range_u8(
+                reinterpret_cast<const uint8_t *>(src_data), src_step,
+                reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+                static_cast<uint8_t>(lower_bound),
+                static_cast<uint8_t>(upper_bound))
+          : kleidicv_thread_in_range_u8(
+                reinterpret_cast<const uint8_t *>(src_data), src_step,
+                reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+                static_cast<uint8_t>(lower_bound),
+                static_cast<uint8_t>(upper_bound), mt));
 }
 
 int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
@@ -1468,10 +1479,19 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
   if (dst_depth != CV_8U || cn != 1) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
-  return convert_error(kleidicv_in_range_f32(
-      reinterpret_cast<const float *>(src_data), src_step,
-      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
-      static_cast<float>(lower_bound), static_cast<float>(upper_bound)));
+  auto mt = get_multithreading();
+  return convert_error(
+      width * height < MULTITHREAD_MIN_ELEMENTS_INRANGE_F32
+          ? kleidicv_in_range_f32(
+                reinterpret_cast<const float *>(src_data), src_step,
+                reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+                static_cast<float>(lower_bound),
+                static_cast<float>(upper_bound))
+          : kleidicv_thread_in_range_f32(
+                reinterpret_cast<const float *>(src_data), src_step,
+                reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+                static_cast<float>(lower_bound),
+                static_cast<float>(upper_bound), mt));
 }
 
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,

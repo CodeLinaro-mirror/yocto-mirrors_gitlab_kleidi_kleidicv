@@ -76,6 +76,15 @@ KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_f32_to_u8, float, uint8_t);
 KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_s8_to_f32, int8_t, float);
 KLEIDICV_THREAD_UNARY_OP(kleidicv_thread_u8_to_f32, uint8_t, float);
 
+#define KLEIDICV_THREAD_INRANGE_OP(name, src_type, dst_type)                   \
+  kleidicv_error_t name(const src_type *src, size_t src_stride, dst_type *dst, \
+                        size_t dst_stride, size_t width, size_t height,        \
+                        src_type lower_bound, src_type upper_bound,            \
+                        kleidicv_thread_multithreading)
+
+KLEIDICV_THREAD_INRANGE_OP(kleidicv_thread_in_range_u8, uint8_t, uint8_t);
+KLEIDICV_THREAD_INRANGE_OP(kleidicv_thread_in_range_f32, float, uint8_t);
+
 /// Internal - not part of the public API and its direct use is not supported.
 ///
 /// Multithreaded implementation of kleidicv_yuv_p_to_bgr_u8 - see the

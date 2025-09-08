@@ -337,6 +337,8 @@ TEST_UNARY_OP(f32_to_s8, float, int8_t, 1, 1);
 TEST_UNARY_OP(f32_to_u8, float, uint8_t, 1, 1);
 TEST_UNARY_OP(s8_to_f32, int8_t, float, 1, 1);
 TEST_UNARY_OP(u8_to_f32, uint8_t, float, 1, 1);
+TEST_UNARY_OP(in_range_u8, uint8_t, uint8_t, 1, 1, 1, 2);
+TEST_UNARY_OP(in_range_f32, float, uint8_t, 1, 1, 1, 2);
 
 TEST_BINARY_OP(saturating_add_s8, int8_t, 1, 1);
 TEST_BINARY_OP(saturating_add_u8, uint8_t, 1, 1);

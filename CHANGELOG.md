@@ -23,6 +23,7 @@ This changelog aims to follow the guiding principles of
 - Add SME2 version of saturating add with multivector loads and stores. It is marked as experimental as it is not covered by CI as of now.
 - Conversion from YUV 4:2:0 planar (IYUV/YV12) to RGBA/BGRA.
 - Conversion from RGBA/BGRA to YUV 4:2:0 (planar/semi-planar).
+- Added a multi-threaded implementation of InRange.
 
 ### Changed
 - Performance of Gaussian Blur is greatly improved in return for some accuracy.
