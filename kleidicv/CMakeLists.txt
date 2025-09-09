@@ -215,7 +215,7 @@ if(KLEIDICV_ENABLE_SME2)
   )
 endif()
 
-add_library(kleidicv STATIC ${KLEIDICV_API_SOURCES})
+add_library(kleidicv STATIC ${KLEIDICV_API_SOURCES} "${CMAKE_CURRENT_LIST_DIR}/src/device_capabilities.cpp")
 target_include_directories(kleidicv PRIVATE ${KLEIDICV_INCLUDE_DIRS})
 set_target_properties(kleidicv PROPERTIES CXX_STANDARD 17)
 target_compile_options(kleidicv PRIVATE ${KLEIDICV_CXX_FLAGS})
