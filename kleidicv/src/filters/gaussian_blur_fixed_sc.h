@@ -363,7 +363,7 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
                          border_type, filter);
     } else {
       for (size_t row = y_begin; row < y_end; ++row) {
-#if KLEIDICV_TARGET_SME
+#if KLEIDICV_TARGET_SME && defined(__ANDROID__)
         __arm_sc_memcpy(
             static_cast<void *>(&dst_rows.at(row)[0]),
             static_cast<const void *>(&src_rows.at(row)[0]),
