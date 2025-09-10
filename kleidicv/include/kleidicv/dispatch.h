@@ -8,44 +8,75 @@
 #include "kleidicv/config.h"
 
 #if KLEIDICV_ENABLE_SME2 || KLEIDICV_ENABLE_SME || KLEIDICV_ENABLE_SVE2
+#include <sys/auxv.h>
+
+#include <cstdint>
 #include <type_traits>
 
-#include "device_capabilities.h"
+namespace KLEIDICV_TARGET_NAMESPACE {
+
+using HwCapTy = uint64_t;
+
+struct HwCaps final {
+  HwCapTy hwcap1;
+  HwCapTy hwcap2;
+};
+
+static inline HwCaps get_hwcaps() {
+  return HwCaps{getauxval(AT_HWCAP), getauxval(AT_HWCAP2)};
+}
 
 #if KLEIDICV_ENABLE_SVE2
-#define KLEIDICV_SVE2_RESOLVE(sve2_impl)              \
-  if (!std::is_null_pointer_v<decltype(sve2_impl)> && \
-      kleidicv::DeviceCapabilities::has_sve2) {       \
-    return sve2_impl;                                 \
+static inline bool hwcaps_has_sve2(HwCaps hwcaps) {
+  return hwcaps.hwcap2 & (1 << 1);
+}
+
+#define KLEIDICV_SVE2_RESOLVE(sve2_impl)                    \
+  if (!std::is_null_pointer_v<decltype(sve2_impl)> &&       \
+      KLEIDICV_TARGET_NAMESPACE::hwcaps_has_sve2(hwcaps)) { \
+    return sve2_impl;                                       \
   }
 #else
 #define KLEIDICV_SVE2_RESOLVE(x)
 #endif  // KLEIDICV_ENABLE_SVE2
 
 #if KLEIDICV_ENABLE_SME
-#define KLEIDICV_SME_RESOLVE(sme_impl)               \
-  if (!std::is_null_pointer_v<decltype(sme_impl)> && \
-      kleidicv::DeviceCapabilities::has_sme) {       \
-    return sme_impl;                                 \
+static inline bool hwcaps_has_sme(HwCaps hwcaps) {
+  const int kSMEBit = 23;
+  return hwcaps.hwcap2 & (1UL << kSMEBit);
+}
+
+#define KLEIDICV_SME_RESOLVE(sme_impl)                     \
+  if (!std::is_null_pointer_v<decltype(sme_impl)> &&       \
+      KLEIDICV_TARGET_NAMESPACE::hwcaps_has_sme(hwcaps)) { \
+    return sme_impl;                                       \
   }
 #else
 #define KLEIDICV_SME_RESOLVE(x)
 #endif  // KLEIDICV_ENABLE_SME
 
 #if KLEIDICV_ENABLE_SME2
+static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
+  const int kSME2Bit = 37;
+  return hwcaps.hwcap2 & (1UL << kSME2Bit);
+}
 
-#define KLEIDICV_SME2_RESOLVE(sme2_impl)              \
-  if (!std::is_null_pointer_v<decltype(sme2_impl)> && \
-      kleidicv::DeviceCapabilities::has_sme2) {       \
-    return sme2_impl;                                 \
+#define KLEIDICV_SME2_RESOLVE(sme2_impl)                    \
+  if (!std::is_null_pointer_v<decltype(sme2_impl)> &&       \
+      KLEIDICV_TARGET_NAMESPACE::hwcaps_has_sme2(hwcaps)) { \
+    return sme2_impl;                                       \
   }
 #else
 #define KLEIDICV_SME2_RESOLVE(x)
 #endif  // KLEIDICV_ENABLE_SME2
 
+}  // namespace KLEIDICV_TARGET_NAMESPACE
+
 #define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl, \
                                     sme2_impl)                                \
   static decltype(neon_impl) api_name##_resolver() {                          \
+    [[maybe_unused]] KLEIDICV_TARGET_NAMESPACE::HwCaps hwcaps =               \
+        KLEIDICV_TARGET_NAMESPACE::get_hwcaps();                              \
     KLEIDICV_SME2_RESOLVE(sme2_impl);                                         \
     KLEIDICV_SME_RESOLVE(sme_impl);                                           \
     KLEIDICV_SVE2_RESOLVE(sve2_impl);                                         \

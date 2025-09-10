@@ -96,21 +96,19 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
   build/ci/sanitize/test/api/kleidicv-api-test
 fi
 
-# Prevent bitrot for some configurations:
-#   - Build benchmark source.
-#   - Build Neon code paths without continuous load/store.
-#   - Build the Neon backend only as the dispatcher is static in that case.
+# Build benchmarks and without continuous load/store code path, just to prevent bitrot.
 cmake -S . -B build/ci/build-benchmark -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
   -DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 \
   -DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu \
+  -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld" \
   -DCMAKE_SYSTEM_NAME=Linux \
   -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
   -DKLEIDICV_BENCHMARK=ON \
-  -DKLEIDICV_ENABLE_SVE2=OFF \
-  -DKLEIDICV_ENABLE_SME=OFF \
-  -DKLEIDICV_ENABLE_SME2=OFF \
+  -DKLEIDICV_ENABLE_SME=ON \
+  -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF \
+  -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS=OFF
 ninja -C build/ci/build-benchmark kleidicv-benchmark
 
