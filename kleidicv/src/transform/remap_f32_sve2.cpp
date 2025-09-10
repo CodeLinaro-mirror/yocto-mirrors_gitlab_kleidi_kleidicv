@@ -90,7 +90,7 @@ void remap_f32_nearest(svuint32_t sv_xmax, svuint32_t sv_ymax,
       auto vector_path_generic = [&](size_t x, size_t x_max,
                                      Columns<ScalarType> dst) {
         size_t length = x_max - x;
-        svbool_t pg32 = svwhilelt_b32(0ULL, length);
+        svbool_t pg32 = svwhilelt_b32_u64(0ULL, length);
         svuint32_t result =
             get_pixels(pg32, calculate_nearest_coordinates(pg32, x));
         svst1b_u32(pg32, &dst[static_cast<ptrdiff_t>(x)], result);
@@ -161,7 +161,7 @@ void remap_f32_nearest(svuint32_t sv_xmax, svuint32_t sv_ymax,
         svbool_t pg32 = svwhilelt_b32(0ULL, length);
         svuint32_t result =
             get_pixels(pg32, calculate_nearest_coordinates(pg32, x));
-        svbool_t pg16 = svwhilelt_b16(0ULL, 2 * length);
+        svbool_t pg16 = svwhilelt_b16_u64(0ULL, 2 * length);
         svst1b_u16(pg16, dst.ptr_at(static_cast<ptrdiff_t>(x)),
                    svreinterpret_u16_u32(result));
       };
@@ -191,10 +191,10 @@ void remap_f32_nearest(svuint32_t sv_xmax, svuint32_t sv_ymax,
         svst1_u16(pg_all16, dst.ptr_at(static_cast<ptrdiff_t>(x)), result);
       });
       loop.remaining([&](size_t x, size_t x_max) {
-        svbool_t pg32 = svwhilelt_b32(x, x_max);
+        svbool_t pg32 = svwhilelt_b32_u64(x, x_max);
         svuint16_t result = svreinterpret_u16_u32(
             get_pixels(pg32, calculate_nearest_coordinates(pg32, x)));
-        svbool_t pg16 = svwhilelt_b16(2 * x, 2 * x_max);
+        svbool_t pg16 = svwhilelt_b16_u64(2 * x, 2 * x_max);
         svst1_u16(pg16, dst.ptr_at(static_cast<ptrdiff_t>(x)), result);
       });
     }
@@ -278,7 +278,7 @@ void remap_f32_linear(svuint32_t sv_xmax, svuint32_t sv_ymax,
       store_vector(pg_all32, &dst[static_cast<ptrdiff_t>(x)], result);
     });
     loop.remaining([&](size_t x, size_t x_max) {
-      svbool_t pg32 = svwhilelt_b32(x, x_max);
+      svbool_t pg32 = svwhilelt_b32_u64(x, x_max);
       svuint32_t result = calculate_linear(pg32, x);
       store_vector(pg32, &dst[static_cast<ptrdiff_t>(x)], result);
     });
@@ -318,9 +318,9 @@ void remap_f32_linear(svuint32_t sv_xmax, svuint32_t sv_ymax,
         svst1_u16(svptrue_b16(), dst.ptr_at(static_cast<ptrdiff_t>(x)), result);
       });
       loop.remaining([&](size_t x, size_t x_max) {
-        svbool_t pg32 = svwhilelt_b32(x, x_max);
+        svbool_t pg32 = svwhilelt_b32_u64(x, x_max);
         svuint16_t result = svreinterpret_u16_u32(calculate_linear(pg32, x));
-        svbool_t pg16 = svwhilelt_b16(2 * x, 2 * x_max);
+        svbool_t pg16 = svwhilelt_b16_u64(2 * x, 2 * x_max);
         svst1_u16(pg16, dst.ptr_at(static_cast<ptrdiff_t>(x)), result);
       });
     }

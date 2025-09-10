@@ -220,7 +220,7 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
       });
       loop.remaining([&](size_t x, size_t x_max) {
         ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
-        svbool_t pg32 = svwhilelt_b32(x, x_max);
+        svbool_t pg32 = svwhilelt_b32_u64(x, x_max);
         svuint32_t result = calculate_linear(pg32, x);
         svst1b_u32(pg32, p_dst, result);
       });

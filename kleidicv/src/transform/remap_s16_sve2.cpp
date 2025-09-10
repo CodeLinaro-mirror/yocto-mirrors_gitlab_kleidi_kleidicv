@@ -147,7 +147,7 @@ class RemapS16ConstantBorder {
   void process_row(size_t width, Columns<const int16_t> mapxy,
                    Columns<ScalarType> dst) {
     for (size_t i = 0; i < width; i += svcnth()) {
-      svbool_t pg = svwhilelt_b16(i, width);
+      svbool_t pg = svwhilelt_b16_u64(i, width);
 
       svint16x2_t xy = svld2_s16(pg, &mapxy[static_cast<ptrdiff_t>(i * 2)]);
       svuint16_t x = svreinterpret_u16_s16(svget2(xy, 0));

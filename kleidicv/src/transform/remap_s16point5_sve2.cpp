@@ -352,7 +352,7 @@ class RemapS16Point5ConstantBorder<uint8_t> {
     svuint16_t one = svdup_n_u16(1);
     svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
     for (size_t i = 0; i < width; i += svcnth()) {
-      svbool_t pg = svwhilelt_b16(i, width);
+      svbool_t pg = svwhilelt_b16_u64(i, width);
 
       svuint16x2_t xy =
           svld2_u16(pg, reinterpret_cast<const uint16_t*>(
@@ -443,7 +443,7 @@ class RemapS16Point5ConstantBorder<uint16_t> {
     svuint16_t one = svdup_n_u16(1);
     svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
     for (size_t i = 0; i < width; i += svcnth()) {
-      svbool_t pg = svwhilelt_b16(i, width);
+      svbool_t pg = svwhilelt_b16_u64(i, width);
 
       svuint16x2_t xy =
           svld2_u16(pg, reinterpret_cast<const uint16_t*>(
@@ -666,8 +666,8 @@ class RemapS16Point5Replicate4ch<uint8_t> {
     svuint8_t res_t =
         svtrn1_u8(svreinterpret_u8_u16(res_tb), svreinterpret_u8_u16(res_tt));
 
-    svbool_t pg_low = svwhilelt_b32(0L, step);
-    svbool_t pg_high = svwhilelt_b32(svcntw(), static_cast<size_t>(step));
+    svbool_t pg_low = svwhilelt_b32_u64(0L, static_cast<size_t>(step));
+    svbool_t pg_high = svwhilelt_b32_u64(svcntw(), static_cast<size_t>(step));
     svuint32_t res_low =
         svzip1_u32(svreinterpret_u32_u8(res_b), svreinterpret_u32_u8(res_t));
     svuint32_t res_high =
@@ -714,7 +714,7 @@ class RemapS16Point5Replicate4ch<uint16_t> {
                   static_cast<ptrdiff_t>(step));
     });
     loop.remaining([&](size_t length, size_t step) {
-      svbool_t pg = svwhilelt_b32(step, step + length);
+      svbool_t pg = svwhilelt_b32_u64(step, step + length);
       svbool_t pg64_b = svtrn1_b32(pg, svpfalse());
       svbool_t pg64_t = svtrn2_b32(pg, svpfalse());
       svbool_t pg_low = svzip1_b32(pg, svpfalse());
@@ -902,7 +902,7 @@ class RemapS16Point5Constant4ch<uint8_t> {
       vector_path(pg, mapxy, mapfrac, dst, static_cast<ptrdiff_t>(step));
     });
     loop.remaining([&](size_t length, size_t step) {
-      svbool_t pg = svwhilelt_b16(step - length, step);
+      svbool_t pg = svwhilelt_b16_u64(step - length, step);
       vector_path(pg, mapxy, mapfrac, dst, static_cast<ptrdiff_t>(length));
     });
   }
@@ -1015,8 +1015,8 @@ class RemapS16Point5Constant4ch<uint8_t> {
     svuint8_t res_t =
         svtrn1_u8(svreinterpret_u8_u16(res_tb), svreinterpret_u8_u16(res_tt));
 
-    svbool_t pg_low = svwhilelt_b32(0L, step);
-    svbool_t pg_high = svwhilelt_b32(svcntw(), static_cast<size_t>(step));
+    svbool_t pg_low = svwhilelt_b32_u64(0L, static_cast<size_t>(step));
+    svbool_t pg_high = svwhilelt_b32_u64(svcntw(), static_cast<size_t>(step));
     svuint32_t res_low =
         svzip1_u32(svreinterpret_u32_u8(res_b), svreinterpret_u32_u8(res_t));
     svuint32_t res_high =
@@ -1068,7 +1068,7 @@ class RemapS16Point5Constant4ch<uint16_t> {
                   dst, static_cast<ptrdiff_t>(step));
     });
     loop.remaining([&](size_t length, size_t step) {
-      svbool_t pg = svwhilelt_b32(step, step + length);
+      svbool_t pg = svwhilelt_b32_u64(step, step + length);
       svbool_t pg_low = svzip1_b32(pg, svpfalse());
       svbool_t pg_high = svzip2_b32(pg, svpfalse());
       vector_path(pg, pg_low, pg_high, mapxy, mapfrac, dst,
