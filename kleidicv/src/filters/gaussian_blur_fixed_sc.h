@@ -5,10 +5,8 @@
 #ifndef KLEIDICV_GAUSSIAN_BLUR_SC_H
 #define KLEIDICV_GAUSSIAN_BLUR_SC_H
 
-#include <array>
 #include <cassert>
 
-#include "border_generic_sc.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/separable_filter_15x15_sc.h"
@@ -20,6 +18,7 @@
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/border_types.h"
 #include "kleidicv/workspace/separable.h"
+#include "separable_sc.h"
 
 #if KLEIDICV_TARGET_SME || KLEIDICV_TARGET_SME2
 #include <arm_sme.h>
@@ -354,11 +353,14 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
 
   if constexpr (IsBinomial) {
     GaussianBlurFilter blur;
-    // TODO uint16_t BorderMaker
     SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+#if KLEIDICV_TARGET_SME
+    process_using_bordermaker(workspace, rect, y_begin, y_end, src_rows,
+                              dst_rows, channels, border_type, filter);
+#else
     workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                        border_type, filter);
-
+#endif
     return KLEIDICV_OK;
   } else {
     constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
@@ -370,50 +372,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
 #if KLEIDICV_TARGET_SME
-      if (border_type == FixedBorderType::REPLICATE) {
-        if (channels == 3) {
-          svuint8_t sv0, sv1, sv2;
-          KLEIDICV_TARGET_NAMESPACE::BorderMaker3ch<uint8_t,
-                                                    FixedBorderType::REPLICATE>
-              border_maker(sv0, sv1, sv2);
-          workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
-                                               dst_rows, channels, border_type,
-                                               filter, border_maker);
-        } else {
-          svuint8_t sv;
-          KLEIDICV_TARGET_NAMESPACE::BorderMaker124ch<
-              uint8_t, FixedBorderType::REPLICATE>
-              border_maker(static_cast<ptrdiff_t>(channels), sv);
-          workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
-                                               dst_rows, channels, border_type,
-                                               filter, border_maker);
-        }
-      } else if (border_type == FixedBorderType::REVERSE) {
-        svuint8_t sv;
-        svbool_t pg;
-        KLEIDICV_TARGET_NAMESPACE::BorderMaker<uint8_t,
-                                               FixedBorderType::REVERSE>
-            border_maker(static_cast<ptrdiff_t>(channels), sv, pg);
-        workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
-                                             dst_rows, channels, border_type,
-                                             filter, border_maker);
-      } else if (border_type == FixedBorderType::REFLECT) {
-        svuint8_t sv;
-        svbool_t pg;
-        KLEIDICV_TARGET_NAMESPACE::BorderMaker<uint8_t,
-                                               FixedBorderType::REFLECT>
-            border_maker(static_cast<ptrdiff_t>(channels), sv, pg);
-        workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
-                                             dst_rows, channels, border_type,
-                                             filter, border_maker);
-      } else if (border_type == FixedBorderType::WRAP) {
-        svbool_t pg;
-        KLEIDICV_TARGET_NAMESPACE::BorderMaker<uint8_t, FixedBorderType::WRAP>
-            border_maker(static_cast<ptrdiff_t>(channels), pg);
-        workspace->process_using_bordermaker(rect, y_begin, y_end, src_rows,
-                                             dst_rows, channels, border_type,
-                                             filter, border_maker);
-      }
+      process_using_bordermaker(workspace, rect, y_begin, y_end, src_rows,
+                                dst_rows, channels, border_type, filter);
 #else
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                          border_type, filter);

@@ -5,12 +5,11 @@
 #ifndef KLEIDICV_SOBEL_SC_H
 #define KLEIDICV_SOBEL_SC_H
 
-#include "border_generic_sc.h"
 #include "kleidicv/filters/separable_filter_3x3_sc.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/sve2.h"
 #include "kleidicv/workspace/separable.h"
+#include "separable_sc.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -143,11 +142,17 @@ static kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8_sc(
     return KLEIDICV_ERROR_ALLOCATION;
   }
 
-  // TODO use BorderMaker??
   HorizontalSobel3x3<uint8_t> horizontal_sobel;
   SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
+#if KLEIDICV_TARGET_SME
+  process_using_bordermaker(workspace.get(), rect, y_begin, y_end, src_rows,
+                            dst_rows, channels, FixedBorderType::REPLICATE,
+                            filter);
+#else
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
+#endif
+
   return KLEIDICV_OK;
 }
 
@@ -174,11 +179,16 @@ static kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8_sc(
     return KLEIDICV_ERROR_ALLOCATION;
   }
 
-  // TODO use BorderMaker (int16_t)
   VerticalSobel3x3<uint8_t> vertical_sobel;
   SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
+#if KLEIDICV_TARGET_SME
+  process_using_bordermaker(workspace.get(), rect, y_begin, y_end, src_rows,
+                            dst_rows, channels, FixedBorderType::REPLICATE,
+                            filter);
+#else
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      FixedBorderType::REPLICATE, filter);
+#endif
   return KLEIDICV_OK;
 }
 

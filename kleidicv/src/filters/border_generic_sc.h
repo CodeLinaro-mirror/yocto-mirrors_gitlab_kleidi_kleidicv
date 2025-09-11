@@ -131,38 +131,42 @@ class BorderMaker124ch;
 template <typename ScalarType, FixedBorderType Border>
 class BorderMaker;
 
-template <>
-class BorderMaker3ch<uint8_t, FixedBorderType::REPLICATE> {
-  using ScalarType = uint8_t;
+template <typename ScalarType>
+class BorderMaker3ch<ScalarType, FixedBorderType::REPLICATE> {
   using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using IndexType = std::make_unsigned_t<ScalarType>;
+  using IndexVectorType =
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<IndexType>::VectorType;
 
  public:
-  BorderMaker3ch(VectorType& sv0, VectorType& sv1,
-                 VectorType& sv2) KLEIDICV_STREAMING : indices0_(sv0),
-                                                       indices1_(sv1),
-                                                       indices2_(sv2) {
+  BorderMaker3ch(IndexVectorType& sv0, IndexVectorType& sv1,
+                 IndexVectorType& sv2) KLEIDICV_STREAMING : indices0_(sv0),
+                                                            indices1_(sv1),
+                                                            indices2_(sv2) {
     size_t kVL = VecTraits::num_lanes();
-    indices0_ = svindex_u8(0, 1);
-    indices1_ = svindex_u8(kVL % 3, 1);
-    indices2_ = svindex_u8((kVL + kVL) % 3, 1);
+    indices0_ = svindex(static_cast<IndexType>(0), static_cast<IndexType>(1));
+    indices1_ =
+        svindex(static_cast<IndexType>(kVL % 3), static_cast<IndexType>(1));
+    indices2_ = svindex(static_cast<IndexType>((kVL + kVL) % 3),
+                        static_cast<IndexType>(1));
     // Decrease by 3 while they are >= 3 --> so we get the modulo
-    size_t steps = (kVL - 1) / 3;
+    size_t steps = (kVL + 1) / 3;
     for (size_t i = 0; i < steps; ++i) {
       indices0_ =
-          svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), indices0_, 3), indices0_, 3);
+          svsub_m(svcmpge(VecTraits::svptrue(), indices0_, 3), indices0_, 3);
       indices1_ =
-          svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), indices1_, 3), indices1_, 3);
+          svsub_m(svcmpge(VecTraits::svptrue(), indices1_, 3), indices1_, 3);
       indices2_ =
-          svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), indices2_, 3), indices2_, 3);
+          svsub_m(svcmpge(VecTraits::svptrue(), indices2_, 3), indices2_, 3);
     }
   }
 
   void make_one_side(Rows<ScalarType> rows, VectorType data, ptrdiff_t offset,
                      ptrdiff_t margin) const KLEIDICV_STREAMING {
-    svuint8_t data0 = svtbl_u8(data, indices0_);
-    svuint8_t data1 = svtbl_u8(data, indices1_);
-    svuint8_t data2 = svtbl_u8(data, indices2_);
+    VectorType data0 = svtbl(data, indices0_);
+    VectorType data1 = svtbl(data, indices1_);
+    VectorType data2 = svtbl(data, indices2_);
     const ptrdiff_t kVL = static_cast<ptrdiff_t>(VecTraits::num_lanes());
     ptrdiff_t xmax = offset + margin * 3;
     for (ptrdiff_t x = offset; x < xmax;) {
@@ -180,39 +184,41 @@ class BorderMaker3ch<uint8_t, FixedBorderType::REPLICATE> {
 
   void make(Rows<ScalarType> rows, ptrdiff_t margin,
             ptrdiff_t width) const KLEIDICV_STREAMING {
-    svbool_t pg_ch = svptrue_pat_b8(SV_VL3);
+    svbool_t pg_ch = VecTraits::template svptrue_pat<SV_VL3>();
 
     // right border
-    svuint8_t data = svld1_u8(pg_ch, &rows[(width - 1) * 3]);
+    VectorType data = svld1(pg_ch, &rows[(width - 1) * 3]);
     make_one_side(rows, data, width * 3, margin);
 
     // left border
-    data = svld1_u8(pg_ch, &rows[0]);
+    data = svld1(pg_ch, &rows[0]);
     make_one_side(rows, data, -margin * 3, margin);
   }
 
  private:
-  VectorType &indices0_, &indices1_, &indices2_;
+  IndexVectorType &indices0_, &indices1_, &indices2_;
 };
 
-template <>
-class BorderMaker124ch<uint8_t, FixedBorderType::REPLICATE> {
-  using ScalarType = uint8_t;
+template <typename ScalarType>
+class BorderMaker124ch<ScalarType, FixedBorderType::REPLICATE> {
   using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using IndexType = std::make_unsigned_t<ScalarType>;
+  using IndexVectorType =
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<IndexType>::VectorType;
 
  public:
-  BorderMaker124ch(ptrdiff_t channels, VectorType& sv) KLEIDICV_STREAMING
+  BorderMaker124ch(ptrdiff_t channels, IndexVectorType& sv) KLEIDICV_STREAMING
       : indices_(sv) {
-    indices_ = svindex_u8(0, 1);
+    indices_ = svindex(static_cast<IndexType>(0), static_cast<IndexType>(1));
     // It does the same as the modulo for 1,2 and 4
-    indices_ = svand_n_u8_x(svptrue_b8(), indices_, channels - 1);
+    indices_ = svand_x(VecTraits::svptrue(), indices_, channels - 1);
   }
 
   void make_one_side(Rows<ScalarType> rows, VectorType data, ptrdiff_t offset,
                      ptrdiff_t margin) const KLEIDICV_STREAMING {
     size_t kVL = VecTraits::num_lanes();
-    svuint8_t filled_data = svtbl_u8(data, indices_);
+    VectorType filled_data = svtbl(data, indices_);
     ptrdiff_t xmax = offset + margin * static_cast<ptrdiff_t>(rows.channels());
     for (ptrdiff_t x = offset; x < xmax;) {
       svbool_t pg = VecTraits::svwhilelt(x, xmax);
@@ -227,33 +233,36 @@ class BorderMaker124ch<uint8_t, FixedBorderType::REPLICATE> {
     svbool_t pg_ch = VecTraits::svwhilelt(0L, ch);
 
     // right border
-    svuint8_t data = svld1_u8(pg_ch, &rows[(width - 1) * ch]);
+    VectorType data = svld1(pg_ch, &rows[(width - 1) * ch]);
     make_one_side(rows, data, width * ch, margin);
 
     // left border
-    data = svld1_u8(pg_ch, &rows[0]);
+    data = svld1(pg_ch, &rows[0]);
     make_one_side(rows, data, -margin * ch, margin);
   }
 
  private:
-  VectorType& indices_;
+  IndexVectorType& indices_;
 };
 
 //////////////////////////////////////////////////////////////////////////////////
 
-template <>
-class BorderMaker<uint8_t, FixedBorderType::REVERSE> {
-  using ScalarType = uint8_t;
+template <typename ScalarType>
+class BorderMaker<ScalarType, FixedBorderType::REVERSE> {
   using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using IndexType = std::make_unsigned_t<ScalarType>;
+  using IndexVectorType =
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<IndexType>::VectorType;
 
  public:
-  BorderMaker(size_t channels, VectorType& sv, svbool_t& pg) KLEIDICV_STREAMING
+  BorderMaker(size_t channels, IndexVectorType& sv,
+              svbool_t& pg) KLEIDICV_STREAMING
       : indices_(sv),
         pg_(pg),
         pixels_per_vector_(static_cast<ptrdiff_t>(VecTraits::num_lanes() /
                                                   channels)) {
-    uint8_t ix[256];
+    IndexType ix[256];
     for (ptrdiff_t i = 0; i < pixels_per_vector_; ++i) {
       size_t i_base = i * channels;
       size_t ix_base = (pixels_per_vector_ - i - 1) * channels;
@@ -261,9 +270,9 @@ class BorderMaker<uint8_t, FixedBorderType::REVERSE> {
         ix[i_base + ch] = ix_base + ch;
       }
     }
-    indices_ = svld1(svptrue_b8(), ix);
+    indices_ = svld1(VecTraits::svptrue(), ix);
     // Full true for 1,2,4, but not for 3 channels
-    pg_ = svwhilelt_b8(0UL, pixels_per_vector_ * channels);
+    pg_ = VecTraits::svwhilelt(0UL, pixels_per_vector_ * channels);
   }
 
   void make(Rows<ScalarType> rows, ptrdiff_t margin,
@@ -272,56 +281,60 @@ class BorderMaker<uint8_t, FixedBorderType::REVERSE> {
     ptrdiff_t ch = static_cast<ptrdiff_t>(rows.channels());
     ptrdiff_t x = 0;
     ptrdiff_t remaining_elements = (margin % pixels_per_vector_) * ch;
-    svbool_t pg_last_front = svwhilelt_b8(0L, remaining_elements);
-    svuint8_t increasing = svindex_u8(0, 1);
-    svbool_t pg_last_end = svcmpge_n_u8(
+    svbool_t pg_last_front = VecTraits::svwhilelt(0L, remaining_elements);
+    VectorType increasing =
+        svindex(static_cast<ScalarType>(0), static_cast<ScalarType>(1));
+    svbool_t pg_last_end = svcmpge(
         pg_, increasing,
-        static_cast<uint8_t>(pixels_per_vector_ * ch - remaining_elements));
+        static_cast<ScalarType>(pixels_per_vector_ * ch - remaining_elements));
     for (; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
-      svuint8_t data = svld1_u8(pg_, &rows[(1 + x) * ch]);
-      svuint8_t reversed = svtbl_u8(data, indices_);
-      svst1_u8(pg_, &rows[(-x - pixels_per_vector_) * ch], reversed);
+      VectorType data = svld1(pg_, &rows[(1 + x) * ch]);
+      VectorType reversed = svtbl(data, indices_);
+      svst1(pg_, &rows[(-x - pixels_per_vector_) * ch], reversed);
     }
     // last one is predicated
-    svuint8_t data = svld1_u8(pg_last_front, &rows[(1 + x) * ch]);
-    svuint8_t reversed = svtbl_u8(data, indices_);
-    svst1_u8(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], reversed);
+    VectorType data = svld1(pg_last_front, &rows[(1 + x) * ch]);
+    VectorType reversed = svtbl(data, indices_);
+    svst1(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], reversed);
 
     // right border
     for (x = 0; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
-      svuint8_t data =
-          svld1_u8(pg_, &rows[(width - (x + 1) - pixels_per_vector_) * ch]);
-      svuint8_t reversed = svtbl_u8(data, indices_);
-      svst1_u8(pg_, &rows[(width + x) * ch], reversed);
+      VectorType data =
+          svld1(pg_, &rows[(width - (x + 1) - pixels_per_vector_) * ch]);
+      VectorType reversed = svtbl(data, indices_);
+      svst1(pg_, &rows[(width + x) * ch], reversed);
     }
     // last one is predicated
-    data = svld1_u8(pg_last_end,
-                    &rows[(width - (x + 1) - pixels_per_vector_) * ch]);
-    reversed = svtbl_u8(data, indices_);
-    svst1_u8(pg_last_front, &rows[(width + x) * ch], reversed);
+    data =
+        svld1(pg_last_end, &rows[(width - (x + 1) - pixels_per_vector_) * ch]);
+    reversed = svtbl(data, indices_);
+    svst1(pg_last_front, &rows[(width + x) * ch], reversed);
   }
 
  private:
-  VectorType& indices_;
+  IndexVectorType& indices_;
   svbool_t& pg_;
   ptrdiff_t pixels_per_vector_;
 };
 
 //////////////////////////////////////////////////////////////////////////////////
 
-template <>
-class BorderMaker<uint8_t, FixedBorderType::REFLECT> {
-  using ScalarType = uint8_t;
+template <typename ScalarType>
+class BorderMaker<ScalarType, FixedBorderType::REFLECT> {
   using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using IndexType = std::make_unsigned_t<ScalarType>;
+  using IndexVectorType =
+      typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<IndexType>::VectorType;
 
  public:
-  BorderMaker(size_t channels, VectorType& sv, svbool_t& pg) KLEIDICV_STREAMING
+  BorderMaker(size_t channels, IndexVectorType& sv,
+              svbool_t& pg) KLEIDICV_STREAMING
       : indices_(sv),
         pg_(pg),
         pixels_per_vector_(static_cast<ptrdiff_t>(VecTraits::num_lanes() /
                                                   channels)) {
-    uint8_t ix[256];
+    IndexType ix[256];
     for (ptrdiff_t i = 0; i < pixels_per_vector_; ++i) {
       size_t i_base = i * channels;
       size_t ix_base = (pixels_per_vector_ - i - 1) * channels;
@@ -329,9 +342,9 @@ class BorderMaker<uint8_t, FixedBorderType::REFLECT> {
         ix[i_base + ch] = ix_base + ch;
       }
     }
-    indices_ = svld1(svptrue_b8(), ix);
+    indices_ = svld1(VecTraits::svptrue(), ix);
     // Full true for 1,2,4, but not for 3 channels
-    pg_ = svwhilelt_b8(0UL, pixels_per_vector_ * channels);
+    pg_ = VecTraits::svwhilelt(0UL, pixels_per_vector_ * channels);
   }
 
   void make(Rows<ScalarType> rows, ptrdiff_t margin,
@@ -340,45 +353,45 @@ class BorderMaker<uint8_t, FixedBorderType::REFLECT> {
     ptrdiff_t ch = static_cast<ptrdiff_t>(rows.channels());
     ptrdiff_t x = 0;
     ptrdiff_t remaining_elements = (margin % pixels_per_vector_) * ch;
-    svbool_t pg_last_front = svwhilelt_b8(0L, remaining_elements);
-    svuint8_t increasing = svindex_u8(0, 1);
-    svbool_t pg_last_end = svcmpge_n_u8(
+    svbool_t pg_last_front = VecTraits::svwhilelt(0L, remaining_elements);
+    VectorType increasing =
+        svindex(static_cast<ScalarType>(0), static_cast<ScalarType>(1));
+    svbool_t pg_last_end = svcmpge(
         pg_, increasing,
-        static_cast<uint8_t>(pixels_per_vector_ * ch - remaining_elements));
+        static_cast<ScalarType>(pixels_per_vector_ * ch - remaining_elements));
     for (; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
-      svuint8_t data = svld1_u8(pg_, &rows[x * ch]);
-      svuint8_t reversed = svtbl_u8(data, indices_);
-      svst1_u8(pg_, &rows[(-x - pixels_per_vector_) * ch], reversed);
+      VectorType data = svld1(pg_, &rows[x * ch]);
+      VectorType reversed = svtbl(data, indices_);
+      svst1(pg_, &rows[(-x - pixels_per_vector_) * ch], reversed);
     }
     // last one is predicated
-    svuint8_t data = svld1_u8(pg_last_front, &rows[x * ch]);
-    svuint8_t reversed = svtbl_u8(data, indices_);
-    svst1_u8(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], reversed);
+    VectorType data = svld1(pg_last_front, &rows[x * ch]);
+    VectorType reversed = svtbl(data, indices_);
+    svst1(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], reversed);
 
     // right border
     for (x = 0; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
-      svuint8_t data =
-          svld1_u8(pg_, &rows[(width - x - pixels_per_vector_) * ch]);
-      svuint8_t reversed = svtbl_u8(data, indices_);
-      svst1_u8(pg_, &rows[(width + x) * ch], reversed);
+      VectorType data =
+          svld1(pg_, &rows[(width - x - pixels_per_vector_) * ch]);
+      VectorType reversed = svtbl(data, indices_);
+      svst1(pg_, &rows[(width + x) * ch], reversed);
     }
     // last one is predicated
-    data = svld1_u8(pg_last_end, &rows[(width - x - pixels_per_vector_) * ch]);
-    reversed = svtbl_u8(data, indices_);
-    svst1_u8(pg_last_front, &rows[(width + x) * ch], reversed);
+    data = svld1(pg_last_end, &rows[(width - x - pixels_per_vector_) * ch]);
+    reversed = svtbl(data, indices_);
+    svst1(pg_last_front, &rows[(width + x) * ch], reversed);
   }
 
  private:
-  VectorType& indices_;
+  IndexVectorType& indices_;
   svbool_t& pg_;
   ptrdiff_t pixels_per_vector_;
 };
 
 //////////////////////////////////////////////////////////////////////////////////
 
-template <>
-class BorderMaker<uint8_t, FixedBorderType::WRAP> {
-  using ScalarType = uint8_t;
+template <typename ScalarType>
+class BorderMaker<ScalarType, FixedBorderType::WRAP> {
   using VecTraits = typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
@@ -388,7 +401,7 @@ class BorderMaker<uint8_t, FixedBorderType::WRAP> {
         pixels_per_vector_(static_cast<ptrdiff_t>(VecTraits::num_lanes() /
                                                   channels)) {
     // Full true for 1,2,4, but not for 3 channels
-    pg_ = svwhilelt_b8(0UL, pixels_per_vector_ * channels);
+    pg_ = VecTraits::svwhilelt(0UL, pixels_per_vector_ * channels);
   }
 
   void make(Rows<ScalarType> rows, ptrdiff_t margin,
@@ -397,29 +410,30 @@ class BorderMaker<uint8_t, FixedBorderType::WRAP> {
     ptrdiff_t ch = static_cast<ptrdiff_t>(rows.channels());
     ptrdiff_t x = 0;
     ptrdiff_t remaining_elements = (margin % pixels_per_vector_) * ch;
-    svbool_t pg_last_front = svwhilelt_b8(0L, remaining_elements);
-    svuint8_t increasing = svindex_u8(0, 1);
-    svbool_t pg_last_end = svcmpge_n_u8(
+    svbool_t pg_last_front = VecTraits::svwhilelt(0L, remaining_elements);
+    VectorType increasing =
+        svindex(static_cast<ScalarType>(0), static_cast<ScalarType>(1));
+    svbool_t pg_last_end = svcmpge(
         pg_, increasing,
-        static_cast<uint8_t>(pixels_per_vector_ * ch - remaining_elements));
+        static_cast<ScalarType>(pixels_per_vector_ * ch - remaining_elements));
     for (; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
-      svuint8_t data =
-          svld1_u8(pg_, &rows[(width - x - pixels_per_vector_) * ch]);
-      svst1_u8(pg_, &rows[(-x - pixels_per_vector_) * ch], data);
+      VectorType data =
+          svld1(pg_, &rows[(width - x - pixels_per_vector_) * ch]);
+      svst1(pg_, &rows[(-x - pixels_per_vector_) * ch], data);
     }
     // last one is predicated
-    svuint8_t data =
-        svld1_u8(pg_last_end, &rows[(width - x - pixels_per_vector_) * ch]);
-    svst1_u8(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], data);
+    VectorType data =
+        svld1(pg_last_end, &rows[(width - x - pixels_per_vector_) * ch]);
+    svst1(pg_last_end, &rows[(-x - pixels_per_vector_) * ch], data);
 
     // right border
     for (x = 0; x <= margin - pixels_per_vector_; x += pixels_per_vector_) {
-      svuint8_t data = svld1_u8(pg_, &rows[x * ch]);
-      svst1_u8(pg_, &rows[(width + x) * ch], data);
+      VectorType data = svld1(pg_, &rows[x * ch]);
+      svst1(pg_, &rows[(width + x) * ch], data);
     }
     // last one is predicated
-    data = svld1_u8(pg_last_front, &rows[x * ch]);
-    svst1_u8(pg_last_front, &rows[(width + x) * ch], data);
+    data = svld1(pg_last_front, &rows[x * ch]);
+    svst1(pg_last_front, &rows[(width + x) * ch], data);
   }
 
  private:

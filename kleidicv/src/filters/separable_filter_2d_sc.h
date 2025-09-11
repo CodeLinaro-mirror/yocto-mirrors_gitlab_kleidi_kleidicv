@@ -7,11 +7,11 @@
 
 #include <limits>
 
-#include "border_generic_sc.h"
 #include "kleidicv/filters/separable_filter_5x5_sc.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/separable.h"
+#include "separable_sc.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -500,12 +500,16 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
       kernel_y_0, kernel_y_1, kernel_y_2, kernel_y_3, kernel_y_4};
   SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
 
-  // TODO use BorderMaker???
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
+
+#if KLEIDICV_TARGET_SME
+  process_using_bordermaker(workspace, rect, y_begin, y_end, src_rows, dst_rows,
+                            channels, fixed_border_type, filter);
+#else
   workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                      fixed_border_type, filter);
-
+#endif
   return KLEIDICV_OK;
 }
 

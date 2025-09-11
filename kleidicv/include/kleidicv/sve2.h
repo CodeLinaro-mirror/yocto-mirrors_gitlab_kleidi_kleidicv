@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "kleidicv/operations.h"
-#include "kleidicv/utils.h"
 
 // It is used by SVE2 and SME, the actual namespace will reflect it.
 namespace KLEIDICV_TARGET_NAMESPACE {
@@ -664,6 +663,131 @@ class ScalableVectorArray1D {
     return window[index].get();
   }
 };
+
+// -----------------------------------------------------------------------------
+// SVE2 binary operations
+// -----------------------------------------------------------------------------
+
+#define SVE2_BINARY_OP_PRED_B8_B16_B32_B64(name, postfix)                     \
+  static inline svint8_t name##postfix(svbool_t pg, svint8_t lhs,             \
+                                       svint8_t rhs) KLEIDICV_STREAMING {     \
+    return name##_s8##postfix(pg, lhs, rhs);                                  \
+  }                                                                           \
+                                                                              \
+  static inline svuint8_t name##postfix(svbool_t pg, svuint8_t lhs,           \
+                                        svuint8_t rhs) KLEIDICV_STREAMING {   \
+    return name##_u8##postfix(pg, lhs, rhs);                                  \
+  }                                                                           \
+                                                                              \
+  static inline svint16_t name##postfix(svbool_t pg, svint16_t lhs,           \
+                                        svint16_t rhs) KLEIDICV_STREAMING {   \
+    return name##_s16##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svuint16_t name##postfix(svbool_t pg, svuint16_t lhs,         \
+                                         svuint16_t rhs) KLEIDICV_STREAMING { \
+    return name##_u16##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svint32_t name##postfix(svbool_t pg, svint32_t lhs,           \
+                                        svint32_t rhs) KLEIDICV_STREAMING {   \
+    return name##_s32##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svuint32_t name##postfix(svbool_t pg, svuint32_t lhs,         \
+                                         svuint32_t rhs) KLEIDICV_STREAMING { \
+    return name##_u32##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svint64_t name##postfix(svbool_t pg, svint64_t lhs,           \
+                                        svint64_t rhs) KLEIDICV_STREAMING {   \
+    return name##_s64##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svuint64_t name##postfix(svbool_t pg, svuint64_t lhs,         \
+                                         svuint64_t rhs) KLEIDICV_STREAMING { \
+    return name##_u64##postfix(pg, lhs, rhs);                                 \
+  }
+
+#define SVE2_BINARY_OP_PRED_B8_B16_B32_B64_N(name, postfix)                   \
+  static inline svint8_t name##postfix(svbool_t pg, svint8_t lhs, int8_t rhs) \
+      KLEIDICV_STREAMING {                                                    \
+    return name##_s8##postfix(pg, lhs, rhs);                                  \
+  }                                                                           \
+                                                                              \
+  static inline svuint8_t name##postfix(svbool_t pg, svuint8_t lhs,           \
+                                        uint8_t rhs) KLEIDICV_STREAMING {     \
+    return name##_u8##postfix(pg, lhs, rhs);                                  \
+  }                                                                           \
+                                                                              \
+  static inline svint16_t name##postfix(svbool_t pg, svint16_t lhs,           \
+                                        int16_t rhs) KLEIDICV_STREAMING {     \
+    return name##_s16##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svuint16_t name##postfix(svbool_t pg, svuint16_t lhs,         \
+                                         uint16_t rhs) KLEIDICV_STREAMING {   \
+    return name##_u16##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svint32_t name##postfix(svbool_t pg, svint32_t lhs,           \
+                                        int32_t rhs) KLEIDICV_STREAMING {     \
+    return name##_s32##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svuint32_t name##postfix(svbool_t pg, svuint32_t lhs,         \
+                                         uint32_t rhs) KLEIDICV_STREAMING {   \
+    return name##_u32##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svint64_t name##postfix(svbool_t pg, svint64_t lhs,           \
+                                        int64_t rhs) KLEIDICV_STREAMING {     \
+    return name##_s64##postfix(pg, lhs, rhs);                                 \
+  }                                                                           \
+                                                                              \
+  static inline svuint64_t name##postfix(svbool_t pg, svuint64_t lhs,         \
+                                         uint64_t rhs) KLEIDICV_STREAMING {   \
+    return name##_u64##postfix(pg, lhs, rhs);                                 \
+  }
+
+#define SVE2_BINARY_OP_UNPRED_B8_B16_B32_B64_NN(name)                         \
+  static inline svint8_t name(int8_t lhs, int8_t rhs) KLEIDICV_STREAMING {    \
+    return name##_s8(lhs, rhs);                                               \
+  }                                                                           \
+                                                                              \
+  static inline svuint8_t name(uint8_t lhs, uint8_t rhs) KLEIDICV_STREAMING { \
+    return name##_u8(lhs, rhs);                                               \
+  }                                                                           \
+                                                                              \
+  static inline svint16_t name(int16_t lhs, int16_t rhs) KLEIDICV_STREAMING { \
+    return name##_s16(lhs, rhs);                                              \
+  }                                                                           \
+                                                                              \
+  static inline svuint16_t name(uint16_t lhs, uint16_t rhs)                   \
+      KLEIDICV_STREAMING {                                                    \
+    return name##_u16(lhs, rhs);                                              \
+  }                                                                           \
+                                                                              \
+  static inline svint32_t name(int32_t lhs, int32_t rhs) KLEIDICV_STREAMING { \
+    return name##_s32(lhs, rhs);                                              \
+  }                                                                           \
+                                                                              \
+  static inline svuint32_t name(uint32_t lhs, uint32_t rhs)                   \
+      KLEIDICV_STREAMING {                                                    \
+    return name##_u32(lhs, rhs);                                              \
+  }                                                                           \
+                                                                              \
+  static inline svint64_t name(int64_t lhs, int64_t rhs) KLEIDICV_STREAMING { \
+    return name##_s64(lhs, rhs);                                              \
+  }                                                                           \
+                                                                              \
+  static inline svuint64_t name(uint64_t lhs, uint64_t rhs)                   \
+      KLEIDICV_STREAMING {                                                    \
+    return name##_u64(lhs, rhs);                                              \
+  }
+
+SVE2_BINARY_OP_PRED_B8_B16_B32_B64_N(svand_n, _x);
+SVE2_BINARY_OP_UNPRED_B8_B16_B32_B64_NN(svindex);
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 

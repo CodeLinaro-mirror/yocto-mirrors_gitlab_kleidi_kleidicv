@@ -161,6 +161,8 @@ class SeparableFilterWorkspace {
   }
 
   // Processes rows vertically first along the full width
+  // BorderMaker version, i.e. borders are prepared into the buffer between the
+  // vertical and the horizontal path. This is simpler and avoids LSRT hazards.
   template <typename FilterType, typename BorderMakerType>
   void process_using_bordermaker(
       Rectangle rect, size_t y_begin, size_t y_end,
