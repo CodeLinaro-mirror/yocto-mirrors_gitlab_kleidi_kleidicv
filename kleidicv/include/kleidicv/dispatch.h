@@ -8,11 +8,74 @@
 #include "kleidicv/config.h"
 
 #if KLEIDICV_ENABLE_SME2 || KLEIDICV_ENABLE_SME || KLEIDICV_ENABLE_SVE2
-#include <sys/auxv.h>
 
 #include <cstdint>
 #include <type_traits>
 
+#ifdef __APPLE__
+
+#include <sys/sysctl.h>
+
+namespace KLEIDICV_TARGET_NAMESPACE {
+
+static bool query_sysctl(const char* attribute_name) {
+  uint64_t attribute_value = 0;
+  size_t max_attribute_size = sizeof(attribute_value);
+  if (sysctlbyname(attribute_name, &attribute_value, &max_attribute_size, NULL,
+                   0)) {
+    return false;
+  }
+
+  return attribute_value;
+}
+
+#if KLEIDICV_ENABLE_SVE2
+#define KLEIDICV_SVE2_RESOLVE(sve2_impl)                                      \
+  if (!std::is_null_pointer_v<decltype(sve2_impl)> &&                         \
+      KLEIDICV_TARGET_NAMESPACE::query_sysctl("hw.optional.arm.FEAT_SVE2")) { \
+    return sve2_impl;                                                         \
+  }
+#else
+#define KLEIDICV_SVE2_RESOLVE(x)
+#endif  // KLEIDICV_ENABLE_SVE2
+
+#if KLEIDICV_ENABLE_SME
+#define KLEIDICV_SME_RESOLVE(sme_impl)                                       \
+  if (!std::is_null_pointer_v<decltype(sme_impl)> &&                         \
+      KLEIDICV_TARGET_NAMESPACE::query_sysctl("hw.optional.arm.FEAT_SME")) { \
+    return sme_impl;                                                         \
+  }
+#else
+#define KLEIDICV_SME_RESOLVE(x)
+#endif  // KLEIDICV_ENABLE_SME
+
+#if KLEIDICV_ENABLE_SME2
+#define KLEIDICV_SME2_RESOLVE(sme2_impl)                                      \
+  if (!std::is_null_pointer_v<decltype(sme2_impl)> &&                         \
+      KLEIDICV_TARGET_NAMESPACE::query_sysctl("hw.optional.arm.FEAT_SME2")) { \
+    return sme2_impl;                                                         \
+  }
+#else
+#define KLEIDICV_SME2_RESOLVE(x)
+#endif  // KLEIDICV_ENABLE_SME2
+
+}  // namespace KLEIDICV_TARGET_NAMESPACE
+
+#define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl, \
+                                    sme2_impl)                                \
+  static decltype(neon_impl) api_name##_resolver() {                          \
+    KLEIDICV_SME2_RESOLVE(sme2_impl);                                         \
+    KLEIDICV_SME_RESOLVE(sme_impl);                                           \
+    KLEIDICV_SVE2_RESOLVE(sve2_impl);                                         \
+    return neon_impl;                                                         \
+  }                                                                           \
+  extern "C" {                                                                \
+  decltype(neon_impl) api_name = api_name##_resolver();                       \
+  }
+
+#else  // __APPLE__
+
+#include <sys/auxv.h>
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 using HwCapTy = uint64_t;
@@ -85,6 +148,8 @@ static inline bool hwcaps_has_sme2(HwCaps hwcaps) {
   extern "C" {                                                                \
   decltype(neon_impl) api_name = api_name##_resolver();                       \
   }
+
+#endif  // __APPLE__
 
 #else  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME || KLEIDICV_HAVE_SME2
 
