@@ -24,10 +24,11 @@ At present the only Tier 2 platform is AArch64 Ubuntu, as defined by `docker/Doc
 
 ## Tier 3
 
-KleidiCV aims to support Tier 3 platforms but since no routine
-testing is done on these platforms it may or may not work in practise.
+KleidiCV aims to support Tier 3 platforms but since no routine testing is done on these platforms
+it may or may not work in practice.
 
-At present the only Tier 3 platform is Mac computers with Apple silicon.
-
+Tier 3 platforms:
+* Mac computers with Apple silicon
+* Windows 11 Arm-based PCs
 
 [^1] Inspired by [Rust's platform support](https://doc.rust-lang.org/nightly/rustc/platform-support.html).
