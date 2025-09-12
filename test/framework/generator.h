@@ -13,6 +13,21 @@
 #include "framework/abstract.h"
 #include "framework/utils.h"
 
+template <typename T, typename... Ts>
+inline constexpr bool is_any_of_v = (std::is_same_v<T, Ts> || ...);
+
+// uniform_int_distribution does not support 8-bit data types on some platforms
+// int64_t is used for not supported types
+template <typename T>
+struct TypeForRandom {
+  using type = std::conditional_t<
+      is_any_of_v<T, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t>,
+      T, int64_t>;
+};
+
+template <typename T>
+using IntTypeForRandom = typename TypeForRandom<T>::type;
+
 namespace test {
 
 template <typename ElementType>
@@ -55,9 +70,10 @@ class PseudoRandomNumberGenerator : public Generator<ElementType> {
         }
       }
     } else {
-      return std::uniform_int_distribution<ElementType>(
-          std::numeric_limits<ElementType>::lowest(),
-          std::numeric_limits<ElementType>::max())(rng_);
+      return static_cast<ElementType>(
+          std::uniform_int_distribution<IntTypeForRandom<ElementType>>(
+              std::numeric_limits<ElementType>::lowest(),
+              std::numeric_limits<ElementType>::max())(rng_));
     }
   }
 
@@ -81,7 +97,7 @@ class PseudoRandomNumberGeneratorIntRange
   }
 
  protected:
-  std::uniform_int_distribution<ElementType> dist_;
+  std::uniform_int_distribution<IntTypeForRandom<ElementType>> dist_;
 };  // end of class PseudoRandomNumberGeneratorIntRange<ElementType>
 
 template <typename ElementType,

@@ -39,6 +39,5 @@ else()
   target_link_libraries(
     kleidicv-c-example
     kleidicv
-    m
   )
 endif()

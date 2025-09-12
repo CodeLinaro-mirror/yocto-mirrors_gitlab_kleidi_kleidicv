@@ -82,7 +82,8 @@ class MorphologyWorkspace final {
       size_t iterations, size_t type_size,
       kleidicv_rectangle_t image) KLEIDICV_STREAMING {
     // These values are arbitrarily choosen.
-    const size_t rows_per_iteration = std::max(2 * kernel.height, 32UL);
+    const size_t rows_per_iteration =
+        std::max(2 * kernel.height, static_cast<size_t>(32ULL));
     // To avoid load/store penalties.
     const size_t kAlignment = 16;
 

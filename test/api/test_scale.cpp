@@ -136,7 +136,7 @@ class ScaleTestLinearBase {
     size_t image_size = std::max(
         minimum_size,
         std::min(saturating_cast<size_t, ElementType>(max() - lowest()),
-                 10000UL));
+                 static_cast<size_t>(10000ULL)));
     size_t step =
         std::max(static_cast<ElementType>(image_size / (max() - lowest())),
                  static_cast<ElementType>(1));

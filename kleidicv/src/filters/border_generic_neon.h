@@ -21,8 +21,9 @@ class GenericBorderHorizontal final {
   GenericBorderHorizontal(size_t width, size_t channels)
       : width_(static_cast<ptrdiff_t>(width)),
         channels_{static_cast<ptrdiff_t>(channels)},
-        data_indices_{0UL | (1UL << 8) | (2UL << 16) | (3UL << 24) |
-                      (4UL << 32) | (5UL << 40) | (6UL << 48) | (7UL << 56)},
+        data_indices_{0ULL | (1ULL << 8) | (2ULL << 16) | (3ULL << 24) |
+                      (4ULL << 32) | (5ULL << 40) | (6ULL << 48) |
+                      (7ULL << 56)},
         border_indices_left_{0},
         border_indices_right_{0} {
     // The result will take some elements from the image (data), and the

@@ -58,7 +58,7 @@ static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
 // Rounding shift right.
 template <typename T>
 static T rounding_shift_right(T value, size_t shift) KLEIDICV_STREAMING {
-  return (value + (1UL << (shift - 1))) >> shift;
+  return (value + (T{1} << (shift - 1))) >> shift;
 }
 
 // When placed in a loop, it effectively disables loop vectorization.
