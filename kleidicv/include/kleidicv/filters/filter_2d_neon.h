@@ -19,7 +19,9 @@ class Filter2d {
   using SourceType = typename InnerFilterType::SourceType;
   using DestinationType = typename InnerFilterType::DestinationType;
   using SourceVecTraits = typename neon::VecTraits<SourceType>;
+  using DestinationVecTraits = typename neon::VecTraits<DestinationType>;
   using SourceVectorType = typename SourceVecTraits::VectorType;
+  using DestinationVectorType = typename DestinationVecTraits::VectorType;
   using BorderType = FixedBorderType;
   static constexpr size_t kMargin = KSize / 2;
   using BorderInfoType =
@@ -29,15 +31,15 @@ class Filter2d {
   explicit Filter2d(InnerFilterType filter) : filter_{filter} {}
 
   void process_pixels_without_horizontal_borders(
-      size_t width, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
-      BorderOffsets window_row_offsets,
+      size_t width, Rows<const SourceType> src_rows,
+      Rows<DestinationType> dst_rows, BorderOffsets window_row_offsets,
       BorderOffsets window_col_offsets) const {
     LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
                                          SourceVecTraits::num_lanes()};
 
     loop.unroll_once([&](size_t index) {
       SourceVectorType src[KSize][KSize];
-      SourceVectorType dst_vec;
+      DestinationVectorType dst_vec;
 
       auto KernelWindow = [&](size_t row, size_t col) -> SourceVectorType& {
         return src[row][col];
@@ -59,16 +61,17 @@ class Filter2d {
   }
 
   void process_pixels_of_dual_rows_without_horizontal_borders(
-      size_t width, Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
-      BorderOffsets window_row_offsets_0, BorderOffsets window_row_offsets_1,
+      size_t width, Rows<const SourceType> src_rows,
+      Rows<DestinationType> dst_rows, BorderOffsets window_row_offsets_0,
+      BorderOffsets window_row_offsets_1,
       BorderOffsets window_col_offsets) const {
     LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
                                          SourceVecTraits::num_lanes()};
 
     loop.unroll_once([&](size_t index) {
       SourceVectorType src[KSize + 1][KSize];
-      SourceVectorType dst_vec_0;
-      SourceVectorType dst_vec_1;
+      DestinationVectorType dst_vec_0;
+      DestinationVectorType dst_vec_1;
       auto KernelWindow = [&](size_t row, size_t col) -> SourceVectorType& {
         return src[row][col];
       };
@@ -92,7 +95,7 @@ class Filter2d {
   }
 
   void process_one_pixel_with_horizontal_borders(
-      Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
+      Rows<const SourceType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets window_row_offsets,
       BorderOffsets window_col_offsets) const KLEIDICV_STREAMING {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
@@ -104,7 +107,7 @@ class Filter2d {
 
   // Processes two vertically adjacent pixels in a single column
   void process_two_pixels_with_horizontal_borders(
-      Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
+      Rows<const SourceType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets window_row_offsets_0, BorderOffsets window_row_offsets_1,
       BorderOffsets window_col_offsets) const {
     for (size_t index = 0; index < src_rows.channels(); ++index) {
@@ -117,7 +120,7 @@ class Filter2d {
 
  private:
   void process_one_element_with_horizontal_borders(
-      Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
+      Rows<const SourceType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets window_row_offsets, BorderOffsets window_col_offsets,
       size_t index) const KLEIDICV_STREAMING {
     SourceType src[KSize][KSize];
@@ -137,7 +140,7 @@ class Filter2d {
   }
 
   void process_two_element_vertically_with_or_without_horizontal_borders(
-      Rows<const SourceType> src_rows, Rows<SourceType> dst_rows,
+      Rows<const SourceType> src_rows, Rows<DestinationType> dst_rows,
       BorderOffsets window_row_offsets_0, BorderOffsets window_row_offsets_1,
       BorderOffsets window_col_offsets, size_t index) const {
     SourceType src[KSize + 1][KSize];
