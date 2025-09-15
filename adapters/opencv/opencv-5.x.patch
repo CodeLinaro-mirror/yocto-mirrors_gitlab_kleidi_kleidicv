@@ -12,48 +12,37 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-diff --git a/modules/core/src/convert.dispatch.cpp b/modules/core/src/convert.dispatch.cpp
-index c18fc2faef..34ef53dc57 100644
---- a/modules/core/src/convert.dispatch.cpp
-+++ b/modules/core/src/convert.dispatch.cpp
-@@ -176,6 +176,15 @@ void Mat::convertTo(OutputArray dst, int type_, double alpha, double beta) const
-         CALL_HAL(convertScale, cv_hal_convertScale, src.data, 0, dstMat.data, 0, (int)src.total() * cn, 1, sdepth, ddepth, alpha, beta);
+diff --git a/modules/core/src/arithm.cpp b/modules/core/src/arithm.cpp
+index 03f502ba48..acebf3f62e 100644
+--- a/modules/core/src/arithm.cpp
++++ b/modules/core/src/arithm.cpp
+@@ -2286,6 +2286,18 @@ void cv::inRange(InputArray _src, InputArray _lowerb,
+ 
+         convertAndUnrollScalar( lb, src.type(), lbuf, blocksize );
+         convertAndUnrollScalar( ub, src.type(), ubuf, blocksize );
++
++        if (depth == CV_8U && src.dims <= 2) {
++            uint8_t lb_scalar = lbuf[0];
++            uint8_t ub_scalar = ubuf[0];
++            CALL_HAL(inRange_u8, cv_hal_inRange8u, src.data, src.step, dst.data, dst.step, dst.depth(), src.cols, src.rows, src.channels(),
++                lb_scalar, ub_scalar);
++        } else if (depth == CV_32F && src.dims <= 2) {
++            double lb_scalar = lb.ptr<double>(0)[0];
++            double ub_scalar = ub.ptr<double>(0)[0];
++            CALL_HAL(inRange_f32, cv_hal_inRange32f, src.data, src.step, dst.data, dst.step, dst.depth(), src.cols, src.rows, src.channels(),
++                lb_scalar, ub_scalar);
++        }
      }
  
-+   if( dims <= 2 )
-+    {
-+        CALL_HAL(convertScale, cv_hal_convertScale, src.data, src.step, dstMat.data, dstMat.step, src.cols * cn, src.rows, sdepth, ddepth, alpha, beta);
-+    }
-+    else if( src.isContinuous() && dstMat.isContinuous() )
-+    {
-+        CALL_HAL(convertScale, cv_hal_convertScale, src.data, 0, dstMat.data, 0, (int)src.total() * cn, 1, sdepth, ddepth, alpha, beta);
-+    }
-+    
-     BinaryFunc func = noScale ? getConvertFunc(sdepth, ddepth) : getConvertScaleFunc(sdepth, ddepth);
-     double scale[] = {alpha, beta};
-     CV_Assert( func != 0 );
+     for( size_t i = 0; i < it.nplanes; i++, ++it )
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
-index 0c9254a872..65ccbbf683 100644
+index a93a3b5291..5221d3c70c 100644
 --- a/modules/core/src/hal_replacement.hpp
 +++ b/modules/core/src/hal_replacement.hpp
-@@ -1223,6 +1223,40 @@ inline int hal_ni_copyToMasked(const uchar* src_data, size_t src_step, uchar* ds
- #define cv_hal_copyToMasked hal_ni_copyToMasked
+@@ -1238,6 +1238,26 @@ inline int hal_ni_sum(const uchar *src_data, size_t src_step, int src_type, int
+ #define cv_hal_sum hal_ni_sum
  //! @endcond
  
-+/**
-+    @ brief sum
-+    @param src_data Source image data
-+    @param src_step Source image step
-+    @param src_type Source image type
-+    @param width, height Source image dimensions
-+    @param result Pointer to save the sum result to.
-+ */
-+inline int hal_ni_sum(const uchar *src_data, size_t src_step, int src_type, int width, int height, double *result)
-+{ return CV_HAL_ERROR_NOT_IMPLEMENTED; }
-+//! @cond IGNORED
-+#define cv_hal_sum hal_ni_sum
-+//! @endcond
-+
 +/**
 +   @brief inRange
 +   @param src_data,src_step,src_depth Source image
@@ -76,67 +65,4 @@ index 0c9254a872..65ccbbf683 100644
 +
  //! @}
  
- 
-diff --git a/modules/core/src/sum.dispatch.cpp b/modules/core/src/sum.dispatch.cpp
-index e56e10117f..3a612935a5 100644
---- a/modules/core/src/sum.dispatch.cpp
-+++ b/modules/core/src/sum.dispatch.cpp
-@@ -199,6 +199,10 @@ Scalar sum(InputArray _src)
-     CV_IPP_RUN(IPP_VERSION_X100 >= 700, ipp_sum(src, _res), _res);
- 
-     int k, cn = src.channels(), depth = src.depth();
-+
-+    double result = 0;
-+    CALL_HAL_RET(sum, cv_hal_sum, result, src.data, src.step, src.type(), src.cols, src.rows);
-+
-     SumFunc func = getSumFunc(depth);
-     if (func == nullptr) {
-         if (depth == CV_Bool && cn == 1)
-diff --git a/modules/imgproc/src/imgwarp.cpp b/modules/imgproc/src/imgwarp.cpp
-index 35fe093c2b..5529d8ee77 100644
---- a/modules/imgproc/src/imgwarp.cpp
-+++ b/modules/imgproc/src/imgwarp.cpp
-@@ -1832,6 +1832,11 @@ void cv::convertMaps( InputArray _map1, InputArray _map2,
-         std::swap( m1, m2 );
-         std::swap( m1type, m2type );
-     }
-+    if ((map1.type() == CV_16SC2) && (map2.empty() || map2.type() == CV_16UC1))
-+    {
-+        CALL_HAL(remap16s, cv_hal_remap16s, src.type(), src.data, src.step, src.cols, src.rows, dst.data, dst.step, dst.cols, dst.rows,
-+                 map1.ptr<short>(), map1.step, map2.ptr<ushort>(), map2.step, interpolation, borderType, borderValue.val);
-+    }
- 
-     if( dstm1type <= 0 )
-         dstm1type = m1type == CV_16SC2 ? CV_32FC2 : CV_16SC2;
-diff --git a/modules/imgproc/test/test_imgwarp.cpp b/modules/imgproc/test/test_imgwarp.cpp
-index 01b033cbef..25a8db9088 100644
---- a/modules/imgproc/test/test_imgwarp.cpp
-+++ b/modules/imgproc/test/test_imgwarp.cpp
-@@ -811,7 +811,13 @@ TEST_P(Imgproc_RemapRelative, validity)
-         cv::remap(src, dstRelative, mapRelativeX32F, mapRelativeY32F, interpolation | WARP_RELATIVE_MAP, borderType);
-     }
- 
--    EXPECT_EQ(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 0);
-+    if (interpolation != INTER_LINEAR) {
-+        EXPECT_EQ(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 0);
-+    } else {
-+        // Absolute algorithm can be different from Relative, they can have different precision:
-+        // Error between full float and integer interpolation with INTER_BITS can be estimated from above with this formula.
-+        EXPECT_LT(cvtest::norm(dstAbsolute, dstRelative, NORM_INF), 1 << (src.elemSize1() * CHAR_BIT - INTER_BITS));
-+    }
- };
- 
- INSTANTIATE_TEST_CASE_P(ImgProc, Imgproc_RemapRelative, testing::Combine(
-diff --git a/modules/imgproc/test/test_imgwarp_strict.cpp b/modules/imgproc/test/test_imgwarp_strict.cpp
-index 92c76e254f..3890cade4b 100644
---- a/modules/imgproc/test/test_imgwarp_strict.cpp
-+++ b/modules/imgproc/test/test_imgwarp_strict.cpp
-@@ -239,7 +239,7 @@ float CV_ImageWarpBaseTest::get_success_error_level(int _interpolation, int) con
-     else if (_interpolation == INTER_AREA)
-         return 2.0f;
-     else
--        return 1.0f;
-+        return 4.0f;    // Reference algorithm uses integer interpolation with 5 bits fractional part, and this greater tolerance allows better precision algorithms to pass the test
- }
- 
- void CV_ImageWarpBaseTest::validate_results() const
+ #if defined(__clang__)
