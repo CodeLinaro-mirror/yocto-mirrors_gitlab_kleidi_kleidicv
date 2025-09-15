@@ -72,9 +72,8 @@ class Filter2D3x3VectorOperations {
         KernelWindow, load_array_element, src_rows, window_row_offsets_0,
         window_row_offsets_1, window_col_offsets, index);
 
-    filter_.vector_path_for_dual_row_handling(
-        pg, KernelWindow, dst_vec_0,
-        dst_vec_1);  // dst_rows.at(0, kMargin)
+    filter_.vector_path_for_dual_row_handling(pg, KernelWindow, dst_vec_0,
+                                              dst_vec_1);
     svst1(pg, &dst_rows.at(0, 0)[index], dst_vec_0);
     svst1(pg, &dst_rows.at(1, 0)[index], dst_vec_1);
   }
@@ -201,7 +200,6 @@ class Filter2d {
       typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo<SourceType, KSize>;
   using BorderType = FixedBorderType;
   using BorderOffsets = typename BorderInfoType::Offsets;
-  // using Base = VectorOperationProviderType<SourceType>;
   static constexpr size_t kMargin = KSize / 2UL;
   explicit Filter2d(InnerFilterType filter) KLEIDICV_STREAMING
       : filter_{filter} {}
