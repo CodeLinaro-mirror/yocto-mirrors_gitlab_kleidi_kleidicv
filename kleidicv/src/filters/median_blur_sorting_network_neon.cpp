@@ -5,7 +5,7 @@
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/filter_2d_neon.h"
 #include "kleidicv/filters/median_blur.h"
-#include "kleidicv/filters/process_fitler_2d.h"
+#include "kleidicv/filters/process_filter_2d.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/workspace/border_3x3.h"

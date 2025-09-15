@@ -9,7 +9,7 @@
 #include "filter_2d_window_loader_5x5.h"
 #include "filter_2d_window_loader_7x7.h"
 #include "kleidicv/neon.h"
-#include "process_fitler_2d.h"
+#include "process_filter_2d.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
