@@ -137,7 +137,7 @@ TEST_P(Rotate, Misalignment) {
   size_t element_size = GetParam();
   if (element_size == 1) {
     // misalignment impossible
-    GTEST_SKIP();
+    return;
   }
 
   const size_t kBufSize = element_size * 10;
