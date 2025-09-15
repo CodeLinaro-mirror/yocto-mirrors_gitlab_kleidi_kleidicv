@@ -32,6 +32,9 @@ This changelog aims to follow the guiding principles of
 - Separate SME only implementations from ones using SME2 and add the build options
   `KLEIDICV_ENABLE_SME` and `KLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS`.
 
+### Removed
+- Support for OpenCV 4.11.
+
 ## 0.5.0 - 2025-06-10
 
 ### Added
