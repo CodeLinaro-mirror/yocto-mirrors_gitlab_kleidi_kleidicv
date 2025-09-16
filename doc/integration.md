@@ -60,7 +60,7 @@ To try the example just run:
 
 In case of targeting Android the
 [Android NDK](https://developer.android.com/ndk/) is also needed. (At least
-version r28b.) Example build command is:
+version r29 RC 1.) Example build command is:
 
 ```
 cmake -S kleidicv/examples/extract_one_operation \

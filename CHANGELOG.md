@@ -18,19 +18,24 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Median Blur for 3x3 kernels.
 - Median Blur for generic kernels (odd-sized only, max kernel size 255x255), Neon backend only.
-- Gaussian Blur for any odd kernel size (up to 255x255) with replicated borders
+- Gaussian Blur for any odd kernel size (up to 255x255) with replicated borders, Neon backend only.
 - Conversion from packed YUV 4:4:4 (interleaved and non-subsampled) to RGBA/BGRA.
-- Add SME2 version of saturating add with multivector loads and stores. It is marked as experimental as it is not covered by CI as of now.
+- SME2 version of saturating add with multivector loads and stores. It is marked experimental as it is not covered by CI as of now.
 - Conversion from YUV 4:2:0 planar (IYUV/YV12) to RGBA/BGRA.
 - Conversion from RGBA/BGRA to YUV 4:2:0 (planar/semi-planar).
-- Added a multi-threaded implementation of InRange.
+- Multi-threaded implementation of InRange.
 - Support for OpenCV 4.12.
+- Dynamic dispatcher for Mac computers with Apple silicon.
+- Windows 11 Arm-based PCs to Tier 3 platforms.
 
 ### Changed
 - Performance of Gaussian Blur is greatly improved in return for some accuracy.
   (Except for binomial variants up to 7x7 kernel size.)
 - Separate SME only implementations from ones using SME2 and add the build options
   `KLEIDICV_ENABLE_SME` and `KLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS`.
+
+### Fixed
+- OpenCV patch for adding InRange HAL.
 
 ### Removed
 - Support for OpenCV 4.11.
