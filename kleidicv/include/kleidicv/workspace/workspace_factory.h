@@ -5,8 +5,6 @@
 #ifndef KLEIDICV_WORKSPACE_WORKSPACE_FACTORY_H
 #define KLEIDICV_WORKSPACE_WORKSPACE_FACTORY_H
 
-#include "kleidicv/dispatch.h"
-
 namespace kleidicv {
 
 namespace neon {

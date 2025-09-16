@@ -44,13 +44,13 @@ class GaussianBlurMatmul {
   template <size_t Channels>
   class IterationsInfo {
    public:
-    IterationsInfo() KLEIDICV_STREAMING_COMPATIBLE = default;
-    size_t horizontal_col_step() const KLEIDICV_STREAMING_COMPATIBLE
+    IterationsInfo() KLEIDICV_STREAMING = default;
+    size_t horizontal_col_step() const KLEIDICV_STREAMING
         KLEIDICV_PRESERVES_ZA {
       return svcntw();
     }
 
-    size_t horizontal_row_step() const KLEIDICV_STREAMING_COMPATIBLE
+    size_t horizontal_row_step() const KLEIDICV_STREAMING
         KLEIDICV_PRESERVES_ZA {
       // Data layout for 1 channel differs on transposition step
       if constexpr (Channels == 4 || Channels == 3) {
@@ -62,24 +62,17 @@ class GaussianBlurMatmul {
       }
     }
 
-    size_t vertical_row_step() const KLEIDICV_STREAMING_COMPATIBLE
-        KLEIDICV_PRESERVES_ZA {
+    size_t vertical_row_step() const KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
       return svcntw();
     }
 
-    size_t vertical_col_step() const KLEIDICV_STREAMING_COMPATIBLE
-        KLEIDICV_PRESERVES_ZA {
+    size_t vertical_col_step() const KLEIDICV_STREAMING KLEIDICV_PRESERVES_ZA {
       return svcntb();
     }
 
-    ptrdiff_t kernel_block_size() const KLEIDICV_STREAMING_COMPATIBLE
+    ptrdiff_t kernel_block_size() const KLEIDICV_STREAMING
         KLEIDICV_PRESERVES_ZA {
       return GaussianBlurMatmul<kKernelSize>::kernel_block_size();
-    }
-
-    size_t kernel_iteration_step() const KLEIDICV_STREAMING_COMPATIBLE
-        KLEIDICV_PRESERVES_ZA {
-      return kKernelIterationStep;
     }
   };
 
@@ -118,7 +111,7 @@ class GaussianBlurMatmul {
                      Rectangle rect, Rectangle padded_rect, size_t col_start,
                      size_t row_start, BorderInfoType border_info)
       KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
-    svbool_t pred_row = svwhilelt_b8(col_start, rect.width() * Channels);
+    svbool_t pred_row = svwhilelt_b8_u64(col_start, rect.width() * Channels);
     const ptrdiff_t row = static_cast<ptrdiff_t>(row_start) - kBorderSize;
     const ptrdiff_t col = static_cast<ptrdiff_t>(col_start);
     const ptrdiff_t block_size = static_cast<ptrdiff_t>(kernel_block_size());
@@ -141,7 +134,7 @@ class GaussianBlurMatmul {
   // done over non-zero blocks that covers diagonal strip of kernel
   // values. Since vector length that covers kernel's matrix is
   // SVLW, then amount of non-zero rows is SVLW + K - 1
-  static constexpr size_t kernel_block_size() KLEIDICV_STREAMING_COMPATIBLE {
+  static constexpr size_t kernel_block_size() KLEIDICV_STREAMING {
     return svcntw() + kKernelSize - 1;
   }
 
@@ -269,7 +262,7 @@ class GaussianBlurMatmul {
     constexpr size_t za32_tiles_count = 4;
     horizontal_1_channel_store_all_za_tiles(
         std::make_index_sequence<za32_tiles_count>{}, dst, rect, row_start, col,
-        svwhilelt_b32(col, rect.width()));
+        svwhilelt_b32_u64(col, rect.width()));
   }
 
   template <size_t... I>
@@ -301,7 +294,8 @@ class GaussianBlurMatmul {
                                 size_t col, size_t row_start)
       KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t channels = 3;
-    svbool_t col_pred = svwhilelt_b8(channels * col, channels * rect.width());
+    svbool_t col_pred =
+        svwhilelt_b8_u64(channels * col, channels * rect.width());
     // Current implementation underutilizes tiles for 3 channels and
     // last quarter of the result vector will always be empty.
     svbool_t chs3_pred =
@@ -353,7 +347,8 @@ class GaussianBlurMatmul {
                                 size_t col, size_t row_start)
       KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     constexpr size_t channels = 4;
-    svbool_t col_pred = svwhilelt_b8(channels * col, channels * rect.width());
+    svbool_t col_pred =
+        svwhilelt_b8_u64(channels * col, channels * rect.width());
     for (size_t row = 0; row < svcntw() && row_start + row < rect.height();
          row++) {
       svuint32x4_t resu =
@@ -460,7 +455,7 @@ class Transposer {
     svzero_za();
 
     for (size_t col = 0; col < rect.width(); col += svlb) {
-      svbool_t pred = svwhilelt_b8(col, rect.width());
+      svbool_t pred = svwhilelt_b8_u64(col, rect.width());
 
       for (size_t row = 0; row < rows; row++) {
         auto *p = &src_rows.at(static_cast<ptrdiff_t>(row_start + row),
@@ -507,7 +502,7 @@ static kleidicv_error_t gaussian_blur(
     size_t width, size_t height, size_t y_begin, size_t y_end,
     size_t kernel_width, size_t, float sigma_x, float,
     FixedBorderType fixed_border_type,
-    MatmulSeparableFilterWorkspace *workspace) KLEIDICV_STREAMING_COMPATIBLE {
+    MatmulSeparableFilterWorkspace *workspace) KLEIDICV_STREAMING {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, Channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, Channels};
@@ -558,7 +553,7 @@ static kleidicv_error_t call_gaussian_blur(
     size_t y_begin, size_t y_end, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
     FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
+    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
   auto *workspace = reinterpret_cast<MatmulSeparableFilterWorkspace *>(context);
   kleidicv_error_t checks_result = gaussian_blur_checks(
       src, src_stride, dst, dst_stride, width, height, channels, workspace);
@@ -588,7 +583,7 @@ static kleidicv_error_t gaussian_blur_fixed_stripe_u8_sme2(
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
     FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING_COMPATIBLE {
+    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
   if (!gaussian_blur_sme2_implementation_checks(kernel_width, kernel_height,
                                                 channels)) {
     return gaussian_blur_fixed_stripe_u8_sc(

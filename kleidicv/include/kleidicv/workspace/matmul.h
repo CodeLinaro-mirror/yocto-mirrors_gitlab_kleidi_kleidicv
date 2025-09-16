@@ -34,13 +34,13 @@ class MatmulBufferSizesPolicy : public DefaultBufferSizesPolicy {
                     DefaultBufferSizesPolicy::compute_buffer_size());
   }
 
-  size_t compute_transpose_buffer_cols() const KLEIDICV_STREAMING_COMPATIBLE {
+  size_t compute_transpose_buffer_cols() const KLEIDICV_STREAMING {
     return svcntsb();
   }
 
   size_t compute_transpose_buffer_rows(Rectangle padded_rect, size_t channels,
                                        size_t max_kernel_width) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     size_t rows = padded_rect.width() * channels;
 
     // To avoid using predicates and reminder loops while processing
@@ -55,13 +55,13 @@ class MatmulBufferSizesPolicy : public DefaultBufferSizesPolicy {
   }
 
   size_t compute_helper_buffer_size(Rectangle padded_rect) const
-      KLEIDICV_STREAMING_COMPATIBLE {
+      KLEIDICV_STREAMING {
     return compute_transpose_buffer_cols() *
            compute_transpose_buffer_rows(padded_rect, channels_,
                                          kernel_rect_.width());
   }
 
-  size_t compute_kernel_buffer_size() const KLEIDICV_STREAMING_COMPATIBLE {
+  size_t compute_kernel_buffer_size() const KLEIDICV_STREAMING {
     // Same logic here with alignment: since UMOPA processing
     // 4 rows at a time, alignment to 4 is needed
     size_t rows = svcntsw() + kernel_rect_.width() - 1;
@@ -103,7 +103,7 @@ class MatmulSeparableFilterWorkspace final : public SeparableFilterWorkspace {
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
                typename FilterType::BorderType border_type,
-               FilterType filter) KLEIDICV_STREAMING_COMPATIBLE {
+               FilterType filter) KLEIDICV_STREAMING {
     constexpr size_t kChannels = FilterType::kChannels;
     constexpr size_t kKernelSize = FilterType::kKernelSize;
     constexpr size_t kBorderSize = FilterType::kBorderSize;
