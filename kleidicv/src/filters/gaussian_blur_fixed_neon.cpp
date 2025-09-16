@@ -8,11 +8,7 @@
 #include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
-#include "kleidicv/filters/separable_filter_15x15_neon.h"
-#include "kleidicv/filters/separable_filter_21x21_neon.h"
-#include "kleidicv/filters/separable_filter_3x3_neon.h"
-#include "kleidicv/filters/separable_filter_5x5_neon.h"
-#include "kleidicv/filters/separable_filter_7x7_neon.h"
+#include "kleidicv/filters/separable_filter_neon.h"
 #include "kleidicv/filters/sigma.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/workspace/border_types.h"
@@ -379,7 +375,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
 
   if constexpr (IsBinomial) {
     GaussianBlurFilter blur;
-    SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+    using SeparableFilterType = SeparableForT<KernelSize, GaussianBlurFilter>;
+    SeparableFilterType filter{blur};
     workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                        border_type, filter);
 
@@ -392,7 +389,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     // just a copy
     if (half_kernel[kHalfKernelSize - 1] < 256) {
       GaussianBlurFilter blur(half_kernel);
-      SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
+      using SeparableFilterType = SeparableForT<KernelSize, GaussianBlurFilter>;
+      SeparableFilterType filter{blur};
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                          border_type, filter);
     } else {

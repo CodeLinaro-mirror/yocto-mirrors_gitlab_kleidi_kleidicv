@@ -6,7 +6,7 @@
 
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/separable_filter_2d.h"
-#include "kleidicv/filters/separable_filter_5x5_neon.h"
+#include "kleidicv/filters/separable_filter_neon.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/workspace/separable.h"
@@ -363,7 +363,7 @@ kleidicv_error_t separable_filter_2d_stripe(
   using SeparableFilterClass = SeparableFilter2D<T, 5>;
 
   SeparableFilterClass filterClass{kernel_x, kernel_y};
-  SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
+  SeparableFilter5x5<SeparableFilterClass> filter{filterClass};
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/filters/separable_filter_3x3_neon.h"
+#include "kleidicv/filters/separable_filter_neon.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"

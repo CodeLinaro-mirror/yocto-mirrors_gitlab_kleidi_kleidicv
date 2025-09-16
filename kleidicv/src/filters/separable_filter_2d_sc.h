@@ -7,7 +7,7 @@
 
 #include <limits>
 
-#include "kleidicv/filters/separable_filter_5x5_sc.h"
+#include "kleidicv/filters/separable_filter_sc.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/workspace/separable.h"
@@ -497,7 +497,7 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
   SeparableFilterClass filterClass{
       kernel_x,   kernel_x_0, kernel_x_1, kernel_x_2, kernel_x_3, kernel_x_4,
       kernel_y_0, kernel_y_1, kernel_y_2, kernel_y_3, kernel_y_4};
-  SeparableFilter<SeparableFilterClass, 5> filter{filterClass};
+  SeparableFilter5x5<SeparableFilterClass> filter{filterClass};
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
