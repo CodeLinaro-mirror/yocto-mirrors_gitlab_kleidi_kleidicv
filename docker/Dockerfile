@@ -54,7 +54,7 @@ RUN wget -q https://apt.llvm.org/llvm-snapshot.gpg.key -O /etc/apt/trusted.gpg.d
 # Package installation fails, so instead the package is downloaded and extracted into the root filesystem.
 RUN if [ $(dpkg --print-architecture) = amd64 ]; then \
     dpkg --add-architecture arm64 \
-    && (apt-get -y update || true) \
+    && (apt-get -y update || true )\
     && cd /tmp \
     && apt-get -y download libclang-rt-${LLVM_VERSION}-dev:arm64 \
     && dpkg-deb -x libclang-rt*.deb / \
@@ -66,7 +66,26 @@ RUN pipx install cpplint==1.6.1
 RUN pipx install gcovr==6.0
 RUN pipx install reuse==3.0.0
 
-ENV PATH=${PATH}:/usr/lib/llvm-${LLVM_VERSION}/bin:/root/.local/bin
+# This tool cannot be downloaded automatically.
+# The downloaded archive shall be put next to this Dockerfile when building.
+# Please download Arm Instruction Emulator (25.0, Ubuntu) from the link below, and put the archive here when building.
+# https://developer.arm.com/Tools%20and%20Software/Arm%20Instruction%20Emulator
+ENV ARMIE_VERSION=arm-instruction-emulator_25.0_Ubuntu-22.04
+WORKDIR /tmp
+COPY ARMIE-BN-UBUNT-r25p0-00rel0.tgz ./armie.tgz
+
+RUN if [ $(dpkg --print-architecture) = arm64 ]; then \
+    md5sum -c <<'EOF' \
+    && tar xzf ./armie.tgz \
+    && chmod +x ./${ARMIE_VERSION}/${ARMIE_VERSION}.sh \
+    && ./${ARMIE_VERSION}/${ARMIE_VERSION}.sh -a \
+    && rm ./${ARMIE_VERSION}/${ARMIE_VERSION}.sh \
+    && mv /opt/arm/arm-instruction-emulator-25.0_Generic-AArch64_Ubuntu-22.04_aarch64-linux /opt/arm/armie \
+    ; fi
+7c63fb51097a7c2b81c315c553df2ff5 ./armie.tgz
+EOF
+RUN rm -rf ./${ARMIE_VERSION} ./armie.tgz
+ENV PATH=${PATH}:/usr/lib/llvm-${LLVM_VERSION}/bin:/root/.local/bin:/opt/arm/armie/bin64
 ENV CC=clang-${LLVM_VERSION}
 ENV CXX=clang++-${LLVM_VERSION}
 

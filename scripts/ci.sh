@@ -44,6 +44,8 @@ cmake -S . -B build/ci/clang -G Ninja \
   -DCMAKE_CXX_CLANG_TIDY=clang-tidy-20 \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
   -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld --coverage" \
+  -DKLEIDICV_ENABLE_SME2=ON \
+  -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_ENABLE_SME=ON \
   -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
@@ -71,6 +73,8 @@ qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
   build/ci/clang/test/api/kleidicv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --gtest_output=xml:build/ci/test-results/clang-sve2048/ --vector-length=256 || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme512=on \
   build/ci/clang/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme/ --vector-length=64 || TESTRESULT=1
+armie -mvl=16 -msvl=64 \
+  build/ci/clang/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme2/ --vector-length=64 || TESTRESULT=1
 
 # Run tests on GCC build
 qemu-aarch64 -cpu cortex-a35 build/ci/gcc/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/gcc-neon/ || TESTRESULT=1
@@ -79,6 +83,7 @@ scripts/prefix_testsuite_names.py build/ci/test-results/clang-neon/kleidicv-api-
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve128/kleidicv-api-test.xml "clang-sve128."
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve2048/kleidicv-api-test.xml "clang-sve2048."
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme/kleidicv-api-test.xml "clang-sme."
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme/kleidicv-api-test.xml "clang-sme2."
 scripts/prefix_testsuite_names.py build/ci/test-results/gcc-neon/kleidicv-api-test.xml "gcc-neon."
 
 # Generate test coverage report

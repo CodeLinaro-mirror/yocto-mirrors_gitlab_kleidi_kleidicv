@@ -14,7 +14,7 @@
         "env": {
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
           "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
-          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=1"
+          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SME2=ON -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=1"
         }
       },
       "group": {
@@ -78,7 +78,7 @@
           "BUILD_ID": "kleidicv-benchmark",
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
           "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
-          "EXTRA_CMAKE_ARGS": "-DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_BENCHMARK=ON"
+          "EXTRA_CMAKE_ARGS": "-DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 -DKLEIDICV_ENABLE_SME2=ON -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_BENCHMARK=ON"
         }
       },
       "group": {
@@ -180,12 +180,31 @@
       }
     },
     {
+      "label": "SME2 API tests",
+      "type": "process",
+      "command": "armie",
+      "args": [
+        "-mvl=16",
+        "-msvl=64",
+        "-mfeatures=${workspaceFolder}/scripts/armie_features.txt",
+        "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
+        "--vector-length=64"
+      ],
+      "dependsOn": [
+        "Build KleidiCV"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
       "label": "All API tests",
       "dependsOn": [
         "NEON API tests",
         "SVE2 API tests, 128 bits",
         "SVE2 API tests, 2048 bits",
-        "SME API tests"
+        "SME API tests",
+        "SME2 API tests"
       ],
       "group": {
         "kind": "test"
