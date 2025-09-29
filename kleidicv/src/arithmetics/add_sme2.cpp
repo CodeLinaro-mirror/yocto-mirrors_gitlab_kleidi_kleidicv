@@ -4,8 +4,6 @@
 
 #include "add_sc.h"
 
-#if KLEIDICV_EXPERIMENTAL_FEATURE_ADD_SME2
-
 namespace kleidicv::sme2 {
 
 template <typename T>
@@ -33,5 +31,3 @@ KLEIDICV_INSTANTIATE_TEMPLATE(int64_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(uint64_t);
 
 }  // namespace kleidicv::sme2
-
-#endif  // KLEIDICV_EXPERIMENTAL_FEATURE_ADD_SME2

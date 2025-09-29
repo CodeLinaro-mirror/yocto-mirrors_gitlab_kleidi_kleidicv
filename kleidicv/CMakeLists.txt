@@ -66,8 +66,6 @@ option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector 
 option(KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE "Internal - If turned ON interleaving loads and stores are preferred instead of continuous loads and stores" OFF)
 option(KLEIDICV_EXPERIMENTAL_FEATURE_CANNY "Internal - Enable experimental Canny algorithm" OFF)
 option(KLEIDICV_CANNY_ALGORITHM_CONFORM_OPENCV "Internal - If turned ON Canny algorithm creates bit exact result compared to OpenCV's original implementation" ON)
-# Marked experimental while CI does not test SME2 version of saturating add.
-option(KLEIDICV_EXPERIMENTAL_FEATURE_ADD_SME2 "Internal - Enable SME2 version of saturating add" OFF)
 
 # Continuous load and store NEON instructions produce suboptimal code generation on GCC version <= 11,
 # and these instructions are not supported on GCC version <=8.

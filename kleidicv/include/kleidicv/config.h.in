@@ -33,8 +33,6 @@
 
 #cmakedefine01 KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
 
-#cmakedefine01 KLEIDICV_EXPERIMENTAL_FEATURE_ADD_SME2
-
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
 #ifndef KLEIDICV_TARGET_NEON
 #define KLEIDICV_TARGET_NEON 0
