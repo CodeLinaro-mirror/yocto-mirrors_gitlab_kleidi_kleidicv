@@ -21,6 +21,7 @@ class float_conversion_operation<float, OutputType> {
  public:
   using SrcVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
   using SrcVectorType = typename SrcVecTraits::VectorType;
+  using SrcVector4Type = typename SrcVecTraits::Vector4Type;
   using IntermediateVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<
       std::conditional_t<std::is_signed_v<OutputType>, int32_t, uint32_t>>;
   using IntermediateVectorType = typename IntermediateVecTraits::VectorType;
@@ -48,10 +49,19 @@ class float_conversion_operation<float, OutputType> {
     LoopUnroll{width, SrcVecTraits::num_lanes()}
         .unroll_n_times<4>([&](size_t step) KLEIDICV_STREAMING {
           svbool_t pg = DstVecTraits::svptrue();
+#if KLEIDICV_TARGET_SME2
+          svcount_t pg_counter = DstVecTraits::svptrue_c();
+          SrcVector4Type src4 = svld1_x4(pg_counter, &src[0]);
+          SrcVectorType src_v0 = svget4(src4, 0);
+          SrcVectorType src_v1 = svget4(src4, 1);
+          SrcVectorType src_v2 = svget4(src4, 2);
+          SrcVectorType src_v3 = svget4(src4, 3);
+#else
           SrcVectorType src_v0 = svld1(pg, &src[0]);
           SrcVectorType src_v1 = svld1_vnum(pg, &src[0], 1);
           SrcVectorType src_v2 = svld1_vnum(pg, &src[0], 2);
           SrcVectorType src_v3 = svld1_vnum(pg, &src[0], 3);
+#endif  // KLEIDICV_TARGET_SME2
           DstVectorType res0 = vector_path(pg, src_v0, src_v1, src_v2, src_v3);
           svst1(pg, &dst[0], res0);
           src += ptrdiff_t(step);
@@ -156,6 +166,7 @@ class float_conversion_operation<InputType, float> {
  public:
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;
   using VectorType = typename VecTraits::VectorType;
+  using Vector2Type = typename VecTraits::Vector2Type;
 
   explicit float_conversion_operation(svuint8_t&) {}
 
@@ -169,8 +180,14 @@ class float_conversion_operation<InputType, float> {
 
           VectorType dst_vector1 = vector_path(pg, src_vect1);
           VectorType dst_vector2 = vector_path(pg, src_vect2);
+#if KLEIDICV_TARGET_SME2
+          svcount_t pg_counter = VecTraits::svptrue_c();
+          Vector2Type res2 = svcreate2(dst_vector1, dst_vector2);
+          svst1(pg_counter, &dst[0], res2);
+#else
           svst1(pg, &dst[0], dst_vector1);
           svst1_vnum(pg, &dst[0], 1, dst_vector2);
+#endif  // KLEIDICV_TARGET_SME2
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
         })

@@ -4,7 +4,7 @@
 
 #include "absdiff_sc.h"
 
-namespace kleidicv::sme {
+namespace kleidicv::sme2 {
 
 template <typename T>
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
@@ -27,4 +27,4 @@ KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(int32_t);
 
-}  // namespace kleidicv::sme
+}  // namespace kleidicv::sme2

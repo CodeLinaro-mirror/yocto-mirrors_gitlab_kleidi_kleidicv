@@ -6,10 +6,11 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API(name, partialname)                  \
-  KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::partialname, \
-                              &kleidicv::sve2::partialname,       \
-                              &kleidicv::sme::partialname, nullptr)
+#define KLEIDICV_DEFINE_C_API(name, partialname)                        \
+  KLEIDICV_MULTIVERSION_C_API(                                          \
+      name, &kleidicv::neon::partialname, &kleidicv::sve2::partialname, \
+      &kleidicv::sme::partialname,                                      \
+      KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::partialname))
 
 KLEIDICV_DEFINE_C_API(kleidicv_rgb_to_yuv420_p_stripe_u8,
                       rgb_to_yuv420_p_stripe_u8);

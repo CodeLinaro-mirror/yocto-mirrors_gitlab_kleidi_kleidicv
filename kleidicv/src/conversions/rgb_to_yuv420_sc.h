@@ -6,10 +6,7 @@
 #define KLEIDICV_RGB_TO_YUV420_SC_H
 
 #include <algorithm>
-#include <functional>
-#include <utility>
 
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 #include "yuv420_coefficients.h"
 
@@ -89,7 +86,6 @@ class RGBxorBGRxToYUV420 {
                              const size_t index, const bool evenRow,
                              const svbool_t pg0, const svbool_t pg1,
                              const svbool_t pg_half) KLEIDICV_STREAMING {
-    const size_t kVectorLength = svcntb();
     svuint32_t r0_0, r0_1, r0_2, r0_3, g0_0, g0_1, g0_2, g0_3, b0_0, b0_1, b0_2,
         b0_3, r1_0, r1_1, r1_2, r1_3, g1_0, g1_1, g1_2, g1_3, b1_0, b1_1, b1_2,
         b1_3;
@@ -113,8 +109,14 @@ class RGBxorBGRxToYUV420 {
 
     svuint8_t y1 = rgb_to_y(r1, g1, b1);
 
+#if KLEIDICV_TARGET_SME2
+    // assume the predicates are full true
+    svcount_t pg_counter = svptrue_c8();
+    svst1(pg_counter, y_row + index, svcreate2(y0, y1));
+#else
     svst1(pg0, y_row + index, y0);
-    svst1(pg1, y_row + index + kVectorLength, y1);
+    svst1(pg1, y_row + index + svcntb(), y1);
+#endif  // KLEIDICV_TARGET_SME2
 
     if (evenRow) {
       svuint8_t u, v;

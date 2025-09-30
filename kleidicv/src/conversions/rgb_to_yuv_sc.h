@@ -146,6 +146,8 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
   using ContextType = Context;
   using ScalarType = uint8_t;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using VectorType = typename VecTraits::VectorType;
+  using Vector4Type = typename VecTraits::Vector4Type;
 
   explicit RGBAToYUV(svuint8x4_t &sv4) KLEIDICV_STREAMING
       : deinterleave16_indices_(sv4) {
@@ -170,7 +172,13 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
-    common_vector_path(pg, pg, pg, pg, pg, src, dst);
+#if KLEIDICV_TARGET_SME2
+    svcount_t p_counter = VecTraits::svptrue_c();
+    Vector4Type src_vect = svld1_x4(p_counter, src);
+#else
+    Vector4Type src_vect = common_load(pg, pg, pg, pg, src);
+#endif
+    common_vector_path(pg, src_vect, dst);
   }
 
   void tail_path(ContextType ctx, const ScalarType *src,
@@ -178,24 +186,24 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
     auto pg = ctx.predicate();
     svbool_t pg_0, pg_1, pg_2, pg_3;
     VecTraits::make_consecutive_predicates(pg, pg_0, pg_1, pg_2, pg_3);
-    common_vector_path(pg, pg_0, pg_1, pg_2, pg_3, src, dst);
+    Vector4Type src_vect = common_load(pg_0, pg_1, pg_2, pg_3, src);
+    common_vector_path(pg, src_vect, dst);
   }
 
  private:
-  void common_vector_path(svbool_t pg, svbool_t pg_0, svbool_t pg_1,
-                          svbool_t pg_2, svbool_t pg_3, const ScalarType *src,
+  void common_vector_path(svbool_t pg, Vector4Type src_vect,
                           ScalarType *dst) KLEIDICV_STREAMING {
     svint16_t r_0, r_1, g_0, g_1, b_0, b_1;
 
-    svuint8_t src0 = svld1(pg_0, src);
-    svuint8_t src1 = svld1_vnum(pg_1, src, 1);
-    svuint8_t src2 = svld1_vnum(pg_2, src, 2);
-    svuint8_t src3 = svld1_vnum(pg_3, src, 3);
+    VectorType src0 = svget4(src_vect, 0);
+    VectorType src1 = svget4(src_vect, 1);
+    VectorType src2 = svget4(src_vect, 2);
+    VectorType src3 = svget4(src_vect, 3);
 
-    svuint8_t rb_l = svuzp1_u8(src0, src1);
-    svuint8_t rb_h = svuzp1_u8(src2, src3);
-    svuint8_t ga_l = svuzp2_u8(src0, src1);
-    svuint8_t ga_h = svuzp2_u8(src2, src3);
+    VectorType rb_l = svuzp1_u8(src0, src1);
+    VectorType rb_h = svuzp1_u8(src2, src3);
+    VectorType ga_l = svuzp2_u8(src0, src1);
+    VectorType ga_h = svuzp2_u8(src2, src3);
     if (KLEIDICV_UNLIKELY(svcntb() >= 256)) {
       svuint8_t r, g, b;
       if constexpr (BGR) {
@@ -235,6 +243,16 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
                                                dst);
   }
 
+  Vector4Type common_load(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
+                          svbool_t pg_3,
+                          const ScalarType *src) KLEIDICV_STREAMING {
+    VectorType src_0 = svld1(pg_0, &src[0]);
+    VectorType src_1 = svld1_vnum(pg_1, &src[0], 1);
+    VectorType src_2 = svld1_vnum(pg_2, &src[0], 2);
+    VectorType src_3 = svld1_vnum(pg_3, &src[0], 3);
+    return svcreate4(src_0, src_1, src_2, src_3);
+  }
+
   static constexpr size_t r_index_ = RGBToYUVBase<BGR>::r_index_;
   static constexpr size_t g_index_ = RGBToYUVBase<BGR>::g_index_;
   static constexpr size_t b_index_ = RGBToYUVBase<BGR>::b_index_;
@@ -260,6 +278,7 @@ kleidicv_error_t rgb2yuv_operation(OperationType operation,
   return KLEIDICV_OK;
 }
 
+#if !KLEIDICV_TARGET_SME2
 KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t rgb_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
                                          uint8_t *dst, size_t dst_stride,
@@ -271,22 +290,24 @@ static kleidicv_error_t rgb_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
 }
 
 KLEIDICV_TARGET_FN_ATTRS
+static kleidicv_error_t bgr_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width,
+                                         size_t height) KLEIDICV_STREAMING {
+  RGBToYUV<true> operation;
+  return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
+                           height);
+}
+
+#endif  // !KLEIDICV_TARGET_SME2
+
+KLEIDICV_TARGET_FN_ATTRS
 static kleidicv_error_t rgba_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
                                           uint8_t *dst, size_t dst_stride,
                                           size_t width,
                                           size_t height) KLEIDICV_STREAMING {
   svuint8x4_t indices;
   RGBAToYUV<false> operation(indices);
-  return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
-}
-
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t bgr_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
-                                         uint8_t *dst, size_t dst_stride,
-                                         size_t width,
-                                         size_t height) KLEIDICV_STREAMING {
-  RGBToYUV<true> operation;
   return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
                            height);
 }

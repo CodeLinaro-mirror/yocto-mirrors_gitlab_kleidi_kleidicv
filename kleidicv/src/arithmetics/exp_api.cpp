@@ -32,11 +32,19 @@ kleidicv_error_t exp(const T* src, size_t src_stride, T* dst, size_t dst_stride,
 
 }  // namespace sme
 
+namespace sme2 {
+
+template <typename T>
+kleidicv_error_t exp(const T* src, size_t src_stride, T* dst, size_t dst_stride,
+                     size_t width, size_t height);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
-#define KLEIDICV_DEFINE_C_API(name, type)                       \
-  KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::exp<type>, \
-                              &kleidicv::sve2::exp<type>,       \
-                              &kleidicv::sme::exp<type>, nullptr)
+#define KLEIDICV_DEFINE_C_API(name, type)                           \
+  KLEIDICV_MULTIVERSION_C_API(                                      \
+      name, &kleidicv::neon::exp<type>, &kleidicv::sve2::exp<type>, \
+      &kleidicv::sme::exp<type>, &kleidicv::sme2::exp<type>)
 
 KLEIDICV_DEFINE_C_API(kleidicv_exp_f32, float);

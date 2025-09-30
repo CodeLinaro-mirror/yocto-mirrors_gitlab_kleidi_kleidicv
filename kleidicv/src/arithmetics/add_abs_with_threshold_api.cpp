@@ -24,6 +24,7 @@ kleidicv_error_t saturating_add_abs_with_threshold(
     T *dst, size_t dst_stride, size_t width, size_t height, T threshold);
 
 }  // namespace sve2
+
 namespace sme {
 template <typename T>
 kleidicv_error_t saturating_add_abs_with_threshold(
@@ -32,6 +33,14 @@ kleidicv_error_t saturating_add_abs_with_threshold(
 
 }  // namespace sme
 
+namespace sme2 {
+template <typename T>
+kleidicv_error_t saturating_add_abs_with_threshold(
+    const T *src_a, size_t src_a_stride, const T *src_b, size_t src_b_stride,
+    T *dst, size_t dst_stride, size_t width, size_t height, T threshold);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_C_API(name, type)                             \
@@ -39,6 +48,8 @@ kleidicv_error_t saturating_add_abs_with_threshold(
       name, &kleidicv::neon::saturating_add_abs_with_threshold<type>, \
       KLEIDICV_SVE2_IMPL_IF(                                          \
           &kleidicv::sve2::saturating_add_abs_with_threshold<type>),  \
-      &kleidicv::sme::saturating_add_abs_with_threshold<type>, nullptr)
+      &kleidicv::sme::saturating_add_abs_with_threshold<type>,        \
+      KLEIDICV_SME_IMPL_IF(                                           \
+          &kleidicv::sme2::saturating_add_abs_with_threshold<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_saturating_add_abs_with_threshold_s16, int16_t);

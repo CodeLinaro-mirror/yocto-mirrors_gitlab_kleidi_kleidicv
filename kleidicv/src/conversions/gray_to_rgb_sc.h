@@ -6,7 +6,6 @@
 #define KLEIDICV_GRAY_TO_RGB_SC_H
 
 #include "kleidicv/conversions/gray_to_rgb.h"
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
@@ -21,6 +20,7 @@ class GrayToRGB final :
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using Vector3Type = typename VecTraits::Vector3Type;
 
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   void vector_path(ContextType ctx, VectorType src_vect,
@@ -29,17 +29,21 @@ class GrayToRGB final :
     svuint8x3_t dst_vect = svcreate3(src_vect, src_vect, src_vect);
     svst3(pg, dst, dst_vect);
   }
-#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+#else  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   explicit GrayToRGB(svuint8x3_t &indices) KLEIDICV_STREAMING
       : indices_{indices} {
     initialize_indices();
   }
 
-  void vector_path(ContextType ctx, VectorType src_vect,
+  void vector_path(ContextType, VectorType src_vect,
                    ScalarType *dst) KLEIDICV_STREAMING {
-    // Call the common vector path.
-    auto pg = ctx.predicate();
-    common_vector_path(pg, pg, pg, src_vect, dst);
+    Vector3Type dst_vect = common_vector_path(src_vect);
+#if KLEIDICV_TARGET_SME2
+    two_plus_one_store(dst, dst_vect);
+#else
+    svbool_t pg = VecTraits::svptrue();
+    common_store(pg, pg, pg, dst, dst_vect);
+#endif
   }
 
   void tail_path(ContextType ctx, VectorType src_vect,
@@ -49,21 +53,32 @@ class GrayToRGB final :
     svbool_t pg_0, pg_1, pg_2;
     VecTraits::make_consecutive_predicates(pg, pg_0, pg_1, pg_2);
     // Call the common vector path.
-    common_vector_path(pg_0, pg_1, pg_2, src_vect, dst);
+    Vector3Type dst_vect = common_vector_path(src_vect);
+    common_store(pg_0, pg_1, pg_2, dst, dst_vect);
   }
 
  private:
-  void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
-                          VectorType src_vect,
-                          ScalarType *dst) KLEIDICV_STREAMING {
+  Vector3Type common_vector_path(VectorType src_vect) KLEIDICV_STREAMING {
     // Convert from gray to RGB using table-lookups.
-    VectorType dst_vec_0 = svtbl(src_vect, svget3(indices_, 0));
-    VectorType dst_vec_1 = svtbl(src_vect, svget3(indices_, 1));
-    VectorType dst_vec_2 = svtbl(src_vect, svget3(indices_, 2));
+    return svcreate3(svtbl(src_vect, svget3(indices_, 0)),
+                     svtbl(src_vect, svget3(indices_, 1)),
+                     svtbl(src_vect, svget3(indices_, 2)));
+  }
 
-    svst1(pg_0, &dst[0], dst_vec_0);
-    svst1_vnum(pg_1, &dst[0], 1, dst_vec_1);
-    svst1_vnum(pg_2, &dst[0], 2, dst_vec_2);
+#if KLEIDICV_TARGET_SME2
+  void two_plus_one_store(ScalarType *dst,
+                          Vector3Type dst_vect) KLEIDICV_STREAMING {
+    svcount_t p_counter = VecTraits::svptrue_c();
+    svst1(p_counter, dst, svcreate2(svget3(dst_vect, 0), svget3(dst_vect, 1)));
+    svst1_vnum(VecTraits::svptrue(), dst, 2, svget3(dst_vect, 2));
+  }
+#endif
+
+  void common_store(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
+                    ScalarType *dst, Vector3Type dst_vect) KLEIDICV_STREAMING {
+    svst1(pg_0, &dst[0], svget3(dst_vect, 0));
+    svst1_vnum(pg_1, &dst[0], 1, svget3(dst_vect, 1));
+    svst1_vnum(pg_2, &dst[0], 2, svget3(dst_vect, 2));
   }
 
   void initialize_indices() KLEIDICV_STREAMING {
@@ -126,16 +141,23 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
+  using Vector4Type = typename VecTraits::Vector4Type;
   explicit GrayToRGBAWithLookUpTable(svuint8x4_t &indices) KLEIDICV_STREAMING
       : indices_{indices} {
     initialize_indices();
   }
 
-  void vector_path(ContextType ctx, VectorType src_vect,
+  void vector_path(ContextType, VectorType src_vect,
                    ScalarType *dst) KLEIDICV_STREAMING {
     // Call the common vector path.
-    auto pg = ctx.predicate();
-    common_vector_path(pg, pg, pg, pg, src_vect, dst);
+    Vector4Type dst_vect = common_vector_path(src_vect);
+#if KLEIDICV_TARGET_SME2
+    svcount_t p_counter = VecTraits::svptrue_c();
+    svst1(p_counter, &dst[0], dst_vect);
+#else
+    svbool_t pg = VecTraits::svptrue();
+    common_store(pg, pg, pg, pg, dst, dst_vect);
+#endif
   }
 
   void tail_path(ContextType ctx, VectorType src_vect,
@@ -145,25 +167,26 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
     svbool_t pg_0, pg_1, pg_2, pg_3;
     VecTraits::make_consecutive_predicates(pg, pg_0, pg_1, pg_2, pg_3);
     // Call the common vector path.
-    common_vector_path(pg_0, pg_1, pg_2, pg_3, src_vect, dst);
+    Vector4Type dst_vect = common_vector_path(src_vect);
+    common_store(pg_0, pg_1, pg_2, pg_3, dst, dst_vect);
   }
 
  private:
-  void common_vector_path(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2,
-                          svbool_t pg_3, VectorType src_vect,
-                          ScalarType *dst) KLEIDICV_STREAMING {
+  Vector4Type common_vector_path(VectorType src_vect) KLEIDICV_STREAMING {
     svuint8x2_t src_and_alpha = svcreate2(src_vect, VecTraits::svdup(-1));
-
     // Convert from gray to RGBA using table-lookups.
-    VectorType dst_vec_0 = svtbl2(src_and_alpha, svget4(indices_, 0));
-    VectorType dst_vec_1 = svtbl2(src_and_alpha, svget4(indices_, 1));
-    VectorType dst_vec_2 = svtbl2(src_and_alpha, svget4(indices_, 2));
-    VectorType dst_vec_3 = svtbl2(src_and_alpha, svget4(indices_, 3));
+    return svcreate4(svtbl2(src_and_alpha, svget4(indices_, 0)),
+                     svtbl2(src_and_alpha, svget4(indices_, 1)),
+                     svtbl2(src_and_alpha, svget4(indices_, 2)),
+                     svtbl2(src_and_alpha, svget4(indices_, 3)));
+  }
 
-    svst1(pg_0, &dst[0], dst_vec_0);
-    svst1_vnum(pg_1, &dst[0], 1, dst_vec_1);
-    svst1_vnum(pg_2, &dst[0], 2, dst_vec_2);
-    svst1_vnum(pg_3, &dst[0], 3, dst_vec_3);
+  void common_store(svbool_t pg_0, svbool_t pg_1, svbool_t pg_2, svbool_t pg_3,
+                    ScalarType *dst, Vector4Type dst_vect) KLEIDICV_STREAMING {
+    svst1(pg_0, &dst[0], svget4(dst_vect, 0));
+    svst1_vnum(pg_1, &dst[0], 1, svget4(dst_vect, 1));
+    svst1_vnum(pg_2, &dst[0], 2, svget4(dst_vect, 2));
+    svst1_vnum(pg_3, &dst[0], 3, svget4(dst_vect, 3));
   }
 
   void initialize_indices() KLEIDICV_STREAMING {

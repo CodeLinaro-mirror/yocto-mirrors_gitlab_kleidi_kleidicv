@@ -5,10 +5,8 @@
 #ifndef KLEIDICV_MORPHOLOGY_SC_H
 #define KLEIDICV_MORPHOLOGY_SC_H
 
-#include <algorithm>
-#include <limits>
+#include <cstdio>
 
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/morphology/workspace.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/types.h"
@@ -45,6 +43,8 @@ template <typename ScalarType, typename O>
 class VerticalOp final {
  public:
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using Vector4Type = typename VecTraits::Vector4Type;
+  using Vector2Type = typename VecTraits::Vector2Type;
 
   VerticalOp(Rectangle rect, Rectangle kernel) KLEIDICV_STREAMING
       : rect_(rect),
@@ -89,17 +89,34 @@ class VerticalOp final {
                       Rows<ScalarType> dst_rows, const size_t index,
                       const size_t height) KLEIDICV_STREAMING {
     const ScalarType *src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    svcount_t p_counter = VecTraits::svptrue_c();
+    Vector4Type v = svld1_x4(p_counter, &src_row[0]);
+    auto first_row0 = svget4(v, 0);
+    auto first_row1 = svget4(v, 1);
+    auto first_row2 = svget4(v, 2);
+    auto first_row3 = svget4(v, 3);
+#else
     auto first_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto first_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
     auto first_row2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
     auto first_row3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
+#endif  // KLEIDICV_TARGET_SME2
     ++src_rows;
 
     src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    v = svld1_x4(p_counter, &src_row[0]);
+    auto acc0 = svget4(v, 0);
+    auto acc1 = svget4(v, 1);
+    auto acc2 = svget4(v, 2);
+    auto acc3 = svget4(v, 3);
+#else
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
     auto acc2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
     auto acc3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
+#endif  // KLEIDICV_TARGET_SME2
     ++src_rows;
 
     LoopUnroll loop{kernel_.height() - 2, 2};
@@ -107,6 +124,18 @@ class VerticalOp final {
     loop.unroll_once([&](size_t step) KLEIDICV_STREAMING {
       const ScalarType *src_row0 = &src_rows.at(0)[index];
       const ScalarType *src_row1 = &src_rows.at(1)[index];
+#if KLEIDICV_TARGET_SME2
+      v = svld1_x4(p_counter, src_row0);
+      auto row00 = svget4(v, 0);
+      auto row01 = svget4(v, 1);
+      auto row02 = svget4(v, 2);
+      auto row03 = svget4(v, 3);
+      v = svld1_x4(p_counter, src_row1);
+      auto row10 = svget4(v, 0);
+      auto row11 = svget4(v, 1);
+      auto row12 = svget4(v, 2);
+      auto row13 = svget4(v, 3);
+#else
       auto row00 = svld1(VecTraits::svptrue(), src_row0);
       auto row01 = svld1_vnum(VecTraits::svptrue(), src_row0, 1);
       auto row02 = svld1_vnum(VecTraits::svptrue(), src_row0, 2);
@@ -115,6 +144,7 @@ class VerticalOp final {
       auto row11 = svld1_vnum(VecTraits::svptrue(), src_row1, 1);
       auto row12 = svld1_vnum(VecTraits::svptrue(), src_row1, 2);
       auto row13 = svld1_vnum(VecTraits::svptrue(), src_row1, 3);
+#endif  // KLEIDICV_TARGET_SME2
       acc0 = O::operation(VecTraits::svptrue(), acc0,
                           O::operation(VecTraits::svptrue(), row00, row10));
       acc1 = O::operation(VecTraits::svptrue(), acc1,
@@ -129,10 +159,18 @@ class VerticalOp final {
     loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
               KLEIDICV_STREAMING {
                 const ScalarType *src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+                v = svld1_x4(p_counter, &src_row[0]);
+                auto row0 = svget4(v, 0);
+                auto row1 = svget4(v, 1);
+                auto row2 = svget4(v, 2);
+                auto row3 = svget4(v, 3);
+#else
                 auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
                 auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
                 auto row2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
                 auto row3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
+#endif  // KLEIDICV_TARGET_SME2
                 acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
                 acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
                 acc2 = O::operation(VecTraits::svptrue(), acc2, row2);
@@ -154,10 +192,15 @@ class VerticalOp final {
 
     // Store the results.
     ScalarType *dst_row = &dst_rows[index];
+#if KLEIDICV_TARGET_SME2
+    Vector4Type res4 = svcreate4(acc0, acc1, acc2, acc3);
+    svst1(p_counter, &dst_row[0], res4);
+#else
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 2, acc2);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 3, acc3);
+#endif  // KLEIDICV_TARGET_SME2
 
     // Try to process one more row, because it is relatively cheap to do so.
     if (KLEIDICV_UNLIKELY((height + 1) >= rect_.height())) {
@@ -167,10 +210,18 @@ class VerticalOp final {
     ++dst_rows;
 
     src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    v = svld1_x4(p_counter, &src_row[0]);
+    auto next_row0 = svget4(v, 0);
+    auto next_row1 = svget4(v, 1);
+    auto next_row2 = svget4(v, 2);
+    auto next_row3 = svget4(v, 3);
+#else
     auto next_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto next_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
     auto next_row2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
     auto next_row3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
+#endif  // KLEIDICV_TARGET_SME2
 
     acc0 = O::operation(VecTraits::svptrue(), partial_acc0, next_row0);
     acc1 = O::operation(VecTraits::svptrue(), partial_acc1, next_row1);
@@ -179,23 +230,42 @@ class VerticalOp final {
 
     // Store the results.
     dst_row = &dst_rows[index];
+#if KLEIDICV_TARGET_SME2
+    res4 = svcreate4(acc0, acc1, acc2, acc3);
+    svst1(p_counter, &dst_row[0], res4);
+#else
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 2, acc2);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 3, acc3);
+#endif  // KLEIDICV_TARGET_SME2
   }
 
   void vector_path_2x(IndirectRows<ScalarType> src_rows,
                       Rows<ScalarType> dst_rows, const size_t index,
                       const size_t height) KLEIDICV_STREAMING {
     const ScalarType *src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    svcount_t p_counter = VecTraits::svptrue_c();
+    Vector2Type v = svld1_x2(p_counter, &src_row[0]);
+    auto first_row0 = svget2(v, 0);
+    auto first_row1 = svget2(v, 1);
+#else
     auto first_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto first_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
+
     ++src_rows;
 
     src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    v = svld1_x2(p_counter, &src_row[0]);
+    auto acc0 = svget2(v, 0);
+    auto acc1 = svget2(v, 1);
+#else
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
     ++src_rows;
 
     LoopUnroll loop{kernel_.height() - 2, 2};
@@ -203,10 +273,19 @@ class VerticalOp final {
     loop.unroll_once([&](size_t step) KLEIDICV_STREAMING {
       const ScalarType *src_row0 = &src_rows.at(0)[index];
       const ScalarType *src_row1 = &src_rows.at(1)[index];
+#if KLEIDICV_TARGET_SME2
+      Vector2Type v0 = svld1_x2(p_counter, src_row0);
+      Vector2Type v1 = svld1_x2(p_counter, src_row1);
+      auto row00 = svget2(v0, 0);
+      auto row01 = svget2(v0, 1);
+      auto row10 = svget2(v1, 0);
+      auto row11 = svget2(v1, 1);
+#else
       auto row00 = svld1(VecTraits::svptrue(), src_row0);
       auto row01 = svld1_vnum(VecTraits::svptrue(), src_row0, 1);
       auto row10 = svld1(VecTraits::svptrue(), src_row1);
       auto row11 = svld1_vnum(VecTraits::svptrue(), src_row1, 1);
+#endif  // KLEIDICV_TARGET_SME2
       acc0 = O::operation(VecTraits::svptrue(), acc0,
                           O::operation(VecTraits::svptrue(), row00, row10));
       acc1 = O::operation(VecTraits::svptrue(), acc1,
@@ -217,8 +296,14 @@ class VerticalOp final {
     loop.tail([&](size_t /* index */)  // NOLINT(readability/casting)
               KLEIDICV_STREAMING {
                 const ScalarType *src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+                v = svld1_x2(p_counter, &src_row[0]);
+                auto row0 = svget2(v, 0);
+                auto row1 = svget2(v, 1);
+#else
                 auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
                 auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
                 acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
                 acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
                 ++src_rows;
@@ -234,8 +319,13 @@ class VerticalOp final {
 
     // Store the results.
     ScalarType *dst_row = &dst_rows[index];
+#if KLEIDICV_TARGET_SME2
+    Vector2Type res2 = svcreate2(acc0, acc1);
+    svst1(p_counter, &dst_row[0], res2);
+#else
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
+#endif  // KLEIDICV_TARGET_SME2
 
     // Try to process one more row, because it is relatively cheap to do so.
     if (KLEIDICV_UNLIKELY((height + 1) >= rect_.height())) {
@@ -245,15 +335,26 @@ class VerticalOp final {
     ++dst_rows;
 
     src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    v = svld1_x2(p_counter, &src_row[0]);
+    auto next_row0 = svget2(v, 0);
+    auto next_row1 = svget2(v, 1);
+#else
     auto next_row0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto next_row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
 
     acc0 = O::operation(VecTraits::svptrue(), partial_acc0, next_row0);
     acc1 = O::operation(VecTraits::svptrue(), partial_acc1, next_row1);
 
     dst_row = &dst_rows[index];
+#if KLEIDICV_TARGET_SME2
+    res2 = svcreate2(acc0, acc1);
+    svst1(p_counter, &dst_row[0], res2);
+#else
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
+#endif  // KLEIDICV_TARGET_SME2
   }
 
   void vector_path(svbool_t pg, IndirectRows<ScalarType> src_rows,
@@ -310,6 +411,8 @@ template <typename ScalarType, typename O>
 class HorizontalOp final {
  public:
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
+  using Vector4Type = typename VecTraits::Vector4Type;
+  using Vector2Type = typename VecTraits::Vector2Type;
 
   HorizontalOp(Rectangle rect, Rectangle kernel) KLEIDICV_STREAMING
       : rect_(rect),
@@ -348,17 +451,34 @@ class HorizontalOp final {
                       Rows<ScalarType> dst_rows,
                       const size_t index) KLEIDICV_STREAMING {
     const auto *src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    svcount_t p_counter = VecTraits::svptrue_c();
+    Vector4Type v = svld1_x4(p_counter, &src_row[0]);
+    auto acc0 = svget4(v, 0);
+    auto acc1 = svget4(v, 1);
+    auto acc2 = svget4(v, 2);
+    auto acc3 = svget4(v, 3);
+#else
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
     auto acc2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
     auto acc3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
+#endif  // KLEIDICV_TARGET_SME2
 
     for (size_t width = 1; width < kernel_.width(); ++width) {
       src_row = &src_rows[index + width * src_rows.channels()];
+#if KLEIDICV_TARGET_SME2
+      Vector4Type v = svld1_x4(p_counter, &src_row[0]);
+      auto row0 = svget4(v, 0);
+      auto row1 = svget4(v, 1);
+      auto row2 = svget4(v, 2);
+      auto row3 = svget4(v, 3);
+#else
       auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
       auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
       auto row2 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 2);
       auto row3 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 3);
+#endif  // KLEIDICV_TARGET_SME2
       acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
       acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
       acc2 = O::operation(VecTraits::svptrue(), acc2, row2);
@@ -366,30 +486,53 @@ class HorizontalOp final {
     }
 
     auto dst_row = &dst_rows[index];
+#if KLEIDICV_TARGET_SME2
+    Vector4Type res4 = svcreate4(acc0, acc1, acc2, acc3);
+    svst1(p_counter, &dst_row[0], res4);
+#else
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 2, acc2);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 3, acc3);
+#endif  // KLEIDICV_TARGET_SME2
   }
 
   void vector_path_2x(Rows<const ScalarType> src_rows,
                       Rows<ScalarType> dst_rows,
                       const size_t index) KLEIDICV_STREAMING {
     const auto *src_row = &src_rows[index];
+#if KLEIDICV_TARGET_SME2
+    svcount_t p_counter = VecTraits::svptrue_c();
+    Vector2Type v = svld1_x2(p_counter, &src_row[0]);
+    auto acc0 = svget2(v, 0);
+    auto acc1 = svget2(v, 1);
+#else
     auto acc0 = svld1(VecTraits::svptrue(), &src_row[0]);
     auto acc1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
 
     for (size_t width = 1; width < kernel_.width(); ++width) {
       src_row = &src_rows[index + width * src_rows.channels()];
+#if KLEIDICV_TARGET_SME2
+      v = svld1_x2(p_counter, &src_row[0]);
+      auto row0 = svget2(v, 0);
+      auto row1 = svget2(v, 1);
+#else
       auto row0 = svld1(VecTraits::svptrue(), &src_row[0]);
       auto row1 = svld1_vnum(VecTraits::svptrue(), &src_row[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
       acc0 = O::operation(VecTraits::svptrue(), acc0, row0);
       acc1 = O::operation(VecTraits::svptrue(), acc1, row1);
     }
 
     auto dst_row = &dst_rows[index];
+#if KLEIDICV_TARGET_SME2
+    Vector2Type res2 = svcreate2(acc0, acc1);
+    svst1(p_counter, &dst_row[0], res2);
+#else
     svst1(VecTraits::svptrue(), &dst_row[0], acc0);
     svst1_vnum(VecTraits::svptrue(), &dst_row[0], 1, acc1);
+#endif  // KLEIDICV_TARGET_SME2
   }
 
   void vector_path(svbool_t pg, Rows<const ScalarType> src_rows,

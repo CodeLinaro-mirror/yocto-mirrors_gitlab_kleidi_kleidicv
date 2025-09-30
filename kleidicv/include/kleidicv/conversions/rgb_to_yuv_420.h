@@ -246,6 +246,61 @@ kleidicv_error_t bgra_to_yuv420_p_stripe_u8(const uint8_t *src,
 
 }  // namespace sme
 
+namespace sme2 {
+kleidicv_error_t rgb_to_yuv420_sp_stripe_u8(const uint8_t *src,
+                                            size_t src_stride, uint8_t *y_dst,
+                                            size_t y_stride, uint8_t *uv_dst,
+                                            size_t uv_stride, size_t width,
+                                            size_t height, bool is_nv21,
+                                            size_t begin, size_t end);
+
+kleidicv_error_t rgba_to_yuv420_sp_stripe_u8(const uint8_t *src,
+                                             size_t src_stride, uint8_t *y_dst,
+                                             size_t y_stride, uint8_t *uv_dst,
+                                             size_t uv_stride, size_t width,
+                                             size_t height, bool is_nv21,
+                                             size_t begin, size_t end);
+
+kleidicv_error_t bgr_to_yuv420_sp_stripe_u8(const uint8_t *src,
+                                            size_t src_stride, uint8_t *y_dst,
+                                            size_t y_stride, uint8_t *uv_dst,
+                                            size_t uv_stride, size_t width,
+                                            size_t height, bool is_nv21,
+                                            size_t begin, size_t end);
+
+kleidicv_error_t bgra_to_yuv420_sp_stripe_u8(const uint8_t *src,
+                                             size_t src_stride, uint8_t *y_dst,
+                                             size_t y_stride, uint8_t *uv_dst,
+                                             size_t uv_stride, size_t width,
+                                             size_t height, bool is_nv21,
+                                             size_t begin, size_t end);
+
+kleidicv_error_t rgb_to_yuv420_p_stripe_u8(const uint8_t *src,
+                                           size_t src_stride, uint8_t *dst,
+                                           size_t dst_stride, size_t width,
+                                           size_t height, bool is_yv12,
+                                           size_t begin, size_t end);
+
+kleidicv_error_t rgba_to_yuv420_p_stripe_u8(const uint8_t *src,
+                                            size_t src_stride, uint8_t *dst,
+                                            size_t dst_stride, size_t width,
+                                            size_t height, bool is_yv12,
+                                            size_t begin, size_t end);
+
+kleidicv_error_t bgr_to_yuv420_p_stripe_u8(const uint8_t *src,
+                                           size_t src_stride, uint8_t *dst,
+                                           size_t dst_stride, size_t width,
+                                           size_t height, bool is_yv12,
+                                           size_t begin, size_t end);
+
+kleidicv_error_t bgra_to_yuv420_p_stripe_u8(const uint8_t *src,
+                                            size_t src_stride, uint8_t *dst,
+                                            size_t dst_stride, size_t width,
+                                            size_t height, bool is_yv12,
+                                            size_t begin, size_t end);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_CONVERSIONS_RGB_TO_YUV420_H

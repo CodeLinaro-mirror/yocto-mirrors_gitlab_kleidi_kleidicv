@@ -9,6 +9,7 @@
 
 #include "framework/array.h"
 #include "framework/generator.h"
+#include "framework/utils.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
 
@@ -53,7 +54,8 @@ class YUV420p2RGBTest : public testing::Test {
   }
 
   static std::vector<TestParams> get_test_cases() {
-    std::vector<size_t> widths = {2, 4, 6, 18, 64};
+    std::vector<size_t> widths = {2, 4, 6, 18,
+                                  test::Options::vector_length() * 2 + 1};
     std::vector<size_t> src_paddings = {4};
     std::vector<size_t> dst_paddings = {0};
     std::vector<size_t> heights = {2, 5, 11, 16};

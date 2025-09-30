@@ -35,13 +35,21 @@ kleidicv_error_t min_max(const T *src, size_t src_stride, size_t width,
                          size_t height, T *min_value, T *max_value);
 }  // namespace sme
 
+namespace sme2 {
+
+template <typename T>
+kleidicv_error_t min_max(const T *src, size_t src_stride, size_t width,
+                         size_t height, T *min_value, T *max_value);
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_MINMAX_API(name, type)               \
   KLEIDICV_MULTIVERSION_C_API(                               \
       name, &kleidicv::neon::min_max<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::min_max<type>), \
-      &kleidicv::sme::min_max<type>, nullptr)
+      &kleidicv::sme::min_max<type>,                         \
+      KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::min_max<type>))
 
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_u8, uint8_t);
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_s8, int8_t);

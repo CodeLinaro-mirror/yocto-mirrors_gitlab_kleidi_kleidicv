@@ -31,9 +31,18 @@ kleidicv_error_t sum(const T *src, size_t src_stride, size_t width,
 
 }  // namespace sme
 
+namespace sme2 {
+
+template <typename T, typename TInternal>
+kleidicv_error_t sum(const T *src, size_t src_stride, size_t width,
+                     size_t height, T *sum);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_sum_f32, (&kleidicv::neon::sum<float, double>),
     KLEIDICV_SVE2_IMPL_IF((&kleidicv::sve2::sum<float, double>)),
-    (&kleidicv::sme::sum<float, double>), nullptr);
+    (&kleidicv::sme::sum<float, double>),
+    (&kleidicv::sme2::sum<float, double>));

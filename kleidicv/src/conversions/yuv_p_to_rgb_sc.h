@@ -131,10 +131,21 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
       svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
       svint16_t v_vec_hi = svreinterpret_s16_u16(svunpkhi_u16(v8_vec));
 
+#if KLEIDICV_TARGET_SME2
+      // assume the predicate is full true
+      svcount_t pg_counter = svptrue_c8();
+      svuint8x2_t y_even = svld1_x2(pg_counter, y0 + index);
+      svuint8x2_t y_odd = svld1_x2(pg_counter, y1 + index);
+      svuint8_t y0_vec = svget2(y_even, 0);
+      svuint8_t y1_vec = svget2(y_odd, 0);
+      svuint8_t y2_vec = svget2(y_even, 1);
+      svuint8_t y3_vec = svget2(y_odd, 1);
+#else
       svuint8_t y0_vec = svld1(pg, y0 + index);
       svuint8_t y1_vec = svld1(pg, y1 + index);
       svuint8_t y2_vec = svld1(pg, y0 + index + kVectorLength);
       svuint8_t y3_vec = svld1(pg, y1 + index + kVectorLength);
+#endif  // KLEIDICV_TARGET_SME2
 
       operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
                             &row0[index * dcn], &row1[index * dcn]);

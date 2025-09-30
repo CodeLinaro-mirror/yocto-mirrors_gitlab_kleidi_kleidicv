@@ -14,7 +14,7 @@ template <typename ScalarType, bool TryShortPath>
 class Exp;
 
 template <bool TryShortPath>
-class Exp<float, TryShortPath> final : public UnrollOnce {
+class Exp<float, TryShortPath> final : public UnrollTwice {
  public:
   using ContextType = Context;
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<float>;

@@ -25,7 +25,7 @@ class RgbToYuvTest final {
 
   template <typename F>
   void execute_vector_test(F impl) {
-    size_t vector_path_width = (2 * test::Options::vector_lanes<uint8_t>()) - 3;
+    size_t vector_path_width = (3 * test::Options::vector_lanes<uint8_t>()) - 3;
     execute_test(impl, vector_path_width, 0);
     // Padding version
     execute_test(impl, vector_path_width, test::Options::vector_length());

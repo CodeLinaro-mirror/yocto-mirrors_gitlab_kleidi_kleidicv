@@ -175,6 +175,30 @@ kleidicv_error_t yuv_p_to_bgra_stripe_u8(const uint8_t *src, size_t src_stride,
                                          size_t end);
 }  // namespace sme
 
+namespace sme2 {
+kleidicv_error_t yuv_p_to_rgb_stripe_u8(const uint8_t *src, size_t src_stride,
+                                        uint8_t *dst, size_t dst_stride,
+                                        size_t width, size_t height,
+                                        bool is_yv12, size_t begin, size_t end);
+
+kleidicv_error_t yuv_p_to_rgba_stripe_u8(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width, size_t height,
+                                         bool is_yv12, size_t begin,
+                                         size_t end);
+
+kleidicv_error_t yuv_p_to_bgr_stripe_u8(const uint8_t *src, size_t src_stride,
+                                        uint8_t *dst, size_t dst_stride,
+                                        size_t width, size_t height,
+                                        bool is_yv12, size_t begin, size_t end);
+
+kleidicv_error_t yuv_p_to_bgra_stripe_u8(const uint8_t *src, size_t src_stride,
+                                         uint8_t *dst, size_t dst_stride,
+                                         size_t width, size_t height,
+                                         bool is_yv12, size_t begin,
+                                         size_t end);
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_CONVERSIONS_YUV_420_TO_RGB_H
