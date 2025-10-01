@@ -61,6 +61,16 @@ kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
 
 }  // namespace sme
 
+namespace sme2 {
+
+kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t y_begin, size_t y_end,
+    size_t channels, FixedBorderType fixed_border_type,
+    kleidicv_filter_context_t *context);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_FILTERS_BLUR_AND_DOWNSAMPLE_H

@@ -4,7 +4,6 @@
 
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/blur_and_downsample.h"
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 #include "kleidicv/utils.h"
 #include "kleidicv/workspace/blur_and_downsample_ws.h"
@@ -31,6 +30,7 @@ class BlurAndDownsample {
   using BufferVecTraits =
       typename ::KLEIDICV_TARGET_NAMESPACE::VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
+  using BufferVector2Type = typename BufferVecTraits::Vector2Type;
   using BorderInfoType =
       typename ::KLEIDICV_TARGET_NAMESPACE::FixedBorderInfo5x5<SourceType>;
   using BorderType = FixedBorderType;
@@ -112,6 +112,14 @@ class BlurAndDownsample {
     SourceVector2Type src_3;
     SourceVector2Type src_4;
 
+#if KLEIDICV_TARGET_SME2
+    svcount_t pg_counter = SourceVecTraits::svptrue_c();
+    src_0 = svld1_x2(pg_counter, &src_row_0[0]);
+    src_1 = svld1_x2(pg_counter, &src_row_1[0]);
+    src_2 = svld1_x2(pg_counter, &src_row_2[0]);
+    src_3 = svld1_x2(pg_counter, &src_row_3[0]);
+    src_4 = svld1_x2(pg_counter, &src_row_4[0]);
+#else
     src_0 =
         svcreate2(svld1(pg, &src_row_0[0]), svld1_vnum(pg, &src_row_0[0], 1));
     src_1 =
@@ -122,6 +130,7 @@ class BlurAndDownsample {
         svcreate2(svld1(pg, &src_row_3[0]), svld1_vnum(pg, &src_row_3[0], 1));
     src_4 =
         svcreate2(svld1(pg, &src_row_4[0]), svld1_vnum(pg, &src_row_4[0], 1));
+#endif  // KLEIDICV_TARGET_SME2
 
     vertical_vector_path(pg, svget2(src_0, 0), svget2(src_1, 0),
                          svget2(src_2, 0), svget2(src_3, 0), svget2(src_4, 0),
@@ -182,6 +191,24 @@ class BlurAndDownsample {
     const auto *src_3 = &src_rows.at(0, border_offsets.c3())[index];
     const auto *src_4 = &src_rows.at(0, border_offsets.c4())[index];
 
+#if KLEIDICV_TARGET_SME2
+    svcount_t pg_counter = BufferVecTraits::svptrue_c();
+    BufferVector2Type vsrc_0 = svld1_x2(pg_counter, &src_0[0]);
+    BufferVector2Type vsrc_1 = svld1_x2(pg_counter, &src_1[0]);
+    BufferVector2Type vsrc_2 = svld1_x2(pg_counter, &src_2[0]);
+    BufferVector2Type vsrc_3 = svld1_x2(pg_counter, &src_3[0]);
+    BufferVector2Type vsrc_4 = svld1_x2(pg_counter, &src_4[0]);
+    BufferVectorType src_0_0 = svget2(vsrc_0, 0);
+    BufferVectorType src_1_0 = svget2(vsrc_0, 1);
+    BufferVectorType src_0_1 = svget2(vsrc_1, 0);
+    BufferVectorType src_1_1 = svget2(vsrc_1, 1);
+    BufferVectorType src_0_2 = svget2(vsrc_2, 0);
+    BufferVectorType src_1_2 = svget2(vsrc_2, 1);
+    BufferVectorType src_0_3 = svget2(vsrc_3, 0);
+    BufferVectorType src_1_3 = svget2(vsrc_3, 1);
+    BufferVectorType src_0_4 = svget2(vsrc_4, 0);
+    BufferVectorType src_1_4 = svget2(vsrc_4, 1);
+#else
     BufferVectorType src_0_0 = svld1(pg_src_0, &src_0[0]);
     BufferVectorType src_1_0 = svld1_vnum(pg_src_1, &src_0[0], 1);
     BufferVectorType src_0_1 = svld1(pg_src_0, &src_1[0]);
@@ -192,6 +219,7 @@ class BlurAndDownsample {
     BufferVectorType src_1_3 = svld1_vnum(pg_src_1, &src_3[0], 1);
     BufferVectorType src_0_4 = svld1(pg_src_0, &src_4[0]);
     BufferVectorType src_1_4 = svld1_vnum(pg_src_1, &src_4[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
 
     svuint16_t res_0 = horizontal_vector_path(pg_src_0, src_0_0, src_0_1,
                                               src_0_2, src_0_3, src_0_4);

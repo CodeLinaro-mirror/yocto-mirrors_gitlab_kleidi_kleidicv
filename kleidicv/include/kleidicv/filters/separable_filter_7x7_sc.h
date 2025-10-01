@@ -115,28 +115,53 @@ class SeparableFilter<FilterType, 7UL> {
                                  Rows<DestinationType> dst_rows,
                                  BorderOffsets border_offsets,
                                  size_t index) const KLEIDICV_STREAMING {
-    auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
-    auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
-    auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
-    auto src_3 = &src_rows.at(0, border_offsets.c3())[index];
-    auto src_4 = &src_rows.at(0, border_offsets.c4())[index];
-    auto src_5 = &src_rows.at(0, border_offsets.c5())[index];
-    auto src_6 = &src_rows.at(0, border_offsets.c6())[index];
+    auto src_row_0 = &src_rows.at(0, border_offsets.c0())[index];
+    auto src_row_1 = &src_rows.at(0, border_offsets.c1())[index];
+    auto src_row_2 = &src_rows.at(0, border_offsets.c2())[index];
+    auto src_row_3 = &src_rows.at(0, border_offsets.c3())[index];
+    auto src_row_4 = &src_rows.at(0, border_offsets.c4())[index];
+    auto src_row_5 = &src_rows.at(0, border_offsets.c5())[index];
+    auto src_row_6 = &src_rows.at(0, border_offsets.c6())[index];
 
-    BufferVectorType src_0_0 = svld1(pg, &src_0[0]);
-    BufferVectorType src_1_0 = svld1_vnum(pg, &src_0[0], 1);
-    BufferVectorType src_0_1 = svld1(pg, &src_1[0]);
-    BufferVectorType src_1_1 = svld1_vnum(pg, &src_1[0], 1);
-    BufferVectorType src_0_2 = svld1(pg, &src_2[0]);
-    BufferVectorType src_1_2 = svld1_vnum(pg, &src_2[0], 1);
-    BufferVectorType src_0_3 = svld1(pg, &src_3[0]);
-    BufferVectorType src_1_3 = svld1_vnum(pg, &src_3[0], 1);
-    BufferVectorType src_0_4 = svld1(pg, &src_4[0]);
-    BufferVectorType src_1_4 = svld1_vnum(pg, &src_4[0], 1);
-    BufferVectorType src_0_5 = svld1(pg, &src_5[0]);
-    BufferVectorType src_1_5 = svld1_vnum(pg, &src_5[0], 1);
-    BufferVectorType src_0_6 = svld1(pg, &src_6[0]);
-    BufferVectorType src_1_6 = svld1_vnum(pg, &src_6[0], 1);
+#if KLEIDICV_TARGET_SME2
+    svcount_t pg_counter = SourceVecTraits::svptrue_c();
+    auto src_0 = svld1_x2(pg_counter, &src_row_0[0]);
+    auto src_1 = svld1_x2(pg_counter, &src_row_1[0]);
+    auto src_2 = svld1_x2(pg_counter, &src_row_2[0]);
+    auto src_3 = svld1_x2(pg_counter, &src_row_3[0]);
+    auto src_4 = svld1_x2(pg_counter, &src_row_4[0]);
+    auto src_5 = svld1_x2(pg_counter, &src_row_5[0]);
+    auto src_6 = svld1_x2(pg_counter, &src_row_6[0]);
+    BufferVectorType src_0_0 = svget2(src_0, 0);
+    BufferVectorType src_1_0 = svget2(src_0, 1);
+    BufferVectorType src_0_1 = svget2(src_1, 0);
+    BufferVectorType src_1_1 = svget2(src_1, 1);
+    BufferVectorType src_0_2 = svget2(src_2, 0);
+    BufferVectorType src_1_2 = svget2(src_2, 1);
+    BufferVectorType src_0_3 = svget2(src_3, 0);
+    BufferVectorType src_1_3 = svget2(src_3, 1);
+    BufferVectorType src_0_4 = svget2(src_4, 0);
+    BufferVectorType src_1_4 = svget2(src_4, 1);
+    BufferVectorType src_0_5 = svget2(src_5, 0);
+    BufferVectorType src_1_5 = svget2(src_5, 1);
+    BufferVectorType src_0_6 = svget2(src_6, 0);
+    BufferVectorType src_1_6 = svget2(src_6, 1);
+#else
+    BufferVectorType src_0_0 = svld1(pg, &src_row_0[0]);
+    BufferVectorType src_1_0 = svld1_vnum(pg, &src_row_0[0], 1);
+    BufferVectorType src_0_1 = svld1(pg, &src_row_1[0]);
+    BufferVectorType src_1_1 = svld1_vnum(pg, &src_row_1[0], 1);
+    BufferVectorType src_0_2 = svld1(pg, &src_row_2[0]);
+    BufferVectorType src_1_2 = svld1_vnum(pg, &src_row_2[0], 1);
+    BufferVectorType src_0_3 = svld1(pg, &src_row_3[0]);
+    BufferVectorType src_1_3 = svld1_vnum(pg, &src_row_3[0], 1);
+    BufferVectorType src_0_4 = svld1(pg, &src_row_4[0]);
+    BufferVectorType src_1_4 = svld1_vnum(pg, &src_row_4[0], 1);
+    BufferVectorType src_0_5 = svld1(pg, &src_row_5[0]);
+    BufferVectorType src_1_5 = svld1_vnum(pg, &src_row_5[0], 1);
+    BufferVectorType src_0_6 = svld1(pg, &src_row_6[0]);
+    BufferVectorType src_1_6 = svld1_vnum(pg, &src_row_6[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
     std::reference_wrapper<BufferVectorType> sources_0[7] = {
         src_0_0, src_0_1, src_0_2, src_0_3, src_0_4, src_0_5, src_0_6};
     filter_.horizontal_vector_path(pg, sources_0, &dst_rows[index]);

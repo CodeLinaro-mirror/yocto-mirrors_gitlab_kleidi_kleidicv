@@ -106,16 +106,29 @@ class SeparableFilter<FilterType, 3UL> {
                                  Rows<DestinationType> dst_rows,
                                  BorderOffsets border_offsets,
                                  size_t index) const KLEIDICV_STREAMING {
-    auto src_0 = &src_rows.at(0, border_offsets.c0())[index];
-    auto src_1 = &src_rows.at(0, border_offsets.c1())[index];
-    auto src_2 = &src_rows.at(0, border_offsets.c2())[index];
+    auto src_row_0 = &src_rows.at(0, border_offsets.c0())[index];
+    auto src_row_1 = &src_rows.at(0, border_offsets.c1())[index];
+    auto src_row_2 = &src_rows.at(0, border_offsets.c2())[index];
 
-    BufferVectorType src_0_0 = svld1(pg, &src_0[0]);
-    BufferVectorType src_1_0 = svld1_vnum(pg, &src_0[0], 1);
-    BufferVectorType src_0_1 = svld1(pg, &src_1[0]);
-    BufferVectorType src_1_1 = svld1_vnum(pg, &src_1[0], 1);
-    BufferVectorType src_0_2 = svld1(pg, &src_2[0]);
-    BufferVectorType src_1_2 = svld1_vnum(pg, &src_2[0], 1);
+#if KLEIDICV_TARGET_SME2
+    svcount_t pg_counter = SourceVecTraits::svptrue_c();
+    auto src_0 = svld1_x2(pg_counter, &src_row_0[0]);
+    auto src_1 = svld1_x2(pg_counter, &src_row_1[0]);
+    auto src_2 = svld1_x2(pg_counter, &src_row_2[0]);
+    BufferVectorType src_0_0 = svget2(src_0, 0);
+    BufferVectorType src_1_0 = svget2(src_0, 1);
+    BufferVectorType src_0_1 = svget2(src_1, 0);
+    BufferVectorType src_1_1 = svget2(src_1, 1);
+    BufferVectorType src_0_2 = svget2(src_2, 0);
+    BufferVectorType src_1_2 = svget2(src_2, 1);
+#else
+    BufferVectorType src_0_0 = svld1(pg, &src_row_0[0]);
+    BufferVectorType src_1_0 = svld1_vnum(pg, &src_row_0[0], 1);
+    BufferVectorType src_0_1 = svld1(pg, &src_row_1[0]);
+    BufferVectorType src_1_1 = svld1_vnum(pg, &src_row_1[0], 1);
+    BufferVectorType src_0_2 = svld1(pg, &src_row_2[0]);
+    BufferVectorType src_1_2 = svld1_vnum(pg, &src_row_2[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
 
     std::reference_wrapper<BufferVectorType> sources_0[3] = {src_0_0, src_0_1,
                                                              src_0_2};

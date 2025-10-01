@@ -45,13 +45,26 @@ kleidicv_error_t separable_filter_2d_stripe(
 
 }  // namespace sme
 
+namespace sme2 {
+
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
+    size_t kernel_height, FixedBorderType border_type,
+    kleidicv_filter_context_t *context);
+
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_C_API(name, type)                                      \
   KLEIDICV_MULTIVERSION_C_API(                                                 \
       name, &kleidicv::neon::separable_filter_2d_stripe<type>,                 \
       KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::separable_filter_2d_stripe<type>), \
-      &kleidicv::sme::separable_filter_2d_stripe<type>, nullptr)
+      &kleidicv::sme::separable_filter_2d_stripe<type>,                        \
+      &kleidicv::sme2::separable_filter_2d_stripe<type>)
 
 KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u8, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u16, uint16_t);
