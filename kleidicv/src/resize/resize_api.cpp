@@ -9,4 +9,5 @@
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_resize_to_quarter_u8, &kleidicv::neon::resize_to_quarter_u8,
     KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::resize_to_quarter_u8),
-    &kleidicv::sme::resize_to_quarter_u8, nullptr);
+    &kleidicv::sme::resize_to_quarter_u8,
+    KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::resize_to_quarter_u8));

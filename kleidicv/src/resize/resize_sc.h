@@ -22,10 +22,20 @@ static inline svuint8_t resize_parallel_vectors(
 static inline void parallel_rows_vectors_path_2x(
     svbool_t pg, Rows<const uint8_t> src_rows,
     Rows<uint8_t> dst_rows) KLEIDICV_STREAMING {
+#if KLEIDICV_TARGET_SME2
+  svcount_t pg_counter = svptrue_c8();
+  auto src_top = svld1_x2(pg_counter, &src_rows.at(0)[0]);
+  auto src_bottom = svld1_x2(pg_counter, &src_rows.at(1)[0]);
+  svuint8_t top_row_0 = svget2(src_top, 0);
+  svuint8_t top_row_1 = svget2(src_top, 1);
+  svuint8_t bottom_row_0 = svget2(src_bottom, 0);
+  svuint8_t bottom_row_1 = svget2(src_bottom, 1);
+#else
   svuint8_t top_row_0 = svld1(pg, &src_rows.at(0)[0]);
   svuint8_t bottom_row_0 = svld1(pg, &src_rows.at(1)[0]);
   svuint8_t top_row_1 = svld1_vnum(pg, &src_rows.at(0)[0], 1);
   svuint8_t bottom_row_1 = svld1_vnum(pg, &src_rows.at(1)[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
   svuint16_t sum0b = svaddlb(top_row_0, bottom_row_0);
   svuint16_t sum0t = svaddlt(top_row_0, bottom_row_0);
   svuint16_t sum1b = svaddlb(top_row_1, bottom_row_1);
@@ -90,8 +100,15 @@ static inline svuint8_t resize_single_row(svbool_t pg,
 static inline void single_row_vector_path_2x(
     svbool_t pg, Rows<const uint8_t> src_rows,
     Rows<uint8_t> dst_rows) KLEIDICV_STREAMING {
+#if KLEIDICV_TARGET_SME2
+  svcount_t pg_counter = svptrue_c8();
+  auto src = svld1_x2(pg_counter, &src_rows.at(0)[0]);
+  svuint8_t line0 = svget2(src, 0);
+  svuint8_t line1 = svget2(src, 1);
+#else
   svuint8_t line0 = svld1(pg, &src_rows[0]);
   svuint8_t line1 = svld1_vnum(pg, &src_rows[0], 1);
+#endif  // KLEIDICV_TARGET_SME2
   svuint8_t result0 = svrshrnb(svadalp_x(pg, svdup_u16(0), line0), 1);
   svuint8_t result1 = svrshrnb(svadalp_x(pg, svdup_u16(0), line1), 1);
   svst1b(pg, &dst_rows[0], svreinterpret_u16_u8(result0));
