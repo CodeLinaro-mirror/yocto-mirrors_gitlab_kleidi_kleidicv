@@ -25,6 +25,7 @@
 #   CMAKE_BUILD_TYPE:              Specifies the build type. Defaults to 'Release'.
 #   CMAKE_CROSSCOMPILING_EMULATOR: If set, it is the full path to an emulator that can run the binary target.
 #   CMAKE_CXX_FLAGS:               General C++ flags for all compiler commands.
+#   CMAKE_C_FLAGS:                 General C flags for all compiler commands.
 #   CMAKE_EXE_LINKER_FLAGS:        General flags for all linker commands for executables.
 #   CMAKE_GENERATOR:               Generator to use, see cmake documentation for details. Defaults to 'Ninja'.
 #   CMAKE_SHARED_LINKER_FLAGS:     General flags for all linker commands for shared libraries.
@@ -50,6 +51,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 : "${CMAKE_BUILD_TYPE:=Release}"
 : "${CMAKE_CROSSCOMPILING_EMULATOR:=}"
 : "${CMAKE_CXX_FLAGS:=}"
+: "${CMAKE_C_FLAGS:=}"
 : "${CMAKE_EXE_LINKER_FLAGS:=}"
 : "${CMAKE_GENERATOR:=Ninja}"
 : "${CMAKE_SHARED_LINKER_FLAGS:=}"
@@ -91,6 +93,7 @@ cmake_config_args=(
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
     "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
     "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
+    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
     "-DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}"
     "-DCMAKE_SHARED_LINKER_FLAGS=${CMAKE_SHARED_LINKER_FLAGS}"
 )
