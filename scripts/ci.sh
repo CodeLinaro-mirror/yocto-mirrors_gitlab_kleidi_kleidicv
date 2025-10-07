@@ -73,7 +73,7 @@ qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
   build/ci/clang/test/api/kleidicv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --gtest_output=xml:build/ci/test-results/clang-sve2048/ --vector-length=256 || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme512=on \
   build/ci/clang/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme/ --vector-length=64 || TESTRESULT=1
-armie -mvl=16 -msvl=64 \
+armie -mvl=16 -msvl=64 -mfeatures=scripts/armie_features.txt \
   build/ci/clang/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme2/ --vector-length=64 || TESTRESULT=1
 
 # Run tests on GCC build
