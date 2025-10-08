@@ -165,7 +165,7 @@ kleidicv_error_t kleidicv_thread_threshold_binary_u8(
 kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
                                           uint8_t *dst, size_t dst_stride,
                                           size_t width, size_t height,
-                                          float scale, float shift,
+                                          double scale, double shift,
                                           kleidicv_thread_multithreading mt) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
@@ -181,7 +181,7 @@ kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
 kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,
                                            float *dst, size_t dst_stride,
                                            size_t width, size_t height,
-                                           float scale, float shift,
+                                           double scale, double shift,
                                            kleidicv_thread_multithreading mt) {
   return kleidicv_thread_unary_op_impl(kleidicv_scale_f32, mt, src, src_stride,
                                        dst, dst_stride, width, height, scale,

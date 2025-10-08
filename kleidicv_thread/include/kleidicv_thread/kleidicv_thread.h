@@ -305,7 +305,7 @@ kleidicv_error_t kleidicv_thread_threshold_binary_u8(
 kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
                                           uint8_t *dst, size_t dst_stride,
                                           size_t width, size_t height,
-                                          float scale, float shift,
+                                          double scale, double shift,
                                           kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
@@ -315,7 +315,7 @@ kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
 kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,
                                            float *dst, size_t dst_stride,
                                            size_t width, size_t height,
-                                           float scale, float shift,
+                                           double scale, double shift,
                                            kleidicv_thread_multithreading);
 
 #define KLEIDICV_THREAD_BINARY_OP(name, type)                              \

@@ -69,10 +69,10 @@ class ScaleIntBase : public UnrollTwice {
 template <typename T>
 kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift);
+                       double scale, double shift);
 
 template <typename T>
-T scale_value(T value, float scale, float shift) {
+T scale_value(T value, double scale, double shift) {
   static constexpr T ScalarMax = std::numeric_limits<T>::max();
   int64_t v = lrintf(static_cast<float>(value) * scale + shift);
   if (static_cast<uint64_t>(v) <= ScalarMax) {
@@ -185,12 +185,13 @@ class ScaleUint8Calc final : public ScaleIntBase<uint8_t> {
 
 kleidicv_error_t scale_with_precalculated_table(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, float scale, float shift,
+    size_t width, size_t height, double scale, double shift,
     const std::array<uint8_t, 256> &precalculated_table) {
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride};
-  ScaleUint8Tbx operation(scale, shift, precalculated_table.data());
+  ScaleUint8Tbx operation(static_cast<float>(scale), static_cast<float>(shift),
+                          precalculated_table.data());
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 
   return KLEIDICV_OK;
@@ -200,7 +201,7 @@ kleidicv_error_t scale_with_precalculated_table(
 template <>
 kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift) {
+                       double scale, double shift) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -209,7 +210,8 @@ kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
     Rectangle rect{width, height};
     Rows<const uint8_t> src_rows{src, src_stride};
     Rows<uint8_t> dst_rows{dst, dst_stride};
-    ScaleUint8Calc operation(scale, shift);
+    ScaleUint8Calc operation(static_cast<float>(scale),
+                             static_cast<float>(shift));
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   } else {
     // For bigger inputs, it's faster to pre-calculate the table
@@ -230,7 +232,10 @@ static uint32x4_t scale_shift(uint32x4_t src, float scale, float shift) {
   return vcvtnq_u32_f32(vmaxq_f32(min, vminq_f32(val, max)));
 }
 
-std::array<uint8_t, 256> precalculate_scale_table_u8(float scale, float shift) {
+std::array<uint8_t, 256> precalculate_scale_table_u8(double dscale,
+                                                     double dshift) {
+  float scale = static_cast<float>(dscale);
+  float shift = static_cast<float>(dshift);
   static constexpr size_t TableLength = 256;
   std::array<uint8_t, TableLength> precalculated_table{};
 
@@ -311,7 +316,7 @@ class ScaleFloat final : public UnrollTwice, public UnrollOnce {
 template <>
 kleidicv_error_t scale(const float *src, size_t src_stride, float *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift) {
+                       double scale, double shift) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -320,10 +325,10 @@ kleidicv_error_t scale(const float *src, size_t src_stride, float *dst,
   Rows<const float> src_rows{src, src_stride};
   Rows<float> dst_rows{dst, dst_stride};
   if (scale == 1.0) {
-    AddFloat operation(shift);
+    AddFloat operation(static_cast<float>(shift));
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   } else {
-    ScaleFloat operation(scale, shift);
+    ScaleFloat operation(static_cast<float>(scale), static_cast<float>(shift));
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }
   return KLEIDICV_OK;

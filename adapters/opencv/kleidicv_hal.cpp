@@ -1375,29 +1375,25 @@ int convertScale(const uchar *src_data, size_t src_step, uchar *dst_data,
       case CV_8U:
         return convert_error(
             width * height < MULTITHREAD_MIN_ELEMENTS_SCALE_U8
-                ? kleidicv_scale_u8(
-                      reinterpret_cast<const uint8_t *>(src_data), src_step,
-                      reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
-                      height, static_cast<float>(scale),
-                      static_cast<float>(shift))
+                ? kleidicv_scale_u8(reinterpret_cast<const uint8_t *>(src_data),
+                                    src_step,
+                                    reinterpret_cast<uint8_t *>(dst_data),
+                                    dst_step, width, height, scale, shift)
                 : kleidicv_thread_scale_u8(
                       reinterpret_cast<const uint8_t *>(src_data), src_step,
                       reinterpret_cast<uint8_t *>(dst_data), dst_step, width,
-                      height, static_cast<float>(scale),
-                      static_cast<float>(shift), mt));
+                      height, scale, shift, mt));
       case CV_32F:
         return convert_error(
             width * height < MULTITHREAD_MIN_ELEMENTS_SCALE_F32
-                ? kleidicv_scale_f32(
-                      reinterpret_cast<const float *>(src_data), src_step,
-                      reinterpret_cast<float *>(dst_data), dst_step, width,
-                      height, static_cast<float>(scale),
-                      static_cast<float>(shift))
+                ? kleidicv_scale_f32(reinterpret_cast<const float *>(src_data),
+                                     src_step,
+                                     reinterpret_cast<float *>(dst_data),
+                                     dst_step, width, height, scale, shift)
                 : kleidicv_thread_scale_f32(
                       reinterpret_cast<const float *>(src_data), src_step,
                       reinterpret_cast<float *>(dst_data), dst_step, width,
-                      height, static_cast<float>(scale),
-                      static_cast<float>(shift), mt));
+                      height, scale, shift, mt));
       default:
         break;
     }
