@@ -730,6 +730,13 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  // KleidiCV does not have a special 9x9 implementation for GaussianBlur if
+  // sigma is not specified and the implementation for arbitrary kernel size
+  // does not match the accuracy expectations of OpenCV.
+  if (kernel_size == 9) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
   // Check for not-implemented before allocating a context
   auto fixed_border_type =
       kleidicv::get_fixed_border_type(kleidicv_border_type);
