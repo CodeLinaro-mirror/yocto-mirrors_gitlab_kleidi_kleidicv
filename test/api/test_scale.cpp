@@ -25,8 +25,8 @@ static DestinationType saturating_cast(SourceType value) {
   return static_cast<DestinationType>(value);
 }
 
-uint8_t scalar_scale_u8(uint8_t x, float scale, float shift) {
-  float result = static_cast<float>(x) * scale + shift;
+uint8_t scalar_scale_u8(uint8_t x, double scale, double shift) {
+  float result = static_cast<float>(x * scale + shift);
   if (result < std::numeric_limits<uint8_t>::lowest()) {
     return std::numeric_limits<uint8_t>::lowest();
   }
@@ -36,8 +36,8 @@ uint8_t scalar_scale_u8(uint8_t x, float scale, float shift) {
   return static_cast<uint8_t>(lrintf(result));
 }
 
-float scalar_scale_f32(float x, float scale, float shift) {
-  return x * scale + shift;
+float scalar_scale_f32(float x, double scale, double shift) {
+  return static_cast<float>(x * scale + shift);
 }
 
 #define KLEIDICV_SCALE_API(type, suffix) \

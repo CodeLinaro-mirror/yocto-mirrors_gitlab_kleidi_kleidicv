@@ -13,7 +13,7 @@ namespace neon {
 template <typename T>
 kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift);
+                       double scale, double shift);
 }  // namespace neon
 
 namespace sve2 {
@@ -21,7 +21,7 @@ namespace sve2 {
 template <typename T>
 kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift);
+                       double scale, double shift);
 
 }  // namespace sve2
 
@@ -29,7 +29,7 @@ namespace sme {
 template <typename T>
 kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift);
+                       double scale, double shift);
 
 }  // namespace sme
 
@@ -37,7 +37,7 @@ namespace sme2 {
 template <typename T>
 kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       float scale, float shift);
+                       double scale, double shift);
 
 }  // namespace sme2
 

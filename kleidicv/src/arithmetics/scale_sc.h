@@ -53,13 +53,13 @@ class ScaleFloat final : public UnrollTwice {
 template <typename T>
 kleidicv_error_t scale_sc(const T *src, size_t src_stride, T *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          float scale, float shift) KLEIDICV_STREAMING;
+                          double scale, double shift) KLEIDICV_STREAMING;
 
 // Specialization for float
 template <>
 kleidicv_error_t scale_sc(const float *src, size_t src_stride, float *dst,
                           size_t dst_stride, size_t width, size_t height,
-                          float scale, float shift) KLEIDICV_STREAMING {
+                          double scale, double shift) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
@@ -67,8 +67,8 @@ kleidicv_error_t scale_sc(const float *src, size_t src_stride, float *dst,
   Rectangle rect{width, height};
   Rows<const float> src_rows{src, src_stride};
   Rows<float> dst_rows{dst, dst_stride};
-  svfloat32_t svscale = svdup_f32(scale);
-  svfloat32_t svshift = svdup_f32(shift);
+  svfloat32_t svscale = svdup_f32(static_cast<float>(scale));
+  svfloat32_t svshift = svdup_f32(static_cast<float>(shift));
   if (scale == 1.0) {
     AddFloat operation(svshift);
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);

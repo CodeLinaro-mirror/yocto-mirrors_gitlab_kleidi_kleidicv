@@ -9,7 +9,7 @@ namespace kleidicv::sme2 {
 template <typename T>
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
 scale(const T* src, size_t src_stride, T* dst, size_t dst_stride, size_t width,
-      size_t height, float scale, float shift) {
+      size_t height, double scale, double shift) {
   return scale_sc<T>(src, src_stride, dst, dst_stride, width, height, scale,
                      shift);
 }
@@ -17,7 +17,7 @@ scale(const T* src, size_t src_stride, T* dst, size_t dst_stride, size_t width,
 #define KLEIDICV_INSTANTIATE_TEMPLATE(type)                             \
   template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t scale<type>(       \
       const type* src, size_t src_stride, type* dst, size_t dst_stride, \
-      size_t width, size_t height, float scale, float shift)
+      size_t width, size_t height, double scale, double shift)
 
 KLEIDICV_INSTANTIATE_TEMPLATE(float);
 

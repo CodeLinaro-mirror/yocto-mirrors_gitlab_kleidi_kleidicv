@@ -1851,11 +1851,13 @@ KLEIDICV_API_DECLARATION(kleidicv_sum_f32, const float *src, size_t src_stride,
 ///
 KLEIDICV_API_DECLARATION(kleidicv_scale_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, float scale, float shift);
+                         size_t width, size_t height, double scale,
+                         double shift);
 /// @copydoc kleidicv_scale_u8
 KLEIDICV_API_DECLARATION(kleidicv_scale_f32, const float *src,
                          size_t src_stride, float *dst, size_t dst_stride,
-                         size_t width, size_t height, float scale, float shift);
+                         size_t width, size_t height, double scale,
+                         double shift);
 
 /// Exponential function, input is the elements in `src`, output is the elements
 /// in `dst`.
