@@ -65,6 +65,39 @@ bool are_float_matrices_different(T threshold_percent, cv::Mat& exp,
   return false;
 }
 
+inline static float16_t get_float16(cv::Mat& m, int i, int j) {
+  uint16_t raw = m.at<uint16_t>(i, j);
+  float16_t val;
+  memcpy(&val, &raw, sizeof(raw));
+  return val;
+}
+
+inline bool are_float16_matrices_different(float16_t threshold_percent,
+                                           cv::Mat& exp, cv::Mat& act) {
+  if (check_matrix_size_and_type(exp, act)) {
+    return true;
+  }
+
+  for (int i = 0; i < exp.rows; ++i) {
+    for (int j = 0; j < (exp.cols * CV_MAT_CN(exp.type())); ++j) {
+      float16_t exp_val = get_float16(exp, i, j);
+      float16_t act_val = get_float16(act, i, j);
+      float16_t diff = abs_diff<float16_t>(exp_val, act_val);
+      float16_t diff_percentage = (diff / std::abs(exp_val)) * 100;
+      if (diff_percentage > threshold_percent) {
+        std::cout << "=== Mismatch at: " << i << " " << j << std::endl
+                  << "Expected: " << exp_val << "   Actual: " << act_val
+                  << std::endl
+                  << "Relative diff: " << diff_percentage << std::endl
+                  << std::endl;
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 template <typename T>
 bool are_matrices_different(T threshold, cv::Mat& A, cv::Mat& B) {
   if (check_matrix_size_and_type(A, B)) {

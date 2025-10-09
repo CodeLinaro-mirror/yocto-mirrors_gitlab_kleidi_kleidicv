@@ -153,6 +153,16 @@ class VectorTypes<double> {
   using Vector4Type = float64x2x4_t;
 };  // end of class VectorTypes<double>
 
+template <>
+class VectorTypes<float16_t> {
+ public:
+  using ScalarType = float16_t;
+  using VectorType = float16x8_t;
+  using Vector2Type = float16x8x2_t;
+  using Vector3Type = float16x8x3_t;
+  using Vector4Type = float16x8x4_t;
+};  // end of class VectorTypes<float16_t>
+
 // NEON vector length in bytes.
 static constexpr size_t kVectorLength = 16;
 
@@ -320,6 +330,10 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
     vst1q_f32_x2(dst, vec);
   }
 
+  static inline void vst1q_x2(float16_t *dst, float16x8x2_t vec) {
+    vst1q_f16_x2(dst, vec);
+  }
+
   static inline void vst1q_x3(int8_t *dst, int8x16x3_t vec) {
     vst1q_s8_x3(dst, vec);
   }
@@ -356,6 +370,10 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
     vst1q_f32_x3(dst, vec);
   }
 
+  static inline void vst1q_x3(float16_t *dst, float16x8x3_t vec) {
+    vst1q_f16_x3(dst, vec);
+  }
+
   static inline void vst1q_x4(int8_t *dst, int8x16x4_t vec) {
     vst1q_s8_x4(dst, vec);
   }
@@ -390,6 +408,10 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
 
   static inline void vst1q_x4(float32_t *dst, float32x4x4_t vec) {
     vst1q_f32_x4(dst, vec);
+  }
+
+  static inline void vst1q_x4(float16_t *dst, float16x8x4_t vec) {
+    vst1q_f16_x4(dst, vec);
   }
 
  public:

@@ -69,7 +69,7 @@ Notes on parameters:
 * `dst.channels()` - supports 3 for RGB and 4 for RGBA.
 
 #### [`COLOR_YUV2RGB_I420`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9:~:text=V%2C%20see%20color_convert_rgb_yuv_42x-,COLOR_YUV2RGB_I420,-Python%3A%20cv.COLOR_YUV2RGB_I420), [`COLOR_YUV2RGB_NV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a35687717fabb536c1e1ec0857714aaf9:~:text=Python%3A%20cv.COLOR_YUV2RGB-,COLOR_YUV2RGB_NV12,-Python%3A%20cv.COLOR_YUV2RGB_NV12)
-YUV420 to RGB/RGBA image conversion supporting **both planar (I420/YV12)** and **semi-planar (NV12/NV21)** layouts.  
+YUV420 to RGB/RGBA image conversion supporting **both planar (I420/YV12)** and **semi-planar (NV12/NV21)** layouts.
 All supported permutations are shown below:
 | YUV Layout    | RGB | BGR | RGBA | BGRA |
 |---------------|-----|-----|------|------|
@@ -103,15 +103,15 @@ Notes on parameters:
 
 #### [`COLOR_RGB2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGR2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_RGBA2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGRA2YUV_IYUV`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_RGB2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGR2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_RGBA2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5), [`COLOR_BGRA2YUV_YV12`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab91f1a5041e1d4b7b0c1f4d0b69479e5)
 
-RGB/BGR to YUV420 planar (IYUV or YV12) conversion.  
-This transformation outputs three separate planes: Y, U, and V, where chroma channels (U and V) are subsampled by 2 in both horizontal and vertical directions.  
-The difference between the two formats is the layout order of U and V:  
-- IYUV: Y is followed by U, then V  
+RGB/BGR to YUV420 planar (IYUV or YV12) conversion.
+This transformation outputs three separate planes: Y, U, and V, where chroma channels (U and V) are subsampled by 2 in both horizontal and vertical directions.
+The difference between the two formats is the layout order of U and V:
+- IYUV: Y is followed by U, then V
 - YV12: Y is followed by V, then U
 
 Notes on parameters:
-- `src.depth()` — only supports `CV_8U` depth.  
-- `src.channels()` — supports 3 (RGB/BGR), 4 (RGBA/BGRA). For RGBA/BGRA, the A channel is ignored.  
+- `src.depth()` — only supports `CV_8U` depth.
+- `src.channels()` — supports 3 (RGB/BGR), 4 (RGBA/BGRA). For RGBA/BGRA, the A channel is ignored.
 - `dst` — output is a single image containing the Y plane followed by U and V planes (IYUV layout) or V and U planes (YV12 layout).
 
 
@@ -216,10 +216,10 @@ Notes on parameters:
 ### [`cv::Mat::convertTo()`](https://docs.opencv.org/4.10.0/d3/d63/classcv_1_1Mat.html#adf88c60c5b4980e05bb556080916978b)
 > ⚠️ **The operation is not bitexact with OpenCV due to rounding differences.**
 
-If the `rtype` parameter is `-1` or the same as the input depth, scale and offset values using `alpha` and `beta`.
-Supported depths:
-  + `CV_8U`
-  + `CV_32F`
+For the following source/destination pairs (`rtype` parameter of `-1` means they are the same), scale and offset values using `alpha` and `beta`:
+* `CV_8U` to `CV_8U`
+* `CV_32F` to `CV_32F`
+* `CV_8U` to `CV_16F`
 
 Otherwise, if `alpha` and `beta` are 1 and 0 respectively, conversion between data types is supported as follows:
 

@@ -188,6 +188,15 @@ kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,
                                        shift);
 }
 
+kleidicv_error_t kleidicv_thread_scale_u8_f16(
+    const uint8_t *src, size_t src_stride, float16_t *dst, size_t dst_stride,
+    size_t width, size_t height, double scale, double shift,
+    kleidicv_thread_multithreading mt) {
+  return kleidicv_thread_unary_op_impl(kleidicv_scale_u8_f16, mt, src,
+                                       src_stride, dst, dst_stride, width,
+                                       height, scale, shift);
+}
+
 #define KLEIDICV_THREAD_BINARY_OP_IMPL(suffix, type)                         \
   kleidicv_error_t kleidicv_thread_##suffix(                                 \
       const type *src_a, size_t src_a_stride, const type *src_b,             \

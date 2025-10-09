@@ -332,6 +332,7 @@ TEST_UNARY_OP(rgba_to_yuv_u8, uint8_t, uint8_t, 4, 3);
 TEST_UNARY_OP(threshold_binary_u8, uint8_t, uint8_t, 1, 1, 100, 200);
 TEST_UNARY_OP(scale_u8, uint8_t, uint8_t, 1, 1, 0.5F, 3.5F);
 TEST_UNARY_OP(scale_f32, float, float, 1, 1, 0.123F, 45.6789F);
+TEST_UNARY_OP(scale_u8_f16, uint8_t, float16_t, 1, 1, 0.123F, 45.6789F);
 TEST_UNARY_OP(exp_f32, float, float, 1, 1);
 TEST_UNARY_OP(f32_to_s8, float, int8_t, 1, 1);
 TEST_UNARY_OP(f32_to_u8, float, uint8_t, 1, 1);

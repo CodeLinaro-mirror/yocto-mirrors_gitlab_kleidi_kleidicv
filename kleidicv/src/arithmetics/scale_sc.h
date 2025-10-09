@@ -50,8 +50,8 @@ class ScaleFloat final : public UnrollTwice {
   const svfloat32_t &svscale_, &svshift_;
 };  // end of class ScaleFloat
 
-template <typename T>
-kleidicv_error_t scale_sc(const T *src, size_t src_stride, T *dst,
+template <typename T, typename U>
+kleidicv_error_t scale_sc(const T *src, size_t src_stride, U *dst,
                           size_t dst_stride, size_t width, size_t height,
                           double scale, double shift) KLEIDICV_STREAMING;
 

@@ -14,15 +14,25 @@
 
 // Abstract base class for operations with InputsSize number of inputs and
 // OutputsSize number of outputs.
-template <typename ElementType, size_t InputsSize, size_t OutputsSize>
+template <typename InputType, size_t InputsSize, size_t OutputsSize,
+          typename OtherType = void>
 class OperationTest {
  public:
+  using OutputType =
+      std::conditional_t<std::is_same_v<OtherType, void>, InputType, OtherType>;
   // Shorthand for internal data layout representation.
-  using ArrayType = test::Array2D<ElementType>;
+  using InputArrayType = test::Array2D<InputType>;
+  using OutputArrayType = test::Array2D<OutputType>;
   // Shorthand for elements.
-  struct Elements {
-    ElementType values[InputsSize + OutputsSize];
-  };  // end of struct Elements
+  struct DifferentElements {
+    InputType input_values[InputsSize];
+    OutputType output_values[OutputsSize];
+  };
+  struct SameElements {
+    InputType values[InputsSize + OutputsSize];
+  };
+  using Elements = std::conditional_t<std::is_same_v<OtherType, void>,
+                                      SameElements, DifferentElements>;
 
   OperationTest() {
     inputs_padding_.fill(0);
@@ -32,7 +42,7 @@ class OperationTest {
   virtual ~OperationTest() = default;
 
   // Sets the number of padding bytes at the end of rows, same for all arrays
-  OperationTest<ElementType, InputsSize, OutputsSize>& with_padding(
+  OperationTest<InputType, InputsSize, OutputsSize, OtherType>& with_padding(
       size_t padding) {
     for (auto& in_padding : inputs_padding_) {
       in_padding = padding;
@@ -46,7 +56,7 @@ class OperationTest {
   }
 
   // Sets the number of padding bytes at the end of rows.
-  OperationTest<ElementType, InputsSize, OutputsSize>& with_paddings(
+  OperationTest<InputType, InputsSize, OutputsSize, OtherType>& with_paddings(
       std::initializer_list<size_t> inputs_padding,
       std::initializer_list<size_t> outputs_padding) {
     size_t i = 0;
@@ -61,7 +71,7 @@ class OperationTest {
   }
 
   // Sets the number of elements in a row.
-  OperationTest<ElementType, InputsSize, OutputsSize>& with_width(
+  OperationTest<InputType, InputsSize, OutputsSize, OtherType>& with_width(
       size_t width) {
     width_ = width;
     return *this;
@@ -69,19 +79,19 @@ class OperationTest {
 
   void test() {
     for (size_t i = 0; i < inputs_.size(); ++i) {
-      inputs_[i] = ArrayType{width(), height(), inputs_padding_[i]};
+      inputs_[i] = InputArrayType{width(), height(), inputs_padding_[i]};
       inputs_[i].fill(0);
       ASSERT_TRUE(inputs_[i].valid());
     }
 
     for (auto& expected : expected_) {
-      expected = ArrayType{width(), height()};
+      expected = OutputArrayType{width(), height()};
       expected.fill(0);
       ASSERT_TRUE(expected.valid());
     }
 
     for (size_t i = 0; i < actual_.size(); ++i) {
-      actual_[i] = ArrayType{width(), height(), outputs_padding_[i]};
+      actual_[i] = OutputArrayType{width(), height(), outputs_padding_[i]};
       actual_[i].fill(42);  // fill with any value different than `expected`
       ASSERT_TRUE(actual_[i].valid());
     }
@@ -104,14 +114,25 @@ class OperationTest {
     for (auto elements : elements_list) {
       // Fill elements one vector length apart.
       for (size_t column_index = 0; column_index < width();
-           column_index += test::Options::vector_lanes<ElementType>()) {
+           column_index += test::Options::vector_lanes<InputType>()) {
         for (size_t index = 0; index < inputs_.size(); ++index) {
-          inputs_[index].set(row_index, column_index, {elements.values[index]});
+          if constexpr (std::is_same_v<OtherType, void>) {
+            inputs_[index].set(row_index, column_index,
+                               {elements.values[index]});
+          } else {
+            inputs_[index].set(row_index, column_index,
+                               {elements.input_values[index]});
+          }
         }
 
         for (size_t index = 0; index < expected_.size(); ++index) {
-          expected_[index].set(row_index, column_index,
-                               {elements.values[inputs_.size() + index]});
+          if constexpr (std::is_same_v<OtherType, void>) {
+            expected_[index].set(row_index, column_index,
+                                 {elements.values[inputs_.size() + index]});
+          } else {
+            expected_[index].set(row_index, column_index,
+                                 {elements.output_values[index]});
+          }
         }
       }
 
@@ -139,34 +160,35 @@ class OperationTest {
 
   // Returns the minimum value for integral types, or the minimum normalized
   // positive value for floating point types.
-  static constexpr ElementType
+  static constexpr OutputType
   min_if_integral_else_smallest_positive_normalized() {
-    return std::numeric_limits<ElementType>::min();
+    return std::numeric_limits<OutputType>::min();
   }
 
   // Returns the lowest value for ElementType.
-  static constexpr ElementType lowest() {
-    return std::numeric_limits<ElementType>::lowest();
+  static constexpr OutputType lowest() {
+    return std::numeric_limits<OutputType>::lowest();
   }
 
   // Returns the maximum value for ElementType.
-  static constexpr ElementType max() {
-    return std::numeric_limits<ElementType>::max();
+  static constexpr OutputType max() {
+    return std::numeric_limits<OutputType>::max();
   }
 
   // Input operand(s) for the operation.
-  std::array<ArrayType, InputsSize> inputs_;
+  std::array<InputArrayType, InputsSize> inputs_;
   // Expected result of the operation.
-  std::array<ArrayType, OutputsSize> expected_;
+  std::array<OutputArrayType, OutputsSize> expected_;
   // Actual result of the operation.
-  std::array<ArrayType, OutputsSize> actual_;
+  std::array<OutputArrayType, OutputsSize> actual_;
   // Number of padding bytes at the end of rows.
   std::array<size_t, InputsSize> inputs_padding_;
   std::array<size_t, OutputsSize> outputs_padding_;
   // Tested number of elements in a row.
   // Sufficient number of elements to exercise both vector and scalar paths.
-  size_t width_{3 * test::Options::vector_lanes<ElementType>() - 1};
-};  // end of class OperationTest<ElementType, InputsSize, OutputsSize>
+  size_t width_{3 * test::Options::vector_lanes<InputType>() - 1};
+};  // end of class OperationTest<InputType, InputsSize, OutputsSize,
+    // OtherType>
 
 template <typename ElementType>
 class BinaryOperationTest : public OperationTest<ElementType, 2, 1> {

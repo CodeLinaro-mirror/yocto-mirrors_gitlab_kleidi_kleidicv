@@ -14,7 +14,10 @@ This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 0.7.0 - not yet released
-- SME2 version added for many simple operations with multivector loads and stores, for some performance uplift.
+
+### Added
+- Scale function for uint8_t input to float16 output
+- SME2 version of many simple operations with multivector loads and stores, for some performance uplift.
 
 ## 0.6.0 - 2025-09-25
 
