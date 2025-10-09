@@ -387,26 +387,29 @@ static void sum_f32(benchmark::State& state) {
 }
 BENCHMARK(sum_f32);
 
-template <typename T, typename Function>
+template <typename T, typename U, typename Function>
 static void scale(Function f, float factor, float shift,
                   benchmark::State& state) {
   bench_functor(state, [f, factor, shift]() {
     (void)f(get_source_buffer_a<T>(), image_width * sizeof(T),
-            get_destination_buffer_a<T>(), image_width * sizeof(T), image_width,
+            get_destination_buffer_a<U>(), image_width * sizeof(U), image_width,
             image_height, factor, shift);
   });
 }
 
-#define BENCH_SCALE(benchname, name, factor, shift, type) \
-  static void benchname(benchmark::State& state) {        \
-    scale<type>(kleidicv_##name, factor, shift, state);   \
-  }                                                       \
+#define BENCH_SCALE(benchname, name, factor, shift, src_type, dst_type) \
+  static void benchname(benchmark::State& state) {                      \
+    scale<src_type, dst_type>(kleidicv_##name, factor, shift, state);   \
+  }                                                                     \
   BENCHMARK(benchname)
 
-BENCH_SCALE(scale_u8_1, scale_u8, 1.0, 4.567, uint8_t);
-BENCH_SCALE(scale_u8_generic, scale_u8, 1.234, 4.567, uint8_t);
-BENCH_SCALE(scale_f32_1, scale_f32, 1.0, 4.567, float);
-BENCH_SCALE(scale_f32_generic, scale_f32, 1.234, 4.567, float);
+BENCH_SCALE(scale_u8_1, scale_u8, 1.0, 4.567, uint8_t, uint8_t);
+BENCH_SCALE(scale_u8_generic, scale_u8, 1.234, 4.567, uint8_t, uint8_t);
+BENCH_SCALE(scale_f32_1, scale_f32, 1.0, 4.567, float, float);
+BENCH_SCALE(scale_f32_generic, scale_f32, 1.234, 4.567, float, float);
+BENCH_SCALE(scale_u8_f16_1, scale_u8_f16, 1.0, 10, uint8_t, float16_t);
+BENCH_SCALE(scale_u8_f16_generic, scale_u8_f16, 1.234, 4.567, uint8_t,
+            float16_t);
 
 template <typename T, typename F>
 static void min_max(F f, benchmark::State& state) {

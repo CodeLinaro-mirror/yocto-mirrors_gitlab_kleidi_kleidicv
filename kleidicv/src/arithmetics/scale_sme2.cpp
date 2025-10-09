@@ -21,5 +21,6 @@ scale(const T* src, size_t src_stride, U* dst, size_t dst_stride, size_t width,
                             size_t height, double scale, double shift)
 
 KLEIDICV_INSTANTIATE_TEMPLATE(float, float);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t, float16_t);
 
 }  // namespace kleidicv::sme2
