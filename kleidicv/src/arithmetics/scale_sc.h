@@ -8,7 +8,11 @@
 #include <arm_sve.h>
 
 #include <algorithm>
+#include <array>
+#include <cassert>
+#include <cstddef>
 
+#include "kleidicv/arithmetics/scale.h"
 #include "kleidicv/sve2.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
@@ -296,6 +300,216 @@ class ScaleUint8ToFloat16Calc32 {
   svfloat32_t &svscale_, &svshift_;
 };  // end of class ScaleUint8ToFloat16Calc32
 
+template <size_t SvCntH>
+class ScaleUint8ToFloat16Table {
+ public:
+  using SrcType = uint8_t;
+  using SrcVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<SrcType>;
+  using SrcVectorType = typename SrcVecTraits::VectorType;
+  using SrcVector2Type = typename SrcVecTraits::Vector2Type;
+  using DstType = float16_t;
+  using DstVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<DstType>;
+  using DstVectorType = typename DstVecTraits::VectorType;
+  using DstVector2Type = typename DstVecTraits::Vector2Type;
+  using DstVector4Type = typename DstVecTraits::Vector4Type;
+
+  static constexpr size_t NTblVectors = (256 + SvCntH - 1) / SvCntH;
+  ScaleUint8ToFloat16Table(const float16_t precalc[256],
+                           std::reference_wrapper<svfloat16_t> svt[NTblVectors])
+      KLEIDICV_STREAMING : st_{svt} {
+    size_t c = 0;
+    KLEIDICV_FORCE_LOOP_UNROLL
+    for (uint64_t i = 0; i < 256; i += SvCntH) {
+      svbool_t pg = svwhilelt_b16(i, 256ULL);
+      st_[c++].get() = svld1(pg, precalc + i);
+    }
+  }
+
+  void process_row(size_t width, Columns<const SrcType> src,
+                   Columns<DstType> dst) const KLEIDICV_STREAMING {
+    svbool_t p8 = svptrue_b8();
+    svbool_t p16 = svptrue_b16();
+    svuint8_t svzero = svdup_n_u8(0);
+#if KLEIDICV_TARGET_SME2
+    svcount_t pc16 = DstVecTraits::svptrue_c();
+#endif
+    auto lookup = [&](svuint16_t src) KLEIDICV_STREAMING {
+      svfloat16_t res = svtbl2(svcreate2(st_[0], st_[1]), src);
+      constexpr uint16_t step = SvCntH;
+      src = svsub_n_u16_x(p16, src, 2 * step);
+      size_t c = 2;
+      uint64_t i = 2ULL * step;
+      KLEIDICV_FORCE_LOOP_UNROLL
+      for (; i < 256; i += step) {
+        res = svtbx(res, st_[c++].get(), src);
+        src = svsub_n_u16_x(p16, src, step);
+      }
+      return res;
+    };
+
+    LoopUnroll{width, SrcVecTraits::num_lanes()}
+        .unroll_once([&](size_t step) KLEIDICV_STREAMING {
+          svuint8_t src0 = svld1(p8, &src[0]);
+          DstVectorType dst0 =
+              lookup(svreinterpret_u16_u8(svzip1(src0, svzero)));
+          DstVectorType dst1 =
+              lookup(svreinterpret_u16_u8(svzip2(src0, svzero)));
+#if KLEIDICV_TARGET_SME2
+          svst1(pc16, &dst[0], svcreate2(dst0, dst1));
+#else
+          svst1(p16, &dst[0], dst0);
+          svst1_vnum(p16, &dst[0], 1, dst1);
+#endif  // KLEIDICV_TARGET_SME2
+          src += ptrdiff_t(step);
+          dst += ptrdiff_t(step);
+        })
+        .remaining([&](size_t length, size_t) KLEIDICV_STREAMING {
+          size_t step = SvCntH;
+          while (length > 0) {
+            disable_loop_vectorization();
+            svbool_t p16 = svwhilelt_b16(static_cast<size_t>(0), length);
+            svuint16_t src0 = svld1ub_u16(p16, &src[0]);
+            svfloat16_t res = lookup(src0);
+            svst1(p16, &dst[0], res);
+            src += ptrdiff_t(step);
+            dst += ptrdiff_t(step);
+            length -= std::min<size_t>(length, step);
+          }
+        });
+  }
+
+ private:
+  std::reference_wrapper<svfloat16_t> *st_;
+};  // end of class ScaleUint8ToFloat16Table
+
+kleidicv_error_t scale_with_precalculated_table_u8_f16(
+    const uint8_t *src, size_t src_stride, float16_t *dst, size_t dst_stride,
+    size_t width, size_t height,
+    const std::array<float16_t, 256> &precalculated_table) KLEIDICV_STREAMING {
+  Rectangle rect{width, height};
+  Rows<const uint8_t> src_rows{src, src_stride};
+  Rows<float16_t> dst_rows{dst, dst_stride};
+  if (svcnth() == 8) {
+    svfloat16_t s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14,
+        s15, s16, s17, s18, s19, s20, s21, s22, s23, s24, s25, s26, s27, s28,
+        s29, s30, s31;
+    std::reference_wrapper<svfloat16_t> st[32] = {
+        s0,  s1,  s2,  s3,  s4,  s5,  s6,  s7,  s8,  s9,  s10,
+        s11, s12, s13, s14, s15, s16, s17, s18, s19, s20, s21,
+        s22, s23, s24, s25, s26, s27, s28, s29, s30, s31};
+    ScaleUint8ToFloat16Table<8> operation(precalculated_table.data(), st);
+    zip_rows(operation, rect, src_rows, dst_rows);
+  } else if (svcnth() == 16) {
+    svfloat16_t s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14,
+        s15;
+    std::reference_wrapper<svfloat16_t> st[16] = {
+        s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15};
+    ScaleUint8ToFloat16Table<16> operation(precalculated_table.data(), st);
+    zip_rows(operation, rect, src_rows, dst_rows);
+  } else if (svcnth() == 24) {
+    svfloat16_t s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10;
+    std::reference_wrapper<svfloat16_t> st[11] = {s0, s1, s2, s3, s4, s5,
+                                                  s6, s7, s8, s9, s10};
+    ScaleUint8ToFloat16Table<24> operation(precalculated_table.data(), st);
+    zip_rows(operation, rect, src_rows, dst_rows);
+  } else if (svcnth() == 32) {
+    svfloat16_t s0, s1, s2, s3, s4, s5, s6, s7;
+    std::reference_wrapper<svfloat16_t> st[8] = {s0, s1, s2, s3,
+                                                 s4, s5, s6, s7};
+    ScaleUint8ToFloat16Table<32> operation(precalculated_table.data(), st);
+    zip_rows(operation, rect, src_rows, dst_rows);
+    /*  } else if (svcnth() == 40) {
+        svfloat16_t s0, s1, s2, s3, s4, s5, s6;
+        std::reference_wrapper<svfloat16_t> st[7] = {s0, s1, s2, s3, s4, s5,
+      s6}; ScaleUint8ToFloat16Table<40> operation(precalculated_table.data(),
+      st); zip_rows(operation, rect, src_rows, dst_rows); } else if (svcnth() ==
+      48) { svfloat16_t s0, s1, s2, s3, s4, s5;
+        std::reference_wrapper<svfloat16_t> st[6] = {s0, s1, s2, s3, s4, s5};
+        ScaleUint8ToFloat16Table<48> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 56) {
+        svfloat16_t s0, s1, s2, s3, s4;
+        std::reference_wrapper<svfloat16_t> st[5] = {s0, s1, s2, s3, s4};
+        ScaleUint8ToFloat16Table<56> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 64) {
+        svfloat16_t s0, s1, s2, s3;
+        std::reference_wrapper<svfloat16_t> st[4] = {s0, s1, s2, s3};
+        ScaleUint8ToFloat16Table<64> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 72) {
+        svfloat16_t s0, s1, s2, s3;
+        std::reference_wrapper<svfloat16_t> st[4] = {s0, s1, s2, s3};
+        ScaleUint8ToFloat16Table<72> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 80) {
+        svfloat16_t s0, s1, s2, s3;
+        std::reference_wrapper<svfloat16_t> st[4] = {s0, s1, s2, s3};
+        ScaleUint8ToFloat16Table<80> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 88) {
+        svfloat16_t s0, s1, s2;
+        std::reference_wrapper<svfloat16_t> st[3] = {s0, s1, s2};
+        ScaleUint8ToFloat16Table<88> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 96) {
+        svfloat16_t s0, s1, s2;
+        std::reference_wrapper<svfloat16_t> st[3] = {s0, s1, s2};
+        ScaleUint8ToFloat16Table<96> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 104) {
+        svfloat16_t s0, s1, s2;
+        std::reference_wrapper<svfloat16_t> st[3] = {s0, s1, s2};
+        ScaleUint8ToFloat16Table<104> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 112) {
+        svfloat16_t s0, s1, s2;
+        std::reference_wrapper<svfloat16_t> st[3] = {s0, s1, s2};
+        ScaleUint8ToFloat16Table<112> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+      } else if (svcnth() == 120) {
+        svfloat16_t s0, s1, s2;
+        std::reference_wrapper<svfloat16_t> st[3] = {s0, s1, s2};
+        ScaleUint8ToFloat16Table<120> operation(precalculated_table.data(), st);
+        zip_rows(operation, rect, src_rows, dst_rows);
+    */
+  } else if (svcnth() == 128) {
+    svfloat16_t s0, s1;
+    std::reference_wrapper<svfloat16_t> st[2] = {s0, s1};
+    ScaleUint8ToFloat16Table<128> operation(precalculated_table.data(), st);
+    zip_rows(operation, rect, src_rows, dst_rows);
+  } else {
+    assert(false);
+  }
+  return KLEIDICV_OK;
+}
+
+std::array<float16_t, 256> precalculate_scale_table_u8_f16(
+    double dscale, double dshift) KLEIDICV_STREAMING {
+  static constexpr size_t TableLength = 256;
+  std::array<float16_t, TableLength> precalculated_table{};
+  svuint16_t counter = svindex_u16(0, 1);
+  svuint16_t svstep = svdup_n_u16(svcnth());
+  svbool_t p32 = svptrue_b32();
+  svbool_t p16 = svptrue_b16();
+  size_t step = svcnth();
+  svfloat32_t svscale = svdup_n_f32(static_cast<float>(dscale));
+  svfloat32_t svshift = svdup_n_f32(static_cast<float>(dshift));
+  svuint16_t svzero = svdup_n_u16(0);
+  for (size_t i = 0; i < TableLength; i += step) {
+    svuint16_t cnt_b = svtrn1(counter, svzero);
+    svuint16_t cnt_t = svtrn2(counter, svzero);
+    counter = svadd_x(p16, counter, svstep);
+    svfloat32_t fcnt_b = svcvt_f32_x(p32, svreinterpret_u32_u16(cnt_b));
+    svfloat32_t fcnt_t = svcvt_f32_x(p32, svreinterpret_u32_u16(cnt_t));
+    svfloat32_t res_b = svmla_f32_x(p32, svshift, fcnt_b, svscale);
+    svfloat32_t res_t = svmla_f32_x(p32, svshift, fcnt_t, svscale);
+    svfloat16_t res = svcvtnt_f16_x(svcvt_f16_x(p16, res_b), p16, res_t);
+    svst1(p16, &precalculated_table[i], res);
+  }
+  return precalculated_table;
+}
+
 // Specialization for uint8_t to float16_t
 template <>
 kleidicv_error_t scale_sc(const uint8_t *src, size_t src_stride, float16_t *dst,
@@ -305,18 +519,27 @@ kleidicv_error_t scale_sc(const uint8_t *src, size_t src_stride, float16_t *dst,
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
-  Rectangle rect{width, height};
-  Rows<const uint8_t> src_rows{src, src_stride};
-  Rows<float16_t> dst_rows{dst, dst_stride};
-  if (static_cast<double>(static_cast<float16_t>(scale)) == scale &&
-      static_cast<double>(static_cast<float16_t>(shift)) == shift) {
-    svfloat16_t s0, s1;
-    ScaleUint8ToFloat16Calc16 operation(scale, shift, s0, s1);
-    zip_rows(operation, rect, src_rows, dst_rows);
+  // For smaller inputs, the full calculation is the faster
+  if (width * height < 1) {  // TODO empirical value
+    Rectangle rect{width, height};
+    Rows<const uint8_t> src_rows{src, src_stride};
+    Rows<float16_t> dst_rows{dst, dst_stride};
+    if (static_cast<double>(static_cast<float16_t>(scale)) == scale &&
+        static_cast<double>(static_cast<float16_t>(shift)) == shift) {
+      svfloat16_t s0, s1;
+      ScaleUint8ToFloat16Calc16 operation(scale, shift, s0, s1);
+      zip_rows(operation, rect, src_rows, dst_rows);
+    } else {
+      svfloat32_t s0, s1;
+      ScaleUint8ToFloat16Calc32 operation(scale, shift, s0, s1);
+      zip_rows(operation, rect, src_rows, dst_rows);
+    }
   } else {
-    svfloat32_t s0, s1;
-    ScaleUint8ToFloat16Calc32 operation(scale, shift, s0, s1);
-    zip_rows(operation, rect, src_rows, dst_rows);
+    // For bigger inputs, it's faster to pre-calculate the table
+    // and map those values during the run
+    auto precalculated_table = precalculate_scale_table_u8_f16(scale, shift);
+    return scale_with_precalculated_table_u8_f16(
+        src, src_stride, dst, dst_stride, width, height, precalculated_table);
   }
 
   return KLEIDICV_OK;

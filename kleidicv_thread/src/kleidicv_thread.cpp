@@ -174,8 +174,8 @@ kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
   const std::array<uint8_t, 256> precalculated_table =
       kleidicv::neon::precalculate_scale_table_u8(scale, shift);
   return kleidicv_thread_unary_op_impl(
-      kleidicv::neon::scale_with_precalculated_table, mt, src, src_stride, dst,
-      dst_stride, width, height, scale, shift, precalculated_table);
+      kleidicv::neon::scale_with_precalculated_table_u8, mt, src, src_stride,
+      dst, dst_stride, width, height, scale, shift, precalculated_table);
 }
 
 kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,

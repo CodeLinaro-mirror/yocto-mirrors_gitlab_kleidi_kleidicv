@@ -183,7 +183,7 @@ class ScaleUint8Calc final : public ScaleIntBase<uint8_t> {
   float32x4_t vscale_, vshift_;
 };  // end of class ScaleUint8Calc<T>
 
-kleidicv_error_t scale_with_precalculated_table(
+kleidicv_error_t scale_with_precalculated_table_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, double scale, double shift,
     const std::array<uint8_t, 256> &precalculated_table) {
@@ -217,9 +217,9 @@ kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
     // For bigger inputs, it's faster to pre-calculate the table
     // and map those values during the run
     auto precalculated_table = precalculate_scale_table_u8(scale, shift);
-    return scale_with_precalculated_table(src, src_stride, dst, dst_stride,
-                                          width, height, scale, shift,
-                                          precalculated_table);
+    return scale_with_precalculated_table_u8(src, src_stride, dst, dst_stride,
+                                             width, height, scale, shift,
+                                             precalculated_table);
   }
   return KLEIDICV_OK;
 }
