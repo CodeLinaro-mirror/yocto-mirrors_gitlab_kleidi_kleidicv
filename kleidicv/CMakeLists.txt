@@ -127,9 +127,6 @@ set(KLEIDICV_WARNING_FLAGS
 )
 
 set(KLEIDICV_CXX_FLAGS
-  "-O2"
-  "-g0"
-  "-fomit-frame-pointer"
   "-fno-stack-protector"
   "-fno-exceptions"
   "-fno-rtti"
@@ -168,7 +165,7 @@ endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   list(APPEND KLEIDICV_CXX_FLAGS "-O0" "-g")
 else()
-  list(APPEND KLEIDICV_CXX_FLAGS "-O2" "-g0")
+  list(APPEND KLEIDICV_CXX_FLAGS "-O2" "-g0" "-fomit-frame-pointer")
 endif()
 
 add_library(kleidicv_neon OBJECT ${KLEIDICV_NEON_SOURCES})
