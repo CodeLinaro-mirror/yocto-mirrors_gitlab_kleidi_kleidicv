@@ -47,12 +47,12 @@ class ExpTestSpecial<float> final : public UnaryOperationTest<float> {
     const std::vector<ElementType>& inputs = input_values();
 
     for (size_t i = 0; i < inputs.size(); ++i) {
-      test_elements_[i].values[0] = inputs[i];
+      std::get<0>(test_elements_[i]) = inputs[i];
       // Expected values calculated as doubles to have 'perfect' references.
       // As the NEON implementation reuses the toolchain's expf implementation
       // for the tail path, the test expects that the error for expf is also
       // less than 1 ULP.
-      test_elements_[i].values[1] =
+      std::get<1>(test_elements_[i]) =
           static_cast<float>(exp(static_cast<double>(inputs[i])));
     }
   }

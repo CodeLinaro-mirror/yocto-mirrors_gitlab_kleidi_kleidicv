@@ -77,8 +77,8 @@ class ScaleTestBase : public UnaryOperationTest<ElementType> {
 
   void fill_expected(std::vector<Elements>& elements) {
     for (size_t i = 0; i < elements.size(); ++i) {
-      elements[i].values[1] = scale_operation<ElementType>()(
-          elements[i].values[0], scale(), shift());
+      std::get<1>(elements[i]) = scale_operation<ElementType>()(
+          std::get<0>(elements[i]), scale(), shift());
     }
   }
 };  // end of class ScaleTestBase<ElementType>
