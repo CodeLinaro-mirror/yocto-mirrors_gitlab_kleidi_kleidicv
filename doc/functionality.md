@@ -9,19 +9,19 @@ Note: functions listed here are not necessarily exposed to adapter API layer.
 See `doc/opencv.md` for details of the functionality available in OpenCV.
 
 ## Arithmetic operations
-|                              | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 | f32 | f64 |
-|------------------------------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
-| Exp                          |     |     |     |     |     |     |     |     |  x  |     |
-| Saturating Add               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |     |     |
-| Saturating Sub               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |     |     |
-| Saturating Absdiff           |  x  |  x  |  x  |  x  |  x  |     |     |     |     |     |
-| Saturating Multiply          |  x  |  x  |  x  |  x  |  x  |     |     |     |     |     |
-| Threshold binary             |     |  x  |     |     |     |     |     |     |     |     |
-| SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |     |     |
-| Scale                        |     |  x  |     |     |     |     |     |     |  x  |     |
-| CompareEqual                 |     |  x  |     |     |     |     |     |     |     |     |
-| CompareGreater               |     |  x  |     |     |     |     |     |     |     |     |
-| InRange                      |     |  x  |     |     |     |     |     |     |  x  |     |
+|                              | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 | f32 | f64 | u8->f16 |
+|------------------------------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|---------|
+| Exp                          |     |     |     |     |     |     |     |     |  x  |     |         |
+| Saturating Add               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |     |     |         |
+| Saturating Sub               |  x  |  x  |  x  |  x  |  x  |  x  |  x  |  x  |     |     |         |
+| Saturating Absdiff           |  x  |  x  |  x  |  x  |  x  |     |     |     |     |     |         |
+| Saturating Multiply          |  x  |  x  |  x  |  x  |  x  |     |     |     |     |     |         |
+| Threshold binary             |     |  x  |     |     |     |     |     |     |     |     |         |
+| SaturatingAddAbsWithThreshold|     |     |  x  |     |     |     |     |     |     |     |         |
+| Scale                        |     |  x  |     |     |     |     |     |     |  x  |     |    x    |
+| CompareEqual                 |     |  x  |     |     |     |     |     |     |     |     |         |
+| CompareGreater               |     |  x  |     |     |     |     |     |     |     |     |         |
+| InRange                      |     |  x  |     |     |     |     |     |     |  x  |     |         |
 
 # Logical operations
 |                              | u8  |
@@ -88,7 +88,6 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Gaussian Blur any kernel size, Replicated Borders |     |  x  |     |     |     |     |     |
 | Median Blur (3x3, 5x5, 7x7)                       |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
 | Median Blur (generic imp, max size 255x255)       |     |  x  |     |     |     |     |     |
-
 
 ## Resize to quarter
 |             | u8  |

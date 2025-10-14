@@ -5,10 +5,10 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 #include "framework/array.h"
-#include "framework/generator.h"
 #include "framework/operation.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
@@ -25,7 +25,7 @@ static DestinationType saturating_cast(SourceType value) {
   return static_cast<DestinationType>(value);
 }
 
-uint8_t scalar_scale_u8(uint8_t x, double scale, double shift) {
+uint8_t scalar_scale_u8_u8(uint8_t x, double scale, double shift) {
   float result = static_cast<float>(x * scale + shift);
   if (result < std::numeric_limits<uint8_t>::lowest()) {
     return std::numeric_limits<uint8_t>::lowest();
@@ -36,54 +36,81 @@ uint8_t scalar_scale_u8(uint8_t x, double scale, double shift) {
   return static_cast<uint8_t>(lrintf(result));
 }
 
-float scalar_scale_f32(float x, double scale, double shift) {
-  return static_cast<float>(x * scale + shift);
+float scalar_scale_f32_f32(float x, double scale, double shift) {
+  return x * static_cast<float>(scale) + static_cast<float>(shift);
 }
 
-#define KLEIDICV_SCALE_API(type, suffix) \
-  KLEIDICV_API(scale_api, kleidicv_scale_##suffix, type)
+float16_t scalar_scale_u8_f16(uint8_t x, double scale, double shift) {
+  return static_cast<float16_t>(x * scale + shift);
+}
 
-#define KLEIDICV_SCALE_OPERATION(type, suffix) \
-  KLEIDICV_API(scale_operation, &scalar_scale_##suffix, type)
+#define KLEIDICV_SCALE_API_SAMETYPE(type, suffix)                           \
+  KLEIDICV_API_DIFFERENT_IO_TYPES(scale_api, kleidicv_scale_##suffix, type, \
+                                  type)
 
-KLEIDICV_SCALE_API(uint8_t, u8);
-KLEIDICV_SCALE_OPERATION(uint8_t, u8);
-KLEIDICV_SCALE_API(float, f32);
-KLEIDICV_SCALE_OPERATION(float, f32);
+#define KLEIDICV_SCALE_API(src_type, dst_type, src_suffix, dst_suffix)        \
+  KLEIDICV_API_DIFFERENT_IO_TYPES(scale_api,                                  \
+                                  kleidicv_scale_##src_suffix##_##dst_suffix, \
+                                  src_type, dst_type)
 
-template <typename ElementType>
-class ScaleTestBase : public UnaryOperationTest<ElementType> {
+#define KLEIDICV_SCALE_OPERATION(src_type, dst_type, src_suffix, dst_suffix) \
+  KLEIDICV_API_DIFFERENT_IO_TYPES(scale_operation,                           \
+                                  &scalar_scale_##src_suffix##_##dst_suffix, \
+                                  src_type, dst_type)
+
+KLEIDICV_SCALE_API_SAMETYPE(uint8_t, u8);
+KLEIDICV_SCALE_OPERATION(uint8_t, uint8_t, u8, u8);
+KLEIDICV_SCALE_API_SAMETYPE(float, f32);
+KLEIDICV_SCALE_OPERATION(float, float, f32, f32);
+KLEIDICV_SCALE_API(uint8_t, float16_t, u8, f16);
+KLEIDICV_SCALE_OPERATION(uint8_t, float16_t, u8, f16);
+
+template <typename InputType, typename OutputType>
+class ScaleTestBase : public OperationTest<InputType, 1, 1, OutputType> {
  protected:
-  using UnaryOperationTest<ElementType>::lowest;
-  using UnaryOperationTest<ElementType>::max;
-  using typename UnaryOperationTest<ElementType>::Elements;
+  using OperationTest<InputType, 1, 1, OutputType>::lowest;
+  using OperationTest<InputType, 1, 1, OutputType>::max;
+  using typename OperationTest<InputType, 1, 1, OutputType>::Elements;
+
+  static constexpr InputType
+  input_min_if_integral_else_smallest_positive_normalized() {
+    return std::numeric_limits<InputType>::min();
+  }
+
+  static constexpr InputType input_lowest() {
+    return std::numeric_limits<InputType>::lowest();
+  }
+
+  static constexpr InputType input_max() {
+    return std::numeric_limits<InputType>::max();
+  }
 
   // Calls the API-under-test in the appropriate way.
   kleidicv_error_t call_api() override {
-    return scale_api<ElementType>()(
+    return scale_api<InputType, OutputType>()(
         this->inputs_[0].data(), this->inputs_[0].stride(),
         this->actual_[0].data(), this->actual_[0].stride(), this->width(),
         this->height(), this->scale(), this->shift());
   }
-  virtual float scale() = 0;
-  virtual float shift() = 0;
+  virtual double scale() = 0;
+  virtual double shift() = 0;
 
   // Prepares expected outputs for the operation.
   void setup() override {
     this->expected_[0].fill(
-        scale_operation<ElementType>()(0, scale(), shift()));
-    UnaryOperationTest<ElementType>::setup();
+        scale_operation<InputType, OutputType>()(0, scale(), shift()));
+    OperationTest<InputType, 1, 1, OutputType>::setup();
   }
 
   void fill_expected(std::vector<Elements>& elements) {
     for (size_t i = 0; i < elements.size(); ++i) {
-      std::get<1>(elements[i]) = scale_operation<ElementType>()(
+      std::get<1>(elements[i]) = scale_operation<InputType, OutputType>()(
           std::get<0>(elements[i]), scale(), shift());
     }
   }
-};  // end of class ScaleTestBase<ElementType>
+};  // end of class ScaleTestBase<InputType, OutputType>
 
-template <typename ElementType>
+template <typename InputType, typename OutputType>
 class ScaleTestLinearBase {
  public:
   // Sets the number of padding bytes at the end of rows.
@@ -94,89 +121,107 @@ class ScaleTestLinearBase {
 
   // minimum_size set by caller to trigger the 'big' scale path.
   void test_scalar(size_t minimum_size = 1, bool in_place = false) {
-    size_t width = test::Options::vector_length() - 1;
+    size_t width = test::Options::vector_lanes<InputType>() - 1;
     test_linear(width, minimum_size, in_place);
   }
 
   void test_vector(size_t minimum_size = 1, bool in_place = false) {
-    size_t width = test::Options::vector_length() * 2;
+    size_t width = test::Options::vector_lanes<InputType>() * 2;
     test_linear(width, minimum_size, in_place);
   }
 
  protected:
-  static constexpr ElementType
+  static constexpr OutputType
   min_if_integral_else_smallest_positive_normalized() {
-    return std::numeric_limits<ElementType>::min();
+    return std::numeric_limits<OutputType>::min();
   }
-  static constexpr ElementType max() {
-    return std::numeric_limits<ElementType>::max();
+
+  static constexpr OutputType lowest() {
+    return std::numeric_limits<OutputType>::lowest();
   }
-  static constexpr ElementType lowest() {
-    return std::numeric_limits<ElementType>::lowest();
+
+  static constexpr OutputType max() {
+    return std::numeric_limits<OutputType>::max();
   }
-  virtual float scale() = 0;
-  virtual float shift() = 0;
+
+  static constexpr InputType
+  input_min_if_integral_else_smallest_positive_normalized() {
+    return std::numeric_limits<InputType>::min();
+  }
+
+  static constexpr InputType input_lowest() {
+    return std::numeric_limits<InputType>::lowest();
+  }
+
+  static constexpr InputType input_max() {
+    return std::numeric_limits<InputType>::max();
+  }
+
+  virtual double scale() = 0;
+  virtual double shift() = 0;
 
  private:
-  class GenerateLinearSeries : public test::Generator<ElementType> {
+  class GenerateLinearSeries : public test::Generator<InputType> {
    public:
-    explicit GenerateLinearSeries(ElementType start_from, ElementType step)
+    explicit GenerateLinearSeries(InputType start_from, InputType step)
         : counter_{start_from}, step_{step} {}
 
-    std::optional<ElementType> next() override { return counter_ + step_; }
+    std::optional<InputType> next() override { return counter_ + step_; }
 
    private:
-    ElementType counter_, step_;
+    InputType counter_, step_;
   };  // end of class GenerateLinearSeries
 
   // Number of padding bytes at the end of rows.
   size_t padding_{0};
 
   void test_linear(size_t width, size_t minimum_size, bool in_place) {
-    size_t image_size = std::max(
-        minimum_size,
-        std::min(saturating_cast<size_t, ElementType>(max() - lowest()),
-                 static_cast<size_t>(10000ULL)));
-    size_t step =
-        std::max(static_cast<ElementType>(image_size / (max() - lowest())),
-                 static_cast<ElementType>(1));
+    size_t image_size =
+        std::max(minimum_size, std::min(saturating_cast<size_t, InputType>(
+                                            input_max() - input_lowest()),
+                                        static_cast<size_t>(10000ULL)));
+    size_t step = std::max(
+        static_cast<InputType>(image_size / (input_max() - input_lowest())),
+        static_cast<InputType>(1));
     size_t height = image_size / width + 1;
-    test::Array2D<ElementType> source(width, height, padding_, 1);
-    test::Array2D<ElementType> expected(width, height, padding_, 1);
-    test::Array2D<ElementType> actual =
-        test::Array2D<ElementType>(width, height, padding_, 1);
+    test::Array2D<InputType> source(width, height, padding_, 1);
+    test::Array2D<OutputType> expected(width, height, padding_, 1);
+    test::Array2D<OutputType> actual(width, height, padding_, 1);
 
     GenerateLinearSeries generator(
-        min_if_integral_else_smallest_positive_normalized(), step);
+        input_min_if_integral_else_smallest_positive_normalized(), step);
 
     source.fill(generator);
 
     calculate_expected(source, expected);
 
-    if (in_place) {
-      actual = source;
-      ASSERT_EQ(KLEIDICV_OK,
-                scale_api<ElementType>()(actual.data(), actual.stride(),
-                                         actual.data(), actual.stride(), width,
-                                         height, scale(), shift()));
-
+    if constexpr (std::is_same_v<InputType, OutputType>) {
+      if (in_place) {
+        actual = source;
+        ASSERT_EQ(KLEIDICV_OK,
+                  (scale_api<InputType, OutputType>()(
+                      actual.data(), actual.stride(), actual.data(),
+                      actual.stride(), width, height, scale(), shift())));
+        EXPECT_EQ_ARRAY2D(expected, actual);
+        return;
+      }
     } else {
       ASSERT_EQ(KLEIDICV_OK,
-                scale_api<ElementType>()(source.data(), source.stride(),
-                                         actual.data(), actual.stride(), width,
-                                         height, scale(), shift()));
+                (scale_api<InputType, OutputType>()(
+                    source.data(), source.stride(), actual.data(),
+                    actual.stride(), width, height, scale(), shift())));
+      EXPECT_EQ_ARRAY2D(expected, actual);
     }
-    EXPECT_EQ_ARRAY2D(expected, actual);
   }
 
  protected:
-  void calculate_expected(const test::Array2D<ElementType>& source,
-                          test::Array2D<ElementType>& expected) {
+  void calculate_expected(const test::Array2D<InputType>& source,
+                          test::Array2D<OutputType>& expected) {
     for (size_t hindex = 0; hindex < source.height(); ++hindex) {
       for (size_t vindex = 0; vindex < source.width(); ++vindex) {
         // clang-tidy cannot detect that source is fully initialized
         // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign,clang-analyzer-core.CallAndMessage)
-        *expected.at(hindex, vindex) = scale_operation<ElementType>()(
+        *expected.at(hindex, vindex) = scale_operation<InputType, OutputType>()(
             *source.at(hindex, vindex), scale(), shift());
         // NOLINTEND(clang-analyzer-core.uninitialized.Assign,clang-analyzer-core.CallAndMessage)
       }
@@ -184,36 +229,40 @@ class ScaleTestLinearBase {
   }
 };  // end of class ScaleTestLinearBase
 
-template <typename ElementType>
-class ScaleTestLinear1 final : public ScaleTestLinearBase<ElementType> {
-  float scale() override { return 10; };
-  float shift() override { return 13; };
+template <typename InputType, typename OutputType>
+class ScaleTestLinear1 final
+    : public ScaleTestLinearBase<InputType, OutputType> {
+  double scale() override { return 10; };
+  double shift() override { return 13; };
+};
+template <typename InputType, typename OutputType>
+class ScaleTestLinear2 final
+    : public ScaleTestLinearBase<InputType, OutputType> {
+  double scale() override { return 14.69; };
+  double shift() override { return 10.13; };
 };
 
-template <typename ElementType>
-class ScaleTestLinear2 final : public ScaleTestLinearBase<ElementType> {
-  float scale() override { return 14.69; };
-  float shift() override { return 10.13; };
+template <typename InputType, typename OutputType>
+class ScaleTestLinear3 final
+    : public ScaleTestLinearBase<InputType, OutputType> {
+  double scale() override { return 0.18; };
+  double shift() override { return 1.41; };
 };
 
-template <typename ElementType>
-class ScaleTestLinear3 final : public ScaleTestLinearBase<ElementType> {
-  float scale() override { return 0.18; };
-  float shift() override { return 1.41; };
+template <typename InputType, typename OutputType>
+class ScaleTestLinear4 final
+    : public ScaleTestLinearBase<InputType, OutputType> {
+  double scale() override { return 1.0; };
+  double shift() override { return -17.7; };
 };
 
-template <typename ElementType>
-class ScaleTestLinear4 final : public ScaleTestLinearBase<ElementType> {
-  float scale() override { return 1.0; };
-  float shift() override { return -17.7; };
-};
+template <typename InputType, typename OutputType>
+class ScaleTestAdd final : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
 
-template <typename ElementType>
-class ScaleTestAdd final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
-
-  float scale() override { return 1; }
-  float shift() override { return 6; }
+  double scale() override { return 1.0; }
+  double shift() override { return 6.0; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
@@ -222,330 +271,428 @@ class ScaleTestAdd final : public ScaleTestBase<ElementType> {
       {12, 18},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestSubtract final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
+template <typename InputType, typename OutputType>
+class ScaleTestSubtract final : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
 
-  float scale() override { return 8; }
-  float shift() override { return -3; }
+  double scale() override { return 8; }
+  double shift() override { return -3; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      { 6,  45},
-      { 20, 157},
+      { 6, 45},
+      {20, 157},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestDivide final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
+template <typename InputType, typename OutputType>
+class ScaleTestDivide final : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
 
-  float scale() override { return 0.25; }
-  float shift() override { return 3; }
+  double scale() override { return 0.25; }
+  double shift() override { return 3; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      { 252, 0},
-      { 255, 0},
+      {252, 0},
+      {255, 0},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestMultiply final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
+template <typename InputType, typename OutputType>
+class ScaleTestMultiply final : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
 
-  float scale() override { return 3.14; }
-  float shift() override { return 2.72; }
+  double scale() override { return 3.14; }
+  double shift() override { return 2.72; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      { 60, 0},
-      { 45, 0},
+      {{60}, {0}},
+      {{45}, {0}},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestZero final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<
-      ElementType>::min_if_integral_else_smallest_positive_normalized;
-  using UnaryOperationTest<ElementType>::max;
-  using UnaryOperationTest<ElementType>::lowest;
+template <typename InputType, typename OutputType>
+class ScaleTestZero final : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
 
-  float scale() override { return 0; }
-  float shift() override { return 0; }
+  using ScaleTestBase<InputType, OutputType>::
+      input_min_if_integral_else_smallest_positive_normalized;
+  using ScaleTestBase<InputType, OutputType>::input_lowest;
+  using ScaleTestBase<InputType, OutputType>::input_max;
+
+  double scale() override { return 0; }
+  double shift() override { return 0; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      { lowest(), 0},
-      { min_if_integral_else_smallest_positive_normalized(), 0},
-      {     0, 0},
-      { max(), 0},
+        {input_lowest(), 0},
+        {input_min_if_integral_else_smallest_positive_normalized(), 0},
+        {    0, 0},
+        {input_max(), 0},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestUnderflowByShift final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<
-      ElementType>::min_if_integral_else_smallest_positive_normalized;
-  using UnaryOperationTest<ElementType>::lowest;
+template <typename InputType, typename OutputType>
+class ScaleTestUnderflowByShift final
+    : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
+  using ScaleTestBase<InputType, OutputType>::
+      input_min_if_integral_else_smallest_positive_normalized;
+  using ScaleTestBase<InputType, OutputType>::input_lowest;
 
-  float scale() override { return 1; }
-  float shift() override { return -1; }
+  double scale() override { return 1; }
+  double shift() override { return -1; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      {lowest() + 1, 0},
-      {    lowest(), 0},
-      {min_if_integral_else_smallest_positive_normalized() + 1, 0},
-      {    min_if_integral_else_smallest_positive_normalized(), 0},
-      {           0, 0},
-      {           1, 0},
-      {           2, 0},
+        {input_lowest() + 1, 0},
+        {    input_lowest(), 0},
+        {input_min_if_integral_else_smallest_positive_normalized() + 1, 0},
+        {    input_min_if_integral_else_smallest_positive_normalized(), 0},
+        {          0, 0},
+        {          1, 0},
+        {          2, 0},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestOverflowByShift final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<ElementType>::max;
+template <typename InputType, typename OutputType>
+class ScaleTestOverflowByShift final
+    : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
+  using ScaleTestBase<InputType, OutputType>::input_max;
 
-  float scale() override { return 1; }
-  float shift() override { return 1; }
+  double scale() override { return 1; }
+  double shift() override { return 1; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      {max() - 1, 0},
-      {    max(), 0},
+      {input_max() - 1, 0},
+      {    input_max(), 0},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestUnderflowByScale final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<ElementType>::max;
+template <typename InputType, typename OutputType>
+class ScaleTestUnderflowByScale final
+    : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
+  using ScaleTestBase<InputType, OutputType>::input_max;
 
-  float scale() override { return -2; }
-  float shift() override { return 0; }
+  double scale() override { return -2; }
+  double shift() override { return 0; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      { max(), 0},
+      { input_max(), 0},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
 };
 
-template <typename ElementType>
-class ScaleTestOverflowByScale final : public ScaleTestBase<ElementType> {
-  using Elements = typename UnaryOperationTest<ElementType>::Elements;
-  using UnaryOperationTest<ElementType>::max;
+template <typename InputType, typename OutputType>
+class ScaleTestOverflowByScale final
+    : public ScaleTestBase<InputType, OutputType> {
+  using Elements =
+      typename OperationTest<InputType, 1, 1, OutputType>::Elements;
+  using ScaleTestBase<InputType, OutputType>::input_max;
 
-  float scale() override { return 2; }
-  float shift() override { return 0; }
+  double scale() override { return 2; }
+  double shift() override { return 0; }
 
   const std::vector<Elements>& test_elements() override {
     static std::vector<Elements> kTestElements = {
         // clang-format off
-      { max(), 0},
+      { input_max(), 0},
         // clang-format on
     };
-    ScaleTestBase<ElementType>::fill_expected(kTestElements);
+    ScaleTestBase<InputType, OutputType>::fill_expected(kTestElements);
     return kTestElements;
   }
+};
+
+class ScaleU8Params {
+ public:
+  using InputType = uint8_t;
+  using OutputType = uint8_t;
+};
+
+class ScaleFloatParams {
+ public:
+  using InputType = float;
+  using OutputType = float;
+};
+
+class ScaleU8ToFloat16Params {
+ public:
+  using InputType = uint8_t;
+  using OutputType = float16_t;
 };
 
 template <typename ElementType>
 class ScaleTest : public testing::Test {};
 
-using ElementTypes = ::testing::Types<uint8_t, float>;
+using ElementTypes =
+    ::testing::Types<ScaleU8Params, ScaleFloatParams, ScaleU8ToFloat16Params>;
 
 TYPED_TEST_SUITE(ScaleTest, ElementTypes);
 
 TYPED_TEST(ScaleTest, TestScalar1) {
-  ScaleTestLinear1<TypeParam>{}.test_scalar();
-  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_scalar();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear1<InputType, OutputType>{}.test_scalar();
+  ScaleTestLinear1<InputType, OutputType>{}.with_padding(1).test_scalar();
 }
 TYPED_TEST(ScaleTest, TestVector1) {
-  ScaleTestLinear1<TypeParam>{}.test_vector();
-  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_vector();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear1<InputType, OutputType>{}.test_vector();
+  ScaleTestLinear1<InputType, OutputType>{}.with_padding(1).test_vector();
 }
 
 TYPED_TEST(ScaleTest, TestScalar1Tbx) {
-  ScaleTestLinear1<TypeParam>{}.test_scalar(700);
-  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_scalar(700);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear1<InputType, OutputType>{}.test_scalar(700);
+  ScaleTestLinear1<InputType, OutputType>{}.with_padding(1).test_scalar(700);
 }
 TYPED_TEST(ScaleTest, TestVector1Tbx) {
-  ScaleTestLinear1<TypeParam>{}.test_vector(700);
-  ScaleTestLinear1<TypeParam>{}.with_padding(1).test_vector(700);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear1<InputType, OutputType>{}.test_vector(700);
+  ScaleTestLinear1<InputType, OutputType>{}.with_padding(1).test_vector(700);
 }
 
 TYPED_TEST(ScaleTest, TestScalar2) {
-  ScaleTestLinear2<TypeParam>{}.test_scalar();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear2<InputType, OutputType>{}.test_scalar();
 }
 TYPED_TEST(ScaleTest, TestVector2) {
-  ScaleTestLinear2<TypeParam>{}.test_vector();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear2<InputType, OutputType>{}.test_vector();
 }
 
 TYPED_TEST(ScaleTest, TestScalar2Tbx) {
-  ScaleTestLinear2<TypeParam>{}.test_scalar(700);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear2<InputType, OutputType>{}.test_scalar(700);
 }
 TYPED_TEST(ScaleTest, TestVector2Tbx) {
-  ScaleTestLinear2<TypeParam>{}.test_vector(700);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear2<InputType, OutputType>{}.test_vector(700);
 }
 
 TYPED_TEST(ScaleTest, TestScalar3) {
-  ScaleTestLinear3<TypeParam>{}.test_scalar();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear3<InputType, OutputType>{}.test_scalar();
 }
 TYPED_TEST(ScaleTest, TestVector3) {
-  ScaleTestLinear3<TypeParam>{}.test_vector();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear3<InputType, OutputType>{}.test_vector();
 }
 
 TYPED_TEST(ScaleTest, TestScalar3Tbx) {
-  ScaleTestLinear3<TypeParam>{}.test_scalar(700);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear3<InputType, OutputType>{}.test_scalar(700);
 }
 TYPED_TEST(ScaleTest, TestVector3Tbx) {
-  ScaleTestLinear3<TypeParam>{}.test_vector(700);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear3<InputType, OutputType>{}.test_vector(700);
 }
 
 TYPED_TEST(ScaleTest, InPlaceScalar2) {
-  ScaleTestLinear2<TypeParam>{}.test_scalar(1, true);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear2<InputType, OutputType>{}.test_scalar(1, true);
 }
 TYPED_TEST(ScaleTest, InPlaceVector2) {
-  ScaleTestLinear2<TypeParam>{}.test_vector(1, true);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear2<InputType, OutputType>{}.test_vector(1, true);
 }
 TYPED_TEST(ScaleTest, InPlaceAddScalar) {
-  ScaleTestLinear4<TypeParam>{}.test_scalar(1, true);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear4<InputType, OutputType>{}.test_scalar(1, true);
 }
 TYPED_TEST(ScaleTest, InPlaceAddVector) {
-  ScaleTestLinear4<TypeParam>{}.test_vector(1, true);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestLinear4<InputType, OutputType>{}.test_vector(1, true);
 }
 
 TYPED_TEST(ScaleTest, TestAdd) {
-  ScaleTestAdd<TypeParam>{}.test();
-  ScaleTestAdd<TypeParam>{}
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestAdd<InputType, OutputType>{}.test();
+  ScaleTestAdd<InputType, OutputType>{}
       .with_padding(1)
-      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .with_width(test::Options::vector_lanes<InputType>() - 1)
       .test();
 }
 
 TYPED_TEST(ScaleTest, TestSubtract) {
-  ScaleTestSubtract<TypeParam>{}.test();
-  ScaleTestSubtract<TypeParam>{}
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestSubtract<InputType, OutputType>{}.test();
+  ScaleTestSubtract<InputType, OutputType>{}
       .with_padding(1)
-      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .with_width(test::Options::vector_lanes<InputType>() - 1)
       .test();
 }
 
 TYPED_TEST(ScaleTest, TestDivide) {
-  ScaleTestDivide<TypeParam>{}.test();
-  ScaleTestDivide<TypeParam>{}
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestDivide<InputType, OutputType>{}.test();
+  ScaleTestDivide<InputType, OutputType>{}
       .with_padding(1)
-      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .with_width(test::Options::vector_lanes<InputType>() - 1)
       .test();
 }
 
 TYPED_TEST(ScaleTest, TestMultiply) {
-  ScaleTestMultiply<TypeParam>{}.test();
-  ScaleTestMultiply<TypeParam>{}
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestMultiply<InputType, OutputType>{}.test();
+  ScaleTestMultiply<InputType, OutputType>{}
       .with_padding(1)
-      .with_width(test::Options::vector_lanes<TypeParam>() - 1)
+      .with_width(test::Options::vector_lanes<InputType>() - 1)
       .test();
 }
 
-TYPED_TEST(ScaleTest, TestZero) { ScaleTestZero<TypeParam>{}.test(); }
+TYPED_TEST(ScaleTest, TestZero) {
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestZero<InputType, OutputType>{}.test();
+}
 
 TYPED_TEST(ScaleTest, TestUnderflowByShift) {
-  ScaleTestUnderflowByShift<TypeParam>{}.test();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestUnderflowByShift<InputType, OutputType>{}.test();
 }
 
 TYPED_TEST(ScaleTest, TestOverflowByShift) {
-  ScaleTestOverflowByShift<TypeParam>{}.test();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestOverflowByShift<InputType, OutputType>{}.test();
 }
 
 TYPED_TEST(ScaleTest, TestUnderflowByScale) {
-  ScaleTestUnderflowByScale<TypeParam>{}.test();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestUnderflowByScale<InputType, OutputType>{}.test();
 }
 
 TYPED_TEST(ScaleTest, TestOverflowByScale) {
-  ScaleTestOverflowByScale<TypeParam>{}.test();
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  ScaleTestOverflowByScale<InputType, OutputType>{}.test();
 }
 
 TYPED_TEST(ScaleTest, NullPointer) {
-  TypeParam src[1] = {}, dst[1];
-  test::test_null_args(scale_api<TypeParam>(), src, sizeof(TypeParam), dst,
-                       sizeof(TypeParam), 1, 1, 2, 0);
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  InputType src[1] = {};
+  OutputType dst[1];
+  test::test_null_args(scale_api<InputType, OutputType>(), src,
+                       sizeof(InputType), dst, sizeof(OutputType), 1, 1, 2, 0);
 }
 
 TYPED_TEST(ScaleTest, Misalignment) {
-  if (sizeof(TypeParam) == 1) {
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  if (sizeof(InputType) == 1) {
     // misalignment impossible
     return;
   }
-  TypeParam src[2] = {}, dst[2];
-  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            scale_api<TypeParam>()(src, sizeof(TypeParam) + 1, dst,
-                                   sizeof(TypeParam), 1, 2, 2, 0));
-  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
-                                   sizeof(TypeParam) + 1, 1, 2, 2, 0));
+  InputType src[2] = {};
+  OutputType dst[2];
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT, (scale_api<InputType, OutputType>()(
+                                          src, sizeof(InputType) + 1, dst,
+                                          sizeof(OutputType), 1, 2, 2, 0)));
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT, (scale_api<InputType, OutputType>()(
+                                          src, sizeof(InputType), dst,
+                                          sizeof(OutputType) + 1, 1, 2, 2, 0)));
 }
 
 TYPED_TEST(ScaleTest, ZeroImageSize) {
-  TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(KLEIDICV_OK, scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
-                                                sizeof(TypeParam), 0, 1, 2, 0));
-  EXPECT_EQ(KLEIDICV_OK, scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
-                                                sizeof(TypeParam), 1, 0, 2, 0));
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  InputType src[1] = {};
+  OutputType dst[1];
+  EXPECT_EQ(KLEIDICV_OK,
+            (scale_api<InputType, OutputType>()(
+                src, sizeof(InputType), dst, sizeof(OutputType), 0, 1, 2, 0)));
+  EXPECT_EQ(KLEIDICV_OK,
+            (scale_api<InputType, OutputType>()(
+                src, sizeof(InputType), dst, sizeof(OutputType), 1, 0, 2, 0)));
 }
 
 TYPED_TEST(ScaleTest, OversizeImage) {
-  TypeParam src[1] = {}, dst[1];
-  EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
-      scale_api<TypeParam>()(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                             KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 2, 0));
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+  InputType src[1] = {};
+  OutputType dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            scale_api<TypeParam>()(src, sizeof(TypeParam), dst,
-                                   sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
-                                   KLEIDICV_MAX_IMAGE_PIXELS, 2, 0));
+            (scale_api<InputType, OutputType>()(
+                src, sizeof(InputType), dst, sizeof(OutputType),
+                KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, 2, 0)));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            (scale_api<InputType, OutputType>()(
+                src, sizeof(InputType), dst, sizeof(OutputType),
+                KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, 2, 0)));
 }

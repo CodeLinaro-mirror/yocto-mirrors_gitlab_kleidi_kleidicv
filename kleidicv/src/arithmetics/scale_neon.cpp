@@ -66,8 +66,8 @@ class ScaleIntBase : public UnrollTwice {
   float scale_, shift_;
 };
 
-template <typename T>
-kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
                        size_t dst_stride, size_t width, size_t height,
                        double scale, double shift);
 
@@ -183,7 +183,7 @@ class ScaleUint8Calc final : public ScaleIntBase<uint8_t> {
   float32x4_t vscale_, vshift_;
 };  // end of class ScaleUint8Calc<T>
 
-kleidicv_error_t scale_with_precalculated_table(
+kleidicv_error_t scale_with_precalculated_table_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, double scale, double shift,
     const std::array<uint8_t, 256> &precalculated_table) {
@@ -197,7 +197,7 @@ kleidicv_error_t scale_with_precalculated_table(
   return KLEIDICV_OK;
 }
 
-// Specialization for uint8_t
+// Specialization for uint8_t to uint8_t
 template <>
 kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
                        size_t dst_stride, size_t width, size_t height,
@@ -217,9 +217,9 @@ kleidicv_error_t scale(const uint8_t *src, size_t src_stride, uint8_t *dst,
     // For bigger inputs, it's faster to pre-calculate the table
     // and map those values during the run
     auto precalculated_table = precalculate_scale_table_u8(scale, shift);
-    return scale_with_precalculated_table(src, src_stride, dst, dst_stride,
-                                          width, height, scale, shift,
-                                          precalculated_table);
+    return scale_with_precalculated_table_u8(src, src_stride, dst, dst_stride,
+                                             width, height, scale, shift,
+                                             precalculated_table);
   }
   return KLEIDICV_OK;
 }
@@ -312,7 +312,7 @@ class ScaleFloat final : public UnrollTwice, public UnrollOnce {
   float32x4_t vscale_, vshift_;
 };  // end of class ScaleFloat
 
-// Specialization for float
+// Specialization for float to float
 template <>
 kleidicv_error_t scale(const float *src, size_t src_stride, float *dst,
                        size_t dst_stride, size_t width, size_t height,
@@ -331,6 +331,116 @@ kleidicv_error_t scale(const float *src, size_t src_stride, float *dst,
     ScaleFloat operation(static_cast<float>(scale), static_cast<float>(shift));
     apply_operation_by_rows(operation, rect, src_rows, dst_rows);
   }
+  return KLEIDICV_OK;
+}
+
+// -----------------------------------------------------------------------
+// Scale uint8 to float16
+// -----------------------------------------------------------------------
+
+class ScaleUint8ToFloat16 {
+ public:
+  using SrcType = uint8_t;
+  using SrcVecTraits = neon::VecTraits<SrcType>;
+  using SrcVectorType = typename SrcVecTraits::VectorType;
+  using SrcVector2Type = typename SrcVecTraits::Vector2Type;
+  using DstType = float16_t;
+  using DstVecTraits = neon::VecTraits<DstType>;
+  using DstVectorType = typename DstVecTraits::VectorType;
+  using DstVector2Type = typename DstVecTraits::Vector2Type;
+  using DstVector4Type = typename DstVecTraits::Vector4Type;
+
+  ScaleUint8ToFloat16(float scale, float shift)
+      : scale_{scale},
+        shift_{shift},
+        vscale_{vdupq_n_f32(scale)},
+        vshift_{vdupq_n_f32(shift)} {}
+
+  void process_row(size_t width, Columns<const SrcType> src,
+                   Columns<DstType> dst) {
+    LoopUnroll{width, SrcVecTraits::num_lanes()}
+        .unroll_twice([&](size_t step) {
+          SrcVector2Type src_2vec;
+          SrcVecTraits::load(&src[0], src_2vec);
+          DstVector2Type dst_2vec1 = vector_path(src_2vec.val[0]);
+          DstVector2Type dst_2vec2 = vector_path(src_2vec.val[1]);
+          DstVector4Type dst_4vec = {
+              dst_2vec1.val[0],
+              dst_2vec1.val[1],
+              dst_2vec2.val[0],
+              dst_2vec2.val[1],
+          };
+          DstVecTraits::store(dst_4vec, &dst[0]);
+          src += ptrdiff_t(step);
+          dst += ptrdiff_t(step);
+        })
+        .unroll_once([&](size_t step) {
+          SrcVectorType src_vec = vld1q_u8(&src[0]);
+          DstVector2Type dst_2vec = vector_path(src_vec);
+          DstVecTraits::store(dst_2vec, &dst[0]);
+          src += ptrdiff_t(step);
+          dst += ptrdiff_t(step);
+        })
+        .remaining([&](size_t length, size_t) {
+          for (ptrdiff_t index = 0; index < static_cast<ptrdiff_t>(length);
+               ++index) {
+            disable_loop_vectorization();
+            dst[index] = static_cast<float16_t>(
+                static_cast<float>(src[index]) * scale_ + shift_);
+          }
+        });
+  }
+
+ private:
+  DstVector2Type vector_path(SrcVectorType src) {
+    // For scaling, uint8 values have to be converted to uint32
+    // i.e. create four vectors from one
+    float32x4_t res0 = scale_shift(vqtbl1q_u8(src, kW0));
+    float32x4_t res1 = scale_shift(vqtbl1q_u8(src, kW1));
+    float32x4_t res2 = scale_shift(vqtbl1q_u8(src, kW2));
+    float32x4_t res3 = scale_shift(vqtbl1q_u8(src, kW3));
+    // Convert from 32-bit to 16-bit
+    float16x4_t res16_0 = vcvt_f16_f32(res0);
+    float16x4_t res16_2 = vcvt_f16_f32(res2);
+    DstVector2Type res;
+    res.val[0] = vcvt_high_f16_f32(res16_0, res1);
+    res.val[1] = vcvt_high_f16_f32(res16_2, res3);
+    return res;
+  }
+
+  // Convert from uint32 to float32 and scale it
+  inline float32x4_t scale_shift(SrcVectorType src) {
+    float32x4_t fx = vcvtq_f32_u32(vreinterpretq_u32_u8(src));
+    return vmlaq_f32(vshift_, fx, vscale_);
+  }
+
+  static constexpr SrcType kFF = std::numeric_limits<SrcType>::max();
+  // clang-format off
+  static constexpr uint8x16_t kW0 = { 0, kFF, kFF, kFF,  1, kFF, kFF, kFF,  2, kFF, kFF, kFF,  3, kFF, kFF, kFF};
+  static constexpr uint8x16_t kW1 = { 4, kFF, kFF, kFF,  5, kFF, kFF, kFF,  6, kFF, kFF, kFF,  7, kFF, kFF, kFF};
+  static constexpr uint8x16_t kW2 = { 8, kFF, kFF, kFF,  9, kFF, kFF, kFF, 10, kFF, kFF, kFF, 11, kFF, kFF, kFF};
+  static constexpr uint8x16_t kW3 = {12, kFF, kFF, kFF, 13, kFF, kFF, kFF, 14, kFF, kFF, kFF, 15, kFF, kFF, kFF};
+  // clang-format on
+
+  float scale_, shift_;
+  float32x4_t vscale_, vshift_;
+};  // end of class ScaleUint8ToFloat16
+
+// Specialization for uint8_t to float16_t
+template <>
+kleidicv_error_t scale(const uint8_t *src, size_t src_stride, float16_t *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       double scale, double shift) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
+  Rectangle rect{width, height};
+  Rows<const uint8_t> src_rows{src, src_stride};
+  Rows<float16_t> dst_rows{dst, dst_stride};
+  ScaleUint8ToFloat16 operation(static_cast<float>(scale),
+                                static_cast<float>(shift));
+  zip_rows(operation, rect, src_rows, dst_rows);
   return KLEIDICV_OK;
 }
 

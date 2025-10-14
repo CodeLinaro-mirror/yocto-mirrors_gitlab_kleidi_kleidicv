@@ -58,6 +58,7 @@ template void dump<int64_t>(const TwoDimensional<int64_t> *);
 template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
 template void dump<float>(const TwoDimensional<float> *);
 template void dump<double>(const TwoDimensional<double> *);
+template void dump<float16_t>(const TwoDimensional<float16_t> *);
 
 std::array<test::ArrayLayout, 8> small_array_layouts(size_t min_width,
                                                      size_t min_height) {

@@ -16,6 +16,10 @@
 #include "stddef.h"
 #endif  // __cplusplus
 
+// This is defined in arm_neon.h or arm_sve.h, but we need it before including
+// those.
+typedef __fp16 float16_t;
+
 #include "kleidicv/config.h"
 
 /// Error values reported by KleidiCV

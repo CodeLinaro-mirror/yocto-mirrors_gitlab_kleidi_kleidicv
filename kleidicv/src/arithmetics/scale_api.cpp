@@ -10,32 +10,34 @@ namespace kleidicv {
 
 namespace neon {
 
-template <typename T>
-kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
                        size_t dst_stride, size_t width, size_t height,
                        double scale, double shift);
 }  // namespace neon
 
 namespace sve2 {
 
-template <typename T>
-kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
                        size_t dst_stride, size_t width, size_t height,
                        double scale, double shift);
 
 }  // namespace sve2
 
 namespace sme {
-template <typename T>
-kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
                        size_t dst_stride, size_t width, size_t height,
                        double scale, double shift);
 
 }  // namespace sme
 
 namespace sme2 {
-template <typename T>
-kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
+
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
                        size_t dst_stride, size_t width, size_t height,
                        double scale, double shift);
 
@@ -43,10 +45,16 @@ kleidicv_error_t scale(const T *src, size_t src_stride, T *dst,
 
 }  // namespace kleidicv
 
-KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8, &kleidicv::neon::scale<uint8_t>,
+KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8,
+                            &(kleidicv::neon::scale<uint8_t, uint8_t>), nullptr,
+                            nullptr, nullptr);
+
+KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8_f16,
+                            &(kleidicv::neon::scale<uint8_t, float16_t>),
                             nullptr, nullptr, nullptr);
+
 KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_scale_f32, &kleidicv::neon::scale<float>,
-    KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::scale<float>),
-    KLEIDICV_SME_IMPL_IF(&kleidicv::sme::scale<float>),
-    KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::scale<float>));
+    kleidicv_scale_f32, &(kleidicv::neon::scale<float, float>),
+    KLEIDICV_SVE2_IMPL_IF((&kleidicv::sve2::scale<float, float>)),
+    KLEIDICV_SME_IMPL_IF((&kleidicv::sme::scale<float, float>)),
+    KLEIDICV_SME2_IMPL_IF((&kleidicv::sme2::scale<float, float>)));

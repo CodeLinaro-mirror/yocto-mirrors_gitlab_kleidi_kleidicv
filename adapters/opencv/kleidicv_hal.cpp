@@ -43,6 +43,7 @@ enum {
   MULTITHREAD_MIN_ELEMENTS_RGB_TO_BGR_U8 = 180000,
   MULTITHREAD_MIN_ELEMENTS_RGBA_TO_BGRA_U8 = 11000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8 = 13000,
+  MULTITHREAD_MIN_ELEMENTS_SCALE_U8_F16 = 9000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_F32 = 20000,
   MULTITHREAD_MIN_ELEMENTS_ROTATE_U8 = 40000,
   MULTITHREAD_MIN_ELEMENTS_ROTATE_U16 = 30000,
@@ -1399,6 +1400,20 @@ int convertScale(const uchar *src_data, size_t src_step, uchar *dst_data,
     }
   }
 
+  // convert and scale at the same time
+  if (src_depth == CV_8U && dst_depth == CV_16F) {
+    return convert_error(
+        width * height < MULTITHREAD_MIN_ELEMENTS_SCALE_U8_F16
+            ? kleidicv_scale_u8_f16(reinterpret_cast<const uint8_t *>(src_data),
+                                    src_step,
+                                    reinterpret_cast<float16_t *>(dst_data),
+                                    dst_step, width, height, scale, shift)
+            : kleidicv_thread_scale_u8_f16(
+                  reinterpret_cast<const uint8_t *>(src_data), src_step,
+                  reinterpret_cast<float16_t *>(dst_data), dst_step, width,
+                  height, scale, shift, mt));
+  }
+
   // type conversion only
   if (scale == 1.0 && shift == 0.0) {
     // float32 to int8
@@ -1653,9 +1668,10 @@ int pyrdown(const uchar *src_data, size_t src_step, int src_width,
 
 int scharr_deriv(const uchar *src_data, size_t src_step, int16_t *dst_data,
                  size_t dst_step, int width, int height, int cn) {
-  // OpenCV provides the source pointer in a way that out-of-bounds reads are
-  // possible to handle borders. On the other hand, KleidiCV expects that the
-  // source pointer points to the top left pixel to be read by the algorithm.
+  // OpenCV provides the source pointer in a way that out-of-bounds reads
+  // are possible to handle borders. On the other hand, KleidiCV expects
+  // that the source pointer points to the top left pixel to be read by the
+  // algorithm.
   const uint8_t *src =
       reinterpret_cast<const uint8_t *>(src_data - src_step) - cn;
 

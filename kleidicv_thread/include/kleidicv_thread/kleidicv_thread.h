@@ -300,7 +300,7 @@ kleidicv_error_t kleidicv_thread_threshold_binary_u8(
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
-/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// Multithreaded implementation of kleidicv_scale_u8 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
                                           uint8_t *dst, size_t dst_stride,
@@ -310,13 +310,24 @@ kleidicv_error_t kleidicv_thread_scale_u8(const uint8_t *src, size_t src_stride,
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
-/// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
+/// Multithreaded implementation of kleidicv_scale_f32 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_scale_f32(const float *src, size_t src_stride,
                                            float *dst, size_t dst_stride,
                                            size_t width, size_t height,
                                            double scale, double shift,
                                            kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
+/// Multithreaded implementation of kleidicv_scale_u8_f16 - see the
+/// documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_scale_u8_f16(const uint8_t *src,
+                                              size_t src_stride, float16_t *dst,
+                                              size_t dst_stride, size_t width,
+                                              size_t height, double scale,
+                                              double shift,
+                                              kleidicv_thread_multithreading);
 
 #define KLEIDICV_THREAD_BINARY_OP(name, type)                              \
   kleidicv_error_t name(const type *src_a, size_t src_a_stride,            \
