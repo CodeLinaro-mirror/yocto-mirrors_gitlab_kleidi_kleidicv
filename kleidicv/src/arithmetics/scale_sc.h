@@ -382,6 +382,82 @@ class ScaleUint8ToFloat16Table {
   std::reference_wrapper<svfloat16_t> *st_;
 };  // end of class ScaleUint8ToFloat16Table
 
+#if !KLEIDICV_TARGET_SME && !KLEIDICV_TARGET_SME2
+class ScaleUint8ToFloat16Gather {
+ public:
+  using SrcType = uint8_t;
+  using SrcVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<SrcType>;
+  using SrcVectorType = typename SrcVecTraits::VectorType;
+  using SrcVector2Type = typename SrcVecTraits::Vector2Type;
+  using DstType = float16_t;
+  using DstVecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<DstType>;
+  using DstVectorType = typename DstVecTraits::VectorType;
+  using DstVector2Type = typename DstVecTraits::Vector2Type;
+  using DstVector4Type = typename DstVecTraits::Vector4Type;
+
+  explicit ScaleUint8ToFloat16Gather(const float16_t precalc[256])
+      KLEIDICV_STREAMING : sct_{precalc} {}
+
+  void process_row(size_t width, Columns<const SrcType> src,
+                   Columns<DstType> dst) const KLEIDICV_STREAMING {
+    svbool_t p8 = svptrue_b8();
+    svbool_t p16 = svptrue_b16();
+    svbool_t p32 = svptrue_b32();
+    svuint8_t svzero = svdup_n_u8(0);
+#if KLEIDICV_TARGET_SME2
+    svcount_t pc16 = DstVecTraits::svptrue_c();
+#endif
+    auto lookup = [&](svuint16_t src) KLEIDICV_STREAMING {
+      svuint32_t src0 =
+          svreinterpret_u32_u16(svzip1(src, svreinterpret_u16_u8(svzero)));
+      svuint32_t src1 =
+          svreinterpret_u32_u16(svzip2(src, svreinterpret_u16_u8(svzero)));
+
+      svuint32_t res0 = svld1uh_gather_index_u32(
+          p32, reinterpret_cast<const uint16_t *>(sct_), src0);
+      svuint32_t res1 = svld1uh_gather_index_u32(
+          p32, reinterpret_cast<const uint16_t *>(sct_), src1);
+
+      return svreinterpret_f16_u16(
+          svuzp1_u16(svreinterpret_u16_u32(res0), svreinterpret_u16_u32(res1)));
+    };
+
+    LoopUnroll{width, SrcVecTraits::num_lanes()}
+        .unroll_once([&](size_t step) KLEIDICV_STREAMING {
+          svuint8_t src0 = svld1(p8, &src[0]);
+          DstVectorType dst0 =
+              lookup(svreinterpret_u16_u8(svzip1(src0, svzero)));
+          DstVectorType dst1 =
+              lookup(svreinterpret_u16_u8(svzip2(src0, svzero)));
+#if KLEIDICV_TARGET_SME2
+          svst1(pc16, &dst[0], svcreate2(dst0, dst1));
+#else
+          svst1(p16, &dst[0], dst0);
+          svst1_vnum(p16, &dst[0], 1, dst1);
+#endif  // KLEIDICV_TARGET_SME2
+          src += ptrdiff_t(step);
+          dst += ptrdiff_t(step);
+        })
+        .remaining([&](size_t length, size_t) KLEIDICV_STREAMING {
+          size_t step = svcnth();
+          while (length > 0) {
+            disable_loop_vectorization();
+            svbool_t p16 = svwhilelt_b16(static_cast<size_t>(0), length);
+            svuint16_t src0 = svld1ub_u16(p16, &src[0]);
+            svfloat16_t res = lookup(src0);
+            svst1(p16, &dst[0], res);
+            src += ptrdiff_t(step);
+            dst += ptrdiff_t(step);
+            length -= std::min<size_t>(length, step);
+          }
+        });
+  }
+
+ private:
+  const float16_t *sct_;  /// SCT = SCale Table
+};  // end of class ScaleUint8ToFloat16Gather
+#endif
+
 kleidicv_error_t scale_with_precalculated_table_u8_f16(
     const uint8_t *src, size_t src_stride, float16_t *dst, size_t dst_stride,
     size_t width, size_t height,
@@ -520,7 +596,7 @@ kleidicv_error_t scale_sc(const uint8_t *src, size_t src_stride, float16_t *dst,
   CHECK_IMAGE_SIZE(width, height);
 
   // For smaller inputs, the full calculation is the faster
-  if (width * height < 1) {  // TODO empirical value
+  if (width * height < 60000) {  // empirical value
     Rectangle rect{width, height};
     Rows<const uint8_t> src_rows{src, src_stride};
     Rows<float16_t> dst_rows{dst, dst_stride};
@@ -538,8 +614,16 @@ kleidicv_error_t scale_sc(const uint8_t *src, size_t src_stride, float16_t *dst,
     // For bigger inputs, it's faster to pre-calculate the table
     // and map those values during the run
     auto precalculated_table = precalculate_scale_table_u8_f16(scale, shift);
+#if KLEIDICV_TARGET_SME || KLEIDICV_TARGET_SME2
     return scale_with_precalculated_table_u8_f16(
         src, src_stride, dst, dst_stride, width, height, precalculated_table);
+#else
+    Rectangle rect{width, height};
+    Rows<const uint8_t> src_rows{src, src_stride};
+    Rows<float16_t> dst_rows{dst, dst_stride};
+    ScaleUint8ToFloat16Gather operation(precalculated_table.data());
+    zip_rows(operation, rect, src_rows, dst_rows);
+#endif
   }
 
   return KLEIDICV_OK;
