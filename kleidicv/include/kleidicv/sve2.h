@@ -135,6 +135,16 @@ class VectorTypes<double> {
   using Vector4Type = svfloat64x4_t;
 };  // end of class VectorTypes<double>
 
+template <>
+class VectorTypes<float16_t> {
+ public:
+  using ScalarType = float16_t;
+  using VectorType = svfloat16_t;
+  using Vector2Type = svfloat16x2_t;
+  using Vector3Type = svfloat16x3_t;
+  using Vector4Type = svfloat16x4_t;
+};  // end of class VectorTypes<float16_t>
+
 // Base class for all SVE vector traits.
 template <typename ScalarType>
 class VecTraitsBase : public VectorTypes<ScalarType> {
@@ -540,6 +550,14 @@ class VecTraits<double> : public VecTraitsBase<double> {
     return svdup_f64(v);
   }
 };  // end of class VecTraits<double>
+
+template <>
+class VecTraits<float16_t> : public VecTraitsBase<float16_t> {
+ public:
+  static inline svfloat16_t svdup(float16_t v) KLEIDICV_STREAMING {
+    return svdup_f16(v);
+  }
+};  // end of class VecTraits<float16_t>
 
 // Adapter which adds context and forwards arguments.
 template <typename OperationType>

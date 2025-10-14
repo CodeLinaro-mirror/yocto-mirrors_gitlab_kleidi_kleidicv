@@ -22,5 +22,6 @@ KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t scale(const T* src, size_t src_stride,
                             size_t height, double scale, double shift)
 
 KLEIDICV_INSTANTIATE_TEMPLATE(float, float);
+KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t, float16_t);
 
 }  // namespace kleidicv::sve2

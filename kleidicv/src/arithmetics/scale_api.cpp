@@ -51,7 +51,9 @@ KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8,
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8_f16,
                             &(kleidicv::neon::scale<uint8_t, float16_t>),
-                            nullptr, nullptr, nullptr);
+                            &(kleidicv::sve2::scale<uint8_t, float16_t>),
+                            &(kleidicv::sme::scale<uint8_t, float16_t>),
+                            &(kleidicv::sme2::scale<uint8_t, float16_t>));
 
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_scale_f32, &(kleidicv::neon::scale<float, float>),
