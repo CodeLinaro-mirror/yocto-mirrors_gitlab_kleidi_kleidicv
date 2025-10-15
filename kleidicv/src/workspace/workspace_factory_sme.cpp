@@ -2,17 +2,28 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include "kleidicv/filters/matmul_filter_checks.h"
+#include "kleidicv/workspace/matmul.h"
 #include "kleidicv/workspace/separable.h"
 #include "kleidicv/workspace/workspace_factory.h"
 
 namespace kleidicv::sme {
 
 KLEIDICV_TARGET_FN_ATTRS void *create_separable_filter_workspace(
-    size_t max_image_width, size_t max_image_height, size_t, size_t,
-    size_t max_channels, size_t intermediate_size) {
+    size_t max_image_width, size_t max_image_height, size_t max_kernel_width,
+    size_t max_kernel_height, size_t max_channels, size_t intermediate_size) {
   Rectangle max_rect(max_image_width, max_image_height);
-  auto workspace = SeparableFilterWorkspace::create(max_rect, max_channels,
-                                                    intermediate_size);
+  Rectangle max_kernel(max_kernel_width, max_kernel_height);
+  SeparableFilterWorkspace::Pointer workspace;
+  if (gaussian_blur_sme2_implementation_checks(max_kernel_width,
+                                               max_kernel_height)) {
+    MatmulBufferSizesPolicy policy(max_rect, max_kernel, max_channels);
+    workspace = SeparableFilterWorkspace::create(max_rect, max_channels,
+                                                 intermediate_size, policy);
+  } else {
+    workspace = SeparableFilterWorkspace::create(max_rect, max_channels,
+                                                 intermediate_size);
+  }
 
   return workspace.release();
 }

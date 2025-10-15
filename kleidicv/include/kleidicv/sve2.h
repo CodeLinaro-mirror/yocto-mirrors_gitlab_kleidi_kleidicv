@@ -741,6 +741,43 @@ class SvqvctWrapper {
 
 #endif  // KLEIDICV_TARGET_SME2
 
+// To provide svzip functionality for any scalable SIMD backend.
+#if KLEIDICV_TARGET_SME2
+template <typename T>
+auto svzip_wrapper(T input) KLEIDICV_STREAMING {
+  return svzip(input);
+}
+#else
+inline svuint8x4_t svzip_wrapper(svuint8x4_t input) KLEIDICV_STREAMING {
+  svuint8_t tmp0 = svzip1(svget4(input, 0), svget4(input, 1));
+  svuint8_t tmp1 = svzip1(svget4(input, 2), svget4(input, 3));
+  svuint8_t tmp2 = svzip2(svget4(input, 0), svget4(input, 1));
+  svuint8_t tmp3 = svzip2(svget4(input, 2), svget4(input, 3));
+
+  svuint16_t wtmp0 = svzip1(svreinterpret_u16(tmp0), svreinterpret_u16(tmp1));
+  svuint16_t wtmp1 = svzip2(svreinterpret_u16(tmp0), svreinterpret_u16(tmp1));
+  svuint16_t wtmp2 = svzip1(svreinterpret_u16(tmp2), svreinterpret_u16(tmp3));
+  svuint16_t wtmp3 = svzip2(svreinterpret_u16(tmp2), svreinterpret_u16(tmp3));
+
+  return svcreate4(svreinterpret_u8(wtmp0), svreinterpret_u8(wtmp1),
+                   svreinterpret_u8(wtmp2), svreinterpret_u8(wtmp3));
+}
+inline svuint32x4_t svzip_wrapper(svuint32x4_t input) KLEIDICV_STREAMING {
+  svuint32_t tmp0 = svzip1(svget4(input, 0), svget4(input, 1));
+  svuint32_t tmp1 = svzip1(svget4(input, 2), svget4(input, 3));
+  svuint32_t tmp2 = svzip2(svget4(input, 0), svget4(input, 1));
+  svuint32_t tmp3 = svzip2(svget4(input, 2), svget4(input, 3));
+
+  svuint64_t wtmp0 = svzip1(svreinterpret_u64(tmp0), svreinterpret_u64(tmp1));
+  svuint64_t wtmp1 = svzip2(svreinterpret_u64(tmp0), svreinterpret_u64(tmp1));
+  svuint64_t wtmp2 = svzip1(svreinterpret_u64(tmp2), svreinterpret_u64(tmp3));
+  svuint64_t wtmp3 = svzip2(svreinterpret_u64(tmp2), svreinterpret_u64(tmp3));
+
+  return svcreate4(svreinterpret_u32(wtmp0), svreinterpret_u32(wtmp1),
+                   svreinterpret_u32(wtmp2), svreinterpret_u32(wtmp3));
+}
+#endif
+
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
 #endif  // KLEIDICV_SVE2_H

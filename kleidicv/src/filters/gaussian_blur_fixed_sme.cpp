@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "gaussian_blur_fixed_sc.h"
+#include "gaussian_blur_fixed_sme2.h"
 
 namespace kleidicv::sme {
 
@@ -13,7 +13,7 @@ gaussian_blur_fixed_stripe_u8(const uint8_t *src, size_t src_stride,
                               size_t channels, size_t kernel_width,
                               size_t kernel_height, float sigma_x,
                               float sigma_y, FixedBorderType border_type) {
-  return gaussian_blur_fixed_stripe_u8_sc(
+  return gaussian_blur_fixed_stripe_u8_sme2(
       src, src_stride, dst, dst_stride, width, height, y_begin, y_end, channels,
       kernel_width, kernel_height, sigma_x, sigma_y, border_type);
 }

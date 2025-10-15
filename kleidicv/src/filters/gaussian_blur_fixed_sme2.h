@@ -76,8 +76,10 @@ class GaussianBlurMatmul {
     }
   };
 
-  explicit GaussianBlurMatmul(float sigma, uint8_t *kernel_buffer)
-      : kernel(generate_gaussian_float_kernel<KernelSize>(sigma)) {
+  explicit GaussianBlurMatmul(float sigma, uint8_t *kernel_buffer,
+                              svuint8_t &svqcvt_index) KLEIDICV_STREAMING
+      : kernel(generate_gaussian_float_kernel<KernelSize>(sigma)),
+        svqvct_wrapper_(svqcvt_index) {
     build_kernel_helper_buffer(kernel_buffer);
     kernel_rows = Rows{kernel_buffer, svcntsw()};
   }
@@ -142,7 +144,7 @@ class GaussianBlurMatmul {
   // will be stored. Since UMOPA for uint8 is being used, this
   // buffer will contain rows in the format (zipped) that UMOPA
   // expects to avoid zipping vectors on processing stage
-  void build_kernel_helper_buffer(uint8_t *kernel_buffer) {
+  void build_kernel_helper_buffer(uint8_t *kernel_buffer) KLEIDICV_STREAMING {
     size_t svlw = svcntsw();
     size_t kernel_buffer_size = svlw + kKernelSize - 1;
     kernel_buffer_size = (kernel_buffer_size + kKernelIterationStep - 1) /
@@ -199,7 +201,8 @@ class GaussianBlurMatmul {
       svcol3 = svld1_u8(svptrue_b8(), &transposed_rows.at(col3)[0]);
     }
 
-    svuint8x4_t svcols = svzip_u8_x4(svcreate4(svcol0, svcol1, svcol2, svcol3));
+    svuint8x4_t svcols =
+        svzip_wrapper(svcreate4(svcol0, svcol1, svcol2, svcol3));
 
     svmopa_za32_u8_m(0, svptrue_b8(), svptrue_b8(), svget4(svcols, 0), svkern);
     svmopa_za32_u8_m(1, svptrue_b8(), svptrue_b8(), svget4(svcols, 1), svkern);
@@ -239,7 +242,8 @@ class GaussianBlurMatmul {
       svcol3 = svld1_u8(pred_row, &src.at(row3)[col]);
     }
 
-    svuint8x4_t svcols = svzip_u8_x4(svcreate4(svcol0, svcol1, svcol2, svcol3));
+    svuint8x4_t svcols =
+        svzip_wrapper(svcreate4(svcol0, svcol1, svcol2, svcol3));
 
     svmopa_za32_u8_m(0, svptrue_b8(), svptrue_b8(), svkern, svget4(svcols, 0));
     svmopa_za32_u8_m(1, svptrue_b8(), svptrue_b8(), svkern, svget4(svcols, 1));
@@ -333,7 +337,7 @@ class GaussianBlurMatmul {
                      postprocess_vector_no_clamp(svread_hor_za32_u32_m(
                          svdup_u32(0), svptrue_b32(), 3, row))));
 
-      svuint8_t svres = svqcvt_u8(resu);
+      svuint8_t svres = svqvct_wrapper_(resu);
       svres = svtbl(svres, indices_final);
       svst1(pred,
             &dst.at(static_cast<ptrdiff_t>(row_start + row),
@@ -361,11 +365,11 @@ class GaussianBlurMatmul {
                      postprocess_vector_no_clamp(svread_hor_za32_u32_m(
                          svdup_u32(0), svptrue_b32(), 3, row))));
 
-      resu = svzip_u32_x4(resu);
+      resu = svzip_wrapper(resu);
       svst1(col_pred,
             &dst.at(static_cast<ptrdiff_t>(row_start + row),
                     static_cast<ptrdiff_t>(col))[0],
-            svqcvt_u8(resu));
+            svqvct_wrapper_(resu));
     }
   }
 
@@ -423,6 +427,7 @@ class GaussianBlurMatmul {
 
   std::array<uint8_t, KernelSize> kernel;
   Rows<SourceType> kernel_rows;
+  SvqvctWrapper svqvct_wrapper_;
 };
 
 // Class to transpose image data for horizontal processing
@@ -508,11 +513,12 @@ static kleidicv_error_t gaussian_blur(
   Rows<uint8_t> dst_rows{dst, dst_stride, Channels};
   uint8_t *kernel_buffer =
       reinterpret_cast<uint8_t *>(workspace->get_kernel_buffer());
+  svuint8_t svqcvt_index;
 
   switch (kernel_width) {
     case 7: {
       using GaussianBlur = GaussianBlurMatmul<7>;
-      GaussianBlur inner_filter(sigma_x, kernel_buffer);
+      GaussianBlur inner_filter(sigma_x, kernel_buffer, svqcvt_index);
       MatmulFilter<Channels, GaussianBlur, Transposer<Channels>> filter(
           inner_filter);
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows,
@@ -521,7 +527,7 @@ static kleidicv_error_t gaussian_blur(
     }
     case 15: {
       using GaussianBlur = GaussianBlurMatmul<15>;
-      GaussianBlur inner_filter(sigma_x, kernel_buffer);
+      GaussianBlur inner_filter(sigma_x, kernel_buffer, svqcvt_index);
       MatmulFilter<Channels, GaussianBlur, Transposer<Channels>> filter(
           inner_filter);
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows,
@@ -530,7 +536,7 @@ static kleidicv_error_t gaussian_blur(
     }
     case 21: {
       using GaussianBlur = GaussianBlurMatmul<21>;
-      GaussianBlur inner_filter(sigma_x, kernel_buffer);
+      GaussianBlur inner_filter(sigma_x, kernel_buffer, svqcvt_index);
       MatmulFilter<Channels, GaussianBlur, Transposer<Channels>> filter(
           inner_filter);
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows,
