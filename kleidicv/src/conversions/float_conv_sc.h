@@ -29,20 +29,7 @@ class float_conversion_operation<float, OutputType> {
   using DstVectorType = typename DstVecTraits::VectorType;
 
   explicit float_conversion_operation(svuint8_t& index) KLEIDICV_STREAMING
-      : index_(index) {
-    // Index generation to reorder converted values by tbl instruction
-    auto index0 = svindex_u8(0, 4);
-    auto index1 = svindex_u8(1, 4);
-    auto index2 = svindex_u8(2, 4);
-    auto index3 = svindex_u8(3, 4);
-
-    svbool_t pg = svwhilelt_b8(uint64_t(0), svcntb() / 4);
-
-    index_ = svsplice(pg, index3, svdup_u8(0));
-    index_ = svsplice(pg, index2, index_);
-    index_ = svsplice(pg, index1, index_);
-    index_ = svsplice(pg, index0, index_);
-  }
+      : svqvct_wrapper(index) {}
 
   void process_row(size_t width, Columns<const float> src,
                    Columns<OutputType> dst) KLEIDICV_STREAMING {
@@ -112,16 +99,8 @@ class float_conversion_operation<float, OutputType> {
     auto _32bit_res2 = convert<OutputType>(full_pg, fsrc2);
     auto _32bit_res3 = convert<OutputType>(full_pg, fsrc3);
 
-    auto _16bit_res0 = svqxtnb(_32bit_res0);
-    _16bit_res0 = svqxtnt(_16bit_res0, _32bit_res2);
-
-    auto _16bit_res1 = svqxtnb(_32bit_res1);
-    _16bit_res1 = svqxtnt(_16bit_res1, _32bit_res3);
-
-    auto _8bit_res = svqxtnb(_16bit_res0);
-    _8bit_res = svqxtnt(_8bit_res, _16bit_res1);
-
-    return svtbl(_8bit_res, index_);
+    return svqvct_wrapper(
+        svcreate4(_32bit_res0, _32bit_res1, _32bit_res2, _32bit_res3));
   }
 
   template <
@@ -158,7 +137,7 @@ class float_conversion_operation<float, OutputType> {
     return svcvt_u32_f32_x(pg, src);
   }
 
-  svuint8_t& index_;
+  SvqvctWrapper svqvct_wrapper;
 };  // end of class float_conversion_operation<float, OutputType>
 
 template <typename InputType>

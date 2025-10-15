@@ -683,6 +683,64 @@ class ScalableVectorArray1D {
   }
 };
 
+#if KLEIDICV_TARGET_SME2
+
+// To provide svqvct_[u8|s8|...] functionality for any scalable SIMD backend.
+class SvqvctWrapper {
+ public:
+  explicit SvqvctWrapper(svuint8_t &) KLEIDICV_STREAMING {}
+
+  svuint8_t operator()(svuint32x4_t input) const KLEIDICV_STREAMING {
+    return svqcvt_u8(input);
+  }
+
+  svint8_t operator()(svint32x4_t input) const KLEIDICV_STREAMING {
+    return svqcvt_s8(input);
+  }
+};
+
+#else  // KLEIDICV_TARGET_SME2
+
+// To provide svqvct_[u8|s8|...] functionality for any scalable SIMD backend.
+class SvqvctWrapper {
+ public:
+  explicit SvqvctWrapper(svuint8_t &index) KLEIDICV_STREAMING : index_(index) {
+    // Index generation to reorder converted values by tbl instruction
+    auto index0 = svindex_u8(0, 4);
+    auto index1 = svindex_u8(1, 4);
+    auto index2 = svindex_u8(2, 4);
+    auto index3 = svindex_u8(3, 4);
+
+    svbool_t pg = svwhilelt_b8(uint64_t(0), svcntb() / 4);
+
+    index_ = svsplice(pg, index3, svdup_u8(0));
+    index_ = svsplice(pg, index2, index_);
+    index_ = svsplice(pg, index1, index_);
+    index_ = svsplice(pg, index0, index_);
+  }
+
+  template <typename T>
+  auto operator()(T input) const KLEIDICV_STREAMING {
+    auto half_width_res0 = svqxtnb(svget4(input, 0));
+    half_width_res0 = svqxtnt(half_width_res0, svget4(input, 2));
+
+    auto half_width_res1 = svqxtnb(svget4(input, 1));
+    half_width_res1 = svqxtnt(half_width_res1, svget4(input, 3));
+
+    auto quarter_width_res = svqxtnb(half_width_res0);
+    quarter_width_res = svqxtnt(quarter_width_res, half_width_res1);
+
+    return svtbl(quarter_width_res, index_);
+  }
+
+ private:
+  // This mimics treating `index_` as a member variable, but scalable types
+  // cannot be declared that way, so the caller owns the storage.
+  svuint8_t &index_;
+};
+
+#endif  // KLEIDICV_TARGET_SME2
+
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
 #endif  // KLEIDICV_SVE2_H
