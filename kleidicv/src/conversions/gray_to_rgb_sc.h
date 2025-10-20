@@ -256,7 +256,7 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t gray_to_rgba_u8_sc(
   Rows<uint8_t> dst_rows{dst, dst_stride, 4 /* RGBA */};
 
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  GrayToRGBAWithInterleaving<int8_t> operation{};
+  GrayToRGBAWithInterleaving<uint8_t> operation{};
   apply_operation_by_rows(operation, rect, src_rows, dst_rows);
 #else
   if (svcntb() > 128) {
