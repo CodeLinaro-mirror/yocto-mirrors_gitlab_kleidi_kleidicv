@@ -52,9 +52,9 @@ class ScaleFloat final : public UnrollTwice {
 };  // end of class ScaleFloat
 
 template <typename T, typename U>
-kleidicv_error_t scale_sc(const T *src, size_t src_stride, U *dst,
-                          size_t dst_stride, size_t width, size_t height,
-                          double scale, double shift) KLEIDICV_STREAMING;
+static kleidicv_error_t scale_sc(const T *src, size_t src_stride, U *dst,
+                                 size_t dst_stride, size_t width, size_t height,
+                                 double scale, double shift) KLEIDICV_STREAMING;
 
 // Specialization for float
 template <>
