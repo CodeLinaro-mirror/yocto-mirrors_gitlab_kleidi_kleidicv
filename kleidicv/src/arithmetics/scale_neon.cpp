@@ -374,13 +374,6 @@ class ScaleUint8ToFloat16 {
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
         })
-        .unroll_once([&](size_t step) {
-          SrcVectorType src_vec = vld1q_u8(&src[0]);
-          DstVector2Type dst_2vec = vector_path(src_vec);
-          DstVecTraits::store(dst_2vec, &dst[0]);
-          src += ptrdiff_t(step);
-          dst += ptrdiff_t(step);
-        })
         .remaining([&](size_t length, size_t) {
           for (ptrdiff_t index = 0; index < static_cast<ptrdiff_t>(length);
                ++index) {

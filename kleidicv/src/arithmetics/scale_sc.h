@@ -106,12 +106,13 @@ class ScaleUint8ToFloat16Calc16 {
 
   void process_row(size_t width, Columns<const SrcType> src,
                    Columns<DstType> dst) const KLEIDICV_STREAMING {
-    svbool_t p8 = svptrue_b8();
     svbool_t p16 = svptrue_b16();
     svuint8_t svzero = svdup_n_u8(0);
 #if KLEIDICV_TARGET_SME2
     svcount_t pc8 = SrcVecTraits::svptrue_c();
     svcount_t pc16 = DstVecTraits::svptrue_c();
+#else
+    svbool_t p8 = svptrue_b8();
 #endif
     auto vector_path = [&](svuint16_t src) KLEIDICV_STREAMING {
       svfloat16_t fsrc = svcvt_f16_x(p16, src);
@@ -144,22 +145,6 @@ class ScaleUint8ToFloat16Calc16 {
           svst1_vnum(p16, &dst[0], 1, dst1);
           svst1_vnum(p16, &dst[0], 2, dst2);
           svst1_vnum(p16, &dst[0], 3, dst3);
-#endif  // KLEIDICV_TARGET_SME2
-          src += ptrdiff_t(step);
-          dst += ptrdiff_t(step);
-        })
-        .unroll_once([&](size_t step) KLEIDICV_STREAMING {
-          svuint8_t src0 = svld1(p8, &src[0]);
-          DstVectorType dst00 =
-              vector_path(svreinterpret_u16_u8(svzip1(src0, svzero)));
-          DstVectorType dst01 =
-              vector_path(svreinterpret_u16_u8(svzip2(src0, svzero)));
-#if KLEIDICV_TARGET_SME2
-          DstVector2Type dst2 = svcreate2(dst00, dst01);
-          svst1(pc16, &dst[0], dst2);
-#else
-          svst1(p16, &dst[0], dst00);
-          svst1_vnum(p16, &dst[0], 1, dst01);
 #endif  // KLEIDICV_TARGET_SME2
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
@@ -204,13 +189,14 @@ class ScaleUint8ToFloat16Calc32 {
 
   void process_row(size_t width, Columns<const SrcType> src,
                    Columns<DstType> dst) const KLEIDICV_STREAMING {
-    svbool_t p8 = svptrue_b8();
     svbool_t p16 = svptrue_b16();
     svbool_t p32 = svptrue_b32();
     svuint8_t svzero = svdup_n_u8(0);
 #if KLEIDICV_TARGET_SME2
     svcount_t pc8 = SrcVecTraits::svptrue_c();
     svcount_t pc16 = DstVecTraits::svptrue_c();
+#else
+    svbool_t p8 = svptrue_b8();
 #endif
     auto vector_path = [&](svuint8_t src) KLEIDICV_STREAMING {
       // First Transpose them, to have even and odd elements separated
@@ -255,18 +241,6 @@ class ScaleUint8ToFloat16Calc32 {
           svst1_vnum(p16, &dst[0], 1, svget2(dst0, 1));
           svst1_vnum(p16, &dst[0], 2, svget2(dst1, 0));
           svst1_vnum(p16, &dst[0], 3, svget2(dst1, 1));
-#endif  // KLEIDICV_TARGET_SME2
-          src += ptrdiff_t(step);
-          dst += ptrdiff_t(step);
-        })
-        .unroll_once([&](size_t step) KLEIDICV_STREAMING {
-          svuint8_t src0 = svld1(p8, &src[0]);
-          DstVector2Type dst0 = vector_path(src0);
-#if KLEIDICV_TARGET_SME2
-          svst1(pc16, &dst[0], dst0);
-#else
-          svst1(p16, &dst[0], svget2(dst0, 0));
-          svst1_vnum(p16, &dst[0], 1, svget2(dst0, 1));
 #endif  // KLEIDICV_TARGET_SME2
           src += ptrdiff_t(step);
           dst += ptrdiff_t(step);
