@@ -6,6 +6,8 @@
 
 set -eu
 
+: "${COMPILER:=clang}"
+
 FILE_PATH="$1"
 
 echo "Active file: ${FILE_PATH}"
@@ -28,6 +30,14 @@ else
   exit 1
 fi
 
-OBJECT_PATH="build/kleidicv/kleidicv/CMakeFiles/${SIMD_BUILD_DIRECTORY}/${FILE_PATH#kleidicv/}.o"
+if [[ "${COMPILER}" == "gcc" ]]; then
+  BASE_BUILD_DIRECTORY="build/kleidicv-gcc/kleidicv/CMakeFiles"
+  OUTPUT_FILE=disasm-gcc.txt
+else
+  BASE_BUILD_DIRECTORY="build/kleidicv/kleidicv/CMakeFiles"
+  OUTPUT_FILE=disasm.txt
+fi
 
-llvm-objdump -C -d -r --mattr=+sme2 "${OBJECT_PATH}" | tee disasm.txt
+OBJECT_PATH="${BASE_BUILD_DIRECTORY}/${SIMD_BUILD_DIRECTORY}/${FILE_PATH#kleidicv/}.o"
+
+llvm-objdump -C -d -r --mattr=+sme2 "${OBJECT_PATH}" | tee ${OUTPUT_FILE}

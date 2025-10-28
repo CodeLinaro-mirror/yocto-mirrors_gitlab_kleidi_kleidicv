@@ -255,6 +255,24 @@
       "problemMatcher": []
     },
     {
+      "label": "Disassemble KleidiCV GCC build",
+      "type": "shell",
+      "command": "${workspaceFolder}/.devcontainer/disassemble.sh",
+      "args": [
+        "${relativeFile}"
+      ],
+      "options": {
+        "env": {
+          "COMPILER": "gcc",
+        },
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "Build KleidiCV with GCC"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Generate coverage",
       "type": "shell",
       "command": "${workspaceFolder}/.devcontainer/coverage.sh",

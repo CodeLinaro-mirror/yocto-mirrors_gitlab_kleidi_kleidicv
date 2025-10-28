@@ -4,4 +4,4 @@
 
 build/
 public/
-disasm.txt
+disasm*.txt
