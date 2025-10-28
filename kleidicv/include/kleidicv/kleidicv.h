@@ -1834,6 +1834,10 @@ KLEIDICV_API_DECLARATION(kleidicv_sum_f32, const float *src, size_t src_stride,
 /// for the source and destination. Number of elements is limited to
 /// @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// Note: Conversion from `uint8_t` to `float16_t` using SVE/SME is
+/// significantly faster when `alpha` and `beta` are exact `float16_t` values.
+/// This can be forced by explicit casting:  `static_cast<float16_t>(0.3)`.
+///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.

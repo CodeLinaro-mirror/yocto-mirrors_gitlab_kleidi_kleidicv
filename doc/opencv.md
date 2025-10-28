@@ -220,8 +220,8 @@ For the following source/destination pairs (`rtype` parameter of `-1` means they
 * `CV_8U` to `CV_8U`
 * `CV_32F` to `CV_32F`
 * `CV_8U` to `CV_16F`
-> ⚠️ **Note: Conversion to 16-bit floating point using SVE/SME is significantly faster when `alpha` and `beta` are exact `float16_t` values.
-This can be forced by explicit casting:  `static_cast<float16_t>(0.3)`.
+> ℹ️ **Conversion to 16-bit floating point using SVE/SME is significantly faster when `alpha` and `beta` are exact `float16_t` values.** \
+**This can be forced by explicit casting:  `static_cast<float16_t>(0.3)`.**
 
 Otherwise, if `alpha` and `beta` are 1 and 0 respectively, conversion between data types is supported as follows:
 
