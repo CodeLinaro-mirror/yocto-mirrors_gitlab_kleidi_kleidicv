@@ -23,8 +23,8 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | CompareGreater               |     |  x  |     |     |     |     |     |     |     |     |         |
 | InRange                      |     |  x  |     |     |     |     |     |     |  x  |     |         |
 
-> ℹ️ **Conversion to 16-bit floating point using SVE/SME is significantly faster when `alpha` and `beta` are exact `float16_t` values.** \
-**This can be forced by explicit casting:  `static_cast<float16_t>(0.3)`.**
+> ℹ️ **Scale u8->f16 using SVE/SME is significantly faster when `alpha` and `beta` are exact `float16_t` values.** \
+**This can be forced by explicit casting: `static_cast<float16_t>(0.3)`.**
 
 # Logical operations
 |                              | u8  |
