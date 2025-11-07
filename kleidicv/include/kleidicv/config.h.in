@@ -127,4 +127,6 @@
 #define KLEIDICV_FORCE_INLINE inline
 #endif
 
+#define KLEIDICV_PREFETCH __builtin_prefetch
+
 #endif  // KLEIDICV_CONFIG_H

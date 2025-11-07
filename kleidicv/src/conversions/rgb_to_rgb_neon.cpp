@@ -5,52 +5,80 @@
 #include "kleidicv/conversions/rgb_to_rgb.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/traits.h"
+#include "kleidicv/types.h"
 
 namespace kleidicv::neon {
 
 template <typename ScalarType>
-class RGBToBGR final : public UnrollTwice {
+class RGBToBGR final {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
 
+  void process_row(size_t length, Columns<const uint8_t> src,
+                   Columns<uint8_t> dst) {
+    LoopUnroll loop{length, 16};
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  RGBToBGR() : indices_{} { VecTraits::load(kRGBToBGRTableIndices, indices_); }
-#else
-  RGBToBGR() = default;
+    uint8x16x3_t indices;
+    VecTraits::load(kRGBToBGRTableIndices, indices);
 #endif
 
-  void vector_path(const ScalarType *src, ScalarType *dst) {
+    loop.unroll_once([&](size_t step) {
+      KLEIDICV_PREFETCH(&src[0] + 1024);
+      uint8x16x3_t src_vect, dst_vect;
+
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-    uint8x16x3_t src_vect = vld3q_u8(src);
-    uint8x16x3_t dst_vect;
-
-    dst_vect.val[0] = src_vect.val[2];
-    dst_vect.val[1] = src_vect.val[1];
-    dst_vect.val[2] = src_vect.val[0];
-
-    vst3q_u8(dst, dst_vect);
+      src_vect = vld3q(&src[0]);
+      dst_vect = vector_path(src_vect);
+      vst3q(&dst[0], dst_vect);
 #else
-
-    uint8x16x3_t src_vect;
-    VecTraits::load(src, src_vect);
-
-    uint8x16x3_t dst_vect;
-
-    uint8x16x2_t src_vect_0_1;
-    src_vect_0_1.val[0] = src_vect.val[0];
-    src_vect_0_1.val[1] = src_vect.val[1];
-
-    uint8x16x2_t src_vect_1_2;
-    src_vect_1_2.val[0] = src_vect.val[1];
-    src_vect_1_2.val[1] = src_vect.val[2];
-
-    dst_vect.val[0] = vqtbl2q_u8(src_vect_0_1, indices_.val[0]);
-    dst_vect.val[1] = vqtbl3q_u8(src_vect, indices_.val[1]);
-    dst_vect.val[2] = vqtbl2q_u8(src_vect_1_2, indices_.val[2]);
-
-    VecTraits::store(dst_vect, dst);
+      VecTraits::load(&src[0], src_vect);
+      dst_vect = vector_path(src_vect, indices);
+      VecTraits::store(dst_vect, &dst[0]);
 #endif
+      src += static_cast<ptrdiff_t>(step);
+      dst += static_cast<ptrdiff_t>(step);
+    });
+
+    loop.remaining([&](size_t length, size_t /* step */) {
+      for (size_t index = 0; index < length; ++index) {
+        disable_loop_vectorization();
+        scalar_path(&src.at(static_cast<ptrdiff_t>(index))[0],
+                    &dst.at(static_cast<ptrdiff_t>(index))[0]);
+      }
+    });
   }
+
+ private:
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+  uint8x16x3_t vector_path(uint8x16x3_t src) {
+    std::swap(src.val[0], src.val[2]);
+    return src;
+  }
+#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+  uint8x16x3_t vector_path(const uint8x16x3_t &src,
+                           const uint8x16x3_t &indices) {
+    uint8x16x3_t dst;
+
+    asm volatile(
+        // dst0 = vqtbl2q_u8({src0, src1}, indices0)
+        "tbl %0.16b, { %3.16b, %4.16b }, %6.16b \n\t"
+        // dst1 = vqtbl3q_u8({src0, src1, src2}, indices1)
+        "tbl %1.16b, { %3.16b, %4.16b, %5.16b }, %7.16b \n\t"
+        // dst2 = vqtbl2q_u8({src1, src2}, indices2)
+        "tbl %2.16b, { %4.16b, %5.16b }, %8.16b \n\t"
+        : "=&w"(dst.val[0]), "=&w"(dst.val[1]), "=&w"(dst.val[2])
+        : "w"(src.val[0]), "w"(src.val[1]), "w"(src.val[2]),
+          "w"(indices.val[0]), "w"(indices.val[1]), "w"(indices.val[2])
+        :);
+
+    return dst;
+  }
+  static constexpr uint8_t kRGBToBGRTableIndices[48] = {
+      2,  1,  0,  5,  4,  3,  8,  7,  6,  11, 10, 9,  14, 13, 12, 17,
+      16, 15, 20, 19, 18, 23, 22, 21, 26, 25, 24, 29, 28, 27, 32, 31,
+      14, 19, 18, 17, 22, 21, 20, 25, 24, 23, 28, 27, 26, 31, 30, 29};
+#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
   void scalar_path(const ScalarType *src, ScalarType *dst) {
     auto tmp = src[0];
@@ -58,15 +86,6 @@ class RGBToBGR final : public UnrollTwice {
     dst[1] = src[1];
     dst[2] = tmp;
   }
-
- private:
-#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  static constexpr uint8_t kRGBToBGRTableIndices[48] = {
-      2,  1,  0,  5,  4,  3,  8,  7,  6,  11, 10, 9,  14, 13, 12, 17,
-      16, 15, 20, 19, 18, 23, 22, 21, 26, 25, 24, 29, 28, 27, 32, 31,
-      14, 19, 18, 17, 22, 21, 20, 25, 24, 23, 28, 27, 26, 31, 30, 29};
-  uint8x16x3_t indices_;
-#endif
 };  // end of class RGBToBGR<ScalarType>
 
 template <typename ScalarType>
@@ -201,7 +220,7 @@ kleidicv_error_t rgb_to_bgr_u8(const uint8_t *src, size_t src_stride,
   Rows<const uint8_t> src_rows{src, src_stride, 3 /* RGB */};
   Rows<uint8_t> dst_rows{dst, dst_stride, 3 /* BGR */};
   RGBToBGR<uint8_t> operation;
-  apply_operation_by_rows(operation, rect, src_rows, dst_rows);
+  zip_rows(operation, rect, src_rows, dst_rows);
   return KLEIDICV_OK;
 }
 
