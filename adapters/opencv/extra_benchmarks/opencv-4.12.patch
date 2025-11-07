@@ -48,7 +48,7 @@ index be706e1a83..862b8b7c35 100644
                   CmpType::all()
                   )
 diff --git a/modules/core/perf/perf_convertTo.cpp b/modules/core/perf/perf_convertTo.cpp
-index 344d81cb8a..ef5a3aa7d2 100644
+index 344d81cb8a..08d1f5ed97 100644
 --- a/modules/core/perf/perf_convertTo.cpp
 +++ b/modules/core/perf/perf_convertTo.cpp
 @@ -4,17 +4,18 @@ namespace opencv_test
@@ -65,9 +65,11 @@ index 344d81cb8a..ef5a3aa7d2 100644
               testing::Combine
               (
 -                 testing::Values(szVGA, sz1080p),
+-                 testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_32F, CV_64F),
+-                 testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_32F, CV_64F),
 +                 testing::Values(sz1080p, sz2160p),
-                  testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_32F, CV_64F),
-                  testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_32F, CV_64F),
++                 testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_16F, CV_32F, CV_64F),
++                 testing::Values(CV_8U, CV_8S, CV_16U, CV_16S, CV_32S, CV_16F, CV_32F, CV_64F),
                   testing::Values(1, 4),
 -                 testing::Values(1.0, 1./255)
 +                 testing::Values(1.0, 1./255, 1.234),
