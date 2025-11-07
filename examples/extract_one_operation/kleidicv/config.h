@@ -18,3 +18,11 @@
 // GCC doesn't have clang's unroll(full). 16 is typically plenty.
 #define KLEIDICV_FORCE_LOOP_UNROLL _Pragma("GCC unroll 16")
 #endif
+
+#if defined(__clang__) || defined(__GNUC__)
+#define KLEIDICV_FORCE_INLINE inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#define KLEIDICV_FORCE_INLINE __forceinline
+#else
+#define KLEIDICV_FORCE_INLINE inline
+#endif

@@ -476,8 +476,12 @@ class ParallelRows final : public RowBase<T> {
 };  // end of class ParallelRows<T>
 
 template <typename OperationType, typename... RowTypes>
-void zip_rows(OperationType &operation, Rectangle rect,
-              RowTypes... rows) KLEIDICV_STREAMING {
+#if defined(__GNUC__)
+KLEIDICV_FORCE_INLINE
+#endif
+    void
+    zip_rows(OperationType &operation, Rectangle rect,
+             RowTypes... rows) KLEIDICV_STREAMING {
   // Unary left fold. Evaluates the expression for every part of the unexpanded
   // parameter pack 'rows'.
   if ((... && (rows.is_continuous(rect.width())))) {

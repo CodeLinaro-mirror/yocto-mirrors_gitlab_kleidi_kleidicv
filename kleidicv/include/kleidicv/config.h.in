@@ -119,4 +119,12 @@
 #define KLEIDICV_NODISCARD
 #endif
 
+#if defined(__clang__) || defined(__GNUC__)
+#define KLEIDICV_FORCE_INLINE inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#define KLEIDICV_FORCE_INLINE __forceinline
+#else
+#define KLEIDICV_FORCE_INLINE inline
+#endif
+
 #endif  // KLEIDICV_CONFIG_H
