@@ -10,7 +10,7 @@
 namespace kleidicv::neon {
 
 template <typename ScalarType>
-class GrayToRGB final : public UnrollTwice {
+class GrayToRGB final : public UnrollOnce {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
@@ -23,7 +23,10 @@ class GrayToRGB final : public UnrollTwice {
   GrayToRGB() = default;
 #endif
 
-  void vector_path(VectorType src_vect, ScalarType *dst) {
+  void vector_path(const ScalarType *src, ScalarType *dst) {
+    KLEIDICV_PREFETCH(&src[0] + 1024);
+    uint8x16_t src_vect;
+    VecTraits::load(&src[0], src_vect);
     uint8x16x3_t dst_vect;
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     dst_vect.val[0] = src_vect;
@@ -71,6 +74,7 @@ class GrayToRGBA final {
 
     const size_t unroll_count = length / kVectorLength;
     for (size_t i = 0; i < unroll_count; ++i) {
+      KLEIDICV_PREFETCH(&src[0] + 1024);
       VecTraits::load(&src[0], src_and_alpha.val[0]);
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
       dst_vect.val[0] = src_and_alpha.val[0];
