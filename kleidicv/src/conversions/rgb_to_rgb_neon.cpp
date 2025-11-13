@@ -89,13 +89,24 @@ class RGBToBGR final {
 };  // end of class RGBToBGR<ScalarType>
 
 template <typename ScalarType>
-class RGBAToBGRA final : public UnrollTwice {
+class RGBAToBGRA final : public UnrollOnce {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
 
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+  RGBAToBGRA() : indices_{} {
+    VecTraits::load(kRGBAToBGRATableIndices, indices_);
+  }
+#else
+  RGBAToBGRA() = default;
+#endif
+
   void vector_path(const ScalarType *src, ScalarType *dst) {
-    uint8x16x4_t src_vect = vld4q_u8(src);
-    uint8x16x4_t dst_vect;
+    KLEIDICV_PREFETCH(&src[0] + 1024);
+    uint8x16x4_t src_vect, dst_vect;
+
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+    src_vect = vld4q_u8(src);
 
     dst_vect.val[0] = src_vect.val[2];
     dst_vect.val[1] = src_vect.val[1];
@@ -103,6 +114,16 @@ class RGBAToBGRA final : public UnrollTwice {
     dst_vect.val[3] = src_vect.val[3];
 
     vst4q_u8(dst, dst_vect);
+#else
+    VecTraits::load(&src[0], src_vect);
+
+    dst_vect.val[0] = vqtbl1q_u8(src_vect.val[0], indices_);
+    dst_vect.val[1] = vqtbl1q_u8(src_vect.val[1], indices_);
+    dst_vect.val[2] = vqtbl1q_u8(src_vect.val[2], indices_);
+    dst_vect.val[3] = vqtbl1q_u8(src_vect.val[3], indices_);
+
+    VecTraits::store(dst_vect, &dst[0]);
+#endif
   }
 
   void scalar_path(const ScalarType *src, ScalarType *dst) {
@@ -112,6 +133,13 @@ class RGBAToBGRA final : public UnrollTwice {
     dst[2] = tmp;
     dst[3] = src[3];
   }
+
+ private:
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+  static constexpr uint8_t kRGBAToBGRATableIndices[16] = {
+      2, 1, 0, 3, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15};
+  uint8x16_t indices_;
+#endif
 };  // end of class RGBAToBGRA<ScalarType>
 
 template <typename ScalarType>
