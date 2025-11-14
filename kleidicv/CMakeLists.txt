@@ -194,9 +194,17 @@ if(KLEIDICV_ENABLE_SME)
   set_target_properties(kleidicv_sme PROPERTIES CXX_STANDARD 17)
   target_compile_options(kleidicv_sme PRIVATE
     ${KLEIDICV_CXX_FLAGS}
-    "-march=armv9-a+sme+nosve"
     "-DKLEIDICV_TARGET_SME=1"
   )
+  if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_compile_options(kleidicv_sme PRIVATE
+    "-march=armv9-a+sme+nosve"
+  )
+  else()
+     target_compile_options(kleidicv_sme PRIVATE
+      "-march=armv9-a+sme"
+    )
+  endif()
 endif()
 
 if(KLEIDICV_ENABLE_SME2)
@@ -205,9 +213,17 @@ if(KLEIDICV_ENABLE_SME2)
   set_target_properties(kleidicv_sme2 PROPERTIES CXX_STANDARD 17)
   target_compile_options(kleidicv_sme2 PRIVATE
     ${KLEIDICV_CXX_FLAGS}
-    "-march=armv9-a+sme2+nosve"
     "-DKLEIDICV_TARGET_SME2=1"
   )
+  if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_compile_options(kleidicv_sme2 PRIVATE
+    "-march=armv9-a+sme2+nosve"
+  )
+  else()
+    target_compile_options(kleidicv_sme2 PRIVATE
+    "-march=armv9-a+sme2"
+  )
+  endif()
 endif()
 
 add_library(kleidicv STATIC ${KLEIDICV_API_SOURCES})
