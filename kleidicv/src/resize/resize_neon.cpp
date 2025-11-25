@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -45,6 +45,10 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
     return ret;
   }
 
+  using VecTraits = neon::VecTraits<uint8_t>;
+  constexpr size_t kVectorLengthX2 = kVectorLength * 2;
+  constexpr size_t kVectorLengthX4 = kVectorLength * 4;
+
   for (; src_height >= 2; src_height -= 2, src += (src_stride * 2),
                           --dst_height, dst += dst_stride) {
     const uint8_t *src_l = src;
@@ -52,28 +56,48 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
     size_t src_width_l = src_width;
     size_t dst_width_l = dst_width;
 
-    for (; src_width_l >= 32;
-         src_width_l -= 32, dst_width_l -= 16, dst_l += 16, src_l += 32) {
-      uint8x16_t top_line_0 = vld1q_u8(src_l);
-      uint8x16_t top_line_1 = vld1q_u8(&src_l[16]);
-      uint8x16_t bottom_line_0 = vld1q_u8(&src_l[src_stride]);
-      uint8x16_t bottom_line_1 = vld1q_u8(&src_l[src_stride + 16]);
+    for (; src_width_l >= kVectorLengthX4;
+         src_width_l -= kVectorLengthX4, dst_width_l -= kVectorLengthX2,
+         dst_l += kVectorLengthX2, src_l += kVectorLengthX4) {
+      KLEIDICV_PREFETCH(src_l + 1024);
+      KLEIDICV_PREFETCH(src_l + src_stride + 1024);
 
-      uint16x8_t top_line_pairs_summed_0 = vpaddlq_u8(top_line_0);
-      uint16x8_t top_line_pairs_summed_1 = vpaddlq_u8(top_line_1);
-      uint16x8_t bottom_line_pairs_summed_0 = vpaddlq_u8(bottom_line_0);
-      uint16x8_t bottom_line_pairs_summed_1 = vpaddlq_u8(bottom_line_1);
+      uint8x16x4_t top_line, bottom_line;
+      uint16x8_t top_line_pairs_summed[4];
+      uint16x8_t bottom_line_pairs_summed[4];
+      uint16x8_t result_before_averaging[4];
+      uint8x16x2_t result;
 
-      uint16x8_t result_before_averaging_0 =
-          vaddq_u16(top_line_pairs_summed_0, bottom_line_pairs_summed_0);
-      uint16x8_t result_before_averaging_1 =
-          vaddq_u16(top_line_pairs_summed_1, bottom_line_pairs_summed_1);
+      VecTraits::load(src_l, top_line);
+      VecTraits::load(&src_l[src_stride], bottom_line);
 
-      uint8x8_t result_0 = vrshrn_n_u16(result_before_averaging_0, 2);
-      uint8x8_t result_1 = vrshrn_n_u16(result_before_averaging_1, 2);
+      top_line_pairs_summed[0] = vpaddlq_u8(top_line.val[0]);
+      top_line_pairs_summed[1] = vpaddlq_u8(top_line.val[1]);
+      top_line_pairs_summed[2] = vpaddlq_u8(top_line.val[2]);
+      top_line_pairs_summed[3] = vpaddlq_u8(top_line.val[3]);
 
-      vst1_u8(&dst_l[0], result_0);
-      vst1_u8(&dst_l[8], result_1);
+      bottom_line_pairs_summed[0] = vpaddlq_u8(bottom_line.val[0]);
+      bottom_line_pairs_summed[1] = vpaddlq_u8(bottom_line.val[1]);
+      bottom_line_pairs_summed[2] = vpaddlq_u8(bottom_line.val[2]);
+      bottom_line_pairs_summed[3] = vpaddlq_u8(bottom_line.val[3]);
+
+      result_before_averaging[0] =
+          vaddq_u16(top_line_pairs_summed[0], bottom_line_pairs_summed[0]);
+      result_before_averaging[1] =
+          vaddq_u16(top_line_pairs_summed[1], bottom_line_pairs_summed[1]);
+      result_before_averaging[2] =
+          vaddq_u16(top_line_pairs_summed[2], bottom_line_pairs_summed[2]);
+      result_before_averaging[3] =
+          vaddq_u16(top_line_pairs_summed[3], bottom_line_pairs_summed[3]);
+
+      result.val[0] =
+          vrshrn_high_n_u16(vrshrn_n_u16(result_before_averaging[0], 2),
+                            result_before_averaging[1], 2);
+      result.val[1] =
+          vrshrn_high_n_u16(vrshrn_n_u16(result_before_averaging[2], 2),
+                            result_before_averaging[3], 2);
+
+      VecTraits::store(result, dst_l);
     }
 
     for (; src_width_l > 1;
@@ -92,19 +116,27 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
   }
 
   if (dst_height) {
-    for (; src_width >= 32;
-         src_width -= 32, dst_width -= 16, dst += 16, src += 32) {
-      uint8x16_t vsrc_0 = vld1q_u8(&src[0]);
-      uint8x16_t vsrc_1 = vld1q_u8(&src[16]);
+    for (; src_width >= kVectorLengthX4;
+         src_width -= kVectorLengthX4, dst_width -= kVectorLengthX2,
+         dst += kVectorLengthX2, src += kVectorLengthX4) {
+      uint8x16x4_t vsrc;
+      uint16x8_t vsrc_line_pairs_summed[4];
+      uint8x16x2_t result;
+      VecTraits::load(&src[0], vsrc);
 
-      uint16x8_t vsrc_line_pairs_summed_0 = vpaddlq_u8(vsrc_0);
-      uint16x8_t vsrc_line_pairs_summed_1 = vpaddlq_u8(vsrc_1);
+      vsrc_line_pairs_summed[0] = vpaddlq_u8(vsrc.val[0]);
+      vsrc_line_pairs_summed[1] = vpaddlq_u8(vsrc.val[1]);
+      vsrc_line_pairs_summed[2] = vpaddlq_u8(vsrc.val[2]);
+      vsrc_line_pairs_summed[3] = vpaddlq_u8(vsrc.val[3]);
 
-      uint8x8_t result_0 = vrshrn_n_u16(vsrc_line_pairs_summed_0, 1);
-      uint8x8_t result_1 = vrshrn_n_u16(vsrc_line_pairs_summed_1, 1);
+      result.val[0] =
+          vrshrn_high_n_u16(vrshrn_n_u16(vsrc_line_pairs_summed[0], 1),
+                            vsrc_line_pairs_summed[1], 1);
+      result.val[1] =
+          vrshrn_high_n_u16(vrshrn_n_u16(vsrc_line_pairs_summed[2], 1),
+                            vsrc_line_pairs_summed[3], 1);
 
-      vst1_u8(&dst[0], result_0);
-      vst1_u8(&dst[8], result_1);
+      VecTraits::store(result, dst);
     }
 
     for (; src_width > 1; src_width -= 2, src += 2, --dst_width, ++dst) {
