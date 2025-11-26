@@ -879,6 +879,14 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32(
     float32x4_t a, b = s0;
     float32x4_t c, d = s1;
     for (size_t src_x = 0; src_x + 1 < src_width; src_x++) {
+      KLEIDICV_PREFETCH(dst_row0 + 64);
+      KLEIDICV_PREFETCH(dst_row1 + 64);
+      KLEIDICV_PREFETCH(dst_row2 + 64);
+      KLEIDICV_PREFETCH(dst_row3 + 64);
+      KLEIDICV_PREFETCH(dst_row4 + 64);
+      KLEIDICV_PREFETCH(dst_row5 + 64);
+      KLEIDICV_PREFETCH(dst_row6 + 64);
+      KLEIDICV_PREFETCH(dst_row7 + 64);
       a = b;
       b = vdupq_n_f32(src_row0[src_x + 1]);
       c = d;
