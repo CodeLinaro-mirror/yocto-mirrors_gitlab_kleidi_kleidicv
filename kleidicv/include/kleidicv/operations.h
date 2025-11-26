@@ -219,7 +219,8 @@ class RowBasedBlockOperation : public OperationBase<OperationType> {
       : OperationBase<OperationType>(operation) {}
 
   template <typename... ColumnTypes>
-  void process_row(size_t length, ColumnTypes... columns) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE void process_row(size_t length, ColumnTypes... columns)
+      KLEIDICV_STREAMING {
     if constexpr (OperationType::is_unrolled_twice()) {
       process_blocks<2>(length, [&](size_t step) KLEIDICV_STREAMING {
         this->operation().vector_path_2x(columns...);
@@ -245,8 +246,8 @@ class RowBasedBlockOperation : public OperationBase<OperationType> {
 
  private:
   template <size_t UnrollFactor, typename CallbackType>
-  void process_blocks(size_t &length,
-                      CallbackType callback) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE void process_blocks(
+      size_t &length, CallbackType callback) KLEIDICV_STREAMING {
     // The number of elements a single iteration would process.
     const size_t elements_per_iteration = UnrollFactor * this->num_lanes();
     // The number of elements which will be processed when this method returns.
