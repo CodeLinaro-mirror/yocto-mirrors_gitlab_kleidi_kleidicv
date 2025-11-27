@@ -32,10 +32,10 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
   using BufferVectorType = typename BufferVecTraits::VectorType;
   using BorderType = FixedBorderType;
 
-  GaussianBlurArbitrary(const uint16_t *half_kernel, ptrdiff_t half_kernel_size,
+  GaussianBlurArbitrary(const uint8_t *half_kernel, ptrdiff_t half_kernel_size,
                         Rectangle &rect, size_t channels)
       : half_kernel_size_(half_kernel_size),
-        half_kernel_u16_(half_kernel),
+        half_kernel_(half_kernel),
         width_(static_cast<ptrdiff_t>(rect.width())),
         vertical_border_(rect.height()),
         horizontal_border_(rect.width(), channels) {}
@@ -128,8 +128,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
   void vertical_vector_path(Rows<const SourceType> src_rows,
                             Rows<BufferType> dst_rows, ptrdiff_t x) const {
     uint8x16_t src_mid = vld1q_u8(&src_rows[x]);
-    uint8x8_t half_kernel_mid = vdup_n_u8(
-        static_cast<uint8_t>(half_kernel_u16_[half_kernel_size_ - 1]));
+    uint8x8_t half_kernel_mid = vdup_n_u8(half_kernel_[half_kernel_size_ - 1]);
     uint16x8_t acc_l = vmull_u8(vget_low_u8(src_mid), half_kernel_mid);
     uint16x8_t acc_h = vmull_u8(vget_high_u8(src_mid), half_kernel_mid);
 
@@ -140,7 +139,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       uint8x16_t src_j = vld1q_u8(&src_rows.at(half_kernel_size_ - i - 1)[x]);
       uint16x8_t vec_l = vaddl_u8(vget_low_u8(src_i), vget_low_u8(src_j));
       uint16x8_t vec_h = vaddl_high_u8(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       uint16x8_t prod0_l = vmulq_u16(vec_l, coeff);
       uint16x8_t prod0_h = vmulq_u16(vec_h, coeff);
 
@@ -148,7 +147,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       src_j = vld1q_u8(&src_rows.at(half_kernel_size_ - i - 2)[x]);
       vec_l = vaddl_u8(vget_low_u8(src_i), vget_low_u8(src_j));
       vec_h = vaddl_high_u8(src_i, src_j);
-      coeff = vdupq_n_u16(half_kernel_u16_[i + 1]);
+      coeff = vdupq_n_u16(half_kernel_[i + 1]);
       uint16x8_t prod1_l = vmulq_u16(vec_l, coeff);
       uint16x8_t prod1_h = vmulq_u16(vec_h, coeff);
 
@@ -156,7 +155,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       src_j = vld1q_u8(&src_rows.at(half_kernel_size_ - i - 3)[x]);
       vec_l = vaddl_u8(vget_low_u8(src_i), vget_low_u8(src_j));
       vec_h = vaddl_high_u8(src_i, src_j);
-      coeff = vdupq_n_u16(half_kernel_u16_[i + 2]);
+      coeff = vdupq_n_u16(half_kernel_[i + 2]);
       uint16x8_t prod2_l = vmulq_u16(vec_l, coeff);
       uint16x8_t prod2_h = vmulq_u16(vec_h, coeff);
 
@@ -164,7 +163,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       src_j = vld1q_u8(&src_rows.at(half_kernel_size_ - i - 4)[x]);
       vec_l = vaddl_u8(vget_low_u8(src_i), vget_low_u8(src_j));
       vec_h = vaddl_high_u8(src_i, src_j);
-      coeff = vdupq_n_u16(half_kernel_u16_[i + 3]);
+      coeff = vdupq_n_u16(half_kernel_[i + 3]);
       uint16x8_t prod3_l = vmulq_u16(vec_l, coeff);
       uint16x8_t prod3_h = vmulq_u16(vec_h, coeff);
 
@@ -185,7 +184,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       uint8x16_t src_j = vld1q_u8(&src_rows.at(half_kernel_size_ - i - 1)[x]);
       uint16x8_t vec_l = vaddl_u8(vget_low_u8(src_i), vget_low_u8(src_j));
       uint16x8_t vec_h = vaddl_high_u8(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       acc_l = vmlaq_u16(acc_l, vec_l, coeff);
       acc_h = vmlaq_u16(acc_h, vec_h, coeff);
     }
@@ -204,8 +203,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
                                    Rows<BufferType> dst_rows, ptrdiff_t y,
                                    ptrdiff_t x) const {
     uint8x16_t src_mid = vld1q_u8(&src_rows.at(y)[x]);
-    uint8x8_t half_kernel_mid = vdup_n_u8(
-        static_cast<uint8_t>(half_kernel_u16_[half_kernel_size_ - 1]));
+    uint8x8_t half_kernel_mid = vdup_n_u8(half_kernel_[half_kernel_size_ - 1]);
     uint16x8_t acc_l = vmull_u8(vget_low_u8(src_mid), half_kernel_mid);
     uint16x8_t acc_h = vmull_u8(vget_high_u8(src_mid), half_kernel_mid);
 
@@ -217,7 +215,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
           vertical_border_.get_row(y + half_kernel_size_ - 1 - i))[x]);
       uint16x8_t vec_l = vaddl_u8(vget_low_u8(src_i), vget_low_u8(src_j));
       uint16x8_t vec_h = vaddl_high_u8(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       acc_l = vmlaq_u16(acc_l, vec_l, coeff);
       acc_h = vmlaq_u16(acc_h, vec_h, coeff);
     }
@@ -234,13 +232,12 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
   void vertical_scalar_path(Rows<const SourceType> src_rows,
                             Rows<BufferType> dst_rows, ptrdiff_t x) const {
     uint32_t acc = static_cast<uint32_t>(src_rows[x]) *
-                   half_kernel_u16_[half_kernel_size_ - 1];
+                   half_kernel_[half_kernel_size_ - 1];
 
     for (ptrdiff_t i = 0; i < half_kernel_size_ - 1; i++) {
-      acc +=
-          (static_cast<uint32_t>(src_rows.at(i + 1 - half_kernel_size_)[x]) +
-           static_cast<uint32_t>(src_rows.at(half_kernel_size_ - i - 1)[x])) *
-          half_kernel_u16_[i];
+      acc += (src_rows.at(i + 1 - half_kernel_size_)[x] +
+              src_rows.at(half_kernel_size_ - i - 1)[x]) *
+             half_kernel_[i];
     }
 
     dst_rows[x] = static_cast<BufferType>(rounding_shift_right(acc, 8));
@@ -249,15 +246,14 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
   void vertical_border_scalar_path(Rows<const SourceType> src_rows,
                                    Rows<BufferType> dst_rows, ptrdiff_t y,
                                    ptrdiff_t x) const {
-    uint32_t acc = static_cast<uint32_t>(src_rows.at(y)[x]) *
-                   half_kernel_u16_[half_kernel_size_ - 1];
+    uint32_t acc = src_rows.at(y)[x] * half_kernel_[half_kernel_size_ - 1];
 
     for (ptrdiff_t i = 0; i < half_kernel_size_ - 1; i++) {
-      acc += (static_cast<uint32_t>(src_rows.at(
-                  vertical_border_.get_row(y + i + 1 - half_kernel_size_))[x]) +
-              static_cast<uint32_t>(src_rows.at(vertical_border_.get_row(
-                  y + half_kernel_size_ - i - 1))[x])) *
-             half_kernel_u16_[i];
+      acc += (src_rows.at(
+                  vertical_border_.get_row(y + i + 1 - half_kernel_size_))[x] +
+              src_rows.at(
+                  vertical_border_.get_row(y + half_kernel_size_ - i - 1))[x]) *
+             half_kernel_[i];
     }
 
     dst_rows[x] = static_cast<BufferType>(rounding_shift_right(acc, 8));
@@ -269,8 +265,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
     // very similar to the vertical path, the difference is only the loading
     // pattern
     uint8x16_t src_mid = vld1q_u8(&src_rows[x]);
-    uint8x8_t half_kernel_mid = vdup_n_u8(
-        static_cast<uint8_t>(half_kernel_u16_[half_kernel_size_ - 1]));
+    uint8x8_t half_kernel_mid = vdup_n_u8(half_kernel_[half_kernel_size_ - 1]);
     uint16x8_t acc_l = vmull_u8(vget_low_u8(src_mid), half_kernel_mid);
     uint16x8_t acc_h = vmull_u8(vget_high_u8(src_mid), half_kernel_mid);
 
@@ -282,7 +277,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       uint8x16_t src_j = vld1q_u8(&src_rows[right - i * ch]);
       uint16x8_t vec_l = vaddl_u8(vget_low_u8(src_i), vget_low_u8(src_j));
       uint16x8_t vec_h = vaddl_high_u8(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       acc_l = vmlaq_u16(acc_l, vec_l, coeff);
       acc_h = vmlaq_u16(acc_h, vec_h, coeff);
     }
@@ -302,8 +297,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
     // similar to the simple horizontal path, except the loading pattern:
     // - this is loading indirect columns, and half of that data
     uint16x8_t src_mid = vmovl_u8(vld1_u8(&src_rows[x]));
-    uint16x8_t acc =
-        vmulq_n_u16(src_mid, half_kernel_u16_[half_kernel_size_ - 1]);
+    uint16x8_t acc = vmulq_n_u16(src_mid, half_kernel_[half_kernel_size_ - 1]);
 
     ptrdiff_t ch = static_cast<ptrdiff_t>(src_rows.channels());
     ptrdiff_t i = 0, left = x - ch * (half_kernel_size_ - 1),
@@ -312,7 +306,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       uint16x8_t src_i = horizontal_border_.load_left(src_rows, left + i * ch);
       uint16x8_t src_j = vmovl_u8(vld1_u8(&src_rows[right - i * ch]));
       uint16x8_t vec = vaddq_u16(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       acc = vmlaq_u16(acc, vec, coeff);
     }
 
@@ -320,7 +314,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       uint16x8_t src_i = vmovl_u8(vld1_u8(&src_rows[left + i * ch]));
       uint16x8_t src_j = vmovl_u8(vld1_u8(&src_rows[right - i * ch]));
       uint16x8_t vec = vaddq_u16(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       acc = vmlaq_u16(acc, vec, coeff);
     }
 
@@ -335,8 +329,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
     // similar to the simple horizontal path, except the loading pattern:
     // - this is loading indirect columns, and half of that data
     uint16x8_t src_mid = vmovl_u8(vld1_u8(&src_rows[x]));
-    uint16x8_t acc =
-        vmulq_n_u16(src_mid, half_kernel_u16_[half_kernel_size_ - 1]);
+    uint16x8_t acc = vmulq_n_u16(src_mid, half_kernel_[half_kernel_size_ - 1]);
 
     ptrdiff_t ch = static_cast<ptrdiff_t>(src_rows.channels());
     ptrdiff_t i = 0, left = x - ch * (half_kernel_size_ - 1),
@@ -346,7 +339,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       uint16x8_t src_j =
           horizontal_border_.load_right(src_rows, right - i * ch);
       uint16x8_t vec = vaddq_u16(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       acc = vmlaq_u16(acc, vec, coeff);
     }
 
@@ -354,7 +347,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
       uint16x8_t src_i = vmovl_u8(vld1_u8(&src_rows[left + i * ch]));
       uint16x8_t src_j = vmovl_u8(vld1_u8(&src_rows[right - i * ch]));
       uint16x8_t vec = vaddq_u16(src_i, src_j);
-      uint16x8_t coeff = vdupq_n_u16(half_kernel_u16_[i]);
+      uint16x8_t coeff = vdupq_n_u16(half_kernel_[i]);
       acc = vmlaq_u16(acc, vec, coeff);
     }
 
@@ -367,7 +360,7 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
                               Rows<DestinationType> dst_rows,
                               ptrdiff_t x) const {
     uint32_t acc = static_cast<uint32_t>(src_rows[x]) *
-                   half_kernel_u16_[half_kernel_size_ - 1];
+                   half_kernel_[half_kernel_size_ - 1];
     ptrdiff_t ch = static_cast<ptrdiff_t>(src_rows.channels());
     ptrdiff_t channel_offset = x % ch;
     ptrdiff_t left_col = x / ch - (half_kernel_size_ - 1),
@@ -380,14 +373,14 @@ class GaussianBlurArbitrary<uint8_t, BorderT> {
               static_cast<uint32_t>(
                   src_rows[horizontal_border_.get_column(right_col - i) * ch +
                            channel_offset])) *
-             half_kernel_u16_[i];
+             half_kernel_[i];
     }
 
     dst_rows[x] = static_cast<DestinationType>(rounding_shift_right(acc, 8));
   }
 
   const ptrdiff_t half_kernel_size_;
-  const uint16_t *half_kernel_u16_;
+  const uint8_t *half_kernel_;
   const ptrdiff_t width_;
   KLEIDICV_TARGET_NAMESPACE::GenericBorderVertical<BorderT> vertical_border_;
   KLEIDICV_TARGET_NAMESPACE::GenericBorderHorizontal<BorderT>
@@ -405,17 +398,18 @@ static kleidicv_error_t gaussian_blur_arbitrary_kernel_size(
 
   const ptrdiff_t kHalfKernelSize =
       static_cast<ptrdiff_t>(get_half_kernel_size(kernel_size));
-  uint16_t half_kernel[128];
-  generate_gaussian_half_kernel(half_kernel, kHalfKernelSize, sigma);
-  // If sigma is so small that the middle point gets all the weights, it's
-  // just a copy
-  if (half_kernel[kHalfKernelSize - 1] < 256) {
+  uint8_t half_kernel[128];
+  bool success =
+      generate_gaussian_half_kernel(half_kernel, kHalfKernelSize, sigma);
+  if (success) {
     // Only replicated border is implemented so far.
     GaussianBlurArbitrary<ScalarType, FixedBorderType::REPLICATE> filter{
         half_kernel, kHalfKernelSize, rect, src_rows.channels()};
     workspace->process_arbitrary(rect, kernel_size, y_begin, y_end, src_rows,
                                  dst_rows, channels, border_type, filter);
   } else {
+    // Sigma is too small that the middle point would get all the weight
+    // => it's just a copy.
     for (size_t row = y_begin; row < y_end; ++row) {
       std::memcpy(static_cast<void *>(&dst_rows.at(row)[0]),
                   static_cast<const void *>(&src_rows.at(row)[0]),

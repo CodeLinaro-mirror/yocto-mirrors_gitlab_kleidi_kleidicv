@@ -95,16 +95,24 @@ class GaussianBlurTest : public test::KernelTest<KernelTestParams> {
   void calculate_mask(test::Array2D<IntermediateType> &mask) {
     constexpr size_t kHalfKernelSize =
         kleidicv::get_half_kernel_size(kKernelSize);
-    std::vector<uint16_t> half_kernel(kHalfKernelSize);
-    kleidicv::generate_gaussian_half_kernel(half_kernel.data(), kHalfKernelSize,
-                                            sigma_);
-    for (size_t row = 0; row < kKernelSize; ++row) {
-      for (size_t column = 0; column < kKernelSize; ++column) {
-        *mask.at(row, column) =
-            half_kernel[row >= kHalfKernelSize ? kKernelSize - 1 - row : row] *
-            half_kernel[column >= kHalfKernelSize ? kKernelSize - 1 - column
-                                                  : column];
+    std::vector<uint8_t> half_kernel(kHalfKernelSize);
+    bool success = kleidicv::generate_gaussian_half_kernel(
+        half_kernel.data(), kHalfKernelSize, sigma_);
+    if (success) {
+      for (size_t row = 0; row < kKernelSize; ++row) {
+        for (size_t column = 0; column < kKernelSize; ++column) {
+          *mask.at(row, column) =
+              half_kernel[row >= kHalfKernelSize ? kKernelSize - 1 - row
+                                                 : row] *
+              half_kernel[column >= kHalfKernelSize ? kKernelSize - 1 - column
+                                                    : column];
+        }
       }
+    } else {
+      // When all the kernel's energy is in the middle, the returned kernel is
+      // invalid, so it is filled in a different way
+      mask.fill(0);
+      *mask.at(kHalfKernelSize - 1, kHalfKernelSize - 1) = 256 * 256;
     }
   }
 
@@ -1041,8 +1049,8 @@ TYPED_TEST(GaussianBlur, InvalidBorderType) {
   EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
 
-static std::vector<uint16_t> generate_reference_kernel(size_t half_size,
-                                                       float sigma) {
+static std::vector<uint8_t> generate_reference_kernel(size_t half_size,
+                                                      float sigma) {
   std::vector<float> float_kernel(half_size);
 
   for (size_t i = 0; i < half_size; ++i) {
@@ -1065,7 +1073,7 @@ static std::vector<uint16_t> generate_reference_kernel(size_t half_size,
     val *= 256;
   }
 
-  std::vector<uint16_t> kernel_to_return(half_size);
+  std::vector<uint8_t> kernel_to_return(half_size);
   // Conversion with rounding error diffusion
   float last_rounding_error = 0.0;
   for (size_t i = 0; i < half_size; ++i) {
@@ -1073,7 +1081,7 @@ static std::vector<uint16_t> generate_reference_kernel(size_t half_size,
         float_kernel[half_size - 1 - i] - last_rounding_error;
     float rounded_value = std::round(corrected_value);
     last_rounding_error = rounded_value - corrected_value;
-    kernel_to_return[i] = static_cast<uint16_t>(rounded_value);
+    kernel_to_return[i] = static_cast<uint8_t>(rounded_value);
   }
 
   return kernel_to_return;
@@ -1081,14 +1089,14 @@ static std::vector<uint16_t> generate_reference_kernel(size_t half_size,
 
 template <size_t Size>
 void test_sigma() {
-  const std::vector<uint16_t> expected_half_kernel =
+  const std::vector<uint8_t> expected_half_kernel =
       generate_reference_kernel(Size, 3.0);
-  std::vector<uint16_t> actual_half_kernel(Size);
+  std::vector<uint8_t> actual_half_kernel(Size);
   kleidicv::generate_gaussian_half_kernel(actual_half_kernel.data(), Size, 3.0);
 
   EXPECT_EQ(expected_half_kernel, actual_half_kernel);
 
-  const std::vector<uint16_t> expected_half_kernel1 =
+  const std::vector<uint8_t> expected_half_kernel1 =
       generate_reference_kernel(Size, ((Size * 2) - 1) * 0.15 + 0.35);
   kleidicv::generate_gaussian_half_kernel(actual_half_kernel.data(), Size, 0.0);
 

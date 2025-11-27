@@ -302,7 +302,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   static constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
 
-  explicit GaussianBlur(const uint16_t *half_kernel)
+  explicit GaussianBlur(const uint8_t *half_kernel)
       : half_kernel_(half_kernel) {}
 
   void vertical_vector_path(uint8x16_t src[KernelSize], BufferType *dst) const {
@@ -311,15 +311,12 @@ class GaussianBlur<uint8_t, KernelSize, false> {
 
   void vertical_scalar_path(const SourceType src[KernelSize],
                             BufferType *dst) const {
-    uint16_t acc = static_cast<uint16_t>(src[kHalfKernelSize - 1]) *
-                   half_kernel_[kHalfKernelSize - 1];
+    uint16_t acc = src[kHalfKernelSize - 1] * half_kernel_[kHalfKernelSize - 1];
 
     // Optimization to avoid unnecessary branching in vector code.
     KLEIDICV_FORCE_LOOP_UNROLL
     for (size_t i = 0; i < kHalfKernelSize - 1; i++) {
-      acc += (static_cast<uint16_t>(src[i]) +
-              static_cast<uint16_t>(src[KernelSize - i - 1])) *
-             half_kernel_[i];
+      acc += (src[i] + src[KernelSize - i - 1]) * half_kernel_[i];
     }
 
     dst[0] = static_cast<DestinationType>(rounding_shift_right(acc, 8));
@@ -363,7 +360,7 @@ class GaussianBlur<uint8_t, KernelSize, false> {
     neon::VecTraits<uint8_t>::store(result, &dst[0]);
   }
 
-  const uint16_t *half_kernel_;
+  const uint8_t *half_kernel_;
 };  // end of class GaussianBlur<uint8_t, KernelSize, false>
 
 template <size_t KernelSize, bool IsBinomial, typename ScalarType>
@@ -386,16 +383,17 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     return KLEIDICV_OK;
   } else {
     constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
-    uint16_t half_kernel[128];
-    generate_gaussian_half_kernel(half_kernel, kHalfKernelSize, sigma);
-    // If sigma is so small that the middle point gets all the weights, it's
-    // just a copy
-    if (half_kernel[kHalfKernelSize - 1] < 256) {
+    uint8_t half_kernel[128];
+    bool success =
+        generate_gaussian_half_kernel(half_kernel, kHalfKernelSize, sigma);
+    if (success) {
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
       workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
                          border_type, filter);
     } else {
+      // Sigma is too small that the middle point would get all the weight
+      // => it's just a copy.
       for (size_t row = y_begin; row < y_end; ++row) {
         std::memcpy(static_cast<void *>(&dst_rows.at(row)[0]),
                     static_cast<const void *>(&src_rows.at(row)[0]),
