@@ -362,11 +362,6 @@ BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgb_to_rgba_u8, 3, 4, uint8_t);
 BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_bgr_u8, 4, 3, uint8_t);
 BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(rgba_to_rgb_u8, 4, 3, uint8_t);
 
-BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(yuv_to_rgb_u8, 3, 3, uint8_t);
-BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(yuv_to_bgr_u8, 3, 3, uint8_t);
-BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(yuv_to_rgba_u8, 3, 4, uint8_t);
-BENCH_UNARY_OP_DIFFERENT_CHANNEL_NUMBER(yuv_to_bgra_u8, 3, 4, uint8_t);
-
 static void min_max_loc_u8(benchmark::State& state) {
   bench_functor(state, []() {
     size_t min_offset, max_offset;
@@ -714,67 +709,85 @@ static void sobel_filter_horizontal(benchmark::State& state) {
 }
 BENCHMARK(sobel_filter_horizontal);
 
-template <size_t OutChannels, typename Function>
-static void yuv_sp(Function f, benchmark::State& state) {
-  bench_functor(state, [f]() {
-    (void)f(get_source_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
-            get_source_buffer_b<uint8_t, 1>(),
-            (image_width / 2) * sizeof(uint8_t),
-            get_destination_buffer_a<uint8_t, OutChannels>(),
-            image_width * OutChannels * sizeof(uint8_t), image_width,
-            image_height, true);
+template <size_t Channels>
+static void yuv420sp_to_rgbx(benchmark::State& state,
+                             kleidicv_color_conversion_t color_format) {
+  bench_functor(state, [&] {
+    (void)kleidicv_yuv_semiplanar_to_rgb_u8(
+        get_source_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
+        get_source_buffer_b<uint8_t, 1>(), (image_width / 2) * sizeof(uint8_t),
+        get_destination_buffer_a<uint8_t, Channels>(),
+        image_width * Channels * sizeof(uint8_t), image_width, image_height,
+        color_format);
   });
 }
 
-static void yuv_sp_to_rgb(benchmark::State& state) {
-  yuv_sp<3>(kleidicv_yuv_sp_to_rgb_u8, state);
-}
-BENCHMARK(yuv_sp_to_rgb);
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<3>, , KLEIDICV_NV12_TO_BGR)
+    ->Name("nv12_to_bgr");
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<3>, , KLEIDICV_NV12_TO_RGB)
+    ->Name("nv12_to_rgb");
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<4>, , KLEIDICV_NV12_TO_BGRA)
+    ->Name("nv12_to_bgra");
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<4>, , KLEIDICV_NV12_TO_RGBA)
+    ->Name("nv12_to_rgba");
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<3>, , KLEIDICV_NV21_TO_BGR)
+    ->Name("nv21_to_bgr");
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<3>, , KLEIDICV_NV21_TO_RGB)
+    ->Name("nv21_to_rgb");
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<4>, , KLEIDICV_NV21_TO_BGRA)
+    ->Name("nv21_to_bgra");
+BENCHMARK_CAPTURE(yuv420sp_to_rgbx<4>, , KLEIDICV_NV21_TO_RGBA)
+    ->Name("nv21_to_rgba");
 
-static void yuv_sp_to_bgr(benchmark::State& state) {
-  yuv_sp<3>(kleidicv_yuv_sp_to_bgr_u8, state);
-}
-BENCHMARK(yuv_sp_to_bgr);
-
-static void yuv_sp_to_rgba(benchmark::State& state) {
-  yuv_sp<4>(kleidicv_yuv_sp_to_rgba_u8, state);
-}
-BENCHMARK(yuv_sp_to_rgba);
-
-static void yuv_sp_to_bgra(benchmark::State& state) {
-  yuv_sp<4>(kleidicv_yuv_sp_to_bgra_u8, state);
-}
-BENCHMARK(yuv_sp_to_bgra);
-
-template <size_t OutChannels, typename Function>
-static void yuv_p(Function f, benchmark::State& state) {
-  bench_functor(state, [f]() {
-    (void)f(get_source_buffer_a<uint8_t, 2>(), image_width * sizeof(uint8_t),
-            get_destination_buffer_a<uint8_t, OutChannels>(),
-            image_width * OutChannels * sizeof(uint8_t), image_width,
-            image_height, true);
+template <size_t Channels>
+static void yuv420p_to_rgbx(benchmark::State& state,
+                            kleidicv_color_conversion_t color_format) {
+  bench_functor(state, [&] {
+    (void)kleidicv_yuv_to_rgb_u8(get_source_buffer_a<uint8_t, 2>(),
+                                 image_width * sizeof(uint8_t),
+                                 get_destination_buffer_a<uint8_t, Channels>(),
+                                 image_width * Channels * sizeof(uint8_t),
+                                 image_width, image_height, color_format);
   });
 }
 
-static void yuv_p_to_rgb(benchmark::State& state) {
-  yuv_p<3>(kleidicv_yuv_p_to_rgb_u8, state);
-}
-BENCHMARK(yuv_p_to_rgb);
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<3>, , KLEIDICV_YV12_TO_BGR)
+    ->Name("yv12_to_bgr");
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<3>, , KLEIDICV_YV12_TO_RGB)
+    ->Name("yv12_to_rgb");
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<4>, , KLEIDICV_YV12_TO_BGRA)
+    ->Name("yv12_to_bgra");
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<4>, , KLEIDICV_YV12_TO_RGBA)
+    ->Name("yv12_to_rgba");
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<3>, , KLEIDICV_IYUV_TO_BGR)
+    ->Name("iyuv_to_bgr");
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<3>, , KLEIDICV_IYUV_TO_RGB)
+    ->Name("iyuv_to_rgb");
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<4>, , KLEIDICV_IYUV_TO_BGRA)
+    ->Name("iyuv_to_bgra");
+BENCHMARK_CAPTURE(yuv420p_to_rgbx<4>, , KLEIDICV_IYUV_TO_RGBA)
+    ->Name("iyuv_to_rgba");
 
-static void yuv_p_to_bgr(benchmark::State& state) {
-  yuv_p<3>(kleidicv_yuv_p_to_bgr_u8, state);
+template <size_t Channels>
+static void yuv444_to_rgbx(benchmark::State& state,
+                           kleidicv_color_conversion_t color_format) {
+  bench_functor(state, [&] {
+    (void)kleidicv_yuv_to_rgb_u8(get_source_buffer_a<uint8_t, 3>(),
+                                 image_width * 3 * sizeof(uint8_t),
+                                 get_destination_buffer_a<uint8_t, Channels>(),
+                                 image_width * Channels * sizeof(uint8_t),
+                                 image_width, image_height, color_format);
+  });
 }
-BENCHMARK(yuv_p_to_bgr);
 
-static void yuv_p_to_rgba(benchmark::State& state) {
-  yuv_p<4>(kleidicv_yuv_p_to_rgba_u8, state);
-}
-BENCHMARK(yuv_p_to_rgba);
-
-static void yuv_p_to_bgra(benchmark::State& state) {
-  yuv_p<4>(kleidicv_yuv_p_to_bgra_u8, state);
-}
-BENCHMARK(yuv_p_to_bgra);
+BENCHMARK_CAPTURE(yuv444_to_rgbx<3>, , KLEIDICV_YUV444_TO_BGR)
+    ->Name("yuv444_to_bgr ");
+BENCHMARK_CAPTURE(yuv444_to_rgbx<3>, , KLEIDICV_YUV444_TO_RGB)
+    ->Name("yuv444_to_rgb ");
+BENCHMARK_CAPTURE(yuv444_to_rgbx<4>, , KLEIDICV_YUV444_TO_BGRA)
+    ->Name("yuv444_to_bgra");
+BENCHMARK_CAPTURE(yuv444_to_rgbx<4>, , KLEIDICV_YUV444_TO_RGBA)
+    ->Name("yuv444_to_rgba");
 
 template <size_t InChannels, typename Function>
 static void rgb_to_yuv420_p_imp(Function f, benchmark::State& state) {

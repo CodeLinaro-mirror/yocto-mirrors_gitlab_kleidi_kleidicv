@@ -14,7 +14,7 @@
 #include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/arithmetics/scale.h"
 #include "kleidicv/conversions/rgb_to_yuv_420.h"
-#include "kleidicv/conversions/yuv_420_to_rgb.h"
+#include "kleidicv/conversions/yuv_to_rgb.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
@@ -126,10 +126,6 @@ KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_bgra_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_rgba_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_bgr_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_rgb_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(yuv_to_bgr_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(yuv_to_bgra_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(yuv_to_rgb_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(yuv_to_rgba_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(bgr_to_yuv_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_yuv_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(bgra_to_yuv_u8, uint8_t, uint8_t);
@@ -274,49 +270,21 @@ kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,
   return parallel_batches(callback, mt, width, 64);
 }
 
-kleidicv_error_t kleidicv_thread_yuv_p_to_bgr_u8(
+kleidicv_error_t kleidicv_thread_yuv_to_rgb_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
+    size_t width, size_t height, kleidicv_color_conversion_t color_format,
     kleidicv_thread_multithreading mt) {
+  // Extract the base format
+  const size_t base_format = static_cast<size_t>(
+      color_format & KLEIDICV_COLOR_CONVERSION_YUV_FMT_MASK);
+  if (base_format == KLEIDICV_COLOR_CONVERSION_FMT_YUV444) {
+    return kleidicv_thread_unary_op_impl(kleidicv_yuv444_to_rgb_u8, mt, src,
+                                         src_stride, dst, dst_stride, width,
+                                         height, color_format);
+  }
   auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_yuv_p_to_bgr_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_yuv_p_to_bgra_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_yuv_p_to_bgra_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_yuv_p_to_rgb_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_yuv_p_to_rgb_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_yuv_p_to_rgba_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_yuv_p_to_rgba_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
+    return kleidicv_yuv420p_to_rgb_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, color_format,
         static_cast<size_t>(begin), static_cast<size_t>(end));
   };
   return parallel_batches(callback, mt, (height + 1) / 2);
@@ -418,37 +386,23 @@ kleidicv_error_t kleidicv_thread_bgra_to_yuv420_sp_u8(
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
 
-template <typename F>
-inline kleidicv_error_t kleidicv_thread_yuv_sp_to_rgb_u8_impl(
-    F f, const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
+kleidicv_error_t kleidicv_thread_yuv_semiplanar_to_rgb_u8(
+    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21, kleidicv_thread_multithreading mt) {
+    size_t height, kleidicv_color_conversion_t color_format,
+    kleidicv_thread_multithreading mt) {
   auto callback = [=](unsigned begin, unsigned end) {
     size_t row_begin = size_t{begin} * 2;
     size_t row_end = std::min<size_t>(height, size_t{end} * 2);
     size_t row_uv = begin;
-    return f(src_y + row_begin * src_y_stride, src_y_stride,
-             src_uv + row_uv * src_uv_stride, src_uv_stride,
-             dst + row_begin * dst_stride, dst_stride, width,
-             row_end - row_begin, is_nv21);
+    return kleidicv_yuv_semiplanar_to_rgb_u8(
+        src_y + row_begin * src_y_stride, src_y_stride,
+        src_uv + row_uv * src_uv_stride, src_uv_stride,
+        dst + row_begin * dst_stride, dst_stride, width, row_end - row_begin,
+        color_format);
   };
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
-
-#define YUV_SP_TO_RGB(suffix)                                               \
-  kleidicv_error_t kleidicv_thread_##suffix(                                \
-      const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,     \
-      size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,  \
-      size_t height, bool is_nv21, kleidicv_thread_multithreading mt) {     \
-    return kleidicv_thread_yuv_sp_to_rgb_u8_impl(                           \
-        kleidicv_##suffix, src_y, src_y_stride, src_uv, src_uv_stride, dst, \
-        dst_stride, width, height, is_nv21, mt);                            \
-  }
-
-YUV_SP_TO_RGB(yuv_sp_to_bgr_u8);
-YUV_SP_TO_RGB(yuv_sp_to_bgra_u8);
-YUV_SP_TO_RGB(yuv_sp_to_rgb_u8);
-YUV_SP_TO_RGB(yuv_sp_to_rgba_u8);
 
 template <typename ScalarType, typename FunctionType>
 kleidicv_error_t parallel_min_max(FunctionType min_max_func,

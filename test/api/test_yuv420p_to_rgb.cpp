@@ -15,6 +15,28 @@
 
 class YUV420p2RGBTest : public testing::Test {
  public:
+  static inline int get_dcn(kleidicv_color_conversion_t color) {
+    return (color & KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA) ? 4 : 3;
+  }
+  static inline kleidicv_color_conversion_t make_color_conversion_type(
+      size_t num_channels, bool is_bgr, bool is_vu, bool is_uyvy,
+      kleidicv_color_conversion_t base_fmt) {
+    unsigned v = static_cast<unsigned>(base_fmt);
+    if (is_vu) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_VU;
+    }
+    if (is_bgr) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_BGR;
+    }
+    if (num_channels == 4) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA;
+    }
+    // is_uyvy only meaningful for YUV422; harmless otherwise
+    if (is_uyvy) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST;
+    }
+    return static_cast<kleidicv_color_conversion_t>(v);
+  }
   struct TestParams {
     size_t width;
     size_t src_padding;
@@ -86,56 +108,52 @@ class YUV420p2RGBTest : public testing::Test {
 
     auto status = KLEIDICV_OK;
 
-    if (params.channels == 3) {
-      if (!params.is_bgr) {
-        status = kleidicv_yuv_p_to_rgb_u8(src.data(), src.stride(), dst.data(),
-                                          dst.stride(), params.width,
-                                          params.height, params.is_yv12);
-      } else {
-        status = kleidicv_yuv_p_to_bgr_u8(src.data(), src.stride(), dst.data(),
-                                          dst.stride(), params.width,
-                                          params.height, params.is_yv12);
-      }
-    }
+    const kleidicv_color_conversion_t color_format = make_color_conversion_type(
+        params.channels, params.is_bgr, params.is_yv12, false,
+        KLEIDICV_COLOR_CONVERSION_FMT_YUV420P);
 
-    if (params.channels == 4) {
-      if (!params.is_bgr) {
-        status = kleidicv_yuv_p_to_rgba_u8(src.data(), src.stride(), dst.data(),
-                                           dst.stride(), params.width,
-                                           params.height, params.is_yv12);
-      } else {
-        status = kleidicv_yuv_p_to_bgra_u8(src.data(), src.stride(), dst.data(),
-                                           dst.stride(), params.width,
-                                           params.height, params.is_yv12);
-      }
-    }
+    status = kleidicv_yuv_to_rgb_u8(src.data(), src.stride(), dst.data(),
+                                    dst.stride(), params.width, params.height,
+                                    color_format);
 
     EXPECT_EQ(KLEIDICV_OK, status);
     EXPECT_EQ_ARRAY2D(expected_dst, dst);
   }
 
   template <typename Func>
-  void run_unsupported(Func impl, size_t channels, bool is_yv12) {
+  void run_unsupported(Func impl, kleidicv_color_conversion_t color_format) {
     test::Array2D<uint8_t> src{20, (10 * 3 + 1) / 2};
-
+    size_t channels = get_dcn(color_format);
     test::Array2D<uint8_t> dst{20 * channels, 10, 0, channels};
 
     test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width(), dst.height(), is_yv12);
+                         dst.stride(), dst.width(), dst.height(), color_format);
 
     EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), dst.data(),
-                                dst.stride(), 0, 1, is_yv12));
+                                dst.stride(), 0, 1, color_format));
 
     EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), dst.data(),
-                                dst.stride(), 1, 0, is_yv12));
+                                dst.stride(), 1, 0, color_format));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(src.data(), src.stride(), dst.data(), dst.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, is_yv12));
-    EXPECT_EQ(
-        KLEIDICV_ERROR_RANGE,
-        impl(src.data(), src.stride(), dst.data(), dst.stride(),
-             KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, is_yv12));
+                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, color_format));
+
+    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+              impl(src.data(), src.stride(), dst.data(), dst.stride(),
+                   KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
+                   color_format));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              impl(src.data(), src.stride(), dst.data(), dst.stride(),
+                   dst.width(), dst.height(), kleidicv_color_conversion_t{}));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              impl(src.data(), src.stride(), dst.data(), dst.stride(),
+                   dst.width(), dst.height(),
+                   static_cast<kleidicv_color_conversion_t>(
+                       KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                       KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST)));
   }
 
  private:
@@ -206,12 +224,12 @@ TEST_F(YUV420p2RGBTest, ConvertspaddedInputsWithAllParamCombinations) {
 }
 
 TEST_F(YUV420p2RGBTest, ReturnsErrorForUnsupportedCombinations) {
-  run_unsupported(kleidicv_yuv_p_to_rgb_u8, 3, true);
-  run_unsupported(kleidicv_yuv_p_to_rgba_u8, 4, true);
-  run_unsupported(kleidicv_yuv_p_to_bgr_u8, 3, true);
-  run_unsupported(kleidicv_yuv_p_to_bgra_u8, 4, true);
-  run_unsupported(kleidicv_yuv_p_to_rgb_u8, 3, false);
-  run_unsupported(kleidicv_yuv_p_to_rgba_u8, 4, false);
-  run_unsupported(kleidicv_yuv_p_to_bgr_u8, 3, false);
-  run_unsupported(kleidicv_yuv_p_to_bgra_u8, 4, false);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_YV12_TO_BGR);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_YV12_TO_RGB);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_YV12_TO_BGRA);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_YV12_TO_RGBA);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_IYUV_TO_BGR);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_IYUV_TO_RGB);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_IYUV_TO_BGRA);
+  run_unsupported(kleidicv_yuv_to_rgb_u8, KLEIDICV_IYUV_TO_RGBA);
 }

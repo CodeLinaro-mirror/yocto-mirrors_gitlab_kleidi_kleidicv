@@ -93,4 +93,154 @@ typedef struct kleidicv_morphology_context_t_ kleidicv_morphology_context_t;
 /// Internal structure where filter operations store their state
 typedef struct kleidicv_filter_context_t_ kleidicv_filter_context_t;
 
+/// Supported color conversions and base formats/modifier flags.
+typedef enum {
+  // Base formats:
+  /// Base YUV444 format (interleaved, full resolution)
+  KLEIDICV_COLOR_CONVERSION_FMT_YUV444 = 0x01,
+  /// Base YUV420 semi-planar format (NV12/NV21)
+  KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP = 0x02,
+  /// Base YUV420 planar format (I420/IYUV or YV12)
+  KLEIDICV_COLOR_CONVERSION_FMT_YUV420P = 0x03,
+  /// Base YUV422 format (interleaved 4:2:2)
+  KLEIDICV_COLOR_CONVERSION_FMT_YUV422 = 0x04,
+  /// Mask to extract the base YUV format (lower 4 bits) from a color conversion
+  /// value. Use this to identify whether the base format is YUV444, YUV420SP,
+  /// YUV420P, or YUV422.
+  KLEIDICV_COLOR_CONVERSION_YUV_FMT_MASK = 0x0F,
+
+  // Modifier flags:
+  /// Indicates VU chroma order (V before U)
+  KLEIDICV_COLOR_CONVERSION_FLAG_VU = 0x10,
+  /// Indicates image data is in BGR format (instead of RGB)
+  KLEIDICV_COLOR_CONVERSION_FLAG_BGR = 0x20,
+  /// Indicates that alpha channel is present (RGBA or BGRA)
+  KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA = 0x40,
+  /// Indicates chroma byte precedes luma (Y) byte in packed 4:2:2 data
+  KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST = 0x80,
+
+  // YUV444 conversions:
+  /// Convert YUV444 to RGB
+  KLEIDICV_YUV444_TO_RGB = KLEIDICV_COLOR_CONVERSION_FMT_YUV444,
+  /// Convert YUV444 to BGR
+  KLEIDICV_YUV444_TO_BGR =
+      KLEIDICV_COLOR_CONVERSION_FMT_YUV444 | KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert YUV444 to RGBA
+  KLEIDICV_YUV444_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV444 |
+                            KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert YUV444 to BGRA
+  KLEIDICV_YUV444_TO_BGRA = KLEIDICV_COLOR_CONVERSION_FMT_YUV444 |
+                            KLEIDICV_COLOR_CONVERSION_FLAG_BGR |
+                            KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+
+  // YUV420 semi-planar (NV12/NV21) conversions:
+  /// Convert NV12 (Y + interleaved UV) to RGB
+  KLEIDICV_NV12_TO_RGB = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP,
+  /// Convert NV12 (Y + interleaved UV) to BGR
+  KLEIDICV_NV12_TO_BGR = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert NV12 (Y + interleaved UV) to RGBA
+  KLEIDICV_NV12_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert NV12 (Y + interleaved UV) to BGRA
+  KLEIDICV_NV12_TO_BGRA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_BGR |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+
+  /// Convert NV21 (Y + interleaved VU) to RGB
+  KLEIDICV_NV21_TO_RGB = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_VU,
+  /// Convert NV21 (Y + interleaved VU) to BGR
+  KLEIDICV_NV21_TO_BGR = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert NV21 (Y + interleaved VU) to RGBA
+  KLEIDICV_NV21_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert NV21 (Y + interleaved VU) to BGRA
+  KLEIDICV_NV21_TO_BGRA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_BGR |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+
+  // YUV420 planar (I420/IYUV/YV12) conversions:
+  /// Convert I420/IYUV (Y, U, V planes) to RGB
+  KLEIDICV_IYUV_TO_RGB = KLEIDICV_COLOR_CONVERSION_FMT_YUV420P,
+  /// Convert I420/IYUV (Y, U, V planes) to BGR
+  KLEIDICV_IYUV_TO_BGR = KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert I420/IYUV (Y, U, V planes) to RGBA
+  KLEIDICV_IYUV_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert I420/IYUV (Y, U, V planes) to BGRA
+  KLEIDICV_IYUV_TO_BGRA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_BGR |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+
+  /// Convert YV12 (Y, V, U planes) to RGB
+  KLEIDICV_YV12_TO_RGB =
+      KLEIDICV_COLOR_CONVERSION_FMT_YUV420P | KLEIDICV_COLOR_CONVERSION_FLAG_VU,
+  /// Convert YV12 (Y, V, U planes) to BGR
+  KLEIDICV_YV12_TO_BGR = KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert YV12 (Y, V, U planes) to RGBA
+  KLEIDICV_YV12_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert YV12 (Y, V, U planes) to BGRA
+  KLEIDICV_YV12_TO_BGRA = KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_BGR |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+
+  // YUV422 packed conversions:
+  /// Convert YUYV (Y, U, Y, V order) to RGB
+  KLEIDICV_YUYV_TO_RGB = KLEIDICV_COLOR_CONVERSION_FMT_YUV422,
+  /// Convert YUYV (Y, U, Y, V order) to BGR
+  KLEIDICV_YUYV_TO_BGR =
+      KLEIDICV_COLOR_CONVERSION_FMT_YUV422 | KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert YUYV (Y, U, Y, V order) to RGBA
+  KLEIDICV_YUYV_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert YUYV (Y, U, Y, V order) to BGRA
+  KLEIDICV_YUYV_TO_BGRA = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_BGR |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+
+  /// Convert YVYU (Y, V, Y, U order) to RGB
+  KLEIDICV_YVYU_TO_RGB =
+      KLEIDICV_COLOR_CONVERSION_FMT_YUV422 | KLEIDICV_COLOR_CONVERSION_FLAG_VU,
+  /// Convert YVYU (Y, V, Y, U order) to BGR
+  KLEIDICV_YVYU_TO_BGR = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert YVYU (Y, V, Y, U order) to RGBA
+  KLEIDICV_YVYU_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert YVYU (Y, V, Y, U order) to BGRA
+  KLEIDICV_YVYU_TO_BGRA =
+      KLEIDICV_COLOR_CONVERSION_FMT_YUV422 | KLEIDICV_COLOR_CONVERSION_FLAG_VU |
+      KLEIDICV_COLOR_CONVERSION_FLAG_BGR | KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+
+  /// Convert UYVY (U, Y, V, Y order) to RGB
+  KLEIDICV_UYVY_TO_RGB = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST,
+  /// Convert UYVY (U, Y, V, Y order) to BGR
+  KLEIDICV_UYVY_TO_BGR = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_BGR,
+  /// Convert UYVY (U, Y, V, Y order) to RGBA
+  KLEIDICV_UYVY_TO_RGBA = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+  /// Convert UYVY (U, Y, V, Y order) to BGRA
+  KLEIDICV_UYVY_TO_BGRA = KLEIDICV_COLOR_CONVERSION_FMT_YUV422 |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_BGR |
+                          KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA,
+} kleidicv_color_conversion_t;
+
 #endif  // KLEIDICV_CTYPES_H

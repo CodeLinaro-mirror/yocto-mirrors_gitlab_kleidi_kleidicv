@@ -8,6 +8,7 @@
 #include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "yuv444_coefficients.h"
 
 namespace kleidicv::neon {
 
@@ -170,39 +171,40 @@ using YUVToBGR = YUVToRGBAll<true, false>;
 using YUVToBGRA = YUVToRGBAll<true, true>;
 
 KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t yuv_to_rgb_u8(const uint8_t *src, size_t src_stride,
-                               uint8_t *dst, size_t dst_stride, size_t width,
-                               size_t height) {
-  YUVToRGB operation;
-  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
-}
+kleidicv_error_t yuv444_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height,
+                                  kleidicv_color_conversion_t color_format) {
+  switch (color_format) {
+    case KLEIDICV_YUV444_TO_RGB: {
+      YUVToRGB operation;
+      return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t yuv_to_rgba_u8(const uint8_t *src, size_t src_stride,
-                                uint8_t *dst, size_t dst_stride, size_t width,
-                                size_t height) {
-  YUVToRGBA operation;
-  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
-}
+    case KLEIDICV_YUV444_TO_BGR: {
+      YUVToBGR operation;
+      return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t yuv_to_bgr_u8(const uint8_t *src, size_t src_stride,
-                               uint8_t *dst, size_t dst_stride, size_t width,
-                               size_t height) {
-  YUVToBGR operation;
-  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
-}
+    case KLEIDICV_YUV444_TO_RGBA: {
+      YUVToRGBA operation;
+      return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t yuv_to_bgra_u8(const uint8_t *src, size_t src_stride,
-                                uint8_t *dst, size_t dst_stride, size_t width,
-                                size_t height) {
-  YUVToBGRA operation;
-  return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
+    case KLEIDICV_YUV444_TO_BGRA: {
+      YUVToBGRA operation;
+      return yuv2rgb_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
+
+    default:
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
 }  // namespace kleidicv::neon

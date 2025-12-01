@@ -561,264 +561,127 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
-/// Converts an NV12 or NV21 (Semi-Planar) YUV image to RGB. All channels are
-/// 8-bit wide.
+/// Converts a YUV image (planar or interleaved) to RGB, RGBA, BGR, or BGRA
+/// format. All channels are 8-bit wide. If the output format includes an
+/// alpha channel, the alpha value is set to 0xFF.
 ///
-/// Destination data is filled liked this:
-/// `| R,G,B | R,G,B | R,G,B | ...`
-/// Where each letter represents one byte of data, and one pixel is represented
-/// by 3 bytes. There is no padding between the pixels.
-/// If 4-byte alignment is required then @ref kleidicv_yuv_sp_to_rgba_u8 can be
-/// used.
+/// Source formats:
 ///
-/// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+/// - Planar YUV420 (I420 or YV12 layout)
 ///
-/// @param src_y         Pointer to the input's Y component. Must be non-null.
-/// @param src_y_stride  Distance in bytes from the start of one row to the
-///                      start of the next row for the input's Y component.
-///                      Must not be less than `width * sizeof(u8)`, except for
-///                      single-row images.
-/// @param src_uv        Pointer to the input's interleaved UV components.
-///                      Must be non-null. If the width parameter is odd, the
-///                      width of this input stream still needs to be even.
-/// @param src_uv_stride Distance in bytes from the start of one row to the
-///                      start of the next row for the input's UV components.
-///                      Must not be less than
-///                      `__builtin_align_up(width, 2) * sizeof(u8)`, except for
-///                      single-row images.
-/// @param dst           Pointer to the destination data. Must be non-null.
-/// @param dst_stride    Distance in bytes from the start of one row to the
-///                      start of the next row for the destination data. Must
-///                      not be less than `width * 3 * sizeof(type)`, except for
-///                      single-row images.
-/// @param width         Number of pixels in a row.
-/// @param height        Number of rows in the data.
-/// @param is_nv21       If true, input is treated as NV21, otherwise treated
-///                      as NV12.
+///   The input buffer consists of three planes stored sequentially in memory:
+///   - Y plane: full resolution, `size = width × height`
+///   - U plane: quarter resolution, `size = (width / 2) × (height / 2)`
+///   - V plane: quarter resolution, `size = (width / 2) × (height / 2)`
 ///
-KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_rgb_u8, const uint8_t *src_y,
-                         size_t src_y_stride, const uint8_t *src_uv,
-                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, bool is_nv21);
+///   The layout order (Y + U + V or Y + V + U) is determined by `color_format`.
+///
+/// - Interleaved YUV444
+///
+///   The input data contains three 8-bit channels per pixel, stored
+///   consecutively in memory as `| Y, U, V | Y, U, V | ... |`.
+///
+///   Each pixel occupies 3 bytes. There is no padding between pixels.
+///
+/// Destination format:
+///
+/// - Interleaved RGB
+///
+///   The destination buffer uses an interleaved pixel layout with 3 or 4
+///   channels per pixel:
+///   - R, G, B
+///   - B, G, R
+///   - R, G, B, Alpha
+///   - B, G, R, Alpha
+///
+///   One pixel occupies 3 or 4 bytes, depending on the format.
+///
+/// Width and height refer to the logical image dimensions, i.e. the number of
+/// pixels per row and the number of rows. The total number of pixels must not
+/// exceed @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src          Pointer to the source buffer containing the YUV data.
+///                     Must be non-null.
+/// @param src_stride   Byte offset between the start of one row and the next
+///                     in the source data.
+///                     For planar YUV420, this is the stride of the Y plane,
+///                     and the U and V planes follow sequentially in memory.
+///                     For interleaved YUV444, this must be at least
+///                     `3 * width`, unless the image has only one row.
+/// @param dst          Pointer to the destination buffer. Must be non-null.
+/// @param dst_stride   Byte offset between the start of one destination row
+///                     and the next. Must be at least
+///                     `(destination channel count) * width`, unless the image
+///                     has only one row.
+/// @param width        Number of pixels in a row.
+/// @param height       Number of rows in the data.
+/// @param color_format Specifies the color conversion type, defining both the
+///                     source YUV layout (e.g., I420, YV12, YUV444) and the
+///                     destination RGB(A)/BGR(A) format.
+///                     Must be one of @ref kleidicv_color_conversion_t.
+kleidicv_error_t kleidicv_yuv_to_rgb_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, kleidicv_color_conversion_t color_format);
 
-/// Converts an NV12 or NV21 (Semi-Planar) YUV image to BGR. All channels are
-/// 8-bit wide.
-///
-/// Destination data is filled liked this:
-/// `| B,G,R | B,G,R | B,G,R | ...`
-/// Where each letter represents one byte of data, and one pixel is represented
-/// by 3 bytes. There is no padding between the pixels.
-/// If 4-byte alignment is required then @ref kleidicv_yuv_sp_to_bgra_u8 can be
-/// used.
-///
-/// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
-///
-/// @param src_y         Pointer to the input's Y component. Must be non-null.
-/// @param src_y_stride  Distance in bytes from the start of one row to the
-///                      start of the next row for the input's Y component.
-///                      Must not be less than `width * sizeof(u8)`, except for
-///                      single-row images.
-/// @param src_uv        Pointer to the input's interleaved UV components.
-///                      Must be non-null. If the width parameter is odd, the
-///                      width of this input stream still needs to be even.
-/// @param src_uv_stride Distance in bytes from the start of one row to the
-///                      start of the next row for the input's UV components.
-///                      Must not be less than
-///                      `__builtin_align_up(width, 2) * sizeof(u8)`, except for
-///                      single-row images.
-/// @param dst           Pointer to the destination data. Must be non-null.
-/// @param dst_stride    Distance in bytes from the start of one row to the
-///                      start of the next row for the destination data. Must
-///                      not be less than `width * 3 * sizeof(type)`, except for
-///                      single-row images.
-/// @param width         Number of pixels in a row.
-/// @param height        Number of rows in the data.
-/// @param is_nv21       If true, input is treated as NV21, otherwise treated
-///                      as NV12.
-///
-KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgr_u8, const uint8_t *src_y,
-                         size_t src_y_stride, const uint8_t *src_uv,
-                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, bool is_nv21);
-
-/// Converts an NV12 or NV21 (Semi-Planar) YUV image to RGBA. All channels are
-/// 8-bit wide. Alpha channel is set to 0xFF.
-///
-/// Destination data is filled liked this:
-/// `| R,G,B,A | R,G,B,A | R,G,B,A | ...`
-/// Where each letter represents one byte of data, and one pixel is represented
-/// by 4 bytes. There is no padding between the pixels.
-///
-/// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
-///
-/// @param src_y         Pointer to the input's Y component. Must be non-null.
-/// @param src_y_stride  Distance in bytes from the start of one row to the
-///                      start of the next row for the input's Y component.
-///                      Must not be less than `width * sizeof(u8)`, except for
-///                      single-row images.
-/// @param src_uv        Pointer to the input's interleaved UV components.
-///                      Must be non-null. If the width parameter is odd, the
-///                      width of this input stream still needs to be even.
-/// @param src_uv_stride Distance in bytes from the start of one row to the
-///                      start of the next row for the input's UV components.
-///                      Must not be less than
-///                      `__builtin_align_up(width, 2) * sizeof(u8)`, except for
-///                      single-row images.
-/// @param dst           Pointer to the destination data. Must be non-null.
-/// @param dst_stride    Distance in bytes from the start of one row to the
-///                      start of the next row for the destination data. Must
-///                      not be less than `width * 4 * sizeof(type)`, except for
-///                      single-row images.
-/// @param width         Number of pixels in a row.
-/// @param height        Number of rows in the data.
-/// @param is_nv21       If true, input is treated as NV21, otherwise treated
-///                      as NV12.
-///
-KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_rgba_u8, const uint8_t *src_y,
-                         size_t src_y_stride, const uint8_t *src_uv,
-                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, bool is_nv21);
-
-/// Converts an NV12 or NV21 (Semi-Planar) YUV image to BGRA. All channels are
-/// 8-bit wide. Alpha channel is set to 0xFF.
-///
-/// Destination data is filled liked this:
-/// `| B,G,R,A | B,G,R,A | B,G,R,A | ...`
-/// Where each letter represents one byte of data, and one pixel is represented
-/// by 4 bytes. There is no padding between the pixels.
-///
-/// Width and height are the same for the source and for the destination. Number
-/// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
-///
-/// @param src_y         Pointer to the input's Y component. Must be non-null.
-/// @param src_y_stride  Distance in bytes from the start of one row to the
-///                      start of the next row for the input's Y component.
-///                      Must not be less than `width * sizeof(u8)`, except for
-///                      single-row images.
-/// @param src_uv        Pointer to the input's interleaved UV components.
-///                      Must be non-null. If the width parameter is odd, the
-///                      width of this input stream still needs to be even.
-/// @param src_uv_stride Distance in bytes from the start of one row to the
-///                      start of the next row for the input's UV components.
-///                      Must not be less than
-///                      `__builtin_align_up(width, 2) * sizeof(u8)`, except for
-///                      single-row images.
-/// @param dst           Pointer to the destination data. Must be non-null.
-/// @param dst_stride    Distance in bytes from the start of one row to the
-///                      start of the next row for the destination data. Must
-///                      not be less than `width * 4 * sizeof(type)`, except for
-///                      single-row images.
-/// @param width         Number of pixels in a row.
-/// @param height        Number of rows in the data.
-/// @param is_nv21       If true, input is treated as NV21, otherwise treated
-///                      as NV12.
-///
-KLEIDICV_API_DECLARATION(kleidicv_yuv_sp_to_bgra_u8, const uint8_t *src_y,
-                         size_t src_y_stride, const uint8_t *src_uv,
-                         size_t src_uv_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height, bool is_nv21);
-
-#define KLEIDICV_OP_YUVP_TO_RGB(name)                                        \
-  kleidicv_error_t name(const uint8_t *src, size_t src_stride, uint8_t *dst, \
-                        size_t dst_stride, size_t width, size_t height,      \
-                        bool is_yv12)
-
-/// Converts a planar YUV420 image (I420 or YV12 layout) to RGB, RGBA, BGR, or
+/// Converts a semi-planar YUV image (NV12 or NV21 layout) to RGB, RGBA, BGR, or
 /// BGRA format. All channels are 8-bit wide. If the output format includes an
 /// alpha channel, the alpha value is set to 0xFF.
 ///
-/// Source format: Planar YUV420
-/// The input buffer consists of three planes stored sequentially in memory:
-/// - Y plane:   full resolution, size = width × height
-/// - U plane:   quarter resolution, size = (width / 2) × (height / 2)
-/// - V plane:   quarter resolution, size = (width / 2) × (height / 2)
+/// Source format:
 ///
-/// Destination format
-/// Destination data uses interleaved pixel layout with 3 or 4 channels per
-/// pixel:
-/// - R, G, B
-/// - B, G, R
-/// - R, G, B, Alpha
-/// - B, G, R, Alpha
+/// - Semi-Planar YUV420
 ///
-/// One pixel occupies 3 or 4 bytes, depending on the format.
+///   The input consists of two planes:
+///   - Y plane:  full resolution, `size = width × height`
+///   - UV plane: half resolution, `size = (width / 2) × (height / 2)`
 ///
-/// Width and height refer to the logical image dimensions, i.e., number of
-/// pixels per row and number of rows. The total number of pixels must not
+///   The UV plane contains interleaved chroma samples:
+///   - NV12: UVUVUV...
+///   - NV21: VUVUVU...
+///
+/// Destination format:
+///
+/// - Interleaved RGB
+///
+///   The destination buffer uses an interleaved pixel layout with 3 or 4
+///   channels per pixel:
+///   - R, G, B
+///   - B, G, R
+///   - R, G, B, Alpha
+///   - B, G, R, Alpha
+///
+///   One pixel occupies 3 or 4 bytes, depending on the format.
+///
+/// Width and height refer to the logical image dimensions, i.e. the number of
+/// pixels per row and the number of rows. The total number of pixels must not
 /// exceed @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
-/// @param src         Pointer to the source buffer containing Y + U + V or Y +
-///                    V + U in sequential planes. Must be non-null.
-/// @param src_stride  Byte offset between the start of one row in the Y plane
-///                    of the output and the next. Must be at least `width`.
-///                    This same stride is reused to compute row stepping in the
-///                    U and V planes, which are stored sequentially after the
-///                    Y plane. Their row stepping alternates between these two
-///                    values:
-///                    `uvsteps[2] = { width / 2, dst_stride - width / 2 }`.
-/// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Byte offset between the start of one destination row and
-///                    the next. Must be at least `(destination channel count) *
-///                    width`, unless the image has only one row.
-/// @param width       Number of pixels in a row.
-/// @param height      Number of rows in the data.
-/// @param is_yv12     If true, treat the layout as YV12 (Y + V + U). Otherwise,
-///                    I420 (Y + U + V).
-KLEIDICV_OP_YUVP_TO_RGB(kleidicv_yuv_p_to_rgb_u8);
-/// @copydoc kleidicv_yuv_p_to_rgb_u8
-KLEIDICV_OP_YUVP_TO_RGB(kleidicv_yuv_p_to_rgba_u8);
-/// @copydoc kleidicv_yuv_p_to_rgb_u8
-KLEIDICV_OP_YUVP_TO_RGB(kleidicv_yuv_p_to_bgr_u8);
-/// @copydoc kleidicv_yuv_p_to_rgb_u8
-KLEIDICV_OP_YUVP_TO_RGB(kleidicv_yuv_p_to_bgra_u8);
-
-/// Converts a YUV image to RGB or RGBA, pixel by pixel. All channels are 8-bit
-/// wide.
-///
-/// Source data has 3 channels like this:
-/// `| Y,U,V | Y,U,V | Y,U,V | ...`
-/// One pixel is represented by 3 bytes. There is no padding between the pixels.
-///
-/// Destination data has 3 or 4 channels:
-/// - R,G,B
-/// - B,G,R
-/// - R,G,B,Alpha
-/// - B,G,R,Alpha
-///
-/// Width and height are the same for the source and for the destination.
-/// Number of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
-///
-/// @param src         Pointer to the source data. Must be non-null.
-/// @param src_stride  Distance in bytes from the start of one row to the
-///                    start of the next row for the source data.
-///                    Must not be less than `3 * width`, except for single-row
-///                    images.
-/// @param dst         Pointer to the destination data. Must be non-null.
-/// @param dst_stride  Byte offset between the start of one destination row and
-///                    the next.
-///                    Must be at least `(destination channel count) * width`,
-///                    unless the image has only one row.
-/// @param width       Number of pixels in a row.
-/// @param height      Number of rows in the data.
-///
-KLEIDICV_API_DECLARATION(kleidicv_yuv_to_bgr_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height);
-/// @copydoc kleidicv_yuv_to_bgr_u8
-KLEIDICV_API_DECLARATION(kleidicv_yuv_to_rgb_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height);
-/// @copydoc kleidicv_yuv_to_bgr_u8
-KLEIDICV_API_DECLARATION(kleidicv_yuv_to_rgba_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height);
-/// @copydoc kleidicv_yuv_to_bgr_u8
-KLEIDICV_API_DECLARATION(kleidicv_yuv_to_bgra_u8, const uint8_t *src,
-                         size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height);
+/// @param src_y         Pointer to the input Y component. Must be non-null.
+/// @param src_y_stride  Byte offset between the start of one Y row and the
+///                      next.
+///                      Must be at least `width`, except for single-row images.
+/// @param src_uv        Pointer to the interleaved UV (or VU) component. Must
+///                      be non-null. The layout order depends on
+///                      `color_format`.
+/// @param src_uv_stride Byte offset between the start of one UV row and the
+///                      next. Must be at least `width`, except for single-row
+///                      images.
+/// @param dst           Pointer to the destination buffer. Must be non-null.
+/// @param dst_stride    Byte offset between the start of one destination row
+///                      and the next. Must be at least `(destination channel
+///                      count) * width`, unless the image has only one row.
+/// @param width         Number of pixels in a row.
+/// @param height        Number of rows in the data.
+/// @param color_format  Specifies the color conversion type, defining both the
+///                      source YUV layout (e.g., I420, YV12, YUV444) and the
+///                      destination RGB(A)/BGR(A) format.
+///                      Must be one of @ref kleidicv_color_conversion_t.
+KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8,
+                         const uint8_t *src_y, size_t src_y_stride,
+                         const uint8_t *src_uv, size_t src_uv_stride,
+                         uint8_t *dst, size_t dst_stride, size_t width,
+                         size_t height,
+                         kleidicv_color_conversion_t color_format);
 
 /// Converts an RGB image to YUV, pixel by pixel. All channels are 8-bit wide.
 ///

@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_YUV_SP_TO_RGB_SC_H
-#define KLEIDICV_YUV_SP_TO_RGB_SC_H
+#ifndef KLEIDICV_YUV420SP_TO_RGB_SC_H
+#define KLEIDICV_YUV420SP_TO_RGB_SC_H
 
-#include "kleidicv/conversions/yuv_420_to_rgb.h"
+#include "kleidicv/conversions/yuv_to_rgb.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 #include "yuv420_to_rgb_sc.h"
@@ -76,45 +76,67 @@ kleidicv_error_t yuv2rgbx_operation(
 }
 
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_sp_to_rgb_u8_sc(
+static kleidicv_error_t yuv420sp_to_rgb_u8_sc(
     const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING {
-  YUVSpToRGB operation{is_nv21};
-  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
-                            src_uv_stride, dst, dst_stride, width, height);
-}
+    size_t height,
+    kleidicv_color_conversion_t color_format) KLEIDICV_STREAMING {
+  switch (color_format) {
+    case KLEIDICV_NV21_TO_BGR: {
+      YUVSpToBGR operation{true};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_sp_to_rgba_u8_sc(
-    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
-    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING {
-  YUVSpToRGBA operation{is_nv21};
-  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
-                            src_uv_stride, dst, dst_stride, width, height);
-}
+    case KLEIDICV_NV21_TO_RGB: {
+      YUVSpToRGB operation{true};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_sp_to_bgr_u8_sc(
-    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
-    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING {
-  YUVSpToBGR operation{is_nv21};
-  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
-                            src_uv_stride, dst, dst_stride, width, height);
-}
+    case KLEIDICV_NV21_TO_BGRA: {
+      YUVSpToBGRA operation{true};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t yuv_sp_to_bgra_u8_sc(
-    const uint8_t *src_y, size_t src_y_stride, const uint8_t *src_uv,
-    size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
-    size_t height, bool is_nv21) KLEIDICV_STREAMING {
-  YUVSpToBGRA operation{is_nv21};
-  return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
-                            src_uv_stride, dst, dst_stride, width, height);
+    case KLEIDICV_NV21_TO_RGBA: {
+      YUVSpToRGBA operation{true};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
+
+    case KLEIDICV_NV12_TO_BGR: {
+      YUVSpToBGR operation{false};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
+
+    case KLEIDICV_NV12_TO_RGB: {
+      YUVSpToRGB operation{false};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
+
+    case KLEIDICV_NV12_TO_BGRA: {
+      YUVSpToBGRA operation{false};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
+
+    case KLEIDICV_NV12_TO_RGBA: {
+      YUVSpToRGBA operation{false};
+      return yuv2rgbx_operation(operation, src_y, src_y_stride, src_uv,
+                                src_uv_stride, dst, dst_stride, width, height);
+    }
+
+    default:
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // KLEIDICV_YUV_SP_TO_RGB_SC_H
+#endif  // KLEIDICV_YUV420SP_TO_RGB_SC_H
