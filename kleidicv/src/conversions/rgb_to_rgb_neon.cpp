@@ -15,27 +15,50 @@ class RGBToBGR final {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
 
+  KLEIDICV_FORCE_INLINE
   void process_row(size_t length, Columns<const uint8_t> src,
                    Columns<uint8_t> dst) {
     LoopUnroll loop{length, 16};
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
     uint8x16x3_t indices;
     VecTraits::load(kRGBToBGRTableIndices, indices);
-#endif
+#endif  // !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
     loop.unroll_once([&](size_t step) {
       KLEIDICV_PREFETCH(&src[0] + 1024);
-      uint8x16x3_t src_vect, dst_vect;
+      uint8x16x3_t dst_vect;
+#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE || defined(__clang__)
+      uint8x16x3_t src_vect;
+#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE || defined(__clang__)
 
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
       src_vect = vld3q(&src[0]);
-      dst_vect = vector_path(src_vect);
+      std::swap(src_vect.val[0], src_vect.val[2]);
       vst3q(&dst[0], dst_vect);
-#else
+#else  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+#if defined(__clang__)
       VecTraits::load(&src[0], src_vect);
-      dst_vect = vector_path(src_vect, indices);
+
+      dst_vect.val[0] =
+          vqtbl2q_u8({src_vect.val[0], src_vect.val[1]}, indices.val[0]);
+      dst_vect.val[1] = vqtbl3q_u8(
+          {src_vect.val[0], src_vect.val[1], src_vect.val[2]}, indices.val[1]);
+      dst_vect.val[2] =
+          vqtbl2q_u8({src_vect.val[1], src_vect.val[2]}, indices.val[2]);
+#else   // defined(__clang__)
+      asm volatile(
+          "ld1 { v16.16b, v17.16b, v18.16b }, [%[src_ptr]] \n\t"
+          "tbl %0.16b, { v16.16b, v17.16b  }, %[idx0].16b \n\t"
+          "tbl %1.16b, { v16.16b, v17.16b, v18.16b }, %[idx1].16b \n\t"
+          "tbl %2.16b, { v17.16b, v18.16b }, %[idx2].16b \n\t"
+          : "=&w"(dst_vect.val[0]), "=&w"(dst_vect.val[1]),
+            "=&w"(dst_vect.val[2])
+          : [src_ptr] "r"(&src[0]), [idx0] "w"(indices.val[0]),
+            [idx1] "w"(indices.val[1]), [idx2] "w"(indices.val[2])
+          : "v16", "v17", "v18", "memory");
+#endif  // defined(__clang__)
       VecTraits::store(dst_vect, &dst[0]);
-#endif
+#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
       src += static_cast<ptrdiff_t>(step);
       dst += static_cast<ptrdiff_t>(step);
     });
@@ -50,35 +73,12 @@ class RGBToBGR final {
   }
 
  private:
-#if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  uint8x16x3_t vector_path(uint8x16x3_t src) {
-    std::swap(src.val[0], src.val[2]);
-    return src;
-  }
-#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-  uint8x16x3_t vector_path(const uint8x16x3_t &src,
-                           const uint8x16x3_t &indices) {
-    uint8x16x3_t dst;
-
-    asm volatile(
-        // dst0 = vqtbl2q_u8({src0, src1}, indices0)
-        "tbl %0.16b, { %3.16b, %4.16b }, %6.16b \n\t"
-        // dst1 = vqtbl3q_u8({src0, src1, src2}, indices1)
-        "tbl %1.16b, { %3.16b, %4.16b, %5.16b }, %7.16b \n\t"
-        // dst2 = vqtbl2q_u8({src1, src2}, indices2)
-        "tbl %2.16b, { %4.16b, %5.16b }, %8.16b \n\t"
-        : "=&w"(dst.val[0]), "=&w"(dst.val[1]), "=&w"(dst.val[2])
-        : "w"(src.val[0]), "w"(src.val[1]), "w"(src.val[2]),
-          "w"(indices.val[0]), "w"(indices.val[1]), "w"(indices.val[2])
-        :);
-
-    return dst;
-  }
+#if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
   static constexpr uint8_t kRGBToBGRTableIndices[48] = {
       2,  1,  0,  5,  4,  3,  8,  7,  6,  11, 10, 9,  14, 13, 12, 17,
       16, 15, 20, 19, 18, 23, 22, 21, 26, 25, 24, 29, 28, 27, 32, 31,
       14, 19, 18, 17, 22, 21, 20, 25, 24, 23, 28, 27, 26, 31, 30, 29};
-#endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+#endif  //  !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
 
   void scalar_path(const ScalarType *src, ScalarType *dst) {
     auto tmp = src[0];
