@@ -62,6 +62,7 @@ class GrayToRGBA final {
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;
 
+  KLEIDICV_FORCE_INLINE
   void process_row(size_t length, Columns<const uint8_t> src,
                    Columns<uint8_t> dst) {
 #if !KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
@@ -82,25 +83,11 @@ class GrayToRGBA final {
       dst_vect.val[2] = src_and_alpha.val[0];
       dst_vect.val[3] = src_and_alpha.val[1];
       vst4q_u8(&dst[0], dst_vect);
-#else  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
-#if defined(__clang__)
+#else   // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
       dst_vect.val[0] = vqtbl2q_u8(src_and_alpha, indices.val[0]);
       dst_vect.val[1] = vqtbl2q_u8(src_and_alpha, indices.val[1]);
       dst_vect.val[2] = vqtbl2q_u8(src_and_alpha, indices.val[2]);
       dst_vect.val[3] = vqtbl2q_u8(src_and_alpha, indices.val[3]);
-#else   // defined(__clang__)
-      asm volatile(
-          "tbl %0.16b, { %4.16b, %5.16b }, %6.16b \n\t"
-          "tbl %1.16b, { %4.16b, %5.16b }, %7.16b \n\t"
-          "tbl %2.16b, { %4.16b, %5.16b }, %8.16b \n\t"
-          "tbl %3.16b, { %4.16b, %5.16b }, %9.16b \n\t"
-          : "=&w"(dst_vect.val[0]), "=&w"(dst_vect.val[1]),
-            "=&w"(dst_vect.val[2]), "=&w"(dst_vect.val[3])
-          : "w"(src_and_alpha.val[0]), "w"(src_and_alpha.val[1]),
-            "w"(indices.val[0]), "w"(indices.val[1]), "w"(indices.val[2]),
-            "w"(indices.val[3])
-          :);
-#endif  // defined(__clang__)
       VecTraits::store(dst_vect, &dst[0]);
 #endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
       src += static_cast<ptrdiff_t>(kVectorLength);

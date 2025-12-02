@@ -15,6 +15,7 @@ class RGBToBGR final {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
 
+  KLEIDICV_FORCE_INLINE
   void process_row(size_t length, Columns<const uint8_t> src,
                    Columns<uint8_t> dst) {
     LoopUnroll loop{length, 16};
@@ -59,18 +60,10 @@ class RGBToBGR final {
   uint8x16x3_t vector_path(const uint8x16x3_t &src,
                            const uint8x16x3_t &indices) {
     uint8x16x3_t dst;
-
-    asm volatile(
-        // dst0 = vqtbl2q_u8({src0, src1}, indices0)
-        "tbl %0.16b, { %3.16b, %4.16b }, %6.16b \n\t"
-        // dst1 = vqtbl3q_u8({src0, src1, src2}, indices1)
-        "tbl %1.16b, { %3.16b, %4.16b, %5.16b }, %7.16b \n\t"
-        // dst2 = vqtbl2q_u8({src1, src2}, indices2)
-        "tbl %2.16b, { %4.16b, %5.16b }, %8.16b \n\t"
-        : "=&w"(dst.val[0]), "=&w"(dst.val[1]), "=&w"(dst.val[2])
-        : "w"(src.val[0]), "w"(src.val[1]), "w"(src.val[2]),
-          "w"(indices.val[0]), "w"(indices.val[1]), "w"(indices.val[2])
-        :);
+    dst.val[0] = vqtbl2q_u8({src.val[0], src.val[1]}, indices.val[0]);
+    dst.val[1] =
+        vqtbl3q_u8({src.val[0], src.val[1], src.val[2]}, indices.val[1]);
+    dst.val[2] = vqtbl2q_u8({src.val[1], src.val[2]}, indices.val[2]);
 
     return dst;
   }
