@@ -272,119 +272,46 @@ int yuv_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 int bgr_to_yuv420_p(const uchar *src_data, size_t src_step, uchar *dst_data,
                     size_t dst_step, int width, int height, int scn,
                     bool swapBlue, int uIdx) {
-  const bool is_bgr = !swapBlue;
   const bool is_yv12 = (uIdx == 2);
   auto mt = get_multithreading();
-  if (scn == 3) {
-    if (is_bgr) {
-      return convert_error(kleidicv_thread_bgr_to_yuv420_p_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height), is_yv12,
-          mt));
-    }
-    return convert_error(kleidicv_thread_rgb_to_yuv420_p_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), is_yv12, mt));
-  }
+  const kleidicv_color_conversion_t color_format = make_color_conversion_type(
+      scn, !swapBlue, is_yv12, false, KLEIDICV_COLOR_CONVERSION_FMT_YUV420P);
 
-  if (scn == 4) {
-    if (is_bgr) {
-      return convert_error(kleidicv_thread_bgra_to_yuv420_p_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height), is_yv12,
-          mt));
-    }
-    return convert_error(kleidicv_thread_rgba_to_yuv420_p_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), is_yv12, mt));
-  }
-
-  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  return convert_error(kleidicv_thread_rgb_to_yuv_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+      color_format, mt));
 }
 
 int bgr_to_yuv420_sp(const uchar *src_data, size_t src_step, uchar *y_data,
                      size_t y_step, uchar *uv_data, size_t uv_step, int width,
                      int height, int scn, bool swapBlue, int uIdx) {
-  const bool is_bgr = !swapBlue;
   const bool is_nv21 = (uIdx == 2);
   auto mt = get_multithreading();
-  if (scn == 3) {
-    if (is_bgr) {
-      return convert_error(kleidicv_thread_bgr_to_yuv420_sp_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(y_data), y_step,
-          reinterpret_cast<uint8_t *>(uv_data), uv_step,
-          static_cast<size_t>(width), static_cast<size_t>(height), is_nv21,
-          mt));
-    }
-    return convert_error(kleidicv_thread_rgb_to_yuv420_sp_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(y_data), y_step,
-        reinterpret_cast<uint8_t *>(uv_data), uv_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), is_nv21, mt));
-  }
-
-  if (scn == 4) {
-    if (is_bgr) {
-      return convert_error(kleidicv_thread_bgra_to_yuv420_sp_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(y_data), y_step,
-          reinterpret_cast<uint8_t *>(uv_data), uv_step,
-          static_cast<size_t>(width), static_cast<size_t>(height), is_nv21,
-          mt));
-    }
-    return convert_error(kleidicv_thread_rgba_to_yuv420_sp_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(y_data), y_step,
-        reinterpret_cast<uint8_t *>(uv_data), uv_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), is_nv21, mt));
-  }
-
-  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  const kleidicv_color_conversion_t color_format = make_color_conversion_type(
+      scn, !swapBlue, is_nv21, false, KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP);
+  return convert_error(kleidicv_thread_rgb_to_yuv_semiplanar_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(y_data), y_step,
+      reinterpret_cast<uint8_t *>(uv_data), uv_step, static_cast<size_t>(width),
+      static_cast<size_t>(height), color_format, mt));
 }
 
 int bgr_to_yuv(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int scn,
                bool swapBlue, bool isCbCr) {
-  const bool is_bgr = !swapBlue;
-
   if (depth != CV_8U || isCbCr) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
   auto mt = get_multithreading();
+  const kleidicv_color_conversion_t color_format = make_color_conversion_type(
+      scn, !swapBlue, false, false, KLEIDICV_COLOR_CONVERSION_FMT_YUV444);
 
-  if (scn == 3) {
-    if (is_bgr) {
-      return convert_error(kleidicv_thread_bgr_to_yuv_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height), mt));
-    }
-    return convert_error(kleidicv_thread_rgb_to_yuv_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), mt));
-  }
-
-  if (scn == 4) {
-    if (is_bgr) {
-      return convert_error(kleidicv_thread_bgra_to_yuv_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height), mt));
-    }
-    return convert_error(kleidicv_thread_rgba_to_yuv_u8(
-        reinterpret_cast<const uint8_t *>(src_data), src_step,
-        reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), mt));
-  }
-
-  return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  return convert_error(kleidicv_thread_rgb_to_yuv_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+      color_format, mt));
 }
 
 int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,

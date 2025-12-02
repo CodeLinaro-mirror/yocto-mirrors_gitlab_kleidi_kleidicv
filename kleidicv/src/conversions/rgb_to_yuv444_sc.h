@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_RGB_TO_YUV_SC_H
-#define KLEIDICV_RGB_TO_YUV_SC_H
+#ifndef KLEIDICV_RGB_TO_YUV444_SC_H
+#define KLEIDICV_RGB_TO_YUV444_SC_H
 
 #include <limits>
 #include <memory>
@@ -11,6 +11,7 @@
 #include "kleidicv/conversions/rgb_to_yuv.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
+#include "rgb_to_yuv444_coefficients.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
@@ -278,51 +279,45 @@ kleidicv_error_t rgb2yuv_operation(OperationType operation,
   return KLEIDICV_OK;
 }
 
-#if !KLEIDICV_TARGET_SME2
 KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgb_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
-                                         uint8_t *dst, size_t dst_stride,
-                                         size_t width,
-                                         size_t height) KLEIDICV_STREAMING {
-  RGBToYUV<false> operation;
-  return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
-}
+static kleidicv_error_t rgb_to_yuv444_u8_sc(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height,
+    kleidicv_color_conversion_t color_format) KLEIDICV_STREAMING {
+  switch (color_format) {
+    case KLEIDICV_RGB_TO_YUV444: {
+      RGBToYUV<false> operation;
+      return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t bgr_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
-                                         uint8_t *dst, size_t dst_stride,
-                                         size_t width,
-                                         size_t height) KLEIDICV_STREAMING {
-  RGBToYUV<true> operation;
-  return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
-}
+    case KLEIDICV_BGR_TO_YUV444: {
+      RGBToYUV<true> operation;
+      return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
 
-#endif  // !KLEIDICV_TARGET_SME2
+    case KLEIDICV_RGBA_TO_YUV444: {
+      svuint8x4_t indices;
+      RGBAToYUV<false> operation(indices);
+      return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t rgba_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
-                                          uint8_t *dst, size_t dst_stride,
-                                          size_t width,
-                                          size_t height) KLEIDICV_STREAMING {
-  svuint8x4_t indices;
-  RGBAToYUV<false> operation(indices);
-  return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
-}
+    case KLEIDICV_BGRA_TO_YUV444: {
+      svuint8x4_t indices;
+      RGBAToYUV<true> operation(indices);
+      return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride,
+                               width, height);
+    }
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t bgra_to_yuv_u8_sc(const uint8_t *src, size_t src_stride,
-                                          uint8_t *dst, size_t dst_stride,
-                                          size_t width,
-                                          size_t height) KLEIDICV_STREAMING {
-  svuint8x4_t indices;
-  RGBAToYUV<true> operation(indices);
-  return rgb2yuv_operation(operation, src, src_stride, dst, dst_stride, width,
-                           height);
+    default:
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 
-#endif  // KLEIDICV_RGB_TO_YUV_SC_H
+#endif  // KLEIDICV_RGB_TO_YUV444_SC_H

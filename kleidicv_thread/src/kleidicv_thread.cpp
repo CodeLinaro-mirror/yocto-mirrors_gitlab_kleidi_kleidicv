@@ -13,7 +13,7 @@
 
 #include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/arithmetics/scale.h"
-#include "kleidicv/conversions/rgb_to_yuv_420.h"
+#include "kleidicv/conversions/rgb_to_yuv.h"
 #include "kleidicv/conversions/yuv_to_rgb.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/filters/blur_and_downsample.h"
@@ -126,10 +126,6 @@ KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_bgra_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_rgba_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_bgr_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_rgb_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(bgr_to_yuv_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_yuv_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(bgra_to_yuv_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_yuv_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(exp_f32, float, float);
 KLEIDICV_THREAD_UNARY_OP_IMPL(f32_to_s8, float, int8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(f32_to_u8, float, uint8_t);
@@ -290,98 +286,35 @@ kleidicv_error_t kleidicv_thread_yuv_to_rgb_u8(
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
 
-kleidicv_error_t kleidicv_thread_rgb_to_yuv420_p_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_rgb_to_yuv420_p_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_rgba_to_yuv420_p_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_rgba_to_yuv420_p_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_bgr_to_yuv420_p_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_bgr_to_yuv420_p_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_bgra_to_yuv420_p_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
-    size_t width, size_t height, bool is_yv12,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_bgra_to_yuv420_p_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, is_yv12,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_rgb_to_yuv420_sp_u8(
+kleidicv_error_t kleidicv_thread_rgb_to_yuv_semiplanar_u8(
     const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
     uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
-    bool is_nv21, kleidicv_thread_multithreading mt) {
+    kleidicv_color_conversion_t color_format,
+    kleidicv_thread_multithreading mt) {
   auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_rgb_to_yuv420_sp_stripe_u8(
+    return kleidicv_rgb_to_yuv420sp_stripe_u8(
         src, src_stride, y_dst, y_stride, uv_dst, uv_stride, width, height,
-        is_nv21, static_cast<size_t>(begin), static_cast<size_t>(end));
+        color_format, static_cast<size_t>(begin), static_cast<size_t>(end));
   };
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
 
-kleidicv_error_t kleidicv_thread_rgba_to_yuv420_sp_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
-    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
-    bool is_nv21, kleidicv_thread_multithreading mt) {
+kleidicv_error_t kleidicv_thread_rgb_to_yuv_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, kleidicv_color_conversion_t color_format,
+    kleidicv_thread_multithreading mt) {
+  // Extract the base format
+  const size_t base_format = static_cast<size_t>(
+      color_format & KLEIDICV_COLOR_CONVERSION_YUV_FMT_MASK);
+  if (base_format == KLEIDICV_COLOR_CONVERSION_FMT_YUV444) {
+    return kleidicv_thread_unary_op_impl(kleidicv_rgb_to_yuv444_u8, mt, src,
+                                         src_stride, dst, dst_stride, width,
+                                         height, color_format);
+  }
   auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_rgba_to_yuv420_sp_stripe_u8(
-        src, src_stride, y_dst, y_stride, uv_dst, uv_stride, width, height,
-        is_nv21, static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_bgr_to_yuv420_sp_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
-    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
-    bool is_nv21, kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_bgr_to_yuv420_sp_stripe_u8(
-        src, src_stride, y_dst, y_stride, uv_dst, uv_stride, width, height,
-        is_nv21, static_cast<size_t>(begin), static_cast<size_t>(end));
-  };
-  return parallel_batches(callback, mt, (height + 1) / 2);
-}
-
-kleidicv_error_t kleidicv_thread_bgra_to_yuv420_sp_u8(
-    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
-    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
-    bool is_nv21, kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_bgra_to_yuv420_sp_stripe_u8(
-        src, src_stride, y_dst, y_stride, uv_dst, uv_stride, width, height,
-        is_nv21, static_cast<size_t>(begin), static_cast<size_t>(end));
+    return kleidicv_rgb_to_yuv420p_stripe_u8(
+        src, src_stride, dst, dst_stride, width, height, color_format,
+        static_cast<size_t>(begin), static_cast<size_t>(end));
   };
   return parallel_batches(callback, mt, (height + 1) / 2);
 }

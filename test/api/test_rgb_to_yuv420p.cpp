@@ -10,20 +10,41 @@
 
 #include "framework/array.h"
 #include "framework/generator.h"
-#include "framework/utils.h"
 #include "kleidicv/kleidicv.h"
-#include "kleidicv/utils.h"
 #include "test_config.h"
 
-class RGB2YUV420SpTest : public testing::Test {
+class RGB2YUV420pTest : public testing::Test {
  public:
+  static inline kleidicv_color_conversion_t make_color_conversion_type(
+      size_t num_channels, bool is_bgr, bool is_vu, bool is_uyvy,
+      kleidicv_color_conversion_t base_fmt) {
+    unsigned v = static_cast<unsigned>(base_fmt);
+    if (is_vu) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_VU;
+    }
+    if (is_bgr) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_BGR;
+    }
+    if (num_channels == 4) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA;
+    }
+    // is_uyvy only meaningful for YUV422; harmless otherwise
+    if (is_uyvy) {
+      v |= KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST;
+    }
+    return static_cast<kleidicv_color_conversion_t>(v);
+  }
+
+  static inline int get_scn(kleidicv_color_conversion_t color) {
+    return (color & KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA) ? 4 : 3;
+  }
   struct TestParams {
     size_t width;
     size_t src_padding;
     size_t dst_padding;
     size_t height;
     size_t channels;
-    bool is_nv21;
+    bool is_yv12;
     bool is_rgb;
   };
 
@@ -56,9 +77,9 @@ class RGB2YUV420SpTest : public testing::Test {
   }
 
   static std::vector<TestParams> get_test_cases() {
-    std::vector<size_t> widths = {3, 27, 32, 770};
-    std::vector<size_t> src_paddings = {2};
-    std::vector<size_t> dst_paddings = {3};
+    std::vector<size_t> widths = {18, 32, 770};
+    std::vector<size_t> src_paddings = {3};
+    std::vector<size_t> dst_paddings = {2};
     std::vector<size_t> heights = {11, 16};
     std::vector<size_t> channels = {3, 4};
     std::vector<bool> uv_cases = {true, false};
@@ -71,89 +92,65 @@ class RGB2YUV420SpTest : public testing::Test {
     test::Array2D<uint8_t> src{params.width * params.channels, params.height,
                                params.src_padding, params.channels};
 
-    test::Array2D<uint8_t> expected_y_dst{params.width, params.height,
-                                          params.dst_padding};
+    test::Array2D<uint8_t> expected_dst{
+        params.width, (params.height * 3 + 1) / 2, params.dst_padding};
 
-    test::Array2D<uint8_t> expected_uv_dst{
-        KLEIDICV_TARGET_NAMESPACE::align_up(params.width, 2),
-        (params.height + 1) / 2, params.dst_padding};
-
-    test::Array2D<uint8_t> y_dst{params.width, params.height,
-                                 params.dst_padding};
-
-    test::Array2D<uint8_t> uv_dst{
-        KLEIDICV_TARGET_NAMESPACE::align_up(params.width, 2),
-        (params.height + 1) / 2, params.dst_padding};
+    test::Array2D<uint8_t> dst{params.width, (params.height * 3 + 1) / 2,
+                               params.dst_padding};
 
     test::PseudoRandomNumberGenerator<uint8_t> input_value_random_range;
     src.fill(input_value_random_range);
 
-    calculate_reference(src.data(), src.stride(), expected_y_dst.data(),
-                        expected_y_dst.stride(), expected_uv_dst.data(),
-                        expected_uv_dst.stride(), params.width, params.height,
-                        params.is_nv21, params.is_rgb, params.channels);
+    calculate_reference(src.data(), src.stride(), expected_dst.data(),
+                        expected_dst.stride(), params.width, params.height,
+                        params.is_yv12, params.is_rgb, params.channels);
 
     auto status = KLEIDICV_OK;
 
-    if (params.channels == 3) {
-      if (params.is_rgb) {
-        status = kleidicv_rgb_to_yuv420_sp_u8(
-            src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-            uv_dst.data(), uv_dst.stride(), params.width, params.height,
-            params.is_nv21);
-      } else {
-        status = kleidicv_bgr_to_yuv420_sp_u8(
-            src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-            uv_dst.data(), uv_dst.stride(), params.width, params.height,
-            params.is_nv21);
-      }
-    }
-
-    if (params.channels == 4) {
-      if (params.is_rgb) {
-        status = kleidicv_rgba_to_yuv420_sp_u8(
-            src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-            uv_dst.data(), uv_dst.stride(), params.width, params.height,
-            params.is_nv21);
-      } else {
-        status = kleidicv_bgra_to_yuv420_sp_u8(
-            src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-            uv_dst.data(), uv_dst.stride(), params.width, params.height,
-            params.is_nv21);
-      }
-    }
+    const kleidicv_color_conversion_t color_format = make_color_conversion_type(
+        params.channels, !params.is_rgb, params.is_yv12, false,
+        KLEIDICV_COLOR_CONVERSION_FMT_YUV420P);
+    status = kleidicv_rgb_to_yuv_u8(src.data(), src.stride(), dst.data(),
+                                    dst.stride(), params.width, params.height,
+                                    color_format);
 
     EXPECT_EQ(KLEIDICV_OK, status);
-    EXPECT_EQ_ARRAY2D(expected_y_dst, y_dst);
-    EXPECT_EQ_ARRAY2D(expected_uv_dst, uv_dst);
+    EXPECT_EQ_ARRAY2D(expected_dst, dst);
   }
 
   template <typename Func>
-  void run_unsupported(Func impl, size_t channels, bool is_nv21) {
+  void run_unsupported(Func impl, kleidicv_color_conversion_t color_format) {
+    size_t channels = get_scn(color_format);
     test::Array2D<uint8_t> src{20 * channels, 10, 0, channels};
-    test::Array2D<uint8_t> y_dst{20, 10};
-    test::Array2D<uint8_t> uv_dst{20, 5};
+    test::Array2D<uint8_t> dst{20, (10 * 3 + 1) / 2};
 
-    test::test_null_args(impl, src.data(), src.stride(), y_dst.data(),
-                         y_dst.stride(), uv_dst.data(), uv_dst.stride(),
-                         src.width(), src.height(), is_nv21);
+    test::test_null_args(impl, src.data(), src.stride(), dst.data(),
+                         dst.stride(), dst.width(), dst.height(), color_format);
 
-    EXPECT_EQ(KLEIDICV_OK,
-              impl(src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-                   uv_dst.data(), uv_dst.stride(), 0, 1, is_nv21));
+    EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), dst.data(),
+                                dst.stride(), 0, 1, color_format));
 
-    EXPECT_EQ(KLEIDICV_OK,
-              impl(src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-                   uv_dst.data(), uv_dst.stride(), 1, 0, is_nv21));
+    EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), dst.data(),
+                                dst.stride(), 1, 0, color_format));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              impl(src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-                   uv_dst.data(), uv_dst.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, is_nv21));
+              impl(src.data(), src.stride(), dst.data(), dst.stride(),
+                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, color_format));
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              impl(src.data(), src.stride(), y_dst.data(), y_dst.stride(),
-                   uv_dst.data(), uv_dst.stride(), KLEIDICV_MAX_IMAGE_PIXELS,
-                   KLEIDICV_MAX_IMAGE_PIXELS, is_nv21));
+              impl(src.data(), src.stride(), dst.data(), dst.stride(),
+                   KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
+                   color_format));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              impl(src.data(), src.stride(), dst.data(), dst.stride(),
+                   dst.width(), dst.height(), kleidicv_color_conversion_t{}));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              impl(src.data(), src.stride(), dst.data(), dst.stride(),
+                   dst.width(), dst.height(),
+                   static_cast<kleidicv_color_conversion_t>(
+                       KLEIDICV_COLOR_CONVERSION_FMT_YUV420P |
+                       KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST)));
   }
 
  private:
@@ -196,21 +193,25 @@ class RGB2YUV420SpTest : public testing::Test {
     u = std::clamp(uu >> kWeightScale, 0, 0xff);
     v = std::clamp(vv >> kWeightScale, 0, 0xff);
   }
-  void calculate_reference(const uint8_t* src, size_t src_stride,
-                           uint8_t* y_dst, size_t y_stride, uint8_t* uv_dst,
-                           size_t uv_stride, size_t width, size_t height,
-                           bool is_nv21, bool RGB, size_t channels) {
+  void calculate_reference(const uint8_t* src, size_t src_stride, uint8_t* dst,
+                           size_t dst_stride, size_t width, size_t height,
+                           bool is_yv12, bool RGB, size_t channels) {
     const uint8_t* src_row = nullptr;
+    uint8_t* uv_data = dst + dst_stride * height;
     uint8_t* y_row = nullptr;
     uint8_t* u_row = nullptr;
+    uint8_t* v_row = nullptr;
 
     for (size_t h = 0; h < height; h++) {
       src_row = src + src_stride * h;
-      y_row = y_dst + y_stride * h;
+      y_row = dst + dst_stride * h;
 
       bool evenRow = (h % 2) == 0;
       if (evenRow) {
-        u_row = uv_dst + uv_stride * (h / 2);
+        u_row =
+            uv_data + dst_stride * (h / 4) + ((h / 2) % 2) * ((width + 1) / 2);
+        v_row = uv_data + dst_stride * ((h + height + 1) / 4) +
+                (((h + height + 1) / 2) % 2) * ((width + 1) / 2);
       }
 
       for (size_t w = 0; w < width; w++) {
@@ -227,30 +228,30 @@ class RGB2YUV420SpTest : public testing::Test {
         if (evenRow && evenCol) {
           uint8_t uu{}, vv{};
           rgb_to_uv(r0, g0, b0, uu, vv);
-          if (is_nv21) {
+          if (is_yv12) {
             std::swap(uu, vv);
           }
-          u_row[w + 0] = uu;
-          u_row[w + 1] = vv;
+          u_row[w >> 1] = uu;
+          v_row[w >> 1] = vv;
         }
       }
     }
   }
 };
 
-TEST_F(RGB2YUV420SpTest, ConvertspaddedInputsWithAllParamCombinations) {
+TEST_F(RGB2YUV420pTest, ConvertspaddedInputsWithAllParamCombinations) {
   for (const auto& params : get_test_cases()) {
     run_test_case(params);
   }
 }
 
-TEST_F(RGB2YUV420SpTest, ReturnsErrorForUnsupportedCombinations) {
-  run_unsupported(kleidicv_rgb_to_yuv420_sp_u8, 3, true);
-  run_unsupported(kleidicv_rgba_to_yuv420_sp_u8, 4, true);
-  run_unsupported(kleidicv_bgr_to_yuv420_sp_u8, 3, true);
-  run_unsupported(kleidicv_bgra_to_yuv420_sp_u8, 4, true);
-  run_unsupported(kleidicv_rgb_to_yuv420_sp_u8, 3, false);
-  run_unsupported(kleidicv_rgba_to_yuv420_sp_u8, 4, false);
-  run_unsupported(kleidicv_bgr_to_yuv420_sp_u8, 3, false);
-  run_unsupported(kleidicv_bgra_to_yuv420_sp_u8, 4, false);
+TEST_F(RGB2YUV420pTest, ReturnsErrorForUnsupportedCombinations) {
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_BGR_TO_YV12);
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_RGB_TO_YV12);
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_BGRA_TO_YV12);
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_RGBA_TO_YV12);
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_BGR_TO_IYUV);
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_RGB_TO_IYUV);
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_BGRA_TO_IYUV);
+  run_unsupported(kleidicv_rgb_to_yuv_u8, KLEIDICV_RGBA_TO_IYUV);
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,25 +16,28 @@ class RgbToYuvTest final {
       : src_channels_(channels), switch_blue_(switch_blue) {}
 
   template <typename F>
-  void execute_scalar_test(F impl) {
+  void execute_scalar_test(F impl, kleidicv_color_conversion_t color_format) {
     size_t scalar_path_width = 5;
-    execute_test(impl, scalar_path_width, 0);
+    execute_test(impl, scalar_path_width, 0, color_format);
     // Padding version
-    execute_test(impl, scalar_path_width, test::Options::vector_length());
+    execute_test(impl, scalar_path_width, test::Options::vector_length(),
+                 color_format);
   }
 
   template <typename F>
-  void execute_vector_test(F impl) {
+  void execute_vector_test(F impl, kleidicv_color_conversion_t color_format) {
     size_t vector_path_width = (3 * test::Options::vector_lanes<uint8_t>()) - 3;
-    execute_test(impl, vector_path_width, 0);
+    execute_test(impl, vector_path_width, 0, color_format);
     // Padding version
-    execute_test(impl, vector_path_width, test::Options::vector_length());
+    execute_test(impl, vector_path_width, test::Options::vector_length(),
+                 color_format);
   }
 
  private:
   static const size_t kDstChannels = 3;
   template <typename F>
-  void execute_test(F impl, size_t logical_width, size_t padding) {
+  void execute_test(F impl, size_t logical_width, size_t padding,
+                    kleidicv_color_conversion_t color_format) {
     test::Array2D<uint8_t> src{logical_width * src_channels_, 5, padding};
     src.fill(0);
     src.set(0, 0, {0, 22, 4, 0, 27, 9, 255, 125, 255, 255, 60, 255});
@@ -51,25 +54,40 @@ class RgbToYuvTest final {
                                   padding};
     actual.fill(42);
     auto err = impl(src.data(), src.stride(), actual.data(), actual.stride(),
-                    logical_width, expected.height());
+                    logical_width, expected.height(), color_format);
 
     ASSERT_EQ(KLEIDICV_OK, err);
     EXPECT_EQ_ARRAY2D(expected, actual);
 
     test::test_null_args(impl, src.data(), src.stride(), actual.data(),
-                         actual.stride(), logical_width, expected.height());
+                         actual.stride(), logical_width, expected.height(),
+                         color_format);
 
     EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), actual.data(),
-                                actual.stride(), 0, 1));
+                                actual.stride(), 0, 1, color_format));
     EXPECT_EQ(KLEIDICV_OK, impl(src.data(), src.stride(), actual.data(),
-                                actual.stride(), 1, 0));
+                                actual.stride(), 1, 0, color_format));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(src.data(), src.stride(), actual.data(), actual.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1));
+                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, color_format));
+
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
               impl(src.data(), src.stride(), actual.data(), actual.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS));
+                   KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
+                   color_format));
+
+    EXPECT_EQ(
+        KLEIDICV_ERROR_NOT_IMPLEMENTED,
+        impl(src.data(), src.stride(), actual.data(), actual.stride(),
+             logical_width, expected.height(), kleidicv_color_conversion_t{}));
+
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              impl(src.data(), src.stride(), actual.data(), actual.stride(),
+                   actual.width(), actual.height(),
+                   static_cast<kleidicv_color_conversion_t>(
+                       KLEIDICV_COLOR_CONVERSION_FMT_YUV444 |
+                       KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST)));
   }
 
   void calculate_expected(test::Array2D<uint8_t> &src_arr,
@@ -111,42 +129,50 @@ class RgbToYuvTest final {
   bool switch_blue_;
 };
 
-TEST(RgbToYuv, RgbYuvScalar) {
+TEST(RgbToYuv, RGB_TO_YUV444_SCALAR) {
   RgbToYuvTest rgb2yuv_test(3, false);
-  rgb2yuv_test.execute_scalar_test(kleidicv_rgb_to_yuv_u8);
+  rgb2yuv_test.execute_scalar_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_RGB_TO_YUV444);
 }
 
-TEST(RgbToYuv, RgbYuvVector) {
+TEST(RgbToYuv, RGB_TO_YUV444_VECTOR) {
   RgbToYuvTest rgb2yuv_test(3, false);
-  rgb2yuv_test.execute_vector_test(kleidicv_rgb_to_yuv_u8);
+  rgb2yuv_test.execute_vector_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_RGB_TO_YUV444);
 }
 
-TEST(RgbToYuv, RgbaYuvScalar) {
+TEST(RgbToYuv, RGBA_TO_YUV444_SCALAR) {
   RgbToYuvTest rgb2yuv_test(4, false);
-  rgb2yuv_test.execute_scalar_test(kleidicv_rgba_to_yuv_u8);
+  rgb2yuv_test.execute_scalar_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_RGBA_TO_YUV444);
 }
 
-TEST(RgbToYuv, RgbaYuvVector) {
+TEST(RgbToYuv, RGBA_TO_YUV44_VECTOR) {
   RgbToYuvTest rgb2yuv_test(4, false);
-  rgb2yuv_test.execute_vector_test(kleidicv_rgba_to_yuv_u8);
+  rgb2yuv_test.execute_vector_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_RGBA_TO_YUV444);
 }
 
-TEST(RgbToYuv, BgrYuvScalar) {
+TEST(RgbToYuv, BGR_TO_YUV444_SCALAR) {
   RgbToYuvTest rgb2yuv_test(3, true);
-  rgb2yuv_test.execute_scalar_test(kleidicv_bgr_to_yuv_u8);
+  rgb2yuv_test.execute_scalar_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_BGR_TO_YUV444);
 }
 
-TEST(RgbToYuv, BgrYuvVector) {
+TEST(RgbToYuv, BGR_TO_YUV444_VECTOR) {
   RgbToYuvTest rgb2yuv_test(3, true);
-  rgb2yuv_test.execute_vector_test(kleidicv_bgr_to_yuv_u8);
+  rgb2yuv_test.execute_vector_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_BGR_TO_YUV444);
 }
 
-TEST(RgbToYuv, BgraYuvScalar) {
+TEST(RgbToYuv, BGRA_TO_YUV444_SCALAR) {
   RgbToYuvTest rgb2yuv_test(4, true);
-  rgb2yuv_test.execute_scalar_test(kleidicv_bgra_to_yuv_u8);
+  rgb2yuv_test.execute_scalar_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_BGRA_TO_YUV444);
 }
 
-TEST(RgbToYuv, BgraYuvVector) {
+TEST(RgbToYuv, BGRA_TO_YUV444_VECTOR) {
   RgbToYuvTest rgb2yuv_test(4, true);
-  rgb2yuv_test.execute_vector_test(kleidicv_bgra_to_yuv_u8);
+  rgb2yuv_test.execute_vector_test(kleidicv_rgb_to_yuv_u8,
+                                   KLEIDICV_BGRA_TO_YUV444);
 }
