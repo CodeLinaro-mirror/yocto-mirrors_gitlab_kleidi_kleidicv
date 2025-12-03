@@ -206,85 +206,32 @@ namespace cv {
 #ifdef OPENCV_IMGPROC_HAL_REPLACEMENT_HPP
 
 // gray_to_bgr
-static inline int kleidicv_gray_to_bgr_with_fallback(
-    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
-    int width, int height, int depth, int dcn) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(gray_to_bgr, cv_hal_cvtGraytoBGR,
-                                       src_data, src_step, dst_data, dst_step,
-                                       width, height, depth, dcn);
-}
 #undef cv_hal_cvtGraytoBGR
-#define cv_hal_cvtGraytoBGR kleidicv_gray_to_bgr_with_fallback
+#define cv_hal_cvtGraytoBGR kleidicv::hal::gray_to_bgr
 
 // bgr_to_bgr
-static inline int kleidicv_bgr_to_bgr_with_fallback(
-    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
-    int width, int height, int depth, int scn, int dcn, bool swapBlue) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(bgr_to_bgr, cv_hal_cvtBGRtoBGR, src_data,
-                                       src_step, dst_data, dst_step, width,
-                                       height, depth, scn, dcn, swapBlue);
-}
 #undef cv_hal_cvtBGRtoBGR
-#define cv_hal_cvtBGRtoBGR kleidicv_bgr_to_bgr_with_fallback
+#define cv_hal_cvtBGRtoBGR kleidicv::hal::bgr_to_bgr
 
 // bgr_to_yuv420_p
-static inline int kleidicv_bgr_to_yuv420_p_with_fallback(
-    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
-    int width, int height, int scn, bool swapBlue, int uIdx) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      bgr_to_yuv420_p, cv_hal_cvtBGRtoThreePlaneYUV, src_data, src_step,
-      dst_data, dst_step, width, height, scn, swapBlue, uIdx);
-}
-
 #undef cv_hal_cvtBGRtoThreePlaneYUV
-#define cv_hal_cvtBGRtoThreePlaneYUV kleidicv_bgr_to_yuv420_p_with_fallback
+#define cv_hal_cvtBGRtoThreePlaneYUV kleidicv::hal::bgr_to_yuv420_p
 
 // bgr_to_yuv420_sp
-static inline int kleidicv_bgr_to_yuv420sp_with_fallback(
-    const uchar *src_data, size_t src_step, uchar *y_data, size_t y_step,
-    uchar *uv_data, size_t uv_step, int width, int height, int scn,
-    bool swapBlue, int uIdx) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      bgr_to_yuv420_sp, cv_hal_cvtBGRtoTwoPlaneYUV, src_data, src_step, y_data,
-      y_step, uv_data, uv_step, width, height, scn, swapBlue, uIdx);
-}
-
 #undef cv_hal_cvtBGRtoTwoPlaneYUV
-#define cv_hal_cvtBGRtoTwoPlaneYUV kleidicv_bgr_to_yuv420sp_with_fallback
+#define cv_hal_cvtBGRtoTwoPlaneYUV kleidicv::hal::bgr_to_yuv420_sp
 
 // yuv_to_bgr_sp
-static inline int kleidicv_yuv_to_bgr_sp_with_fallback(
-    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
-    int dst_width, int dst_height, int dcn, bool swapBlue, int uIdx) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      yuv_to_bgr_sp, cv_hal_cvtTwoPlaneYUVtoBGR, src_data, src_step, dst_data,
-      dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
-}
 #undef cv_hal_cvtTwoPlaneYUVtoBGR
-#define cv_hal_cvtTwoPlaneYUVtoBGR kleidicv_yuv_to_bgr_sp_with_fallback
+#define cv_hal_cvtTwoPlaneYUVtoBGR kleidicv::hal::yuv_to_bgr_sp
 
 // yuv_to_bgr_sp_ex
-static inline int kleidicv_yuv_to_bgr_sp_ex_with_fallback(
-    const uchar *y_data, size_t y_step, const uchar *uv_data, size_t uv_step,
-    uchar *dst_data, size_t dst_step, int dst_width, int dst_height, int dcn,
-    bool swapBlue, int uIdx) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      yuv_to_bgr_sp_ex, cv_hal_cvtTwoPlaneYUVtoBGREx, y_data, y_step, uv_data,
-      uv_step, dst_data, dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
-}
 #undef cv_hal_cvtTwoPlaneYUVtoBGREx
-#define cv_hal_cvtTwoPlaneYUVtoBGREx kleidicv_yuv_to_bgr_sp_ex_with_fallback
+#define cv_hal_cvtTwoPlaneYUVtoBGREx kleidicv::hal::yuv_to_bgr_sp_ex
 
 // yuv_to_bgr_p
-static inline int kleidicv_yuv_to_bgr_p_with_fallback(
-    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
-    int dst_width, int dst_height, int dcn, bool swapBlue, int uIdx) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(
-      yuv_to_bgr_p, cv_hal_cvtThreePlaneYUVtoBGR, src_data, src_step, dst_data,
-      dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
-}
 #undef cv_hal_cvtThreePlaneYUVtoBGR
-#define cv_hal_cvtThreePlaneYUVtoBGR kleidicv_yuv_to_bgr_p_with_fallback
+#define cv_hal_cvtThreePlaneYUVtoBGR kleidicv::hal::yuv_to_bgr_p
 
 // yuv_to_bgr
 static inline int kleidicv_yuv_to_bgr_with_fallback(
@@ -575,12 +522,8 @@ static inline int kleidicv_convertTo_with_fallback(
 #endif  // cv_hal_convertScale
 
 // exp32f
-static inline int kleidicv_exp32f_with_fallback(const float *src, float *dst,
-                                                int len) {
-  return KLEIDICV_HAL_FALLBACK_FORWARD(exp32f, cv_hal_exp32f, src, dst, len);
-}
 #undef cv_hal_exp32f
-#define cv_hal_exp32f kleidicv_exp32f_with_fallback
+#define cv_hal_exp32f kleidicv::hal::exp32f
 
 #if KLEIDICV_ENABLE_ALL_OPENCV_HAL
 // compare
