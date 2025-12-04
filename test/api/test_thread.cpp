@@ -279,23 +279,17 @@ class Thread : public testing::TestWithParam<P> {
     EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
   }
 
-  void check_gaussian_blur_u8(unsigned width, unsigned height,
-                              size_t kernel_size) {
+  void check_gaussian_blur_u8(size_t kernel_size) {
     size_t channels = 1;
     size_t kernel_width = kernel_size;
     size_t kernel_height = kernel_size;
     float sigma_x = 0.0F, sigma_y = 0.0F;
     kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
-    kleidicv_filter_context_t *context = nullptr;
-    ASSERT_EQ(KLEIDICV_OK,
-              kleidicv_filter_context_create(&context, channels, kernel_width,
-                                             kernel_height, width, height));
     check_unary_op<uint8_t, uint8_t>(
         kleidicv_gaussian_blur_u8, kleidicv_thread_gaussian_blur_u8,
         channels /*src_channels*/, channels /*dst_channels*/,
         /*remaining arguments passed to gaussian_blur_u8 functions*/ channels,
-        kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+        kernel_width, kernel_height, sigma_x, sigma_y, border_type);
   }
 };
 
@@ -368,14 +362,14 @@ TEST_P(Thread, gaussian_blur_fixed_u8) {
   unsigned width = 0, height = 0, thread_count = 0;
   std::tie(width, height, thread_count) = GetParam();
   (void)thread_count;
-  check_gaussian_blur_u8(width, height, 5);
+  check_gaussian_blur_u8(5);
 }
 
 TEST_P(Thread, gaussian_blur_arbitrary_u8) {
   unsigned width = 0, height = 0, thread_count = 0;
   std::tie(width, height, thread_count) = GetParam();
   (void)thread_count;
-  check_gaussian_blur_u8(width, height, 11);
+  check_gaussian_blur_u8(11);
 }
 
 template <typename T, typename MultithreadedFunc>
@@ -471,27 +465,19 @@ TEST(ThreadGaussianBlur, NotImplemented) {
   size_t kernel_width = 5;
   size_t kernel_height = kernel_width;
   float sigma_x = 0.0F, sigma_y = 0.0F;
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, channels, kernel_width, kernel_height,
-                             max_width, max_height));
-
   uint8_t src[1] = {}, dst[1] = {};
   // Image too small
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_thread_gaussian_blur_u8(
-                src, 1, dst, 1, 1, 1, channels, kernel_width, kernel_height,
-                sigma_x, sigma_y, KLEIDICV_BORDER_TYPE_REPLICATE, context,
-                get_multithreading_fake(2)));
-  // Border not supported
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       kleidicv_thread_gaussian_blur_u8(
-          src, 1, dst, 1, max_width, max_height, channels, kernel_width,
-          kernel_height, sigma_x, sigma_y, KLEIDICV_BORDER_TYPE_TRANSPARENT,
-          context, get_multithreading_fake(2)));
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+          src, 1, dst, 1, 1, 1, channels, kernel_width, kernel_height, sigma_x,
+          sigma_y, KLEIDICV_BORDER_TYPE_REPLICATE, get_multithreading_fake(2)));
+  // Border not supported
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_thread_gaussian_blur_u8(
+                src, 1, dst, 1, max_width, max_height, channels, kernel_width,
+                kernel_height, sigma_x, sigma_y,
+                KLEIDICV_BORDER_TYPE_TRANSPARENT, get_multithreading_fake(2)));
 }
 
 TEST_P(Thread, blur_and_downsample_u8) {

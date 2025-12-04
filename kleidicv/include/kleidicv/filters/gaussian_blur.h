@@ -22,8 +22,7 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_fixed_stripe_u8,
                          size_t y_begin, size_t y_end, size_t channels,
                          size_t kernel_width, size_t kernel_height,
                          float sigma_x, float sigma_y,
-                         kleidicv::FixedBorderType border_type,
-                         kleidicv_filter_context_t *context);
+                         kleidicv::FixedBorderType border_type);
 
 KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_arbitrary_stripe_u8,
                          const uint8_t *src, size_t src_stride, uint8_t *dst,
@@ -31,8 +30,7 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_arbitrary_stripe_u8,
                          size_t y_begin, size_t y_end, size_t channels,
                          size_t kernel_width, size_t kernel_height,
                          float sigma_x, float sigma_y,
-                         kleidicv::FixedBorderType border_type,
-                         kleidicv_filter_context_t *context);
+                         kleidicv::FixedBorderType border_type);
 }
 
 namespace kleidicv {
@@ -86,26 +84,12 @@ inline bool gaussian_blur_is_implemented(
 // Does not include checks for whether the operation is implemented.
 // This must be done earlier, by gaussian_blur_is_implemented.
 template <typename T>
-kleidicv_error_t gaussian_blur_checks(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, size_t channels,
-    const KLEIDICV_TARGET_NAMESPACE::SeparableFilterWorkspace *workspace)
-    KLEIDICV_STREAMING {
-  CHECK_POINTERS(workspace);
-
+kleidicv_error_t gaussian_blur_checks(const T *src, size_t src_stride, T *dst,
+                                      size_t dst_stride, size_t width,
+                                      size_t height) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
-
-  if (workspace->channels() < channels) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  const KLEIDICV_TARGET_NAMESPACE::Rectangle &context_rect =
-      workspace->image_size();
-  if (context_rect.width() < width || context_rect.height() < height) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
 
   return KLEIDICV_OK;
 }
@@ -116,13 +100,13 @@ kleidicv_error_t gaussian_blur_fixed_stripe_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
-    FixedBorderType border_type, kleidicv_filter_context_t *context);
+    FixedBorderType border_type);
 
 kleidicv_error_t gaussian_blur_arbitrary_stripe_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
-    FixedBorderType border_type, kleidicv_filter_context_t *context);
+    FixedBorderType border_type);
 
 }  // namespace neon
 
@@ -132,7 +116,7 @@ kleidicv_error_t gaussian_blur_fixed_stripe_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
-    FixedBorderType border_type, kleidicv_filter_context_t *context);
+    FixedBorderType border_type);
 
 }  // namespace sve2
 
@@ -142,7 +126,7 @@ kleidicv_error_t gaussian_blur_fixed_stripe_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
-    FixedBorderType border_type, kleidicv_filter_context_t *context);
+    FixedBorderType border_type);
 
 }  // namespace sme
 

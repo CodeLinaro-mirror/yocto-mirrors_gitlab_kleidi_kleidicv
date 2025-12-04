@@ -1332,14 +1332,6 @@ kleidicv_error_t kleidicv_separable_filter_2d_s16(
 /// destination. The number of elements is limited to @ref
 /// KLEIDICV_MAX_IMAGE_PIXELS.
 ///
-/// Usage:
-///
-/// Before using this function, a context must be created using
-/// @ref kleidicv_filter_context_create, and when finished, it has to be
-/// released using @ref kleidicv_filter_context_release. Please ensure that your
-/// filter context parameters are large enough, otherwise this API will return
-/// with an error.
-///
 /// Note, from the border types only these are supported:
 ///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE
 ///                       - @ref KLEIDICV_BORDER_TYPE_REFLECT
@@ -1376,13 +1368,12 @@ kleidicv_error_t kleidicv_separable_filter_2d_s16(
 ///                      probability mass function of the binomial distribution
 ///                      in the vertical direction.
 /// @param border_type   Way of handling the border.
-/// @param context       Pointer to filter context.
 ///
 kleidicv_error_t kleidicv_gaussian_blur_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
+    kleidicv_border_type_t border_type);
 
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.

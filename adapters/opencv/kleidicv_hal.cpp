@@ -614,31 +614,11 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  // Check for not-implemented before allocating a context
-  auto fixed_border_type =
-      kleidicv::get_fixed_border_type(kleidicv_border_type);
-  if (!fixed_border_type || !kleidicv::gaussian_blur_is_implemented(
-                                width, height, kernel_size, kernel_size, 0, 0,
-                                cn, *fixed_border_type)) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  kleidicv_filter_context_t *context;
-  if (kleidicv_error_t create_err = kleidicv_filter_context_create(
-          &context, cn, kernel_size, kernel_size, static_cast<size_t>(width),
-          static_cast<size_t>(height))) {
-    return convert_error(create_err);
-  }
-
-  auto mt = get_multithreading();
-  kleidicv_error_t blur_err = kleidicv_thread_gaussian_blur_u8(
+  return convert_error(kleidicv_thread_gaussian_blur_u8(
       reinterpret_cast<const uint8_t *>(src_data), src_step,
       reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
-      kernel_size, kernel_size, 0.0, 0.0, kleidicv_border_type, context, mt);
-
-  kleidicv_error_t release_err = kleidicv_filter_context_release(context);
-
-  return convert_error(blur_err ? blur_err : release_err);
+      kernel_size, kernel_size, 0.0, 0.0, kleidicv_border_type,
+      get_multithreading()));
 }
 
 int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
@@ -669,32 +649,11 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  // Check for not-implemented before allocating a context
-  auto fixed_border_type =
-      kleidicv::get_fixed_border_type(kleidicv_border_type);
-  if (!fixed_border_type || !kleidicv::gaussian_blur_is_implemented(
-                                width, height, kernel_width, kernel_height,
-                                sigma_x, sigma_y, cn, *fixed_border_type)) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  kleidicv_filter_context_t *context;
-  if (kleidicv_error_t create_err = kleidicv_filter_context_create(
-          &context, cn, kernel_width, kernel_height, static_cast<size_t>(width),
-          static_cast<size_t>(height))) {
-    return convert_error(create_err);
-  }
-
-  auto mt = get_multithreading();
-  kleidicv_error_t blur_err = kleidicv_thread_gaussian_blur_u8(
+  return convert_error(kleidicv_thread_gaussian_blur_u8(
       reinterpret_cast<const uint8_t *>(src_data), src_step,
       reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height, cn,
       kernel_width, kernel_height, sigma_x, sigma_y, kleidicv_border_type,
-      context, mt);
-
-  kleidicv_error_t release_err = kleidicv_filter_context_release(context);
-
-  return convert_error(blur_err ? blur_err : release_err);
+      get_multithreading()));
 }
 
 struct MorphologyParams {

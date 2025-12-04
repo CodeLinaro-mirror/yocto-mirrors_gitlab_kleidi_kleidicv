@@ -490,40 +490,31 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
-    kleidicv_thread_multithreading mt) {
+    kleidicv_border_type_t border_type, kleidicv_thread_multithreading mt) {
   auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
-  if (!fixed_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if (!kleidicv::gaussian_blur_is_implemented(width, height, kernel_width,
+  if (!fixed_border_type ||
+      !kleidicv::gaussian_blur_is_implemented(width, height, kernel_width,
                                               kernel_height, sigma_x, sigma_y,
                                               channels, *fixed_border_type)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   if (kernel_width <= 7 || kernel_width == 15 || kernel_width == 21) {
-    auto callback = [=](size_t y_begin, size_t y_end,
-                        kleidicv_filter_context_t *thread_context) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       return kleidicv_gaussian_blur_fixed_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
           channels, kernel_width, kernel_height, sigma_x, sigma_y,
-          *fixed_border_type, thread_context);
+          *fixed_border_type);
     };
-    return kleidicv_thread_filter(callback, width, height, channels,
-                                  kernel_width, kernel_height, context, mt);
+    return parallel_batches(callback, mt, height);
   }
-
-  auto callback = [=](size_t y_begin, size_t y_end,
-                      kleidicv_filter_context_t *thread_context) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_gaussian_blur_arbitrary_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, sigma_x, sigma_y,
-        *fixed_border_type, thread_context);
+        *fixed_border_type);
   };
-  return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
-                                kernel_height, context, mt);
+  return parallel_batches(callback, mt, height);
 }
 
 kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(

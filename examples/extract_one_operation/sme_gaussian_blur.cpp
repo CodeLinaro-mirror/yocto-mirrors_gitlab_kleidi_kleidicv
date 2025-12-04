@@ -56,8 +56,7 @@ static kleidicv_error_t filter_context_release(
 extern "C" {
 
 // Implemented based on kleidicv_gaussian_blur_u8 function (placed in
-// kleidicv/src/filters/gaussian_blur_api.cpp), but the filter context is
-// created (no need to pass it as a an input) and the SME backend is called
+// kleidicv/src/filters/gaussian_blur_api.cpp), but the SME backend is called
 // directly. (Original implementation calls the dispatcher to choose between
 // backends.)
 kleidicv_error_t sme_gaussian_blur_u8(const uint8_t *src, size_t src_stride,
@@ -79,19 +78,9 @@ kleidicv_error_t sme_gaussian_blur_u8(const uint8_t *src, size_t src_stride,
   }
 
   if (kernel_width <= 7 || kernel_width == 15 || kernel_width == 21) {
-    kleidicv_filter_context_t *context = nullptr;
-    if (kleidicv_error_t create_err = filter_context_create(
-            &context, channels, kernel_width, kernel_height, width, height)) {
-      return create_err;
-    }
-
-    kleidicv_error_t blur_err = kleidicv::sme::gaussian_blur_fixed_stripe_u8(
+    return kleidicv::sme::gaussian_blur_fixed_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-        kernel_width, kernel_height, sigma_x, sigma_y, *fixed_border_type,
-        context);
-
-    kleidicv_error_t release_err = filter_context_release(context);
-    return blur_err ? blur_err : release_err;
+        kernel_width, kernel_height, sigma_x, sigma_y, *fixed_border_type);
   }
 
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;

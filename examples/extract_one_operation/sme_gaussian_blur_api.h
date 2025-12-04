@@ -58,9 +58,8 @@ typedef enum {
 extern "C" {
 #endif  // __cplusplus
 
-// Similar funtionality as of kleidicv_gaussian_blur_u8 but filter context
-// creation/destruction is handled automatically and uses the SME backend
-// directly, so less kernel sizes are suppored.
+// Similar funtionality as of kleidicv_gaussian_blur_u8 but it uses the SME
+// backend directly, so less kernel sizes are supported.
 kleidicv_error_t sme_gaussian_blur_u8(const uint8_t *src, size_t src_stride,
                                       uint8_t *dst, size_t dst_stride,
                                       size_t width, size_t height,

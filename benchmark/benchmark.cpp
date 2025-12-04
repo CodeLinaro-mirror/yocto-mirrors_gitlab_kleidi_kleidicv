@@ -538,24 +538,14 @@ BENCHMARK(separable_filter_2d_s16_5x5_3ch);
 
 template <typename T, size_t KernelSize, int Channels, bool Binomial>
 static void gaussian_blur(benchmark::State& state) {
-  kleidicv_filter_context_t* context;
-  kleidicv_error_t err = kleidicv_filter_context_create(
-      &context, Channels, KernelSize, KernelSize, image_width, image_height);
-  if (err != KLEIDICV_OK) {
-    state.SkipWithError("Could not initialize Gaussian blur filter context.");
-    return;
-  }
-
-  bench_functor(state, [context]() {
+  bench_functor(state, []() {
     (void)kleidicv_gaussian_blur_u8(
         get_source_buffer_a<T, Channels>(), image_width * Channels * sizeof(T),
         get_destination_buffer_a<T, Channels>(),
         image_width * Channels * sizeof(T), image_width, image_height, Channels,
         KernelSize, KernelSize, (Binomial ? 0.0 : 2.0), (Binomial ? 0.0 : 2.0),
-        KLEIDICV_BORDER_TYPE_REFLECT, context);
+        KLEIDICV_BORDER_TYPE_REFLECT);
   });
-
-  (void)kleidicv_filter_context_release(context);
 }
 
 #define BENCH_GAUSSIAN_BLUR(kernel_size, channel_number)                                 \

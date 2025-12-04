@@ -447,27 +447,32 @@ kleidicv_error_t gaussian_blur_fixed_stripe_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t /*kernel_height*/, float sigma_x,
-    float /*sigma_y*/, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) {
-  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
-  kleidicv_error_t checks_result = gaussian_blur_checks(
-      src, src_stride, dst, dst_stride, width, height, channels, workspace);
-
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+    float /*sigma_y*/, FixedBorderType fixed_border_type) {
+  if (auto result =
+          gaussian_blur_checks(src, src_stride, dst, dst_stride, width, height);
+      result != KLEIDICV_OK) {
+    return result;
   }
 
   Rectangle rect{width, height};
-
-  if (sigma_x == 0.0) {
-    return gaussian_blur_fixed<true>(kernel_width, src, src_stride, dst,
-                                     dst_stride, rect, y_begin, y_end, channels,
-                                     sigma_x, fixed_border_type, workspace);
+  // As we cannot predict the intermediate size based on the parameters given,
+  // just use the largest possible immediate size out of all available
+  // operations.
+  auto workspace =
+      SeparableFilterWorkspace::create(rect, channels, sizeof(uint32_t));
+  if (!workspace) {
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
-  return gaussian_blur_fixed<false>(kernel_width, src, src_stride, dst,
-                                    dst_stride, rect, y_begin, y_end, channels,
-                                    sigma_x, fixed_border_type, workspace);
+  if (sigma_x == 0.0) {
+    return gaussian_blur_fixed<true>(
+        kernel_width, src, src_stride, dst, dst_stride, rect, y_begin, y_end,
+        channels, sigma_x, fixed_border_type, workspace.get());
+  }
+
+  return gaussian_blur_fixed<false>(
+      kernel_width, src, src_stride, dst, dst_stride, rect, y_begin, y_end,
+      channels, sigma_x, fixed_border_type, workspace.get());
 }
 
 }  // namespace kleidicv::neon
