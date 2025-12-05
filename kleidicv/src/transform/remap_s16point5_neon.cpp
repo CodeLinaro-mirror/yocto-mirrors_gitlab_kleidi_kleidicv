@@ -413,7 +413,7 @@ class RemapS16Point5ConstantBorder<uint8_t> {
         src_rows_[vgetq_lane_u32(indices_high, 2)],
         src_rows_[vgetq_lane_u32(indices_high, 3)],
     };
-    // Select between source pixels and border colour
+    // Select between source pixels and border color
     return vbslq_u16(in_range, vmovl_u8(pixels), v_border_);
   }
 
@@ -528,7 +528,7 @@ class RemapS16Point5ConstantBorder<uint16_t> {
         src_rows_[vgetq_lane_u32(indices_high, 2)],
         src_rows_[vgetq_lane_u32(indices_high, 3)],
     };
-    // Select between source pixels and border colour
+    // Select between source pixels and border color
     return vbslq_u16(in_range, pixels, v_border_);
   }
 

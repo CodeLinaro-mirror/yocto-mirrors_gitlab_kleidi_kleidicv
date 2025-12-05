@@ -116,7 +116,7 @@ typedef enum {
   KLEIDICV_COLOR_CONVERSION_FLAG_BGR = 0x20,
   /// Indicates that alpha channel is present (RGBA or BGRA)
   KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA = 0x40,
-  /// Indicates chroma byte precedes luma (Y) byte in packed 4:2:2 data
+  /// Indicates chroma byte precedes luma (Y) byte in interleaved 4:2:2 data
   KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST = 0x80,
 
   // YUV444 conversions:
@@ -235,7 +235,7 @@ typedef enum {
   /// Convert BGRA to YV12 (Y, V, U planes)
   KLEIDICV_BGRA_TO_YV12 = KLEIDICV_YV12_TO_BGRA,
 
-  // YUV422 packed conversions:
+  // YUV422 interleaved conversions:
   /// Convert YUYV (Y, U, Y, V order) to RGB
   KLEIDICV_YUYV_TO_RGB = KLEIDICV_COLOR_CONVERSION_FMT_YUV422,
   /// Convert RGB to YUYV (Y, U, Y, V order)

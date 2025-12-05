@@ -129,6 +129,17 @@ static kleidicv_thread_multithreading get_multithreading() {
   return kleidicv_thread_multithreading{parallel, nullptr};
 }
 
+int bgr_to_yuv422(const uchar *src_data, size_t src_step, uchar *dst_data,
+                  size_t dst_step, int width, int height, int dcn,
+                  bool swapBlue, int uIdx, int ycn) {
+  const kleidicv_color_conversion_t color_format = make_color_conversion_type(
+      dcn, !swapBlue, uIdx, ycn, KLEIDICV_COLOR_CONVERSION_FMT_YUV422);
+  return convert_error(kleidicv_thread_rgb_to_yuv_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step, width, height,
+      color_format, get_multithreading()));
+}
+
 // Note: 'dcn' is already accounted for in 'dst_step'.
 int gray_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
                 size_t dst_step, int width, int height, int depth, int dcn) {

@@ -163,7 +163,7 @@ void RemapS16ConstantBorder<uint8_t>::transform_pixels(uint32x4_t indices_low,
       src_rows_[vgetq_lane_u32(indices_high, 2)],
       src_rows_[vgetq_lane_u32(indices_high, 3)],
   };
-  // Select between source pixels and border colour
+  // Select between source pixels and border color
   uint8x8_t pixels_or_border =
       vbsl_u8(vmovn_u16(in_range), pixels, vmovn_u16(v_border_));
 
@@ -186,7 +186,7 @@ void RemapS16ConstantBorder<uint16_t>::transform_pixels(uint32x4_t indices_low,
       src_rows_[vgetq_lane_u32(indices_high, 3)],
   };
 
-  // Select between source pixels and border colour
+  // Select between source pixels and border color
   uint16x8_t pixels_or_border = vbslq_u16(in_range, pixels, v_border_);
 
   vst1q_u16(&dst[0], pixels_or_border);

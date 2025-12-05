@@ -46,7 +46,7 @@ void remap_f32_nearest(svuint32_t sv_xmax, svuint32_t sv_ymax,
       svbool_t in_range = svand_b_z(pg, svcmple_u32(pg, x, sv_xmax),
                                     svcmple_u32(pg, y, sv_ymax));
       svuint32_t result = load_source(in_range, x, y);
-      // Select between source pixels and border colour
+      // Select between source pixels and border color
       return svsel_u32(in_range, result, sv_border);
     } else {
       static_assert(Border == KLEIDICV_BORDER_TYPE_REPLICATE);

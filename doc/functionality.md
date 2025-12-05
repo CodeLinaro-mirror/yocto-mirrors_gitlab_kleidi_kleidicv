@@ -40,6 +40,10 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | BGR-RGB                              |  x  |
 | RGBA-BGRA                            |  x  |
 | BGRA-RGBA                            |  x  |
+| RGB-YUV422                           |  x  |
+| BGR-YUV422                           |  x  |
+| RGBA-YUV422                          |  x  |
+| BGRA-YUV422                          |  x  |
 | YUV420 (planar & semi-planar) - BGR  |  x  |
 | YUV420 (planar & semi-planar) - BGRA |  x  |
 | YUV420 (planar & semi-planar) - RGB  |  x  |

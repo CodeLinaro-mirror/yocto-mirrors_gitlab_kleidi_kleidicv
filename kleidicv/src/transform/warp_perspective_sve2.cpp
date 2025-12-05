@@ -106,7 +106,7 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
         svand_b_z(pg, svcmple_u32(pg, x, sv_xmax), svcmple_u32(pg, y, sv_ymax));
     svuint32_t result =
         load_xy<ScalarType, IsLarge>(in_range, x, y, sv_src_stride, src_rows);
-    // Select between source pixels and border colour
+    // Select between source pixels and border color
     return svsel_u32(in_range, result, sv_border);
   };
 

@@ -19,6 +19,7 @@
 KLEIDICV_DEFINE_C_API_WITH_SME2(kleidicv_rgb_to_yuv444_u8, rgb_to_yuv444_u8);
 KLEIDICV_DEFINE_C_API_WITH_SME2(kleidicv_rgb_to_yuv420p_stripe_u8,
                                 rgb_to_yuv420p_stripe_u8);
+KLEIDICV_DEFINE_C_API_WITHOUT_SME2(kleidicv_rgb_to_yuv422_u8, rgb_to_yuv422_u8);
 KLEIDICV_DEFINE_C_API_WITHOUT_SME2(kleidicv_rgb_to_yuv420sp_stripe_u8,
                                    rgb_to_yuv420sp_stripe_u8);
 
@@ -31,13 +32,17 @@ kleidicv_error_t kleidicv_rgb_to_yuv_u8(
   const size_t base_format = static_cast<size_t>(
       color_format & KLEIDICV_COLOR_CONVERSION_YUV_FMT_MASK);
   if (base_format == KLEIDICV_COLOR_CONVERSION_FMT_YUV444) {
-    // No stripe variant is required here, as the conversion operates on each
-    // pixel independently, the operation does not depend on the absolute pixel
-    // locations or neighboring data.
     return kleidicv_rgb_to_yuv444_u8(src, src_stride, dst, dst_stride, width,
                                      height, color_format);
   }
+  if (base_format == KLEIDICV_COLOR_CONVERSION_FMT_YUV422) {
+    return kleidicv_rgb_to_yuv422_u8(src, src_stride, dst, dst_stride, width,
+                                     height, color_format);
+  }
 
+  // YUV420 uses 2x2 chroma blocks spanning adjacent rows, so the stripe API
+  // provides each invocation with contiguous rows and the proper per-plane
+  // offsets for that slice.
   return kleidicv_rgb_to_yuv420p_stripe_u8(
       src, src_stride, dst, dst_stride, width, height, color_format, 0, height);
 }

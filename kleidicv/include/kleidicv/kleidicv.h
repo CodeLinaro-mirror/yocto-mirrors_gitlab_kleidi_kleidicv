@@ -726,6 +726,20 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8,
 ///   consecutively in memory as `| Y, U, V | Y, U, V | ... |`.
 ///   Each pixel occupies 3 bytes. There is no padding between pixels.
 ///
+/// - Interleaved YUV422
+///
+///   The output buffer consists of interleaved Y, U, and V samples stored in
+///   one of several layouts depending on `color_format`:
+///
+///   - YUYV: [Y0 U0 Y1 V0] [Y2 U2 Y3 V2] ...
+///   - UYVY: [U0 Y0 V0 Y1] [U2 Y2 V2 Y3] ...
+///   - YVYU: [Y0 V0 Y1 U0] [Y2 V2 Y3 U2] ...
+///
+///   Each pair of output pixels shares one U and one V sample, computed as the
+///   average of the two corresponding source pixels’ chroma values. Because
+///   pixels are processed in pairs, the image width must be at least 2 and kept
+///   even for all YUV422 conversions.
+///
 /// Width and height refer to the logical image dimensions, i.e., the number of
 /// pixels per row and the number of rows. The total number of pixels must not
 /// exceed @ref KLEIDICV_MAX_IMAGE_PIXELS.
@@ -747,6 +761,8 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8,
 ///                     For interleaved YUV444:
 ///                     This is simply the byte offset between the start of one
 ///                     row and the next.
+///                     For interleaved YUV422:
+///                     Must be at least `width * 2`
 /// @param width        Number of pixels in a row.
 /// @param height       Number of rows in the image.
 /// @param color_format Specifies the color conversion type, defining both the

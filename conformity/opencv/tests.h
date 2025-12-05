@@ -30,5 +30,6 @@ std::vector<test>& blur_and_downsample_tests_get();
 std::vector<test>& scharr_interleaved_tests_get();
 std::vector<test>& median_blur_tests_get();
 std::vector<test>& rgb2yuv420_tests_get();
+std::vector<test>& rgb_to_yuv_422_tests_get();
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TESTS_H_
