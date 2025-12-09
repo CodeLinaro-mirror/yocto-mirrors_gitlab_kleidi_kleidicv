@@ -21,6 +21,9 @@ namespace hal {
 
 // Macros to shorten repeated code.
 #define KLEIDICV_HAL_API(api) (kleidicv::hal::api)
+int yuv422_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
+                  size_t dst_step, int width, int height, int dcn,
+                  bool swapBlue, int uIdx, int ycn);
 
 int bgr_to_yuv422(const uchar *src_data, size_t src_step, uchar *dst_data,
                   size_t dst_step, int width, int height, int dcn,
@@ -224,6 +227,9 @@ namespace cv {
 // bgr_to_yuv422
 #undef cv_hal_cvtOnePlaneBGRtoYUV
 #define cv_hal_cvtOnePlaneBGRtoYUV kleidicv::hal::bgr_to_yuv422
+// yuv422_to_bgr
+#undef cv_hal_cvtOnePlaneYUVtoBGR
+#define cv_hal_cvtOnePlaneYUVtoBGR kleidicv::hal::yuv422_to_bgr
 
 // bgr_to_yuv420_sp
 #undef cv_hal_cvtBGRtoTwoPlaneYUV

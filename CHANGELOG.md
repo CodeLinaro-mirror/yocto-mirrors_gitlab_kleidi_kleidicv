@@ -19,6 +19,7 @@ This changelog aims to follow the guiding principles of
 - Scale function supporting uint8_t input and float16 output.
 - SME2 version of many simple operations with multivector loads and stores, for some performance uplift.
 - Conversion from RGB/BGR/RGBA/BGRA to YUV 4:2:2.
+- Conversion from YUV 4:2:2 to RGB/BGR/RGBA/BGRA.
 
 ## 0.6.0 - 2025-09-25
 

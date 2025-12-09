@@ -278,6 +278,13 @@ kleidicv_error_t kleidicv_thread_yuv_to_rgb_u8(
                                          src_stride, dst, dst_stride, width,
                                          height, color_format);
   }
+
+  if (base_format == KLEIDICV_COLOR_CONVERSION_FMT_YUV422) {
+    return kleidicv_thread_unary_op_impl(kleidicv_yuv422_to_rgb_u8, mt, src,
+                                         src_stride, dst, dst_stride, width,
+                                         height, color_format);
+  }
+
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_yuv420p_to_rgb_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, color_format,

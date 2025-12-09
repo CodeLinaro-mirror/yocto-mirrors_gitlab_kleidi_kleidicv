@@ -25,6 +25,14 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv444_to_rgb_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height,
                          kleidicv_color_conversion_t color_format);
+
+// For internal use only. See instead kleidicv_yuv_to_rgb_u8.
+// Converts an interleaved YUV422 image to RGB, RGBA, BGR, or BGRA format.
+// All channels are 8-bit wide.
+KLEIDICV_API_DECLARATION(kleidicv_yuv422_to_rgb_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height,
+                         kleidicv_color_conversion_t color_format);
 }
 namespace kleidicv {
 
@@ -41,6 +49,11 @@ kleidicv_error_t yuv420p_to_rgb_stripe_u8(
     size_t begin, size_t end);
 
 kleidicv_error_t yuv444_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height,
+                                  kleidicv_color_conversion_t color_format);
+
+kleidicv_error_t yuv422_to_rgb_u8(const uint8_t *src, size_t src_stride,
                                   uint8_t *dst, size_t dst_stride, size_t width,
                                   size_t height,
                                   kleidicv_color_conversion_t color_format);
@@ -64,6 +77,11 @@ kleidicv_error_t yuv444_to_rgb_u8(const uint8_t *src, size_t src_stride,
                                   size_t height,
                                   kleidicv_color_conversion_t color_format);
 
+kleidicv_error_t yuv422_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height,
+                                  kleidicv_color_conversion_t color_format);
+
 }  // namespace sve2
 
 namespace sme {
@@ -79,6 +97,11 @@ kleidicv_error_t yuv420p_to_rgb_stripe_u8(
     size_t begin, size_t end);
 
 kleidicv_error_t yuv444_to_rgb_u8(const uint8_t *src, size_t src_stride,
+                                  uint8_t *dst, size_t dst_stride, size_t width,
+                                  size_t height,
+                                  kleidicv_color_conversion_t color_format);
+
+kleidicv_error_t yuv422_to_rgb_u8(const uint8_t *src, size_t src_stride,
                                   uint8_t *dst, size_t dst_stride, size_t width,
                                   size_t height,
                                   kleidicv_color_conversion_t color_format);

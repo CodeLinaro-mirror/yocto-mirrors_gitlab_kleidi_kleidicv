@@ -695,6 +695,45 @@ static void sobel_filter_horizontal(benchmark::State& state) {
 BENCHMARK(sobel_filter_horizontal);
 
 template <size_t Channels>
+static void yuv422_to_rgbx(benchmark::State& state,
+                           kleidicv_color_conversion_t color_format) {
+  bench_functor(state, [&]() {
+    (void)kleidicv_yuv_to_rgb_u8(
+        get_source_buffer_a<uint8_t, 2>(),
+        image_width * 2 *
+            sizeof(uint8_t),  // YUV422: 2 bytes per pixel (interleaved)
+        get_destination_buffer_a<uint8_t, Channels>(),
+        image_width * Channels * sizeof(uint8_t), image_width, image_height,
+        color_format);
+  });
+}
+
+BENCHMARK_CAPTURE(yuv422_to_rgbx<3>, , KLEIDICV_YUYV_TO_BGR)
+    ->Name("yuyv_to_bgr");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<3>, , KLEIDICV_UYVY_TO_BGR)
+    ->Name("uyvy_to_bgr");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<3>, , KLEIDICV_YVYU_TO_BGR)
+    ->Name("yvyu_to_bgr");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<3>, , KLEIDICV_YUYV_TO_RGB)
+    ->Name("yuyv_to_rgb");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<3>, , KLEIDICV_UYVY_TO_RGB)
+    ->Name("uyvy_to_rgb");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<3>, , KLEIDICV_YVYU_TO_RGB)
+    ->Name("yvyu_to_rgb");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_YUYV_TO_BGRA)
+    ->Name("yuyv_to_bgra");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_UYVY_TO_BGRA)
+    ->Name("uyvy_to_bgra");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_YVYU_TO_BGRA)
+    ->Name("yvyu_to_bgra");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_YUYV_TO_RGBA)
+    ->Name("yuyv_to_rgba");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_UYVY_TO_RGBA)
+    ->Name("uyvy_to_rgba");
+BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_YVYU_TO_RGBA)
+    ->Name("yvyu_to_rgba");
+
+template <size_t Channels>
 static void yuv420sp_to_rgbx(benchmark::State& state,
                              kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&] {

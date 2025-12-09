@@ -10,7 +10,7 @@
 #include "utils.h"
 
 std::vector<test>& binary_op_tests_get();
-std::vector<test>& yuv420_to_rgb_tests_get();
+std::vector<test>& yuv42x_to_rgb_tests_get();
 std::vector<test>& morphology_tests_get();
 std::vector<test>& separable_filter_2d_tests_get();
 std::vector<test>& gaussian_blur_tests_get();

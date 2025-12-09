@@ -93,6 +93,18 @@ All supported permutations are shown below:
 
 Notes on parameters:
 * `src.channels()` - supports 3 for RGB and 4 for RGBA.
+#### [`COLOR_YUV2RGB_YUY2`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a6b1ceb56c6a2e8dc80ec1d3b77e0bb0c:~:text=synonym%20to%20UYVY-,COLOR_YUV2RGB_YUY2,-Python%3A%20cv.COLOR_YUV2RGB_YUY2), [`COLOR_YUV2RGB_UYVY`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a6b1ceb56c6a2e8dc80ec1d3b77e0bb0c:~:text=synonym%20to%20COLOR_YUV2GRAY_420-,COLOR_YUV2RGB_UYVY,-Python%3A%20cv.COLOR_YUV2RGB_UYVY), [`COLOR_YUV2RGB_YVYU`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a6b1ceb56c6a2e8dc80ec1d3b77e0bb0c:~:text=V%2C%20see%20color_convert_rgb_yuv_42x-,COLOR_YUV2RGB_YVYU,-Python%3A%20cv.COLOR_YUV2RGB_YVYU)
+
+YUV422 (interleaved) to RGB image conversion supporting the common interleaved layouts **YUYV/YUY2**, **UYVY**, and **YVYU**.  
+All supported permutations are shown below:
+|               | RGB | BGR | RGBA | BGRA |
+|---------------|-----|-----|------|------|
+| YUYV (YUY2)   |  x  |  x  |   x  |   x  |
+| UYVY          |  x  |  x  |   x  |   x  |
+| YVYU          |  x  |  x  |   x  |   x  |
+
+Notes on parameters:
+* `dst.channels()` - supports 3 for RGB and 4 for RGBA.
 
 #### [`COLOR_YUV2RGB`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab09d8186a9e5aaac83acd157a1be43b0),[`COLOR_YUV2BGR`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0ab053f0cf23ae1b0bfee1964fd9a182c9)
 YUV to RGB image conversion, 3 channels to 3 or 4 channels, no subsampling.\

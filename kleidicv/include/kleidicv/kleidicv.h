@@ -583,6 +583,19 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
 ///
 ///   Each pixel occupies 3 bytes. There is no padding between pixels.
 ///
+/// - Interleaved YUV422
+///
+///   The input buffer consists of interleaved Y, U, and V samples, stored
+///   in one of several layouts depending on `olor_format`:
+///
+///   - YUYV: [Y0 U0 Y1 V0] [Y2 U2 Y3 V2] ...
+///   - UYVY: [U0 Y0 V0 Y1] [U2 Y2 V2 Y3] ...
+///   - YVYU: [Y0 V0 Y1 U0] [Y2 V2 Y3 U2] ...
+///
+///   Each pair of pixels shares one U and one V sample. Because pixels are
+///   processed in pairs (`Y0, U, Y1, V`), the image width must be even and at
+///   least 2 pixels wide.
+///
 /// Destination format:
 ///
 /// - Interleaved RGB
@@ -608,6 +621,7 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
 ///                     and the U and V planes follow sequentially in memory.
 ///                     For interleaved YUV444, this must be at least
 ///                     `3 * width`, unless the image has only one row.
+///                     For interleaved YUV422, Must be at least `width * 2`
 /// @param dst          Pointer to the destination buffer. Must be non-null.
 /// @param dst_stride   Byte offset between the start of one destination row
 ///                     and the next. Must be at least

@@ -48,18 +48,22 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | YUV420 (planar & semi-planar) - BGRA |  x  |
 | YUV420 (planar & semi-planar) - RGB  |  x  |
 | YUV420 (planar & semi-planar) - RGBA |  x  |
-| YUV-BGR                              |  x  |
-| YUV-RGB                              |  x  |
-| YUV-BGRA                             |  x  |
-| YUV-RGBA                             |  x  |
-| RGB-YUV                              |  x  |
-| RGBA-YUV                             |  x  |
-| BGR-YUV                              |  x  |
-| BGRA-YUV                             |  x  |
-| RGB-YUV420  (planar & semi-planar)   |  x  |
-| RGBA-YUV420 (planar & semi-planar)   |  x  |
-| BGR-YUV420  (planar & semi-planar)   |  x  |
-| BGRA-YUV420 (planar & semi-planar)   |  x  |
+| YUV422 - BGR                         |  x  |
+| YUV422 - BGRA                        |  x  |
+| YUV422 - RGB                         |  x  |
+| YUV422 - RGBA                        |  x  |
+| YUV - BGR                            |  x  |
+| YUV - RGB                            |  x  |
+| YUV - BGRA                           |  x  |
+| YUV - RGBA                           |  x  |
+| RGB - YUV                            |  x  |
+| RGBA - YUV                           |  x  |
+| BGR - YUV                            |  x  |
+| BGRA - YUV                           |  x  |
+| RGB - YUV420 (planar & semi-planar)  |  x  |
+| RGBA - YUV420 (planar & semi-planar) |  x  |
+| BGR - YUV420 (planar & semi-planar)  |  x  |
+| BGRA - YUV420 (planar & semi-planar) |  x  |
 
 ## Data type conversions
 |            | u8  | s8  | f32 |

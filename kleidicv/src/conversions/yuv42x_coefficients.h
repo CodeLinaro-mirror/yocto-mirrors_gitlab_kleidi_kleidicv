@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_YUV420_COEFFICIENT_H
-#define KLEIDICV_YUV420_COEFFICIENT_H
+#ifndef KLEIDICV_YUV42x_COEFFICIENT_H
+#define KLEIDICV_YUV42x_COEFFICIENT_H
 
 #include <algorithm>
 #include <utility>
@@ -106,4 +106,4 @@ static constexpr int32_t kUVWeights[4] = {
 
 }  // namespace kleidicv
 
-#endif  // KLEIDICV_YUV420_COEFFICIENT_H
+#endif  // KLEIDICV_YUV42x_COEFFICIENT_H

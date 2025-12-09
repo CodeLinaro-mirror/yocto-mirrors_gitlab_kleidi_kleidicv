@@ -8,7 +8,7 @@
 #include <algorithm>
 
 #include "kleidicv/sve2.h"
-#include "yuv420_coefficients.h"
+#include "yuv42x_coefficients.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 

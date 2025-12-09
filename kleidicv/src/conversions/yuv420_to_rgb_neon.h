@@ -10,7 +10,7 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/traits.h"
-#include "yuv420_coefficients.h"
+#include "yuv42x_coefficients.h"
 
 namespace kleidicv::neon {
 
