@@ -68,6 +68,7 @@ class RGBxorBGRxToYUV420 {
   }
 
  private:
+  KLEIDICV_FORCE_INLINE
   static void vector_path_2x(const uint8_t *src_row, uint8_t *y_row,
                              uint8_t *u_row, uint8_t *v_row, const bool v_first,
                              const size_t index, const bool evenRow) {

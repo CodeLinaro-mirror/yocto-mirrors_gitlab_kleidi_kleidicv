@@ -29,9 +29,10 @@ class YUVpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha> {
 
   // Processes 2 * 16 bytes (even and odd rows) of the input YUV data, and
   // outputs 2 * 3 (or 4) * 16 bytes of RGB (or RGBA) data per loop iteration.
+  KLEIDICV_FORCE_INLINE
   void vector_path(svbool_t &pg, svuint8_t &y0, svuint8_t &y1, svint16_t &u,
                    svint16_t &v, uint8_t *rgbx_row_0,
-                   uint8_t *rgbx_row_1) KLEIDICV_STREAMING {
+                   uint8_t *rgbx_row_1) const KLEIDICV_STREAMING {
     yuv420x_to_rgb(pg, y0, y1, u, v, rgbx_row_0, rgbx_row_1);
   }
 };  // end of class YUVpToRGBxOrBGRx<bool, bool>
@@ -121,73 +122,98 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
 
     LoopUnroll2 loop{width, svcntb()};
 
-    loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING {
-      svbool_t pg = svptrue_b8();
-      svuint8_t u8_vec = svld1(pg, u + index / 2);
-      svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
-      svint16_t u_vec_hi = svreinterpret_s16_u16(svunpkhi_u16(u8_vec));
+    struct VectorPath2x {
+      const ScalarType *y0, *y1, *u, *v;
+      ScalarType *row0, *row1;
+      const size_t kVectorLength, dcn;
+      OperationType operation;
+      KLEIDICV_FORCE_INLINE
+      void operator()(size_t index) const KLEIDICV_STREAMING {
+        svbool_t pg = svptrue_b8();
+        svuint8_t u8_vec = svld1(pg, u + index / 2);
+        svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
+        svint16_t u_vec_hi = svreinterpret_s16_u16(svunpkhi_u16(u8_vec));
 
-      svuint8_t v8_vec = svld1(pg, v + index / 2);
-      svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
-      svint16_t v_vec_hi = svreinterpret_s16_u16(svunpkhi_u16(v8_vec));
+        svuint8_t v8_vec = svld1(pg, v + index / 2);
+        svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
+        svint16_t v_vec_hi = svreinterpret_s16_u16(svunpkhi_u16(v8_vec));
 
 #if KLEIDICV_TARGET_SME2
-      // assume the predicate is full true
-      svcount_t pg_counter = svptrue_c8();
-      svuint8x2_t y_even = svld1_x2(pg_counter, y0 + index);
-      svuint8x2_t y_odd = svld1_x2(pg_counter, y1 + index);
-      svuint8_t y0_vec = svget2(y_even, 0);
-      svuint8_t y1_vec = svget2(y_odd, 0);
-      svuint8_t y2_vec = svget2(y_even, 1);
-      svuint8_t y3_vec = svget2(y_odd, 1);
+        // assume the predicate is full true
+        svcount_t pg_counter = svptrue_c8();
+        svuint8x2_t y_even = svld1_x2(pg_counter, y0 + index);
+        svuint8x2_t y_odd = svld1_x2(pg_counter, y1 + index);
+        svuint8_t y0_vec = svget2(y_even, 0);
+        svuint8_t y1_vec = svget2(y_odd, 0);
+        svuint8_t y2_vec = svget2(y_even, 1);
+        svuint8_t y3_vec = svget2(y_odd, 1);
 #else
-      svuint8_t y0_vec = svld1(pg, y0 + index);
-      svuint8_t y1_vec = svld1(pg, y1 + index);
-      svuint8_t y2_vec = svld1(pg, y0 + index + kVectorLength);
-      svuint8_t y3_vec = svld1(pg, y1 + index + kVectorLength);
+        svuint8_t y0_vec = svld1(pg, y0 + index);
+        svuint8_t y1_vec = svld1(pg, y1 + index);
+        svuint8_t y2_vec = svld1(pg, y0 + index + kVectorLength);
+        svuint8_t y3_vec = svld1(pg, y1 + index + kVectorLength);
 #endif  // KLEIDICV_TARGET_SME2
 
-      operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
-                            &row0[index * dcn], &row1[index * dcn]);
+        operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
+                              &row0[index * dcn], &row1[index * dcn]);
 
-      operation.vector_path(pg, y2_vec, y3_vec, u_vec_hi, v_vec_hi,
-                            &row0[(index + kVectorLength) * dcn],
-                            &row1[(index + kVectorLength) * dcn]);
-    });
+        operation.vector_path(pg, y2_vec, y3_vec, u_vec_hi, v_vec_hi,
+                              &row0[(index + kVectorLength) * dcn],
+                              &row1[(index + kVectorLength) * dcn]);
+      }
+    };
+    loop.unroll_twice(
+        VectorPath2x{y0, y1, u, v, row0, row1, kVectorLength, dcn, operation});
 
-    loop.unroll_once([&](size_t index) KLEIDICV_STREAMING {
-      svbool_t pg = svptrue_b8();
-      svbool_t pg_half = svwhilelt_b8(0UL, svcntb() / 2);
+    struct VectorPath1x {
+      const ScalarType *y0, *y1, *u, *v;
+      ScalarType *row0, *row1;
+      const size_t dcn;
+      OperationType operation;
+      KLEIDICV_FORCE_INLINE
+      void operator()(size_t index) const KLEIDICV_STREAMING {
+        svbool_t pg = svptrue_b8();
+        svbool_t pg_half = svwhilelt_b8(0UL, svcntb() / 2);
 
-      svuint8_t u8_vec = svld1(pg_half, u + index / 2);
-      svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
+        svuint8_t u8_vec = svld1(pg_half, u + index / 2);
+        svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
 
-      svuint8_t v8_vec = svld1(pg_half, v + index / 2);
-      svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
+        svuint8_t v8_vec = svld1(pg_half, v + index / 2);
+        svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
 
-      svuint8_t y0_vec = svld1(pg, y0 + index);
-      svuint8_t y1_vec = svld1(pg, y1 + index);
+        svuint8_t y0_vec = svld1(pg, y0 + index);
+        svuint8_t y1_vec = svld1(pg, y1 + index);
 
-      operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
-                            &row0[index * dcn], &row1[index * dcn]);
-    });
+        operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
+                              &row0[index * dcn], &row1[index * dcn]);
+      }
+    };
+    loop.unroll_once(VectorPath1x{y0, y1, u, v, row0, row1, dcn, operation});
 
-    loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
-      svbool_t pg = svwhilelt_b8_u64(index, length);
-      svbool_t pg_half = svwhilelt_b8_u64((index + 1) / 2, (length + 1) >> 1);
+    struct RemainingPath {
+      const ScalarType *y0, *y1, *u, *v;
+      ScalarType *row0, *row1;
+      const size_t dcn;
+      OperationType operation;
+      KLEIDICV_FORCE_INLINE
+      void operator()(size_t index, size_t length) const KLEIDICV_STREAMING {
+        svbool_t pg = svwhilelt_b8_u64(index, length);
+        svbool_t pg_half = svwhilelt_b8_u64((index + 1) / 2, (length + 1) >> 1);
 
-      svuint8_t u8_vec = svld1(pg_half, u + index / 2);
-      svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
+        svuint8_t u8_vec = svld1(pg_half, u + index / 2);
+        svint16_t u_vec_lo = svreinterpret_s16_u16(svunpklo_u16(u8_vec));
 
-      svuint8_t v8_vec = svld1(pg_half, v + index / 2);
-      svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
+        svuint8_t v8_vec = svld1(pg_half, v + index / 2);
+        svint16_t v_vec_lo = svreinterpret_s16_u16(svunpklo_u16(v8_vec));
 
-      svuint8_t y0_vec = svld1(pg, y0 + index);
-      svuint8_t y1_vec = svld1(pg, y1 + index);
+        svuint8_t y0_vec = svld1(pg, y0 + index);
+        svuint8_t y1_vec = svld1(pg, y1 + index);
 
-      operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
-                            &row0[index * dcn], &row1[index * dcn]);
-    });
+        operation.vector_path(pg, y0_vec, y1_vec, u_vec_lo, v_vec_lo,
+                              &row0[index * dcn], &row1[index * dcn]);
+      }
+    };
+    loop.remaining(RemainingPath{y0, y1, u, v, row0, row1, dcn, operation});
 
     y0 += src_stride * 2;
     u += uv_strides[(u_index++) & 1];

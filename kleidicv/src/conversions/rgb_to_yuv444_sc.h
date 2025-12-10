@@ -23,6 +23,7 @@ class RGBToYUVBase : public UnrollOnce {
   using VecTraits = KLEIDICV_TARGET_NAMESPACE::VecTraits<ScalarType>;
 
  protected:
+  KLEIDICV_FORCE_INLINE
   void vector_calculation_path(svbool_t pg, svint16_t r_0, svint16_t r_1,
                                svint16_t g_0, svint16_t g_1, svint16_t b_0,
                                svint16_t b_1,
@@ -170,6 +171,7 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
   // Returns the number of channels in the output image.
   static constexpr size_t input_channels() KLEIDICV_STREAMING { return 4; }
 
+  KLEIDICV_FORCE_INLINE
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();
@@ -192,6 +194,7 @@ class RGBAToYUV final : public RGBToYUVBase<BGR>, public UsesTailPath {
   }
 
  private:
+  KLEIDICV_FORCE_INLINE
   void common_vector_path(svbool_t pg, Vector4Type src_vect,
                           ScalarType *dst) KLEIDICV_STREAMING {
     svint16_t r_0, r_1, g_0, g_1, b_0, b_1;

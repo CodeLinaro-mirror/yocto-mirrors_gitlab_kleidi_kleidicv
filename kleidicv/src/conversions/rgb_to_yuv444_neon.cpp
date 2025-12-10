@@ -24,6 +24,7 @@ class RGBToYUVAll final : public UnrollOnce, public TryToAvoidTailLoop {
     return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
+  KLEIDICV_FORCE_INLINE
   void vector_path(const ScalarType *src, ScalarType *dst) {
     RawSourceVectorType vsrc;
     int16x8_t r_l, r_h, g_l, g_h, b_l, b_h;
@@ -150,6 +151,7 @@ class RGBToYUVAll final : public UnrollOnce, public TryToAvoidTailLoop {
   static constexpr uint32_t half_ =
       (std::numeric_limits<uint8_t>::max() / 2 + 1U) << kWeightScale;
 
+  KLEIDICV_FORCE_INLINE
   static int16x8_t combine_scaled_s16(int32x4_t a, int32x4_t b) {
     return vrshrn_high_n_s32(vrshrn_n_s32(a, kWeightScale), b, kWeightScale);
   }

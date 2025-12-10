@@ -27,6 +27,7 @@ class YUVSpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha>,
 
   // Processes 2 * 16 bytes (even and odd rows) of the input YUV data, and
   // outputs 2 * 3 (or 4) * 16 bytes of RGB (or RGBA) data per loop iteration.
+  KLEIDICV_FORCE_INLINE
   void vector_path(VectorType y0, VectorType y1, VectorType uv,
                    ScalarType *rgbx_row_0, ScalarType *rgbx_row_1) {
     // Widen U and V to 32 bits.
@@ -40,6 +41,7 @@ class YUVSpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha>,
   }
 
   // Processes inputs which are not long enough to fit a vector.
+  KLEIDICV_FORCE_INLINE
   void scalar_path(size_t length, const ScalarType *y_row_0,
                    const ScalarType *y_row_1, const ScalarType *uv_row,
                    ScalarType *rgbx_row_0, ScalarType *rgbx_row_1) {

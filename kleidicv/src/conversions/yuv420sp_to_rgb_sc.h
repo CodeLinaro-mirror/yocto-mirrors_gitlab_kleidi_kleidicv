@@ -29,6 +29,7 @@ class YUVSpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha> {
 
   // Processes 2 * 16 bytes (even and odd rows) of the input YUV data, and
   // outputs 2 * 3 (or 4) * 16 bytes of RGB (or RGBA) data per loop iteration.
+  KLEIDICV_FORCE_INLINE
   void vector_path(ContextType ctx, const uint8_t *y_row_0,
                    const uint8_t *y_row_1, const uint8_t *uv_row,
                    uint8_t *rgbx_row_0,
@@ -51,7 +52,7 @@ using YUVSpToBGR = YUVSpToRGBxOrBGRx<true, false>;
 using YUVSpToBGRA = YUVSpToRGBxOrBGRx<true, true>;
 
 template <typename OperationType, typename ScalarType>
-kleidicv_error_t yuv2rgbx_operation(
+KLEIDICV_FORCE_INLINE kleidicv_error_t yuv2rgbx_operation(
     OperationType &operation, const ScalarType *src_y, size_t src_y_stride,
     const ScalarType *src_uv, size_t src_uv_stride, ScalarType *dst,
     size_t dst_stride, size_t width, size_t height) KLEIDICV_STREAMING {

@@ -17,9 +17,11 @@ class YUV420XToRGBxOrBGRx {
   const bool v_first_;
   explicit YUV420XToRGBxOrBGRx(bool v_first) KLEIDICV_STREAMING
       : v_first_{v_first} {}
+
+  KLEIDICV_FORCE_INLINE
   void yuv420x_to_rgb(svbool_t &pg, svuint8_t &y0, svuint8_t &y1, svint16_t &u,
                       svint16_t &v, uint8_t *rgbx_row_0,
-                      uint8_t *rgbx_row_1) KLEIDICV_STREAMING {
+                      uint8_t *rgbx_row_1) const KLEIDICV_STREAMING {
     // Both the rounding shift right constant and the -128 value are included.
     constexpr int32_t kOffset = 1 << (kWeightScale - 1);
     svint32_t r_base = svdup_s32(kOffset - 128 * kUVWeights[kRVWeightIndex]);

@@ -32,6 +32,7 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
     return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
+  KLEIDICV_FORCE_INLINE
   void vector_path(const ScalarType *src, ScalarType *dst) {
     // Load deinterleaved
     Vector3Type vsrc = vld3q_u8(src);
@@ -122,6 +123,7 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
     }
   }
 
+  KLEIDICV_FORCE_INLINE
   void scalar_path(const ScalarType *src, ScalarType *dst) {
     int32_t y = static_cast<int32_t>(src[0]);
     int32_t u = static_cast<int32_t>(src[1]);
@@ -149,10 +151,9 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
 };  // end of class YUVToRGBAll<bool BGR>
 
 template <typename OperationType, typename ScalarType>
-kleidicv_error_t yuv2rgb_operation(OperationType &operation,
-                                   const ScalarType *src, size_t src_stride,
-                                   ScalarType *dst, size_t dst_stride,
-                                   size_t width, size_t height) {
+KLEIDICV_FORCE_INLINE kleidicv_error_t yuv2rgb_operation(
+    OperationType &operation, const ScalarType *src, size_t src_stride,
+    ScalarType *dst, size_t dst_stride, size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);

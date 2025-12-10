@@ -25,10 +25,8 @@ class YUV422ToRGBxOrBGRx {
     // two channels per pixel on average: one luma (Y) and one shared
     // chroma (U or V).
     constexpr size_t scn = 2;
-    // Keep track of the current output row being written.
     Rows<uint8_t> dst_rows{dst, dst_stride, dcn};
 
-    // Loop through rows along the image height.
     for (size_t y = 0; y < height; y++, src += src_stride) {
       LoopUnroll2 loop{width, kVectorLength};
 
@@ -37,53 +35,73 @@ class YUV422ToRGBxOrBGRx {
       // These four values produce two RGBx output pixels. By unrolling,
       // we handle both pixels together in a single iteration, improving
       // overall efficiency for that loop body.
-      loop.unroll_twice([&](size_t index) {
-        // Deinterleave the YUV422 data into separate channels.
-        // vld4q_u8() loads 16 groups of 4 bytes: (Y0, U0, Y1, V0).
-        // Because we unroll twice, we must process two pixels at once.
-        // Each pixel contributes two components (Y + chroma), so 4 vectors
-        // are required: Y0, Y1, U, and V. This is why we perform 4 loads
-        // instead of 2 — they directly correspond to the unrolled iteration.
-        uint8x16x4_t yuv422 = vld4q_u8(src + index * scn);
-        uint8x16_t y_even_lanes = yuv422.val[y_idx];
-        uint8x16_t y_odd_lanes = yuv422.val[y_idx + scn];
-        uint8x16_t u = yuv422.val[u_idx];
-        uint8x16_t v = yuv422.val[v_idx];
-        // Convert two output vectors in one go (loop unrolled twice).
-        // The second destination pointer is advanced by kVectorLength * dcn:
-        //   - kVectorLength: number of pixels produced per vector
-        //   - dcn: destination channels per pixel (3 for RGB, 4 for RGBA)
-        // Because we emit two RGBx vectors per iteration, the second write
-        // starts exactly kVectorLength * dcn bytes after the first.
-        yuv422_to_rgb(
-            y_even_lanes, y_odd_lanes, u, v,
-            dst_rows.as_columns().ptr_at(static_cast<ptrdiff_t>(index)),
-            dst_rows.as_columns().ptr_at(
-                static_cast<ptrdiff_t>(index + kVectorLength)));
-      });
+      struct UnrollTwiceFunctor {
+        const uint8_t* src_row;
+        Rows<uint8_t>& dst_rows;
 
-      loop.remaining([&](size_t index, size_t length) {
-        // Scalar loop over YUV422 pixels.
-        for (; index < length; index += 2) {
-          const uint8_t u = src[(index * scn) + u_idx];
-          const uint8_t v = src[(index * scn) + v_idx];
-          const uint8_t y_even_lanes = src[(index * scn) + y_idx];
-          const uint8_t y_odd_lanes = src[(index * scn) + y_idx + scn];
-          const int32_t u_m128 = u - 128;
-          const int32_t v_m128 = v - 128;
-          const uint8_t y_rows[2] = {y_even_lanes, y_odd_lanes};
-          uint8_t* rgbx_rows[2] = {
+        KLEIDICV_FORCE_INLINE void operator()(size_t index) const {
+          // Deinterleave the YUV422 data into separate channels.
+          // vld4q_u8() loads 16 groups of 4 bytes: (Y0, U0, Y1, V0).
+          // Because we unroll twice, we must process two pixels at once.
+          // Each pixel contributes two components (Y + chroma), so 4 vectors
+          // are required: Y0, Y1, U, and V. This is why we perform 4 loads
+          // instead of 2 — they directly correspond to the unrolled iteration.
+          uint8x16x4_t yuv422 = vld4q_u8(src_row + index * scn);
+          uint8x16_t y_even_lanes = yuv422.val[y_idx];
+          uint8x16_t y_odd_lanes = yuv422.val[y_idx + scn];
+          uint8x16_t u = yuv422.val[u_idx];
+          uint8x16_t v = yuv422.val[v_idx];
+          // Convert two output vectors in one go (loop unrolled twice).
+          // The second destination pointer is advanced by kVectorLength * dcn:
+          //   - kVectorLength: number of pixels produced per vector
+          //   - dcn: destination channels per pixel (3 for RGB, 4 for RGBA)
+          // Because we emit two RGBx vectors per iteration, the second write
+          // starts exactly kVectorLength * dcn bytes after the first.
+          yuv422_to_rgb(
+              y_even_lanes, y_odd_lanes, u, v,
               dst_rows.as_columns().ptr_at(static_cast<ptrdiff_t>(index)),
-              dst_rows.as_columns().ptr_at(static_cast<ptrdiff_t>(index + 1))};
-          yuv422_to_rgb(y_rows, u_m128, v_m128, rgbx_rows);
+              dst_rows.as_columns().ptr_at(
+                  static_cast<ptrdiff_t>(index + kVectorLength)));
         }
-      });
+      };
+      loop.unroll_twice(UnrollTwiceFunctor{src, dst_rows});
+
+      // Scalar loop over YUV422 pixels.
+      struct RemainingFunctor {
+        const uint8_t* src_row;
+        Rows<uint8_t>& dst_rows;
+
+        KLEIDICV_FORCE_INLINE void operator()(size_t index,
+                                              size_t length) const {
+          for (; index < length; index += 2) {
+            const uint8_t u = src_row[(index * scn) + u_idx];
+            const uint8_t v = src_row[(index * scn) + v_idx];
+            const uint8_t y0 = src_row[(index * scn) + y_idx];
+            const uint8_t y1 = src_row[(index * scn) + y_idx + scn];
+
+            const int32_t u_m128 = static_cast<int32_t>(u) - 128;
+            const int32_t v_m128 = static_cast<int32_t>(v) - 128;
+
+            const uint8_t y_rows[2] = {y0, y1};
+            uint8_t* rgbx_rows[2] = {
+                dst_rows.as_columns().ptr_at(static_cast<ptrdiff_t>(index)),
+                dst_rows.as_columns().ptr_at(
+                    static_cast<ptrdiff_t>(index + 1))};
+
+            yuv422_to_rgb(y_rows, u_m128, v_m128, rgbx_rows);
+          }
+        }
+      };
+      loop.remaining(RemainingFunctor{src, dst_rows});
+
       ++dst_rows;
     }
+
     return KLEIDICV_OK;
   }
 
  private:
+  KLEIDICV_FORCE_INLINE
   static uint8x16_t normalize_and_pack(int32x4_t vec_0, int32x4_t vec_1,
                                        int32x4_t vec_2, int32x4_t vec_3) {
     int16x4_t tmp_lo_lo = vqshrun_n_s32(vec_0, kWeightScale - 8);
@@ -100,6 +118,7 @@ class YUV422ToRGBxOrBGRx {
   // Each block contains 16 Y values (y_even_lanes, y_odd_lanes) plus shared U
   // and V values. The function computes R, G, B channels, normalizes, and
   // stores results either as RGB (3 channels) or RGBA (4 channels).
+  KLEIDICV_FORCE_INLINE
   static void yuv422_to_rgb(const uint8x16_t& y_even_lanes,
                             const uint8x16_t& y_odd_lanes, const uint8x16_t& u,
                             const uint8x16_t& v, uint8_t* rgbx0,
@@ -336,6 +355,7 @@ class YUV422ToRGBxOrBGRx {
     }
   }
 
+  KLEIDICV_FORCE_INLINE
   static void yuv422_to_rgb(const uint8_t y_rows[2], int32_t u_m128,
                             int32_t v_m128, uint8_t* rgbx_rows[2]) {
     int32_t r_sub_y =

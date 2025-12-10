@@ -29,6 +29,7 @@ class YUVToRGB : public UnrollOnce {
     return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
+  KLEIDICV_FORCE_INLINE
   void vector_path(ContextType ctx, const ScalarType *src,
                    ScalarType *dst) KLEIDICV_STREAMING {
     auto pg = ctx.predicate();

@@ -31,6 +31,7 @@ class YUV420XToRGBxOrBGRx {
     return kAlpha ? /* RGBA */ 4 : /* RGB */ 3;
   }
 
+  KLEIDICV_FORCE_INLINE
   static int16x8_t combine_scaled_s16(int32x4_t a, int32x4_t b) {
     return vcombine_s16(vmovn_s32(vshrq_n_s32(a, kWeightScale)),
                         vmovn_s32(vshrq_n_s32(b, kWeightScale)));
@@ -65,6 +66,7 @@ class YUV420XToRGBxOrBGRx {
                                   de_interleave_indices_);
   }
 
+  KLEIDICV_FORCE_INLINE
   void yuv420x_to_rgb(VectorType y0, VectorType y1, int32x4_t u_l,
                       int32x4_t u_h, int32x4_t v_l, int32x4_t v_h,
                       ScalarType *rgbx_row_0, ScalarType *rgbx_row_1) {
@@ -225,6 +227,7 @@ class YUV420XToRGBxOrBGRx {
     }
   }
 
+  KLEIDICV_FORCE_INLINE
   void yuv420x_to_rgb(const uint8_t *y_rows[2], size_t index, int32_t u_m128,
                       int32_t v_m128, uint8_t *rgbx_rows[2]) {
     for (size_t selector = 0; selector < 2; ++selector) {

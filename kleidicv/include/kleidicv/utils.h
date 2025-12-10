@@ -217,7 +217,8 @@ class LoopUnroll2 final {
 
   // Loop unrolled twice.
   template <typename CallbackType>
-  LoopUnroll2 &unroll_twice(CallbackType callback) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE LoopUnroll2 &unroll_twice(CallbackType callback)
+      KLEIDICV_STREAMING {
     return unroll_n_times<2>(callback);
   }
 
@@ -233,7 +234,8 @@ class LoopUnroll2 final {
 
   // Loop unrolled once.
   template <typename CallbackType>
-  LoopUnroll2 &unroll_once(CallbackType callback) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE LoopUnroll2 &unroll_once(CallbackType callback)
+      KLEIDICV_STREAMING {
     return unroll_n_times<1>(callback);
   }
 
@@ -282,7 +284,8 @@ class LoopUnroll2 final {
 
  private:
   template <const size_t UnrollFactor, typename CallbackType>
-  LoopUnroll2 &unroll_n_times(CallbackType callback) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE LoopUnroll2 &unroll_n_times(CallbackType callback)
+      KLEIDICV_STREAMING {
     const size_t n_step = UnrollFactor * step();
     size_t max_index = index_ + (remaining_length() / n_step) * n_step;
 

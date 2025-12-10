@@ -113,6 +113,7 @@ class RGBxOrBGRxToYUV422 {
     return {u, v};
   }
 
+  KLEIDICV_FORCE_INLINE
   static void rgb_to_yuv422(const uint8_t r0, const uint8_t g0,
                             const uint8_t b0, const uint8_t r1,
                             const uint8_t g1, const uint8_t b1,
@@ -233,6 +234,7 @@ class RGBxOrBGRxToYUV422 {
     return normalize_and_pack(acc_lo[0], acc_hi[0], acc_lo[1], acc_hi[1]);
   }
 
+  KLEIDICV_FORCE_INLINE
   static uint8x16_t normalize_and_pack(int32x4_t vec_0, int32x4_t vec_1,
                                        int32x4_t vec_2, int32x4_t vec_3) {
     uint8x16_t index = {0,  2,  4,  6,  8,  10, 12, 14,

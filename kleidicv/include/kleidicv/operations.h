@@ -6,6 +6,7 @@
 #define KLEIDICV_OPERATIONS_H
 
 #include <algorithm>
+#include <tuple>
 #include <utility>
 
 #include "kleidicv/traits.h"
@@ -40,60 +41,71 @@ class OperationBase {
 
   // Forwards vector_path_2x() calls to the inner operation.
   template <typename... ArgTypes>
-  decltype(auto) vector_path_2x(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) vector_path_2x(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return operation().vector_path_2x(std::forward<ArgTypes>(args)...);
   }
 
   // Forwards vector_path() calls to the inner operation.
   template <typename... ArgTypes>
-  decltype(auto) vector_path(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) vector_path(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return operation().vector_path(std::forward<ArgTypes>(args)...);
   }
 
   // Forwards remaining_path() calls to the inner operation.
   template <typename... ArgTypes>
-  decltype(auto) remaining_path(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) remaining_path(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return operation().remaining_path(std::forward<ArgTypes>(args)...);
   }
 
   // Forwards tail_path() calls to the inner operation.
   template <typename... ArgTypes>
-  decltype(auto) tail_path(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) tail_path(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return operation().tail_path(std::forward<ArgTypes>(args)...);
   }
 
   // Forwards scalar_path() calls to the inner operation.
   template <typename... ArgTypes>
-  decltype(auto) scalar_path(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) scalar_path(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return operation().scalar_path(std::forward<ArgTypes>(args)...);
   }
 
   template <typename... ArgTypes>
-  decltype(auto) load(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) load(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return VecTraits::load(std::forward<ArgTypes>(args)...);
   }
 
   template <typename... ArgTypes>
-  decltype(auto) load_consecutive(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) load_consecutive(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return VecTraits::load_consecutive(std::forward<ArgTypes>(args)...);
   }
 
   template <typename... ArgTypes>
-  decltype(auto) store(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) store(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return VecTraits::store(std::forward<ArgTypes>(args)...);
   }
 
   template <typename... ArgTypes>
-  decltype(auto) store_consecutive(ArgTypes &&...args) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE decltype(auto) store_consecutive(ArgTypes &&...args)
+      KLEIDICV_STREAMING {
     return VecTraits::store_consecutive(std::forward<ArgTypes>(args)...);
   }
 
   // Forwards max_vectors_per_block() calls to the inner operation.
+  KLEIDICV_FORCE_INLINE
   size_t max_vectors_per_block() KLEIDICV_STREAMING {
     return operation_.max_vectors_per_block();
   }
 
   // Forwards on_block_finished() calls to the inner operation.
+  KLEIDICV_FORCE_INLINE
   void on_block_finished(size_t vectors_in_block) KLEIDICV_STREAMING {
     return operation_.on_block_finished(vectors_in_block);
   }
@@ -156,48 +168,89 @@ class RowBasedOperation : public OperationBase<OperationType> {
   explicit RowBasedOperation(OperationType &operation) KLEIDICV_STREAMING
       : OperationBase<OperationType>(operation) {}
 
-  // NOLINTBEGIN(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
   template <typename... ColumnTypes>
-  void process_row(size_t length, ColumnTypes... columns) KLEIDICV_STREAMING {
+  KLEIDICV_FORCE_INLINE void process_row(size_t length, ColumnTypes... columns)
+      KLEIDICV_STREAMING {
+    using Self = std::remove_reference_t<decltype(*this)>;
+
     LoopUnroll loop{length, this->num_lanes()};
 
-    // clang-format off
+    if constexpr (OperationType::is_unrolled_twice()) {
+      struct UnrollTwiceFunctor {
+        Self &self;
+        std::tuple<ColumnTypes &...> cols;
 
-    loop.unroll_twice_if<OperationType::is_unrolled_twice()>(
-      [&](size_t step) KLEIDICV_STREAMING {
-        this->operation().vector_path_2x(columns...);
-        ((columns += step), ...);
-      });
-
-  avoid_tail_loop:
-
-    loop.unroll_once_if<OperationType::is_unrolled_once()>(
-      [&](size_t step) KLEIDICV_STREAMING {
-        this->operation().vector_path(columns...);
-        ((columns += step), ...);
-      });
-
-    // Process leftover bytes on the unrolled-once vector path, if requested and
-    // possible.
-    if constexpr (OperationType::is_unrolled_once() && OperationType::try_to_avoid_tail_loop()) {
-        if (loop.try_avoid_tail_loop(
-            [&](size_t backward_step) KLEIDICV_STREAMING {
-              // Adjust pointers backwards to include
-              // the leftover bytes.
-              ((columns -= backward_step), ...);
-            })) {
-        goto avoid_tail_loop;
-      }
+        KLEIDICV_FORCE_INLINE void operator()(size_t step) const
+            KLEIDICV_STREAMING {
+          std::apply(
+              [&](auto &...columns) {
+                self.operation().vector_path_2x(columns...);
+                ((columns += step), ...);
+              },
+              cols);
+        }
+      };
+      loop.unroll_twice_if<OperationType::is_unrolled_twice()>(
+          UnrollTwiceFunctor{*this, std::tie(columns...)});
     }
 
-    loop.remaining(
-      [&](size_t length, size_t /* step */) KLEIDICV_STREAMING {
-        this->operation().remaining_path(length, columns...);
-      });
+    // NOLINTBEGIN(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
+    if constexpr (OperationType::is_unrolled_once()) {
+    avoid_tail_loop:
+      struct UnrollOnceFunctor {
+        Self &self;
+        std::tuple<ColumnTypes &...> cols;
 
-    // clang-format on
+        KLEIDICV_FORCE_INLINE void operator()(size_t step) const
+            KLEIDICV_STREAMING {
+          std::apply(
+              [&](auto &...columns) {
+                self.operation().vector_path(columns...);
+                ((columns += step), ...);
+              },
+              cols);
+        }
+      };
+
+      loop.unroll_once_if<OperationType::is_unrolled_once()>(
+          UnrollOnceFunctor{*this, std::tie(columns...)});
+
+      // Process leftover bytes on the unrolled-once vector path, if requested
+      // and possible.
+      if constexpr (OperationType::try_to_avoid_tail_loop()) {
+        struct BackwardAdjustFunctor {
+          std::tuple<ColumnTypes &...> cols;
+
+          KLEIDICV_FORCE_INLINE void operator()(size_t backward_step) const
+              KLEIDICV_STREAMING {
+            std::apply(
+                [&](auto &...columns) { ((columns -= backward_step), ...); },
+                cols);
+          }
+        };
+        if (loop.try_avoid_tail_loop(
+                BackwardAdjustFunctor{std::tie(columns...)})) {
+          goto avoid_tail_loop;
+        }
+      }
+    }
+    // NOLINTEND(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
+
+    struct RemainingFunctor {
+      Self &self;
+      std::tuple<ColumnTypes &...> cols;
+
+      KLEIDICV_FORCE_INLINE void operator()(size_t rem_length,
+                                            size_t) const KLEIDICV_STREAMING {
+        std::apply(
+            [&](auto &...columns) {
+              self.operation().remaining_path(rem_length, columns...);
+            },
+            cols);
+      }
+    };
+    loop.remaining(RemainingFunctor{*this, std::tie(columns...)});
   }
-  // NOLINTEND(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
 };  // end of class RowBasedOperation<OperationType>
 
 // Facade to offer a simplified row-based operation interface.
@@ -221,27 +274,60 @@ class RowBasedBlockOperation : public OperationBase<OperationType> {
   template <typename... ColumnTypes>
   KLEIDICV_FORCE_INLINE void process_row(size_t length, ColumnTypes... columns)
       KLEIDICV_STREAMING {
+    using Self = std::remove_reference_t<decltype(*this)>;
+
     if constexpr (OperationType::is_unrolled_twice()) {
-      process_blocks<2>(length, [&](size_t step) KLEIDICV_STREAMING {
-        this->operation().vector_path_2x(columns...);
-        ((columns += step), ...);
-      });
+      struct UnrollTwiceFunctor {
+        Self &self;
+        std::tuple<ColumnTypes &...> cols;
+
+        KLEIDICV_FORCE_INLINE void operator()(size_t step) const
+            KLEIDICV_STREAMING {
+          std::apply(
+              [&](auto &...columns) {
+                self.operation().vector_path_2x(columns...);
+                ((columns += step), ...);
+              },
+              cols);
+        }
+      };
+      process_blocks<2>(length,
+                        UnrollTwiceFunctor{*this, std::tie(columns...)});
     }
 
     if constexpr (OperationType::is_unrolled_once()) {
-      process_blocks<1>(length, [&](size_t step) KLEIDICV_STREAMING {
-        this->operation().vector_path(columns...);
-        ((columns += step), ...);
-      });
+      struct UnrollOnceFunctor {
+        Self &self;
+        std::tuple<ColumnTypes &...> cols;
+
+        KLEIDICV_FORCE_INLINE void operator()(size_t step) const
+            KLEIDICV_STREAMING {
+          std::apply(
+              [&](auto &...columns) {
+                self.operation().vector_path(columns...);
+                ((columns += step), ...);
+              },
+              cols);
+        }
+      };
+      process_blocks<1>(length, UnrollOnceFunctor{*this, std::tie(columns...)});
     }
 
-    // clang-format off
     LoopUnroll loop{length, this->num_lanes()};
-    loop.remaining(
-      [&](size_t length, size_t /* step */) KLEIDICV_STREAMING {
-        this->operation().remaining_path(length, columns...);
-      });
-    // clang-format on
+    struct RemainingFunctor {
+      Self &self;
+      std::tuple<ColumnTypes &...> cols;
+
+      KLEIDICV_FORCE_INLINE void operator()(size_t length,
+                                            size_t) const KLEIDICV_STREAMING {
+        std::apply(
+            [&](auto &...columns) {
+              self.operation().remaining_path(length, columns...);
+            },
+            cols);
+      }
+    };
+    loop.remaining(RemainingFunctor{*this, std::tie(columns...)});
   }
 
  private:
@@ -250,7 +336,8 @@ class RowBasedBlockOperation : public OperationBase<OperationType> {
       size_t &length, CallbackType callback) KLEIDICV_STREAMING {
     // The number of elements a single iteration would process.
     const size_t elements_per_iteration = UnrollFactor * this->num_lanes();
-    // The number of elements which will be processed when this method returns.
+    // The number of elements which will be processed when this method
+    // returns.
     const size_t processed_length =
         (length / elements_per_iteration) * elements_per_iteration;
     // The number of vectors which can be processed safely with the current
@@ -300,8 +387,8 @@ class ParallelRowsAdapter : public OperationBase<OperationType> {
   explicit ParallelRowsAdapter(OperationType &operation) KLEIDICV_STREAMING
       : OperationBase<OperationType>(operation) {}
 
-  // Forwards vector_path_2x() calls to the inner operation with one source and
-  // destination parallel columns.
+  // Forwards vector_path_2x() calls to the inner operation with one source
+  // and destination parallel columns.
   void vector_path_2x(ConstParallelColumnType src_a, ConstColumnType src_b,
                       ParallelColumnType dst) KLEIDICV_STREAMING {
     this->operation().vector_path_2x(src_a.first(), src_a.second(), src_b,
@@ -316,8 +403,8 @@ class ParallelRowsAdapter : public OperationBase<OperationType> {
                                   dst.first(), dst.second());
   }
 
-  // Forwards remaining_path() calls to the inner operation with one source and
-  // destination parallel columns.
+  // Forwards remaining_path() calls to the inner operation with one source
+  // and destination parallel columns.
   void remaining_path(size_t length, ConstParallelColumnType src_a,
                       ConstColumnType src_b,
                       ParallelColumnType dst) KLEIDICV_STREAMING {

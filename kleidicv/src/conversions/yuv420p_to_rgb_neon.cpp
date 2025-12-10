@@ -25,6 +25,7 @@ class YUVpToRGBxOrBGRx final : public YUV420XToRGBxOrBGRx<BGR, kAlpha>,
   explicit YUVpToRGBxOrBGRx(bool is_yv12)
       : YUV420XToRGBxOrBGRx<BGR, kAlpha>(is_yv12) {}
 
+  KLEIDICV_FORCE_INLINE
   void vector_path(VectorType &y0, VectorType &y1, VectorType &y2,
                    VectorType &y3, VectorType &u, VectorType &v,
                    ScalarType *rgbx_row_0, ScalarType *rgbx_row_1) {

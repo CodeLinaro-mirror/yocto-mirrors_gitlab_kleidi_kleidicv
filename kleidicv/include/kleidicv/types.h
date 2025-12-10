@@ -492,8 +492,9 @@ KLEIDICV_FORCE_INLINE void zip_rows(OperationType &operation, Rectangle rect,
 }
 
 template <typename OperationType, typename... RowTypes>
-void zip_parallel_rows(OperationType &operation, Rectangle rect,
-                       RowTypes... rows) KLEIDICV_STREAMING {
+KLEIDICV_FORCE_INLINE void zip_parallel_rows(OperationType &operation,
+                                             Rectangle rect, RowTypes... rows)
+    KLEIDICV_STREAMING {
   for (size_t row_index = 0; row_index < rect.height(); row_index += 2) {
     // Handle the last odd row in a special way.
     if (KLEIDICV_UNLIKELY(row_index == (rect.height() - 1))) {
@@ -510,6 +511,7 @@ void zip_parallel_rows(OperationType &operation, Rectangle rect,
 template <typename T>
 class CopyRows final {
  public:
+  KLEIDICV_FORCE_INLINE
   void process_row(size_t length, Columns<const T> src,
                    Columns<T> dst) KLEIDICV_STREAMING {
 #if (KLEIDICV_TARGET_SME || KLEIDICV_TARGET_SME2) && defined(__ANDROID__)
@@ -534,6 +536,7 @@ class CopyRows final {
 template <typename T>
 class CopyNonOverlappingRows final {
  public:
+  KLEIDICV_FORCE_INLINE
   void process_row(size_t length, Columns<const T> src,
                    Columns<T> dst) KLEIDICV_STREAMING {
 #if (KLEIDICV_TARGET_SME || KLEIDICV_TARGET_SME2) && defined(__ANDROID__)
