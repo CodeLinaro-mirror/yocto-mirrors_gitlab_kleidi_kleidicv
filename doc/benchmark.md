@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -11,7 +11,7 @@ KleidiCV has a small set of benchmarks to test the performance of some of its AP
 Building of the benchmarks can be enabled with the `cmake` argument `-DKLEIDICV_BENCHMARK=ON`.
 
 Benchmarks should be built in Release mode via the `CMAKE_BUILD_TYPE` parameter.
-Building is otherwise as described in the [building documentation](building.md).
+Building is otherwise as described in the [building documentation](build.md).
 
 For example, on Linux:
 ```
