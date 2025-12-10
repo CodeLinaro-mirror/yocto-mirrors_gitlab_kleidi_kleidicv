@@ -71,27 +71,27 @@ class MatmulFilter {
       // Regular branch instead of ternary operator
       // to avoid csel. Relying on branch predictor
       // since branch is predictable.
-      if (batch > padded_rect.height() - row) {  // NOLINT
-        batch = padded_rect.height() - row;
+      if (batch > rect.height() - row) {  // NOLINT
+        batch = rect.height() - row;
       }
 
       transposer_.transpose(src_rows, transpose_buffer_rows, rect, row, batch);
 
       for (size_t col = 0; col < border_size; col += col_iteration_step) {
         filter_.template horizontal_path<Channels, true>(
-            transpose_buffer_rows, dst_rows, rect, col, row, border_info);
+            transpose_buffer_rows, dst_rows, rect, padded_rect, col, row, border_info);
       }
 
       for (size_t col = border_size; col < borderless_end;
            col += col_iteration_step) {
         filter_.template horizontal_path<Channels, false>(
-            transpose_buffer_rows, dst_rows, rect, col, row, border_info);
+            transpose_buffer_rows, dst_rows, rect, padded_rect, col, row, border_info);
       }
 
       for (size_t col = borderless_end; col < rect.width();
            col += col_iteration_step) {
         filter_.template horizontal_path<Channels, true>(
-            transpose_buffer_rows, dst_rows, rect, col, row, border_info);
+            transpose_buffer_rows, dst_rows, rect, padded_rect, col, row, border_info);
       }
     }
   }

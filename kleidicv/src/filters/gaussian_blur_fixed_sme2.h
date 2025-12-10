@@ -90,12 +90,15 @@ class GaussianBlurMatmul {
   template <size_t Channels, bool EnableBorderTranslation>
   void horizontal_path(
       Rows<SourceType> transposed_rows, Rows<BufferType> dst_rows,
-      Rectangle rect, size_t col_start, size_t row_start,
+      Rectangle rect, Rectangle padded_rect, size_t col_start, size_t row_start,
       BorderInfoType border_info) KLEIDICV_STREAMING KLEIDICV_INOUT_ZA {
     const ptrdiff_t col = static_cast<ptrdiff_t>(col_start) - kBorderSize;
-    const size_t block_size = kernel_block_size();
+    const ptrdiff_t block_size = static_cast<ptrdiff_t>(kernel_block_size());
+    const ptrdiff_t padded_width = static_cast<ptrdiff_t>(padded_rect.width());
+    constexpr ptrdiff_t border_size = kBorderSize;
 
-    for (size_t kernel_block_row = 0; kernel_block_row < block_size;
+    for (ptrdiff_t kernel_block_row = 0; kernel_block_row < block_size &&
+                                      kernel_block_row + col < padded_width - border_size;
          kernel_block_row += kKernelIterationStep) {
       horizontal_fma_part<EnableBorderTranslation>(
           kernel_block_row, col, transposed_rows, border_info);
@@ -119,9 +122,10 @@ class GaussianBlurMatmul {
     const ptrdiff_t block_size = static_cast<ptrdiff_t>(kernel_block_size());
     const ptrdiff_t padded_height =
         static_cast<ptrdiff_t>(padded_rect.height());
+    constexpr ptrdiff_t border_size = kBorderSize;
 
     for (ptrdiff_t kernel_block_row = 0; kernel_block_row < block_size &&
-                                         kernel_block_row + row < padded_height;
+                                         kernel_block_row + row < padded_height - border_size;
          kernel_block_row += kKernelIterationStep) {
       vertical_fma_part<EnableBorderTranslation>(kernel_block_row, row, col,
                                                  pred_row, src, border_info);
