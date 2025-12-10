@@ -62,7 +62,7 @@ template <typename Callback>
 inline kleidicv_error_t parallel_batches(Callback callback,
                                          kleidicv_thread_multithreading mt,
                                          unsigned count,
-                                         unsigned min_batch_size = 16) {
+                                         unsigned min_batch_size = 1) {
   const unsigned task_count = std::max(1U, (count) / min_batch_size);
   FunctionCallback f = [=](unsigned task_begin, unsigned task_end) {
     unsigned begin = task_begin * min_batch_size,
@@ -80,6 +80,10 @@ template <typename SrcT, typename DstT, typename F, typename... Args>
 inline kleidicv_error_t kleidicv_thread_unary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src, size_t src_stride,
     DstT *dst, size_t dst_stride, size_t width, size_t height, Args... args) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto callback = [=](unsigned begin, unsigned end) {
     return f(src + static_cast<ptrdiff_t>(begin * src_stride / sizeof(SrcT)),
              src_stride,
@@ -94,6 +98,11 @@ inline kleidicv_error_t kleidicv_thread_binary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src_a,
     size_t src_a_stride, const SrcT *src_b, size_t src_b_stride, DstT *dst,
     size_t dst_stride, size_t width, size_t height, Args... args) {
+  CHECK_POINTER_AND_STRIDE(src_a, src_a_stride, height);
+  CHECK_POINTER_AND_STRIDE(src_b, src_b_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto callback = [=](unsigned begin, unsigned end) {
     return f(
         src_a + static_cast<ptrdiff_t>(begin * src_a_stride / sizeof(SrcT)),
@@ -253,6 +262,25 @@ kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,
                                         size_t dst_stride, int angle,
                                         size_t element_size,
                                         kleidicv_thread_multithreading mt) {
+  if (element_size == 1) {
+    CHECK_POINTER_AND_STRIDE(static_cast<const uint8_t *>(src), src_stride,
+                             height);
+    CHECK_POINTER_AND_STRIDE(static_cast<uint8_t *>(dst), dst_stride, height);
+  } else if (element_size == 2) {
+    CHECK_POINTER_AND_STRIDE(static_cast<const uint16_t *>(src), src_stride,
+                             height);
+    CHECK_POINTER_AND_STRIDE(static_cast<uint16_t *>(dst), dst_stride, height);
+  } else if (element_size == 4) {
+    CHECK_POINTER_AND_STRIDE(static_cast<const uint32_t *>(src), src_stride,
+                             height);
+    CHECK_POINTER_AND_STRIDE(static_cast<uint32_t *>(dst), dst_stride, height);
+  } else if (element_size == 8) {
+    CHECK_POINTER_AND_STRIDE(static_cast<const uint64_t *>(src), src_stride,
+                             height);
+    CHECK_POINTER_AND_STRIDE(static_cast<uint64_t *>(dst), dst_stride, height);
+  }
+  CHECK_IMAGE_SIZE(width, height);
+
   if (!kleidicv::rotate_is_implemented(src, dst, angle, element_size)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
@@ -298,6 +326,11 @@ kleidicv_error_t kleidicv_thread_rgb_to_yuv_semiplanar_u8(
     uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
     kleidicv_color_conversion_t color_format,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(y_dst, y_stride, height);
+  CHECK_POINTER_AND_STRIDE(uv_dst, uv_stride, (height + 1) / 2);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_rgb_to_yuv420sp_stripe_u8(
         src, src_stride, y_dst, y_stride, uv_dst, uv_stride, width, height,
@@ -338,6 +371,11 @@ kleidicv_error_t kleidicv_thread_yuv_semiplanar_to_rgb_u8(
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, kleidicv_color_conversion_t color_format,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src_y, src_y_stride, height);
+  CHECK_POINTER_AND_STRIDE(src_uv, src_uv_stride, (height + 1) / 2);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto callback = [=](unsigned begin, unsigned end) {
     size_t row_begin = size_t{begin} * 2;
     size_t row_end = std::min<size_t>(height, size_t{end} * 2);
@@ -396,6 +434,8 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
       const type *src, size_t src_stride, size_t width, size_t height,         \
       type *p_min_value, type *p_max_value,                                    \
       kleidicv_thread_multithreading mt) {                                     \
+    CHECK_POINTER_AND_STRIDE(src, src_stride, height);                         \
+    CHECK_IMAGE_SIZE(width, height);                                           \
     return parallel_min_max(kleidicv_min_max_##suffix, src, src_stride, width, \
                             height, p_min_value, p_max_value, mt);             \
   }
@@ -453,6 +493,8 @@ kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
       const type *src, size_t src_stride, size_t width, size_t height,   \
       size_t *p_min_offset, size_t *p_max_offset,                        \
       kleidicv_thread_multithreading mt) {                               \
+    CHECK_POINTER_AND_STRIDE(src, src_stride, height);                   \
+    CHECK_IMAGE_SIZE(width, height);                                     \
     return parallel_min_max_loc(kleidicv_min_max_loc_##suffix, src,      \
                                 src_stride, width, height, p_min_offset, \
                                 p_max_offset, mt);                       \
@@ -466,6 +508,8 @@ kleidicv_error_t kleidicv_thread_filter(F filter, size_t width, size_t height,
                                         size_t kernel_height,
                                         kleidicv_filter_context_t *context,
                                         kleidicv_thread_multithreading mt) {
+  CHECK_IMAGE_SIZE(width, height);
+
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     // The context contains a buffer that can only fit a single row, so can't be
     // shared between threads. Since we don't know how many threads there are,
@@ -505,6 +549,10 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
     kleidicv_border_type_t border_type, kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
   if (!fixed_border_type ||
       !kleidicv::gaussian_blur_is_implemented(width, height, kernel_width,
@@ -537,6 +585,10 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
     size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
                                                     kernel_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -564,6 +616,10 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
                                                     kernel_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -591,6 +647,10 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
     size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
                                                     kernel_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -617,6 +677,10 @@ kleidicv_error_t kleidicv_thread_blur_and_downsample_u8(
     uint8_t *dst, size_t dst_stride, size_t channels,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, (src_height + 1) / 2);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+
   if (!kleidicv::blur_and_downsample_is_implemented(src_width, src_height,
                                                     channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -641,6 +705,10 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   if (!kleidicv::sobel_is_implemented(width, height, 3)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
@@ -658,6 +726,10 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto result_pair = kleidicv::median_blur_is_implemented(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
@@ -699,6 +771,10 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto result_pair = kleidicv::median_blur_is_implemented(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
@@ -722,6 +798,10 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto result_pair = kleidicv::median_blur_is_implemented(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
@@ -745,6 +825,10 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   auto result_pair = kleidicv::median_blur_is_implemented(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
@@ -767,6 +851,10 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
   if (!kleidicv::sobel_is_implemented(width, height, 3)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
@@ -783,6 +871,10 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t src_channels, int16_t *dst, size_t dst_stride,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, src_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+
   if (!kleidicv::scharr_interleaved_is_implemented(src_width, src_height,
                                                    src_channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -802,6 +894,11 @@ kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   auto callback = [=](unsigned begin, unsigned end) {
     size_t src_begin = size_t{begin} * 2;
     size_t src_end = std::min<size_t>(src_height, size_t{end} * 2);
@@ -825,6 +922,11 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::resize_linear_u8_is_implemented(src_width, src_height,
                                                  dst_width, dst_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -842,6 +944,11 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     float *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::resize_linear_f32_is_implemented(src_width, src_height,
                                                   dst_width, dst_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -861,6 +968,12 @@ kleidicv_error_t kleidicv_thread_remap_s16_u8(
     size_t channels, const int16_t *mapxy, size_t mapxy_stride,
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::remap_s16_is_implemented<uint8_t>(src_stride, src_width,
                                                    src_height, dst_width,
                                                    border_type, channels)) {
@@ -883,6 +996,12 @@ kleidicv_error_t kleidicv_thread_remap_s16_u16(
     size_t channels, const int16_t *mapxy, size_t mapxy_stride,
     kleidicv_border_type_t border_type, const uint16_t *border_value,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::remap_s16_is_implemented<uint16_t>(src_stride, src_width,
                                                     src_height, dst_width,
                                                     border_type, channels)) {
@@ -906,6 +1025,13 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
     const uint16_t *mapfrac, size_t mapfrac_stride,
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapfrac, mapfrac_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::remap_s16point5_is_implemented<uint8_t>(
           src_stride, src_width, src_height, dst_width, border_type,
           channels)) {
@@ -932,6 +1058,13 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u16(
     const uint16_t *mapfrac, size_t mapfrac_stride,
     kleidicv_border_type_t border_type, const uint16_t *border_value,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapxy, mapxy_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapfrac, mapfrac_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::remap_s16point5_is_implemented<uint16_t>(
           src_stride, src_width, src_height, dst_width, border_type,
           channels)) {
@@ -958,6 +1091,13 @@ kleidicv_error_t kleidicv_thread_remap_f32_u8(
     size_t mapy_stride, kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapx, mapx_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapy, mapy_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::remap_f32_is_implemented<uint8_t>(
           src_stride, src_width, src_height, dst_width, dst_height, border_type,
           channels, interpolation)) {
@@ -983,6 +1123,13 @@ kleidicv_error_t kleidicv_thread_remap_f32_u16(
     size_t mapy_stride, kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const uint16_t *border_value,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapx, mapx_stride, dst_height);
+  CHECK_POINTER_AND_STRIDE(mapy, mapy_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::remap_f32_is_implemented<uint16_t>(
           src_stride, src_width, src_height, dst_width, dst_height, border_type,
           channels, interpolation)) {
@@ -1008,6 +1155,11 @@ kleidicv_error_t kleidicv_thread_warp_perspective_u8(
     kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const uint8_t *border_value,
     kleidicv_thread_multithreading mt) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
+
   if (!kleidicv::warp_perspective_is_implemented<uint8_t>(
           dst_width, channels, interpolation, border_type)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;

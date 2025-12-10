@@ -31,7 +31,7 @@ class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
                             buffer_rows_stride_, channels};
 
     // Vertical processing loop.
-    for (size_t vertical_index = y_begin; vertical_index < y_end;
+    for (size_t vertical_index = (y_begin + 1) & ~1; vertical_index < y_end;
          vertical_index += 2) {
       // Recalculate vertical border offsets.
       auto offsets = vertical_border.offsets_with_border(vertical_index);

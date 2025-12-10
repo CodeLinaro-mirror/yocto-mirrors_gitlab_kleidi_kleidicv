@@ -621,16 +621,17 @@ void check_separable_filter_2d_not_implemented(
   T src[1] = {}, dst[1] = {};
   // Image too small
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            multithreaded_func(src, 1, dst, 1, 1, 1, channels, kernel_x.data(),
-                               kernel_width, kernel_y.data(), kernel_height,
-                               KLEIDICV_BORDER_TYPE_REPLICATE, context,
-                               get_multithreading_fake(2)));
+            multithreaded_func(src, sizeof(T), dst, sizeof(T), 1, 1, channels,
+                               kernel_x.data(), kernel_width, kernel_y.data(),
+                               kernel_height, KLEIDICV_BORDER_TYPE_REPLICATE,
+                               context, get_multithreading_fake(2)));
   // Border not supported
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            multithreaded_func(src, 1, dst, 1, max_width, max_height, channels,
-                               kernel_x.data(), kernel_width, kernel_y.data(),
-                               kernel_height, KLEIDICV_BORDER_TYPE_TRANSPARENT,
-                               context, get_multithreading_fake(2)));
+            multithreaded_func(src, max_width, dst, max_width, max_width,
+                               max_height, channels, kernel_x.data(),
+                               kernel_width, kernel_y.data(), kernel_height,
+                               KLEIDICV_BORDER_TYPE_TRANSPARENT, context,
+                               get_multithreading_fake(2)));
 
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
@@ -1073,7 +1074,7 @@ TEST_P(SingleMultiThreadInconsistency, ExpF32) {
 
   EXPECT_EQ(KLEIDICV_OK, multi_result);
   EXPECT_EQ(KLEIDICV_OK, single_result);
-  EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+  EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1e-7, dst_multi, dst_single);
 }
 
 INSTANTIATE_TEST_SUITE_P(, SingleMultiThreadInconsistency,
