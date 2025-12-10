@@ -92,7 +92,6 @@ class GrayToRGBA final {
       dst_vect.val[1] = vqtbl2q_u8(src_and_alpha, indices.val[1]);
       dst_vect.val[2] = vqtbl2q_u8(src_and_alpha, indices.val[2]);
       dst_vect.val[3] = vqtbl2q_u8(src_and_alpha, indices.val[3]);
-      VecTraits::store(dst_vect, &dst[0]);
 #else   // defined(__clang__)
       asm volatile(
           "ld1 { v16.16b }, [%[src_ptr]] \n\t"
