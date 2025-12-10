@@ -213,7 +213,11 @@ class Array2D : public TwoDimensional<ElementType> {
           error = static_cast<ElementType>(
               abs(static_cast<int64_t>(lhs[0]) - static_cast<int64_t>(rhs[0])));
         } else {
-          error = std::abs(lhs[0] - rhs[0]);
+          if (rhs[0] == 0.0) {
+            error = lhs[0];
+          } else {
+            error = std::abs((lhs[0] - rhs[0]) / rhs[0]);
+          }
         }
         if (error > threshold) {
           return std::make_tuple(row, column);

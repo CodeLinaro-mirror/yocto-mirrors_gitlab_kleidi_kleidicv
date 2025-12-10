@@ -157,8 +157,13 @@ kleidicv_error_t yuv2rgbx_operation(OperationType &operation,
   // Calculate starting pointers for Y, U, and V planes at the given stripe
   // start.
   const ScalarType *y0 = src + row_begin * src_stride;
-  u = u + row_uv * src_stride / 2;
-  v = v + row_uv * src_stride / 2;
+  u = u + (row_uv / 2) * src_stride;
+  v = v + (row_uv / 2) * src_stride;
+
+  if (row_uv % 2 == 1) {
+    u += uv_strides[(u_index++) & 1];
+    v += uv_strides[(v_index++) & 1];
+  }
 
   size_t dcn = operation.output_channels();
   for (size_t h = row_begin; h < row_end; h += 2) {

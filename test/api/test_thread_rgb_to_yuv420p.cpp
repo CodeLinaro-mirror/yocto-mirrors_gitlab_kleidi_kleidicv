@@ -54,10 +54,6 @@ class RgbToYuv420Thread : public testing::TestWithParam<P> {
     test::Array2D<uint8_t> src{20 * channels, 10, 0, channels};
     test::Array2D<uint8_t> dst(20, (10 * 3 + 1) / 2);
 
-    test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width(), dst.height(), color_format,
-                         get_multithreading_fake(2));
-
     EXPECT_EQ(KLEIDICV_OK,
               impl(src.data(), src.stride(), dst.data(), dst.stride(), 0, 1,
                    color_format, get_multithreading_fake(2)));

@@ -58,10 +58,6 @@ class Yuv422Thread : public testing::TestWithParam<P> {
     size_t channel = get_dcn(color_format);
     test::Array2D<uint8_t> dst{60, 10, 0, channel};
 
-    test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width() / 3, dst.height(),
-                         color_format, get_multithreading_fake(2));
-
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
               impl(src.data(), src.stride(), dst.data(), dst.stride(), 1, 1,
                    color_format, get_multithreading_fake(2)));

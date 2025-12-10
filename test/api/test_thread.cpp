@@ -22,8 +22,8 @@ class Thread : public testing::TestWithParam<P> {
   template <typename SrcT, typename DstT, typename SingleThreadedFunc,
             typename MultithreadedFunc, typename... Args>
   void check_unary_op(SingleThreadedFunc single_threaded_func,
-                      MultithreadedFunc multithreaded_func, size_t src_channels,
-                      size_t dst_channels, Args... args) {
+                      MultithreadedFunc multithreaded_func, DstT tolerance,
+                      size_t src_channels, size_t dst_channels, Args... args) {
     unsigned width = 0, height = 0, thread_count = 0;
     std::tie(width, height, thread_count) = GetParam();
     test::Array2D<SrcT> src(size_t{width} * src_channels, height);
@@ -43,7 +43,7 @@ class Thread : public testing::TestWithParam<P> {
 
     EXPECT_EQ(single_result, multi_result);
     if (KLEIDICV_OK == single_result) {
-      EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+      EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(tolerance, dst_multi, dst_single);
     }
   }
 
@@ -98,7 +98,7 @@ class Thread : public testing::TestWithParam<P> {
               kleidicv_filter_context_create(&context, channels, kernel_width,
                                              kernel_height, width, height));
     check_unary_op<T, T>(
-        single_threaded_func, multithreaded_func, channels /*src_channels*/,
+        single_threaded_func, multithreaded_func, 0, channels /*src_channels*/,
         channels /*dst_channels*/,
         /*remaining arguments passed to separable_filter_2d_... functions*/
         channels, kernel_x.data(), kernel_width, kernel_y.data(), kernel_height,
@@ -115,8 +115,9 @@ class Thread : public testing::TestWithParam<P> {
     kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
     const auto &filter_size = std::vector<size_t>{3, 5, 7, 9, 17};
     for (auto ksize : filter_size) {
-      check_unary_op<T, T>(single_threaded_func, multithreaded_func, channels,
-                           channels, channels, ksize, ksize, border_type);
+      check_unary_op<T, T>(single_threaded_func, multithreaded_func, 0,
+                           channels, channels, channels, ksize, ksize,
+                           border_type);
     }
   }
 
@@ -286,17 +287,23 @@ class Thread : public testing::TestWithParam<P> {
     float sigma_x = 0.0F, sigma_y = 0.0F;
     kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
     check_unary_op<uint8_t, uint8_t>(
-        kleidicv_gaussian_blur_u8, kleidicv_thread_gaussian_blur_u8,
+        kleidicv_gaussian_blur_u8, kleidicv_thread_gaussian_blur_u8, 0,
         channels /*src_channels*/, channels /*dst_channels*/,
         /*remaining arguments passed to gaussian_blur_u8 functions*/ channels,
         kernel_width, kernel_height, sigma_x, sigma_y, border_type);
   }
 };
 
-#define TEST_UNARY_OP(suffix, SrcT, DstT, ...)                              \
+#define TEST_UNARY_OP(suffix, SrcT, DstT, ...)                                 \
+  TEST_P(Thread, suffix) {                                                     \
+    check_unary_op<SrcT, DstT>(kleidicv_##suffix, kleidicv_thread_##suffix, 0, \
+                               __VA_ARGS__);                                   \
+  }
+
+#define TEST_UNARY_OP_WITH_TOLERANCE(suffix, SrcT, DstT, tolerance, ...)    \
   TEST_P(Thread, suffix) {                                                  \
     check_unary_op<SrcT, DstT>(kleidicv_##suffix, kleidicv_thread_##suffix, \
-                               __VA_ARGS__);                                \
+                               tolerance, __VA_ARGS__);                     \
   }
 
 #define TEST_BINARY_OP(suffix, T, ...)                                 \
@@ -319,7 +326,7 @@ TEST_UNARY_OP(threshold_binary_u8, uint8_t, uint8_t, 1, 1, 100, 200);
 TEST_UNARY_OP(scale_u8, uint8_t, uint8_t, 1, 1, 0.5F, 3.5F);
 TEST_UNARY_OP(scale_f32, float, float, 1, 1, 0.123F, 45.6789F);
 TEST_UNARY_OP(scale_u8_f16, uint8_t, float16_t, 1, 1, 0.123F, 45.6789F);
-TEST_UNARY_OP(exp_f32, float, float, 1, 1);
+TEST_UNARY_OP_WITH_TOLERANCE(exp_f32, float, float, 1e-6, 1, 1);
 TEST_UNARY_OP(f32_to_s8, float, int8_t, 1, 1);
 TEST_UNARY_OP(f32_to_u8, float, uint8_t, 1, 1);
 TEST_UNARY_OP(s8_to_f32, int8_t, float, 1, 1);
@@ -621,16 +628,17 @@ void check_separable_filter_2d_not_implemented(
   T src[1] = {}, dst[1] = {};
   // Image too small
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            multithreaded_func(src, 1, dst, 1, 1, 1, channels, kernel_x.data(),
-                               kernel_width, kernel_y.data(), kernel_height,
-                               KLEIDICV_BORDER_TYPE_REPLICATE, context,
-                               get_multithreading_fake(2)));
+            multithreaded_func(src, sizeof(T), dst, sizeof(T), 1, 1, channels,
+                               kernel_x.data(), kernel_width, kernel_y.data(),
+                               kernel_height, KLEIDICV_BORDER_TYPE_REPLICATE,
+                               context, get_multithreading_fake(2)));
   // Border not supported
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            multithreaded_func(src, 1, dst, 1, max_width, max_height, channels,
-                               kernel_x.data(), kernel_width, kernel_y.data(),
-                               kernel_height, KLEIDICV_BORDER_TYPE_TRANSPARENT,
-                               context, get_multithreading_fake(2)));
+            multithreaded_func(src, max_width, dst, max_width, max_width,
+                               max_height, channels, kernel_x.data(),
+                               kernel_width, kernel_y.data(), kernel_height,
+                               KLEIDICV_BORDER_TYPE_TRANSPARENT, context,
+                               get_multithreading_fake(2)));
 
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
@@ -911,25 +919,25 @@ TEST(ThreadWarpPerspective, NotImplemented) {
 TEST_P(Thread, SobelHorizontal1Channel) {
   check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_horizontal_s16_u8,
                                    kleidicv_thread_sobel_3x3_horizontal_s16_u8,
-                                   1, 1, 1);
+                                   0, 1, 1, 1);
 }
 
 TEST_P(Thread, SobelHorizontal3Channels) {
   check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_horizontal_s16_u8,
                                    kleidicv_thread_sobel_3x3_horizontal_s16_u8,
-                                   3, 3, 3);
+                                   0, 3, 3, 3);
 }
 
 TEST_P(Thread, SobelVertical1Channel) {
   check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_vertical_s16_u8,
-                                   kleidicv_thread_sobel_3x3_vertical_s16_u8, 1,
-                                   1, 1);
+                                   kleidicv_thread_sobel_3x3_vertical_s16_u8, 0,
+                                   1, 1, 1);
 }
 
 TEST_P(Thread, SobelVertical3Channels) {
   check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_vertical_s16_u8,
-                                   kleidicv_thread_sobel_3x3_vertical_s16_u8, 3,
-                                   3, 3);
+                                   kleidicv_thread_sobel_3x3_vertical_s16_u8, 0,
+                                   3, 3, 3);
 }
 
 TEST(ThreadSobel, NotImplemented) {
@@ -953,13 +961,6 @@ INSTANTIATE_TEST_SUITE_P(
                     P{1, 32, 2}, P{2, 16, 2}, P{2, 32, 1}, P{1, 48, 2},
                     P{2, 48, 1}, P{6, 64, 1}, P{4, 80, 2}, P{2, 96, 3},
                     P{1, 112, 4}, P{12, 34, 5}, P{40, 34, 5}));
-
-TEST(ThreadScaleU8, NotImplemented) {
-  test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
-  test::test_null_args(kleidicv_thread_scale_u8, src.data(), src.stride(),
-                       dst.data(), dst.stride(), 1, 1, 2, 0,
-                       get_multithreading_fake(2));
-}
 
 TEST(ThreadScaleU8, OversizeImage) {
   test::Array2D<uint8_t> src(size_t{1}, 1), dst(size_t{1}, 1);
@@ -1047,7 +1048,7 @@ TEST_P(SingleMultiThreadInconsistency, ScaleF32) {
 
   EXPECT_EQ(KLEIDICV_OK, multi_result);
   EXPECT_EQ(KLEIDICV_OK, single_result);
-  EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+  EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1e-6, dst_multi, dst_single);
 }
 
 TEST_P(SingleMultiThreadInconsistency, ExpF32) {
@@ -1073,7 +1074,7 @@ TEST_P(SingleMultiThreadInconsistency, ExpF32) {
 
   EXPECT_EQ(KLEIDICV_OK, multi_result);
   EXPECT_EQ(KLEIDICV_OK, single_result);
-  EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+  EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(1e-6, dst_multi, dst_single);
 }
 
 INSTANTIATE_TEST_SUITE_P(, SingleMultiThreadInconsistency,

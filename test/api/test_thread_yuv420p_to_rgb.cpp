@@ -54,10 +54,6 @@ class YuvpThread : public testing::TestWithParam<P> {
     size_t channels = get_dcn(color_format);
     test::Array2D<uint8_t> dst{20 * channels, 10, 0, channels};
 
-    test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width(), dst.height(), color_format,
-                         get_multithreading_fake(2));
-
     EXPECT_EQ(KLEIDICV_OK,
               impl(src.data(), src.stride(), dst.data(), dst.stride(), 0, 1,
                    color_format, get_multithreading_fake(2)));

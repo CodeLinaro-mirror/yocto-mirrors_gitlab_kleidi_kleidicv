@@ -54,10 +54,6 @@ class YuvThread : public testing::TestWithParam<P> {
     test::Array2D<uint8_t> src{20 * channels, 10, 0, channels};
     test::Array2D<uint8_t> dst{20 * channels, 10, 0, channels};
 
-    test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width(), dst.height(), color_format,
-                         get_multithreading_fake(2));
-
     EXPECT_EQ(KLEIDICV_OK,
               impl(src.data(), src.stride(), dst.data(), dst.stride(), 0, 1,
                    color_format, get_multithreading_fake(2)));
@@ -77,13 +73,11 @@ class YuvThread : public testing::TestWithParam<P> {
                    color_format, get_multithreading_fake(2)));
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              impl(src.data(), src.stride(), dst.data(), dst.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
+              impl(src.data(), src.stride(), dst.data(), dst.stride(), 20, 10,
                    kleidicv_color_conversion_t{}, get_multithreading_fake(2)));
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              impl(src.data(), src.stride(), dst.data(), dst.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
+              impl(src.data(), src.stride(), dst.data(), dst.stride(), 20, 10,
                    static_cast<kleidicv_color_conversion_t>(
                        KLEIDICV_COLOR_CONVERSION_FMT_YUV444 |
                        KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST),

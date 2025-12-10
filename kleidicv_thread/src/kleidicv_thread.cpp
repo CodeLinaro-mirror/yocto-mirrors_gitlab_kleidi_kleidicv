@@ -40,29 +40,26 @@ static kleidicv_error_t kleidicv_thread_std_function_callback(
 // process the parts of the data that don't fit into the vector width.
 // For floating point operations in particular, the results may be very slightly
 // different between vector and scalar paths.
+//
 // When using multithreading, images are divided into parts to be processed by
 // each thread, and this could change which parts of the data end up being
-// processed by the vector and scalar paths. Since the threading may be
-// non-deterministic in how it divides up the image, this non-determinism could
-// leak through in the values of the output. This could cause subtle bugs.
+// processed by the vector and scalar paths.
 //
-// To avoid this problem, this function passes data to each thread in batches
-// that are a multiple of the Neon vector width in size (16 bytes). The
-// exception is the last batch, which may be longer in order to extend to the
-// end of the data. No batch can be shorter than vector length as this could
-// cause different behaviour for operations that try to avoid the tail loop (see
-// the TryToAvoidTailLoop class) - this technique only works if the data is
-// longer than vector length.
+// If an implementation is sensitive to these very slight differences, set
+// min_batch_size to the Neon vector length (16 bytes). That makes every batch
+// handed to a thread a multiple of the vector width; only the final batch may
+// be longer to reach the end of the data. No batch can be shorter than vector
+// length because that could change behaviour for operations that try to avoid
+// the tail loop (see the TryToAvoidTailLoop class).
+// This technique only works if the data is longer than vector length.
 //
-// Typically with how this function is used, batches will be 16 image rows or
-// row pairs, which is likely to be far coarser alignment than is needed.
-// However it's unlikely that threading on a finer-grained level would provide a
-// performance benefit.
+// On the other hand, measurements showed that increasing the batch size can
+// cause degradation of the multithreaded performance.
 template <typename Callback>
 inline kleidicv_error_t parallel_batches(Callback callback,
                                          kleidicv_thread_multithreading mt,
                                          unsigned count,
-                                         unsigned min_batch_size = 16) {
+                                         unsigned min_batch_size = 1) {
   const unsigned task_count = std::max(1U, (count) / min_batch_size);
   FunctionCallback f = [=](unsigned task_begin, unsigned task_end) {
     unsigned begin = task_begin * min_batch_size,

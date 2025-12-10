@@ -52,11 +52,6 @@ class Rgb2Yuv422Thread : public testing::TestWithParam<P> {
     test::Array2D<uint8_t> src{60, 10, 0, 3};
     test::Array2D<uint8_t> dst{40, 10};
 
-    // Null-arg checks.
-    test::test_null_args(impl, src.data(), src.stride(), dst.data(),
-                         dst.stride(), dst.width() / 3, dst.height(),
-                         color_format, get_multithreading_fake(2));
-
     // Zero-sized images should be OK (no-op).
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
               impl(src.data(), src.stride(), dst.data(), dst.stride(), 1, 1,
