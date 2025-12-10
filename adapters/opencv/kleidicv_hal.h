@@ -213,12 +213,26 @@ namespace cv {
 #ifdef OPENCV_IMGPROC_HAL_REPLACEMENT_HPP
 
 // gray_to_bgr
+static inline int kleidicv_gray_to_bgr_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int width, int height, int depth, int dcn) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(gray_to_bgr, cv_hal_cvtGraytoBGR,
+                                       src_data, src_step, dst_data, dst_step,
+                                       width, height, depth, dcn);
+}
 #undef cv_hal_cvtGraytoBGR
-#define cv_hal_cvtGraytoBGR kleidicv::hal::gray_to_bgr
+#define cv_hal_cvtGraytoBGR kleidicv_gray_to_bgr_with_fallback
 
 // bgr_to_bgr
+static inline int kleidicv_bgr_to_bgr_with_fallback(
+    const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
+    int width, int height, int depth, int scn, int dcn, bool swapBlue) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(bgr_to_bgr, cv_hal_cvtBGRtoBGR, src_data,
+                                       src_step, dst_data, dst_step, width,
+                                       height, depth, scn, dcn, swapBlue);
+}
 #undef cv_hal_cvtBGRtoBGR
-#define cv_hal_cvtBGRtoBGR kleidicv::hal::bgr_to_bgr
+#define cv_hal_cvtBGRtoBGR kleidicv_bgr_to_bgr_with_fallback
 
 // bgr_to_yuv420_p
 #undef cv_hal_cvtBGRtoThreePlaneYUV
