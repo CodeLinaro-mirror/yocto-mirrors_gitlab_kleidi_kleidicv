@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -12,15 +12,16 @@ Support for different platforms is organised in 3 tiers[^1].
 
 A released version of KleidiCV shall be tested for correctness and performance on a Tier 1 platform.
 
-At present the only Tier 1 platform is Android on Samsung Galaxy S22
-with an up-to-date operating system, where applications are built with
-Android NDK r27c.
+Tier 1 platforms:
+* Android on Samsung Galaxy S22 with an up-to-date operating system, where applications are built with
+  Android NDK r27c.
+* AArch64 Ubuntu (as defined by `docker/Dockerfile` in the KleidiCV source tree) on Arm Neoverse N1 CPU.
 
 ## Tier 2
 
 KleidiCV is tested for correctness on a Tier 2 platform, however performance is not checked.
 
-At present the only Tier 2 platform is AArch64 Ubuntu, as defined by `docker/Dockerfile` in the KleidiCV source tree.
+There are no Tier 2 platforms currently.
 
 ## Tier 3
 

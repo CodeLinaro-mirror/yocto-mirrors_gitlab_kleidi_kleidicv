@@ -21,6 +21,13 @@ This changelog aims to follow the guiding principles of
 - Conversion from RGB/BGR/RGBA/BGRA to YUV 4:2:2.
 - Conversion from YUV 4:2:2 to RGB/BGR/RGBA/BGRA.
 
+### Changed
+- AArch64 Ubuntu promoted from Tier 2 to Tier 1 on Arm Neoverse N1.
+
+### Fixed
+- Multithreaded performance in the OpenCV HAL. (By changing the batch size.)
+- SME and SME2 builds with Android NDK r29.
+
 ## 0.6.0 - 2025-09-25
 
 ### Added
