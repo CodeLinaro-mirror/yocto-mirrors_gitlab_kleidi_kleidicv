@@ -126,3 +126,22 @@ TEST(ResizeThreadTest, NotImplemented) {
                                                 get_multithreading_fake(2)));
   }
 }
+
+TEST(ResizeThreadTest, NullArgs) {
+  test::Array2D<uint8_t> src_u8(4, 4), dst_quarter(2, 2), dst_u8(4, 4);
+  test::Array2D<float> src_f32(4, 4), dst_f32(4, 4);
+  auto mt = get_multithreading_fake(2);
+
+  test::test_null_args(kleidicv_thread_resize_to_quarter_u8, src_u8.data(),
+                       src_u8.stride(), src_u8.width(), src_u8.height(),
+                       dst_quarter.data(), dst_quarter.stride(),
+                       dst_quarter.width(), dst_quarter.height(), mt);
+  test::test_null_args(kleidicv_thread_resize_linear_u8, src_u8.data(),
+                       src_u8.stride(), src_u8.width(), src_u8.height(),
+                       dst_u8.data(), dst_u8.stride(), dst_u8.width(),
+                       dst_u8.height(), mt);
+  test::test_null_args(kleidicv_thread_resize_linear_f32, src_f32.data(),
+                       src_f32.stride(), src_f32.width(), src_f32.height(),
+                       dst_f32.data(), dst_f32.stride(), dst_f32.width(),
+                       dst_f32.height(), mt);
+}

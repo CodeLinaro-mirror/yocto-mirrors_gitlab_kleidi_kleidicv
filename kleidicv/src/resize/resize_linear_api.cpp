@@ -5,6 +5,7 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/resize/resize_linear.h"
+#include "kleidicv/utils.h"
 
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_resize_linear_stripe_u8, &kleidicv::neon::resize_linear_stripe_u8,
@@ -28,6 +29,9 @@ kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
                                                  dst_width, dst_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
   return kleidicv_resize_linear_stripe_u8(src, src_stride, src_width,
                                           src_height, 0, src_height, dst,
                                           dst_stride, dst_width, dst_height);
@@ -42,6 +46,9 @@ kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
                                                   dst_width, dst_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
   return kleidicv_resize_linear_stripe_f32(src, src_stride, src_width,
                                            src_height, 0, src_height, dst,
                                            dst_stride, dst_width, dst_height);

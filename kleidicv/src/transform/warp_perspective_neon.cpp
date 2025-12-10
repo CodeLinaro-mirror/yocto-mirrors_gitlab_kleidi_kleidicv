@@ -143,12 +143,6 @@ kleidicv_error_t warp_perspective_stripe(
     size_t y_begin, size_t y_end, const float transformation[9],
     size_t channels, kleidicv_interpolation_type_t interpolation,
     kleidicv_border_type_t border_type, const T *border_value) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-  CHECK_POINTERS(transformation);
-  CHECK_IMAGE_SIZE(src_width, src_height);
-  CHECK_IMAGE_SIZE(dst_width, dst_height);
-
   if (border_type == KLEIDICV_BORDER_TYPE_CONSTANT && nullptr == border_value) {
     return KLEIDICV_ERROR_NULL_POINTER;
   }

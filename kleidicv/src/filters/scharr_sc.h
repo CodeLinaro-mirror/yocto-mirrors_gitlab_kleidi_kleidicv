@@ -151,15 +151,9 @@ class ScharrBufferDeleter {
 };
 
 static kleidicv_error_t kleidicv_scharr_interleaved_stripe_s16_u8_sc(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t,
     size_t src_channels, int16_t *dst, size_t dst_stride, size_t y_begin,
     size_t y_end) KLEIDICV_STREAMING {
-  // Does not include checks for whether the operation is implemented.
-  // This must be done earlier, by scharr_interleaved_is_implemented.
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, src_height);
-  CHECK_IMAGE_SIZE(src_width, src_height);
-
   // Allocating more elements because in case of SVE interleaving stores are
   // governed by one predicate. For example, if a predicate requires 7 uint8_t
   // elements and an algorithm performs widening to 16 bits, the resulting

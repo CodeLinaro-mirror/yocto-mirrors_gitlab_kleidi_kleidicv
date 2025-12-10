@@ -92,6 +92,11 @@ TYPED_TEST_P(MinMaxThread, NullArguments) {
   size_t width = 1, height = 2, thread_count = 2;
   TypeParam src[2] = {1, 2}, min_value, max_value;
 
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            thread_min_max<TypeParam>()(nullptr, width * sizeof(TypeParam),
+                                        width, height, &min_value, &max_value,
+                                        get_multithreading_fake(2)));
+
   min_value = max_value = 0;
   kleidicv_error_t res = thread_min_max<TypeParam>()(
       src, width * sizeof(TypeParam), width, height, nullptr, &max_value,

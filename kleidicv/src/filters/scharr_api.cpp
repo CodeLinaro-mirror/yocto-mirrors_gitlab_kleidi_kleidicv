@@ -5,6 +5,7 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/filters/scharr.h"
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/utils.h"
 
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_scharr_interleaved_stripe_s16_u8,
@@ -22,6 +23,12 @@ kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
                                                    src_channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+
+  // Does not include checks for whether the operation is implemented.
+  // This must be done earlier, by scharr_interleaved_is_implemented.
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, src_height);
+  CHECK_IMAGE_SIZE(src_width, src_height);
 
   // height is decremented by 2 as the result has less rows.
   return kleidicv_scharr_interleaved_stripe_s16_u8(

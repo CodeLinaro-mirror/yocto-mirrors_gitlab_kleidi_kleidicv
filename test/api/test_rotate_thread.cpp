@@ -145,3 +145,17 @@ TEST(RotateThreadNotImplemented, ElementSize) {
                                    dst.data(), stride, angle, element_size,
                                    get_multithreading_fake(thread_count)));
 }
+
+TEST(RotateThreadNotImplemented, NullArgs) {
+  const size_t width = 2;
+  const size_t height = 2;
+  const size_t element_size = 1;
+  const size_t stride = width * element_size;
+  const int angle = 90;
+  auto mt = get_multithreading_fake(2);
+  std::vector<uint8_t> src(width * height * element_size, 0);
+  std::vector<uint8_t> dst(width * height * element_size, 0);
+
+  test::test_null_args(kleidicv_thread_rotate, src.data(), stride, width,
+                       height, dst.data(), stride, angle, element_size, mt);
+}

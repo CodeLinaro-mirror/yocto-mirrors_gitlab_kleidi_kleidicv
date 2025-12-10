@@ -358,6 +358,9 @@ kleidicv_error_t kleidicv_thread_rgb_to_yuv_u8(
                                          height, color_format);
   }
 
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, (height * 3 + 1) / 2);
+  CHECK_IMAGE_SIZE(width, height);
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_rgb_to_yuv420p_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, color_format,

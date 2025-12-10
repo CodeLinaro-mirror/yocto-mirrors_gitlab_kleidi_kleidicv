@@ -439,6 +439,40 @@ TEST(ThreadMedianBlur, NotImplemented) {
   check_median_blur_not_implemented<float>(kleidicv_thread_median_blur_f32);
 }
 
+TEST(ThreadMedianBlur, NullArgs) {
+  const size_t width = 5;
+  const size_t height = 5;
+  const size_t channels = 1;
+  const size_t kernel = 3;
+  auto mt = get_multithreading_fake(2);
+
+  test::Array2D<uint8_t> src_u8(width * channels, height),
+      dst_u8(width * channels, height);
+  test::Array2D<uint16_t> src_u16(width * channels, height),
+      dst_u16(width * channels, height);
+  test::Array2D<int16_t> src_s16(width * channels, height),
+      dst_s16(width * channels, height);
+  test::Array2D<float> src_f32(width * channels, height),
+      dst_f32(width * channels, height);
+
+  test::test_null_args(kleidicv_thread_median_blur_u8, src_u8.data(),
+                       src_u8.stride(), dst_u8.data(), dst_u8.stride(), width,
+                       height, channels, kernel, kernel,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, mt);
+  test::test_null_args(kleidicv_thread_median_blur_u16, src_u16.data(),
+                       src_u16.stride(), dst_u16.data(), dst_u16.stride(),
+                       width, height, channels, kernel, kernel,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, mt);
+  test::test_null_args(kleidicv_thread_median_blur_s16, src_s16.data(),
+                       src_s16.stride(), dst_s16.data(), dst_s16.stride(),
+                       width, height, channels, kernel, kernel,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, mt);
+  test::test_null_args(kleidicv_thread_median_blur_f32, src_f32.data(),
+                       src_f32.stride(), dst_f32.data(), dst_f32.stride(),
+                       width, height, channels, kernel, kernel,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, mt);
+}
+
 TEST_P(Thread, median_blur_u8) {
   check_median_blur<uint8_t>(kleidicv_median_blur_u8,
                              kleidicv_thread_median_blur_u8);
@@ -478,6 +512,22 @@ TEST(ThreadGaussianBlur, NotImplemented) {
                 src, 1, dst, 1, max_width, max_height, channels, kernel_width,
                 kernel_height, sigma_x, sigma_y,
                 KLEIDICV_BORDER_TYPE_TRANSPARENT, get_multithreading_fake(2)));
+}
+
+TEST(ThreadGaussianBlur, NullArgs) {
+  const size_t width = 5;
+  const size_t height = 5;
+  const size_t channels = 1;
+  const size_t kernel = 5;
+  const float sigma = 1.0F;
+  test::Array2D<uint8_t> src(width * channels, height),
+      dst(width * channels, height);
+  auto mt = get_multithreading_fake(2);
+
+  test::test_null_args(kleidicv_thread_gaussian_blur_u8, src.data(),
+                       src.stride(), dst.data(), dst.stride(), width, height,
+                       channels, kernel, kernel, sigma, sigma,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, mt);
 }
 
 TEST_P(Thread, blur_and_downsample_u8) {
@@ -543,6 +593,28 @@ TEST(ThreadBlurAndDownsample, NotImplemented) {
   ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
 
+TEST(ThreadBlurAndDownsample, NullArgs) {
+  const size_t src_width = 6;
+  const size_t src_height = 6;
+  const size_t channels = 1;
+  const size_t kernel_width = 5;
+  const size_t kernel_height = kernel_width;
+  test::Array2D<uint8_t> src(src_width * channels, src_height);
+  test::Array2D<uint8_t> dst((src_width + 1) / 2 * channels,
+                             (src_height + 1) / 2);
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
+                             &context, channels, kernel_width, kernel_height,
+                             src_width, src_height));
+
+  test::test_null_args(kleidicv_thread_blur_and_downsample_u8, src.data(),
+                       src.stride(), src_width, src_height, dst.data(),
+                       dst.stride(), channels, KLEIDICV_BORDER_TYPE_REPLICATE,
+                       context, get_multithreading_fake(2));
+
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
+
 TEST_P(Thread, scharr_interleaved_s16_u8) {
   unsigned src_width = 0, src_height = 0, thread_count = 0;
   std::tie(src_width, src_height, thread_count) = GetParam();
@@ -584,6 +656,18 @@ TEST(ThreadScharrInterleaved, NotImplemented) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_thread_scharr_interleaved_s16_u8(
                 src, 1, 1, 1, 2, dst, sizeof(dst), get_multithreading_fake(2)));
+}
+
+TEST(ThreadScharrInterleaved, NullArgs) {
+  const size_t width = 3;
+  const size_t height = 3;
+  const size_t channels = 1;
+  test::Array2D<uint8_t> src(width * channels, height);
+  test::Array2D<int16_t> dst((width - 2) * channels * 2, height - 2);
+
+  test::test_null_args(kleidicv_thread_scharr_interleaved_s16_u8, src.data(),
+                       src.stride(), width, height, channels, dst.data(),
+                       dst.stride(), get_multithreading_fake(2));
 }
 
 TEST_P(Thread, separable_filter_2d_u8) {
@@ -645,6 +729,50 @@ TEST(ThreadSeparableFilter2D, NotImplemented) {
       kleidicv_thread_separable_filter_2d_u16);
 }
 
+TEST(ThreadSeparableFilter2D, NullArgs) {
+  const size_t width = 5;
+  const size_t height = 5;
+  const size_t channels = 1;
+  const size_t kernel_width = 5;
+  const size_t kernel_height = 5;
+  std::array<uint8_t, kernel_width> kernel_x_u8{1, 4, 6, 4, 1};
+  std::array<uint8_t, kernel_height> kernel_y_u8{1, 4, 6, 4, 1};
+  std::array<uint16_t, kernel_width> kernel_x_u16{1, 4, 6, 4, 1};
+  std::array<uint16_t, kernel_height> kernel_y_u16{1, 4, 6, 4, 1};
+  std::array<int16_t, kernel_width> kernel_x_s16{1, 4, 6, 4, 1};
+  std::array<int16_t, kernel_height> kernel_y_s16{1, 4, 6, 4, 1};
+  kleidicv_filter_context_t *context = nullptr;
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_filter_context_create(&context, channels, kernel_width,
+                                           kernel_height, width, height));
+  auto mt = get_multithreading_fake(2);
+
+  test::Array2D<uint8_t> src_u8(width * channels, height),
+      dst_u8(width * channels, height);
+  test::Array2D<uint16_t> src_u16(width * channels, height),
+      dst_u16(width * channels, height);
+  test::Array2D<int16_t> src_s16(width * channels, height),
+      dst_s16(width * channels, height);
+
+  test::test_null_args(kleidicv_thread_separable_filter_2d_u8, src_u8.data(),
+                       src_u8.stride(), dst_u8.data(), dst_u8.stride(), width,
+                       height, channels, kernel_x_u8.data(), kernel_width,
+                       kernel_y_u8.data(), kernel_height,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, context, mt);
+  test::test_null_args(kleidicv_thread_separable_filter_2d_u16, src_u16.data(),
+                       src_u16.stride(), dst_u16.data(), dst_u16.stride(),
+                       width, height, channels, kernel_x_u16.data(),
+                       kernel_width, kernel_y_u16.data(), kernel_height,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, context, mt);
+  test::test_null_args(kleidicv_thread_separable_filter_2d_s16, src_s16.data(),
+                       src_s16.stride(), dst_s16.data(), dst_s16.stride(),
+                       width, height, channels, kernel_x_s16.data(),
+                       kernel_width, kernel_y_s16.data(), kernel_height,
+                       KLEIDICV_BORDER_TYPE_REPLICATE, context, mt);
+
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+}
+
 TEST_P(Thread, remap_s16_u8_border_replicate) {
   check_remap_s16<uint8_t>(kleidicv_remap_s16_u8, kleidicv_thread_remap_s16_u8,
                            1, KLEIDICV_BORDER_TYPE_REPLICATE, nullptr);
@@ -698,6 +826,31 @@ TEST(ThreadRemapS16, NotImplemented) {
                                             KLEIDICV_BORDER_TYPE_REPLICATE);
   check_remap_s16_not_implemented<uint16_t>(kleidicv_thread_remap_s16_u16, 1,
                                             KLEIDICV_BORDER_TYPE_REFLECT);
+}
+
+TEST(ThreadRemapS16, NullArgs) {
+  const size_t width = 8;
+  const size_t height = 2;
+  const size_t channels = 1;
+  auto mt = get_multithreading_fake(2);
+  test::Array2D<uint8_t> src_u8(width * channels, height),
+      dst_u8(width * channels, height);
+  test::Array2D<uint16_t> src_u16(width * channels, height),
+      dst_u16(width * channels, height);
+  test::Array2D<int16_t> mapxy(width * channels * 2, height);
+  uint8_t border_u8 = 0;
+  uint16_t border_u16 = 0;
+
+  test::test_null_args(kleidicv_thread_remap_s16_u8, src_u8.data(),
+                       src_u8.stride(), width, height, dst_u8.data(),
+                       dst_u8.stride(), width, height, channels, mapxy.data(),
+                       mapxy.stride(), KLEIDICV_BORDER_TYPE_CONSTANT,
+                       &border_u8, mt);
+  test::test_null_args(kleidicv_thread_remap_s16_u16, src_u16.data(),
+                       src_u16.stride(), width, height, dst_u16.data(),
+                       dst_u16.stride(), width, height, channels, mapxy.data(),
+                       mapxy.stride(), KLEIDICV_BORDER_TYPE_CONSTANT,
+                       &border_u16, mt);
 }
 
 TEST_P(Thread, remap_s16point5_u8_border_replicate) {
@@ -784,6 +937,32 @@ TEST(ThreadRemapS16Point5, NotImplemented) {
       kleidicv_thread_remap_s16point5_u16, 1, KLEIDICV_BORDER_TYPE_REFLECT);
 }
 
+TEST(ThreadRemapS16Point5, NullArgs) {
+  const size_t width = 8;
+  const size_t height = 2;
+  const size_t channels = 1;
+  auto mt = get_multithreading_fake(2);
+  test::Array2D<uint8_t> src_u8(width * channels, height),
+      dst_u8(width * channels, height);
+  test::Array2D<uint16_t> src_u16(width * channels, height),
+      dst_u16(width * channels, height);
+  test::Array2D<int16_t> mapxy(width * channels * 2, height);
+  test::Array2D<uint16_t> mapfrac(width * channels, height);
+  uint8_t border_u8 = 0;
+  uint16_t border_u16 = 0;
+
+  test::test_null_args(kleidicv_thread_remap_s16point5_u8, src_u8.data(),
+                       src_u8.stride(), width, height, dst_u8.data(),
+                       dst_u8.stride(), width, height, channels, mapxy.data(),
+                       mapxy.stride(), mapfrac.data(), mapfrac.stride(),
+                       KLEIDICV_BORDER_TYPE_CONSTANT, &border_u8, mt);
+  test::test_null_args(kleidicv_thread_remap_s16point5_u16, src_u16.data(),
+                       src_u16.stride(), width, height, dst_u16.data(),
+                       dst_u16.stride(), width, height, channels, mapxy.data(),
+                       mapxy.stride(), mapfrac.data(), mapfrac.stride(),
+                       KLEIDICV_BORDER_TYPE_CONSTANT, &border_u16, mt);
+}
+
 TEST_P(Thread, remap_f32_u8_border_replicate) {
   check_remap_f32<uint8_t>(kleidicv_remap_f32_u8, kleidicv_thread_remap_f32_u8,
                            1, KLEIDICV_INTERPOLATION_LINEAR,
@@ -857,6 +1036,34 @@ TEST(ThreadRemapF32, NotImplemented) {
                                             KLEIDICV_BORDER_TYPE_REFLECT);
 }
 
+TEST(ThreadRemapF32, NullArgs) {
+  const size_t width = 4;
+  const size_t height = 2;
+  const size_t channels = 1;
+  auto mt = get_multithreading_fake(2);
+  test::Array2D<uint8_t> src_u8(width * channels, height),
+      dst_u8(width * channels, height);
+  test::Array2D<uint16_t> src_u16(width * channels, height),
+      dst_u16(width * channels, height);
+  test::Array2D<float> mapx(width * channels, height);
+  test::Array2D<float> mapy(width * channels, height);
+  uint8_t border_u8 = 0;
+  uint16_t border_u16 = 0;
+
+  test::test_null_args(kleidicv_thread_remap_f32_u8, src_u8.data(),
+                       src_u8.stride(), width, height, dst_u8.data(),
+                       dst_u8.stride(), width, height, channels, mapx.data(),
+                       mapx.stride(), mapy.data(), mapy.stride(),
+                       KLEIDICV_INTERPOLATION_LINEAR,
+                       KLEIDICV_BORDER_TYPE_CONSTANT, &border_u8, mt);
+  test::test_null_args(kleidicv_thread_remap_f32_u16, src_u16.data(),
+                       src_u16.stride(), width, height, dst_u16.data(),
+                       dst_u16.stride(), width, height, channels, mapx.data(),
+                       mapx.stride(), mapy.data(), mapy.stride(),
+                       KLEIDICV_INTERPOLATION_LINEAR,
+                       KLEIDICV_BORDER_TYPE_CONSTANT, &border_u16, mt);
+}
+
 TEST_P(Thread, warp_perspective_u8_border_replicate) {
   const uint8_t border_value = 0;
   check_warp_perspective<uint8_t>(
@@ -909,6 +1116,23 @@ TEST(ThreadWarpPerspective, NotImplemented) {
       KLEIDICV_BORDER_TYPE_REFLECT);
 }
 
+TEST(ThreadWarpPerspective, NullArgs) {
+  const size_t width = 8;
+  const size_t height = 2;
+  const size_t channels = 1;
+  const float transform[9] = {};
+  const uint8_t border_value = 0;
+  test::Array2D<uint8_t> src(width * channels, height),
+      dst(width * channels, height);
+
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            kleidicv_thread_warp_perspective_u8(
+                nullptr, src.stride(), width, height, dst.data(), dst.stride(),
+                width, height, transform, channels,
+                KLEIDICV_INTERPOLATION_LINEAR, KLEIDICV_BORDER_TYPE_CONSTANT,
+                &border_value, get_multithreading_fake(2)));
+}
+
 TEST_P(Thread, SobelHorizontal1Channel) {
   check_unary_op<uint8_t, int16_t>(kleidicv_sobel_3x3_horizontal_s16_u8,
                                    kleidicv_thread_sobel_3x3_horizontal_s16_u8,
@@ -944,6 +1168,22 @@ TEST(ThreadSobel, NotImplemented) {
             kleidicv_thread_sobel_3x3_horizontal_s16_u8(
                 src, sizeof(src), dst, sizeof(dst), 1, 1, 1,
                 get_multithreading_fake(2)));
+}
+
+TEST(ThreadSobel, NullArgs) {
+  const size_t width = 3;
+  const size_t height = 3;
+  const size_t channels = 1;
+  test::Array2D<uint8_t> src(width * channels, height);
+  test::Array2D<int16_t> dst(width * channels, height);
+  auto mt = get_multithreading_fake(2);
+
+  test::test_null_args(kleidicv_thread_sobel_3x3_vertical_s16_u8, src.data(),
+                       src.stride(), dst.data(), dst.stride(), width, height,
+                       channels, mt);
+  test::test_null_args(kleidicv_thread_sobel_3x3_horizontal_s16_u8, src.data(),
+                       src.stride(), dst.data(), dst.stride(), width, height,
+                       channels, mt);
 }
 
 INSTANTIATE_TEST_SUITE_P(

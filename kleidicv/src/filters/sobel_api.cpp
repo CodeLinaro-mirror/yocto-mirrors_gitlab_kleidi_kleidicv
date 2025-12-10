@@ -5,6 +5,7 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/utils.h"
 
 #define KLEIDICV_DEFINE_C_API(name, partialname)           \
   KLEIDICV_MULTIVERSION_C_API(                             \
@@ -22,6 +23,9 @@ extern "C" {
 kleidicv_error_t kleidicv_sobel_3x3_horizontal_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
   if (!kleidicv::sobel_is_implemented(width, height, 3)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
@@ -31,6 +35,9 @@ kleidicv_error_t kleidicv_sobel_3x3_horizontal_s16_u8(
 kleidicv_error_t kleidicv_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
   if (!kleidicv::sobel_is_implemented(width, height, 3)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }

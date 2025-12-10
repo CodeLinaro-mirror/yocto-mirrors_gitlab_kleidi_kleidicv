@@ -6,6 +6,7 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/transform/warp_perspective.h"
+#include "kleidicv/utils.h"
 
 KLEIDICV_MULTIVERSION_C_API(kleidicv_warp_perspective_stripe_u8,
                             &kleidicv::neon::warp_perspective_stripe<uint8_t>,
@@ -25,6 +26,11 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
+  CHECK_POINTERS(transformation);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+  CHECK_IMAGE_SIZE(dst_width, dst_height);
   return kleidicv_warp_perspective_stripe_u8(
       src, src_stride, src_width, src_height, dst, dst_stride, dst_width,
       dst_height, 0, dst_height, transformation, 1, interpolation, border_type,
