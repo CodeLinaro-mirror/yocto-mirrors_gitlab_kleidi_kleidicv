@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -253,7 +253,8 @@ class MessageQueue {
   void wait() {
     timespec abs_timeout;
     clock_gettime(CLOCK_REALTIME, &abs_timeout);
-    abs_timeout.tv_sec += 3;
+    // Set the timeout in seconds
+    abs_timeout.tv_sec += 15;
     ssize_t read_bytes =
         mq_timedreceive(queue_desc_, reinterpret_cast<char*>(&last_message_),
                         sizeof(last_message_), nullptr, &abs_timeout);
