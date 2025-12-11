@@ -16,15 +16,15 @@ class YUV422ToRGBxOrBGRx {
   // Byte offsets for chroma samples inside a 4-byte YUV422 tuple (Y0 U Y1 V).
   static constexpr size_t u_idx = u_chroma_idx;
   static constexpr size_t v_idx = (u_idx + 2) % 4;
+  // Source channel count (scn = 2) because YUV422 is interleaved with
+  // two channels per pixel on average: one luma (Y) and one shared
+  // chroma (U or V).
+  static constexpr size_t scn = 2;
 
   static kleidicv_error_t yuv2rgbx_operation(const uint8_t* src,
                                              size_t src_stride, uint8_t* dst,
                                              size_t dst_stride, size_t width,
                                              size_t height) {
-    // Source channel count (scn = 2) because YUV422 is interleaved with
-    // two channels per pixel on average: one luma (Y) and one shared
-    // chroma (U or V).
-    constexpr size_t scn = 2;
     Rows<uint8_t> dst_rows{dst, dst_stride, dcn};
 
     for (size_t y = 0; y < height; y++, src += src_stride) {
