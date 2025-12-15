@@ -10,12 +10,24 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <memory>
 
 #include "kleidicv/types.h"
 #include "kleidicv/utils.h"
 #include "separable.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
+
+// Forward declarations.
+class MatmulSeparableFilterWorkspace;
+
+// Deleter for MatmulSeparableFilterWorkspace instances.
+class MatmulSeparableFilterWorkspaceDeleter {
+ public:
+  void operator()(MatmulSeparableFilterWorkspace *ptr) const KLEIDICV_STREAMING {
+    std::free(ptr);
+  };
+};
 
 class MatmulBufferSizesPolicy : public DefaultBufferSizesPolicy {
  public:
@@ -135,6 +147,17 @@ class MatmulSeparableFilterWorkspace final : public SeparableFilterWorkspace {
                                 sizeof(typename FilterType::SourceType)};
     filter.process(src_rows, transposed_buffer_rows, dst_rows, rect,
                    padded_rect, horizontal_border, vertical_border);
+  }
+
+  using Pointer = std::unique_ptr<MatmulSeparableFilterWorkspace,
+                                  MatmulSeparableFilterWorkspaceDeleter>;
+
+  static Pointer create(Rectangle rect, Rectangle kernel_rect, size_t channels, size_t intermediate_size) {
+    MatmulBufferSizesPolicy policy{rect, kernel_rect, channels};
+    auto *allocation = reinterpret_cast<MatmulSeparableFilterWorkspace *>(
+        SeparableFilterWorkspace::create(intermediate_size, policy));
+
+    return MatmulSeparableFilterWorkspace::Pointer{allocation};
   }
 
   // Get allocated chunk of memory for helper kernel buffer

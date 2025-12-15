@@ -563,10 +563,9 @@ static kleidicv_error_t call_gaussian_blur(
     size_t y_begin, size_t y_end, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
     FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
-  auto *workspace = reinterpret_cast<MatmulSeparableFilterWorkspace *>(context);
+    MatmulSeparableFilterWorkspace *workspace) KLEIDICV_STREAMING {
   kleidicv_error_t checks_result = gaussian_blur_checks(
-      src, src_stride, dst, dst_stride, width, height, channels, workspace);
+      src, src_stride, dst, dst_stride, width, height);
   if (kernel_width != kernel_height) {
     checks_result = KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
@@ -592,21 +591,27 @@ static kleidicv_error_t gaussian_blur_fixed_stripe_u8_sme2(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t kernel_height, float sigma_x, float sigma_y,
-    FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
+    FixedBorderType fixed_border_type) KLEIDICV_STREAMING {
   if (!gaussian_blur_sme2_implementation_checks(kernel_width, kernel_height,
                                                 channels)) {
     return gaussian_blur_fixed_stripe_u8_sc(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, sigma_x, sigma_y,
-        fixed_border_type, context);
+        fixed_border_type);
+  }
+
+  Rectangle rect{width, height};
+  Rectangle kernel_rect{kernel_width, kernel_height};
+  auto workspace = MatmulSeparableFilterWorkspace::create(rect, kernel_rect, channels, sizeof(uint32_t));
+  if (!workspace) {
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   constexpr std::index_sequence<1, 3, 4> supported_channels;
   return call_gaussian_blur(supported_channels, src, src_stride, dst,
                             dst_stride, width, height, y_begin, y_end, channels,
                             kernel_width, kernel_height, sigma_x, sigma_y,
-                            fixed_border_type, context);
+                            fixed_border_type, workspace.get());
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE

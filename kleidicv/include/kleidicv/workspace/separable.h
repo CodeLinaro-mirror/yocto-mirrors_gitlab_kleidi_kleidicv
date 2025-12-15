@@ -102,8 +102,8 @@ class SeparableFilterWorkspace {
 
   // Creates a workspace on the heap.
   template <class BufferAllocationPolicy>
-  static Pointer create(
-      Rectangle rect, size_t channels, size_t intermediate_size,
+  static SeparableFilterWorkspace * create(
+      size_t intermediate_size,
       const BufferAllocationPolicy &policy) KLEIDICV_STREAMING {
     size_t buffer_rows_size =
         (policy.compute_buffer_size() + kAlignment - 1) * intermediate_size;
@@ -112,9 +112,15 @@ class SeparableFilterWorkspace {
     size_t allocation_size =
         sizeof(SeparableFilterWorkspace) + buffer_rows_size;
     void *allocation = std::malloc(allocation_size);
+    return reinterpret_cast<SeparableFilterWorkspace *>(allocation);
+  }
+
+  static Pointer create(Rectangle rect, size_t channels,
+                        size_t intermediate_size) {
+    DefaultBufferSizesPolicy policy{rect, channels};
+    auto *allocation = create(intermediate_size, policy);
     if (!allocation) {
-      return SeparableFilterWorkspace::Pointer{
-          reinterpret_cast<SeparableFilterWorkspace *>(allocation)};
+      return SeparableFilterWorkspace::Pointer{allocation};
     }
 
     auto workspace = SeparableFilterWorkspace::Pointer{
@@ -122,12 +128,6 @@ class SeparableFilterWorkspace {
                                                   intermediate_size, policy)};
 
     return workspace;
-  }
-
-  static Pointer create(Rectangle rect, size_t channels,
-                        size_t intermediate_size) {
-    return create(rect, channels, intermediate_size,
-                  DefaultBufferSizesPolicy{rect, channels});
   }
 
   size_t channels() const { return channels_; }

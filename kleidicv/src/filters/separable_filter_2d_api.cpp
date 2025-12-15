@@ -6,7 +6,6 @@
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/workspace/separable.h"
-#include "kleidicv/workspace/workspace_factory.h"
 
 namespace kleidicv {
 
@@ -58,19 +57,6 @@ KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u8, uint8_t);
 KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_u16, uint16_t);
 KLEIDICV_DEFINE_C_API(kleidicv_separable_filter_2d_stripe_s16, int16_t);
 
-KLEIDICV_MULTIVERSION_C_API(create_separable_filter_workspace,
-                            &kleidicv::neon::create_separable_filter_workspace,
-                            &kleidicv::sve2::create_separable_filter_workspace,
-                            &kleidicv::sme::create_separable_filter_workspace,
-                            &kleidicv::sme2::create_separable_filter_workspace);
-
-KLEIDICV_MULTIVERSION_C_API(
-    release_separable_filter_workspace,
-    &kleidicv::neon::release_separable_filter_workspace,
-    &kleidicv::sve2::release_separable_filter_workspace,
-    &kleidicv::sme::release_separable_filter_workspace,
-    &kleidicv::sme2::release_separable_filter_workspace);
-
 extern "C" {
 
 using KLEIDICV_TARGET_NAMESPACE::Rectangle;
@@ -95,8 +81,8 @@ kleidicv_error_t kleidicv_filter_context_create(
   // As we cannot predict the intermediate size based on the parameters given,
   // just use the largest possible size out of all available operations.
   constexpr size_t intermediate_size = sizeof(uint32_t);
-  auto *workspace = create_separable_filter_workspace(
-      max_image_width, max_image_height, max_kernel_width, max_kernel_height,
+  auto workspace = SeparableFilterWorkspace::create(
+      Rectangle{max_image_width, max_image_height},
       max_channels, intermediate_size);
 
   if (!workspace) {
@@ -104,14 +90,20 @@ kleidicv_error_t kleidicv_filter_context_create(
     return KLEIDICV_ERROR_ALLOCATION;
   }
 
-  *context = reinterpret_cast<kleidicv_filter_context_t *>(workspace);
+  *context = reinterpret_cast<kleidicv_filter_context_t *>(workspace.release());
   return KLEIDICV_OK;
 }
 
 kleidicv_error_t kleidicv_filter_context_release(
     kleidicv_filter_context_t *context) {
   CHECK_POINTERS(context);
-  release_separable_filter_workspace(reinterpret_cast<void *>(context));
+
+  // Deliberately create and immediately destroy a unique_ptr to delete the
+  // workspace.
+  // NOLINTBEGIN(bugprone-unused-raii)
+  SeparableFilterWorkspace::Pointer{
+      reinterpret_cast<SeparableFilterWorkspace *>(context)};
+  // NOLINTEND(bugprone-unused-raii)
   return KLEIDICV_OK;
 }
 

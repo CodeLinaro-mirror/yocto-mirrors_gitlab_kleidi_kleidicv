@@ -14,11 +14,10 @@ gaussian_blur_fixed_stripe_u8(const uint8_t *src, size_t src_stride,
                               size_t height, size_t y_begin, size_t y_end,
                               size_t channels, size_t kernel_width,
                               size_t kernel_height, float sigma_x,
-                              float sigma_y, FixedBorderType border_type,
-                              kleidicv_filter_context_t *context) {
+                              float sigma_y, FixedBorderType border_type) {
   return gaussian_blur_fixed_stripe_u8_sme2(
       src, src_stride, dst, dst_stride, width, height, y_begin, y_end, channels,
-      kernel_width, kernel_height, sigma_x, sigma_y, border_type, context);
+      kernel_width, kernel_height, sigma_x, sigma_y, border_type);
 }
 
 }  // namespace kleidicv::sme2
