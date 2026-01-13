@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -23,7 +23,8 @@ FetchContent_Declare(
   PATCH_COMMAND cd <SOURCE_DIR> && patch --strip=1 --input=${CMAKE_CURRENT_SOURCE_DIR}/patches/benchmark.patch
 )
 FetchContent_MakeAvailable(benchmark)
-
+# In case of very recent clang the following warning needs to be turned off
+target_compile_options(benchmark PRIVATE -Wno-c2y-extensions)
 
 set(KLEIDICV_INCLUDE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/../kleidicv/include
