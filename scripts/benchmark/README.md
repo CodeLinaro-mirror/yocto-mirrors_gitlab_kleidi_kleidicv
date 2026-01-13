@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -11,11 +11,11 @@ Use at your own risk, the stability of this solution is the best on release tags
 First, you need a Linux x86 machine to build this.
 Next, to build for Android, you'll need [Android NDK](https://developer.android.com/ndk/).
 
-Also, the OpenCV 4.12.0 source needs to be downloaded and patched. Assuming CWD is the root of OpenCV's
+Also, the OpenCV 4.13.0 source needs to be downloaded and patched. Assuming CWD is the root of OpenCV's
 source directory please run:
 ```
-patch -p1 < path/to/kleidicv/adapters/opencv/opencv-4.12.patch
-patch -p1 < path/to/kleidicv/adapters/opencv/extra_benchmarks/opencv-4.12.patch
+patch -p1 < path/to/kleidicv/adapters/opencv/opencv-4.13.patch
+patch -p1 < path/to/kleidicv/adapters/opencv/extra_benchmarks/opencv-4.13.patch
 ```
 
 Let's assume you are building on a machine that has the phone attached to via USB.

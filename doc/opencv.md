@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -265,7 +265,6 @@ Otherwise, if `alpha` and `beta` are 1 and 0 respectively, conversion between da
 Exponential function. Currently only `CV_32F` type is supported.
 
 ### [`cv::inRange()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga48af0ab51e36436c5d04340e036ce981)
-> ⚠️ **Acceleration will not work unless OpenCV is built from source patched with `opencv-4.12.patch`**
 
 Checks whether array elements fall between the lower and upper bounds set by the user.\
 Currently only scalar bounds are supported.

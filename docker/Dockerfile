@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -89,7 +89,7 @@ ENV PATH=${PATH}:/usr/lib/llvm-${LLVM_VERSION}/bin:/root/.local/bin:/opt/arm/arm
 ENV CC=clang-${LLVM_VERSION}
 ENV CXX=clang++-${LLVM_VERSION}
 
-ARG OPENCV_VERSION=4.12.0
+ARG OPENCV_VERSION=4.13.0
 RUN wget \
   https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.tar.gz \
   -O /opt/opencv-${OPENCV_VERSION}.tar.gz

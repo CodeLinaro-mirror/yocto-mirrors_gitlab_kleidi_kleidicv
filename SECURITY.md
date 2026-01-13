@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -14,4 +14,4 @@ Scripts within this project may download and patch third party sources.
 These third party sources are:
 * Google Test 1.12.1.
 * Google Benchmark 1.9.2.
-* OpenCV 4.12.0 (and its dependencies)
+* OpenCV 4.13.0 (and its dependencies)

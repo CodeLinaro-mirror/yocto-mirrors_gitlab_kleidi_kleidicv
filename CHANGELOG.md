@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -14,6 +14,12 @@ This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 0.8.0 - not yet released
+
+### Added
+- Support for OpenCV 4.13.
+
+### Removed
+- Support for OpenCV 4.12.
 
 ## 0.7.0 - 2025-12-17
 

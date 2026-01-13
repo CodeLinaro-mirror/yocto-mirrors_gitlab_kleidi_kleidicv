@@ -231,8 +231,8 @@
       "options": {
         "env": {
           "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/.devcontainer/clang_toolchain.cmake",
-          "OPENCV_VERSION": "4.12.0",
-          "OPENCV_URL": "/opt/opencv-4.12.0.tar.gz"
+          "OPENCV_VERSION": "4.13.0",
+          "OPENCV_URL": "/opt/opencv-4.13.0.tar.gz"
         }
       },
       "group": {

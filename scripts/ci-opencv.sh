@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -11,7 +11,7 @@ set -exu
 # Ensure we're at the root of the repo.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-export OPENCV_VERSION="4.12.0"
+export OPENCV_VERSION="4.13.0"
 
 # ------------------------------------------------------------------------------
 # Try to build unpatched OpenCV with KleidiCV
@@ -58,10 +58,8 @@ EXTRA_CMAKE_ARGS="\
   -DWITH_LAPACK=OFF \
   -DOPENCV_PYTHON_SKIP_DETECTION=ON \
   -DOPENCV_ALGO_HINT_DEFAULT=ALGO_HINT_APPROX \
-  -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-  -DCMAKE_CXX_FLAGS=-Wno-nontrivial-memcall" \
+  -DCMAKE_COMPILE_WARNING_AS_ERROR=ON" \
 ./scripts/build-opencv.sh
-# OpenCV 4.12.0 has a warning with latest clang, so the specific warning is turned off.
 
 # ------------------------------------------------------------------------------
 # Run OpenCV conformity checks

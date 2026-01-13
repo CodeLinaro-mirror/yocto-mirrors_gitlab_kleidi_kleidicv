@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,7 +9,7 @@ project("OpenCV Conformity" CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # Please update SECURITY.md if adding, removing or changing the version of third party content.
-set(OPENCV_VERSION "4.12.0" CACHE STRING "Version of OpenCV")
+set(OPENCV_VERSION "4.13.0" CACHE STRING "Version of OpenCV")
 set(OPENCV_URL "https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.tar.gz" CACHE STRING "URL of OpenCV")
 
 # Remove the last part of the version number (e.g., 4.9.0 -> 4.9)

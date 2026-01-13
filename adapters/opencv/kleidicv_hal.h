@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -420,10 +420,6 @@ static inline int kleidicv_canny_with_fallback(
 #define cv_hal_canny kleidicv_canny_with_fallback
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
-// remap
-// This condition can be removed if this HAL macro is defined in all supported
-// versions
-#ifdef cv_hal_remap16s
 static inline int kleidicv_remap_s16_with_fallback(
     int src_type, const uchar *src_data, size_t src_step, int src_width,
     int src_height, uchar *dst_data, size_t dst_step, int dst_width,
@@ -437,7 +433,6 @@ static inline int kleidicv_remap_s16_with_fallback(
 }
 #undef cv_hal_remap16s
 #define cv_hal_remap16s kleidicv_remap_s16_with_fallback
-#endif  // cv_hal_remap16s
 
 static inline int kleidicv_remap_f32_with_fallback(
     int src_type, const uchar *src_data, size_t src_step, int src_width,
@@ -498,7 +493,6 @@ static inline int kleidicv_transpose_with_fallback(
 
 #if KLEIDICV_ENABLE_ALL_OPENCV_HAL
 // sum
-#ifdef cv_hal_sum
 static inline int kleidicv_sum_with_fallback(const uchar *src_data,
                                              size_t src_step, int src_type,
                                              size_t width, size_t height,
@@ -508,7 +502,6 @@ static inline int kleidicv_sum_with_fallback(const uchar *src_data,
 }
 #undef cv_hal_sum
 #define cv_hal_sum kleidicv_sum_with_fallback
-#endif  // cv_hal_sum
 #endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
 // rotate
@@ -536,7 +529,6 @@ static inline int kleidicv_min_max_idx_with_fallback(
 #undef cv_hal_minMaxIdx
 #define cv_hal_minMaxIdx kleidicv_min_max_idx_with_fallback
 
-#ifdef cv_hal_convertScale
 static inline int kleidicv_convertTo_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
     int width, int height, int src_depth, int dst_depth, double scale,
@@ -547,7 +539,6 @@ static inline int kleidicv_convertTo_with_fallback(
 }
 #undef cv_hal_convertScale
 #define cv_hal_convertScale kleidicv_convertTo_with_fallback
-#endif  // cv_hal_convertScale
 
 // exp32f
 #undef cv_hal_exp32f
@@ -629,10 +620,6 @@ KLEIDICV_HAL_MUL(mul16s, kleidicv_saturating_multiply_s16, int16_t);
 #undef cv_hal_mul16s
 #define cv_hal_mul16s kleidicv_mul16s_with_fallback
 
-// inRange
-// This condition can be removed if this HAL macro is defined in all supported
-// versions
-#ifdef cv_hal_inRange8u
 static inline int kleidicv_in_range_u8_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
     int dst_depth, size_t width, size_t height, int cn, uchar lower_bound,
@@ -643,11 +630,7 @@ static inline int kleidicv_in_range_u8_with_fallback(
 }
 #undef cv_hal_inRange8u
 #define cv_hal_inRange8u kleidicv_in_range_u8_with_fallback
-#endif  // cv_hal_inRange8u
 
-// This condition can be removed if this HAL macro is defined in all supported
-// versions
-#ifdef cv_hal_inRange32f
 static inline int kleidicv_in_range_f32_with_fallback(
     const uchar *src_data, size_t src_step, uchar *dst_data, size_t dst_step,
     int dst_depth, size_t width, size_t height, int cn, double lower_bound,
@@ -658,16 +641,11 @@ static inline int kleidicv_in_range_f32_with_fallback(
 }
 #undef cv_hal_inRange32f
 #define cv_hal_inRange32f kleidicv_in_range_f32_with_fallback
-#endif  // cv_hal_inRange32f
 
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 
 #ifdef OPENCV_VIDEO_HAL_REPLACEMENT_HPP
 
-// ScharrDeriv
-// This condition can be removed if this HAL macro is defined in all supported
-// versions
-#ifdef cv_hal_ScharrDeriv
 static inline int kleidicv_ScharrDeriv_with_fallback(const uchar *src_data,
                                                      size_t src_step,
                                                      int16_t *dst_data,
@@ -679,7 +657,6 @@ static inline int kleidicv_ScharrDeriv_with_fallback(const uchar *src_data,
 }
 #undef cv_hal_ScharrDeriv
 #define cv_hal_ScharrDeriv kleidicv_ScharrDeriv_with_fallback
-#endif  // cv_hal_ScharrDeriv
 
 #endif  // OPENCV_VIDEO_HAL_REPLACEMENT_HPP
 
