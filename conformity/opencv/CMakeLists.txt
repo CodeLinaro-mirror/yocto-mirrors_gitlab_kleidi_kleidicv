@@ -14,13 +14,35 @@ set(OPENCV_URL "https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERS
 
 # Remove the last part of the version number (e.g., 4.9.0 -> 4.9)
 string(REGEX REPLACE "\.[^\.]+$" "" OPENCV_PATCH_VERSION ${OPENCV_VERSION})
+set(OPENCV_PATCH_FILE "${CMAKE_CURRENT_LIST_DIR}/../../adapters/opencv/opencv-${OPENCV_PATCH_VERSION}.patch")
+
+# The patch command can be run only with a non-empty patch file, otherwise fetch content fails.
+set(OPENCV_PATCH_FILE_HAS_CONTENT FALSE)
+file(STRINGS "${OPENCV_PATCH_FILE}" OPENCV_PATCH_LINES)
+foreach(line IN LISTS OPENCV_PATCH_LINES)
+  if (NOT line MATCHES "^(//|$)")
+    set(OPENCV_PATCH_FILE_HAS_CONTENT TRUE)
+    break()
+  endif()
+endforeach()
+
+if (OPENCV_PATCH_FILE_HAS_CONTENT)
+  set(OPENCV_PATCH_COMMAND
+    patch -p1 -i "${OPENCV_PATCH_FILE}"
+  )
+else()
+  message(STATUS "Patching OpenCV is skipped as the patch file is empty or comment-only.")
+  set(OPENCV_PATCH_COMMAND
+    ${CMAKE_COMMAND} -E true
+  )
+endif()
 
 include(FetchContent)
 
 FetchContent_Declare(
   OpenCV
   URL ${OPENCV_URL}
-  PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/../../adapters/opencv/opencv-${OPENCV_PATCH_VERSION}.patch
+  PATCH_COMMAND ${OPENCV_PATCH_COMMAND}
 )
 
 FetchContent_MakeAvailable(OpenCV)

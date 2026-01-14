@@ -44,6 +44,7 @@ cd opencv-4.13.0
 ```
 patch -p1</path/to/kleidicv/adapters/opencv/opencv-4.13.patch
 ```
+(It can happen that the current patch file is empty. In that case the patch command outputs a warning, but it is not an issue.)
 
 ### Build
 
