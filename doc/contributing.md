@@ -70,3 +70,10 @@ as well with representative inputs.
 The subject line of the commit message should be 50 characters maximum and the
 body should be wrapped at 72 characters. Please use imperative mood in the
 subject line.
+
+To enable the automatic commit message check locally, configure Git to use the
+repo hooks directory:
+
+```
+git config core.hooksPath .githooks
+```

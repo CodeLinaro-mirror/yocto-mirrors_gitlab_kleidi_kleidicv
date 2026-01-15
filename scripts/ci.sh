@@ -9,6 +9,11 @@ set -exu
 # Ensure we're at the root of the repo.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+# Commit message checks for merge requests
+if [[ -n "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ]]; then
+  python3 scripts/check_commit_messages.py --range "${CI_MERGE_REQUEST_DIFF_BASE_SHA}..${CI_COMMIT_SHA}"
+fi
+
 # Ensure we're doing a clean build
 rm -rf build/ci
 mkdir -p build/ci
