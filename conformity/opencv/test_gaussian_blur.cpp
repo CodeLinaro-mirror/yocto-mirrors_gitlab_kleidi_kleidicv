@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,6 +16,9 @@ cv::Mat exec_gaussian_blur(cv::Mat& input) {
   cv::Mat input_mat = input.rowRange(0, input.rows - 2).clone();
   cv::Size kernel(KernelSize, KernelSize);
   cv::Mat result;
+  // Some OpenCV instability is triggered in our environment if reference
+  // created in a multithreaded way. Let us hide the issue for now.
+  cv::setNumThreads(1);
   cv::GaussianBlur(input_mat, result, kernel, sigma, sigma, BorderType,
                    cv::ALGO_HINT_APPROX);
   return result;

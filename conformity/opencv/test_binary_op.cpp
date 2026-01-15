@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -56,8 +56,14 @@ static bool test_binary_op(int index, RecreatedMessageQueue& request_queue,
   for (size_t height = 5; height <= 16; ++height) {
     for (size_t width = 5; width <= 16; ++width) {
       cv::Mat input(height * 2, width, Format);
-      rng.fill(input, cv::RNG::UNIFORM, std::numeric_limits<T>::lowest(),
-               std::numeric_limits<T>::max());
+      if constexpr (Operation == mul) {
+        // Limiting input values, otherewise results overflow all the time
+        rng.fill(input, cv::RNG::UNIFORM, std::numeric_limits<T>::lowest() / 16,
+                 std::numeric_limits<T>::max() / 16);
+      } else {
+        rng.fill(input, cv::RNG::UNIFORM, std::numeric_limits<T>::lowest(),
+                 std::numeric_limits<T>::max());
+      }
 
       cv::Mat actual = exec_binary_op<Operation>(input);
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,
