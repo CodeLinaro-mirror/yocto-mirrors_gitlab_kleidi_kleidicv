@@ -298,10 +298,12 @@ class ScaleFloat final : public UnrollTwice, public UnrollOnce {
         vshift_{vdupq_n_f32(shift)} {}
 
   VectorType vector_path(VectorType src) const {
-    return vmlaq_f32(vshift_, src, vscale_);
+    return vfmaq_f32(vshift_, src, vscale_);
   }
 
-  ScalarType scalar_path(ScalarType src) const { return src * scale_ + shift_; }
+  ScalarType scalar_path(ScalarType src) const {
+    return std::fma(src, scale_, shift_);
+  }
 
  private:
   float scale_, shift_;
