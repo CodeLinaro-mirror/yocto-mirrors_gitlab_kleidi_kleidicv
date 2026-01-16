@@ -23,6 +23,12 @@ class remove_streaming_compatible<Ret (Impl::*)(Args...) KLEIDICV_STREAMING> {
  public:
   using type = Ret (Impl::*)(Args...);
 };
+template <typename Ret, typename Impl, typename... Args>
+class remove_streaming_compatible<Ret (Impl::*)(Args...)
+                                      const KLEIDICV_STREAMING> {
+ public:
+  using type = Ret (Impl::*)(Args...) const;
+};
 #endif
 
 template <typename Ret, typename Impl, typename... Args>
@@ -31,9 +37,32 @@ class remove_streaming_compatible<Ret (Impl::*)(Args...)> {
   using type = Ret (Impl::*)(Args...);
 };
 
+template <typename Ret, typename Impl, typename... Args>
+class remove_streaming_compatible<Ret (Impl::*)(Args...) const> {
+ public:
+  using type = Ret (Impl::*)(Args...) const;
+};
+
 template <typename FnType>
 using remove_streaming_compatible_t =
     typename remove_streaming_compatible<FnType>::type;
+
+// Removes the const qualifier from a member function pointer if present.
+template <typename FnType>
+class remove_member_function_const {
+ public:
+  using type = FnType;
+};
+
+template <typename Ret, typename Impl, typename... Args>
+class remove_member_function_const<Ret (Impl::*)(Args...) const> {
+ public:
+  using type = Ret (Impl::*)(Args...);
+};
+
+template <typename FnType>
+using remove_member_function_const_t =
+    typename remove_member_function_const<FnType>::type;
 
 // Tags an operation to process data of one vector per iteration.
 class UnrollOnce {};
@@ -71,10 +100,11 @@ constexpr bool has_vector_path = false;
 
 // Specialization to handle types with T::vector_path() method.
 template <typename T, typename FnType>
-constexpr bool
-    has_vector_path<T, FnType, std::void_t<decltype(&T::vector_path)>> =
-        std::is_same<remove_streaming_compatible_t<decltype(&T::vector_path)>,
-                     FnType>::value;
+constexpr bool has_vector_path<T, FnType,
+                               std::void_t<decltype(&T::vector_path)>> =
+    std::is_same<remove_member_function_const_t<
+                     remove_streaming_compatible_t<decltype(&T::vector_path)>>,
+                 FnType>::value;
 
 // Helper to simplify usage of std::enable_if_t with has_vector_path<T>.
 template <class ReturnType, class ImplType, class ContextType,
@@ -91,7 +121,8 @@ constexpr bool has_tail_path = false;
 // Specialization to handle types with T::tail_path() method.
 template <typename T, typename FnType>
 constexpr bool has_tail_path<T, FnType, std::void_t<decltype(&T::tail_path)>> =
-    std::is_same<remove_streaming_compatible_t<decltype(&T::tail_path)>,
+    std::is_same<remove_member_function_const_t<
+                     remove_streaming_compatible_t<decltype(&T::tail_path)>>,
                  FnType>::value;
 
 // Helper to simplify usage of std::enable_if_t with has_tail_path<T>.
@@ -108,10 +139,11 @@ constexpr bool has_scalar_path = false;
 
 // Specialization to handle types with T::scalar_path() method.
 template <typename T, typename FnType>
-constexpr bool
-    has_scalar_path<T, FnType, std::void_t<decltype(&T::scalar_path)>> =
-        std::is_same<remove_streaming_compatible_t<decltype(&T::scalar_path)>,
-                     FnType>::value;
+constexpr bool has_scalar_path<T, FnType,
+                               std::void_t<decltype(&T::scalar_path)>> =
+    std::is_same<remove_member_function_const_t<
+                     remove_streaming_compatible_t<decltype(&T::scalar_path)>>,
+                 FnType>::value;
 
 // Helper to simplify usage of std::enable_if_t with has_scalar_path<T>.
 template <class ReturnType, class ImplType, class ContextType,

@@ -278,9 +278,7 @@ class AddFloat final : public UnrollTwice, public UnrollOnce {
 
   VectorType vector_path(VectorType src) { return vaddq_f32(vshift_, src); }
 
-  // NOLINTBEGIN(readability-make-member-function-const)
-  ScalarType scalar_path(ScalarType src) { return src + shift_; }
-  // NOLINTEND(readability-make-member-function-const)
+  ScalarType scalar_path(ScalarType src) const { return src + shift_; }
 
  private:
   float shift_;
@@ -299,13 +297,11 @@ class ScaleFloat final : public UnrollTwice, public UnrollOnce {
         vscale_{vdupq_n_f32(scale)},
         vshift_{vdupq_n_f32(shift)} {}
 
-  VectorType vector_path(VectorType src) {
+  VectorType vector_path(VectorType src) const {
     return vmlaq_f32(vshift_, src, vscale_);
   }
 
-  // NOLINTBEGIN(readability-make-member-function-const)
-  ScalarType scalar_path(ScalarType src) { return src * scale_ + shift_; }
-  // NOLINTEND(readability-make-member-function-const)
+  ScalarType scalar_path(ScalarType src) const { return src * scale_ + shift_; }
 
  private:
   float scale_, shift_;
