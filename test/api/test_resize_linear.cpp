@@ -270,7 +270,7 @@ TYPED_TEST(ResizeLinear, NotImplemented) {
             kleidicv_resize_linear(src, sizeof(TypeParam) * 16, 16, 1, dst,
                                    sizeof(TypeParam) * 7, 7, 1));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_resize_linear(src, sizeof(TypeParam) * 15, 15, 1, dst,
+            kleidicv_resize_linear(src, sizeof(TypeParam) * 14, 14, 1, dst,
                                    sizeof(TypeParam) * 8, 8, 1));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src, sizeof(TypeParam) * 23, 23, 1, dst,
@@ -516,7 +516,7 @@ TEST(ResizeLinearU8, CannotAllocateBuffer) {
   uint8_t dst[8];
   MockMallocToFail::enable();
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
-            kleidicv_resize_linear(src, 2 * 8UL, 2 * 8UL, 1, dst, 8, 8, 1));
+            kleidicv_resize_linear(src, 2 * 8UL, 2 * 8UL, 1, dst, 9, 9, 1));
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
             kleidicv_resize_linear(src, 4 * 8UL, 4 * 8UL, 1, dst, 13, 13, 1));
   MockMallocToFail::disable();

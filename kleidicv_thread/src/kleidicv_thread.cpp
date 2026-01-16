@@ -780,29 +780,6 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
   return parallel_batches(callback, mt, src_height - 2);
 }
 
-kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
-    kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    size_t src_begin = size_t{begin} * 2;
-    size_t src_end = std::min<size_t>(src_height, size_t{end} * 2);
-    size_t dst_begin = begin;
-    size_t dst_end = std::min<size_t>(dst_height, end);
-
-    // half of odd height is rounded towards zero?
-    if (dst_begin == dst_end) {
-      return KLEIDICV_OK;
-    }
-
-    return kleidicv_resize_to_quarter_u8(
-        src + src_begin * src_stride, src_stride, src_width,
-        src_end - src_begin, dst + dst_begin * dst_stride, dst_stride,
-        dst_width, dst_end - dst_begin);
-  };
-  return parallel_batches(callback, mt, (src_height + 1) / 2);
-}
-
 kleidicv_error_t kleidicv_thread_resize_linear_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
@@ -811,6 +788,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
                                                  dst_width, dst_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
+
   if (dst_height > src_height) {
     auto callback = [=](unsigned y_begin, unsigned y_end) {
       return kleidicv_resize_linear_stripe_u8(

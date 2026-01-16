@@ -452,7 +452,7 @@ static void resize_downscale(F f, size_t scale_x, size_t scale_y,
 }
 
 static void resize_quarter_u8(benchmark::State& state) {
-  resize_downscale<uint8_t>(kleidicv_resize_to_quarter_u8, 2, 2, state);
+  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 2, 2, state);
 }
 BENCHMARK(resize_quarter_u8);
 

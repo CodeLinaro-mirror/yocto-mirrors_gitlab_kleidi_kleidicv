@@ -21,12 +21,11 @@ class ResizeThread : public testing::TestWithParam<P> {
   void test_resize_to_quarter() {
     size_t src_width = 0, src_height = 0, thread_count = 0;
     std::tie(src_width, src_height, thread_count) = GetParam();
-    check<uint8_t>(kleidicv_resize_to_quarter_u8,
-                   kleidicv_thread_resize_to_quarter_u8, thread_count,
-                   src_width, src_height, src_width / 2, src_height / 2);
-    check<uint8_t>(kleidicv_resize_to_quarter_u8,
-                   kleidicv_thread_resize_to_quarter_u8, thread_count,
-                   src_width, src_height, (src_width + 1) / 2,
+    check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
+                   thread_count, src_width, src_height, src_width / 2,
+                   src_height / 2);
+    check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
+                   thread_count, src_width, src_height, (src_width + 1) / 2,
                    (src_height + 1) / 2);
   }
   void test_resize_u8_2x2() {

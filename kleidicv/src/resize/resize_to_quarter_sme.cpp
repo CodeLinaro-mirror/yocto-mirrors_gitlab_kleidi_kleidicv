@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/resize/resize.h"
-#include "resize_sc.h"
+#include "kleidicv/resize/resize_linear.h"
+#include "resize_to_quarter_sc.h"
 
 namespace kleidicv::sme {
 

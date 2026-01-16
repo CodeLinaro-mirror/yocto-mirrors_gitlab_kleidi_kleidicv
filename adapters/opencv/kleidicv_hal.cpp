@@ -711,6 +711,8 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  // For this special scaling factor pair INTER_LINEAR and INTER_AREA provide
+  // the very same results.
   if (CV_MAT_DEPTH(src_type) == CV_8U && inv_scale_x == 0.5 &&
       inv_scale_y == 0.5 &&
       (interpolation == CV_HAL_INTER_LINEAR ||
@@ -719,7 +721,7 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
         MULTITHREAD_MIN_ELEMENTS_RESIZE_TO_QUARTER_U8) {
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
     } else {
-      return convert_error(kleidicv_thread_resize_to_quarter_u8(
+      return convert_error(kleidicv_thread_resize_linear_u8(
           src_data, src_step, src_width, src_height, dst_data, dst_step,
           dst_width, dst_height, get_multithreading()));
     }
