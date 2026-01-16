@@ -4,47 +4,38 @@
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/resize/resize.h"
+#include "kleidicv/resize/resize_linear.h"
 
 namespace kleidicv::neon {
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t check_dimensions(size_t src_dim, size_t dst_dim) {
-  size_t half_src_dim = src_dim / 2;
+/// Resizes source data by averaging 4 elements to one.
+/// In-place operation not supported.
+///
+/// For even source dimensions `(2*N, 2*M)` destination dimensions should be
+/// `(N, M)`.
+/// In case of odd source dimensions `(2*N+1, 2*M+1)` destination
+/// dimensions could be either `(N+1, M+1)` or `(N, M)` or combination of both.
+/// For later cases last respective row or column of source data will not be
+/// processed. Currently only supports single-channel data. Number of pixels in
+/// the source is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// Even dimension example of 2x2 to 1x1 conversion:
+/// ```
+/// | a | b | --> | (a+b+c+d)/4 |
+/// | c | d |
+/// ```
+/// Odd dimension example of 3x3 to 2x2 conversion:
+/// ```
+/// | a | b | c |     | (a+b+c+d)/4 | (c+f)/2 |
+/// | d | e | f | --> |   (g+h)/2   |    i    |
+/// | g | h | i |
+/// ```
 
-  if ((src_dim % 2) == 0) {
-    if (dst_dim == half_src_dim) {
-      return KLEIDICV_OK;
-    }
-  } else {
-    if (dst_dim == half_src_dim || dst_dim == (half_src_dim + 1)) {
-      return KLEIDICV_OK;
-    }
-  }
-
-  return KLEIDICV_ERROR_RANGE;
-}
-
-// Disable the warning, as the complexity is just above the threshold, it's
-// better to leave it in one piece.
-// NOLINTBEGIN(readability-function-cognitive-complexity)
 KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       size_t src_width, size_t src_height,
                                       uint8_t *dst, size_t dst_stride,
                                       size_t dst_width, size_t dst_height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-  CHECK_IMAGE_SIZE(src_width, src_height);
-
-  if (kleidicv_error_t ret = check_dimensions(src_width, dst_width)) {
-    return ret;
-  }
-
-  if (kleidicv_error_t ret = check_dimensions(src_height, dst_height)) {
-    return ret;
-  }
-
   using VecTraits = neon::VecTraits<uint8_t>;
   constexpr size_t kVectorLengthX2 = kVectorLength * 2;
   constexpr size_t kVectorLengthX4 = kVectorLength * 4;
@@ -151,6 +142,5 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
   }
   return KLEIDICV_OK;
 }
-// NOLINTEND(readability-function-cognitive-complexity)
 
 }  // namespace kleidicv::neon

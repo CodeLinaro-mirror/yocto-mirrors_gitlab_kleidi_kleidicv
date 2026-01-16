@@ -29,6 +29,12 @@ KLEIDICV_DEFINE_C_API_NEON(kleidicv_resize_r3_u8,
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_linear_stripe_f32,
                           kleidicv_resize_linear_stripe_f32);
 
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_resize_to_quarter_u8, &kleidicv::neon::resize_to_quarter_u8,
+    KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::resize_to_quarter_u8),
+    &kleidicv::sme::resize_to_quarter_u8,
+    KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::resize_to_quarter_u8));
+
 extern "C" {
 
 kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
@@ -40,9 +46,14 @@ kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
                                                  dst_width, dst_height)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  return kleidicv_resize_linear_stripe_u8(
-      src, src_stride, src_width, src_height, 0,
-      std::min(src_height, dst_height), dst, dst_stride, dst_width, dst_height);
+
+  // For upsampling, process by src rows
+  // For resize_generic, process by dst rows
+  size_t y_end = (src_width < dst_width) ? src_height : dst_height;
+
+  return kleidicv_resize_linear_stripe_u8(src, src_stride, src_width,
+                                          src_height, 0, y_end, dst, dst_stride,
+                                          dst_width, dst_height);
 }
 
 kleidicv_error_t kleidicv_resize_linear_stripe_u8(
@@ -57,6 +68,22 @@ kleidicv_error_t kleidicv_resize_linear_stripe_u8(
     return KLEIDICV_OK;
   }
 
+  if ((src_width / 2 == dst_width || (src_width + 1) / 2 == dst_width) &&
+      (src_height / 2 == dst_height || (src_height + 1) / 2 == dst_height)) {
+    size_t src_begin = y_begin * 2;
+    size_t src_end = std::min<size_t>(src_height, y_end * 2);
+    size_t dst_begin = y_begin;
+    size_t dst_end = std::min<size_t>(dst_height, y_end);
+
+    if (dst_begin == dst_end) {
+      return KLEIDICV_OK;
+    }
+
+    return kleidicv_resize_to_quarter_u8(
+        src + src_begin * src_stride, src_stride, src_width,
+        src_end - src_begin, dst + dst_begin * dst_stride, dst_stride,
+        dst_width, dst_end - dst_begin);
+  }
   if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
     return kleidicv_resize_2x2_stripe_u8(src, src_stride, src_width, src_height,
                                          y_begin, y_end, dst, dst_stride);

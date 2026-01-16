@@ -8,6 +8,29 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/sve2.h"
 
+/// Resizes source data by averaging 4 elements to one.
+/// In-place operation not supported.
+///
+/// For even source dimensions `(2*N, 2*M)` destination dimensions should be
+/// `(N, M)`.
+/// In case of odd source dimensions `(2*N+1, 2*M+1)` destination
+/// dimensions could be either `(N+1, M+1)` or `(N, M)` or combination of both.
+/// For later cases last respective row or column of source data will not be
+/// processed. Currently only supports single-channel data. Number of pixels in
+/// the source is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// Even dimension example of 2x2 to 1x1 conversion:
+/// ```
+/// | a | b | --> | (a+b+c+d)/4 |
+/// | c | d |
+/// ```
+/// Odd dimension example of 3x3 to 2x2 conversion:
+/// ```
+/// | a | b | c |     | (a+b+c+d)/4 | (c+f)/2 |
+/// | d | e | f | --> |   (g+h)/2   |    i    |
+/// | g | h | i |
+/// ```
+
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 static inline svuint8_t resize_parallel_vectors(
@@ -157,40 +180,10 @@ static inline void process_single_row(Rows<const ScalarType> src_rows,
   }
 }
 
-KLEIDICV_TARGET_FN_ATTRS
-static kleidicv_error_t check_dimensions(size_t src_dim,
-                                         size_t dst_dim) KLEIDICV_STREAMING {
-  size_t half_src_dim = src_dim / 2;
-
-  if ((src_dim % 2) == 0) {
-    if (dst_dim == half_src_dim) {
-      return KLEIDICV_OK;
-    }
-  } else {
-    if (dst_dim == half_src_dim || dst_dim == (half_src_dim + 1)) {
-      return KLEIDICV_OK;
-    }
-  }
-
-  return KLEIDICV_ERROR_RANGE;
-}
-
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_to_quarter_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width,
     size_t dst_height) KLEIDICV_STREAMING {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-  CHECK_IMAGE_SIZE(src_width, src_height);
-
-  if (kleidicv_error_t ret = check_dimensions(src_width, dst_width)) {
-    return ret;
-  }
-
-  if (kleidicv_error_t ret = check_dimensions(src_height, dst_height)) {
-    return ret;
-  }
-
   Rows<const uint8_t> src_rows{src, src_stride, /* channels*/ 1};
   Rows<uint8_t> dst_rows{dst, dst_stride, /* channels*/ 1};
   LoopUnroll2 loop{src_height, /* Process two rows */ 2};

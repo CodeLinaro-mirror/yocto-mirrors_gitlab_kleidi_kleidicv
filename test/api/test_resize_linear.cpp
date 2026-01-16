@@ -272,7 +272,7 @@ TYPED_TEST(ResizeLinear, NotImplemented) {
             kleidicv_resize_linear(src, sizeof(TypeParam) * 16, 16, 1, dst,
                                    sizeof(TypeParam) * 7, 7, 1));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_resize_linear(src, sizeof(TypeParam) * 15, 15, 1, dst,
+            kleidicv_resize_linear(src, sizeof(TypeParam) * 14, 14, 1, dst,
                                    sizeof(TypeParam) * 8, 8, 1));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src, sizeof(TypeParam) * 23, 23, 1, dst,

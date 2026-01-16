@@ -100,11 +100,6 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Median Blur (3x3, 5x5, 7x7)                       |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
 | Median Blur (generic imp, max size 255x255)       |     |  x  |     |     |     |     |     |
 
-## Resize to quarter
-|             | u8  |
-|-------------|-----|
-| 0.5x0.5     |  x  |
-
 ## Resize with linear interpolation
 |                   | u8  | f32 |
 |-------------------|-----|-----|

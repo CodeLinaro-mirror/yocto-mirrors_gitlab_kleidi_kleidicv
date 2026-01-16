@@ -41,7 +41,7 @@ class ResizeToQuarterTest final {
 
     calculate_expected(source, expected);
 
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_resize_to_quarter_u8(
+    ASSERT_EQ(KLEIDICV_OK, kleidicv_resize_linear_u8(
                                source.data(), source.stride(), source.width(),
                                source.height(), actual.data(), actual.stride(),
                                actual.width(), actual.height()));
@@ -216,41 +216,13 @@ TEST(ResizeToQuarter, OddDimsTruncated) {
 TEST(ResizeToQuarter, NullPointer) {
   const uint8_t src[4] = {};
   uint8_t dst[1];
-  test::test_null_args(kleidicv_resize_to_quarter_u8, src, 2, 2, 2, dst, 1, 1,
-                       1);
+  test::test_null_args(kleidicv_resize_linear_u8, src, 2, 2, 2, dst, 1, 1, 1);
 }
 
 TEST(ResizeToQuarter, ZeroImageSize) {
   const uint8_t src[1] = {};
   uint8_t dst[1];
 
-  EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_resize_to_quarter_u8(src, 1, 0, 1, dst, 1, 0, 1));
-  EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_resize_to_quarter_u8(src, 1, 1, 0, dst, 1, 1, 0));
-}
-
-TEST(ResizeToQuarter, InvalidImageSize) {
-  const uint8_t src[1] = {};
-  uint8_t dst[1];
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_resize_to_quarter_u8(src, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1,
-                                          1, dst, 1, 1, 1));
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE, kleidicv_resize_to_quarter_u8(
-                                      src, 1, KLEIDICV_MAX_IMAGE_PIXELS,
-                                      KLEIDICV_MAX_IMAGE_PIXELS, dst, 1, 1, 1));
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_resize_to_quarter_u8(src, 1, 8, 8, dst, 1, 4, 3));
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_resize_to_quarter_u8(src, 1, 8, 8, dst, 1, 3, 4));
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_resize_to_quarter_u8(src, 1, 9, 9, dst, 1, 4, 1));
-
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_resize_to_quarter_u8(src, 1, 9, 9, dst, 1, 7, 5));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_resize_linear_u8(src, 1, 0, 1, dst, 1, 0, 1));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_resize_linear_u8(src, 1, 1, 0, dst, 1, 1, 0));
 }
