@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -7,15 +7,19 @@ cmake_minimum_required(VERSION 3.16)
 project("KleidiCV")
 
 # Choose the default value for the KLEIDICV_ENABLE_SVE2 option
-# according to the compiler version. The list of compiler versions
-# recognised as supporting SVE may be extended in future.
+# according to the compiler version and the system. The list of compiler
+# versions recognised as supporting SVE2 may be extended in future.
 # check_cxx_compiler_flag is not used to test whether the compiler
 # supports +sve2 since this may succeed for compilers that have only
-# partial SVE support.
-if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
-    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12) OR
-    (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
-    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10)
+# partial SVE2 support.
+# SVE2 backend is only turned ON by default for Linux and Android.
+if (((CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
+      CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12) OR
+     (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+      CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10))
+    AND
+    (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
+     CMAKE_SYSTEM_NAME STREQUAL "Android")
 )
   set(KLEIDICV_ENABLE_SVE2_DEFAULT ON)
 else()
