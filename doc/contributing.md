@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -71,8 +71,10 @@ The subject line of the commit message should be 50 characters maximum and the
 body should be wrapped at 72 characters. Please use imperative mood in the
 subject line.
 
-To enable the automatic commit message check locally, configure Git to use the
-repo hooks directory:
+## Git hooks
+
+To enable local commit message checks and checks for licenses, formatting, and
+shell scripts, configure Git to use the repo's hooks directory:
 
 ```
 git config core.hooksPath .githooks
