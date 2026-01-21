@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -35,17 +35,20 @@ class ScharrInterleaved {
   using SourceType = uint8_t;
   using SourceVecTraits = VecTraits<SourceType>;
   using SourceVectorType = typename SourceVecTraits::VectorType;
+  using SourceVector2Type = typename SourceVecTraits::Vector2Type;
   using BufferType = int16_t;
   using BufferVecTraits = VecTraits<BufferType>;
   using BufferVectorType = typename BufferVecTraits::VectorType;
+  using BufferVector2Type = typename BufferVecTraits::Vector2Type;
   using BufferVector4Type = typename BufferVecTraits::Vector4Type;
   using DestinationType = int16_t;
   using DestinationVecTraits = VecTraits<DestinationType>;
   using DestinationVectorType = typename DestinationVecTraits::VectorType;
+  using DestinationVector2Type = typename DestinationVecTraits::Vector2Type;
 
  public:
-  ScharrInterleaved(Rows<int16_t> hori_deriv_buffer,
-                    Rows<int16_t> vert_deriv_buffer, size_t width)
+  ScharrInterleaved(Rows<BufferType> hori_deriv_buffer,
+                    Rows<BufferType> vert_deriv_buffer, size_t width)
       : hori_deriv_buffer_(hori_deriv_buffer),
         vert_deriv_buffer_(vert_deriv_buffer),
         width_(width),
@@ -53,8 +56,9 @@ class ScharrInterleaved {
         const_10_u8_(vdupq_n_u8(10)),
         const_10_s16_(vdupq_n_s16(10)) {}
 
-  void process(Rows<const uint8_t> src_rows, Rows<int16_t> dst_rows,
-               size_t y_begin, size_t y_end) {
+  KLEIDICV_FORCE_INLINE void process(Rows<const SourceType> src_rows,
+                                     Rows<DestinationType> dst_rows,
+                                     size_t y_begin, size_t y_end) {
     for (size_t i = y_begin; i < y_end; ++i) {
       process_vertical(src_rows.at(static_cast<ptrdiff_t>(i)));
       process_horizontal(dst_rows.at(static_cast<ptrdiff_t>(i)));
@@ -62,11 +66,11 @@ class ScharrInterleaved {
   }
 
  private:
-  BufferVector4Type vertical_vector_path(SourceVectorType src[3]) {
+  KLEIDICV_FORCE_INLINE BufferVector4Type
+  vertical_vector_path(SourceVectorType src[3]) {
     // Horizontal derivative approximation
     uint16x8_t hori_acc_l = vaddl_u8(vget_low_u8(src[0]), vget_low_u8(src[2]));
-    uint16x8_t hori_acc_h =
-        vaddl_u8(vget_high_u8(src[0]), vget_high_u8(src[2]));
+    uint16x8_t hori_acc_h = vaddl_high_u8(src[0], src[2]);
 
     hori_acc_l = vmulq_u16(hori_acc_l, const_3_s16_);
     hori_acc_h = vmulq_u16(hori_acc_h, const_3_s16_);
@@ -77,29 +81,50 @@ class ScharrInterleaved {
 
     // Vertical derivative approximation
     uint16x8_t vert_acc_l = vsubl_u8(vget_low_u8(src[2]), vget_low_u8(src[0]));
-    uint16x8_t vert_acc_h =
-        vsubl_u8(vget_high_u8(src[2]), vget_high_u8(src[0]));
+    uint16x8_t vert_acc_h = vsubl_high_u8(src[2], src[0]);
 
     return {
         vreinterpretq_s16_u16(hori_acc_l), vreinterpretq_s16_u16(hori_acc_h),
         vreinterpretq_s16_u16(vert_acc_l), vreinterpretq_s16_u16(vert_acc_h)};
   }
 
-  void process_vertical(Rows<const uint8_t> src_rows) {
+  KLEIDICV_FORCE_INLINE void process_vertical(Rows<const SourceType> src_rows) {
     LoopUnroll2 loop{width_ * src_rows.channels(), kSourceVecNumLanes};
+
+    loop.unroll_twice([&](ptrdiff_t index) {
+      SourceVector2Type src[3];
+      SourceVecTraits::load(&src_rows.at(0)[index], src[0]);
+      SourceVecTraits::load(&src_rows.at(1)[index], src[1]);
+      SourceVecTraits::load(&src_rows.at(2)[index], src[2]);
+
+      SourceVectorType src_a[3] = {src[0].val[0], src[1].val[0], src[2].val[0]};
+      BufferVector4Type res_a = vertical_vector_path(src_a);
+
+      SourceVectorType src_b[3] = {src[0].val[1], src[1].val[1], src[2].val[1]};
+      BufferVector4Type res_b = vertical_vector_path(src_b);
+
+      BufferVector4Type hori_derivs = {res_a.val[0], res_a.val[1], res_b.val[0],
+                                       res_b.val[1]};
+      BufferVector4Type vert_derivs = {res_a.val[2], res_a.val[3], res_b.val[2],
+                                       res_b.val[3]};
+
+      BufferVecTraits::store(hori_derivs, &hori_deriv_buffer_[index]);
+      BufferVecTraits::store(vert_derivs, &vert_deriv_buffer_[index]);
+    });
 
     loop.unroll_once([&](ptrdiff_t index) {
       SourceVectorType src[3];
-      src[0] = vld1q(&src_rows.at(0)[index]);
-      src[1] = vld1q(&src_rows.at(1)[index]);
-      src[2] = vld1q(&src_rows.at(2)[index]);
+      SourceVecTraits::load(&src_rows.at(0)[index], src[0]);
+      SourceVecTraits::load(&src_rows.at(1)[index], src[1]);
+      SourceVecTraits::load(&src_rows.at(2)[index], src[2]);
 
       BufferVector4Type res = vertical_vector_path(src);
 
-      vst1q(&hori_deriv_buffer_[index], res.val[0]);
-      vst1q(&hori_deriv_buffer_[index + kBufferVecNumLanes], res.val[1]);
-      vst1q(&vert_deriv_buffer_[index], res.val[2]);
-      vst1q(&vert_deriv_buffer_[index + kBufferVecNumLanes], res.val[3]);
+      BufferVector2Type hori_pair = {res.val[0], res.val[1]};
+      BufferVector2Type vert_pair = {res.val[2], res.val[3]};
+
+      BufferVecTraits::store(hori_pair, &hori_deriv_buffer_[index]);
+      BufferVecTraits::store(vert_pair, &vert_deriv_buffer_[index]);
     });
 
     loop.tail([&](ptrdiff_t index) {
@@ -112,41 +137,74 @@ class ScharrInterleaved {
     });
   }
 
-  DestinationVectorType horizontal_vector_path_hori_approx(
-      BufferVectorType buff[2]) {
+  KLEIDICV_FORCE_INLINE DestinationVectorType
+  horizontal_vector_path_hori_approx(BufferVectorType buff[2]) {
     return vsubq_s16(buff[1], buff[0]);
   }
 
-  DestinationVectorType horizontal_vector_path_vert_approx(
-      BufferVectorType buff[3]) {
+  KLEIDICV_FORCE_INLINE DestinationVectorType
+  horizontal_vector_path_vert_approx(BufferVectorType buff[3]) {
     BufferVectorType a = vaddq_u16(buff[0], buff[2]);
     a = vaddq_u16(a, vaddq_u16(a, a));
     return vmlaq_u16(a, buff[1], const_10_s16_);
   }
 
-  void process_horizontal(Rows<int16_t> dst_rows) {
+  KLEIDICV_FORCE_INLINE void process_horizontal(
+      Rows<DestinationType> dst_rows) {
     // width is decremented by 2 as the result has less columns.
     LoopUnroll2 loop{(width_ - 2) * hori_deriv_buffer_.channels(),
                      kBufferVecNumLanes};
 
+    loop.unroll_twice([&](ptrdiff_t index) {
+      BufferVector2Type hori_buff[2];
+      BufferVecTraits::load(&hori_deriv_buffer_[index], hori_buff[0]);
+      BufferVecTraits::load(&hori_deriv_buffer_[index + 2], hori_buff[1]);
+
+      BufferVectorType hori_buff_a[2] = {hori_buff[0].val[0],
+                                         hori_buff[1].val[0]};
+      DestinationVectorType hori_approx_res_a =
+          horizontal_vector_path_hori_approx(hori_buff_a);
+
+      BufferVectorType hori_buff_b[2] = {hori_buff[0].val[1],
+                                         hori_buff[1].val[1]};
+      DestinationVectorType hori_approx_res_b =
+          horizontal_vector_path_hori_approx(hori_buff_b);
+
+      BufferVector2Type vert_buff[3];
+      BufferVecTraits::load(&vert_deriv_buffer_[index], vert_buff[0]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + 1], vert_buff[1]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + 2], vert_buff[2]);
+
+      BufferVectorType vert_buff_a[3] = {
+          vert_buff[0].val[0], vert_buff[1].val[0], vert_buff[2].val[0]};
+      DestinationVectorType vert_approx_res_a =
+          horizontal_vector_path_vert_approx(vert_buff_a);
+
+      BufferVectorType vert_buff_b[3] = {
+          vert_buff[0].val[1], vert_buff[1].val[1], vert_buff[2].val[1]};
+      DestinationVectorType vert_approx_res_b =
+          horizontal_vector_path_vert_approx(vert_buff_b);
+
+      vst2q(&dst_rows.at(0, index)[0], {hori_approx_res_a, vert_approx_res_a});
+      vst2q(&dst_rows.at(0, index + kBufferVecNumLanes)[0],
+            {hori_approx_res_b, vert_approx_res_b});
+    });
+
     loop.unroll_once([&](ptrdiff_t index) {
       BufferVectorType hori_buff[2];
-      hori_buff[0] = vld1q(&hori_deriv_buffer_[index]);
-      hori_buff[1] = vld1q(&hori_deriv_buffer_[index + 2]);
+      BufferVecTraits::load(&hori_deriv_buffer_[index], hori_buff[0]);
+      BufferVecTraits::load(&hori_deriv_buffer_[index + 2], hori_buff[1]);
       DestinationVectorType hori_approx_res =
           horizontal_vector_path_hori_approx(hori_buff);
 
       BufferVectorType vert_buff[3];
-      vert_buff[0] = vld1q(&vert_deriv_buffer_[index]);
-      vert_buff[1] = vld1q(&vert_deriv_buffer_[index + 1]);
-      vert_buff[2] = vld1q(&vert_deriv_buffer_[index + 2]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index], vert_buff[0]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + 1], vert_buff[1]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + 2], vert_buff[2]);
       DestinationVectorType vert_approx_res =
           horizontal_vector_path_vert_approx(vert_buff);
 
-      vst1q(&dst_rows.at(0, index)[0],
-            vzip1q_s16(hori_approx_res, vert_approx_res));
-      vst1q(&dst_rows.at(0, index)[DestinationVecTraits::num_lanes()],
-            vzip2q_s16(hori_approx_res, vert_approx_res));
+      vst2q(&dst_rows.at(0, index)[0], {hori_approx_res, vert_approx_res});
     });
 
     loop.tail([&](ptrdiff_t index) {
@@ -164,8 +222,8 @@ class ScharrInterleaved {
     });
   }
 
-  Rows<int16_t> hori_deriv_buffer_;
-  Rows<int16_t> vert_deriv_buffer_;
+  Rows<BufferType> hori_deriv_buffer_;
+  Rows<BufferType> vert_deriv_buffer_;
   size_t width_;
   int16x8_t const_3_s16_;
   uint8x16_t const_10_u8_;
