@@ -14,27 +14,41 @@ set(OPENCV_URL "https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERS
 
 # Remove the last part of the version number (e.g., 4.9.0 -> 4.9)
 string(REGEX REPLACE "\.[^\.]+$" "" OPENCV_PATCH_VERSION ${OPENCV_VERSION})
-set(OPENCV_PATCH_FILE "${CMAKE_CURRENT_LIST_DIR}/../../adapters/opencv/opencv-${OPENCV_PATCH_VERSION}.patch")
 
-# The patch command can be run only with a non-empty patch file, otherwise fetch content fails.
-set(OPENCV_PATCH_FILE_HAS_CONTENT FALSE)
-file(STRINGS "${OPENCV_PATCH_FILE}" OPENCV_PATCH_LINES)
-foreach(line IN LISTS OPENCV_PATCH_LINES)
-  if (NOT line MATCHES "^(//|$)")
-    set(OPENCV_PATCH_FILE_HAS_CONTENT TRUE)
-    break()
+# List of patch files to apply (add new patches here).
+set(OPENCV_PATCH_FILES
+    "${CMAKE_CURRENT_LIST_DIR}/../../adapters/opencv/opencv-${OPENCV_PATCH_VERSION}.patch"
+    "${CMAKE_CURRENT_LIST_DIR}/opencv-${OPENCV_PATCH_VERSION}-gaussianblur.patch")
+
+# Check if a patch file has non-comment content.
+function(patch_has_content patch_file result_var)
+  set(has_content FALSE)
+  if (EXISTS "${patch_file}")
+    file(STRINGS "${patch_file}" patch_lines)
+    foreach(line IN LISTS patch_lines)
+      if (NOT line MATCHES "^(//|$)")
+        set(has_content TRUE)
+        break()
+      endif()
+    endforeach()
+  endif()
+  set(${result_var} ${has_content} PARENT_SCOPE)
+endfunction()
+
+# Build patch command from all valid patches.
+set(OPENCV_PATCH_COMMAND)
+foreach(patch_file IN LISTS OPENCV_PATCH_FILES)
+  patch_has_content("${patch_file}" has_content)
+  if (has_content)
+    list(APPEND OPENCV_PATCH_COMMAND COMMAND patch -p1 -i "${patch_file}")
+    message(STATUS "Will apply OpenCV patch: ${patch_file}")
+  else()
+    message(STATUS "Skipping empty/missing patch: ${patch_file}")
   endif()
 endforeach()
 
-if (OPENCV_PATCH_FILE_HAS_CONTENT)
-  set(OPENCV_PATCH_COMMAND
-    patch -p1 -i "${OPENCV_PATCH_FILE}"
-  )
-else()
-  message(STATUS "Patching OpenCV is skipped as the patch file is empty or comment-only.")
-  set(OPENCV_PATCH_COMMAND
-    ${CMAKE_COMMAND} -E true
-  )
+if (NOT OPENCV_PATCH_COMMAND)
+  set(OPENCV_PATCH_COMMAND COMMAND ${CMAKE_COMMAND} -E true)
 endif()
 
 include(FetchContent)
