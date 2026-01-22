@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -511,6 +511,7 @@ int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
 
   if (margin_left != 0 || margin_top != 0 || margin_right != 0 ||
       margin_bottom != 0) {
+    // If the input is a submatrix the operation is rejected
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -655,6 +656,7 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
 
   if (margin_left != 0 || margin_top != 0 || margin_right != 0 ||
       margin_bottom != 0) {
+    // If the input is a submatrix the operation is rejected
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -702,6 +704,7 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
   }
 
   if (allow_submatrix) {
+    // If the input is a submatrix the operation is rejected
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -802,7 +805,8 @@ int morphology_operation(cvhalFilter2D *cvcontext, uchar *src_data,
                          int src_full_height, int src_roi_x, int src_roi_y,
                          int dst_full_width, int dst_full_height, int dst_roi_x,
                          int dst_roi_y) {
-  // Some parameters are unused.
+  // The init function returned with NOT_IMPLEMENTED for submatrix inputs, so
+  // these parameters are not needed.
   (void)src_full_width;
   (void)src_full_height;
   (void)src_roi_x;
@@ -934,6 +938,7 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
   }
 
   if (margin_left || margin_top || margin_right || margin_bottom) {
+    // If the input is a submatrix the operation is rejected
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 

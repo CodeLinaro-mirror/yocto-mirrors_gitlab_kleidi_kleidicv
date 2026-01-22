@@ -11,13 +11,13 @@ template <size_t KernelSize, size_t BorderType>
 cv::Mat exec_gaussian_blur(cv::Mat& input) {
   double sigma =
       *reinterpret_cast<double*>(&input.at<uint8_t>(input.rows - 2, 0));
-  // clone is required, otherwise the result matrix is treated as part of a
-  // bigger image, and it would have impact on what border types are supported
-  cv::Mat input_mat = input.rowRange(0, input.rows - 2).clone();
+  cv::Mat input_mat = input.rowRange(0, input.rows - 2);
   cv::Size kernel(KernelSize, KernelSize);
   cv::Mat result;
-  cv::GaussianBlur(input_mat, result, kernel, sigma, sigma, BorderType,
-                   cv::ALGO_HINT_APPROX);
+  // cv::BORDER_ISOLATED` is needed to be OR-ed into `borderType`, as otherwise
+  // submatrix inputs are not supported
+  cv::GaussianBlur(input_mat, result, kernel, sigma, sigma,
+                   BorderType | cv::BORDER_ISOLATED, cv::ALGO_HINT_APPROX);
   return result;
 }
 

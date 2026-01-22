@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -28,9 +28,7 @@ template <typename TypeParam, size_t KernelSize, size_t BorderType>
 cv::Mat exec_separable_filter_2d(cv::Mat& input) {
   uint32_t kernel_seed =
       *reinterpret_cast<uint32_t*>(&input.at<TypeParam>(input.rows - 1, 0));
-  // clone is required, otherwise the result matrix is treated as part of a
-  // bigger image, and it would have impact on what border types are supported
-  cv::Mat input_mat = input.rowRange(0, input.rows - 1).clone();
+  cv::Mat input_mat = input.rowRange(0, input.rows - 1);
 
   cv::RNG rng(kernel_seed);
   cv::Mat kernel_x(KernelSize, 1, get_opencv_matrix_type<TypeParam, 1>());
@@ -43,8 +41,10 @@ cv::Mat exec_separable_filter_2d(cv::Mat& input) {
            std::numeric_limits<TypeParam>::max());
 
   cv::Mat result;
+  // cv::BORDER_ISOLATED` is needed to be OR-ed into `borderType`, as otherwise
+  // submatrix inputs are not supported
   cv::sepFilter2D(input_mat, result, -1, kernel_x, kernel_y, cv::Point(-1, -1),
-                  0, BorderType);
+                  0, BorderType | cv::BORDER_ISOLATED);
   return result;
 }
 

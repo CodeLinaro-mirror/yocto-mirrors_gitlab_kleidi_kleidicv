@@ -149,6 +149,8 @@ Blurs an image using a Gaussian filter.\
 The filter's standard deviation must be the same in horizontal and vertical directions (`sigmaX == sigmaY`).\
 In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
 
+If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLATED` is OR-ed into `borderType`.
+
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1`
@@ -162,6 +164,8 @@ Notes on parameters:
 * `hint` - must be [`ALGO_HINT_APPROX`](https://docs.opencv.org/4.11.0/db/de0/group__core__utils.html#gafeab8763db9cdb68a6c20353efe0e9de) if `sigmaX` or `sigmaY` are not 0.
 
 ### [`cv::dilate()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c)
+If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLATED` is OR-ed into `borderType`.
+
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
 * `src.rows` - image height must be greater than or equal to `kernel.rows - 1`
@@ -170,6 +174,8 @@ Notes on parameters:
 * `borderType` - only supports [`BORDER_CONSTANT`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#gga209f2f4869e304c82d07739337eae7c5aed2e4346047e265c8c5a6d0276dcd838).
 
 ### [`cv::erode()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaeb1e0c1033e3f6b891a25d0511362aeb)
+If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLATED` is OR-ed into `borderType`.
+
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
 * `src.rows` - image height must be greater than or equal to `kernel.rows - 1`
@@ -194,6 +200,8 @@ Notes on parameters:
 
 ### [`cv::Sobel()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gacea54f142e81b6758cb6f375ce782c8d)
 Applies Sobel gradient filter to a given image.
+
+If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLATED` is OR-ed into `borderType`.
 
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
