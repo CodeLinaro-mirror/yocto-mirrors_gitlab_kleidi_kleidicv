@@ -18,6 +18,9 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Support for OpenCV 4.13.
 
+### Changed
+- sepFilter2D is enabled in the OpenCV HAL.
+
 ### Removed
 - Support for OpenCV 4.12.
 

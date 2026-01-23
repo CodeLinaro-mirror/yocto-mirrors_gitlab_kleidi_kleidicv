@@ -32,12 +32,10 @@ cv::Mat exec_separable_filter_2d(cv::Mat& input) {
 
   cv::RNG rng(kernel_seed);
   cv::Mat kernel_x(KernelSize, 1, get_opencv_matrix_type<TypeParam, 1>());
-  // use the minimum value 1 for the kernels in order to properly work around
-  // the potential OpenCV bug (mentioned lower in "test_separable_filter_2d")
-  rng.fill(kernel_x, cv::RNG::UNIFORM, 1,
+  rng.fill(kernel_x, cv::RNG::UNIFORM, std::numeric_limits<TypeParam>::min(),
            std::numeric_limits<TypeParam>::max());
   cv::Mat kernel_y(KernelSize, 1, get_opencv_matrix_type<TypeParam, 1>());
-  rng.fill(kernel_y, cv::RNG::UNIFORM, 1,
+  rng.fill(kernel_y, cv::RNG::UNIFORM, std::numeric_limits<TypeParam>::min(),
            std::numeric_limits<TypeParam>::max());
 
   cv::Mat result;
@@ -92,14 +90,11 @@ bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
       // One extra line allocated to be sure the kernel seed can be placed next
       // to the real input
       cv::Mat input(y + 1, x, get_opencv_matrix_type<TypeParam, Channels>());
-      // use the minimum value 1 for the input in order to properly work around
-      // the potential OpenCV bug (mentioned lower)
-      rng.fill(input, cv::RNG::UNIFORM, 1,
+      rng.fill(input, cv::RNG::UNIFORM, std::numeric_limits<TypeParam>::min(),
                std::numeric_limits<TypeParam>::max());
 
-      uint32_t kernel_seed = rng.next();
-
       // kernel seed is embedded into the input matrix
+      uint32_t kernel_seed = rng.next();
       *reinterpret_cast<uint32_t*>(&input.at<TypeParam>(input.rows - 1, 0)) =
           kernel_seed;
 
@@ -107,22 +102,6 @@ bool test_separable_filter_2d(int index, RecreatedMessageQueue& request_queue,
           exec_separable_filter_2d<TypeParam, KernelSize, BorderType>(input);
       cv::Mat expected = get_expected_from_subordinate(index, request_queue,
                                                        reply_queue, input);
-
-      // bypass OpenCV bug/inconsistency where the output matrix contains 0's
-      // (or also the smallest negative value for signed types), whereas this
-      // should not be possible mathematically
-      for (size_t i = 0; i < (y * Channels); ++i) {
-        for (size_t j = 0; j < (x * Channels); ++j) {
-          if (expected.at<TypeParam>(i, j) ==
-              std::numeric_limits<TypeParam>::lowest()) {
-            expected.at<TypeParam>(i, j) =
-                std::numeric_limits<TypeParam>::max();
-          } else if (expected.at<TypeParam>(i, j) == 0) {
-            expected.at<TypeParam>(i, j) =
-                std::numeric_limits<TypeParam>::max();
-          }
-        }
-      }
 
       if (are_matrices_different<TypeParam>(0, actual, expected)) {
         fail_print_matrices(y, x, input, actual, expected);

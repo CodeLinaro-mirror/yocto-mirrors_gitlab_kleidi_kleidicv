@@ -69,19 +69,13 @@ int threshold(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int width, int height, int depth, int cn,
               double thresh, double maxValue, int thresholdType);
 
-int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
-                             int dst_type, int kernel_type, uchar *kernelx_data,
-                             int kernelx_length, uchar *kernely_data,
-                             int kernely_length, int anchor_x, int anchor_y,
-                             double delta, int borderType);
-
-int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
-                                  size_t src_step, uchar *dst_data,
-                                  size_t dst_step, int width, int height,
-                                  int full_width, int full_height, int offset_x,
-                                  int offset_y);
-
-int separable_filter_2d_free(cvhalFilter2D *context);
+int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
+                        uchar *dst_data, size_t dst_step, int dst_type,
+                        int width, int height, int full_width, int full_height,
+                        int offset_x, int offset_y, const uchar *kernelx_data,
+                        int kernelx_len, const uchar *kernely_data,
+                        int kernely_len, int kernel_type, int anchor_x,
+                        int anchor_y, double delta, int borderType);
 
 int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
                            uchar *dst_data, size_t dst_step, int width,
@@ -297,28 +291,21 @@ static inline int kleidicv_threshold_with_fallback(
 #define cv_hal_threshold kleidicv_threshold_with_fallback
 #endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
-// TODO: implement 3x3 kernels and 8UC1 -> 16SC1 data type
-#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
-
-// separable_filter_2d_init
-// no fallback, because it cannot be made sure that
-// separable_filter_2d_operation also uses the fallback
-#undef cv_hal_sepFilterInit
-#define cv_hal_sepFilterInit kleidicv::hal::separable_filter_2d_init
-
-// separable_filter_2d_operation
-// no fallback, because it cannot be made sure that separable_filter_2d_init
-// also uses the fallback
-#undef cv_hal_sepFilter
-#define cv_hal_sepFilter kleidicv::hal::separable_filter_2d_operation
-
-// separable_filter_2d_free
-// no fallback, because it cannot be made sure that separable_filter_2d_init
-// also uses the fallback
-#undef cv_hal_sepFilterFree
-#define cv_hal_sepFilterFree kleidicv::hal::separable_filter_2d_free
-
-#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
+// sepFilter
+static inline int kleidicv_sepFilter_with_fallback(
+    const uchar *src_data, size_t src_step, int src_type, uchar *dst_data,
+    size_t dst_step, int dst_type, int width, int height, int full_width,
+    int full_height, int offset_x, int offset_y, const uchar *kernelx_data,
+    int kernelx_len, const uchar *kernely_data, int kernely_len,
+    int kernel_type, int anchor_x, int anchor_y, double delta, int borderType) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      separable_filter_2d, cv_hal_sepFilter_stateless, src_data, src_step,
+      src_type, dst_data, dst_step, dst_type, width, height, full_width,
+      full_height, offset_x, offset_y, kernelx_data, kernelx_len, kernely_data,
+      kernely_len, kernel_type, anchor_x, anchor_y, delta, borderType);
+}
+#undef cv_hal_sepFilter_stateless
+#define cv_hal_sepFilter_stateless kleidicv_sepFilter_with_fallback
 
 // gaussian_blur_binomial
 static inline int kleidicv_gaussian_blur_binomial_with_fallback(

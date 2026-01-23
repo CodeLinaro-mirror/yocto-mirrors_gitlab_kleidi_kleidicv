@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cfloat>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
@@ -401,24 +402,29 @@ static int from_opencv(int opencv_interpolation,
 
   return 0;
 }
-struct SeparableFilter2DParams {
-  size_t channels;
-  kleidicv_border_type_t border_type;
-  int operation_depth;
-  const uint8_t *kernel_x;
-  size_t kernel_width;
-  const uint8_t *kernel_y;
-  size_t kernel_height;
-  kleidicv_filter_context_t *cached_filter_context;
-  size_t cached_max_image_width;
-  size_t cached_max_image_height;
-};
 
-int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
-                             int dst_type, int kernel_type, uchar *kernelx_data,
-                             int kernelx_length, uchar *kernely_data,
-                             int kernely_length, int anchor_x, int anchor_y,
-                             double delta, int borderType) {
+int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
+                        uchar *dst_data, size_t dst_step, int dst_type,
+                        int width, int height, int full_width, int full_height,
+                        int offset_x, int offset_y, const uchar *kernelx_data,
+                        int kernelx_len, const uchar *kernely_data,
+                        int kernely_len, int kernel_type, int anchor_x,
+                        int anchor_y, double delta, int borderType) {
+  size_t margin_left = static_cast<size_t>(offset_x);
+  size_t margin_top = static_cast<size_t>(offset_y);
+  size_t margin_right = static_cast<size_t>(full_width - width - offset_x);
+  size_t margin_bottom = static_cast<size_t>(full_height - height - offset_y);
+
+  if (margin_left != 0 || margin_top != 0 || margin_right != 0 ||
+      margin_bottom != 0) {
+    // If the input is a submatrix the operation is rejected
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (src_data == dst_data) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (src_type != dst_type) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
@@ -453,11 +459,11 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (anchor_x > -1 && anchor_x != (kernelx_length >> 1)) {
+  if (anchor_x > -1 && anchor_x != (kernelx_len >> 1)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (anchor_y > -1 && anchor_y != (kernely_length >> 1)) {
+  if (anchor_y > -1 && anchor_y != (kernely_len >> 1)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -465,141 +471,51 @@ int separable_filter_2d_init(cvhalFilter2D **context, int src_type,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  // Use std::unique_ptr<T> to make error returns safer.
-  auto params = std::make_unique<SeparableFilter2DParams>();
-  if (!params) {
-    return CV_HAL_ERROR_UNKNOWN;
-  }
+  size_t channels = static_cast<size_t>(CV_MAT_CN(src_type));
+  size_t image_width = static_cast<size_t>(width);
+  size_t image_height = static_cast<size_t>(height);
+  size_t kernel_width = static_cast<size_t>(kernelx_len);
+  size_t kernel_height = static_cast<size_t>(kernely_len);
 
-  size_t type_size = get_type_size(operation_depth);
-
-  uint8_t *kernel_x = new uint8_t[kernelx_length * type_size];
-  uint8_t *kernel_y = new uint8_t[kernely_length * type_size];
-
-  std::memcpy(kernel_x, kernelx_data, kernelx_length * type_size);
-  std::memcpy(kernel_y, kernely_data, kernely_length * type_size);
-
-  params->channels = (src_type >> CV_CN_SHIFT) + 1;
-  params->border_type = kleidicv_border_type;
-  params->operation_depth = operation_depth;
-
-  params->kernel_x = kernel_x;
-  params->kernel_width = static_cast<size_t>(kernelx_length);
-
-  params->kernel_y = kernel_y;
-  params->kernel_height = static_cast<size_t>(kernely_length);
-
-  params->cached_filter_context = nullptr;
-
-  *context = reinterpret_cast<cvhalFilter2D *>(params.release());
-  return CV_HAL_ERROR_OK;
-}
-
-int separable_filter_2d_operation(cvhalFilter2D *context, uchar *src_data,
-                                  size_t src_step, uchar *dst_data,
-                                  size_t dst_step, int width, int height,
-                                  int full_width, int full_height, int offset_x,
-                                  int offset_y) {
-  if (!context) {
-    return CV_HAL_ERROR_UNKNOWN;
-  }
-
-  size_t margin_left = static_cast<size_t>(offset_x);
-  size_t margin_top = static_cast<size_t>(offset_y);
-  size_t margin_right = static_cast<size_t>(full_width - width - offset_x);
-  size_t margin_bottom = static_cast<size_t>(full_height - height - offset_y);
-
-  if (margin_left != 0 || margin_top != 0 || margin_right != 0 ||
-      margin_bottom != 0) {
-    // If the input is a submatrix the operation is rejected
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  auto params = reinterpret_cast<SeparableFilter2DParams *>(context);
-  size_t width_sz = static_cast<size_t>(width);
-  size_t height_sz = static_cast<size_t>(height);
-
-  kleidicv_filter_context_t *filter_context = params->cached_filter_context;
-  if (filter_context && (width_sz > params->cached_max_image_width ||
-                         height_sz > params->cached_max_image_height)) {
-    if (kleidicv_error_t release_err =
-            kleidicv_filter_context_release(params->cached_filter_context)) {
-      return convert_error(release_err);
-    }
-
-    filter_context = nullptr;
-  }
-
-  if (!filter_context) {
-    kleidicv_error_t create_err = kleidicv_filter_context_create(
-        &filter_context, params->channels, params->kernel_width,
-        params->kernel_height, width_sz, height_sz);
-    if (create_err) {
-      return convert_error(create_err);
-    }
-    params->cached_filter_context = filter_context;
-    params->cached_max_image_width = width_sz;
-    params->cached_max_image_height = height_sz;
+  kleidicv_filter_context_t *context = nullptr;
+  if (kleidicv_error_t err = kleidicv_filter_context_create(
+          &context, channels, kernel_width, kernel_height, image_width,
+          image_height)) {
+    return convert_error(err);
   }
 
   auto mt = get_multithreading();
 
-  kleidicv_error_t filter_err;
-  switch (params->operation_depth) {
-    case CV_8U:
-      filter_err = kleidicv_thread_separable_filter_2d_u8(
-          reinterpret_cast<const uint8_t *>(src_data), src_step,
-          reinterpret_cast<uint8_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height),
-          params->channels, params->kernel_x, params->kernel_width,
-          params->kernel_y, params->kernel_height, params->border_type,
-          filter_context, mt);
-      break;
-    case CV_16U:
-      filter_err = kleidicv_thread_separable_filter_2d_u16(
-          reinterpret_cast<const uint16_t *>(src_data), src_step,
-          reinterpret_cast<uint16_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height),
-          params->channels,
-          reinterpret_cast<const uint16_t *>(params->kernel_x),
-          params->kernel_width,
-          reinterpret_cast<const uint16_t *>(params->kernel_y),
-          params->kernel_height, params->border_type, filter_context, mt);
-      break;
-    case CV_16S:
-      filter_err = kleidicv_thread_separable_filter_2d_s16(
-          reinterpret_cast<const int16_t *>(src_data), src_step,
-          reinterpret_cast<int16_t *>(dst_data), dst_step,
-          static_cast<size_t>(width), static_cast<size_t>(height),
-          params->channels, reinterpret_cast<const int16_t *>(params->kernel_x),
-          params->kernel_width,
-          reinterpret_cast<const int16_t *>(params->kernel_y),
-          params->kernel_height, params->border_type, filter_context, mt);
-      break;
-    default:
-      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  kleidicv_error_t operation_err;
+  if (CV_MAT_DEPTH(src_type) == CV_8U) {
+    operation_err = kleidicv_thread_separable_filter_2d_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step, image_width,
+        image_height, channels, reinterpret_cast<const uint8_t *>(kernelx_data),
+        kernel_width, reinterpret_cast<const uint8_t *>(kernely_data),
+        kernel_height, kleidicv_border_type, context, mt);
+
+  } else if (CV_MAT_DEPTH(src_type) == CV_16U) {
+    operation_err = kleidicv_thread_separable_filter_2d_u16(
+        reinterpret_cast<const uint16_t *>(src_data), src_step,
+        reinterpret_cast<uint16_t *>(dst_data), dst_step, image_width,
+        image_height, channels,
+        reinterpret_cast<const uint16_t *>(kernelx_data), kernel_width,
+        reinterpret_cast<const uint16_t *>(kernely_data), kernel_height,
+        kleidicv_border_type, context, mt);
+
+  } else /* CV_MAT_DEPTH(src_type) == CV_16S */ {
+    operation_err = kleidicv_thread_separable_filter_2d_s16(
+        reinterpret_cast<const int16_t *>(src_data), src_step,
+        reinterpret_cast<int16_t *>(dst_data), dst_step, image_width,
+        image_height, channels, reinterpret_cast<const int16_t *>(kernelx_data),
+        kernel_width, reinterpret_cast<const int16_t *>(kernely_data),
+        kernel_height, kleidicv_border_type, context, mt);
   }
 
-  return convert_error(filter_err);
-}
+  (void)kleidicv_filter_context_release(context);
 
-int separable_filter_2d_free(cvhalFilter2D *context) {
-  if (!context) {
-    return CV_HAL_ERROR_UNKNOWN;
-  }
-
-  std::unique_ptr<SeparableFilter2DParams> params(
-      reinterpret_cast<SeparableFilter2DParams *>(context));
-  delete[] params->kernel_y;
-  delete[] params->kernel_x;
-
-  if (params->cached_filter_context) {
-    kleidicv_error_t release_err =
-        kleidicv_filter_context_release(params->cached_filter_context);
-    return convert_error(release_err);
-  }
-
-  return CV_HAL_ERROR_OK;
+  return convert_error(operation_err);
 }
 
 int gaussian_blur_binomial(const uchar *src_data, size_t src_step,

@@ -330,3 +330,22 @@ Notes on parameters:
 
 ### [`cv::buildOpticalFlowPyramid()`](https://docs.opencv.org/4.10.0/dc/d6b/group__video__track.html#ga86640c1c470f87b2660c096d2b22b2ce)
 Constructs an image pyramid which can be passed to `cv::calcOpticalFlowPyrLK`.
+
+### [`cv::sepFilter2D()`](https://docs.opencv.org/4.13.0/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d)
+Applies a separable filter to a given image.
+
+In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
+
+If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLATED` is OR-ed into `borderType`.
+
+Notes on parameters:
+* `src.depth()` - only supports `CV_8U`, `CV_16U` and `CV_16S`.
+* `src.type()`, `dst.type()`, `kernelX.type()` and `kernelY.type()` are must be the same.
+* `ddepth` must be `-1`.
+* `anchor` must be `(-1, -1)`.
+* `delta` must be `0.0`.
+* `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.13.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
+  + `cv::BORDER_REPLICATE`
+  + `cv::BORDER_REFLECT`
+  + `cv::BORDER_WRAP`
+  + `cv::BORDER_REFLECT_101`

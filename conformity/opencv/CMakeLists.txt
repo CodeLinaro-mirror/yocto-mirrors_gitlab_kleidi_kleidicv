@@ -18,7 +18,8 @@ string(REGEX REPLACE "\.[^\.]+$" "" OPENCV_PATCH_VERSION ${OPENCV_VERSION})
 # List of patch files to apply (add new patches here).
 set(OPENCV_PATCH_FILES
     "${CMAKE_CURRENT_LIST_DIR}/../../adapters/opencv/opencv-${OPENCV_PATCH_VERSION}.patch"
-    "${CMAKE_CURRENT_LIST_DIR}/opencv-${OPENCV_PATCH_VERSION}-gaussianblur.patch")
+    "${CMAKE_CURRENT_LIST_DIR}/opencv-${OPENCV_PATCH_VERSION}-gaussianblur.patch"
+    "${CMAKE_CURRENT_LIST_DIR}/opencv-${OPENCV_PATCH_VERSION}-fast-math-rounding.patch")
 
 # Check if a patch file has non-comment content.
 function(patch_has_content patch_file result_var)

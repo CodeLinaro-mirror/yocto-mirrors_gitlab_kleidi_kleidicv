@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -26,9 +26,7 @@ std::vector<test> all_tests = merge_tests({
     binary_op_tests_get,
     yuv42x_to_rgb_tests_get,
     morphology_tests_get,
-#if KLEIDICV_ENABLE_ALL_OPENCV_HAL
     separable_filter_2d_tests_get,
-#endif
     gaussian_blur_tests_get,
     rgb2yuv_tests_get,
     yuv2rgb_tests_get,
