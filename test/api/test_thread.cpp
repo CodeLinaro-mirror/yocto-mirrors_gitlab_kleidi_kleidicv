@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -603,11 +603,6 @@ TEST_P(Thread, separable_filter_2d_u16) {
                                       kleidicv_thread_separable_filter_2d_u16);
 }
 
-TEST_P(Thread, separable_filter_2d_s16) {
-  check_separable_filter_2d<int16_t>(kleidicv_separable_filter_2d_s16,
-                                     kleidicv_thread_separable_filter_2d_s16);
-}
-
 template <typename T, typename MultithreadedFunc>
 void check_separable_filter_2d_not_implemented(
     MultithreadedFunc multithreaded_func) {
@@ -646,8 +641,6 @@ void check_separable_filter_2d_not_implemented(
 TEST(ThreadSeparableFilter2D, NotImplemented) {
   check_separable_filter_2d_not_implemented<uint8_t>(
       kleidicv_thread_separable_filter_2d_u8);
-  check_separable_filter_2d_not_implemented<int16_t>(
-      kleidicv_thread_separable_filter_2d_s16);
   check_separable_filter_2d_not_implemented<uint16_t>(
       kleidicv_thread_separable_filter_2d_u16);
 }

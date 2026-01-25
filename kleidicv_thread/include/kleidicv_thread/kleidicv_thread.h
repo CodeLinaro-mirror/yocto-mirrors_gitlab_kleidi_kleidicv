@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -318,17 +318,6 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
     const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
-    kleidicv_thread_multithreading);
-
-/// Internal - not part of the public API and its direct use is not supported.
-///
-/// Multithreaded implementation of kleidicv_sobel_3x3_horizontal_s16_u8 - see
-/// the documentation of that function for more details.
-kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
-    const int16_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channels, const int16_t *kernel_x,
-    size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
     kleidicv_thread_multithreading);
 

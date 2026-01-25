@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -220,101 +220,6 @@ class SeparableFilter2D<uint16_t, 5> {
   SourceVectorType kernel_y_u16_[5];
 };  // end of class SeparableFilter2D<uint16_t, 5>
 
-template <>
-class SeparableFilter2D<int16_t, 5> {
- public:
-  using SourceType = int16_t;
-  using SourceVectorType = typename VecTraits<SourceType>::VectorType;
-  using BufferType = int32_t;
-  using BufferVectorType = typename VecTraits<BufferType>::VectorType;
-  using DestinationType = int16_t;
-
-  // Ignored because vectors are initialized in the constructor body.
-  // NOLINTNEXTLINE - hicpp-member-init
-  SeparableFilter2D(const SourceType *kernel_x, const SourceType *kernel_y)
-      : kernel_x_(kernel_x), kernel_y_(kernel_y) {
-    for (size_t i = 0; i < 5; i++) {
-      kernel_x_s32_[i] = vdupq_n_s32(kernel_x[i]);
-      kernel_y_s16_[i] = vdupq_n_s16(kernel_y[i]);
-    }
-  }
-
-  void vertical_vector_path(SourceVectorType src[5], BufferType *dst) const {
-    BufferVectorType acc_l =
-        vmull_s16(vget_low_s16(src[0]), vget_low_s16(kernel_y_s16_[0]));
-    BufferVectorType acc_h = vmull_high_s16(src[0], kernel_y_s16_[0]);
-
-    // Optimization to avoid unnecessary branching in vector code.
-    KLEIDICV_FORCE_LOOP_UNROLL
-    for (size_t i = 1; i < 5; i++) {
-      BufferVectorType vec_l =
-          vmull_s16(vget_low_s16(src[i]), vget_low_s16(kernel_y_s16_[i]));
-      BufferVectorType vec_h = vmull_high_s16(src[i], kernel_y_s16_[i]);
-
-      acc_l = vqaddq_s32(acc_l, vec_l);
-      acc_h = vqaddq_s32(acc_h, vec_h);
-    }
-
-    vst1q_s32(&dst[0], acc_l);
-    vst1q_s32(&dst[4], acc_h);
-  }
-
-  void vertical_scalar_path(const SourceType src[5], BufferType *dst) const {
-    BufferType acc = static_cast<BufferType>(src[0]) * kernel_y_[0];
-    for (size_t i = 1; i < 5; i++) {
-      BufferType temp = static_cast<BufferType>(src[i]) * kernel_y_[i];
-      if (__builtin_add_overflow(acc, temp, &acc)) {
-        dst[0] = std::numeric_limits<SourceType>::max();
-        return;
-      }
-    }
-
-    dst[0] = acc;
-  }
-
-  void horizontal_vector_path(BufferVectorType src[5],
-                              DestinationType *dst) const {
-    int64x2_t acc_l =
-        vmull_s32(vget_low_s32(src[0]), vget_low_s32(kernel_x_s32_[0]));
-    int64x2_t acc_h = vmull_high_s32(src[0], kernel_x_s32_[0]);
-
-    // Optimization to avoid unnecessary branching in vector code.
-    KLEIDICV_FORCE_LOOP_UNROLL
-    for (size_t i = 1; i < 5; i++) {
-      acc_l = vmlal_s32(acc_l, vget_low_s32(src[i]),
-                        vget_low_s32(kernel_x_s32_[i]));
-      acc_h = vmlal_high_s32(acc_h, src[i], kernel_x_s32_[i]);
-    }
-
-    int32x4_t acc_s32 = vcombine_s32(vqmovn_s64(acc_l), vqmovn_s64(acc_h));
-    int16x4_t result = vqmovn_s32(acc_s32);
-    vst1_s16(&dst[0], result);
-  }
-
-  void horizontal_scalar_path(const BufferType src[5],
-                              DestinationType *dst) const {
-    int64_t acc = static_cast<int64_t>(src[0]) * kernel_x_[0];
-    for (size_t i = 1; i < 5; i++) {
-      acc += static_cast<int64_t>(src[i]) * kernel_x_[i];
-    }
-
-    if (acc < std::numeric_limits<DestinationType>::min()) {
-      acc = std::numeric_limits<DestinationType>::min();
-    } else if (acc > std::numeric_limits<DestinationType>::max()) {
-      acc = std::numeric_limits<DestinationType>::max();
-    }
-
-    dst[0] = static_cast<DestinationType>(acc);
-  }
-
- private:
-  const SourceType *kernel_x_;
-  const SourceType *kernel_y_;
-
-  BufferVectorType kernel_x_s32_[5];
-  SourceVectorType kernel_y_s16_[5];
-};  // end of class SeparableFilter2D<int16_t, 5>
-
 template <typename T>
 static kleidicv_error_t separable_filter_2d_checks(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
@@ -384,6 +289,5 @@ kleidicv_error_t separable_filter_2d_stripe(
 
 KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
-KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
 
 }  // namespace kleidicv::neon

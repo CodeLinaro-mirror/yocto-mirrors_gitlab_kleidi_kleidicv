@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -574,33 +574,6 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
   auto callback = [=](size_t y_begin, size_t y_end,
                       kleidicv_filter_context_t *thread_context) {
     return kleidicv_separable_filter_2d_stripe_u16(
-        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_x, kernel_width, kernel_y, kernel_height,
-        *fixed_border_type, thread_context);
-  };
-  return kleidicv_thread_filter(callback, width, height, channels, kernel_width,
-                                kernel_height, context, mt);
-}
-
-kleidicv_error_t kleidicv_thread_separable_filter_2d_s16(
-    const int16_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
-    size_t width, size_t height, size_t channels, const int16_t *kernel_x,
-    size_t kernel_width, const int16_t *kernel_y, size_t kernel_height,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context,
-    kleidicv_thread_multithreading mt) {
-  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
-                                                    kernel_height)) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
-  if (!fixed_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  auto callback = [=](size_t y_begin, size_t y_end,
-                      kleidicv_filter_context_t *thread_context) {
-    return kleidicv_separable_filter_2d_stripe_s16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_x, kernel_width, kernel_y, kernel_height,
         *fixed_border_type, thread_context);

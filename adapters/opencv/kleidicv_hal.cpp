@@ -438,8 +438,7 @@ int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
   }
 
   int operation_depth = CV_MAT_DEPTH(src_type);
-  if (operation_depth != CV_8U && operation_depth != CV_16U &&
-      operation_depth != CV_16S) {
+  if (operation_depth != CV_8U && operation_depth != CV_16U) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -495,7 +494,7 @@ int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
         kernel_width, reinterpret_cast<const uint8_t *>(kernely_data),
         kernel_height, kleidicv_border_type, context, mt);
 
-  } else if (CV_MAT_DEPTH(src_type) == CV_16U) {
+  } else /* (CV_MAT_DEPTH(src_type) == CV_16U) */ {
     operation_err = kleidicv_thread_separable_filter_2d_u16(
         reinterpret_cast<const uint16_t *>(src_data), src_step,
         reinterpret_cast<uint16_t *>(dst_data), dst_step, image_width,
@@ -503,14 +502,6 @@ int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
         reinterpret_cast<const uint16_t *>(kernelx_data), kernel_width,
         reinterpret_cast<const uint16_t *>(kernely_data), kernel_height,
         kleidicv_border_type, context, mt);
-
-  } else /* CV_MAT_DEPTH(src_type) == CV_16S */ {
-    operation_err = kleidicv_thread_separable_filter_2d_s16(
-        reinterpret_cast<const int16_t *>(src_data), src_step,
-        reinterpret_cast<int16_t *>(dst_data), dst_step, image_width,
-        image_height, channels, reinterpret_cast<const int16_t *>(kernelx_data),
-        kernel_width, reinterpret_cast<const int16_t *>(kernely_data),
-        kernel_height, kleidicv_border_type, context, mt);
   }
 
   (void)kleidicv_filter_context_release(context);

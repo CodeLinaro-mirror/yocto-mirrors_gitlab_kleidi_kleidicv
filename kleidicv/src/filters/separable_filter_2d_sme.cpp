@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -32,6 +32,5 @@ separable_filter_2d_stripe(const T *src, size_t src_stride, T *dst,
 
 KLEIDICV_INSTANTIATE_TEMPLATE(uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(uint16_t);
-KLEIDICV_INSTANTIATE_TEMPLATE(int16_t);
 
 }  // namespace kleidicv::sme
