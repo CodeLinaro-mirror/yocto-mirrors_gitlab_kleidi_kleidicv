@@ -599,8 +599,9 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
                     int anchor_y, int cvborder_type,
                     const double border_value_f64[4], int iterations,
                     bool allow_submatrix, bool allow_in_place) {
-  // Some parameters are unused.
-  (void)allow_in_place;
+  if (allow_in_place) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
 
   if (src_type != dst_type) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -869,6 +870,10 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
 int medianBlur(const uchar *src_data, size_t src_step, uchar *dst_data,
                size_t dst_step, int width, int height, int depth, int cn,
                int ksize) {
+  if (src_data == dst_data) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
   auto mt = get_multithreading();
   if (depth == CV_8U) {
     return convert_error(kleidicv_thread_median_blur_u8(

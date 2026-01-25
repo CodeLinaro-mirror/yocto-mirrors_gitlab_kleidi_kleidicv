@@ -166,6 +166,8 @@ Notes on parameters:
 ### [`cv::dilate()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c)
 If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLATED` is OR-ed into `borderType`.
 
+In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
+
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
 * `src.rows` - image height must be greater than or equal to `kernel.rows - 1`
@@ -175,6 +177,8 @@ Notes on parameters:
 
 ### [`cv::erode()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaeb1e0c1033e3f6b891a25d0511362aeb)
 If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLATED` is OR-ed into `borderType`.
+
+In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
 
 Notes on parameters:
 * `src.depth()`,`dst.depth()`,`kernel.depth()` - only support `CV_8U` depth.
@@ -215,6 +219,8 @@ Notes on parameters:
 
 ### [`cv::medianBlur()`](https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#ga564869aa33e58769b4469101aac458f9)
 Applies median filter to a given image.
+
+In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
 
 Notes on parameters:
 * `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1` (e.g., `>= 4` for 5x5, `>= 14` for 15x15).
