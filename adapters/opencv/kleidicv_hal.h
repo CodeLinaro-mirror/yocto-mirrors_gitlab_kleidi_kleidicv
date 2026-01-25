@@ -91,21 +91,15 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
                   size_t kernel_height, double sigma_x, double sigma_y,
                   int border_type);
 
-int morphology_init(cvhalFilter2D **context, int operation, int src_type,
-                    int dst_type, int max_width, int max_height,
-                    int kernel_type, uchar *kernel_data, size_t kernel_step,
-                    int kernel_width, int kernel_height, int anchor_x,
-                    int anchor_y, int border_type, const double border_value[4],
-                    int iterations, bool allow_submatrix, bool allow_in_place);
-
-int morphology_operation(cvhalFilter2D *context, uchar *src_data,
-                         size_t src_step, uchar *dst_data, size_t dst_step,
-                         int width, int height, int src_full_width,
-                         int src_full_height, int src_roi_x, int src_roi_y,
-                         int dst_full_width, int dst_full_height, int dst_roi_x,
-                         int dst_roi_y);
-
-int morphology_free(cvhalFilter2D *context);
+int morphology(int operation, const uchar *src_data, size_t src_step,
+               int src_type, uchar *dst_data, size_t dst_step, int dst_type,
+               int width, int height, int src_full_width, int src_full_height,
+               int src_roi_x, int src_roi_y, int dst_full_width,
+               int dst_full_height, int dst_roi_x, int dst_roi_y,
+               const uchar *kernel_data, size_t kernel_step, int kernel_type,
+               int kernel_width, int kernel_height, int anchor_x, int anchor_y,
+               int borderType, const double borderValue[4], int iterations,
+               bool allowSubmatrix, bool allowInplace);
 
 int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int dst_width,
@@ -338,23 +332,26 @@ static inline int kleidicv_gaussian_blur_with_fallback(
 #undef cv_hal_gaussianBlur
 #define cv_hal_gaussianBlur kleidicv_gaussian_blur_with_fallback
 
-// morphology_init
-// no fallback, because it cannot be made sure that morphology_operation also
-// uses the fallback
-#undef cv_hal_morphInit
-#define cv_hal_morphInit kleidicv::hal::morphology_init
-
-// morphology_operation
-// no fallback, because it cannot be made sure that morphology_init also uses
-// the fallback
-#undef cv_hal_morph
-#define cv_hal_morph kleidicv::hal::morphology_operation
-
-// morphology_free
-// no fallback, because it cannot be made sure that morphology_init also uses
-// the fallback
-#undef cv_hal_morphFree
-#define cv_hal_morphFree kleidicv::hal::morphology_free
+// morphology
+static inline int kleidicv_morphology_with_fallback(
+    int operation, const uchar *src_data, size_t src_step, int src_type,
+    uchar *dst_data, size_t dst_step, int dst_type, int width, int height,
+    int src_full_width, int src_full_height, int src_roi_x, int src_roi_y,
+    int dst_full_width, int dst_full_height, int dst_roi_x, int dst_roi_y,
+    const uchar *kernel_data, size_t kernel_step, int kernel_type,
+    int kernel_width, int kernel_height, int anchor_x, int anchor_y,
+    int borderType, const double borderValue[4], int iterations,
+    bool allowSubmatrix, bool allowInplace) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      morphology, cv_hal_morph_stateless, operation, src_data, src_step,
+      src_type, dst_data, dst_step, dst_type, width, height, src_full_width,
+      src_full_height, src_roi_x, src_roi_y, dst_full_width, dst_full_height,
+      dst_roi_x, dst_roi_y, kernel_data, kernel_step, kernel_type, kernel_width,
+      kernel_height, anchor_x, anchor_y, borderType, borderValue, iterations,
+      allowSubmatrix, allowInplace);
+}
+#undef cv_hal_morph_stateless
+#define cv_hal_morph_stateless kleidicv_morphology_with_fallback
 
 // resize
 static inline int kleidicv_resize_with_fallback(

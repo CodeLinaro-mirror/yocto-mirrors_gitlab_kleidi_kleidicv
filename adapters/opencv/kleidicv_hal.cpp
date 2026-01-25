@@ -587,19 +587,16 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
       get_multithreading()));
 }
 
-struct MorphologyParams {
-  kleidicv_morphology_context_t *context;
-  decltype(kleidicv_dilate_u8) impl;
-};
-
-int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
-                    int dst_type, int max_width, int max_height,
-                    int kernel_type, uchar *kernel_data, size_t kernel_step,
-                    int kernel_width, int kernel_height, int anchor_x,
-                    int anchor_y, int cvborder_type,
-                    const double border_value_f64[4], int iterations,
-                    bool allow_submatrix, bool allow_in_place) {
-  if (allow_in_place) {
+int morphology(int operation, const uchar *src_data, size_t src_step,
+               int src_type, uchar *dst_data, size_t dst_step, int dst_type,
+               int width, int height, int src_full_width, int src_full_height,
+               int src_roi_x, int src_roi_y, int dst_full_width,
+               int dst_full_height, int dst_roi_x, int dst_roi_y,
+               const uchar *kernel_data, size_t kernel_step, int kernel_type,
+               int kernel_width, int kernel_height, int anchor_x, int anchor_y,
+               int cvborder_type, const double border_value_f64[4],
+               int iterations, bool allowSubmatrix, bool allowInplace) {
+  if (allowInplace) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -611,10 +608,23 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (allow_submatrix) {
+  if ((operation != CV_HAL_MORPH_DILATE) && (operation != CV_HAL_MORPH_ERODE)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (allowSubmatrix) {
     // If the input is a submatrix the operation is rejected
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
+  // Parameters associated with submatrix input
+  (void)src_full_width;
+  (void)src_full_height;
+  (void)src_roi_x;
+  (void)src_roi_y;
+  (void)dst_full_width;
+  (void)dst_full_height;
+  (void)dst_roi_x;
+  (void)dst_roi_y;
 
   kleidicv_border_type_t border_type;
   if (from_opencv(cvborder_type, border_type)) {
@@ -641,8 +651,8 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
     case CV_8U: {
       size_t nonzero_count = 0;
       if (kleidicv_error_t err = kleidicv_count_nonzeros_u8(
-              static_cast<uint8_t *>(kernel_data), kernel_step, kernel_width_sz,
-              kernel_height_sz, &nonzero_count)) {
+              static_cast<const uint8_t *>(kernel_data), kernel_step,
+              kernel_width_sz, kernel_height_sz, &nonzero_count)) {
         return convert_error(err);
       }
       if (nonzero_count != kernel_area) {
@@ -654,13 +664,7 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
       return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  // Use std::unique_ptr<T> to make error returns safer.
-  auto params = std::make_unique<MorphologyParams>();
-  if (!params) {
-    return CV_HAL_ERROR_UNKNOWN;
-  }
-
-  size_t channels = (src_type >> CV_CN_SHIFT) + 1;
+  size_t channels = static_cast<size_t>(CV_MAT_CN(src_type));
   size_t type_size = get_type_size(CV_MAT_DEPTH(src_type));
   if (SIZE_MAX == type_size) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
@@ -680,62 +684,35 @@ int morphology_init(cvhalFilter2D **cvcontext, int operation, int src_type,
     }
   }
 
-  switch (operation) {
-    case CV_HAL_MORPH_DILATE:
-      params->impl = kleidicv_dilate_u8;
-      break;
-    case CV_HAL_MORPH_ERODE:
-      params->impl = kleidicv_erode_u8;
-      break;
-    default:
-      return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
+  kleidicv_morphology_context_t *context = nullptr;
   if (kleidicv_error_t err = kleidicv_morphology_create(
-          &params->context,
+          &context,
           kleidicv_rectangle_t{static_cast<size_t>(kernel_width),
                                static_cast<size_t>(kernel_height)},
           kleidicv_point_t{static_cast<size_t>(anchor_x),
                            static_cast<size_t>(anchor_y)},
           border_type, border_value.data(), channels, iterations, type_size,
-          kleidicv_rectangle_t{static_cast<size_t>(max_width),
-                               static_cast<size_t>(max_height)})) {
+          kleidicv_rectangle_t{static_cast<size_t>(width),
+                               static_cast<size_t>(height)})) {
     return convert_error(err);
   }
 
-  *cvcontext = reinterpret_cast<cvhalFilter2D *>(params.release());
-  return CV_HAL_ERROR_OK;
-}
+  kleidicv_error_t operation_err;
+  if (operation == CV_HAL_MORPH_DILATE) {
+    operation_err = kleidicv_dilate_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step,
+        static_cast<size_t>(width), static_cast<size_t>(height), context);
+  } else /* operation == CV_HAL_MORPH_ERODE */ {
+    operation_err = kleidicv_erode_u8(
+        reinterpret_cast<const uint8_t *>(src_data), src_step,
+        reinterpret_cast<uint8_t *>(dst_data), dst_step,
+        static_cast<size_t>(width), static_cast<size_t>(height), context);
+  }
 
-int morphology_operation(cvhalFilter2D *cvcontext, uchar *src_data,
-                         size_t src_step, uchar *dst_data, size_t dst_step,
-                         int width, int height, int src_full_width,
-                         int src_full_height, int src_roi_x, int src_roi_y,
-                         int dst_full_width, int dst_full_height, int dst_roi_x,
-                         int dst_roi_y) {
-  // The init function returned with NOT_IMPLEMENTED for submatrix inputs, so
-  // these parameters are not needed.
-  (void)src_full_width;
-  (void)src_full_height;
-  (void)src_roi_x;
-  (void)src_roi_y;
-  (void)dst_full_width;
-  (void)dst_full_height;
-  (void)dst_roi_x;
-  (void)dst_roi_y;
+  (void)kleidicv_morphology_release(context);
 
-  auto params = reinterpret_cast<MorphologyParams *>(cvcontext);
-  return convert_error(
-      params->impl(reinterpret_cast<const uint8_t *>(src_data), src_step,
-                   reinterpret_cast<uint8_t *>(dst_data), dst_step,
-                   static_cast<size_t>(width), static_cast<size_t>(height),
-                   params->context));
-}
-
-int morphology_free(cvhalFilter2D *cvcontext) {
-  std::unique_ptr<MorphologyParams> params(
-      reinterpret_cast<MorphologyParams *>(cvcontext));
-  return convert_error(kleidicv_morphology_release(params->context));
+  return convert_error(operation_err);
 }
 
 int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
