@@ -417,7 +417,8 @@ int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
 
   if (margin_left != 0 || margin_top != 0 || margin_right != 0 ||
       margin_bottom != 0) {
-    // If the input is a submatrix the operation is rejected
+    // Reject the operation if the input is a submatrix and the BORDER_ISOLATED
+    // flag is not OR-ed to the border type.
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -563,7 +564,8 @@ int gaussian_blur(const uchar *src_data, size_t src_step, uchar *dst_data,
 
   if (margin_left != 0 || margin_top != 0 || margin_right != 0 ||
       margin_bottom != 0) {
-    // If the input is a submatrix the operation is rejected
+    // Reject the operation if the input is a submatrix and the BORDER_ISOLATED
+    // flag is not OR-ed to the border type.
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -613,7 +615,8 @@ int morphology(int operation, const uchar *src_data, size_t src_step,
   }
 
   if (allowSubmatrix) {
-    // If the input is a submatrix the operation is rejected
+    // Reject the operation if the input is a submatrix and the BORDER_ISOLATED
+    // flag is not OR-ed to the border type.
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
   // Parameters associated with submatrix input
@@ -823,7 +826,8 @@ int sobel(const uchar *src_data, size_t src_step, uchar *dst_data,
   }
 
   if (margin_left || margin_top || margin_right || margin_bottom) {
-    // If the input is a submatrix the operation is rejected
+    // Reject the operation if the input is a submatrix and the BORDER_ISOLATED
+    // flag is not OR-ed to the border type.
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
