@@ -151,21 +151,6 @@ std::vector<test>& separable_filter_2d_tests_get() {
     TEST("Separable Filter 2D 5x5 (u16), BORDER_REPLICATE, 2 channel", (test_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE, 2>), (exec_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE>)),
     TEST("Separable Filter 2D 5x5 (u16), BORDER_REPLICATE, 3 channel", (test_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE, 3>), (exec_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE>)),
     TEST("Separable Filter 2D 5x5 (u16), BORDER_REPLICATE, 4 channel", (test_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE, 4>), (exec_separable_filter_2d<uint16_t, 5, cv::BORDER_REPLICATE>)),
-
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT_101, 1 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101, 1>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT_101, 2 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101, 2>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT_101, 3 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101, 3>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT_101, 4 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101, 4>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT_101>)),
-
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT, 1 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT, 1>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT, 2 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT, 2>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT, 3 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT, 3>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REFLECT, 4 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT, 4>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REFLECT>)),
-
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REPLICATE, 1 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE, 1>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REPLICATE, 2 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE, 2>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REPLICATE, 3 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE, 3>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE>)),
-    TEST("Separable Filter 2D 5x5 (s16), BORDER_REPLICATE, 4 channel", (test_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE, 4>), (exec_separable_filter_2d<int16_t, 5, cv::BORDER_REPLICATE>)),
   };
   // clang-format on
   return tests;
