@@ -370,6 +370,7 @@ TEST_P(Thread, gaussian_blur_fixed_u8) {
   std::tie(width, height, thread_count) = GetParam();
   (void)thread_count;
   check_gaussian_blur_u8(5);
+  check_gaussian_blur_u8(9);
 }
 
 TEST_P(Thread, gaussian_blur_arbitrary_u8) {
