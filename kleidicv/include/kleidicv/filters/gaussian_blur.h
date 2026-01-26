@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -63,7 +63,7 @@ inline bool gaussian_blur_is_implemented(
     return false;
   }
 
-  if (kernel_width > 7 && kernel_width != 15 && kernel_width != 21) {
+  if (kernel_width > 9 && kernel_width != 15 && kernel_width != 21) {
     if (border_type != FixedBorderType::REPLICATE) {
       return false;
     }

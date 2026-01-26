@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -626,13 +626,6 @@ int gaussian_blur_binomial(const uchar *src_data, size_t src_step,
 
   kleidicv_border_type_t kleidicv_border_type;
   if (from_opencv(border_type, kleidicv_border_type)) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  // KleidiCV does not have a special 9x9 implementation for GaussianBlur if
-  // sigma is not specified and the implementation for arbitrary kernel size
-  // does not match the accuracy expectations of OpenCV.
-  if (kernel_size == 9) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -221,6 +221,25 @@ TYPED_TEST(GaussianBlur, 7x7) {
   GaussianBlurTest{KernelTestParams{}}.test(mask);
 }
 
+// Tests gaussian_blur_9x9_<input_type> API.
+TYPED_TEST(GaussianBlur, 9x9) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 9>;
+  // 9x9 GaussianBlur operator.
+  test::Array2D<typename KernelTestParams::IntermediateType> mask{9, 9};
+  // clang-format off
+  mask.set(0, 0, {  16,  52, 120, 204, 240, 204, 120,  52,  16 });
+  mask.set(1, 0, {  52, 169, 390, 663, 780, 663, 390, 169,  52 });
+  mask.set(2, 0, { 120, 390, 900, 1530, 1800, 1530, 900, 390, 120 });
+  mask.set(3, 0, { 204, 663, 1530, 2601, 3060, 2601, 1530, 663, 204 });
+  mask.set(4, 0, { 240, 780, 1800, 3060, 3600, 3060, 1800, 780, 240 });
+  mask.set(5, 0, { 204, 663, 1530, 2601, 3060, 2601, 1530, 663, 204 });
+  mask.set(6, 0, { 120, 390, 900, 1530, 1800, 1530, 900, 390, 120 });
+  mask.set(7, 0, {  52, 169, 390, 663, 780, 663, 390, 169,  52 });
+  mask.set(8, 0, {  16,  52, 120, 204, 240, 204, 120,  52,  16 });
+  // clang-format on
+  GaussianBlurTest{KernelTestParams{}}.test(mask);
+}
+
 const auto minimal_array_layouts_for_fixed = [](size_t min_w, size_t min_h) {
   // Number of 16-bit elements in a SIMD vector (maximum border length)
   size_t margin = min_w / 2;
@@ -257,7 +276,7 @@ const auto minimal_array_layouts_for_arbitrary = [](size_t min_w,
 };
 
 size_t minimumValidWidth(size_t kernel_size, size_t vector_length) {
-  if (kernel_size <= 7 || kernel_size == 15 || kernel_size == 21) {
+  if (kernel_size <= 9 || kernel_size == 15 || kernel_size == 21) {
     return kernel_size - 1;
   }
   size_t margin = kernel_size / 2;
@@ -292,6 +311,18 @@ TYPED_TEST(GaussianBlur, 5x5_CustomSigma) {
 
 TYPED_TEST(GaussianBlur, 7x7_CustomSigma) {
   using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 7>;
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
+                   kAllBorders, kToleranceOne}
+      .with_sigma(2.2)
+      .test_with_generated_mask();
+  GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
+                   kAllBorders, kToleranceOne}
+      .with_sigma(0.01)
+      .test_with_generated_mask();
+}
+
+TYPED_TEST(GaussianBlur, 9x9_CustomSigma) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 9>;
   GaussianBlurTest{KernelTestParams{}, minimal_array_layouts_for_fixed,
                    kAllBorders, kToleranceOne}
       .with_sigma(2.2)
@@ -404,6 +435,25 @@ TYPED_TEST(GaussianBlur, UnsupportedBorderType7x7) {
               gaussian_blur<TypeParam>()(src, sizeof(TypeParam), dst,
                                          sizeof(TypeParam), validSize,
                                          validSize, 1, 7, 7, 0.0, 0.0, border));
+  }
+}
+
+TYPED_TEST(GaussianBlur, UnsupportedBorderType9x9) {
+  using KernelTestParams = GaussianBlurKernelTestParams<TypeParam, 9>;
+
+  size_t validSize = minimumValidWidth(KernelTestParams::kKernelSize,
+                                       test::Options::vector_length());
+
+  TypeParam src[1] = {}, dst[1];
+  for (kleidicv_border_type_t border : {
+           KLEIDICV_BORDER_TYPE_CONSTANT,
+           KLEIDICV_BORDER_TYPE_TRANSPARENT,
+           KLEIDICV_BORDER_TYPE_NONE,
+       }) {
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              gaussian_blur<TypeParam>()(src, sizeof(TypeParam), dst,
+                                         sizeof(TypeParam), validSize,
+                                         validSize, 1, 9, 9, 0.0, 0.0, border));
   }
 }
 
