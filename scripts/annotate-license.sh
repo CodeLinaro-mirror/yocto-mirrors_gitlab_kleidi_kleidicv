@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -58,7 +58,7 @@ EXIT_CODE="${?}"
 
 # Notify user if there were changes made to staging files
 for file in $(git diff --name-only); do
-    if ! echo "${UNSTAGED}" | grep -q "\b${file}\b"; then
+    if ! echo "${UNSTAGED}" | grep -Fxq -- "$file"; then
         echo -e "${GREEN}Please stage ${file} for the commit${NC}"
         EXIT_CODE=$((EXIT_CODE | 2))
     fi
