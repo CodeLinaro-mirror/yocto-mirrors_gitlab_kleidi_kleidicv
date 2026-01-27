@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <cassert>
+
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/resize/resize_linear.h"
@@ -21,10 +23,22 @@ KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_2x2_stripe_u8,
                           kleidicv_resize_2x2_stripe_u8);
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_4x4_stripe_u8,
                           kleidicv_resize_4x4_stripe_u8);
-KLEIDICV_DEFINE_C_API_NEON(kleidicv_resize_r2_u8,
-                           kleidicv_resize_generic_stripe_u8<2>);
-KLEIDICV_DEFINE_C_API_NEON(kleidicv_resize_r3_u8,
-                           kleidicv_resize_generic_stripe_u8<3>);
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_resize_1ch_r2_stripe_u8,
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 1>), nullptr,
+    nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_resize_2ch_r2_stripe_u8,
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 2>), nullptr,
+    nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_resize_1ch_r3_stripe_u8,
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 1>), nullptr,
+    nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API(
+    kleidicv_resize_2ch_r3_stripe_u8,
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 2>), nullptr,
+    nullptr, nullptr);
 
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_linear_stripe_f32,
                           kleidicv_resize_linear_stripe_f32);
@@ -41,9 +55,9 @@ kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
                                            size_t src_stride, size_t src_width,
                                            size_t src_height, uint8_t *dst,
                                            size_t dst_stride, size_t dst_width,
-                                           size_t dst_height) {
-  if (!kleidicv::resize_linear_u8_is_implemented(src_width, src_height,
-                                                 dst_width, dst_height)) {
+                                           size_t dst_height, size_t channels) {
+  if (!kleidicv::resize_linear_u8_is_implemented(
+          src_width, src_height, dst_width, dst_height, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -53,62 +67,76 @@ kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
 
   return kleidicv_resize_linear_stripe_u8(src, src_stride, src_width,
                                           src_height, 0, y_end, dst, dst_stride,
-                                          dst_width, dst_height);
+                                          dst_width, dst_height, channels);
 }
 
+// This function is too complex, but disable the warning for now.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 kleidicv_error_t kleidicv_resize_linear_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
-    size_t dst_width, size_t dst_height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-  CHECK_IMAGE_SIZE(dst_width, dst_height);
-
+    size_t dst_width, size_t dst_height, size_t channels) {
   if (src_width == 0 || src_height == 0) {
     return KLEIDICV_OK;
   }
 
-  if ((src_width / 2 == dst_width || (src_width + 1) / 2 == dst_width) &&
-      (src_height / 2 == dst_height || (src_height + 1) / 2 == dst_height)) {
-    size_t src_begin = y_begin * 2;
-    size_t src_end = std::min<size_t>(src_height, y_end * 2);
-    size_t dst_begin = y_begin;
-    size_t dst_end = std::min<size_t>(dst_height, y_end);
+  if (channels == 1) {
+    if ((src_width / 2 == dst_width || (src_width + 1) / 2 == dst_width) &&
+        (src_height / 2 == dst_height || (src_height + 1) / 2 == dst_height)) {
+      size_t src_begin = y_begin * 2;
+      size_t src_end = std::min<size_t>(src_height, y_end * 2);
+      size_t dst_begin = y_begin;
+      size_t dst_end = std::min<size_t>(dst_height, y_end);
 
-    if (dst_begin == dst_end) {
-      return KLEIDICV_OK;
+      if (dst_begin == dst_end) {
+        return KLEIDICV_OK;
+      }
+
+      return kleidicv_resize_to_quarter_u8(
+          src + src_begin * src_stride, src_stride, src_width,
+          src_end - src_begin, dst + dst_begin * dst_stride, dst_stride,
+          dst_width, dst_end - dst_begin);
+    }
+    if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
+      return kleidicv_resize_2x2_stripe_u8(src, src_stride, src_width,
+                                           src_height, y_begin, y_end, dst,
+                                           dst_stride);
+    }
+    if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
+      return kleidicv_resize_4x4_stripe_u8(src, src_stride, src_width,
+                                           src_height, y_begin, y_end, dst,
+                                           dst_stride);
     }
 
-    return kleidicv_resize_to_quarter_u8(
-        src + src_begin * src_stride, src_stride, src_width,
-        src_end - src_begin, dst + dst_begin * dst_stride, dst_stride,
-        dst_width, dst_end - dst_begin);
-  }
-  if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
-    return kleidicv_resize_2x2_stripe_u8(src, src_stride, src_width, src_height,
-                                         y_begin, y_end, dst, dst_stride);
-  }
-  if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
-    return kleidicv_resize_4x4_stripe_u8(src, src_stride, src_width, src_height,
-                                         y_begin, y_end, dst, dst_stride);
+    if (dst_width * 2 >= src_width) {
+      return kleidicv_resize_1ch_r2_stripe_u8(
+          src, src_stride, src_width, src_height, y_begin, y_end, dst,
+          dst_stride, dst_width, dst_height);
+    }
+    return kleidicv_resize_1ch_r3_stripe_u8(src, src_stride, src_width,
+                                            src_height, y_begin, y_end, dst,
+                                            dst_stride, dst_width, dst_height);
   }
 
+  assert(channels == 2);
   if (dst_width * 2 >= src_width) {
-    return kleidicv_resize_r2_u8(src, src_stride, src_width, src_height,
-                                 y_begin, y_end, dst, dst_stride, dst_width,
-                                 dst_height);
+    return kleidicv_resize_2ch_r2_stripe_u8(src, src_stride, src_width,
+                                            src_height, y_begin, y_end, dst,
+                                            dst_stride, dst_width, dst_height);
   }
-  return kleidicv_resize_r3_u8(src, src_stride, src_width, src_height, y_begin,
-                               y_end, dst, dst_stride, dst_width, dst_height);
+  return kleidicv_resize_2ch_r3_stripe_u8(src, src_stride, src_width,
+                                          src_height, y_begin, y_end, dst,
+                                          dst_stride, dst_width, dst_height);
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
                                             size_t src_width, size_t src_height,
                                             float *dst, size_t dst_stride,
-                                            size_t dst_width,
-                                            size_t dst_height) {
-  if (!kleidicv::resize_linear_f32_is_implemented(src_width, src_height,
-                                                  dst_width, dst_height)) {
+                                            size_t dst_width, size_t dst_height,
+                                            size_t channels) {
+  if (!kleidicv::resize_linear_f32_is_implemented(
+          src_width, src_height, dst_width, dst_height, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
   return kleidicv_resize_linear_stripe_f32(src, src_stride, src_width,

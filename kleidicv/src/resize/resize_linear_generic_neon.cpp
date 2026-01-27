@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,7 +12,7 @@
 namespace kleidicv::neon {
 
 //------------------------------------------------------
-/// Generic resize for ratios 1/3 to 1/1, u8, 1channel
+/// Generic resize for ratios 1/3 to 1/1, u8
 //------------------------------------------------------
 
 // For the coordinate calculation, fixed-point format is used, for better
@@ -28,8 +28,8 @@ namespace kleidicv::neon {
 //   is 1 << 15
 
 // ratio: number of vectors to load and resize to 1 vector
-// - supported values: 2, 3
-template <ptrdiff_t kRatio>
+// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
+template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 class ResizeGenericU8Operation final {
  public:
   ResizeGenericU8Operation(const uint8_t *src, size_t src_stride,
@@ -344,26 +344,29 @@ class ResizeGenericU8Operation final {
 };
 
 // ratio: number of vectors to load and resize to 1 vector
-// - supported values: 2, 3
-template <ptrdiff_t kRatio>
+// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
+template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end,
     uint8_t *dst,  // NOLINT
     size_t dst_stride, size_t dst_width, size_t dst_height) {
-  ResizeGenericU8Operation<kRatio> operation(src, src_stride, src_width,
-                                             src_height, y_begin, y_end, dst,
-                                             dst_stride, dst_width, dst_height);
+  ResizeGenericU8Operation<kRatio, kChannels> operation(
+      src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
+      dst_width, dst_height);
   return operation.process_rows();
 }
 
-#define KLEIDICV_INSTANTIATE_TEMPLATE(ratio)                          \
-  template kleidicv_error_t kleidicv_resize_generic_stripe_u8<ratio>( \
-      const uint8_t *src, size_t src_stride, size_t src_width,        \
-      size_t src_height, size_t y_begin, size_t y_end, uint8_t *dst,  \
+#define KLEIDICV_INSTANTIATE_TEMPLATE(ratio, channels)               \
+  template kleidicv_error_t                                          \
+  kleidicv_resize_generic_stripe_u8<ratio, channels>(                \
+      const uint8_t *src, size_t src_stride, size_t src_width,       \
+      size_t src_height, size_t y_begin, size_t y_end, uint8_t *dst, \
       size_t dst_stride, size_t dst_width, size_t dst_height)
 
-KLEIDICV_INSTANTIATE_TEMPLATE(2L);
-KLEIDICV_INSTANTIATE_TEMPLATE(3L);
+KLEIDICV_INSTANTIATE_TEMPLATE(2L, 1L);
+KLEIDICV_INSTANTIATE_TEMPLATE(2L, 2L);  // Without functionality
+KLEIDICV_INSTANTIATE_TEMPLATE(3L, 1L);
+KLEIDICV_INSTANTIATE_TEMPLATE(3L, 2L);  // Without functionality
 
 }  // namespace kleidicv::neon

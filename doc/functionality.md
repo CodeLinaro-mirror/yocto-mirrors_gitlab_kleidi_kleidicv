@@ -101,12 +101,12 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Median Blur (generic imp, max size 255x255)       |     |  x  |     |     |     |     |     |
 
 ## Resize with linear interpolation
-|                   | u8  | f32 |
-|-------------------|-----|-----|
-| 2x2               |  x  |  x  |
-| 4x4               |  x  |  x  |
-| 8x8               |     |  x  |
-| Downsize 1/3 to 1 |  x  |     |
+|                                     | u8  | f32 |
+|-------------------------------------|-----|-----|
+| 2x2 (1 channel)                     |  x  |  x  |
+| 4x4 (1 channel)                     |  x  |  x  |
+| 8x8 (1 channel)                     |     |  x  |
+| Downsize 1/3 to 1 (1 or 2 channels) |  x  |     |
 
 > ℹ️ **For the linear downsize, width ratio is limited to 0.33 - 1.0, but height ratio can be anything between 0.0 and 1.0.**
 
