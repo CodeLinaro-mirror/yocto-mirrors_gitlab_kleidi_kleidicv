@@ -414,7 +414,7 @@ kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(
 kleidicv_error_t kleidicv_thread_resize_linear_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
-    kleidicv_thread_multithreading);
+    size_t channels, kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
@@ -423,7 +423,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
 kleidicv_error_t kleidicv_thread_resize_linear_f32(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     float *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
-    kleidicv_thread_multithreading);
+    size_t channels, kleidicv_thread_multithreading);
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///

@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <thread>
+#include <type_traits>
 
 #include "framework/array.h"
 #include "framework/generator.h"
@@ -13,68 +14,69 @@
 #include "kleidicv_thread/kleidicv_thread.h"
 #include "multithreading_fake.h"
 
-// Tuple of width, height, thread count.
-typedef std::tuple<size_t, size_t, size_t> P;
+// Tuple of width, height, thread count, channel count.
+typedef std::tuple<size_t, size_t, size_t, size_t> P;
 
 class ResizeThread : public testing::TestWithParam<P> {
  public:
   void test_resize_to_quarter() {
-    size_t src_width = 0, src_height = 0, thread_count = 0;
-    std::tie(src_width, src_height, thread_count) = GetParam();
+    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(src_width, src_height, thread_count, channels) = GetParam();
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, src_width, src_height, src_width / 2,
+                   thread_count, src_width, src_height, 1, src_width / 2,
                    src_height / 2);
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, src_width, src_height, (src_width + 1) / 2,
+                   thread_count, src_width, src_height, 1, (src_width + 1) / 2,
                    (src_height + 1) / 2);
   }
   void test_resize_u8_2x2() {
-    size_t src_width = 0, src_height = 0, thread_count = 0;
-    std::tie(src_width, src_height, thread_count) = GetParam();
+    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(src_width, src_height, thread_count, channels) = GetParam();
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, src_width, src_height, 2 * src_width,
+                   thread_count, src_width, src_height, 1, 2 * src_width,
                    2 * src_height);
   }
   void test_resize_u8_4x4() {
-    size_t src_width = 0, src_height = 0, thread_count = 0;
-    std::tie(src_width, src_height, thread_count) = GetParam();
+    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(src_width, src_height, thread_count, channels) = GetParam();
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, src_width, src_height, 4 * src_width,
+                   thread_count, src_width, src_height, 1, 4 * src_width,
                    4 * src_height);
   }
   void test_resize_u8_down2() {
-    size_t width = 0, height = 0, thread_count = 0;
-    std::tie(width, height, thread_count) = GetParam();
+    size_t width = 0, height = 0, thread_count = 0, channels = 0;
+    std::tie(width, height, thread_count, channels) = GetParam();
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, 16 * width, 3 * height, 9 * width, 2 * height);
+                   thread_count, 16 * width, 3 * height, channels, 9 * width,
+                   2 * height);
   }
   void test_resize_u8_down3() {
-    size_t width = 0, height = 0, thread_count = 0;
-    std::tie(width, height, thread_count) = GetParam();
+    size_t width = 0, height = 0, thread_count = 0, channels = 0;
+    std::tie(width, height, thread_count, channels) = GetParam();
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, 32 * width, 3 * height, 13 * width,
+                   thread_count, 32 * width, 3 * height, channels, 13 * width,
                    2 * height);
   }
 
   void test_resize_f32_2x2() {
-    size_t src_width = 0, src_height = 0, thread_count = 0;
-    std::tie(src_width, src_height, thread_count) = GetParam();
+    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(src_width, src_height, thread_count, channels) = GetParam();
     check<float>(kleidicv_resize_linear_f32, kleidicv_thread_resize_linear_f32,
-                 thread_count, src_width, src_height, 2 * src_width,
+                 thread_count, src_width, src_height, 1, 2 * src_width,
                  2 * src_height);
   }
   void test_resize_f32_4x4() {
-    size_t src_width = 0, src_height = 0, thread_count = 0;
-    std::tie(src_width, src_height, thread_count) = GetParam();
+    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(src_width, src_height, thread_count, channels) = GetParam();
     check<float>(kleidicv_resize_linear_f32, kleidicv_thread_resize_linear_f32,
-                 thread_count, src_width, src_height, 4 * src_width,
+                 thread_count, src_width, src_height, 1, 4 * src_width,
                  4 * src_height);
   }
   void test_resize_f32_8x8() {
-    size_t src_width = 0, src_height = 0, thread_count = 0;
-    std::tie(src_width, src_height, thread_count) = GetParam();
+    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(src_width, src_height, thread_count, channels) = GetParam();
     check<float>(kleidicv_resize_linear_f32, kleidicv_thread_resize_linear_f32,
-                 thread_count, src_width, src_height, 8 * src_width,
+                 thread_count, src_width, src_height, 1, 8 * src_width,
                  8 * src_height);
   }
 
@@ -83,24 +85,25 @@ class ResizeThread : public testing::TestWithParam<P> {
             typename MultithreadedFunc>
   static void check(SingleThreadedFunc single_threaded_func,
                     MultithreadedFunc multithreaded_func, size_t thread_count,
-                    size_t src_width, size_t src_height, size_t dst_width,
+                    size_t src_width, size_t src_height,
+                    [[maybe_unused]] size_t channels, size_t dst_width,
                     size_t dst_height) {
-    test::Array2D<ScalarType> src(src_width, src_height),
-        dst_single(dst_width, dst_height), dst_multi(dst_width, dst_height);
+    test::Array2D<ScalarType> src(src_width * channels, src_height),
+        dst_single(dst_width * channels, dst_height),
+        dst_multi(dst_width * channels, dst_height);
     test::PseudoRandomNumberGenerator<ScalarType> generator;
     src.fill(generator);
 
-    kleidicv_error_t single_result = single_threaded_func(
-        src.data(), src.stride(), src_width, src_height, dst_single.data(),
-        dst_single.stride(), dst_width, dst_height);
+    EXPECT_EQ(KLEIDICV_OK, single_threaded_func(
+                               src.data(), src.stride(), src_width, src_height,
+                               dst_single.data(), dst_single.stride(),
+                               dst_width, dst_height, channels));
+    EXPECT_EQ(KLEIDICV_OK,
+              multithreaded_func(
+                  src.data(), src.stride(), src_width, src_height,
+                  dst_multi.data(), dst_multi.stride(), dst_width, dst_height,
+                  channels, get_multithreading_fake(thread_count)));
 
-    kleidicv_error_t multi_result =
-        multithreaded_func(src.data(), src.stride(), src_width, src_height,
-                           dst_multi.data(), dst_multi.stride(), dst_width,
-                           dst_height, get_multithreading_fake(thread_count));
-
-    EXPECT_EQ(KLEIDICV_OK, single_result);
-    EXPECT_EQ(KLEIDICV_OK, multi_result);
     EXPECT_EQ_ARRAY2D(dst_single, dst_multi);
   }
 };
@@ -122,24 +125,65 @@ TEST_P(ResizeThread, ResizeFloat4x4) { test_resize_f32_4x4(); }
 TEST_P(ResizeThread, ResizeFloat8x8) { test_resize_f32_8x8(); }
 
 INSTANTIATE_TEST_SUITE_P(, ResizeThread,
-                         testing::Values(P{1, 1, 1}, P{1, 2, 1}, P{1, 2, 2},
-                                         P{2, 1, 2}, P{2, 2, 1}, P{1, 3, 2},
-                                         P{2, 3, 1}, P{6, 4, 1}, P{4, 5, 2},
-                                         P{2, 6, 3}, P{1, 7, 4}, P{12, 34, 5}));
+                         testing::Values(P{1, 1, 1, 1}, P{1, 2, 1, 2},
+                                         P{1, 2, 2, 1}, P{2, 1, 2, 2},
+                                         P{2, 2, 1, 1}, P{1, 3, 2, 2},
+                                         P{2, 3, 1, 1}, P{6, 4, 1, 2},
+                                         P{4, 5, 2, 1}, P{2, 6, 3, 2},
+                                         P{1, 7, 4, 1}, P{12, 34, 5, 2}));
 
 TEST(ResizeThreadTest, NotImplemented) {
-  {
+  for (size_t channels = 1; channels <= 2; ++channels) {
+    // Too small images
     uint8_t src[1] = {}, dst[1] = {};
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
               kleidicv_thread_resize_linear_u8(src, sizeof(src), 2, 2, dst,
-                                               sizeof(dst), 3, 7,
+                                               sizeof(dst), 3, 7, channels,
                                                get_multithreading_fake(2)));
   }
+
   {
+    // Too small images
     float src[1] = {}, dst[1] = {};
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
               kleidicv_thread_resize_linear_f32(src, sizeof(src), 2, 2, dst,
-                                                sizeof(dst), 3, 7,
+                                                sizeof(dst), 3, 7, 1,
                                                 get_multithreading_fake(2)));
+  }
+
+  {
+    // Invalid channel count
+    size_t channels = 2;
+    std::vector<uint8_t> src(2UL * 2UL * channels);
+    std::vector<uint8_t> dst(4UL * 4UL * channels);
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              kleidicv_thread_resize_linear_u8(
+                  src.data(), sizeof(uint8_t) * channels * 2, 2, 2, dst.data(),
+                  sizeof(uint8_t) * channels * 4, 4, 4, channels,
+                  get_multithreading_fake(2)));
+  }
+
+  {
+    // Invalid channel count
+    size_t channels = 3;
+    std::vector<uint8_t> src(48UL * 2UL * channels);
+    std::vector<uint8_t> dst(32UL * 1UL * channels);
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              kleidicv_thread_resize_linear_u8(
+                  src.data(), sizeof(uint8_t) * channels * 48, 48, 2,
+                  dst.data(), sizeof(uint8_t) * channels * 32, 32, 1, channels,
+                  get_multithreading_fake(2)));
+  }
+
+  {
+    // Invalid channel count
+    size_t channels = 2;
+    std::vector<float> src(2UL * 2UL * channels);
+    std::vector<float> dst(4UL * 4UL * channels);
+    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              kleidicv_thread_resize_linear_f32(
+                  src.data(), sizeof(float) * channels * 2, 2, 2, dst.data(),
+                  sizeof(float) * channels * 4, 4, 4, channels,
+                  get_multithreading_fake(2)));
   }
 }

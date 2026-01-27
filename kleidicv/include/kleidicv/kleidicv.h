@@ -1041,12 +1041,16 @@ KLEIDICV_API_DECLARATION(kleidicv_count_nonzeros_u8, const uint8_t *src,
 ///   height ratio can be anything between 0 and 1.0
 /// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED is returned.
 ///
-/// Supported channels:  1
+/// Supported channels:
+/// - 1 channel for float data.
+/// - 1 channel for upsizing uint8 data.
+/// - 2 channels for downsizing uint8 data between any width ratio of 0.33
+///   and 1.0, height ratio can be anything between 0 and 1.0.
 ///
-/// The total number of pixels in the destination is limited to
+/// The total number of pixels in the source and destination is limited to
 /// @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
-/// \par Generic downsizing algorithm accuracy:
+/// \par Generic downsizing algorithm accuracy for uint8 data:
 /// For the best performance, 2-D linear interpolation uses 8-bit weights.
 /// Its maximum error from the exact value can be calculated as below.<br>
 /// The weights are rounded to 8-bit integers, this leads to this error:
@@ -1110,19 +1114,21 @@ KLEIDICV_API_DECLARATION(kleidicv_count_nonzeros_u8, const uint8_t *src,
 /// @param dst_height   Number of rows in the destination data.
 ///                     For upsizing, it must be inline with the chosen
 ///                     operation, for example `src_height * 2` in case of 2x2.
+/// @param channels     Number of channels in the data. Must be not more than
+///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
 kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
                                            size_t src_stride, size_t src_width,
                                            size_t src_height, uint8_t *dst,
                                            size_t dst_stride, size_t dst_width,
-                                           size_t dst_height);
+                                           size_t dst_height, size_t channels);
 
 /// @copydoc kleidicv_resize_linear_u8
 kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
                                             size_t src_width, size_t src_height,
                                             float *dst, size_t dst_stride,
-                                            size_t dst_width,
-                                            size_t dst_height);
+                                            size_t dst_width, size_t dst_height,
+                                            size_t channels);
 
 /// Calculates vertical derivative approximation with Sobel filter.
 ///

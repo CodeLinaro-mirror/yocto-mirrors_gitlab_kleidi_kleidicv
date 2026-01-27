@@ -425,61 +425,89 @@ BENCH_MIN_MAX(min_max_f32, float);
 
 template <typename T, typename F>
 static void resize(F f, size_t src_width, size_t src_height, size_t dst_width,
-                   size_t dst_height, benchmark::State& state) {
-  bench_functor(state, [f, src_width, src_height, dst_width, dst_height]() {
-    (void)f(get_source_buffer_a<T>(), src_width * sizeof(T), src_width,
-            src_height, get_destination_buffer_a<T>(), dst_width * sizeof(T),
-            dst_width, dst_height);
-  });
+                   size_t dst_height, benchmark::State& state,
+                   size_t channels) {
+  bench_functor(
+      state, [f, src_width, src_height, dst_width, dst_height, channels]() {
+        (void)f(get_source_buffer_a<T>(), src_width * sizeof(T), src_width,
+                src_height, get_destination_buffer_a<T>(),
+                dst_width * sizeof(T), dst_width, dst_height, channels);
+      });
 }
 
 template <typename T, typename F>
 static void resize_upscale(F f, size_t scale_x, size_t scale_y,
-                           benchmark::State& state) {
+                           benchmark::State& state, size_t channels = 1) {
   size_t src_width = image_width / scale_x;
   size_t src_height = image_height / scale_y;
   resize<T>(f, src_width, src_height, src_width * scale_x, src_height * scale_y,
-            state);
+            state, channels);
 }
 
 template <typename T, typename F>
-static void resize_downscale(F f, size_t scale_x, size_t scale_y,
-                             benchmark::State& state) {
-  size_t dst_width = image_width / scale_x;
-  size_t dst_height = image_height / scale_y;
+static void resize_downscale(F f, double scale_x, double scale_y,
+                             benchmark::State& state, size_t channels = 1) {
+  // Casting to uint32 to avoid clang-tidy errors
+  uint32_t image_width_u32 = static_cast<uint32_t>(image_width);
+  uint32_t image_height_u32 = static_cast<uint32_t>(image_height);
+  uint32_t dst_width = static_cast<uint32_t>(image_width_u32 / scale_x);
+  uint32_t dst_height = static_cast<uint32_t>(image_height_u32 / scale_y);
   resize<T>(f, dst_width * scale_x, dst_height * scale_y, dst_width, dst_height,
-            state);
+            state, channels);
+}
+
+static void resize_u8_downscale_channels(benchmark::internal::Benchmark* b) {
+  b->ArgNames({"channels"});
+  for (int channel : {1, 2}) {
+    b->Args({channel});
+  }
 }
 
 static void resize_quarter_u8(benchmark::State& state) {
-  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 2, 2, state);
+  int channels = state.range(0);
+  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 2, 2, state,
+                            static_cast<size_t>(channels));
 }
-BENCHMARK(resize_quarter_u8);
+BENCHMARK(resize_quarter_u8)->Apply(resize_u8_downscale_channels);
 
-static void resize_linear_2x2_u8(benchmark::State& state) {
+static void resize_linear_u8_r2(benchmark::State& state) {
+  int channels = state.range(0);
+  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 1.7, 2, state,
+                            static_cast<size_t>(channels));
+}
+BENCHMARK(resize_linear_u8_r2)->Apply(resize_u8_downscale_channels);
+
+static void resize_linear_u8_r3(benchmark::State& state) {
+  int channels = state.range(0);
+  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 2.7, 2, state,
+                            static_cast<size_t>(channels));
+}
+BENCHMARK(resize_linear_u8_r3)->Apply(resize_u8_downscale_channels);
+
+static void resize_linear_2x2_u8_1ch(benchmark::State& state) {
   resize_upscale<uint8_t>(kleidicv_resize_linear_u8, 2, 2, state);
 }
-BENCHMARK(resize_linear_2x2_u8);
+BENCHMARK(resize_linear_2x2_u8_1ch);
 
-static void resize_linear_4x4_u8(benchmark::State& state) {
+static void resize_linear_4x4_u8_1ch(benchmark::State& state) {
   resize_upscale<uint8_t>(kleidicv_resize_linear_u8, 4, 4, state);
 }
-BENCHMARK(resize_linear_4x4_u8);
+BENCHMARK(resize_linear_4x4_u8_1ch);
 
-static void resize_linear_2x2_f32(benchmark::State& state) {
+static void resize_linear_2x2_f32_1ch(benchmark::State& state) {
   resize_upscale<float>(kleidicv_resize_linear_f32, 2, 2, state);
 }
-BENCHMARK(resize_linear_2x2_f32);
+BENCHMARK(resize_linear_2x2_f32_1ch);
 
-static void resize_linear_4x4_f32(benchmark::State& state) {
+static void resize_linear_4x4_f32_1ch(benchmark::State& state) {
   resize_upscale<float>(kleidicv_resize_linear_f32, 4, 4, state);
 }
-BENCHMARK(resize_linear_4x4_f32);
+BENCHMARK(resize_linear_4x4_f32_1ch);
 
-static void resize_linear_8x8_f32(benchmark::State& state) {
+static void resize_linear_8x8_f32_1ch(benchmark::State& state) {
   resize_upscale<float>(kleidicv_resize_linear_f32, 8, 8, state);
 }
-BENCHMARK(resize_linear_8x8_f32);
+BENCHMARK(resize_linear_8x8_f32_1ch);
 
 template <typename T, size_t KernelSize, int Channels, typename F>
 static void separable_filter_2d(benchmark::State& state, F function) {

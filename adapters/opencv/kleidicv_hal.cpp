@@ -707,7 +707,7 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
   }
 
   size_t channels = (src_type >> CV_CN_SHIFT) + 1;
-  if (channels != 1) {
+  if (channels != 1 && CV_MAT_DEPTH(src_type) != CV_8U) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -723,7 +723,7 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
     } else {
       return convert_error(kleidicv_thread_resize_linear_u8(
           src_data, src_step, src_width, src_height, dst_data, dst_step,
-          dst_width, dst_height, get_multithreading()));
+          dst_width, dst_height, channels, get_multithreading()));
     }
   }
 
@@ -742,13 +742,13 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
     case CV_8U:
       return convert_error(kleidicv_thread_resize_linear_u8(
           src_data, src_step, src_width, src_height, dst_data, dst_step,
-          dst_width, dst_height, get_multithreading()));
+          dst_width, dst_height, channels, get_multithreading()));
     case CV_32F:
       if (inv_scale_x <= 2.1 && inv_scale_y <= 2.1) {
         return convert_error(kleidicv_thread_resize_linear_f32(
             reinterpret_cast<const float *>(src_data), src_step, src_width,
             src_height, reinterpret_cast<float *>(dst_data), dst_step,
-            dst_width, dst_height, get_multithreading()));
+            dst_width, dst_height, channels, get_multithreading()));
       } else {
         // Bigger resize algorithms (4x4 and 8x8) don't perform well with
         // multiple threads
@@ -756,13 +756,13 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
         return convert_error(kleidicv_thread_resize_linear_f32(
             reinterpret_cast<const float *>(src_data), src_step, src_width,
             src_height, reinterpret_cast<float *>(dst_data), dst_step,
-            dst_width, dst_height, get_multithreading()));
+            dst_width, dst_height, channels, get_multithreading()));
 #else
         if (cv::getNumThreads() == 1) {
           return convert_error(kleidicv_resize_linear_f32(
               reinterpret_cast<const float *>(src_data), src_step, src_width,
               src_height, reinterpret_cast<float *>(dst_data), dst_step,
-              dst_width, dst_height));
+              dst_width, dst_height, channels));
         }
 #endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
       }

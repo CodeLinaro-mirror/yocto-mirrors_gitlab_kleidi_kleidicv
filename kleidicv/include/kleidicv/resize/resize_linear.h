@@ -7,26 +7,38 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 
 #include "kleidicv/kleidicv.h"
 
 namespace kleidicv {
 
 inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
-                                            size_t dst_width,
-                                            size_t dst_height) {
-  if (src_width == 0 || src_height == 0) {
-    return true;
-  }
+                                            size_t dst_width, size_t dst_height,
+                                            size_t channels) {
+  if (channels == 1) {
+    if (src_width == 0 || src_height == 0) {
+      return true;
+    }
 
-  if ((src_width / 2 == dst_width || (src_width + 1) / 2 == dst_width) &&
-      (src_height / 2 == dst_height || (src_height + 1) / 2 == dst_height)) {
-    return true;
+    if ((src_width / 2 == dst_width || (src_width + 1) / 2 == dst_width) &&
+        (src_height / 2 == dst_height || (src_height + 1) / 2 == dst_height)) {
+      return true;
+    }
+
+    const std::array<size_t, 2> implemented_ratios = {2, 4};
+    if (std::any_of(implemented_ratios.begin(), implemented_ratios.end(),
+                    [&](size_t ratio) {
+                      return src_width * ratio == dst_width &&
+                             src_height * ratio == dst_height;
+                    })) {
+      return true;
+    }
   }
 
   // Downsize between horizontal ratios of 1/3 and 1/1: a minimal width is
   // needed to execute vector operations
-  if (dst_width * 3 >= src_width && dst_width < src_width &&
+  if (channels <= 2 && dst_width * 3 >= src_width && dst_width < src_width &&
       dst_height < src_height) {
     if (dst_width < 8) {
       return false;
@@ -37,18 +49,18 @@ inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
     return src_width >= 32;
   }
 
-  const std::array<size_t, 2> implemented_ratios = {2, 4};
-  return std::any_of(implemented_ratios.begin(), implemented_ratios.end(),
-                     [&](size_t ratio) {
-                       return src_width * ratio == dst_width &&
-                              src_height * ratio == dst_height;
-                     });
+  return false;
 }
 
 inline bool resize_linear_f32_is_implemented(size_t src_width,
                                              size_t src_height,
                                              size_t dst_width,
-                                             size_t dst_height) {
+                                             size_t dst_height,
+                                             size_t channels) {
+  if (channels != 1) {
+    return false;
+  }
+
   if (src_width == 0 || src_height == 0) {
     return true;
   }
@@ -71,12 +83,11 @@ kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
 kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-template <ptrdiff_t kRatio>
+template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
     size_t dst_width, size_t dst_height);
-
 kleidicv_error_t kleidicv_resize_linear_stripe_f32(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, float *dst, size_t dst_stride,
@@ -147,7 +158,7 @@ extern "C" {
 extern kleidicv_error_t kleidicv_resize_linear_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
-    size_t dst_width, size_t dst_height);
+    size_t dst_width, size_t dst_height, size_t channels);
 
 /// Internal - not part of the public API and its direct use is not
 /// supported. It is used by the multithreaded function.

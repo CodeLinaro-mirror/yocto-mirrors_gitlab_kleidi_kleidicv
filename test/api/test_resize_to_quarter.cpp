@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -44,7 +44,7 @@ class ResizeToQuarterTest final {
     ASSERT_EQ(KLEIDICV_OK, kleidicv_resize_linear_u8(
                                source.data(), source.stride(), source.width(),
                                source.height(), actual.data(), actual.stride(),
-                               actual.width(), actual.height()));
+                               actual.width(), actual.height(), 1));
 
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
@@ -216,13 +216,16 @@ TEST(ResizeToQuarter, OddDimsTruncated) {
 TEST(ResizeToQuarter, NullPointer) {
   const uint8_t src[4] = {};
   uint8_t dst[1];
-  test::test_null_args(kleidicv_resize_linear_u8, src, 2, 2, 2, dst, 1, 1, 1);
+  test::test_null_args(kleidicv_resize_linear_u8, src, 2, 2, 2, dst, 1, 1, 1,
+                       1);
 }
 
 TEST(ResizeToQuarter, ZeroImageSize) {
   const uint8_t src[1] = {};
   uint8_t dst[1];
 
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_resize_linear_u8(src, 1, 0, 1, dst, 1, 0, 1));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_resize_linear_u8(src, 1, 1, 0, dst, 1, 1, 0));
+  EXPECT_EQ(KLEIDICV_OK,
+            kleidicv_resize_linear_u8(src, 1, 0, 1, dst, 1, 0, 1, 1));
+  EXPECT_EQ(KLEIDICV_OK,
+            kleidicv_resize_linear_u8(src, 1, 1, 0, dst, 1, 1, 0, 1));
 }

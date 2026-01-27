@@ -953,7 +953,6 @@ kleidicv_error_t kleidicv_resize_linear_stripe_f32(
     size_t dst_width, size_t dst_height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-  CHECK_IMAGE_SIZE(dst_width, dst_height);
 
   if (src_width == 0 || src_height == 0) {
     return KLEIDICV_OK;
