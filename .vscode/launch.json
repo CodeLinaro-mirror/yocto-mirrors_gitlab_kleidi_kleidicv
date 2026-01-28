@@ -17,7 +17,7 @@
       "preLaunchTask": "Build KleidiCV for debug",
     },
     {
-      "name": "NEON API tests",
+      "name": "Neon API tests",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test",
@@ -26,7 +26,7 @@
       "miDebuggerServerAddress": "localhost:2345",
       "targetArchitecture": "arm64",
       "debugServerPath" : "${workspaceFolder}/.devcontainer/start_qemu.sh",
-      "debugServerArgs": "-g 2345 -cpu cortex-a53 ${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test --vector-length=16 --gtest_filter=*",
+      "debugServerArgs": "-g 2345 -cpu cortex-a35 ${workspaceFolder}/build/kleidicv-debug/test/api/kleidicv-api-test --vector-length=16 --gtest_filter=*",
       "cwd": "${workspaceFolder}",
       "internalConsoleOptions": "openOnSessionStart",
       "preLaunchTask": "Build KleidiCV for debug",

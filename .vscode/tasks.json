@@ -113,7 +113,7 @@
       }
     },
     {
-      "label": "NEON API tests",
+      "label": "Neon API tests",
       "type": "process",
       "command": "qemu-aarch64",
       "args": [
