@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -277,7 +277,7 @@ bool test_remap_f32_linear_accuracy(int index,
 
   // If the width of the result image is less than 4 then KleidiCV rejects the
   // operation and fallback happens to OpenCV's implementation. But for this
-  // accurecy test only the first pixel counts. This map is used for both x and
+  // accuracy test only the first pixel counts. This map is used for both x and
   // y directions.
   cv::Mat map = (cv::Mat_<float>(1, 4) << map_value, 0, 0, 0);
 

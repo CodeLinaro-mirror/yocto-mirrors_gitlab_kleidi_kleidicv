@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -139,13 +139,13 @@ class Columns final {
   // NOLINTEND(hicpp-explicit-conversions)
 
   // Returns a new instance at a given column.
-  [[nodiscard]] Columns<T> at(ptrdiff_t column) KLEIDICV_STREAMING {
+  [[nodiscard]] Columns<T> at(ptrdiff_t column) const KLEIDICV_STREAMING {
     return Columns<T>{&ptr_[column * static_cast<ptrdiff_t>(channels())],
                       channels()};
   }
 
   // Returns a pointer to a given column.
-  [[nodiscard]] T *ptr_at(ptrdiff_t column) KLEIDICV_STREAMING {
+  [[nodiscard]] T *ptr_at(ptrdiff_t column) const KLEIDICV_STREAMING {
     return ptr_ + column * static_cast<ptrdiff_t>(channels());
   }
 
