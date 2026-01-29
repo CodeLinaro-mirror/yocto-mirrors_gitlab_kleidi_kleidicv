@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -117,6 +117,8 @@ cmake -S . -B build/ci/build-benchmark -G Ninja \
   -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
   -DKLEIDICV_BENCHMARK=ON \
   -DKLEIDICV_ENABLE_SME=ON \
+  -DKLEIDICV_ENABLE_SME2=ON \
+  -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
   -DKLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS=OFF

@@ -51,7 +51,7 @@ option(
 )
 option(
   KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS
-  "Limits SVE2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SME2 is false."
+  "Limits SME2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SME2 is false."
   ON
 )
 option(
