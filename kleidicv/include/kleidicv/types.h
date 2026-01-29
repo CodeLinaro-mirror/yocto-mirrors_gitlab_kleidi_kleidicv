@@ -114,7 +114,9 @@ class Columns final {
 
   // Subscript operator to return an arbitrary column at an index. To account
   // for channel count use at() method.
-  T &operator[](ptrdiff_t index) KLEIDICV_STREAMING { return ptr_[index]; }
+  T &operator[](ptrdiff_t index) const KLEIDICV_STREAMING {
+    return ptr_[index];
+  }
 
   // Addition assignment operator to step across the columns.
   Columns &operator+=(ptrdiff_t diff) KLEIDICV_STREAMING {
@@ -302,7 +304,7 @@ class Rows final : public RowBase<T> {
 
   // Returns a new instance at a given row and column.
   [[nodiscard]] Rows<T> at(ptrdiff_t row,
-                           ptrdiff_t column = 0) KLEIDICV_STREAMING {
+                           ptrdiff_t column = 0) const KLEIDICV_STREAMING {
     return Rows<T>{get_pointer_at(row, column), stride(), channels()};
   }
 
@@ -323,8 +325,8 @@ class Rows final : public RowBase<T> {
  private:
   // Returns a column in a row at a given index taking stride and channels into
   // account.
-  [[nodiscard]] T *get_pointer_at(ptrdiff_t row,
-                                  ptrdiff_t column = 0) KLEIDICV_STREAMING {
+  [[nodiscard]] T *get_pointer_at(ptrdiff_t row, ptrdiff_t column = 0) const
+      KLEIDICV_STREAMING {
     T *ptr =
         RowBase<T>::add_stride(ptr_, row * static_cast<ptrdiff_t>(stride()));
     return &ptr[column * static_cast<ptrdiff_t>(channels())];

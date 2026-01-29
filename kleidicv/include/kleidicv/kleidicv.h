@@ -1084,18 +1084,68 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 /// Resize image using linear interpolation.
 /// In-place operation not supported.
 ///
-/// At present only 2x2 and 4x4 upsizing is supported, and 8x8 for float data.
-/// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED
-/// will be returned.
+/// Supported ratios:
+/// - 2x2 and 4x4 upsizing, and 8x8 for float data.
+/// - downsizing to any width ratio between 0.33 and 1.0 for uint8 data,
+///   height ratio can be anything between 0 and 1.0
+/// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED is returned.
+///
+/// Supported channels:  1
+///
 /// The total number of pixels in the destination is limited to
 /// @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// \par Generic downsizing algorithm accuracy:
+/// For the best performance, 2-D linear interpolation uses 8-bit weights.
+/// Its maximum error from the exact value can be calculated as below.<br>
+/// The weights are rounded to 8-bit integers, this leads to this error:
+/// > `E = 1 / 2`
+///
+/// The 8-bit weight is therefore the exact weight `We` plus the error:
+/// > `W = We + E`
+///
+/// 1-D interpolation with 8-bit weights is done according to this formula:
+/// > `R = A + ((B - A) * W) / 256`
+///
+/// The maximum error happens at `A = 0` and `B = 255`, substituting these the
+/// error is the difference between the result `R` and the exact result `Re`,
+/// plus a rounding error of `1 / 2`:
+/// > `E1D = Re - R = (255 * E) / 256 + 1 / 2 = 511 / 512`
+///
+/// For two dimensions (i.e. doing the horizontal interpolation after the
+/// vertical one), the formula is the same, but here `A` and `B` are the results
+/// of the 1D calculation above, so they also have some error:
+/// > `A = Ae + E1D`<br>
+/// > `B = Be + E1D`<br>
+/// > `W = We + E`<br>
+///
+/// Calculating the error from
+/// > `R = A + ((B - A) * W) / 256`
+///
+/// The total error comes from the following addends
+/// (note that the error is always added, not allowed to subtract it):
+/// > `A ---> E1D`<br>
+/// > `(((Be - Ae) + E1D + E1D) * (We + E)) / 256
+/// >   ---> ((Be - Ae) * E) / 256 + (2 * E1D * We) / 256`
+/// >   (as `E1D*E` is very small and it can be ignored)<br>
+/// > `1/2` (rounding error)
+///
+/// From these, `(Be - Ae) <= 255` and `We <= 255`, so the total theoretical
+/// error is:
+///  > `E2D = E1D + (2 * E1D) + (E * 255) / 256 + 1 / 2 = 4 * E1D = 2044 / 512`
+///
+/// But this theoretical error cannot be triggered, as the error components are
+/// not independent. So the biggest difference compared to a perfect 8-bit
+/// result can be `2`.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
 ///                     Must be a multiple of `sizeof(type)` and no less than
 ///                     `width * sizeof(type)`, except for single-row images.
-/// @param src_width    Number of elements in the source row.
+/// @param src_width    Number of elements in the source row. For downsizing, it
+///                     must be at least 16 if the ratio is between 1/2 and 1,
+///                     and at least 32 if the ratio is between 1/3 and 1/2.
 /// @param src_height   Number of rows in the source data.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
@@ -1103,11 +1153,12 @@ KLEIDICV_API_DECLARATION(kleidicv_resize_to_quarter_u8, const uint8_t *src,
 ///                     Must be a multiple of `sizeof(type)` and no less than
 ///                     `width * sizeof(type)`, except for single-row images.
 /// @param dst_width    Number of elements in the destination row.
-///                     Must be inline with the choosen upsizing operation, for
-///                     example `src_width * 2` in case of 2x2.
+///                     For downsizing, it must be at least 8.
+///                     For upsizing, it must be inline with the chosen
+///                     operation, for example `src_width * 2` in case of 2x2.
 /// @param dst_height   Number of rows in the destination data.
-///                     Must be inline with the choosen upsizing operation, for
-///                     example `src_height * 2` in case of 2x2.
+///                     For upsizing, it must be inline with the chosen
+///                     operation, for example `src_height * 2` in case of 2x2.
 ///
 kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
                                            size_t src_stride, size_t src_width,
