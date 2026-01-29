@@ -1,12 +1,10 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <cassert>
 
-#include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
-#include "kleidicv/operations.h"
 #include "kleidicv/resize/resize_linear.h"
 
 namespace kleidicv::neon {
@@ -60,7 +58,7 @@ uint8x8_t lerp2d_vector_p_q_q_r(uint8x8_t a, uint8x8_t b, uint8x8_t c,
   return result;
 }
 
-KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8(
+KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride) {
   size_t dst_width = src_width * 2;
@@ -188,13 +186,13 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_u8(
   // Bottom row
   if (KLEIDICV_LIKELY(y_end == src_height)) {
     process_edge_row(src + src_stride * (src_height - 1),
-                     dst + dst_stride * (src_height * 2 - 1));
+                     dst + dst_stride * (2 * src_height - 1));
   }
 
   return KLEIDICV_OK;
 }
 
-KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8(
+KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride) {
   size_t dst_width = src_width * 4, dst_height = src_height * 4;
@@ -417,34 +415,6 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_4x4_u8(
   }
 
   return KLEIDICV_OK;
-}
-
-KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
-                                         size_t src_width, size_t src_height,
-                                         size_t y_begin, size_t y_end,
-                                         uint8_t *dst, size_t dst_stride,
-                                         size_t dst_width, size_t dst_height) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-  CHECK_IMAGE_SIZE(dst_width, dst_height);
-
-  if (src_width == 0 || src_height == 0) {
-    return KLEIDICV_OK;
-  }
-  if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
-    return resize_2x2_u8(src, src_stride, src_width, src_height, y_begin, y_end,
-                         dst, dst_stride);
-  }
-  if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
-    return resize_4x4_u8(src, src_stride, src_width, src_height, y_begin, y_end,
-                         dst, dst_stride);
-  }
-  // resize_linear_u8_is_implemented checked the kernel size already.
-  // GCOVR_EXCL_START
-  assert(!"resize ratio not implemented");
-  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  // GCOVR_EXCL_STOP
 }
 
 KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_2x2_f32(
@@ -977,11 +947,10 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t resize_8x8_f32(
   return KLEIDICV_OK;
 }
 
-kleidicv_error_t resize_linear_stripe_f32(const float *src, size_t src_stride,
-                                          size_t src_width, size_t src_height,
-                                          size_t y_begin, size_t y_end,
-                                          float *dst, size_t dst_stride,
-                                          size_t dst_width, size_t dst_height) {
+kleidicv_error_t kleidicv_resize_linear_stripe_f32(
+    const float *src, size_t src_stride, size_t src_width, size_t src_height,
+    size_t y_begin, size_t y_end, float *dst, size_t dst_stride,
+    size_t dst_width, size_t dst_height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
   CHECK_IMAGE_SIZE(dst_width, dst_height);
@@ -1007,5 +976,4 @@ kleidicv_error_t resize_linear_stripe_f32(const float *src, size_t src_stride,
   return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   // GCOVR_EXCL_STOP
 }
-
 }  // namespace kleidicv::neon

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -43,6 +43,20 @@ class ResizeThread : public testing::TestWithParam<P> {
                    thread_count, src_width, src_height, 4 * src_width,
                    4 * src_height);
   }
+  void test_resize_u8_down2() {
+    size_t width = 0, height = 0, thread_count = 0;
+    std::tie(width, height, thread_count) = GetParam();
+    check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
+                   thread_count, 16 * width, 3 * height, 9 * width, 2 * height);
+  }
+  void test_resize_u8_down3() {
+    size_t width = 0, height = 0, thread_count = 0;
+    std::tie(width, height, thread_count) = GetParam();
+    check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
+                   thread_count, 32 * width, 3 * height, 13 * width,
+                   2 * height);
+  }
+
   void test_resize_f32_2x2() {
     size_t src_width = 0, src_height = 0, thread_count = 0;
     std::tie(src_width, src_height, thread_count) = GetParam();
@@ -97,6 +111,10 @@ TEST_P(ResizeThread, ResizeToQuarter) { test_resize_to_quarter(); }
 TEST_P(ResizeThread, ResizeUint2x2) { test_resize_u8_2x2(); }
 
 TEST_P(ResizeThread, ResizeUint4x4) { test_resize_u8_4x4(); }
+
+TEST_P(ResizeThread, ResizeUintDown2) { test_resize_u8_down2(); }
+
+TEST_P(ResizeThread, ResizeUintDown3) { test_resize_u8_down3(); }
 
 TEST_P(ResizeThread, ResizeFloat2x2) { test_resize_f32_2x2(); }
 

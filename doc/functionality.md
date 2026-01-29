@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -106,11 +106,14 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | 0.5x0.5     |  x  |
 
 ## Resize with linear interpolation
-|             | u8  | f32 |
-|-------------|-----|-----|
-| 2x2         |  x  |  x  |
-| 4x4         |  x  |  x  |
-| 8x8         |     |  x  |
+|                   | u8  | f32 |
+|-------------------|-----|-----|
+| 2x2               |  x  |  x  |
+| 4x4               |  x  |  x  |
+| 8x8               |     |  x  |
+| Downsize 1/3 to 1 |  x  |     |
+
+> ℹ️ **For the linear downsize, width ratio is limited to 0.33 - 1.0, but height ratio can be anything between 0.0 and 1.0.**
 
 # Remap
 |                                                   |  1ch u8 | 1ch u16 | 2ch u8 | 2ch u16 | 4ch u8 | 4ch u16 |

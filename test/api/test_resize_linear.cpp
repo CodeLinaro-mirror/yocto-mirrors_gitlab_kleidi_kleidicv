@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,11 +6,11 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
-#include <random>
 #include <type_traits>
 
 #include "framework/utils.h"
 #include "kleidicv/kleidicv.h"
+#include "test_config.h"
 
 namespace {
 // Google Mock custom matcher to check that two numbers are the same as each
@@ -150,6 +150,46 @@ static void resize_linear_unaccelerated_generic_upscale(
 }
 
 template <typename T>
+static void resize_linear_generic_interpolate(
+    const T *src, size_t src_stride, size_t src_width, size_t src_height,
+    T *dst, size_t dst_stride, size_t dst_width, size_t dst_height) {
+  src_stride /= sizeof(T);
+  dst_stride /= sizeof(T);
+  float inv_scale_width =
+      static_cast<float>(src_width) / static_cast<float>(dst_width);
+  float inv_scale_height =
+      static_cast<float>(src_height) / static_cast<float>(dst_height);
+
+  auto process_row = [&](const T *src_top, const T *src_bottom, T *dst_row,
+                         ptrdiff_t dst_width, float yfrac) {
+    for (ptrdiff_t dx = 0; dx <= dst_width; ++dx) {
+      // Adding and subtracting 0.5 is needed to keep the image center aligned
+      float sx = (static_cast<float>(dx) + 0.5F) * inv_scale_width - 0.5F;
+      ptrdiff_t usx = static_cast<ptrdiff_t>(sx);
+      float xfrac = sx - std::floor(sx);
+      float nxfrac = 1.0F - xfrac;
+      float nyfrac = 1.0F - yfrac;
+      dst_row[dx] = static_cast<T>(
+          lroundf(nyfrac * (nxfrac * static_cast<float>(src_top[usx]) +
+                            xfrac * static_cast<float>(src_top[usx + 1])) +
+                  yfrac * (nxfrac * static_cast<float>(src_bottom[usx]) +
+                           xfrac * static_cast<float>(src_bottom[usx + 1]))));
+    }
+  };
+
+  for (size_t dst_y = 0; dst_y < dst_height; ++dst_y) {
+    float src_y = (static_cast<float>(dst_y) + 0.5F) * inv_scale_height - 0.5F;
+    // Truncate (take the integer part)
+    uint32_t usy = static_cast<uint32_t>(src_y);
+    const T *src_row0 = src + src_stride * usy;
+    const T *src_row1 = src_row0 + src_stride;
+    process_row(src_row0, src_row1, dst + dst_stride * dst_y,
+                static_cast<ptrdiff_t>(dst_width),
+                src_y - static_cast<float>(usy));
+  }
+}
+
+template <typename T>
 static void resize_linear_unaccelerated(const T *src, size_t src_stride,
                                         size_t src_width, size_t src_height,
                                         T *dst, size_t dst_stride,
@@ -161,6 +201,9 @@ static void resize_linear_unaccelerated(const T *src, size_t src_stride,
     resize_linear_unaccelerated_generic_upscale(src, src_stride, src_width,
                                                 src_height, dst, dst_stride,
                                                 dst_width, dst_height);
+  } else {
+    resize_linear_generic_interpolate(src, src_stride, src_width, src_height,
+                                      dst, dst_stride, dst_width, dst_height);
   }
 }
 
@@ -223,6 +266,15 @@ TYPED_TEST(ResizeLinear, NotImplemented) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src, sizeof(TypeParam), 1, 1, dst,
                                    sizeof(TypeParam) * 2, 4, 8));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(src, sizeof(TypeParam) * 16, 16, 1, dst,
+                                   sizeof(TypeParam) * 7, 7, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(src, sizeof(TypeParam) * 15, 15, 1, dst,
+                                   sizeof(TypeParam) * 8, 8, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(src, sizeof(TypeParam) * 23, 23, 1, dst,
+                                   sizeof(TypeParam) * 8, 8, 1));
 }
 
 TYPED_TEST(ResizeLinear, NullPointer) {
@@ -264,22 +316,35 @@ TYPED_TEST(ResizeLinear, ZeroImageSize) {
   EXPECT_EQ(KLEIDICV_OK, kleidicv_resize_linear(src, 0, 0, 1, dst, 0, 0, 2));
 }
 
+MATCHER_P(IntSimilar, tolerance,
+          "integer absolute difference within tolerance") {
+  using Elem = std::decay_t<decltype(std::get<0>(arg))>;
+  static_assert(std::is_integral_v<Elem>,
+                "IntSimilar requires integral elements");
+
+  using Wide = std::conditional_t<std::is_signed_v<Elem>, int64_t, uint64_t>;
+  const Wide a = static_cast<Wide>(std::get<0>(arg));
+  const Wide b = static_cast<Wide>(std::get<1>(arg));
+  const Wide d = (a >= b) ? (a - b) : (b - a);
+  return d <= static_cast<Wide>(tolerance);
+}
+
 template <typename T>
-static void do_large_dimensions_test(size_t x_scale, size_t y_scale) {
-  size_t src_width = 2049;
-  size_t src_height = 5;
+static void do_large_dimensions_test(size_t src_width, size_t src_height,
+                                     size_t dst_width, size_t dst_height) {
   size_t src_stride_pixels = src_width + 6;
-  size_t dst_width = src_width * x_scale;
-  size_t dst_height = src_height * y_scale;
   size_t dst_stride_pixels = dst_width + 3;
 
   std::vector<T> src, dst, expected_data;
   src.resize(src_stride_pixels * src_height);
   dst.resize(dst_stride_pixels * dst_height);
   expected_data.resize(dst_stride_pixels * dst_height);
-  std::mt19937 generator{
-      static_cast<std::mt19937::result_type>(test::Options::seed())};
-  std::generate(src.begin(), src.end(), generator);
+  for (size_t y = 0; y < src_height; ++y) {
+    for (size_t x = 0; x < src_width; ++x) {
+      src[y * src_stride_pixels + x] =
+          static_cast<T>(y * src_stride_pixels + x * 10);
+    }
+  }
   resize_linear_unaccelerated(src.data(), src_stride_pixels * sizeof(T),
                               src_width, src_height, expected_data.data(),
                               dst_stride_pixels * sizeof(T), dst_width,
@@ -303,23 +368,163 @@ static void do_large_dimensions_test(size_t x_scale, size_t y_scale) {
       EXPECT_THAT(actual, ::testing::Pointwise(FloatSimilar(2e-6F), expected))
           << "Row #" << y;
     } else {
-      EXPECT_THAT(actual, ::testing::ElementsAreArray(expected))
+      EXPECT_THAT(actual, ::testing::Pointwise(IntSimilar<T>(1), expected))
+          << "Row #" << y;
+    }
+  }
+}
+
+template <typename T>
+static void cross_pattern_test(size_t src_width, size_t src_height,
+                               size_t dst_width, size_t dst_height) {
+  size_t src_stride_pixels = src_width + 6;
+  size_t dst_stride_pixels = dst_width + 3;
+
+  std::vector<T> src, dst, expected_data;
+  src.resize(src_stride_pixels * src_height, 0xFF);
+  dst.resize(dst_stride_pixels * dst_height);
+  expected_data.resize(dst_stride_pixels * dst_height);
+  for (size_t y = 0; y < src_height; ++y) {
+    for (size_t x = 10; x < src_width; x += 10) {
+      src[y * src_stride_pixels + x] = 0;
+    }
+  }
+  for (size_t y = 10; y < src_height; y += 10) {
+    for (size_t x = 0; x < src_width; ++x) {
+      src[y * src_stride_pixels + x] = 0;
+    }
+  }
+  resize_linear_unaccelerated(src.data(), src_stride_pixels * sizeof(T),
+                              src_width, src_height, expected_data.data(),
+                              dst_stride_pixels * sizeof(T), dst_width,
+                              dst_height);
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_resize_linear(src.data(), src_stride_pixels * sizeof(T),
+                                   src_width, src_height, dst.data(),
+                                   dst_stride_pixels * sizeof(T), dst_width,
+                                   dst_height));
+
+  for (size_t y = 0; y < dst_height; ++y) {
+    std::vector<typename PrintTypeGetter<T>::type> actual{
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels),
+        dst.begin() +
+            static_cast<ptrdiff_t>(y * dst_stride_pixels + dst_width)},
+        expected{expected_data.begin() +
+                     static_cast<ptrdiff_t>(y * dst_stride_pixels),
+                 expected_data.begin() +
+                     static_cast<ptrdiff_t>(y * dst_stride_pixels + dst_width)};
+    if constexpr (std::is_floating_point_v<T>) {
+      EXPECT_THAT(actual, ::testing::Pointwise(FloatSimilar(2e-6F), expected))
+          << "Row #" << y;
+    } else {
+      EXPECT_THAT(actual, ::testing::Pointwise(IntSimilar<T>(1), expected))
+          << "Row #" << y;
+    }
+  }
+}
+
+template <typename T>
+static void checkerboard_pattern_test(size_t src_width, size_t src_height,
+                                      size_t dst_width, size_t dst_height) {
+  size_t src_stride_pixels = src_width + 6;
+  size_t dst_stride_pixels = dst_width + 3;
+
+  std::vector<T> src, dst, expected_data;
+  src.resize(src_stride_pixels * src_height, 0xFF);
+  dst.resize(dst_stride_pixels * dst_height);
+  expected_data.resize(dst_stride_pixels * dst_height);
+  for (size_t y = 0; y < src_height; ++y) {
+    for (size_t x = y % 2; x < src_width; x += 2) {
+      src[y * src_stride_pixels + x] = 0;
+    }
+  }
+  resize_linear_unaccelerated(src.data(), src_stride_pixels * sizeof(T),
+                              src_width, src_height, expected_data.data(),
+                              dst_stride_pixels * sizeof(T), dst_width,
+                              dst_height);
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_resize_linear(src.data(), src_stride_pixels * sizeof(T),
+                                   src_width, src_height, dst.data(),
+                                   dst_stride_pixels * sizeof(T), dst_width,
+                                   dst_height));
+  for (size_t y = 0; y < dst_height; ++y) {
+    std::vector<typename PrintTypeGetter<T>::type> actual{
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels),
+        dst.begin() +
+            static_cast<ptrdiff_t>(y * dst_stride_pixels + dst_width)},
+        expected{expected_data.begin() +
+                     static_cast<ptrdiff_t>(y * dst_stride_pixels),
+                 expected_data.begin() +
+                     static_cast<ptrdiff_t>(y * dst_stride_pixels + dst_width)};
+    if constexpr (std::is_floating_point_v<T>) {
+      EXPECT_THAT(actual, ::testing::Pointwise(FloatSimilar(2e-6F), expected))
+          << "Row #" << y;
+    } else {
+      EXPECT_THAT(actual, ::testing::Pointwise(IntSimilar<T>(1), expected))
           << "Row #" << y;
     }
   }
 }
 
 TYPED_TEST(ResizeLinear, LargeDimensions2x2) {
-  do_large_dimensions_test<TypeParam>(2, 2);
+  do_large_dimensions_test<TypeParam>(2097, 5, 4194, 10);
 }
 
 TYPED_TEST(ResizeLinear, LargeDimensions4x4) {
-  do_large_dimensions_test<TypeParam>(4, 4);
+  do_large_dimensions_test<TypeParam>(2097, 5, 8388, 20);
 }
 
 TEST(ResizeLinearFloat, LargeDimensions8x8) {
-  do_large_dimensions_test<float>(8, 8);
+  do_large_dimensions_test<float>(2097, 5, 16776, 40);
 }
+
+TEST(ResizeLinear, LargeDimensionsGeneric2) {
+  do_large_dimensions_test<uint8_t>(2097, 5, 1614, 3);
+}
+
+TEST(ResizeLinear, LargeDimensionsGeneric3) {
+  do_large_dimensions_test<uint8_t>(2097, 5, 807, 2);
+}
+
+TEST(ResizeLinear, LargeDimensionsGenericSmaller2) {
+  do_large_dimensions_test<uint8_t>(66, 19, 37, 13);
+}
+
+TEST(ResizeLinear, LargeDimensionsGenericSmaller3) {
+  do_large_dimensions_test<uint8_t>(203, 29, 101, 13);
+}
+
+TEST(ResizeLinear, CrossPattern06) {
+  cross_pattern_test<uint8_t>(409, 13, 261, 6);
+}
+
+TEST(ResizeLinear, CrossPattern04) {
+  cross_pattern_test<uint8_t>(409, 13, 181, 6);
+}
+
+TEST(ResizeLinear, CheckerboardGeneric2) {
+  checkerboard_pattern_test<uint8_t>(266, 138, 245, 117);
+}
+
+TEST(ResizeLinear, CheckerboardGeneric3) {
+  checkerboard_pattern_test<uint8_t>(266, 138, 115, 61);
+}
+
+#ifdef KLEIDICV_ALLOCATION_TESTS
+TEST(ResizeLinearU8, CannotAllocateBuffer) {
+  const uint8_t src[3 * 8] = {};
+  uint8_t dst[8];
+  MockMallocToFail::enable();
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
+            kleidicv_resize_linear(src, 2 * 8UL, 2 * 8UL, 1, dst, 8, 8, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
+            kleidicv_resize_linear(src, 4 * 8UL, 4 * 8UL, 1, dst, 13, 13, 1));
+  MockMallocToFail::disable();
+}
+#endif
+
+// TODO add a test for really big images, a few 10000 pixels wide to test the
+// recalibrate mechanism
 
 TEST(ResizeLinearU8, NotImplemented_8x8) {
   const uint8_t src[1] = {};

@@ -81,7 +81,7 @@ Notes on parameters:
 
 #### [`COLOR_RGB2YUV_YUY2`](https://docs.opencv.org/4.x/d8/d01/group__imgproc__color__conversions.html), [`COLOR_RGB2YUV_UYVY`](https://docs.opencv.org/4.x/d8/d01/group__imgproc__color__conversions.html), [`COLOR_RGB2YUV_YVYU`](https://docs.opencv.org/4.x/d8/d01/group__imgproc__color__conversions.html)
 
-RGB (and BGR/RGBA/BGRA) to **YUV422 interleaved** image conversion supporting the common interleaved layouts **YUYV/YUY2** (aliases: **YUYV**, **YUNV**), **UYVY** (aliases: **Y422**, **UYNV**), and **YVYU**.  
+RGB (and BGR/RGBA/BGRA) to **YUV422 interleaved** image conversion supporting the common interleaved layouts **YUYV/YUY2** (aliases: **YUYV**, **YUNV**), **UYVY** (aliases: **Y422**, **UYNV**), and **YVYU**.
 All supported permutations are shown below:
 
 |      | YUYV (YUY2) | UYVY | YVYU |
@@ -95,7 +95,7 @@ Notes on parameters:
 * `src.channels()` - supports 3 for RGB and 4 for RGBA.
 #### [`COLOR_YUV2RGB_YUY2`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a6b1ceb56c6a2e8dc80ec1d3b77e0bb0c:~:text=synonym%20to%20UYVY-,COLOR_YUV2RGB_YUY2,-Python%3A%20cv.COLOR_YUV2RGB_YUY2), [`COLOR_YUV2RGB_UYVY`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a6b1ceb56c6a2e8dc80ec1d3b77e0bb0c:~:text=synonym%20to%20COLOR_YUV2GRAY_420-,COLOR_YUV2RGB_UYVY,-Python%3A%20cv.COLOR_YUV2RGB_UYVY), [`COLOR_YUV2RGB_YVYU`](https://docs.opencv.org/4.10.0/d8/d01/group__imgproc__color__conversions.html#gga4e0972be5de079fed4e3a10e24ef5ef0a6b1ceb56c6a2e8dc80ec1d3b77e0bb0c:~:text=V%2C%20see%20color_convert_rgb_yuv_42x-,COLOR_YUV2RGB_YVYU,-Python%3A%20cv.COLOR_YUV2RGB_YVYU)
 
-YUV422 (interleaved) to RGB image conversion supporting the common interleaved layouts **YUYV/YUY2**, **UYVY**, and **YVYU**.  
+YUV422 (interleaved) to RGB image conversion supporting the common interleaved layouts **YUYV/YUY2**, **UYVY**, and **YVYU**.
 All supported permutations are shown below:
 |               | RGB | BGR | RGBA | BGRA |
 |---------------|-----|-----|------|------|
@@ -199,8 +199,10 @@ Notes on parameters:
 |`src.type()`|`interpolation`|src:dst dimensions ratio|
 |------------|---------------|------------------------|
 | `CV_8UC1`  | `INTER_AREA`  |        0.5x0.5         |
-| `CV_8UC1`  |`INTER_LINEAR` |   0.5x0.5, 2x2, 4x4    |
+| `CV_8UC1`  |`INTER_LINEAR` |  0.33 - 1.0, 2x2, 4x4  |
 | `CV_32FC1` |`INTER_LINEAR` |     2x2, 4x4, 8x8      |
+
+> ℹ️ **For the generic linear resize, width ratio is limited to 0.33 - 1.0, but height ratio can be anything between 0.0 and 1.0.**
 
 ### [`cv::Sobel()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gacea54f142e81b6758cb6f375ce782c8d)
 Applies Sobel gradient filter to a given image.

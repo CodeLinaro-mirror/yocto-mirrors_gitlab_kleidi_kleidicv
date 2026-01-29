@@ -1,11 +1,11 @@
-// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include "kleidicv/resize/resize_linear.h"
 #include "resize_linear_sc.h"
 
-namespace kleidicv::sme {
+namespace kleidicv::sme2 {
 
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
 kleidicv_resize_2x2_stripe_u8(const uint8_t *src, size_t src_stride,
@@ -36,4 +36,4 @@ kleidicv_resize_linear_stripe_f32(const float *src, size_t src_stride,
       dst_width, dst_height);
 }
 
-}  // namespace kleidicv::sme
+}  // namespace kleidicv::sme2
