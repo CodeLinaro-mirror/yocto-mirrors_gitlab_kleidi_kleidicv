@@ -218,9 +218,33 @@
       "problemMatcher": []
     },
     {
-      "label": "Run CI script",
+      "label": "Run Full CI",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/ci.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Clang CI",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ci-clang.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run GCC CI",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ci-gcc.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Lint & Docs CI",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ci-lint-docs.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run OpenCV CI",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ci-opencv.sh",
       "problemMatcher": []
     },
     {

@@ -4,14 +4,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Full OpenCV integration run: build, conformity, and unit tests.
+
 set -exu
 
-: "${CLEAN:=OFF}"
+SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
 # Ensure we're at the root of the repo.
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "${SCRIPT_PATH}/.."
 
-export OPENCV_VERSION="4.13.0"
+: "${CLEAN:=OFF}"
+: "${OPENCV_VERSION:=4.13.0}"
+: "${OPENCV_URL:=/opt/opencv-${OPENCV_VERSION}.tar.gz}"
 
 # ------------------------------------------------------------------------------
 # Try to build unpatched OpenCV with KleidiCV
@@ -20,7 +24,7 @@ if [[ "${CLEAN}" == "ON" ]]; then
     rm -rf build/ci/unpatched-opencv*
 fi
 mkdir -p build/ci/unpatched-opencv-src
-tar -xzf /opt/opencv-${OPENCV_VERSION}.tar.gz -C build/ci/unpatched-opencv-src
+tar -xzf "${OPENCV_URL}" -C build/ci/unpatched-opencv-src
 BUILD_ID="ci/unpatched-opencv" \
 OPENCV_PATH="$(pwd)/build/ci/unpatched-opencv-src/opencv-${OPENCV_VERSION}" \
 CMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -fuse-ld=lld" \
@@ -66,7 +70,6 @@ EXTRA_CMAKE_ARGS="\
 # ------------------------------------------------------------------------------
 TESTRESULT=0
 CLEAN="ON" \
-  OPENCV_URL="/opt/opencv-${OPENCV_VERSION}.tar.gz" \
   LDFLAGS="--rtlib=compiler-rt -fuse-ld=lld" \
   BUILD_PATH="build/ci/conformity" \
   ./scripts/run_opencv_conformity_checks.sh || TESTRESULT=1
@@ -85,8 +88,8 @@ ninja -C build/ci/conformity/opencv_kleidicv \
 if [[ "${CLEAN}" == "ON" ]]; then
     rm -rf build/ci/opencv_extra*
 fi
-tar xf /opt/opencv-extra-${OPENCV_VERSION}.tar.gz -C build/ci
-mv build/ci/opencv_extra-${OPENCV_VERSION} build/ci/opencv_extra
+tar xf "/opt/opencv-extra-${OPENCV_VERSION}.tar.gz" -C build/ci
+mv "build/ci/opencv_extra-${OPENCV_VERSION}" build/ci/opencv_extra
 
 pushd build/ci/opencv_extra/testdata/cv
 
