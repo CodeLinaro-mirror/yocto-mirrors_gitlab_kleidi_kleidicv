@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -21,8 +21,12 @@
 #   COMMON_EXTRA_CMAKE_ARGS:      Optional commmon CMake options for all the opencv builds.
 #   VANILLA_EXTRA_CMAKE_OPTIONS:  Optional extra CMake options for the opencv-vanilla build.
 #   KLEIDICV_EXTRA_CMAKE_OPTIONS: Optional extra CMake options for the opencv-kleidicv build.
-#   CUSTOM_CMAKE_OPTIONS:         If provided, an extra build will be created with KleidiCV.
-#   CUSTOM_BUILD_SUFFIX:          Build name suffix for the extra build. Defaults to 'custom'.
+#   CUSTOM_CMAKE_OPTIONS:         If provided, a (first) extra build will be created with KleidiCV with these options.
+#   CUSTOM2_CMAKE_OPTIONS:        If provided, a (second) extra build will be created with KleidiCV with these options.
+#   CUSTOM3_CMAKE_OPTIONS:        If provided, a (third) extra build will be created with KleidiCV with these options.
+#   CUSTOM_BUILD_SUFFIX:          Build name suffix for the first extra build. Defaults to 'custom'.
+#   CUSTOM2_BUILD_SUFFIX:         Build name suffix for the second extra build. Defaults to 'custom2'.
+#   CUSTOM3_BUILD_SUFFIX:         Build name suffix for the third extra build. Defaults to 'custom3'.
 #
 # ------------------------------------------------------------------------------
 
@@ -65,7 +69,6 @@ export EXTRA_CMAKE_ARGS="\
     ${COMMON_EXTRA_CMAKE_ARGS:-} \
     -DWITH_KLEIDICV=ON \
     -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
-    -DKLEIDICV_ENABLE_SME=ON \
     ${KLEIDICV_EXTRA_CMAKE_OPTIONS:-} \
 "
 
@@ -83,8 +86,41 @@ export EXTRA_CMAKE_ARGS="\
     ${COMMON_EXTRA_CMAKE_ARGS:-} \
     -DWITH_KLEIDICV=ON \
     -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
-    -DKLEIDICV_ENABLE_SME=ON \
     ${CUSTOM_CMAKE_OPTIONS} \
+"
+
+"${SCRIPT_PATH}"/build-opencv.sh "${CMAKE_TARGETS:-}"
+
+# ------------------------------------------------------------------------------
+
+if [[ -z "${CUSTOM2_CMAKE_OPTIONS:-}" ]]; then
+  exit 0;
+fi
+
+export BUILD_ID="opencv-kleidicv-${CUSTOM2_BUILD_SUFFIX:-custom2}"
+export EXTRA_CMAKE_ARGS="\
+    ${COMMON_CMAKE_ARGS} \
+    ${COMMON_EXTRA_CMAKE_ARGS:-} \
+    -DWITH_KLEIDICV=ON \
+    -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
+    ${CUSTOM2_CMAKE_OPTIONS} \
+"
+
+"${SCRIPT_PATH}"/build-opencv.sh "${CMAKE_TARGETS:-}"
+
+# ------------------------------------------------------------------------------
+
+if [[ -z "${CUSTOM3_CMAKE_OPTIONS:-}" ]]; then
+  exit 0;
+fi
+
+export BUILD_ID="opencv-kleidicv-${CUSTOM3_BUILD_SUFFIX:-custom3}"
+export EXTRA_CMAKE_ARGS="\
+    ${COMMON_CMAKE_ARGS} \
+    ${COMMON_EXTRA_CMAKE_ARGS:-} \
+    -DWITH_KLEIDICV=ON \
+    -DKLEIDICV_SOURCE_PATH=${KLEIDICV_SOURCE_PATH} \
+    ${CUSTOM3_CMAKE_OPTIONS} \
 "
 
 "${SCRIPT_PATH}"/build-opencv.sh "${CMAKE_TARGETS:-}"

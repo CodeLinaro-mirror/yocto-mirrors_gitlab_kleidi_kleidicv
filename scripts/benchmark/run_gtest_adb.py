@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -56,8 +56,18 @@ def parse_args():
     parser.add_argument(
         "--executables",
         nargs="+",
-        help="Path to the gtest executables on the host. "
-        "These will be copied to the device.",
+        help="Path to the gtest executables on the host (or target if --no-push is used). "
+        "These are copied to the device, unless --no-push is used.",
+    )
+    parser.add_argument(
+        "--no_push",
+        action="store_true",
+        help="Don't push --executables from host, use them as target path instead.",
+    )
+    parser.add_argument(
+        "--no_root",
+        action="store_true",
+        help="Don't use su and don't try to set performance governor, as the device is not rooted and these would fail",
     )
     parser.add_argument("--adb", default="adb", help="Path to adb")
     parser.add_argument(
@@ -120,10 +130,19 @@ def parse_args():
         help="Repeat the entire set of tests this many times. "
         "Useful for getting a sense of how much noise there is in the results",
     )
+    parser.add_argument(
+        "--delay",
+        type=int,
+        default=0,
+        help="Delay in seconds between benchmark runs. "
+        "Give the device a little cooldown / time for other processes so all the runs will have more similar situation",
+    )
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--gtest_filter")
     parser.add_argument("--gtest_param_filter")
     parser.add_argument("--perf_min_samples", type=int, default=100)
+    parser.add_argument("--perf_time_limit", type=int, default=6)
+    parser.add_argument("--perf_force_samples", type=int, default=0)
     args = parser.parse_args()
 
     assert len(args.taskset_masks) == len(args.thermal_zones)
@@ -143,15 +162,17 @@ class ADBRunner:
             result.extend(["-s", self.serial_number])
         return result
 
-    def _print_command(self, command):
+    def _print_command(self, command: list[str]):
         if self.verbose:
-            print("+ " + shlex.join(command))
+            print("+ ", shlex.join(command))
 
-    def check_output(self, script):
-        command = self._make_adb_command() + ["shell", "su"]
+    def check_output(self, script: str):
+        command = self._make_adb_command() + ["shell"]
+        if not args.no_root:
+            command += ["su"]
         self._print_command(command)
         if self.verbose:
-            print("+ " + script)
+            print("+ ", script)
         try:
             return subprocess.check_output(
                 command,
@@ -185,6 +206,11 @@ def wait_for_cooldown(runner, thermal_zone):
     temp_filename = (
         f"/sys/devices/virtual/thermal/thermal_zone{thermal_zone}/temp"
     )
+    if args.delay > 0:
+        temp = int(runner.check_output(f"cat {shlex.quote(temp_filename)}"))
+        print(f"Sleeping {args.delay} seconds before next test run to allow cooldown.")
+        time.sleep(args.delay)
+
     while True:
         temp = int(runner.check_output(f"cat {shlex.quote(temp_filename)}"))
         if temp < 40000:
@@ -248,6 +274,8 @@ def run_executable_tests(
                         f"--gtest_output=json:{output_file}",
                         f"--gtest_filter={test_name}",
                         f"--perf_min_samples={args.perf_min_samples}",
+                        f"--perf_time_limit={args.perf_time_limit}",
+                        f"--perf_force_samples={args.perf_force_samples}",
                     ]
                 )
             )
@@ -291,17 +319,19 @@ def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone, threads):
         if (1 << cpu) & taskset_mask == 0:
             continue
 
-        scaling_governor_filename_quoted = shlex.quote(
-            f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
-        )
-        prev_scaling_governor = runner.check_output(
-            f"cat {scaling_governor_filename_quoted}"
-        ).strip()
         try:
-            runner.check_output(
-                f"echo performance ~> {scaling_governor_filename_quoted}"
-            )
-            return {
+            if not args.no_root:
+                scaling_governor_filename_quoted = shlex.quote(
+                    f"/sys/devices/system/cpu/cpu{cpu}/cpufreq/scaling_governor"
+                )
+                prev_scaling_governor = runner.check_output(
+                    f"cat {scaling_governor_filename_quoted}"
+                ).strip()
+                runner.check_output(
+                    f"echo performance ~> {scaling_governor_filename_quoted}"
+                )
+
+            retval = {
                 get_run_name(
                     rep, executable, taskset_mask, threads
                 ): run_executable_tests(
@@ -310,10 +340,12 @@ def run_tests_on_cpus(runner, args, rep, taskset_mask, thermal_zone, threads):
                 for executable in args.executables
             }
         finally:
-            runner.check_output(
-                f"echo {shlex.quote(prev_scaling_governor)} ~> {scaling_governor_filename_quoted}"
-            )
+            if not args.no_root:
+                runner.check_output(
+                    f"echo {shlex.quote(prev_scaling_governor)} ~> {scaling_governor_filename_quoted}"
+                )
 
+        return retval
 
 def get_results_table(args, results):
     # If executables have a common prefix then strip it, or omit it
@@ -360,8 +392,8 @@ def get_results_table(args, results):
     return rows
 
 
-def main():
-    args = parse_args()
+def main(args):
+    print(args)
 
     runner = ADBRunner(
         adb_command=args.adb,
@@ -370,11 +402,12 @@ def main():
     )
 
     # Copy executables to device
-    for host_filename in args.executables:
-        runner.push(
-            [host_filename],
-            host_filename_to_device_filename(args, host_filename),
-        )
+    if not args.no_push:
+        for host_filename in args.executables:
+            runner.push(
+                [host_filename],
+                host_filename_to_device_filename(args, host_filename),
+            )
 
     results = {}
 
@@ -399,4 +432,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args)
