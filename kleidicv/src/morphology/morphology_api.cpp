@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,12 +13,18 @@ namespace neon {
 template <typename T>
 kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
                         size_t dst_stride, size_t width, size_t height,
-                        kleidicv_morphology_context_t *context);
+                        size_t channels, size_t kernel_width,
+                        size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                        kleidicv_border_type_t border_type,
+                        const uint8_t *border_value, size_t iterations);
 
 template <typename T>
 kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       kleidicv_morphology_context_t *context);
+                       size_t channels, size_t kernel_width,
+                       size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                       kleidicv_border_type_t border_type,
+                       const uint8_t *border_value, size_t iterations);
 
 }  // namespace neon
 
@@ -27,12 +33,18 @@ namespace sve2 {
 template <typename T>
 kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
                         size_t dst_stride, size_t width, size_t height,
-                        kleidicv_morphology_context_t *context);
+                        size_t channels, size_t kernel_width,
+                        size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                        kleidicv_border_type_t border_type,
+                        const uint8_t *border_value, size_t iterations);
 
 template <typename T>
 kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       kleidicv_morphology_context_t *context);
+                       size_t channels, size_t kernel_width,
+                       size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                       kleidicv_border_type_t border_type,
+                       const uint8_t *border_value, size_t iterations);
 
 }  // namespace sve2
 
@@ -41,12 +53,18 @@ namespace sme {
 template <typename T>
 kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
                         size_t dst_stride, size_t width, size_t height,
-                        kleidicv_morphology_context_t *context);
+                        size_t channels, size_t kernel_width,
+                        size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                        kleidicv_border_type_t border_type,
+                        const uint8_t *border_value, size_t iterations);
 
 template <typename T>
 kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       kleidicv_morphology_context_t *context);
+                       size_t channels, size_t kernel_width,
+                       size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                       kleidicv_border_type_t border_type,
+                       const uint8_t *border_value, size_t iterations);
 
 }  // namespace sme
 
@@ -55,72 +73,22 @@ namespace sme2 {
 template <typename T>
 kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
                         size_t dst_stride, size_t width, size_t height,
-                        kleidicv_morphology_context_t *context);
+                        size_t channels, size_t kernel_width,
+                        size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                        kleidicv_border_type_t border_type,
+                        const uint8_t *border_value, size_t iterations);
 
 template <typename T>
 kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       kleidicv_morphology_context_t *context);
+                       size_t channels, size_t kernel_width,
+                       size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                       kleidicv_border_type_t border_type,
+                       const uint8_t *border_value, size_t iterations);
 
 }  // namespace sme2
 
 }  // namespace kleidicv
-
-extern "C" {
-
-using KLEIDICV_TARGET_NAMESPACE::MorphologyWorkspace;
-
-kleidicv_error_t kleidicv_morphology_create(
-    kleidicv_morphology_context_t **context, kleidicv_rectangle_t kernel,
-    kleidicv_point_t anchor, kleidicv_border_type_t border_type,
-    const uint8_t *border_value, size_t channels, size_t iterations,
-    size_t type_size, kleidicv_rectangle_t image) {
-  CHECK_POINTERS(context);
-  *context = nullptr;
-  CHECK_RECTANGLE_SIZE(kernel);
-  CHECK_RECTANGLE_SIZE(image);
-
-  if (type_size > KLEIDICV_MAXIMUM_TYPE_SIZE) {
-    return KLEIDICV_ERROR_RANGE;
-  }
-
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  auto morphology_border_type =
-      MorphologyWorkspace::get_border_type(border_type);
-
-  if (!morphology_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  MorphologyWorkspace::Pointer workspace;
-  if (kleidicv_error_t error = MorphologyWorkspace::create(
-          workspace, kernel, anchor, *morphology_border_type, border_value,
-          channels, iterations, type_size, image)) {
-    return error;
-  }
-
-  *context =
-      reinterpret_cast<kleidicv_morphology_context_t *>(workspace.release());
-  return KLEIDICV_OK;
-}
-
-kleidicv_error_t kleidicv_morphology_release(
-    kleidicv_morphology_context_t *context) {
-  CHECK_POINTERS(context);
-
-  // Deliberately create and immediately destroy a unique_ptr to delete the
-  // workspace.
-  // NOLINTBEGIN(bugprone-unused-raii)
-  MorphologyWorkspace::Pointer{
-      reinterpret_cast<MorphologyWorkspace *>(context)};
-  // NOLINTEND(bugprone-unused-raii)
-  return KLEIDICV_OK;
-}
-
-}  // extern "C"
 
 #define KLEIDICV_DEFINE_C_API(name, tname, type)           \
   KLEIDICV_MULTIVERSION_C_API(                             \

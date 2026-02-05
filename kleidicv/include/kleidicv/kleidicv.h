@@ -945,47 +945,6 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_greater_u8, const uint8_t *src_a,
                          size_t src_b_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
-/// Creates a morphology context according to the parameters.
-///
-/// Before a @ref kleidicv_dilate_u8 "dilate" or @ref kleidicv_erode_u8
-/// "erode" operation, this initialization is needed. After the operation is
-/// finished, the context needs to be released using @ref
-/// kleidicv_morphology_release.
-///
-/// @param context       Pointer where to return the created context's address.
-/// @param kernel        Width and height of the kernel. Its size must not be
-///                      more than @ref KLEIDICV_MAX_IMAGE_PIXELS.
-/// @param anchor        Location in the kernel which is aligned to the actual
-///                      point in the source data. Must not point out of the
-///                      kernel.
-/// @param border_type   Way of handling the border. The supported border types
-///                      are: \n
-///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT \n
-///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
-/// @param border_value  Border value if the border_type is
-///                      @ref KLEIDICV_BORDER_TYPE_CONSTANT.
-/// @param channels      Number of channels in the data. Must be not more than
-///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
-/// @param iterations    Number of times to do the morphology operation.
-/// @param type_size     Element size in bytes. Must not be more than
-///                      @ref KLEIDICV_MAXIMUM_TYPE_SIZE.
-/// @param image         Image dimensions. Its size must not be more than
-///                      @ref KLEIDICV_MAX_IMAGE_PIXELS.
-///
-kleidicv_error_t kleidicv_morphology_create(
-    kleidicv_morphology_context_t **context, kleidicv_rectangle_t kernel,
-    kleidicv_point_t anchor, kleidicv_border_type_t border_type,
-    const uint8_t *border_value, size_t channels, size_t iterations,
-    size_t type_size, kleidicv_rectangle_t image);
-
-/// Releases a morphology context that was previously created using @ref
-/// kleidicv_morphology_create.
-///
-/// @param context      Pointer to morphology context. Must not be nullptr.
-///
-kleidicv_error_t kleidicv_morphology_release(
-    kleidicv_morphology_context_t *context);
-
 /// Calculates maximum (dilate) or minimum (erode) element value of `src`
 /// values using a given kernel which has a rectangular shape, and puts the
 /// result into `dst`.
@@ -1004,43 +963,58 @@ kleidicv_error_t kleidicv_morphology_release(
 ///    [ 4, 3, 6, 8, 1 ]  border: replicate     [ 7, 7, 8, 8, 8 ]
 ///    [ 1, 2, 5, 3, 7 ]                        [ 4, 6, 8, 8, 8 ]
 /// ```
-/// Usage:
 ///
-/// Before using this function, a context must be created using
-/// @ref kleidicv_morphology_create, and after finished, it has to be
-/// released using @ref kleidicv_morphology_release.
-/// The context must be created with the same image dimensions as `width` and
-/// `height` parameters, with `sizeof(uint8)` as `type_size`, and with the
-/// channel number of the data as `channels`.
-///
-/// @param src          Pointer to the source data. Must be non-null.
-/// @param src_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the source data.
-///                     Must not be less than `width * channels *
-///                     sizeof(uint8)`, except for single-row images.
-/// @param dst          Pointer to the destination data. Must be non-null.
-/// @param dst_stride   Distance in bytes from the start of one row to the
-///                     start of the next row for the destination data. Must
-///                     not be less than `width * channels * sizeof(uint8)`,
-///                     except for single-row images.
+/// @param src           Pointer to the source data. Must be non-null.
+/// @param src_stride    Distance in bytes from the start of one row to the
+///                      start of the next row for the source data.
+///                      Must not be less than `width * channels *
+///                      sizeof(uint8)`, except for single-row images.
+/// @param dst           Pointer to the destination data. Must be non-null.
+/// @param dst_stride    Distance in bytes from the start of one row to the
+///                      start of the next row for the destination data. Must
+///                      not be less than `width * channels * sizeof(uint8)`,
+///                      except for single-row images.
 /// @param width         Number of columns in the data. (One column consists of
 ///                      `channels` number of elements.) Must be greater than
 ///                      or equal to `kernel - 1`.
 /// @param height        Number of rows in the data. Must be greater than
 ///                      or equal to `kernel - 1`.
-/// @param context      Pointer to morphology context.
+/// @param channels      Number of channels in the data. Must not be more than
+///                      @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
+/// @param kernel_width  Width of the kernel. The product of kernel_width and
+///                      kernel_height must not be more than
+///                      @ref KLEIDICV_MAX_IMAGE_PIXELS.
+/// @param kernel_height Height of the kernel. See kernel_width for the kernel
+///                      size limit.
+/// @param anchor_x      X coordinate in the kernel aligned to the source point.
+///                      Must not point out of the kernel.
+/// @param anchor_y      Y coordinate in the kernel aligned to the source point.
+///                      Must not point out of the kernel.
+/// @param border_type   Way of handling the border. The supported border types
+///                      are: \n
+///                         - @ref KLEIDICV_BORDER_TYPE_CONSTANT \n
+///                         - @ref KLEIDICV_BORDER_TYPE_REPLICATE
+/// @param border_value  Border value if the border_type is
+///                      @ref KLEIDICV_BORDER_TYPE_CONSTANT.
+/// @param iterations    Number of times to do the morphology operation.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_dilate_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height,
-                         kleidicv_morphology_context_t *context);
+                         size_t width, size_t height, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         size_t anchor_x, size_t anchor_y,
+                         kleidicv_border_type_t border_type,
+                         const uint8_t *border_value, size_t iterations);
 
 /// @copydoc kleidicv_dilate_u8
 ///
 KLEIDICV_API_DECLARATION(kleidicv_erode_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
-                         size_t width, size_t height,
-                         kleidicv_morphology_context_t *context);
+                         size_t width, size_t height, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         size_t anchor_x, size_t anchor_y,
+                         kleidicv_border_type_t border_type,
+                         const uint8_t *border_value, size_t iterations);
 
 /// Counts how many nonzero elements are in the source data. Number of elements
 /// is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.

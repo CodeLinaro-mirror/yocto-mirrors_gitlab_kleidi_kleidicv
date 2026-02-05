@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -76,21 +76,24 @@ class MorphologyWorkspace final {
   MorphologyWorkspace() = delete;
 
   // Creates a workspace on the heap.
-  static kleidicv_error_t create(
-      Pointer &workspace, kleidicv_rectangle_t kernel, kleidicv_point_t anchor,
-      BorderType border_type, const uint8_t *border_value, size_t channels,
-      size_t iterations, size_t type_size,
-      kleidicv_rectangle_t image) KLEIDICV_STREAMING {
-    // These values are arbitrarily choosen.
-    const size_t rows_per_iteration =
-        std::max(2 * kernel.height, static_cast<size_t>(32ULL));
-    // To avoid load/store penalties.
-    const size_t kAlignment = 16;
-
-    if (anchor.x >= kernel.width || anchor.y >= kernel.height) {
+  static kleidicv_error_t create(Pointer &workspace, Rectangle kernel,
+                                 Point anchor, BorderType border_type,
+                                 const uint8_t *border_value, size_t channels,
+                                 size_t iterations, size_t type_size,
+                                 Rectangle image) KLEIDICV_STREAMING {
+    if (anchor.x() >= kernel.width() || anchor.y() >= kernel.height()) {
       return KLEIDICV_ERROR_RANGE;
     }
 
+    if (border_type == BorderType::CONSTANT && border_value == nullptr) {
+      return KLEIDICV_ERROR_NULL_POINTER;
+    }
+
+    // These values are arbitrarily choosen.
+    const size_t rows_per_iteration =
+        std::max(2 * kernel.height(), static_cast<size_t>(32ULL));
+    // To avoid load/store penalties.
+    const size_t kAlignment = 16;
     Rectangle image_size{image};
     Margin margin{kernel, anchor};
 
@@ -147,13 +150,10 @@ class MorphologyWorkspace final {
     workspace->wide_rows_offset_ = wide_rows_address - &workspace->data_[0];
     workspace->wide_rows_stride_ = wide_rows_stride;
 
-    workspace->kernel_ = kernel;
-    workspace->anchor_ = anchor;
+    workspace->kernel_ = {kernel.width(), kernel.height()};
+    workspace->anchor_ = {anchor.x(), anchor.y()};
     workspace->border_type_ = border_type;
     if (border_type == BorderType::CONSTANT) {
-      if (border_value == nullptr) {
-        return KLEIDICV_ERROR_NULL_POINTER;
-      }
       for (size_t i = 0; i < channels; ++i) {
         workspace->border_value_[i] = border_value[i];
       }

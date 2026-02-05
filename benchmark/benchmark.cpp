@@ -923,24 +923,14 @@ BENCHMARK_CAPTURE(rgbx_to_yuv422<4>, , KLEIDICV_RGBA_TO_YVYU)
 
 template <typename T, size_t KernelSize, typename Function>
 static void morphology(Function f, benchmark::State& state) {
-  kleidicv_morphology_context_t* context = nullptr;
   const T border_value[4] = {};
-  kleidicv_error_t err = kleidicv_morphology_create(
-      &context, kleidicv_rectangle_t{KernelSize, KernelSize},
-      kleidicv_point_t{0, 0}, KLEIDICV_BORDER_TYPE_REPLICATE, border_value, 1,
-      1, sizeof(T), kleidicv_rectangle_t{image_width, image_height});
-  if (err != KLEIDICV_OK) {
-    state.SkipWithError("Could not initialize morphology context.");
-    return;
-  }
-
-  bench_functor(state, [f, context]() {
+  bench_functor(state, [f, &border_value]() {
     (void)f(get_source_buffer_a<T, 1>(), image_width * sizeof(T),
             get_destination_buffer_a<T, 1>(), image_width * sizeof(T),
-            image_width, image_height, context);
+            image_width, image_height, 1, KernelSize, KernelSize, 0, 0,
+            KLEIDICV_BORDER_TYPE_REPLICATE,
+            reinterpret_cast<const uint8_t*>(border_value), 1);
   });
-
-  (void)kleidicv_morphology_release(context);
 }
 
 #define BENCH_MORPHOLOGY(name, kernel_size)                                   \
