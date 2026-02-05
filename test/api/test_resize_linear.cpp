@@ -157,37 +157,38 @@ static void resize_linear_unaccelerated_generic_downscale(
     size_t dst_height) {
   src_stride /= sizeof(T);
   dst_stride /= sizeof(T);
-  float inv_scale_width =
-      static_cast<float>(src_width) / static_cast<float>(dst_width);
-  float inv_scale_height =
-      static_cast<float>(src_height) / static_cast<float>(dst_height);
+  double inv_scale_width =
+      static_cast<double>(src_width) / static_cast<double>(dst_width);
+  double inv_scale_height =
+      static_cast<double>(src_height) / static_cast<double>(dst_height);
 
   for (size_t dst_y = 0; dst_y < dst_height; ++dst_y) {
     // Adding and subtracting 0.5 is needed to keep the image center aligned
-    float src_y = (static_cast<float>(dst_y) + 0.5F) * inv_scale_height - 0.5F;
+    double src_y =
+        (static_cast<double>(dst_y) + 0.5F) * inv_scale_height - 0.5F;
     // Truncate (take the integer part)
     uint32_t usy = static_cast<uint32_t>(src_y);
     const T *src_row0 = src + src_stride * usy;
     const T *src_row1 = src_row0 + src_stride;
-    float yfrac = src_y - static_cast<float>(usy);
+    double yfrac = src_y - static_cast<double>(usy);
     T *dst_row = dst + dst_stride * dst_y;
-    for (ptrdiff_t dx = 0; dx <= static_cast<ptrdiff_t>(dst_width); ++dx) {
+    for (ptrdiff_t dx = 0; dx < static_cast<ptrdiff_t>(dst_width); ++dx) {
       for (ptrdiff_t ch = 0; ch < static_cast<ptrdiff_t>(channels); ++ch) {
         // Adding and subtracting 0.5 is needed to keep the image center aligned
-        float sx = (static_cast<float>(dx) + 0.5F) * inv_scale_width - 0.5F;
+        double sx = (static_cast<double>(dx) + 0.5F) * inv_scale_width - 0.5F;
         ptrdiff_t usx = static_cast<ptrdiff_t>(sx);
-        float xfrac = sx - std::floor(sx);
-        float nxfrac = 1.0F - xfrac;
-        float nyfrac = 1.0F - yfrac;
+        double xfrac = sx - std::floor(sx);
+        double nxfrac = 1.0F - xfrac;
+        double nyfrac = 1.0F - yfrac;
         dst_row[dx * channels + ch] = static_cast<T>(lroundf(
             nyfrac *
-                (nxfrac * static_cast<float>(src_row0[usx * channels + ch]) +
+                (nxfrac * static_cast<double>(src_row0[usx * channels + ch]) +
                  xfrac *
-                     static_cast<float>(src_row0[(usx + 1) * channels + ch])) +
+                     static_cast<double>(src_row0[(usx + 1) * channels + ch])) +
             yfrac *
-                (nxfrac * static_cast<float>(src_row1[usx * channels + ch]) +
-                 xfrac *
-                     static_cast<float>(src_row1[(usx + 1) * channels + ch]))));
+                (nxfrac * static_cast<double>(src_row1[usx * channels + ch]) +
+                 xfrac * static_cast<double>(
+                             src_row1[(usx + 1) * channels + ch]))));
       }
     }
   }
@@ -380,12 +381,12 @@ static uint8_t kleidicv_resize_linear_u8_accuracy(size_t src_width,
   return 0;
 }
 
-template <typename T>
+template <typename T, bool kPadding = true>
 static void do_large_dimensions_test(size_t src_width, size_t src_height,
                                      size_t dst_width, size_t dst_height,
                                      size_t channels = 1) {
-  size_t src_stride_pixels = src_width * channels + 6;
-  size_t dst_stride_pixels = dst_width * channels + 3;
+  size_t src_stride_pixels = src_width * channels + (kPadding ? 6 : 0);
+  size_t dst_stride_pixels = dst_width * channels + (kPadding ? 3 : 0);
 
   std::vector<T> src, dst, expected_data;
   src.resize(src_stride_pixels * src_height);
@@ -633,8 +634,23 @@ TEST_P(ResizeLinearU8, CannotAllocateBuffer) {
 }
 #endif
 
-// TODO add a test for really big images, a few 10000 pixels wide to test the
-// recalibrate mechanism
+TEST(ResizeLinearU8, RecalibrateMechanism2) {
+  do_large_dimensions_test<uint8_t>(503900, 2, 314300, 1);
+}
+
+TEST(ResizeLinearU8, RecalibrateMechanism3) {
+  do_large_dimensions_test<uint8_t>(867500, 2, 321711, 1);
+}
+
+TEST_P(ResizeLinearU8, SmallSourceWidthForVecotrPath2x_r2) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t, false>(33, 2, 32, 1, channels);
+}
+
+TEST_P(ResizeLinearU8, SmallSourceWidthForVecotrPath2x_r3) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t, false>(66, 2, 32, 1, channels);
+}
 
 TEST_P(ResizeLinearU8, NotImplemented_8x8) {
   size_t channels = GetParam();

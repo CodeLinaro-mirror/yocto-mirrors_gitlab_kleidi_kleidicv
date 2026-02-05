@@ -36,8 +36,8 @@ class ResizeGenericU8Operation final {
                            size_t src_width, size_t src_height, size_t y_begin,
                            size_t y_end, uint8_t *dst, size_t dst_stride,
                            size_t dst_width, size_t dst_height)
-      : src_rows_{src, src_stride},
-        dst_rows_{dst, dst_stride},
+      : src_rows_{src, src_stride, kChannels},
+        dst_rows_{dst, dst_stride, kChannels},
         src_width_{src_width},
         src_height_{src_height},
         y_begin_{y_begin},
@@ -45,12 +45,12 @@ class ResizeGenericU8Operation final {
         dst_width_{dst_width},
         dst_height_{dst_height},
         // Difference in source x coordinate, for one vector path
-        sx_fixp_step_{static_cast<uint64_t>(
-            (((src_width_ * kStep) << kFixpBits) + dst_width_ / 2) /
-            dst_width_)},
+        sx_fixp_step_{rounding_div(
+            (src_width_ * kStep / kChannels) << kFixpBits, dst_width_)},
         // Difference in source x coordinate, for the half vector path
         sx_fixp_half_step_{static_cast<uint64_t>(
-            (((src_width_ * kHalfStep) << kFixpBits) + dst_width_ / 2) /
+            (((src_width_ * kHalfStep / kChannels) << kFixpBits) +
+             dst_width_ / 2) /
             dst_width_)},
         vsidx_tbl_{2, 6, 10, 14, 18, 22, 26, 30},
         vsfrac_tbl_{1,  255, 5,  255, 9,  255, 13, 255,
@@ -58,22 +58,24 @@ class ResizeGenericU8Operation final {
         // These starting values are not aligned to center. The center alignment
         // must be added only once. When added to a center-aligned source_x
         // value, the result will be center-aligned.
-        vsx0_0_{scale_x(0), scale_x(1), scale_x(2), scale_x(3)},
-        vsx0_1_{scale_x(4), scale_x(5), scale_x(6), scale_x(7)},
-        vsx0_2_{scale_x(8), scale_x(9), scale_x(10), scale_x(11)},
-        vsx0_3_{scale_x(12), scale_x(13), scale_x(14), scale_x(15)},
+        vsx0_0_{scale_x(0), scale_x(1 / kChannels), scale_x(2 / kChannels),
+                scale_x(3 / kChannels)},
+        vsx0_1_{scale_x(4 / kChannels), scale_x(5 / kChannels),
+                scale_x(6 / kChannels), scale_x(7 / kChannels)},
+        vsx0_2_{scale_x(8 / kChannels), scale_x(9 / kChannels),
+                scale_x(10 / kChannels), scale_x(11 / kChannels)},
+        vsx0_3_{scale_x(12 / kChannels), scale_x(13 / kChannels),
+                scale_x(14 / kChannels), scale_x(15 / kChannels)},
         precalc_{nullptr, &std::free},
-        // Ensure src and dst row buffers are not overrun
-        max_vector_dx_{std::min(
-            static_cast<ptrdiff_t>(dst_width_) - 2 * kStep + 1,
-            static_cast<ptrdiff_t>((src_width_ - kRatio * 2 * kStep - 1) *
-                                       dst_width_ / src_width_ -
-                                   1))} {}
+        num_of_vector_path_2x_{
+            calculate_num_of_vector_path_2x(src_width, dst_width)} {}
 
   kleidicv_error_t process_rows() {
-    kleidicv_error_t err = allocate_temp_buffers();
-    if (err != KLEIDICV_OK) {
-      return err;
+    if (num_of_vector_path_2x_ > 0) {
+      kleidicv_error_t err = allocate_temp_buffers();
+      if (err != KLEIDICV_OK) {
+        return err;
+      }
     }
 
     precalculate_indices_fractions_bases();
@@ -90,9 +92,6 @@ class ResizeGenericU8Operation final {
   static constexpr ptrdiff_t kFixpHalf = (1UL << (kFixpBits - 1));
   static constexpr ptrdiff_t kStep = kVectorLength / sizeof(uint8_t);
   static constexpr ptrdiff_t kHalfStep = kStep / 2;
-  // Adding sx values again and again accumulates error, recalibrating resets
-  // it. This is the number of pixels between recalibrations.
-  static constexpr ptrdiff_t kRecalibrateStep = 4000;
   using FreeDeleter = decltype(&std::free);
 
   struct PrecalcData {
@@ -100,6 +99,14 @@ class ResizeGenericU8Operation final {
     uint16_t xfrac[kStep];
     ptrdiff_t sxbase;
   };
+
+  static size_t calculate_num_of_vector_path_2x(size_t src_width,
+                                                size_t dst_width) {
+    if ((src_width * kChannels) >= (sizeof(uint8x16_t) * kRatio)) {
+      return (dst_width * kChannels) / (2 * kStep);
+    }
+    return 0;
+  }
 
   template <typename T = uint64_t>
   static T rounding_div(uint64_t nom, uint64_t denom) {
@@ -129,17 +136,17 @@ class ResizeGenericU8Operation final {
   }
 
   kleidicv_error_t allocate_temp_buffers() {
-    size_t vectorized_width = max_vector_dx_ + 2 * kStep;
     precalc_.reset(static_cast<PrecalcData *>(
-        malloc(vectorized_width / kStep * sizeof(PrecalcData))));
+        malloc(num_of_vector_path_2x_ * 2 * sizeof(PrecalcData))));
     if (!precalc_) {
       return KLEIDICV_ERROR_ALLOCATION;
     }
     return KLEIDICV_OK;
   }
 
-  void calculate_indices_fractions_base(ptrdiff_t dx, uint64_t sx_fixp) {
-    uint32_t xfrac0 = static_cast<uint32_t>(sx_fixp & ((1 << kFixpBits) - 1));
+  void calculate_indices_fractions_base(size_t precalc_index, ptrdiff_t sx_base,
+                                        uint64_t sx_fixp) {
+    uint32_t xfrac0 = static_cast<uint32_t>(sx_fixp - (sx_base << kFixpBits));
     uint32x4_t vfrac = vdupq_n_u32(xfrac0);
     // Calculate x coordinate delta from sx_base, the integer part of source x
     uint8x16x2_t vsx_delta_lo, vsx_delta_hi;
@@ -150,7 +157,13 @@ class ResizeGenericU8Operation final {
     uint8x8_t idx0 = vqtbl2_u8(vsx_delta_lo, vsidx_tbl_);
     uint8x8_t idx1 = vqtbl2_u8(vsx_delta_hi, vsidx_tbl_);
     uint8x16_t vsx0_idx = vcombine_u8(idx0, idx1);
-    PrecalcData &precalc1 = precalc_.get()[dx / kStep];
+    if constexpr (kChannels > 1) {
+      vsx0_idx = vshlq_n_u8(vsx0_idx, kChannels == 4 ? 2 : 1);
+      vsx0_idx =
+          vaddq_u8(vsx0_idx, vreinterpretq_u8_u32(vdupq_n_u32(
+                                 kChannels == 4 ? 0x03020100U : 0x01000100)));
+    }
+    PrecalcData &precalc1 = precalc_.get()[precalc_index];
     vst1q(precalc1.idx, vsx0_idx);
     uint16x8x2_t vsxfrac;
     vsxfrac.val[0] =
@@ -158,22 +171,42 @@ class ResizeGenericU8Operation final {
     vsxfrac.val[1] =
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta_hi, vsfrac_tbl_));
     VecTraits<uint16_t>::store(vsxfrac, precalc1.xfrac);
-    precalc1.sxbase = static_cast<ptrdiff_t>(sx_fixp >> kFixpBits);
+    precalc1.sxbase = sx_base;
   }
 
   void precalculate_indices_fractions_bases() {
+    // Repeatedly adding sx_fixp_step_ is faster than multiplication, but it
+    // accumulates fixed-point error; periodic recalibration resets it. The
+    // maximum per-addition error of sx_fixp_step_ is 0.5 / (1 << 16). Only the
+    // upper 8 bits of the 16-bit fractional part are used for interpolation, so
+    // once the accumulated error reaches 1 / (1 << 8), it can affect later
+    // stages. This corresponds to 512 additions. Since two additions are
+    // performed per cycle, we recalibrate every 256 cycles.
+    constexpr ptrdiff_t kRecalibrateCycle = 256;
+
     ptrdiff_t dx = 0;
-    while (dx < max_vector_dx_) {
+    size_t i = 0;
+    ptrdiff_t max_sx =
+        std::max(static_cast<ptrdiff_t>(src_width_ * kChannels -
+                                        (sizeof(uint8x16_t) * kRatio)),
+                 0L) /
+        kChannels;
+    while (i < num_of_vector_path_2x_) {
       uint64_t sx_fixp = to_src_x(dx);
-      ptrdiff_t dxmax = std::min(max_vector_dx_, dx + kRecalibrateStep);
+      size_t i_end = std::min(num_of_vector_path_2x_, i + kRecalibrateCycle);
       // Unroll twice, so it is in sync with process_row
-      while (dx < dxmax) {
-        calculate_indices_fractions_base(dx, sx_fixp);
+      while (i < i_end) {
+        ptrdiff_t sx_candidate = static_cast<ptrdiff_t>(sx_fixp >> kFixpBits);
+        calculate_indices_fractions_base(i * 2, std::min(max_sx, sx_candidate),
+                                         sx_fixp);
         sx_fixp += sx_fixp_step_;
-        dx += kStep;
-        calculate_indices_fractions_base(dx, sx_fixp);
+        dx += kStep / kChannels;
+        sx_candidate = static_cast<ptrdiff_t>(sx_fixp >> kFixpBits);
+        calculate_indices_fractions_base(
+            (i * 2) + 1, std::min(max_sx, sx_candidate), sx_fixp);
         sx_fixp += sx_fixp_step_;
-        dx += kStep;
+        dx += kStep / kChannels;
+        i++;
       }
     }
   }
@@ -193,21 +226,29 @@ class ResizeGenericU8Operation final {
 
     ptrdiff_t dx = 0;
 
-    for (; dx < max_vector_dx_; dx += 2 * kStep) {
-      vector_path_2x(dx, yfrac, src_cols_top, src_cols_bottom, dst_cols);
+    for (size_t i = 0; i < num_of_vector_path_2x_; i += 1) {
+      auto res = vector_path_2x(i, yfrac, src_cols_top, src_cols_bottom);
+      VecTraits<uint8_t>::store(res, &dst_cols.at(dx)[0]);
+      dx += (kStep / kChannels) * 2;
     }
 
     // Remaining part:
     ptrdiff_t sx_fixp = to_src_x(dx);
     ptrdiff_t sx_fixp_one_element =
         rounding_div<ptrdiff_t>(src_width_ << kFixpBits, dst_width_);
-    ptrdiff_t max_sx = std::max(
-        static_cast<ptrdiff_t>(src_width_) - (kRatio == 3 ? 2 * kStep : kStep),
-        0L);
-    for (; dx < static_cast<ptrdiff_t>(dst_width_); dx += kHalfStep) {
+    // A pixel consists of kChannel elements: total width is that big, but
+    // finally it shall be divided to get the max in pixel coordinate
+    ptrdiff_t max_sx =
+        std::max(static_cast<ptrdiff_t>(src_width_ * kChannels -
+                                        sizeof(std::conditional_t < kRatio == 2,
+                                               uint8x16_t, uint8x16x2_t >)),
+                 0L) /
+        kChannels;
+    for (; dx < static_cast<ptrdiff_t>(dst_width_);
+         dx += kHalfStep / kChannels) {
       // If (dx + half vector length) would overrun the buffer, pull it back
-      ptrdiff_t dx_fixed =
-          std::min(dx, static_cast<ptrdiff_t>(dst_width_) - kHalfStep);
+      ptrdiff_t dx_fixed = std::min(
+          dx, static_cast<ptrdiff_t>(dst_width_) - kHalfStep / kChannels);
       sx_fixp -= (dx - dx_fixed) * sx_fixp_one_element;
       dx = dx_fixed;
       // If (sx_base + reading length) would overrun the buffer, pull it back
@@ -236,7 +277,13 @@ class ResizeGenericU8Operation final {
     vsx_delta.val[1] =
         vreinterpretq_u8_u32(vaddq_u32(vsx0_1_, vdupq_n_u32(xfrac0)));
     uint8x8_t vsx0_idx = vqtbl2_u8(vsx_delta, vsidx_tbl_);
-    uint8x8_t vsx1_idx = vadd_u8(vsx0_idx, vdup_n_u8(1));
+    if constexpr (kChannels > 1) {
+      vsx0_idx = vshl_n_u8(vsx0_idx, kChannels == 4 ? 2 : 1);
+      vsx0_idx = vadd_u8(
+          vsx0_idx, vreinterpret_u8_u32(
+                        vdup_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100)));
+    }
+    uint8x8_t vsx1_idx = vadd_u8(vsx0_idx, vdup_n_u8(kChannels));
     uint16x8_t vsxfrac =
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta, vsfrac_tbl_));
 
@@ -261,23 +308,25 @@ class ResizeGenericU8Operation final {
     vst1(dst_cols.ptr_at(dx), res);
   }
 
-  void vector_path_2x(ptrdiff_t dx, uint16_t yfrac,
-                      const Columns<const uint8_t> &src_cols_top,
-                      const Columns<const uint8_t> &src_cols_bottom,
-                      Columns<uint8_t> dst_cols) const {
-    uint8x16x2_t res = {
-        vector_path(dx / kStep, src_cols_top, src_cols_bottom, yfrac),
-        vector_path(dx / kStep + 1, src_cols_top, src_cols_bottom, yfrac)};
-    VecTraits<uint8_t>::store(res, dst_cols.ptr_at(dx));
+  // In this function, dx is in elements, not pixels
+  // One pixel consists of kChannel elements
+  uint8x16x2_t vector_path_2x(
+      size_t vector_path_2x_index, uint16_t yfrac,
+      const Columns<const uint8_t> &src_cols_top,
+      const Columns<const uint8_t> &src_cols_bottom) const {
+    return {vector_path(vector_path_2x_index * 2, src_cols_top, src_cols_bottom,
+                        yfrac),
+            vector_path((vector_path_2x_index * 2) + 1, src_cols_top,
+                        src_cols_bottom, yfrac)};
   }
 
-  uint8x16_t vector_path(ptrdiff_t dxidx,
+  uint8x16_t vector_path(size_t precalc_index,
                          const Columns<const uint8_t> &src_cols_top,
                          const Columns<const uint8_t> &src_cols_bottom,
                          uint16_t yfrac) const {
-    PrecalcData &precalc1 = precalc_.get()[dxidx];
+    PrecalcData &precalc1 = precalc_.get()[precalc_index];
     uint8x16_t vsx0_idx = vld1q(precalc1.idx);
-    uint8x16_t vsx1_idx = vaddq_u8(vsx0_idx, vdupq_n_u8(1));
+    uint8x16_t vsx1_idx = vaddq_u8(vsx0_idx, vdupq_n_u8(kChannels));
     uint16x8x2_t vsxfrac2;
     VecTraits<uint16_t>::load(precalc1.xfrac, vsxfrac2);
     ptrdiff_t sx_base = precalc1.sxbase;
@@ -340,11 +389,11 @@ class ResizeGenericU8Operation final {
   const uint32x4_t vsx0_2_;
   const uint32x4_t vsx0_3_;
   std::unique_ptr<PrecalcData, FreeDeleter> precalc_;
-  const ptrdiff_t max_vector_dx_;
+  const size_t num_of_vector_path_2x_;
 };
 
 // ratio: number of vectors to load and resize to 1 vector
-// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
+// supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
 template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -365,8 +414,8 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8(
       size_t dst_stride, size_t dst_width, size_t dst_height)
 
 KLEIDICV_INSTANTIATE_TEMPLATE(2L, 1L);
-KLEIDICV_INSTANTIATE_TEMPLATE(2L, 2L);  // Without functionality
+KLEIDICV_INSTANTIATE_TEMPLATE(2L, 2L);
 KLEIDICV_INSTANTIATE_TEMPLATE(3L, 1L);
-KLEIDICV_INSTANTIATE_TEMPLATE(3L, 2L);  // Without functionality
+KLEIDICV_INSTANTIATE_TEMPLATE(3L, 2L);
 
 }  // namespace kleidicv::neon

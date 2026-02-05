@@ -17,7 +17,7 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Support for OpenCV 4.13.
-- Implementation of Generic Linear Resize for downsizing to 1/3 to 1 ratios.
+- Generic Linear Resize for downscaling with factors from 1/3 to 1 (1- or 2-channel images).
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.
