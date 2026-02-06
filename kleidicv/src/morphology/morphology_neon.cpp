@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/morphology/morphology.h"
 #include "kleidicv/morphology/workspace.h"
 #include "kleidicv/neon.h"
 #include "kleidicv/types.h"
@@ -490,38 +491,43 @@ class DilateOperation final {
 template <typename T>
 kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
                         size_t dst_stride, size_t width, size_t height,
-                        kleidicv_morphology_context_t *context) {
-  CHECK_POINTERS(context);
+                        size_t channels, size_t kernel_width,
+                        size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                        kleidicv_border_type_t border_type,
+                        const uint8_t *border_value, size_t iterations) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
-
-  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
-
-  if (workspace->type_size() != sizeof(T)) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
+  CHECK_IMAGE_SIZE(kernel_width, kernel_height);
+  auto morphology_border_type =
+      MorphologyWorkspace::get_border_type(border_type);
+  if (!morphology_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  if (!morphology_is_implemented(width, height, kernel_width, kernel_height,
+                                 channels)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rectangle rect{width, height};
-  if (workspace->image_size() != rect) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
+  Rectangle kernel_rect{kernel_width, kernel_height};
+  Point anchor{anchor_x, anchor_y};
 
-  // Currently valid, will need to be changed if morphology supports more border
-  // types, like KLEIDICV_BORDER_TYPE_REVERSE.
-  Rectangle kernel{workspace->kernel()};
-  if (width < kernel.width() - 1 || height < kernel.height() - 1) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  MorphologyWorkspace::Pointer workspace;
+  if (kleidicv_error_t error = MorphologyWorkspace::create(
+          workspace, kernel_rect, anchor, *morphology_border_type, border_value,
+          channels, iterations, sizeof(uint8_t), rect)) {
+    return error;
   }
 
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
-  Margin margin{workspace->kernel(), workspace->anchor()};
+  Margin margin{kernel_rect, anchor};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
   for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
-    DilateOperation<T> operation{kernel};
+    DilateOperation<T> operation{kernel_rect};
     workspace->process(rect, current_src_rows, current_dst_rows, margin,
                        workspace->border_type(), operation);
     // Update source for the next iteration.
@@ -560,38 +566,42 @@ class ErodeOperation final {
 template <typename T>
 kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
                        size_t dst_stride, size_t width, size_t height,
-                       kleidicv_morphology_context_t *context) {
-  CHECK_POINTERS(context);
+                       size_t channels, size_t kernel_width,
+                       size_t kernel_height, size_t anchor_x, size_t anchor_y,
+                       kleidicv_border_type_t border_type,
+                       const uint8_t *border_value, size_t iterations) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
-
-  auto *workspace = reinterpret_cast<MorphologyWorkspace *>(context);
-
-  if (workspace->type_size() != sizeof(T)) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
+  CHECK_IMAGE_SIZE(kernel_width, kernel_height);
+  auto morphology_border_type =
+      MorphologyWorkspace::get_border_type(border_type);
+  if (!morphology_border_type) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+  if (!morphology_is_implemented(width, height, kernel_width, kernel_height,
+                                 channels)) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
   Rectangle rect{width, height};
-  if (workspace->image_size() != rect) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  // Currently valid, will need to be changed if morphology supports more border
-  // types, like KLEIDICV_BORDER_TYPE_REVERSE.
-  Rectangle kernel{workspace->kernel()};
-  if (width < kernel.width() - 1 || height < kernel.height() - 1) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  Rectangle kernel_rect{kernel_width, kernel_height};
+  Point anchor{anchor_x, anchor_y};
+  MorphologyWorkspace::Pointer workspace;
+  if (kleidicv_error_t error = MorphologyWorkspace::create(
+          workspace, kernel_rect, anchor, *morphology_border_type, border_value,
+          channels, iterations, sizeof(uint8_t), rect)) {
+    return error;
   }
 
   Rows<const T> src_rows{src, src_stride, workspace->channels()};
   Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
-  Margin margin{workspace->kernel(), workspace->anchor()};
+  Margin margin{kernel_rect, anchor};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
   for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
-    ErodeOperation<T> operation{kernel};
+    ErodeOperation<T> operation{kernel_rect};
     workspace->process(rect, current_src_rows, current_dst_rows, margin,
                        workspace->border_type(), operation);
     // Update source for the next iteration.
@@ -600,10 +610,13 @@ kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
   return KLEIDICV_OK;
 }
 
-#define KLEIDICV_INSTANTIATE_TEMPLATE(name, type)                       \
-  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t name<type>(        \
-      const type *src, size_t src_stride, type *dst, size_t dst_stride, \
-      size_t width, size_t height, kleidicv_morphology_context_t *context)
+#define KLEIDICV_INSTANTIATE_TEMPLATE(name, type)                        \
+  template KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t name<type>(         \
+      const type *src, size_t src_stride, type *dst, size_t dst_stride,  \
+      size_t width, size_t height, size_t channels, size_t kernel_width, \
+      size_t kernel_height, size_t anchor_x, size_t anchor_y,            \
+      kleidicv_border_type_t border_type, const uint8_t *border_value,   \
+      size_t iterations)
 
 KLEIDICV_INSTANTIATE_TEMPLATE(dilate, uint8_t);
 KLEIDICV_INSTANTIATE_TEMPLATE(erode, uint8_t);

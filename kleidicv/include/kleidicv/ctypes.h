@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -36,8 +36,7 @@ typedef enum KLEIDICV_NODISCARD {
   KLEIDICV_ERROR_ALLOCATION,
   /// A value did not meet alignment requirements.
   KLEIDICV_ERROR_ALIGNMENT,
-  /// The provided context (like @ref kleidicv_morphology_context_t) is not
-  /// compatible with the operation.
+  /// The provided context is not compatible with the operation.
   KLEIDICV_ERROR_CONTEXT_MISMATCH,
 } kleidicv_error_t;
 
@@ -86,9 +85,6 @@ typedef enum {
   /** Bilinear interpolation */
   KLEIDICV_INTERPOLATION_LINEAR,
 } kleidicv_interpolation_type_t;
-
-/// Internal structure where morphology operations store their state
-typedef struct kleidicv_morphology_context_t_ kleidicv_morphology_context_t;
 
 /// Internal structure where filter operations store their state
 typedef struct kleidicv_filter_context_t_ kleidicv_filter_context_t;

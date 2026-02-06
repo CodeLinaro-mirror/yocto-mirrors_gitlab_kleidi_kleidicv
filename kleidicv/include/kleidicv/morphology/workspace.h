@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -76,21 +76,24 @@ class MorphologyWorkspace final {
   MorphologyWorkspace() = delete;
 
   // Creates a workspace on the heap.
-  static kleidicv_error_t create(
-      Pointer &workspace, kleidicv_rectangle_t kernel, kleidicv_point_t anchor,
-      BorderType border_type, const uint8_t *border_value, size_t channels,
-      size_t iterations, size_t type_size,
-      kleidicv_rectangle_t image) KLEIDICV_STREAMING {
-    // These values are arbitrarily choosen.
-    const size_t rows_per_iteration =
-        std::max(2 * kernel.height, static_cast<size_t>(32ULL));
-    // To avoid load/store penalties.
-    const size_t kAlignment = 16;
-
-    if (anchor.x >= kernel.width || anchor.y >= kernel.height) {
+  static kleidicv_error_t create(Pointer &workspace, Rectangle kernel,
+                                 Point anchor, BorderType border_type,
+                                 const uint8_t *border_value, size_t channels,
+                                 size_t iterations, size_t type_size,
+                                 Rectangle image) KLEIDICV_STREAMING {
+    if (anchor.x() >= kernel.width() || anchor.y() >= kernel.height()) {
       return KLEIDICV_ERROR_RANGE;
     }
 
+    if (border_type == BorderType::CONSTANT && border_value == nullptr) {
+      return KLEIDICV_ERROR_NULL_POINTER;
+    }
+
+    // These values are arbitrarily choosen.
+    const size_t rows_per_iteration =
+        std::max(2 * kernel.height(), static_cast<size_t>(32ULL));
+    // To avoid load/store penalties.
+    const size_t kAlignment = 16;
     Rectangle image_size{image};
     Margin margin{kernel, anchor};
 
@@ -151,9 +154,6 @@ class MorphologyWorkspace final {
     workspace->anchor_ = anchor;
     workspace->border_type_ = border_type;
     if (border_type == BorderType::CONSTANT) {
-      if (border_value == nullptr) {
-        return KLEIDICV_ERROR_NULL_POINTER;
-      }
       for (size_t i = 0; i < channels; ++i) {
         workspace->border_value_[i] = border_value[i];
       }
@@ -166,8 +166,8 @@ class MorphologyWorkspace final {
     return KLEIDICV_OK;
   }
 
-  kleidicv_rectangle_t kernel() const { return kernel_; }
-  kleidicv_point_t anchor() const { return anchor_; }
+  Rectangle kernel() const { return kernel_; }
+  Point anchor() const { return anchor_; }
   BorderType border_type() const { return border_type_; }
   size_t channels() const { return channels_; }
   size_t iterations() const { return iterations_; }
@@ -364,8 +364,8 @@ class MorphologyWorkspace final {
 
   static_assert(sizeof(Pointer) == sizeof(void *), "Unexpected type size");
 
-  kleidicv_rectangle_t kernel_;
-  kleidicv_point_t anchor_;
+  Rectangle kernel_;
+  Point anchor_;
   BorderType border_type_;
   std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT> border_value_;
   size_t iterations_;

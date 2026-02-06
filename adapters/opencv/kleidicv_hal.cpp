@@ -661,10 +661,6 @@ int morphology(int operation, const uchar *src_data, size_t src_step,
   }
 
   size_t channels = static_cast<size_t>(CV_MAT_CN(src_type));
-  size_t type_size = get_type_size(CV_MAT_DEPTH(src_type));
-  if (SIZE_MAX == type_size) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
 
   std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT> border_value;
 
@@ -680,33 +676,24 @@ int morphology(int operation, const uchar *src_data, size_t src_step,
     }
   }
 
-  kleidicv_morphology_context_t *context = nullptr;
-  if (kleidicv_error_t err = kleidicv_morphology_create(
-          &context,
-          kleidicv_rectangle_t{static_cast<size_t>(kernel_width),
-                               static_cast<size_t>(kernel_height)},
-          kleidicv_point_t{static_cast<size_t>(anchor_x),
-                           static_cast<size_t>(anchor_y)},
-          border_type, border_value.data(), channels, iterations, type_size,
-          kleidicv_rectangle_t{static_cast<size_t>(width),
-                               static_cast<size_t>(height)})) {
-    return convert_error(err);
-  }
-
   kleidicv_error_t operation_err;
   if (operation == CV_HAL_MORPH_DILATE) {
     operation_err = kleidicv_dilate_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), context);
+        static_cast<size_t>(width), static_cast<size_t>(height), channels,
+        static_cast<size_t>(kernel_width), static_cast<size_t>(kernel_height),
+        static_cast<size_t>(anchor_x), static_cast<size_t>(anchor_y),
+        border_type, border_value.data(), iterations);
   } else /* operation == CV_HAL_MORPH_ERODE */ {
     operation_err = kleidicv_erode_u8(
         reinterpret_cast<const uint8_t *>(src_data), src_step,
         reinterpret_cast<uint8_t *>(dst_data), dst_step,
-        static_cast<size_t>(width), static_cast<size_t>(height), context);
+        static_cast<size_t>(width), static_cast<size_t>(height), channels,
+        static_cast<size_t>(kernel_width), static_cast<size_t>(kernel_height),
+        static_cast<size_t>(anchor_x), static_cast<size_t>(anchor_y),
+        border_type, border_value.data(), iterations);
   }
-
-  (void)kleidicv_morphology_release(context);
 
   return convert_error(operation_err);
 }
