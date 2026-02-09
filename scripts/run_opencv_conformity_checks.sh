@@ -20,6 +20,8 @@ OPENCV_KLEIDICV_PATH="${BUILD_PATH}/opencv_kleidicv"
 
 OPENCV_CONFORMITY_CPUS="${OPENCV_CONFORMITY_CPUS:-cortex-a35 max,sve128=on,sme=off max,sve128=on,sme512=on}"
 
+export OPENCV_VERSION OPENCV_URL
+
 BUILD_PATH="${BUILD_PATH}" \
 CLEAN="${CLEAN}" \
   "${SCRIPT_PATH}/opencv-conformity-build.sh"
