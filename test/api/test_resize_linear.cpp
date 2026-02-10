@@ -301,6 +301,14 @@ TYPED_TEST(ResizeLinear, NotImplemented) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(23), 23, 2,
                                    dst.data(), dst_stride(8), 8, 1, channels));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_resize_linear(src.data(), src_stride(31), 31, 1, dst.data(),
+                             dst_stride(11), 11, 1, channels));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_resize_linear(src.data(), src_stride(32), 32, 2, dst.data(),
+                             dst_stride(11), 11, 3, channels));
 }
 
 TYPED_TEST(ResizeLinear, InvalidImageSize) {

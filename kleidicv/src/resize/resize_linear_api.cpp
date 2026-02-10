@@ -23,17 +23,22 @@ KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_2x2_stripe_u8,
                           kleidicv_resize_2x2_stripe_u8);
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_4x4_stripe_u8,
                           kleidicv_resize_4x4_stripe_u8);
-KLEIDICV_MULTIVERSION_C_API(
+
+KLEIDICV_MULTIVERSION_C_API_VECLEN(
     kleidicv_resize_1ch_r2_stripe_u8,
-    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 1>), nullptr,
-    nullptr, nullptr);
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 1>),
+    (&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<2>),
+    (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<2>),
+    (&kleidicv::sme2::kleidicv_resize_generic_stripe_u8<2>), 16, 64);
+KLEIDICV_MULTIVERSION_C_API_VECLEN(
+    kleidicv_resize_1ch_r3_stripe_u8,
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 1>),
+    (&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<3>),
+    (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<3>),
+    (&kleidicv::sme2::kleidicv_resize_generic_stripe_u8<3>), 16, 64);
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_resize_2ch_r2_stripe_u8,
     (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 2>), nullptr,
-    nullptr, nullptr);
-KLEIDICV_MULTIVERSION_C_API(
-    kleidicv_resize_1ch_r3_stripe_u8,
-    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 1>), nullptr,
     nullptr, nullptr);
 KLEIDICV_MULTIVERSION_C_API(
     kleidicv_resize_2ch_r3_stripe_u8,
