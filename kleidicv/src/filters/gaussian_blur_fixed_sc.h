@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,6 +14,7 @@
 #include "kleidicv/filters/separable_filter_3x3_sc.h"
 #include "kleidicv/filters/separable_filter_5x5_sc.h"
 #include "kleidicv/filters/separable_filter_7x7_sc.h"
+#include "kleidicv/filters/separable_filter_9x9_sc.h"
 #include "kleidicv/filters/sigma.h"
 #include "kleidicv/workspace/separable.h"
 
@@ -250,6 +251,137 @@ class GaussianBlur<uint8_t, 7, true> {
   }
 };  // end of class GaussianBlur<uint8_t, 7, true>
 
+// Template for 9x9 Gaussian Blur binomial filters.
+//
+//                [  16,   52,  120,  204,  240,  204,  120,   52,  16 ]
+//                [  52,  169,  390,  663,  780,  663,  390,  169,  52 ]
+//                [ 120,  390,  900, 1530, 1800, 1530,  900,  390, 120 ]
+//  F = 1/65536 * [ 204,  663, 1530, 2601, 3060, 2601, 1530,  663, 204 ] =
+//                [ 240,  780, 1800, 3060, 3600, 3060, 1800,  780, 240 ]
+//                [ 204,  663, 1530, 2601, 3060, 2601, 1530,  663, 204 ]
+//                [ 120,  390,  900, 1530, 1800, 1530,  900,  390, 120 ]
+//                [  52,  169,  390,  663,  780,  663,  390,  169,  52 ]
+//                [  16,   52,  120,  204,  240,  204,  120,   52,  16 ]
+//
+//                [  4 ]
+//                [ 13 ]
+//                [ 30 ]
+//  = 1/65536 *   [ 51 ] * [ 4, 13, 30, 51, 60, 51, 30, 13, 4 ]
+//                [ 60 ]
+//                [ 51 ]
+//                [ 30 ]
+//                [ 13 ]
+//                [  4 ]
+template <>
+class GaussianBlur<uint8_t, 9, true> {
+ public:
+  using SourceType = uint8_t;
+  using BufferType = uint16_t;
+  using DestinationType = uint8_t;
+
+  // Applies vertical filtering vector using SIMD operations.
+  //
+  // DST = [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6, SRC7, SRC8 ] *
+  //     * [ 4, 13, 30, 51, 60, 51, 30, 13, 4 ]T
+  void vertical_vector_path(svbool_t pg,
+                            std::reference_wrapper<svuint8_t> src[9],
+                            BufferType *dst) const KLEIDICV_STREAMING {
+    // Lane-level split after widening: *_lo/*_hi are lower/upper lanes.
+    svuint16_t acc_0_8_lo = svaddlb_u16(src[0], src[8]);
+    svuint16_t acc_0_8_hi = svaddlt_u16(src[0], src[8]);
+
+    svuint16_t acc_1_7_lo = svaddlb_u16(src[1], src[7]);
+    svuint16_t acc_1_7_hi = svaddlt_u16(src[1], src[7]);
+
+    svuint16_t acc_2_6_lo = svaddlb_u16(src[2], src[6]);
+    svuint16_t acc_2_6_hi = svaddlt_u16(src[2], src[6]);
+
+    svuint16_t acc_3_5_lo = svaddlb_u16(src[3], src[5]);
+    svuint16_t acc_3_5_hi = svaddlt_u16(src[3], src[5]);
+
+    svuint16_t acc_4_lo = svmovlb_u16(src[4]);
+    svuint16_t acc_4_hi = svmovlt_u16(src[4]);
+
+    // Window-level grouping: *_tap_even/*_tap_odd are even/odd taps
+    // (0, 2, 4, 6, 8 vs 1, 3, 5, 7).
+    svuint16_t acc_lo_tap_even = svlsl_n_u16_x(pg, acc_0_8_lo, 2);
+    svuint16_t acc_hi_tap_even = svlsl_n_u16_x(pg, acc_0_8_hi, 2);
+    acc_lo_tap_even = svmla_n_u16_x(pg, acc_lo_tap_even, acc_2_6_lo, 30);
+    acc_hi_tap_even = svmla_n_u16_x(pg, acc_hi_tap_even, acc_2_6_hi, 30);
+    acc_lo_tap_even = svmla_n_u16_x(pg, acc_lo_tap_even, acc_4_lo, 60);
+    acc_hi_tap_even = svmla_n_u16_x(pg, acc_hi_tap_even, acc_4_hi, 60);
+
+    svuint16_t acc_lo_tap_odd = svmul_n_u16_x(pg, acc_1_7_lo, 13);
+    svuint16_t acc_hi_tap_odd = svmul_n_u16_x(pg, acc_1_7_hi, 13);
+    acc_lo_tap_odd = svmla_n_u16_x(pg, acc_lo_tap_odd, acc_3_5_lo, 51);
+    acc_hi_tap_odd = svmla_n_u16_x(pg, acc_hi_tap_odd, acc_3_5_hi, 51);
+
+    svuint16_t acc_lo = svadd_u16_x(pg, acc_lo_tap_even, acc_lo_tap_odd);
+    svuint16_t acc_hi = svadd_u16_x(pg, acc_hi_tap_even, acc_hi_tap_odd);
+
+    svuint16x2_t interleaved = svcreate2(acc_lo, acc_hi);
+    svst2(pg, &dst[0], interleaved);
+  }
+
+  // Applies horizontal filtering vector using SIMD operations.
+  //
+  // DST = 1/65536 * [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6, SRC7, SRC8 ] *
+  //               * [ 4, 13, 30, 51, 60, 51, 30, 13, 4 ]T
+  void horizontal_vector_path(svbool_t pg,
+                              std::reference_wrapper<svuint16_t> src[9],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
+    // Lane-level split after widening: *_lo/*_hi are lower/upper lanes.
+    svuint32_t acc_0_8_lo = svaddlb_u32(src[0], src[8]);
+    svuint32_t acc_0_8_hi = svaddlt_u32(src[0], src[8]);
+
+    svuint32_t acc_1_7_lo = svaddlb_u32(src[1], src[7]);
+    svuint32_t acc_1_7_hi = svaddlt_u32(src[1], src[7]);
+
+    svuint32_t acc_2_6_lo = svaddlb_u32(src[2], src[6]);
+    svuint32_t acc_2_6_hi = svaddlt_u32(src[2], src[6]);
+
+    svuint32_t acc_3_5_lo = svaddlb_u32(src[3], src[5]);
+    svuint32_t acc_3_5_hi = svaddlt_u32(src[3], src[5]);
+
+    svuint32_t acc_4_lo = svmovlb_u32(src[4]);
+    svuint32_t acc_4_hi = svmovlt_u32(src[4]);
+
+    // Window-level grouping: *_tap_even/*_tap_odd are even/odd taps
+    // (0, 2, 4, 6, 8 vs 1, 3, 5, 7).
+    svuint32_t acc_lo_tap_even = svlsl_n_u32_x(pg, acc_0_8_lo, 2);
+    svuint32_t acc_hi_tap_even = svlsl_n_u32_x(pg, acc_0_8_hi, 2);
+    acc_lo_tap_even = svmla_n_u32_x(pg, acc_lo_tap_even, acc_2_6_lo, 30);
+    acc_hi_tap_even = svmla_n_u32_x(pg, acc_hi_tap_even, acc_2_6_hi, 30);
+    acc_lo_tap_even = svmla_n_u32_x(pg, acc_lo_tap_even, acc_4_lo, 60);
+    acc_hi_tap_even = svmla_n_u32_x(pg, acc_hi_tap_even, acc_4_hi, 60);
+
+    svuint32_t acc_lo_tap_odd = svmul_n_u32_x(pg, acc_1_7_lo, 13);
+    svuint32_t acc_hi_tap_odd = svmul_n_u32_x(pg, acc_1_7_hi, 13);
+    acc_lo_tap_odd = svmla_n_u32_x(pg, acc_lo_tap_odd, acc_3_5_lo, 51);
+    acc_hi_tap_odd = svmla_n_u32_x(pg, acc_hi_tap_odd, acc_3_5_hi, 51);
+
+    svuint32_t acc_lo = svadd_u32_x(pg, acc_lo_tap_even, acc_lo_tap_odd);
+    svuint32_t acc_hi = svadd_u32_x(pg, acc_hi_tap_even, acc_hi_tap_odd);
+
+    svuint16_t acc_u16_lo = svrshrnb_n_u32(acc_lo, 16);
+    svuint16_t acc_u16 = svrshrnt_n_u32(acc_u16_lo, acc_hi, 16);
+
+    svst1b(pg, &dst[0], acc_u16);
+  }
+
+  // Applies horizontal filtering vector using scalar operations.
+  //
+  // DST = 1/65536 * [ SRC0, SRC1, SRC2, SRC3, SRC4, SRC5, SRC6, SRC7, SRC8 ] *
+  //               * [ 4, 13, 30, 51, 60, 51, 30, 13, 4 ]T
+  void horizontal_scalar_path(const BufferType src[9],
+                              DestinationType *dst) const KLEIDICV_STREAMING {
+    uint32_t acc = src[0] * 4 + src[1] * 13 + src[2] * 30 + src[3] * 51 +
+                   src[4] * 60 + src[5] * 51 + src[6] * 30 + src[7] * 13 +
+                   src[8] * 4;
+    dst[0] = rounding_shift_right(acc, 16);
+  }
+};  // end of class GaussianBlur<uint8_t, 9, true>
+
 // CustomSigma variant
 template <size_t KernelSize>
 class GaussianBlur<uint8_t, KernelSize, false> {
@@ -394,6 +526,10 @@ static kleidicv_error_t gaussian_blur(
           sigma, border_type, workspace);
     case 7:
       return gaussian_blur_fixed_kernel_size<7, IsBinomial>(
+          src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
+          sigma, border_type, workspace);
+    case 9:
+      return gaussian_blur_fixed_kernel_size<9, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
           sigma, border_type, workspace);
     case 15:

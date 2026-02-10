@@ -510,19 +510,7 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (kernel_width == 9) {
-    // Temporary: force Neon for 9x9 until SVE/SME implementations
-    // (including the separable driver) are available.
-    auto callback = [=](size_t y_begin, size_t y_end) {
-      return kleidicv::neon::gaussian_blur_fixed_stripe_u8(
-          src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-          channels, kernel_width, kernel_height, sigma_x, sigma_y,
-          *fixed_border_type);
-    };
-    return parallel_batches(callback, mt, height);
-  }
-
-  if (kernel_width <= 7 || kernel_width == 15 || kernel_width == 21) {
+  if (kernel_width <= 9 || kernel_width == 15 || kernel_width == 21) {
     auto callback = [=](size_t y_begin, size_t y_end) {
       return kleidicv_gaussian_blur_fixed_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,

@@ -154,7 +154,7 @@ If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLA
 Notes on parameters:
 * `src.depth()` - only supports `CV_8U` depth.
 * `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1`
-* `ksize` - supported kernel sizes are 3x3, 5x5, 7x7, 15x15 and 21x21. Odd kernel sizes between 9 and 255 only supported with `cv::BORDER_REPLICATE`.
+* `ksize` - supported kernel sizes are 3x3, 5x5, 7x7, 9x9, 15x15 and 21x21. Odd kernel sizes between 11 and 255 only supported with `cv::BORDER_REPLICATE`.
 * `sigmaX`, `sigmaY` - If set to 0, it is automatically calculated. Up to 7x7 kernel size optimal performance is achieved this way.
 * `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.11.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
   + `cv::BORDER_REPLICATE`

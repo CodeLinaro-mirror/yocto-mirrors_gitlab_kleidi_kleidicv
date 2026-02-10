@@ -18,6 +18,7 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Support for OpenCV 4.13.
 - Generic Linear Resize for downscaling with factors from 1/3 to 1 (1- or 2-channel images).
+- Gaussian Blur 9x9 kernel support for NEON and SVE/SME fixed paths.
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.
