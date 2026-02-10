@@ -18,5 +18,6 @@ scripts/ci-gcc.sh
 # TODO: Cross-build OpenCV
 if [[ $(dpkg --print-architecture) = arm64 ]]; then
   # Check OpenCV-KleidiCV integration
-  CLEAN="ON" scripts/ci-opencv.sh
+  CLEAN="ON" scripts/ci-opencv-tests.sh
+  scripts/run_opencv_conformity_checks.sh
 fi
