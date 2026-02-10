@@ -244,7 +244,11 @@
     {
       "label": "Run OpenCV CI",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/ci-opencv.sh",
+      "command": "bash",
+      "args": [
+        "-c",
+        "CLEAN=ON \"${workspaceFolder}/scripts/ci-opencv-tests.sh\" && \"${workspaceFolder}/scripts/run_opencv_conformity_checks.sh\""
+      ],
       "problemMatcher": []
     },
     {
