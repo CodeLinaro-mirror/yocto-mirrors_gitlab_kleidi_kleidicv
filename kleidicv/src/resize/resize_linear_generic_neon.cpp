@@ -89,17 +89,25 @@ class ResizeGenericU8Operation final {
   static constexpr ptrdiff_t kHalfStep = kStep / 2;
   using FreeDeleter = decltype(&std::free);
 
+  struct VectorPathNums {
+    size_t two_x_;
+    size_t half_;
+
+    explicit VectorPathNums(std::pair<size_t, size_t> sizes)
+        : two_x_{sizes.first}, half_{sizes.second} {}
+  };
+
   struct PrecalcData_2x {
     uint8_t idx[kStep];
     uint16_t xfrac[kStep];
-    ptrdiff_t sxbase;
+    ptrdiff_t src_element_index;
   };
 
   struct PrecalcData_half {
     uint8_t idx[kHalfStep];
     uint16_t xfrac[kHalfStep];
-    ptrdiff_t sxbase;
-    ptrdiff_t dx;
+    ptrdiff_t src_element_index;
+    ptrdiff_t dst_element_index;
   };
 
   static std::pair<size_t, size_t> calculate_num_of_vector_paths(
@@ -183,7 +191,7 @@ class ResizeGenericU8Operation final {
     vsxfrac.val[1] =
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta_hi, vsfrac_tbl_));
     VecTraits<uint16_t>::store(vsxfrac, precalc.xfrac);
-    precalc.sxbase = static_cast<ptrdiff_t>(sx_base);
+    precalc.src_element_index = static_cast<ptrdiff_t>(sx_base * kChannels);
   }
 
   void calculate_indices_fractions_base_half(size_t precalc_index,
@@ -206,8 +214,8 @@ class ResizeGenericU8Operation final {
     uint16x8_t vsxfrac =
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta, vsfrac_tbl_));
     VecTraits<uint16_t>::store(vsxfrac, precalc.xfrac);
-    precalc.sxbase = static_cast<ptrdiff_t>(sx_base);
-    precalc.dx = static_cast<ptrdiff_t>(dx);
+    precalc.src_element_index = static_cast<ptrdiff_t>(sx_base * kChannels);
+    precalc.dst_element_index = static_cast<ptrdiff_t>(dx * kChannels);
   }
 
   void precalculate_indices_fractions_bases() {
@@ -290,9 +298,9 @@ class ResizeGenericU8Operation final {
   void process_row(uint64_t dy) {
     uint64_t sy_fixp = to_src_y(dy);
     ptrdiff_t sy = static_cast<ptrdiff_t>(sy_fixp >> kFixpBits);
-    auto src_cols_top = src_rows_.at(sy).as_columns();
-    auto src_cols_bottom = src_rows_.at(sy + 1).as_columns();
-    auto dst_cols = dst_rows_.at(static_cast<ptrdiff_t>(dy)).as_columns();
+    const uint8_t *src_top = &src_rows_.at(sy)[0];
+    const uint8_t *src_bottom = &src_rows_.at(sy + 1)[0];
+    uint8_t *dst = &dst_rows_.at(static_cast<ptrdiff_t>(dy))[0];
     // Get the highest 8 bits of the fractional part
     // This is a good compromise between accuracy and performance
     // Because the result is 8bits, the error only affects the least
@@ -300,39 +308,37 @@ class ResizeGenericU8Operation final {
     uint16_t yfrac =
         static_cast<uint16_t>((sy_fixp - (sy << kFixpBits)) >> (kFixpBits - 8));
 
-    ptrdiff_t dx = 0;
+    ptrdiff_t dst_element_index = 0;
 
     for (size_t i = 0; i < num_of_vector_paths.two_x_; i += 1) {
       uint8x16x2_t res{};
-      res.val[0] = vector_path(i * 2, src_cols_top, src_cols_bottom, yfrac);
-      res.val[1] =
-          vector_path((i * 2) + 1, src_cols_top, src_cols_bottom, yfrac);
-      VecTraits<uint8_t>::store(res, &dst_cols.at(dx)[0]);
-      dx += (kStep / kChannels) * 2;
+      res.val[0] = vector_path(i * 2, src_top, src_bottom, yfrac);
+      res.val[1] = vector_path((i * 2) + 1, src_top, src_bottom, yfrac);
+      VecTraits<uint8_t>::store(res, &dst[dst_element_index]);
+      dst_element_index += kStep * 2;
     }
 
     for (size_t i = 0; i < num_of_vector_paths.half_; i += 1) {
-      auto res = vector_path_half(i, yfrac, src_cols_top, src_cols_bottom);
-      vst1(dst_cols.ptr_at(precalc_half_[i].dx), res);
+      auto res = vector_path_half(i, yfrac, src_top, src_bottom);
+      vst1(&dst[precalc_half_[i].dst_element_index], res);
     }
   }
 
-  uint8x8_t vector_path_half(
-      size_t precalc_index, uint16_t yfrac,
-      const Columns<const uint8_t> &src_cols_top,
-      const Columns<const uint8_t> &src_cols_bottom) const {
+  uint8x8_t vector_path_half(size_t precalc_index, uint16_t yfrac,
+                             const uint8_t *src_top,
+                             const uint8_t *src_bottom) const {
     PrecalcData_half &precalc = precalc_half_[precalc_index];
     uint8x8_t vsx0_idx = vld1_u8(precalc.idx);
     uint8x8_t vsx1_idx = vadd_u8(vsx0_idx, vdup_n_u8(kChannels));
     uint16x8_t vsxfrac;
     VecTraits<uint16_t>::load(precalc.xfrac, vsxfrac);
-    ptrdiff_t sx_base = precalc.sxbase;
+    ptrdiff_t src_element_index = precalc.src_element_index;
 
     using SrcVecType =
         std::conditional_t<kRatio == 2, uint8x16_t, uint8x16x2_t>;
     SrcVecType topsrc, bottomsrc;
-    VecTraits<uint8_t>::load(src_cols_top.ptr_at(sx_base), topsrc);
-    VecTraits<uint8_t>::load(src_cols_bottom.ptr_at(sx_base), bottomsrc);
+    VecTraits<uint8_t>::load(&src_top[src_element_index], topsrc);
+    VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);
 
     uint8x8_t a, b, c, d;
     if constexpr (kRatio == 2) {
@@ -355,22 +361,20 @@ class ResizeGenericU8Operation final {
     return res;
   }
 
-  uint8x16_t vector_path(size_t precalc_index,
-                         const Columns<const uint8_t> &src_cols_top,
-                         const Columns<const uint8_t> &src_cols_bottom,
-                         uint16_t yfrac) const {
+  uint8x16_t vector_path(size_t precalc_index, const uint8_t *src_top,
+                         const uint8_t *src_bottom, uint16_t yfrac) const {
     PrecalcData_2x &precalc1 = precalc_2x_[precalc_index];
     uint8x16_t vsx0_idx = vld1q(precalc1.idx);
     uint8x16_t vsx1_idx = vaddq_u8(vsx0_idx, vdupq_n_u8(kChannels));
     uint16x8x2_t vsxfrac2;
     VecTraits<uint16_t>::load(precalc1.xfrac, vsxfrac2);
-    ptrdiff_t sx_base = precalc1.sxbase;
+    ptrdiff_t src_element_index = precalc1.src_element_index;
 
     using SrcVecType =
         std::conditional_t<kRatio == 2, uint8x16x2_t, uint8x16x3_t>;
     SrcVecType topsrc, bottomsrc;
-    VecTraits<uint8_t>::load(src_cols_top.ptr_at(sx_base), topsrc);
-    VecTraits<uint8_t>::load(src_cols_bottom.ptr_at(sx_base), bottomsrc);
+    VecTraits<uint8_t>::load(&src_top[src_element_index], topsrc);
+    VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);
     uint8x16_t a, b, c, d;
     if constexpr (kRatio == 2) {
       a = vqtbl2q_u8(topsrc, vsx0_idx);
@@ -406,14 +410,6 @@ class ResizeGenericU8Operation final {
   static uint8x8_t lerp_full(uint8x8_t a, uint8x8_t b, uint16x8_t w) {
     return vraddhn_u16(vshll_n_u8(a, 8), vmulq_u16(vsubl_u8(b, a), w));
   }
-
-  struct VectorPathNums {
-    size_t two_x_;
-    size_t half_;
-
-    explicit VectorPathNums(std::pair<size_t, size_t> sizes)
-        : two_x_{sizes.first}, half_{sizes.second} {}
-  };
 
   const Rows<const uint8_t> src_rows_;
   const Rows<uint8_t> dst_rows_;
