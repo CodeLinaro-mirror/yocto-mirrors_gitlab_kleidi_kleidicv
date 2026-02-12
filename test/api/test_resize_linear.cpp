@@ -393,40 +393,40 @@ template <typename T, bool kPadding = true>
 static void do_large_dimensions_test(size_t src_width, size_t src_height,
                                      size_t dst_width, size_t dst_height,
                                      size_t channels = 1) {
-  size_t src_stride_pixels = src_width * channels + (kPadding ? 6 : 0);
-  size_t dst_stride_pixels = dst_width * channels + (kPadding ? 3 : 0);
+  size_t src_stride_elements = src_width * channels + (kPadding ? 6 : 0);
+  size_t dst_stride_elements = dst_width * channels + (kPadding ? 3 : 0);
 
   std::vector<T> src, dst, expected_data;
-  src.resize(src_stride_pixels * src_height);
-  dst.resize(dst_stride_pixels * dst_height);
-  expected_data.resize(dst_stride_pixels * dst_height);
+  src.resize(src_stride_elements * src_height);
+  dst.resize(dst_stride_elements * dst_height);
+  expected_data.resize(dst_stride_elements * dst_height);
   for (size_t y = 0; y < src_height; ++y) {
     for (size_t x = 0; x < src_width; ++x) {
       for (size_t ch = 0; ch < channels; ++ch) {
-        src[y * src_stride_pixels + x * channels + ch] =
-            static_cast<T>(y * src_stride_pixels + x * 10 + ch);
+        src[y * src_stride_elements + x * channels + ch] =
+            static_cast<T>(y * src_stride_elements + x * 10 + ch);
       }
     }
   }
   resize_linear_unaccelerated(
-      src.data(), src_stride_pixels * sizeof(T), src_width, src_height,
-      channels, expected_data.data(), dst_stride_pixels * sizeof(T), dst_width,
-      dst_height);
+      src.data(), src_stride_elements * sizeof(T), src_width, src_height,
+      channels, expected_data.data(), dst_stride_elements * sizeof(T),
+      dst_width, dst_height);
   ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_resize_linear(src.data(), src_stride_pixels * sizeof(T),
+            kleidicv_resize_linear(src.data(), src_stride_elements * sizeof(T),
                                    src_width, src_height, dst.data(),
-                                   dst_stride_pixels * sizeof(T), dst_width,
+                                   dst_stride_elements * sizeof(T), dst_width,
                                    dst_height, channels));
 
   for (size_t y = 0; y < dst_height; ++y) {
     std::vector<typename PrintTypeGetter<T>::type> actual{
-        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels),
-        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels +
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_elements),
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_elements +
                                              dst_width * channels)},
         expected{expected_data.begin() +
-                     static_cast<ptrdiff_t>(y * dst_stride_pixels),
+                     static_cast<ptrdiff_t>(y * dst_stride_elements),
                  expected_data.begin() +
-                     static_cast<ptrdiff_t>(y * dst_stride_pixels +
+                     static_cast<ptrdiff_t>(y * dst_stride_elements +
                                             dst_width * channels)};
     if constexpr (std::is_floating_point_v<T>) {
       EXPECT_THAT(actual, ::testing::Pointwise(FloatSimilar(2e-6F), expected))
