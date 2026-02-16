@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,6 +13,28 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 // rows and columns
 class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
  public:
+  // Only constructible with create().
+  BlurAndDownsampleFilterWorkspace() = delete;
+
+  static std::variant<BlurAndDownsampleFilterWorkspace, kleidicv_error_t>
+  create(Rectangle rect, size_t channels,
+         size_t intermediate_size) KLEIDICV_STREAMING {
+    auto [allocation, buffer_rows_stride] =
+        allocate(rect, channels, intermediate_size);
+
+    if (!allocation) {
+      return KLEIDICV_ERROR_ALLOCATION;
+    }
+
+    return BlurAndDownsampleFilterWorkspace{allocation, buffer_rows_stride};
+  }
+
+ private:
+  BlurAndDownsampleFilterWorkspace(uint8_t *allocation,
+                                   size_t buffer_rows_stride) KLEIDICV_STREAMING
+      : SeparableFilterWorkspace(allocation, buffer_rows_stride) {}
+
+ public:
   template <typename FilterType>
   void process(Rectangle rect, size_t y_begin, size_t y_end,
                Rows<const typename FilterType::SourceType> src_rows,
@@ -26,9 +48,9 @@ class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
                                                           border_type};
 
     // Buffer rows which hold intermediate widened data.
-    auto buffer_rows = Rows{reinterpret_cast<typename FilterType::BufferType *>(
-                                &data_[buffer_rows_offset_]),
-                            buffer_rows_stride_, channels};
+    auto buffer_rows =
+        Rows{reinterpret_cast<typename FilterType::BufferType *>(buffer_.get()),
+             buffer_rows_stride_, channels};
 
     // Vertical processing loop.
     for (size_t vertical_index = align_up(y_begin, 2); vertical_index < y_end;
@@ -85,14 +107,6 @@ class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
     }
   }
 };  // end of class BlurAndDownsampleFilterWorkspace
-
-// BlurAndDownsampleFilterWorkspace and SeparableFilterWorkspace must have the
-// same size because through the API of this library only
-// SeparableFilterWorkspace can be created. So, child classes of
-// SeparableFilterWorkspace can only add functionality but cannot add member
-// variables.
-static_assert(sizeof(BlurAndDownsampleFilterWorkspace) ==
-              sizeof(SeparableFilterWorkspace));
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 

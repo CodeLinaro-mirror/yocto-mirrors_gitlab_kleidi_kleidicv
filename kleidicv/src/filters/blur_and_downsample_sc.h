@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -245,55 +245,29 @@ class BlurAndDownsample {
   }
 };  // end of class BlurAndDownsample
 
-// Does not include checks for whether the operation is implemented.
-// This must be done earlier, by blur_and_downsample_is_implemented.
-static kleidicv_error_t blur_and_downsample_checks(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    uint8_t *dst, size_t dst_stride, size_t channels,
-    BlurAndDownsampleFilterWorkspace *workspace) KLEIDICV_STREAMING {
-  CHECK_POINTERS(workspace);
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, (src_height + 1) / 2);
-  CHECK_IMAGE_SIZE(src_width, src_height);
-
-  Rectangle rect{src_width, src_height};
-  const Rectangle &context_rect = workspace->image_size();
-  if (context_rect.width() < src_width || context_rect.height() < src_height) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  // Currently supports only one channel, so it cannot be tested.
-  // GCOVR_EXCL_START
-  if (workspace->channels() < channels) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-  // GCOVR_EXCL_STOP
-
-  return KLEIDICV_OK;
-}
-
 static kleidicv_error_t blur_and_downsample_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t y_begin, size_t y_end,
-    size_t channels, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
-  // Does not include checks for whether the operation is implemented.
-  // This must be done earlier, by blur_and_downsample_is_implemented.
-  auto *workspace =
-      reinterpret_cast<BlurAndDownsampleFilterWorkspace *>(context);
-
-  if (auto check_result =
-          blur_and_downsample_checks(src, src_stride, src_width, src_height,
-                                     dst, dst_stride, channels, workspace)) {
-    return check_result;
-  }
-
+    size_t channels, FixedBorderType fixed_border_type) KLEIDICV_STREAMING {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, (src_height + 1) / 2);
+  CHECK_IMAGE_SIZE(src_width, src_height);
   Rectangle rect{src_width, src_height};
+  constexpr size_t intermediate_size{
+      sizeof(typename BlurAndDownsample::BufferType)};
+
+  auto workspace_variant = BlurAndDownsampleFilterWorkspace::create(
+      rect, channels, intermediate_size);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
+  }
+  auto &workspace =
+      *std::get_if<BlurAndDownsampleFilterWorkspace>(&workspace_variant);
 
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     fixed_border_type, BlurAndDownsample{});
+  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                    fixed_border_type, BlurAndDownsample{});
 
   return KLEIDICV_OK;
 }

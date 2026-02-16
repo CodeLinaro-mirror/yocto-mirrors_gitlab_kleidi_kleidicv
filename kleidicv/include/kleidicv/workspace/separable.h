@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -7,23 +7,15 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <utility>
+#include <variant>
 
 #include "kleidicv/types.h"
 
 namespace KLEIDICV_TARGET_NAMESPACE {
-
-// Forward declarations.
-class SeparableFilterWorkspace;
-
-// Deleter for SeparableFilterWorkspace instances.
-class SeparableFilterWorkspaceDeleter {
- public:
-  void operator()(SeparableFilterWorkspace *ptr) const KLEIDICV_STREAMING {
-    std::free(ptr);
-  };
-};
 
 // Workspace for separable fixed-size filters.
 //
@@ -69,19 +61,26 @@ class SeparableFilterWorkspaceDeleter {
 // suitably-sized buffers which could hold both borders and data.
 class SeparableFilterWorkspace {
  public:
-  // To avoid load/store penalties.
-  static constexpr size_t kAlignment = 16UL;
-
-  // Shorthand for std::unique_ptr<> holding a workspace.
-  using Pointer = std::unique_ptr<SeparableFilterWorkspace,
-                                  SeparableFilterWorkspaceDeleter>;
-
   // Workspace is only constructible with create().
   SeparableFilterWorkspace() = delete;
 
-  // Creates a workspace on the heap.
-  static Pointer create(Rectangle rect, size_t channels,
-                        size_t intermediate_size) KLEIDICV_STREAMING {
+  static std::variant<SeparableFilterWorkspace, kleidicv_error_t> create(
+      Rectangle rect, size_t channels,
+      size_t intermediate_size) KLEIDICV_STREAMING {
+    auto [allocation, buffer_rows_stride] =
+        allocate(rect, channels, intermediate_size);
+
+    if (!allocation) {
+      return KLEIDICV_ERROR_ALLOCATION;
+    }
+
+    return SeparableFilterWorkspace{allocation, buffer_rows_stride};
+  }
+
+ protected:
+  static std::pair<uint8_t *, size_t> allocate(Rectangle rect, size_t channels,
+                                               size_t intermediate_size)
+      KLEIDICV_STREAMING {
     size_t buffer_rows_number_of_elements = rect.width() * channels;
     // Adding more elements because of SVE, where interleaving stores are
     // governed by one predicate. For example, if a predicate requires 7 uint8_t
@@ -92,35 +91,19 @@ class SeparableFilterWorkspace {
 
     size_t buffer_rows_stride =
         buffer_rows_number_of_elements * intermediate_size;
-    size_t buffer_rows_size = buffer_rows_stride;
-    buffer_rows_size += kAlignment - 1;
 
-    // Try to allocate workspace at once.
-    size_t allocation_size =
-        sizeof(SeparableFilterWorkspace) + buffer_rows_size;
-    void *allocation = std::malloc(allocation_size);
-    auto workspace = SeparableFilterWorkspace::Pointer{
-        reinterpret_cast<SeparableFilterWorkspace *>(allocation)};
+    uint8_t *allocation =
+        reinterpret_cast<uint8_t *>(std::malloc(buffer_rows_stride));
 
-    if (!workspace) {
-      return workspace;
-    }
-
-    auto *buffer_rows_address = &workspace->data_[0];
-    buffer_rows_address = align_up(buffer_rows_address, kAlignment);
-    workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
-    workspace->buffer_rows_stride_ = buffer_rows_stride;
-    workspace->image_size_ = rect;
-    workspace->channels_ = channels;
-    workspace->intermediate_size_ = intermediate_size;
-
-    return workspace;
+    return {allocation, buffer_rows_stride};
   }
 
-  size_t channels() const { return channels_; }
-  Rectangle image_size() const { return image_size_; }
-  size_t intermediate_size() const { return intermediate_size_; }
+  SeparableFilterWorkspace(uint8_t *allocation,
+                           size_t buffer_rows_stride) KLEIDICV_STREAMING
+      : buffer_{allocation, &std::free},
+        buffer_rows_stride_{buffer_rows_stride} {}
 
+ public:
   // Processes rows vertically first along the full width
   template <typename FilterType>
   void process(Rectangle rect, size_t y_begin, size_t y_end,
@@ -135,9 +118,9 @@ class SeparableFilterWorkspace {
                                                           border_type};
 
     // Buffer rows which hold intermediate widened data.
-    auto buffer_rows = Rows{reinterpret_cast<typename FilterType::BufferType *>(
-                                &data_[buffer_rows_offset_]),
-                            buffer_rows_stride_, channels};
+    auto buffer_rows =
+        Rows{reinterpret_cast<typename FilterType::BufferType *>(buffer_.get()),
+             buffer_rows_stride_, channels};
 
     // Vertical processing loop.
     for (size_t vertical_index = y_begin; vertical_index < y_end;
@@ -163,9 +146,9 @@ class SeparableFilterWorkspace {
                          typename FilterType::BorderType /* border_type */,
                          FilterType filter) KLEIDICV_STREAMING {
     // Buffer rows which hold intermediate widened data.
-    auto buffer_rows = Rows{reinterpret_cast<typename FilterType::BufferType *>(
-                                &data_[buffer_rows_offset_]),
-                            buffer_rows_stride_, channels};
+    auto buffer_rows =
+        Rows{reinterpret_cast<typename FilterType::BufferType *>(buffer_.get()),
+             buffer_rows_stride_, channels};
     size_t margin = kernel_size / 2;
 
     // Process top rows, affected by border
@@ -196,7 +179,7 @@ class SeparableFilterWorkspace {
     }
   }
 
- protected:
+ private:
   template <typename FilterType>
   void process_horizontal(size_t width,
                           Rows<typename FilterType::BufferType> buffer_rows,
@@ -238,17 +221,9 @@ class SeparableFilterWorkspace {
     }
   }
 
-  // Offset in bytes to the buffer rows from &data_[0].
-  size_t buffer_rows_offset_;
-  // Stride of the buffer rows.
+ protected:
+  std::unique_ptr<uint8_t, decltype(&std::free)> buffer_;
   size_t buffer_rows_stride_;
-
-  Rectangle image_size_;
-  size_t channels_;
-  size_t intermediate_size_;
-
-  // Workspace area begins here.
-  uint8_t data_[0] KLEIDICV_ATTR_ALIGNED(kAlignment);
 };  // end of class SeparableFilterWorkspace
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE

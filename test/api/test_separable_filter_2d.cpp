@@ -84,25 +84,11 @@ class SeparableFilter2DTest : public test::KernelTest<KernelTestParams> {
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t border_type,
                             const InputType *) override {
-    kleidicv_filter_context_t *context = nullptr;
-    auto ret = kleidicv_filter_context_create(
-        &context, input->channels(), KernelTestParams::kKernelSize,
-        KernelTestParams::kKernelSize, input->width() / input->channels(),
-        input->height());
-    if (ret != KLEIDICV_OK) {
-      return ret;
-    }
-
-    ret = separable_filter_2d<InputType>()(
+    kleidicv_error_t ret = separable_filter_2d<InputType>()(
         input->data(), input->stride(), output->data(), output->stride(),
         input->width() / input->channels(), input->height(), input->channels(),
         kernel_x_.data(), KernelTestParams::kKernelSize, kernel_y_.data(),
-        KernelTestParams::kKernelSize, border_type, context);
-    auto releaseRet = kleidicv_filter_context_release(context);
-    if (releaseRet != KLEIDICV_OK) {
-      return releaseRet;
-    }
-
+        KernelTestParams::kKernelSize, border_type);
     return ret;
   }
 
@@ -142,10 +128,6 @@ TYPED_TEST(SeparableFilter2D, 5x5) {
 
 TEST(SeparableFilter2D, 5x5_U8OverflowSequence) {
   using TypeParam = uint8_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 5, 5));
   test::Array2D<TypeParam> src{5, 5, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 1, 2, 3, 4, 5});
@@ -173,17 +155,12 @@ TEST(SeparableFilter2D, 5x5_U8OverflowSequence) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              5, 5, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TEST(SeparableFilter2D, 5x5_U8OverflowMax) {
   using TypeParam = uint8_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 5, 5));
   test::Array2D<TypeParam> src{5, 5, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 255, 255, 255, 255, 255});
@@ -211,17 +188,12 @@ TEST(SeparableFilter2D, 5x5_U8OverflowMax) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              5, 5, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TEST(SeparableFilter2D, 5x5_U8OverflowVectorNEON) {
   using TypeParam = uint8_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 13, 6));
   test::Array2D<TypeParam> src{13, 6, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 232, 175,   8,  66, 167, 249, 190, 176,  89, 230, 120,  71,  14});
@@ -251,17 +223,12 @@ TEST(SeparableFilter2D, 5x5_U8OverflowVectorNEON) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              13, 6, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TEST(SeparableFilter2D, 5x5_U8OverflowVectorSC) {
   using TypeParam = uint8_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 13, 6));
   test::Array2D<TypeParam> src{13, 6, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 133, 210, 177,   6,   5, 200,   6, 242, 237,  80, 223, 253, 241});
@@ -291,17 +258,12 @@ TEST(SeparableFilter2D, 5x5_U8OverflowVectorSC) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              13, 6, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TEST(SeparableFilter2D, 5x5_U16OverflowSequence) {
   using TypeParam = uint16_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 7, 8));
   test::Array2D<TypeParam> src{7, 8, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 1, 2, 3, 4, 5, 6, 7});
@@ -335,17 +297,12 @@ TEST(SeparableFilter2D, 5x5_U16OverflowSequence) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TEST(SeparableFilter2D, 5x5_U16OverflowBigKernel) {
   using TypeParam = uint16_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 7, 8));
   test::Array2D<TypeParam> src{7, 8, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 1, 2, 3, 4, 5, 6, 7});
@@ -379,17 +336,12 @@ TEST(SeparableFilter2D, 5x5_U16OverflowBigKernel) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TEST(SeparableFilter2D, 5x5_U16OverflowMax) {
   using TypeParam = uint16_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 7, 8));
   test::Array2D<TypeParam> src{7, 8, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, { 65535, 65535, 65535, 65535, 65535, 65535, 65535});
@@ -423,17 +375,12 @@ TEST(SeparableFilter2D, 5x5_U16OverflowMax) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              7, 8, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TEST(SeparableFilter2D, 5x5_U16OverflowVector) {
   using TypeParam = uint16_t;
-
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 18, 7));
   test::Array2D<TypeParam> src{18, 7, test::Options::vector_length()};
   // clang-format off
   src.set(0, 0, {  7069, 15555, 36257, 50924, 19919, 14775,  5812, 63033,
@@ -479,46 +426,34 @@ TEST(SeparableFilter2D, 5x5_U16OverflowVector) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              18, 7, 1, kernel_x.data(), 5, kernel_y.data(), 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(dst_expected, dst);
 }
 
 TYPED_TEST(SeparableFilter2D, NullPointer) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
-                                                        validSize, validSize));
-  TypeParam src[1] = {}, dst[1], kernel[5] = {};
+  TypeParam src[1] = {}, dst[1] = {}, kernel[5] = {};
   test::test_null_args(separable_filter_2d<TypeParam>(), src, sizeof(TypeParam),
                        dst, sizeof(TypeParam), validSize, validSize, 1, kernel,
-                       5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context);
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                       5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE);
 }
 
 TYPED_TEST(SeparableFilter2D, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1], kernel[5] = {};
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 1, 1));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 0, 5, 1, kernel,
-                5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
+                5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), 5, 0, 1, kernel,
-                5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(SeparableFilter2D, ValidImageSize) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
-                                                        validSize, validSize));
   test::Array2D<TypeParam> src{validSize, validSize,
                                test::Options::vector_length()};
   test::Array2D<TypeParam> dst{validSize, validSize,
@@ -527,209 +462,108 @@ TYPED_TEST(SeparableFilter2D, ValidImageSize) {
   EXPECT_EQ(KLEIDICV_OK, separable_filter_2d<TypeParam>()(
                              src.data(), src.stride(), dst.data(), dst.stride(),
                              validSize, validSize, 1, kernel, 5, kernel, 5,
-                             KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                             KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(SeparableFilter2D, UndersizeImage) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  kleidicv_filter_context_t *context = nullptr;
   size_t underSize = KernelTestParams::kKernelSize - 2;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
-                                                        validSize, validSize));
   TypeParam src[1] = {}, dst[1], kernel[5] = {};
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize, underSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), underSize, validSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, underSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(src, sizeof(TypeParam), dst,
+                                             sizeof(TypeParam), underSize,
+                                             underSize, 1, kernel, 5, kernel, 5,
+                                             KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(src, sizeof(TypeParam), dst,
+                                             sizeof(TypeParam), underSize,
+                                             validSize, 1, kernel, 5, kernel, 5,
+                                             KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(src, sizeof(TypeParam), dst,
+                                             sizeof(TypeParam), validSize,
+                                             underSize, 1, kernel, 5, kernel, 5,
+                                             KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(SeparableFilter2D, OversizeImage) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_filter_context_create(&context, 1, 5, 5, 1, 1));
-  TypeParam src[1], dst[1], kernel[5] = {};
+  TypeParam src[1] = {}, dst[1] = {}, kernel[5] = {};
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
                 KLEIDICV_MAX_IMAGE_PIXELS + 1, 5, 1, kernel, 5, kernel, 5,
-                KLEIDICV_BORDER_TYPE_REPLICATE, context));
+                KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam),
                 KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS, 1, kernel,
-                5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(SeparableFilter2D, ChannelNumber) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
-                                                        validSize, validSize));
-  TypeParam src[1], dst[1], kernel[5] = {};
+  TypeParam src[1] = {}, dst[1] = {}, kernel[5] = {};
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
                 validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, kernel, 5,
-                kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
-}
-
-TYPED_TEST(SeparableFilter2D, InvalidContextMaxChannels) {
-  using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  kleidicv_filter_context_t *context = nullptr;
-  size_t validSize = KernelTestParams::kKernelSize - 1;
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
-                                                        validSize, validSize));
-  TypeParam src[1], dst[1], kernel[5] = {};
-  EXPECT_EQ(
-      KLEIDICV_ERROR_CONTEXT_MISMATCH,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
-          2, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
-}
-
-TYPED_TEST(SeparableFilter2D, InvalidContextImageSize) {
-  using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  kleidicv_filter_context_t *context = nullptr;
-  size_t validSize = KernelTestParams::kKernelSize - 1;
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
-                                                        validSize, validSize));
-  TypeParam src[1], dst[1], kernel[5] = {};
-  EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
-            separable_filter_2d<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize + 1,
-                validSize, 1, kernel, 5, kernel, 5,
-                KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
-            separable_filter_2d<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
-                validSize + 1, 1, kernel, 5, kernel, 5,
-                KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
-            separable_filter_2d<TypeParam>()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize + 1,
-                validSize + 1, 1, kernel, 5, kernel, 5,
-                KLEIDICV_BORDER_TYPE_REPLICATE, context));
-
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(SeparableFilter2D, InvalidKernelSize) {
-  kleidicv_filter_context_t *context = nullptr;
   constexpr size_t kernel_size = 17;
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 1, kernel_size, kernel_size, kernel_size,
-                             kernel_size));
-  TypeParam src[kernel_size], dst[kernel_size], kernel[kernel_size] = {};
+  TypeParam src[kernel_size] = {}, dst[kernel_size] = {},
+            kernel[kernel_size] = {};
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), kernel_size,
                 kernel_size, 1, kernel, kernel_size, kernel, 5,
-                KLEIDICV_BORDER_TYPE_REPLICATE, context));
+                KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             separable_filter_2d<TypeParam>()(
                 src, sizeof(TypeParam), dst, sizeof(TypeParam), kernel_size,
                 kernel_size, 1, kernel, 5, kernel, kernel_size,
-                KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(SeparableFilter2D, InvalidBorderType) {
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
-  kleidicv_filter_context_t *context = nullptr;
   size_t validSize = KernelTestParams::kKernelSize - 1;
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(&context, 1, 5, 5,
-                                                        validSize, validSize));
-  TypeParam src[1], dst[1], kernel[5] = {};
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_CONSTANT, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_TRANSPARENT, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      separable_filter_2d<TypeParam>()(
-          src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize, validSize,
-          1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_NONE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  TypeParam src[1] = {}, dst[1] = {}, kernel[5] = {};
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(src, sizeof(TypeParam), dst,
+                                             sizeof(TypeParam), validSize,
+                                             validSize, 1, kernel, 5, kernel, 5,
+                                             KLEIDICV_BORDER_TYPE_CONSTANT));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(src, sizeof(TypeParam), dst,
+                                             sizeof(TypeParam), validSize,
+                                             validSize, 1, kernel, 5, kernel, 5,
+                                             KLEIDICV_BORDER_TYPE_TRANSPARENT));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), validSize,
+                validSize, 1, kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_NONE));
 }
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
-TEST(FilterCreate, CannotAllocateFilter) {
+TYPED_TEST(SeparableFilter2D, CannotAllocate) {
   MockMallocToFail::enable();
-  kleidicv_filter_context_t *context = nullptr;
-  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
-            kleidicv_filter_context_create(&context, 1, 1, 1,
-                                           KLEIDICV_MAX_IMAGE_PIXELS, 1));
+  using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1];
+  constexpr size_t kernel_size = 5;
+  TypeParam kernel[kernel_size] = {};
+  size_t validSize = 4;
+
+  auto ret = separable_filter_2d<TypeParam>()(
+      src, sizeof(TypeParam) * validSize, dst, sizeof(TypeParam) * validSize,
+      validSize, validSize, 1, kernel, kernel_size, kernel, kernel_size,
+      KLEIDICV_BORDER_TYPE_REPLICATE);
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
+
   MockMallocToFail::disable();
 }
 #endif
-
-TEST(FilterCreate, OversizeImage) {
-  kleidicv_filter_context_t *context = nullptr;
-
-  for (kleidicv_rectangle_t rect : {
-           kleidicv_rectangle_t{KLEIDICV_MAX_IMAGE_PIXELS + 1, 1},
-           kleidicv_rectangle_t{KLEIDICV_MAX_IMAGE_PIXELS,
-                                KLEIDICV_MAX_IMAGE_PIXELS},
-       }) {
-    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              kleidicv_filter_context_create(&context, 1, 1, 1, rect.width,
-                                             rect.height));
-    ASSERT_EQ(nullptr, context);
-  }
-}
-
-TEST(FilterCreate, DifferentKernelSize) {
-  kleidicv_filter_context_t *context = nullptr;
-
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_filter_context_create(&context, 1, 7, 15, 1, 1));
-  ASSERT_EQ(nullptr, context);
-}
-
-TEST(FilterCreate, ChannelNumber) {
-  kleidicv_filter_context_t *context = nullptr;
-
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_filter_context_create(
-                &context, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 1, 1, 1, 1));
-  ASSERT_EQ(nullptr, context);
-}
-
-TEST(FilterCreate, NullPointer) {
-  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
-            kleidicv_filter_context_create(nullptr, 1, 1, 1, 1, 1));
-}
-
-TEST(FilterRelease, NullPointer) {
-  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
-            kleidicv_filter_context_release(nullptr));
-}

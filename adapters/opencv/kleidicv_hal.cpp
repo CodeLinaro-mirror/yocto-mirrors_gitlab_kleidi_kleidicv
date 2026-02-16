@@ -477,13 +477,6 @@ int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
   size_t kernel_width = static_cast<size_t>(kernelx_len);
   size_t kernel_height = static_cast<size_t>(kernely_len);
 
-  kleidicv_filter_context_t *context = nullptr;
-  if (kleidicv_error_t err = kleidicv_filter_context_create(
-          &context, channels, kernel_width, kernel_height, image_width,
-          image_height)) {
-    return convert_error(err);
-  }
-
   auto mt = get_multithreading();
 
   kleidicv_error_t operation_err;
@@ -493,7 +486,7 @@ int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
         reinterpret_cast<uint8_t *>(dst_data), dst_step, image_width,
         image_height, channels, reinterpret_cast<const uint8_t *>(kernelx_data),
         kernel_width, reinterpret_cast<const uint8_t *>(kernely_data),
-        kernel_height, kleidicv_border_type, context, mt);
+        kernel_height, kleidicv_border_type, mt);
 
   } else /* (CV_MAT_DEPTH(src_type) == CV_16U) */ {
     operation_err = kleidicv_thread_separable_filter_2d_u16(
@@ -502,10 +495,8 @@ int separable_filter_2d(const uchar *src_data, size_t src_step, int src_type,
         image_height, channels,
         reinterpret_cast<const uint16_t *>(kernelx_data), kernel_width,
         reinterpret_cast<const uint16_t *>(kernely_data), kernel_height,
-        kleidicv_border_type, context, mt);
+        kleidicv_border_type, mt);
   }
-
-  (void)kleidicv_filter_context_release(context);
 
   return convert_error(operation_err);
 }
@@ -1378,29 +1369,11 @@ int pyrdown(const uchar *src_data, size_t src_step, int src_width,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  // Check for not-implemented before allocating a context
-  if (!kleidicv::blur_and_downsample_is_implemented(src_width, src_height,
-                                                    cn) ||
-      !kleidicv::get_fixed_border_type(kleidicv_border_type)) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
-  kleidicv_filter_context_t *context;
-  if (kleidicv_error_t create_err = kleidicv_filter_context_create(
-          &context, cn, 5, 5, static_cast<size_t>(src_width),
-          static_cast<size_t>(src_height))) {
-    return convert_error(create_err);
-  }
-
   auto mt = get_multithreading();
-  kleidicv_error_t blur_err = kleidicv_thread_blur_and_downsample_u8(
+  return convert_error(kleidicv_thread_blur_and_downsample_u8(
       reinterpret_cast<const uint8_t *>(src_data), src_step, src_width,
       src_height, reinterpret_cast<uint8_t *>(dst_data), dst_step, cn,
-      kleidicv_border_type, context, mt);
-
-  kleidicv_error_t release_err = kleidicv_filter_context_release(context);
-
-  return convert_error(blur_err ? blur_err : release_err);
+      kleidicv_border_type, mt));
 }
 
 int scharr_deriv(const uchar *src_data, size_t src_step, int16_t *dst_data,

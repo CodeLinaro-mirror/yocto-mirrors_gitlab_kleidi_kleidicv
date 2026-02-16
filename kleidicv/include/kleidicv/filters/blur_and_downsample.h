@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -19,8 +19,7 @@ KLEIDICV_API_DECLARATION(kleidicv_blur_and_downsample_stripe_u8,
                          size_t src_width, size_t src_height, uint8_t *dst,
                          size_t dst_stride, size_t y_begin, size_t y_end,
                          size_t channels,
-                         kleidicv::FixedBorderType fixed_border_type,
-                         kleidicv_filter_context_t *context);
+                         kleidicv::FixedBorderType fixed_border_type);
 }
 
 namespace kleidicv {
@@ -36,8 +35,7 @@ namespace neon {
 kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t y_begin, size_t y_end,
-    size_t channels, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context);
+    size_t channels, FixedBorderType fixed_border_type);
 
 }  // namespace neon
 
@@ -46,8 +44,7 @@ namespace sve2 {
 kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t y_begin, size_t y_end,
-    size_t channels, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context);
+    size_t channels, FixedBorderType fixed_border_type);
 
 }  // namespace sve2
 
@@ -56,8 +53,7 @@ namespace sme {
 kleidicv_error_t kleidicv_blur_and_downsample_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t y_begin, size_t y_end,
-    size_t channels, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context);
+    size_t channels, FixedBorderType fixed_border_type);
 
 }  // namespace sme
 

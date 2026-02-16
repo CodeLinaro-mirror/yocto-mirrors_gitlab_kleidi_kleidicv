@@ -86,9 +86,6 @@ typedef enum {
   KLEIDICV_INTERPOLATION_LINEAR,
 } kleidicv_interpolation_type_t;
 
-/// Internal structure where filter operations store their state
-typedef struct kleidicv_filter_context_t_ kleidicv_filter_context_t;
-
 /// Supported color conversions and base formats/modifier flags.
 typedef enum {
   // Base formats:

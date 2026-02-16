@@ -1002,14 +1002,47 @@ TYPED_TEST(GaussianBlur, InvalidBorderType) {
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TYPED_TEST(GaussianBlur, Allocation) {
-  uint8_t src[13 * 13] = {};
-  uint8_t dst[13 * 13] = {};
+  constexpr size_t max_size = 21;
+  uint8_t src[max_size * max_size] = {};
+  uint8_t dst[max_size * max_size] = {};
 
-  MockMallocToFail::enable();
-  auto ret3 = gaussian_blur<TypeParam>()(src, 3, dst, 3, 3, 3, 1, 3, 3, 0.0,
-                                         0.0, KLEIDICV_BORDER_TYPE_REVERSE);
-  MockMallocToFail::disable();
-  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret3);
+  constexpr size_t fixed_sizes[] = {3, 5, 7, 9};
+  constexpr float sigma_binomial = 0.0F;
+  constexpr float sigma_non_binomial = 1.0F;
+
+  for (size_t kernel_size : fixed_sizes) {
+    const size_t stride = kernel_size * sizeof(uint8_t);
+    MockMallocToFail::enable();
+    auto ret = gaussian_blur<TypeParam>()(
+        src, stride, dst, stride, kernel_size, kernel_size, /*ch*/ 1,
+        kernel_size, kernel_size, sigma_binomial, sigma_binomial,
+        KLEIDICV_BORDER_TYPE_REPLICATE);
+    MockMallocToFail::disable();
+    EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
+  }
+
+  for (size_t kernel_size : fixed_sizes) {
+    const size_t stride = kernel_size * sizeof(uint8_t);
+    MockMallocToFail::enable();
+    auto ret = gaussian_blur<TypeParam>()(
+        src, stride, dst, stride, kernel_size, kernel_size, /*ch*/ 1,
+        kernel_size, kernel_size, sigma_non_binomial, sigma_non_binomial,
+        KLEIDICV_BORDER_TYPE_REPLICATE);
+    MockMallocToFail::disable();
+    EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
+  }
+
+  constexpr size_t non_binomial_sizes[] = {15, 21};
+  for (size_t kernel_size : non_binomial_sizes) {
+    const size_t stride = kernel_size * sizeof(uint8_t);
+    MockMallocToFail::enable();
+    auto ret = gaussian_blur<TypeParam>()(
+        src, stride, dst, stride, kernel_size, kernel_size, /*ch*/ 1,
+        kernel_size, kernel_size, sigma_non_binomial, sigma_non_binomial,
+        KLEIDICV_BORDER_TYPE_REPLICATE);
+    MockMallocToFail::disable();
+    EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
+  }
 
   MockMallocToFail::enable();
   auto ret11 =

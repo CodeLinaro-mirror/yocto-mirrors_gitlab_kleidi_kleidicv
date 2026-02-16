@@ -1249,52 +1249,12 @@ KLEIDICV_API_DECLARATION(kleidicv_canny_u8, const uint8_t *src,
                          double high_threshold);
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY
 
-/// Creates a filter context according to the parameters.
-///
-/// Before a Gaussian blur operation, this initialization is needed.
-/// After the operation is finished, the context needs to be released
-/// using @ref kleidicv_filter_context_release.
-///
-/// @param context           Pointer where to return the created context's
-///                          address.
-/// @param max_channels      Maximum number of channels in the data. Must not be
-///                          more than @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
-/// @param max_kernel_width  Maximum width of the Gaussian blur kernel.
-/// @param max_kernel_height Maximum height of the Gaussian blur kernel.
-/// @param max_image_width   Maximum image width. `max_image_width *
-///                          max_image_height` must not be more than @ref
-///                          KLEIDICV_MAX_IMAGE_PIXELS.
-/// @param max_image_height  Maximum image height. `max_image_width *
-///                          max_image_height` must not be more than @ref
-///                          KLEIDICV_MAX_IMAGE_PIXELS.
-///
-kleidicv_error_t kleidicv_filter_context_create(
-    kleidicv_filter_context_t **context, size_t max_channels,
-    size_t max_kernel_width, size_t max_kernel_height, size_t max_image_width,
-    size_t max_image_height);
-
-/// Releases a filter context that was previously created using @ref
-/// kleidicv_filter_context_create.
-///
-/// @param context      Pointer to filter context. Must not be nullptr.
-///
-kleidicv_error_t kleidicv_filter_context_release(
-    kleidicv_filter_context_t *context);
-
 /// Applies a two-dimensional separable filter to the source image using the
 /// specified parameters. In-place filtering is not supported.
 ///
 /// Width and height are assumed to be the same for the source and for the
 /// destination. The number of elements is limited to @ref
 /// KLEIDICV_MAX_IMAGE_PIXELS.
-///
-/// Usage:
-///
-/// Before using this function, a context must be created using
-/// @ref kleidicv_filter_context_create, and when finished, it has to be
-/// released using @ref kleidicv_filter_context_release. Please ensure that your
-/// filter context parameters are large enough, otherwise this API will return
-/// with an error.
 ///
 /// Note, from the border types only KLEIDICV_BORDER_TYPE_REPLICATE is
 /// supported.
@@ -1321,19 +1281,18 @@ kleidicv_error_t kleidicv_filter_context_release(
 /// @param kernel_y      Pointer to the vertical 2D kernel values.
 /// @param kernel_height Size of the vertical 2D kernel.
 /// @param border_type   Way of handling the border.
-/// @param context       Pointer to filter context.
 ///
 kleidicv_error_t kleidicv_separable_filter_2d_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
     size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
+    kleidicv_border_type_t border_type);
 /// @copydoc kleidicv_separable_filter_2d_u8
 kleidicv_error_t kleidicv_separable_filter_2d_u16(
     const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
+    kleidicv_border_type_t border_type);
 
 /// Applies Gaussian blur to the source image using the specified parameters.
 /// In-place filtering is not supported.
@@ -1400,14 +1359,6 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
 ///   - `dst_width = (src_width + 1) / 2`
 ///   - `dst_height = (src_height + 1) / 2`
 ///
-/// Usage:
-///
-/// Before using this function, a context must be created using @ref
-/// kleidicv_filter_context_create, and when finished, it has to be released
-/// using @ref kleidicv_filter_context_release. Please ensure that your filter
-/// context parameters are large enough (max_kernel_width and max_kernel_height
-/// must be at least 5), otherwise this API will return with an error.
-///
 /// Note, from the border types only these are supported:
 ///                       - @ref KLEIDICV_BORDER_TYPE_REPLICATE
 ///                       - @ref KLEIDICV_BORDER_TYPE_REFLECT
@@ -1435,12 +1386,11 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
 ///                      single-row images.
 /// @param channels      Number of channels in the data. Must be equal to 1.
 /// @param border_type   Way of handling the border.
-/// @param context       Pointer to filter context.
 ///
 kleidicv_error_t kleidicv_blur_and_downsample_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t channels,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context);
+    kleidicv_border_type_t border_type);
 #endif
 
 /// Splits a multi channel source stream into separate 1-channel streams. Width

@@ -201,7 +201,7 @@
     {
       "label": "All API tests",
       "dependsOn": [
-        "NEON API tests",
+        "Neon API tests",
         "SVE2 API tests, 128 bits",
         "SVE2 API tests, 2048 bits",
         "SME API tests",
