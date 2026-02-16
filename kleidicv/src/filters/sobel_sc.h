@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -135,17 +135,21 @@ static kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8_sc(
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<int16_t> dst_rows{dst, dst_stride, channels};
+  using HorizontalSobel3x3_t = HorizontalSobel3x3<uint8_t>;
+  constexpr size_t intermediate_size{
+      sizeof(typename HorizontalSobel3x3_t::BufferType)};
 
-  auto workspace =
-      SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
-  if (!workspace) {
-    return KLEIDICV_ERROR_ALLOCATION;
+  auto workspace_variant =
+      SeparableFilterWorkspace::create(rect, channels, intermediate_size);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
   }
+  auto &workspace = *std::get_if<SeparableFilterWorkspace>(&workspace_variant);
 
-  HorizontalSobel3x3<uint8_t> horizontal_sobel;
-  SeparableFilter3x3<HorizontalSobel3x3<uint8_t>> filter{horizontal_sobel};
-  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     FixedBorderType::REPLICATE, filter);
+  HorizontalSobel3x3_t vertical_sobel;
+  SeparableFilter3x3<HorizontalSobel3x3_t> filter{vertical_sobel};
+  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                    FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }
 
@@ -165,17 +169,21 @@ static kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8_sc(
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<int16_t> dst_rows{dst, dst_stride, channels};
+  using VerticalSobel3x3_t = VerticalSobel3x3<uint8_t>;
+  constexpr size_t intermediate_size{
+      sizeof(typename VerticalSobel3x3_t::BufferType)};
 
-  auto workspace =
-      SeparableFilterWorkspace::create(rect, channels, sizeof(int16_t));
-  if (!workspace) {
-    return KLEIDICV_ERROR_ALLOCATION;
+  auto workspace_variant =
+      SeparableFilterWorkspace::create(rect, channels, intermediate_size);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
   }
+  auto &workspace = *std::get_if<SeparableFilterWorkspace>(&workspace_variant);
 
-  VerticalSobel3x3<uint8_t> vertical_sobel;
-  SeparableFilter3x3<VerticalSobel3x3<uint8_t>> filter{vertical_sobel};
-  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     FixedBorderType::REPLICATE, filter);
+  VerticalSobel3x3_t vertical_sobel;
+  SeparableFilter3x3<VerticalSobel3x3_t> filter{vertical_sobel};
+  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                    FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }
 

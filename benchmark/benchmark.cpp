@@ -511,27 +511,16 @@ BENCHMARK(resize_linear_8x8_f32_1ch);
 
 template <typename T, size_t KernelSize, int Channels, typename F>
 static void separable_filter_2d(benchmark::State& state, F function) {
-  kleidicv_filter_context_t* context;
-  kleidicv_error_t err = kleidicv_filter_context_create(
-      &context, Channels, KernelSize, KernelSize, image_width, image_height);
-  if (err != KLEIDICV_OK) {
-    state.SkipWithError(
-        "Could not initialize SeparableFilter2D filter context.");
-    return;
-  }
-
   std::vector<T> kernel(KernelSize, 2);
 
-  bench_functor(state, [context, kernel, function]() {
-    (void)function(
-        get_source_buffer_a<T, Channels>(), image_width * Channels * sizeof(T),
-        get_destination_buffer_a<T, Channels>(),
-        image_width * Channels * sizeof(T), image_width, image_height, Channels,
-        kernel.data(), KernelSize, kernel.data(), KernelSize,
-        KLEIDICV_BORDER_TYPE_REPLICATE, context);
+  bench_functor(state, [kernel, function]() {
+    (void)function(get_source_buffer_a<T, Channels>(),
+                   image_width * Channels * sizeof(T),
+                   get_destination_buffer_a<T, Channels>(),
+                   image_width * Channels * sizeof(T), image_width,
+                   image_height, Channels, kernel.data(), KernelSize,
+                   kernel.data(), KernelSize, KLEIDICV_BORDER_TYPE_REPLICATE);
   });
-
-  (void)kleidicv_filter_context_release(context);
 }
 
 static void separable_filter_2d_u8_5x5_1ch(benchmark::State& state) {
@@ -997,24 +986,13 @@ BENCH_IN_RANGE(in_range_u8, in_range_u8, 1, 2, uint8_t);
 BENCH_IN_RANGE(in_range_f32, in_range_f32, 1.111, 1.112, float);
 
 static void blur_and_downsample_u8(benchmark::State& state) {
-  kleidicv_filter_context_t* context;
-  kleidicv_error_t err = kleidicv_filter_context_create(
-      &context, 1, 5, 5, image_width, image_height);
-  if (err != KLEIDICV_OK) {
-    state.SkipWithError(
-        "Could not initialize filter context for Blur and Downsample");
-    return;
-  }
-
-  bench_functor(state, [context]() {
+  bench_functor(state, []() {
     (void)kleidicv_blur_and_downsample_u8(
         get_source_buffer_a<uint8_t>(), image_width * sizeof(uint8_t),
         image_width, image_height, get_destination_buffer_a<uint8_t>(),
         ((image_width + 1) / 2) * sizeof(uint8_t), 1,
-        KLEIDICV_BORDER_TYPE_REFLECT, context);
+        KLEIDICV_BORDER_TYPE_REFLECT);
   });
-
-  (void)kleidicv_filter_context_release(context);
 }
 BENCHMARK(blur_and_downsample_u8);
 

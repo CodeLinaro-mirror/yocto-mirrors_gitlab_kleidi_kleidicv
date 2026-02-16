@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -20,8 +20,7 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u8,
                          size_t y_begin, size_t y_end, size_t channels,
                          const uint8_t *kernel_x, size_t kernel_width,
                          const uint8_t *kernel_y, size_t kernel_height,
-                         kleidicv::FixedBorderType border_type,
-                         kleidicv_filter_context_t *context);
+                         kleidicv::FixedBorderType border_type);
 // For internal use only. See instead kleidicv_separable_filter_2d_u16.
 // Filter a horizontal stripe across an image. The stripe is defined by the
 // range (y_begin, y_end].
@@ -31,8 +30,7 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u16,
                          size_t y_begin, size_t y_end, size_t channels,
                          const uint16_t *kernel_x, size_t kernel_width,
                          const uint16_t *kernel_y, size_t kernel_height,
-                         kleidicv::FixedBorderType border_type,
-                         kleidicv_filter_context_t *context);
+                         kleidicv::FixedBorderType border_type);
 // For internal use only. See instead kleidicv_separable_filter_2d_s16.
 // Filter a horizontal stripe across an image. The stripe is defined by the
 // range (y_begin, y_end].
@@ -42,8 +40,7 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_s16,
                          size_t y_begin, size_t y_end, size_t channels,
                          const int16_t *kernel_x, size_t kernel_width,
                          const int16_t *kernel_y, size_t kernel_height,
-                         kleidicv::FixedBorderType border_type,
-                         kleidicv_filter_context_t *context);
+                         kleidicv::FixedBorderType border_type);
 }
 
 namespace kleidicv {

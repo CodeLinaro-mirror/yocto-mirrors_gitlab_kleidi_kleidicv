@@ -1,57 +1,8 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/ctypes.h"
 #include "kleidicv/filters/gaussian_blur.h"
-#include "kleidicv/utils.h"
-#include "kleidicv/workspace/separable.h"
-
-// Copied from kleidicv/src/filters/separable_filter_2d_api.cpp
-static kleidicv_error_t filter_context_create(
-    kleidicv_filter_context_t **context, size_t max_channels,
-    size_t max_kernel_width, size_t max_kernel_height, size_t max_image_width,
-    size_t max_image_height) {
-  CHECK_POINTERS(context);
-
-  if (max_kernel_width != max_kernel_height) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  if (max_channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
-  CHECK_IMAGE_SIZE(max_image_width, max_image_height);
-
-  // As we cannot predict the intermediate size based on the parameters given,
-  // just use the largest possible size out of all available operations.
-  constexpr size_t intermediate_size = sizeof(uint32_t);
-  auto workspace = kleidicv::sme::SeparableFilterWorkspace::create(
-      kleidicv::sme::Rectangle{max_image_width, max_image_height}, max_channels,
-      intermediate_size);
-  if (!workspace) {
-    *context = nullptr;
-    return KLEIDICV_ERROR_ALLOCATION;
-  }
-
-  *context = reinterpret_cast<kleidicv_filter_context_t *>(workspace.release());
-  return KLEIDICV_OK;
-}
-
-// Copied from kleidicv/src/filters/separable_filter_2d_api.cpp
-static kleidicv_error_t filter_context_release(
-    kleidicv_filter_context_t *context) {
-  CHECK_POINTERS(context);
-
-  // Deliberately create and immediately destroy a unique_ptr to delete the
-  // workspace.
-  // NOLINTBEGIN(bugprone-unused-raii)
-  kleidicv::sme::SeparableFilterWorkspace::Pointer{
-      reinterpret_cast<kleidicv::sme::SeparableFilterWorkspace *>(context)};
-  // NOLINTEND(bugprone-unused-raii)
-  return KLEIDICV_OK;
-}
 
 extern "C" {
 
@@ -77,7 +28,7 @@ kleidicv_error_t sme_gaussian_blur_u8(const uint8_t *src, size_t src_stride,
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (kernel_width <= 7 || kernel_width == 15 || kernel_width == 21) {
+  if (kernel_width <= 9 || kernel_width == 15 || kernel_width == 21) {
     return kleidicv::sme::gaussian_blur_fixed_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, 0, height, channels,
         kernel_width, kernel_height, sigma_x, sigma_y, *fixed_border_type);

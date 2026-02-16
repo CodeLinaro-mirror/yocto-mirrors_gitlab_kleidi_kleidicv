@@ -294,51 +294,33 @@ class SeparableFilter2D<uint16_t, 5> {
 };  // end of class SeparableFilter2D<uint16_t, 5>
 
 template <typename T>
-static kleidicv_error_t separable_filter_2d_checks(
+kleidicv_error_t separable_filter_2d_stripe_sc(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, size_t channels, const T *kernel_x, const T *kernel_y,
-    SeparableFilterWorkspace *workspace) KLEIDICV_STREAMING {
-  CHECK_POINTERS(workspace, kernel_x, kernel_y);
-
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t /*kernel_width*/, const T *kernel_y,
+    size_t /*kernel_height*/,
+    FixedBorderType fixed_border_type) KLEIDICV_STREAMING {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
+  CHECK_POINTERS(kernel_x, kernel_y);
 
   if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (workspace->channels() < channels) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  const Rectangle &context_rect = workspace->image_size();
-  if (context_rect.width() < width || context_rect.height() < height) {
-    return KLEIDICV_ERROR_CONTEXT_MISMATCH;
-  }
-
-  return KLEIDICV_OK;
-}
-
-template <typename T>
-kleidicv_error_t separable_filter_2d_stripe_sc(
-    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
-    size_t height, size_t y_begin, size_t y_end, size_t channels,
-    const T *kernel_x, size_t /*kernel_width*/, const T *kernel_y,
-    size_t /*kernel_height*/, FixedBorderType fixed_border_type,
-    kleidicv_filter_context_t *context) KLEIDICV_STREAMING {
-  auto *workspace = reinterpret_cast<SeparableFilterWorkspace *>(context);
-  kleidicv_error_t checks_result = separable_filter_2d_checks(
-      src, src_stride, dst, dst_stride, width, height, channels, kernel_x,
-      kernel_y, workspace);
-
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
-  }
-
   Rectangle rect{width, height};
 
   using SeparableFilterClass = SeparableFilter2D<T, 5>;
+  constexpr size_t intermediate_size{
+      sizeof(typename SeparableFilterClass::BufferType)};
+
+  auto workspace_variant =
+      SeparableFilterWorkspace::create(rect, channels, intermediate_size);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
+  }
+  auto &workspace = *std::get_if<SeparableFilterWorkspace>(&workspace_variant);
 
   using WiderT = typename double_element_width<T>::type;
   using KernelXVectorTraits = VecTraits<WiderT>;
@@ -365,8 +347,8 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
-  workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                     fixed_border_type, filter);
+  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                    fixed_border_type, filter);
 
   return KLEIDICV_OK;
 }

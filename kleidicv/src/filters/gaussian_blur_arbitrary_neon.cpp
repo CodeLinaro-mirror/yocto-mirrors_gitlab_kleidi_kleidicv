@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -391,10 +391,21 @@ template <typename ScalarType>
 static kleidicv_error_t gaussian_blur_arbitrary_kernel_size(
     const ScalarType *src, size_t src_stride, ScalarType *dst,
     size_t dst_stride, Rectangle &rect, size_t kernel_size, size_t y_begin,
-    size_t y_end, size_t channels, float sigma, FixedBorderType border_type,
-    SeparableFilterWorkspace *workspace) {
+    size_t y_end, size_t channels, float sigma, FixedBorderType border_type) {
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
+  // Only replicated border is implemented so far.
+  using GaussianBlurFilter =
+      GaussianBlurArbitrary<ScalarType, FixedBorderType::REPLICATE>;
+  constexpr size_t intermediate_size{
+      sizeof(typename GaussianBlurFilter::BufferType)};
+
+  auto workspace_variant =
+      SeparableFilterWorkspace::create(rect, channels, intermediate_size);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
+  }
+  auto &workspace = *std::get_if<SeparableFilterWorkspace>(&workspace_variant);
 
   const ptrdiff_t kHalfKernelSize =
       static_cast<ptrdiff_t>(get_half_kernel_size(kernel_size));
@@ -402,11 +413,10 @@ static kleidicv_error_t gaussian_blur_arbitrary_kernel_size(
   bool success =
       generate_gaussian_half_kernel(half_kernel, kHalfKernelSize, sigma);
   if (success) {
-    // Only replicated border is implemented so far.
-    GaussianBlurArbitrary<ScalarType, FixedBorderType::REPLICATE> filter{
-        half_kernel, kHalfKernelSize, rect, src_rows.channels()};
-    workspace->process_arbitrary(rect, kernel_size, y_begin, y_end, src_rows,
-                                 dst_rows, channels, border_type, filter);
+    GaussianBlurFilter filter{half_kernel, kHalfKernelSize, rect,
+                              src_rows.channels()};
+    workspace.process_arbitrary(rect, kernel_size, y_begin, y_end, src_rows,
+                                dst_rows, channels, border_type, filter);
   } else {
     // Sigma is too small that the middle point would get all the weight
     // => it's just a copy.
@@ -432,18 +442,10 @@ kleidicv_error_t gaussian_blur_arbitrary_stripe_u8(
   }
 
   Rectangle rect{width, height};
-  // As we cannot predict the intermediate size based on the parameters given,
-  // just use the largest possible immediate size out of all available
-  // operations.
-  auto workspace =
-      SeparableFilterWorkspace::create(rect, channels, sizeof(uint32_t));
-  if (!workspace) {
-    return KLEIDICV_ERROR_ALLOCATION;
-  }
 
   return gaussian_blur_arbitrary_kernel_size(
       src, src_stride, dst, dst_stride, rect, kernel_width, y_begin, y_end,
-      channels, sigma_x, fixed_border_type, workspace.get());
+      channels, sigma_x, fixed_border_type);
 }
 
 }  // namespace kleidicv::neon

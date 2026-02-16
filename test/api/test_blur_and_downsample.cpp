@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -12,6 +12,7 @@
 #include "framework/utils.h"
 #include "kleidicv/ctypes.h"
 #include "kleidicv/kleidicv.h"
+#include "test_config.h"
 
 static constexpr std::array kAllBorders = {
     KLEIDICV_BORDER_TYPE_REPLICATE,
@@ -74,23 +75,10 @@ class BlurAndDownsampleTest : public test::KernelTest<KernelTestParams> {
                             test::Array2D<OutputType> *output,
                             kleidicv_border_type_t border_type,
                             const InputType *) override {
-    kleidicv_filter_context_t *context = nullptr;
-    auto ret = kleidicv_filter_context_create(
-        &context, input->channels(), kKernelSize, kKernelSize,
-        input->width() / input->channels(), input->height());
-    if (ret != KLEIDICV_OK) {
-      return ret;
-    }
-
-    ret = blur_and_downsample<InputType>()(
+    auto ret = blur_and_downsample<InputType>()(
         input->data(), input->stride(), input->width() / input->channels(),
         input->height(), output->data(), output->stride(), input->channels(),
-        border_type, context);
-    auto releaseRet = kleidicv_filter_context_release(context);
-    if (releaseRet != KLEIDICV_OK) {
-      return releaseRet;
-    }
-
+        border_type);
     return ret;
   }
 
@@ -193,25 +181,15 @@ TEST(BlurAndDownsample, Minimal_u8) {
 
   test::Array2D<TypeParam> actual{3, 3};
 
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, input.channels(), 5, 5,
-                             input.width() / input.channels(), input.height()));
-
   EXPECT_EQ(KLEIDICV_OK,
             blur_and_downsample<TypeParam>()(
                 input.data(), input.stride(), input.width() / input.channels(),
                 input.height(), actual.data(), actual.stride(),
-                input.channels(), KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                input.channels(), KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ_ARRAY2D(expected, actual);
 }
 
 TYPED_TEST(BlurAndDownsample, UnsupportedBorderType) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 1, kKernelSize, kKernelSize,
-                             kMinWidthHeight, kMinWidthHeight));
   TypeParam src[1] = {}, dst[1];
   for (kleidicv_border_type_t border : {
            KLEIDICV_BORDER_TYPE_CONSTANT,
@@ -221,21 +199,15 @@ TYPED_TEST(BlurAndDownsample, UnsupportedBorderType) {
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
               blur_and_downsample<TypeParam>()(
                   src, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight, dst,
-                  sizeof(TypeParam), 1, border, context));
+                  sizeof(TypeParam), 1, border));
   }
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
 }
 
 TYPED_TEST(BlurAndDownsample, NullPointer) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 1, kKernelSize, kKernelSize,
-                             kMinWidthHeight, kMinWidthHeight));
   TypeParam src[1] = {}, dst[1];
   test::test_null_args(blur_and_downsample<TypeParam>(), src, sizeof(TypeParam),
                        kMinWidthHeight, kMinWidthHeight, dst, sizeof(TypeParam),
-                       1, KLEIDICV_BORDER_TYPE_REPLICATE, context);
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                       1, KLEIDICV_BORDER_TYPE_REPLICATE);
 }
 
 TYPED_TEST(BlurAndDownsample, Misalignment) {
@@ -243,104 +215,68 @@ TYPED_TEST(BlurAndDownsample, Misalignment) {
     // misalignment impossible
     return;
   }
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 1, kKernelSize, kKernelSize,
-                             kMinWidthHeight, kMinWidthHeight));
   TypeParam src[1] = {}, dst[1];
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_ALIGNMENT,
-      blur_and_downsample<TypeParam>()(
-          src, sizeof(TypeParam) + 1, kMinWidthHeight, kMinWidthHeight, dst,
-          sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_ALIGNMENT,
-      blur_and_downsample<TypeParam>()(
-          src, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight, dst,
-          sizeof(TypeParam) + 1, 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+            blur_and_downsample<TypeParam>()(
+                src, sizeof(TypeParam) + 1, kMinWidthHeight, kMinWidthHeight,
+                dst, sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+            blur_and_downsample<TypeParam>()(
+                src, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight, dst,
+                sizeof(TypeParam) + 1, 1, KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(BlurAndDownsample, UndersizeImage) {
-  kleidicv_filter_context_t *context = nullptr;
   const size_t underSize = kKernelSize - 2;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 1, kKernelSize, kKernelSize,
-                             kMinWidthHeight, kMinWidthHeight));
   TypeParam src[1] = {}, dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             blur_and_downsample<TypeParam>()(
                 src, sizeof(TypeParam), underSize, underSize, dst,
-                sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
+                sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             blur_and_downsample<TypeParam>()(
                 src, sizeof(TypeParam), underSize, kMinWidthHeight, dst,
-                sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
+                sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             blur_and_downsample<TypeParam>()(
                 src, sizeof(TypeParam), kMinWidthHeight, underSize, dst,
-                sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE));
 }
 
 TYPED_TEST(BlurAndDownsample, OversizeImage) {
-  kleidicv_filter_context_t *context = nullptr;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 1, kKernelSize, kKernelSize, 1, 1));
-  TypeParam src[1], dst[1];
-  EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
-      blur_and_downsample<TypeParam>()(
-          src, sizeof(TypeParam), (KLEIDICV_MAX_IMAGE_PIXELS / 4) + 1, 4, dst,
-          sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REFLECT, context));
+  TypeParam src[1] = {}, dst[1] = {};
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            blur_and_downsample<TypeParam>()(
+                src, sizeof(TypeParam), (KLEIDICV_MAX_IMAGE_PIXELS / 4) + 1, 4,
+                dst, sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REFLECT));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             blur_and_downsample<TypeParam>()(
                 src, sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
                 KLEIDICV_MAX_IMAGE_PIXELS, dst, sizeof(TypeParam), 1,
-                KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                KLEIDICV_BORDER_TYPE_REFLECT));
 }
 
 TYPED_TEST(BlurAndDownsample, ChannelNumber) {
-  kleidicv_filter_context_t *context = nullptr;
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 2, kKernelSize, kKernelSize,
-                             kMinWidthHeight, kMinWidthHeight));
-  TypeParam src[1], dst[1];
+  TypeParam src[1] = {}, dst[1] = {};
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             blur_and_downsample<TypeParam>()(
                 src, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight, dst,
-                sizeof(TypeParam), 2, KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+                sizeof(TypeParam), 2, KLEIDICV_BORDER_TYPE_REFLECT));
 }
 
-TYPED_TEST(BlurAndDownsample, InvalidContextImageSize) {
-  kleidicv_filter_context_t *context = nullptr;
+#ifdef KLEIDICV_ALLOCATION_TESTS
+TYPED_TEST(BlurAndDownsample, Allocation) {
+  constexpr size_t width = kMinWidthHeight;
+  constexpr size_t height = kMinWidthHeight;
+  TypeParam src[width * height] = {};
+  TypeParam dst[width * height] = {};
 
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_filter_context_create(
-                             &context, 1, kKernelSize, kKernelSize,
-                             kMinWidthHeight, kMinWidthHeight));
-  TypeParam src[1], dst[1];
-  EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
-            blur_and_downsample<TypeParam>()(
-                src, sizeof(TypeParam), kMinWidthHeight + 1, kMinWidthHeight,
-                dst, sizeof(TypeParam), 1,
-
-                KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(KLEIDICV_ERROR_CONTEXT_MISMATCH,
-            blur_and_downsample<TypeParam>()(
-                src, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight + 1,
-                dst, sizeof(TypeParam), 1,
-
-                KLEIDICV_BORDER_TYPE_REFLECT, context));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_CONTEXT_MISMATCH,
-      blur_and_downsample<TypeParam>()(
-          src, sizeof(TypeParam), kMinWidthHeight + 1, kMinWidthHeight + 1, dst,
-          sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REFLECT, context));
-
-  EXPECT_EQ(KLEIDICV_OK, kleidicv_filter_context_release(context));
+  MockMallocToFail::enable();
+  auto ret = blur_and_downsample<TypeParam>()(
+      src, sizeof(TypeParam) * width, width, height, dst, sizeof(TypeParam), 1,
+      KLEIDICV_BORDER_TYPE_REPLICATE);
+  MockMallocToFail::disable();
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
 }
+#endif

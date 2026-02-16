@@ -532,9 +532,17 @@ template <size_t KernelSize, bool IsBinomial, typename ScalarType>
 static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     const ScalarType *src, size_t src_stride, ScalarType *dst,
     size_t dst_stride, Rectangle &rect, size_t y_begin, size_t y_end,
-    size_t channels, float sigma, FixedBorderType border_type,
-    SeparableFilterWorkspace *workspace) {
+    size_t channels, float sigma, FixedBorderType border_type) {
   using GaussianBlurFilter = GaussianBlur<ScalarType, KernelSize, IsBinomial>;
+  constexpr size_t intermediate_size{
+      sizeof(typename GaussianBlurFilter::BufferType)};
+
+  auto workspace_variant =
+      SeparableFilterWorkspace::create(rect, channels, intermediate_size);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
+  }
+  auto &workspace = *std::get_if<SeparableFilterWorkspace>(&workspace_variant);
 
   Rows<const ScalarType> src_rows{src, src_stride, channels};
   Rows<ScalarType> dst_rows{dst, dst_stride, channels};
@@ -542,9 +550,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
   if constexpr (IsBinomial) {
     GaussianBlurFilter blur;
     SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
-    workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                       border_type, filter);
-
+    workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                      border_type, filter);
     return KLEIDICV_OK;
   } else {
     constexpr size_t kHalfKernelSize = get_half_kernel_size(KernelSize);
@@ -554,8 +561,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     if (success) {
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
-      workspace->process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                         border_type, filter);
+      workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+                        border_type, filter);
     } else {
       // Sigma is too small that the middle point would get all the weight
       // => it's just a copy.
@@ -573,35 +580,34 @@ template <bool IsBinomial, typename ScalarType>
 static kleidicv_error_t gaussian_blur_fixed(
     size_t kernel_size, const ScalarType *src, size_t src_stride,
     ScalarType *dst, size_t dst_stride, Rectangle &rect, size_t y_begin,
-    size_t y_end, size_t channels, float sigma, FixedBorderType border_type,
-    SeparableFilterWorkspace *workspace) {
+    size_t y_end, size_t channels, float sigma, FixedBorderType border_type) {
   switch (kernel_size) {
     case 3:
       return gaussian_blur_fixed_kernel_size<3, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
-          sigma, border_type, workspace);
+          sigma, border_type);
     case 5:
       return gaussian_blur_fixed_kernel_size<5, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
-          sigma, border_type, workspace);
+          sigma, border_type);
     case 7:
       return gaussian_blur_fixed_kernel_size<7, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
-          sigma, border_type, workspace);
+          sigma, border_type);
     case 9:
       return gaussian_blur_fixed_kernel_size<9, IsBinomial>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
-          sigma, border_type, workspace);
+          sigma, border_type);
     case 15:
       // 15x15 does not have a binomial variant
       return gaussian_blur_fixed_kernel_size<15, false>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
-          sigma, border_type, workspace);
+          sigma, border_type);
     case 21:
       // 21x21 does not have a binomial variant
       return gaussian_blur_fixed_kernel_size<21, false>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
-          sigma, border_type, workspace);
+          sigma, border_type);
       // gaussian_blur_is_implemented checked the kernel size already.
     // GCOVR_EXCL_START
     default:
@@ -624,24 +630,16 @@ kleidicv_error_t gaussian_blur_fixed_stripe_u8(
   }
 
   Rectangle rect{width, height};
-  // As we cannot predict the intermediate size based on the parameters given,
-  // just use the largest possible immediate size out of all available
-  // operations.
-  auto workspace =
-      SeparableFilterWorkspace::create(rect, channels, sizeof(uint32_t));
-  if (!workspace) {
-    return KLEIDICV_ERROR_ALLOCATION;
-  }
 
   if (sigma_x == 0.0) {
-    return gaussian_blur_fixed<true>(
-        kernel_width, src, src_stride, dst, dst_stride, rect, y_begin, y_end,
-        channels, sigma_x, fixed_border_type, workspace.get());
+    return gaussian_blur_fixed<true>(kernel_width, src, src_stride, dst,
+                                     dst_stride, rect, y_begin, y_end, channels,
+                                     sigma_x, fixed_border_type);
   }
 
-  return gaussian_blur_fixed<false>(
-      kernel_width, src, src_stride, dst, dst_stride, rect, y_begin, y_end,
-      channels, sigma_x, fixed_border_type, workspace.get());
+  return gaussian_blur_fixed<false>(kernel_width, src, src_stride, dst,
+                                    dst_stride, rect, y_begin, y_end, channels,
+                                    sigma_x, fixed_border_type);
 }
 
 }  // namespace kleidicv::neon

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -17,7 +17,7 @@ extern "C" {
 kleidicv_error_t kleidicv_blur_and_downsample_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t channels,
-    kleidicv_border_type_t border_type, kleidicv_filter_context_t *context) {
+    kleidicv_border_type_t border_type) {
   if (!kleidicv::blur_and_downsample_is_implemented(src_width, src_height,
                                                     channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
@@ -29,7 +29,7 @@ kleidicv_error_t kleidicv_blur_and_downsample_u8(
   }
   return kleidicv_blur_and_downsample_stripe_u8(
       src, src_stride, src_width, src_height, dst, dst_stride, 0, src_height,
-      channels, *fixed_border_type, context);
+      channels, *fixed_border_type);
 }
 
 }  // extern "C"
