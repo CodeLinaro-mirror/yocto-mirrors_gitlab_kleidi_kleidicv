@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -11,6 +11,7 @@ It is designed to be simple to integrate into a wide variety of projects.
 
 ## Documentation
 
+* [Overview](doc/overview.md)
 * [Platform Support](doc/platform-support.md)
 * [Building](doc/build.md)
 * [OpenCV Hardware Adapter Layer](doc/opencv.md)

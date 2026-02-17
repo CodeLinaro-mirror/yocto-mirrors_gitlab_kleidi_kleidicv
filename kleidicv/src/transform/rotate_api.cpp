@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/transform/rotate.h"
 
 KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(kleidicv_rotate,
                                         &kleidicv::neon::rotate, nullptr);

@@ -72,14 +72,14 @@ static inline void rotate_transpose_tile(Rows<const ScalarType> src_rows,
   constexpr size_t num_of_lanes = VecTraits<ScalarType>::num_lanes();
 
   // The number of vectors read and write is the same as the lane count of the
-  // given element size
+  // given element size.
   constexpr size_t buffer_size = num_of_lanes;
 
-  // Last transpose/rotate step is always done on 64 bit elements
+  // Last transpose/rotate step is always done on 64-bit elements.
   uint64x2_t trn_result_b64[buffer_size];  // NOLINT(runtime/arrays)
 
-  // The 64 bit transpose/rotate spans through all the vectors, so its "order"
-  // is the same as the number of vectors
+  // The 64-bit transpose/rotate spans through all the vectors, so its order
+  // is the same as the number of vectors.
   constexpr size_t transpose_order_b64 = num_of_lanes;
 
   rotate_transpose_tile_recursive<buffer_size, transpose_order_b64,
@@ -154,13 +154,13 @@ static inline kleidicv_error_t rotate_transpose_rect(
     LoopUnroll2<TryToAvoidTailLoop> horizontal_loop(rect_width, num_of_lanes);
 
     horizontal_loop.unroll_once([&](size_t hindex) {
-      // if the input is big enough handle it tile by tile
-      // ReverseRows toggles CW/CCW behavior; keep this direct call to simplify
-      // adding CCW support later.
+      // If the input is big enough, handle it tile by tile. ReverseRows
+      // toggles CW/CCW behavior; keep this direct call to simplify adding CCW
+      // support later.
       rotate_vector_tile(vindex, hindex);
     });
 
-    // This branch is needed even for TryToAvoidTailLoop
+    // This branch is needed even for TryToAvoidTailLoop.
     horizontal_loop.remaining([&](size_t hindex, size_t final_hindex) {
       rotate_scalar_segment(vindex, hindex, final_hindex);
     });

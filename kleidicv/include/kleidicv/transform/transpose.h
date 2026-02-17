@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_ARITHMETICS_TRANSPOSE_H
-#define KLEIDICV_ARITHMETICS_TRANSPOSE_H
+#ifndef KLEIDICV_TRANSFORM_TRANSPOSE_H
+#define KLEIDICV_TRANSFORM_TRANSPOSE_H
 
 #include <cstddef>
 #include <cstdint>
@@ -20,4 +20,4 @@ kleidicv_error_t transpose(const void *src, size_t src_stride, void *dst,
 
 }  // namespace kleidicv
 
-#endif  // KLEIDICV_ARITHMETICS_TRANSPOSE_H
+#endif  // KLEIDICV_TRANSFORM_TRANSPOSE_H
