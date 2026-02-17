@@ -18,6 +18,8 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 /// Generic resize for ratios 1/3 to 1/1, u8, 1channel
 //------------------------------------------------------
 
+namespace resize_generic_u8 {
+
 // For the coordinate calculation, fixed-point format is used, for better
 // performance. Fixed-point format:
 // - lowest 16 bits are the fractional part, that is the kFixpBits constant
@@ -30,76 +32,134 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 // - for better accuracy, rounding is needed everywhere, i.e. adding 0.5, which
 //   is 1 << 15
 
-// ratio: number of vectors to load and resize to 1 vector
-// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
+static constexpr ptrdiff_t kFixpBits = 16;
+static constexpr ptrdiff_t kFixpHalf = (1UL << (kFixpBits - 1));
+
+// Precalc 1 item:
+// Frac:       2 vectors u16
+// Idx:
+// - ratio=2:  1 vector   u8 (left_idx)
+// - ratio=3:  2 vectors  u8 (left+right interleaved)
+// Src_index:  uint64 (separate array)
+template <size_t kRatio>
+struct PrecalcIterator {
+  size_t index_;
+  uint64_t *src_index_ptr_;
+  const size_t kStep, kIdxFracStep;
+  uint16_t *frac_ptr_;
+  uint8_t *idx_ptr_;
+  PrecalcIterator(size_t kStepDst, uint64_t *src_indices, uint8_t *p_idx_frac)
+      : index_{0},
+        src_index_ptr_{src_indices},
+        kStep{kStepDst},
+        kIdxFracStep{kStep * (2 + (kRatio == 3 ? 2 : 1))},
+        frac_ptr_{reinterpret_cast<uint16_t *>(p_idx_frac)},
+        idx_ptr_{p_idx_frac + kStep * 2} {}
+
+  PrecalcIterator &operator++() {
+    ++index_;
+    ++src_index_ptr_;
+    frac_ptr_ += kIdxFracStep / 2;
+    idx_ptr_ += kIdxFracStep;
+    return *this;
+  }
+};
+
 template <ptrdiff_t kRatio, ptrdiff_t kChannels>
-class ResizeGenericU8Operation final {
+class PrecalcIndicesFractions final {
  public:
-  ResizeGenericU8Operation(const uint8_t *src, size_t src_stride,
-                           size_t src_width, size_t src_height, size_t y_begin,
-                           size_t y_end, uint8_t *dst,  // NOLINT
-                           size_t dst_stride, size_t dst_width,
-                           size_t dst_height, svuint32_t &s0, svuint32_t &s1,
-                           svuint32_t &s2, svuint32_t &s3, svuint8_t &s4,
-                           svuint8_t &s5) KLEIDICV_STREAMING
-      : src_rows_{src, src_stride, kChannels},
-        dst_rows_{dst, dst_stride, kChannels},
-        src_width_{src_width},
-        src_height_{src_height},
-        y_begin_{y_begin},
-        y_end_{y_end},
+  PrecalcIndicesFractions(size_t src_width, size_t dst_width, ptrdiff_t kStep)
+      : src_width_{src_width},
         dst_width_{dst_width},
-        dst_height_{dst_height},
-        rounded_width_{0},
-        max_2x_vector_path_{0},
-        kStep_{static_cast<ptrdiff_t>(svcntb())},
-        idx_{nullptr},
-        xfrac_{nullptr},
-        sxbase_{nullptr},
-        precalc_buffer_{nullptr, &std::free},
-        vsx0b_{s0},
-        vsx0t_{s1},
-        vsx1b_{s2},
-        vsx1t_{s3},
-        vsxfrac_bottom_tbl_{s4},
-        vsxfrac_top_tbl_{s5},
-        // Difference in source x coordinate, for one vector path
-        sx_fixp_step_{
-            rounding_div(((src_width_ * kStep_ / kChannels) << kFixpBits),
-                         dst_width_)} {
+        n_iterations_{0},
+        n_iterations_2x_{0},
+        kStep_{kStep},
+        precalc_src_bases_{nullptr, &std::free},
+        precalc_idx_frac_{nullptr, &std::free} {}
+
+  PrecalcIterator<kRatio> begin() const {
+    return PrecalcIterator<kRatio>(kStep_, precalc_src_bases_.get(),
+                                   precalc_idx_frac_.get());
+  }
+
+  bool precalculate_indices_fractions_bases() KLEIDICV_STREAMING {
+    if (!allocate_temp_buffers()) {
+      return false;
+    }
+
     // These starting values are not aligned to center. The center alignment
     // must be added only once. When added to a center-aligned source_x
     // value, the result will be center-aligned.
-    vsx0b_ = make_vsx0(0);
-    vsx0t_ = make_vsx0(1);
-    vsx1b_ = make_vsx0(2 * svcntw());
-    vsx1t_ = make_vsx0(2 * svcntw() + 1);
-
+    svuint32_t vsx0b = make_vsx0(0);
+    svuint32_t vsx0t = make_vsx0(1);
+    svuint32_t vsx1b = make_vsx0(2 * svcntw());
+    svuint32_t vsx1t = make_vsx0(2 * svcntw() + 1);
     // from each even 16bit element, take the low byte, and the high is 0
-    vsxfrac_bottom_tbl_ = svreinterpret_u8_u16(svindex_u16(0xFF00, 0x0004));
+    svuint8_t vsxfrac_bottom_tbl =
+        svreinterpret_u8_u16(svindex_u16(0xFF00, 0x0004));
     // from each odd 16bit element, take the low byte, and the high is 0
-    vsxfrac_top_tbl_ = svreinterpret_u8_u16(svindex_u16(0xFF02, 0x0004));
+    svuint8_t vsxfrac_top_tbl =
+        svreinterpret_u8_u16(svindex_u16(0xFF02, 0x0004));
+
+    // Difference in source x coordinate, for one vector path
+    const uint64_t sx_fixp_step = rounding_div(
+        ((src_width_ * kStep_ / kChannels) << kFixpBits), dst_width_);
+    uint64_t sx_fixp = to_src_x(0);
+    const uint64_t max_src_index =
+        std::max(src_width_ * kChannels - kStep_ * kRatio, 0UL);
+    // For 1,2,4 channels dx can be iterated vector by vector, but not for 3
+    ptrdiff_t dx = 0;
+    for (auto pcit = begin(); pcit.index_ < n_iterations_;
+         ++pcit, dx += kStep_ / kChannels) {
+      // Repeatedly adding sx_fixp_vector_step is faster than multiplication,
+      // but it accumulates fixed-point error; periodic recalibration resets
+      // it. The maximum per-addition error of sx_fixp_vector_step is 0.5 / (1
+      // << 16). Only the upper 8 bits of the 16-bit fractional part are used
+      // for interpolation, so once the accumulated error reaches 1 / (1 <<
+      // 8), it can affect later stages. This corresponds to 512 additions,
+      // which is calculated by this mask.
+      constexpr uint64_t kRecalibrateCycleMask = ((1 << 9) - 1);
+      if ((pcit.index_ & kRecalibrateCycleMask) == 0) {
+        sx_fixp = to_src_x(dx);
+      }
+
+      n_iterations_2x_ = (sx_fixp >> kFixpBits) * kChannels <= max_src_index
+                             ? pcit.index_
+                             : n_iterations_2x_;
+      calculate_indices_fractions_base(pcit, sx_fixp, vsx0b, vsx0t, vsx1b,
+                                       vsx1t, vsxfrac_bottom_tbl,
+                                       vsxfrac_top_tbl);
+      sx_fixp += sx_fixp_step;
+    }
+    return true;
   }
 
-  kleidicv_error_t process_rows() KLEIDICV_STREAMING {
-    kleidicv_error_t err = allocate_temp_buffers();
-    if (err != KLEIDICV_OK) {
-      return err;
-    }
-
-    precalculate_indices_fractions_bases();
-
-    for (uint64_t dst_y = y_begin_; dst_y < y_end_; ++dst_y) {
-      process_row(dst_y);
-    }
-
-    return KLEIDICV_OK;
+  size_t n_iterations() const KLEIDICV_STREAMING { return n_iterations_; }
+  size_t n_iterations_2x() const KLEIDICV_STREAMING { return n_iterations_2x_; }
+  uint64_t *src_bases() const KLEIDICV_STREAMING {
+    return precalc_src_bases_.get();
+  }
+  uint8_t *idx_frac() const KLEIDICV_STREAMING {
+    return precalc_idx_frac_.get();
   }
 
  private:
-  static constexpr ptrdiff_t kFixpBits = 16;
-  static constexpr ptrdiff_t kFixpHalf = (1UL << (kFixpBits - 1));
   using FreeDeleter = decltype(&std::free);
+
+  bool allocate_temp_buffers() KLEIDICV_STREAMING {
+    // Allocate a bit more so don't have to care about overindexing
+    ptrdiff_t rounded_width = align_up(dst_width_ * kChannels, kStep_);
+    n_iterations_ = rounded_width / kStep_;
+    // When kRatio == 3: store dx0 and dx1 indices (x+1), interleaved
+    size_t idx_bytes = (kRatio - 1) * rounded_width;
+    size_t xfrac_bytes = sizeof(uint16_t) * rounded_width;
+    precalc_idx_frac_.reset(
+        static_cast<uint8_t *>(malloc(idx_bytes + xfrac_bytes)));
+    size_t src_bases_bytes = sizeof(uint64_t) * rounded_width / kStep_;
+    precalc_src_bases_.reset(static_cast<uint64_t *>(malloc(src_bases_bytes)));
+    return (reinterpret_cast<uintptr_t>(precalc_idx_frac_.get()) &
+            reinterpret_cast<uintptr_t>(precalc_src_bases_.get()));
+  }
 
   template <typename T = uint64_t>
   static T rounding_div(uint64_t nom, uint64_t denom) {
@@ -118,58 +178,37 @@ class ResizeGenericU8Operation final {
     return aligned_scale(dx, src_width_, dst_width_);
   }
 
-  uint64_t to_src_y(uint64_t dy) const KLEIDICV_STREAMING {
-    return aligned_scale(dy, src_height_, dst_height_);
-  }
-
-  kleidicv_error_t allocate_temp_buffers() KLEIDICV_STREAMING {
-    // Allocate a bit more so don't have to care about overindexing
-    rounded_width_ = align_up(dst_width_ * kChannels, kStep_);
-    // When kRatio == 3: store dx0 and dx1 indices (x+1), interleaved
-    size_t idx_bytes = kRatio == 3 ? 2 * rounded_width_ : rounded_width_;
-    size_t xfrac_begin = idx_bytes;
-    size_t sxbase_begin = xfrac_begin + rounded_width_ * sizeof(uint16_t);
-    size_t total_bytes =
-        sxbase_begin + (rounded_width_ / kStep_) * sizeof(uint64_t);
-    precalc_buffer_.reset(static_cast<uint8_t *>(malloc(total_bytes)));
-    if (!precalc_buffer_) {
-      return KLEIDICV_ERROR_ALLOCATION;
-    }
-    idx_ = precalc_buffer_.get();
-    xfrac_ = reinterpret_cast<uint16_t *>(precalc_buffer_.get() + xfrac_begin);
-    sxbase_ =
-        reinterpret_cast<uint64_t *>(precalc_buffer_.get() + sxbase_begin);
-    return KLEIDICV_OK;
+  // Scale destination x coordinate to source x coordinate, into fixed-point,
+  // without center correction
+  uint32_t scale_x(uint64_t dx) const KLEIDICV_STREAMING {
+    return rounding_div<uint32_t>(((dx * src_width_) << kFixpBits), dst_width_);
   }
 
   svuint32_t make_vsx0(uint64_t dx) const KLEIDICV_STREAMING {
-    svuint64_t half = svdup_n_u64(dst_width_ / 2);
-    svuint64_t sx_b = svmla_n_u64_x(svptrue_b64(), half,
-                                    svindex_u64(dx / kChannels, 4 / kChannels),
-                                    src_width_ << kFixpBits);
-    svuint64_t sx_t = svmla_n_u64_x(
-        svptrue_b64(), half, svindex_u64((dx + 2) / kChannels, 4 / kChannels),
-        src_width_ << kFixpBits);
-    return svtrn1_u32(
-        svreinterpret_u32_u64(svlsl_n_u64_x(
-            svptrue_b64(), svdiv_n_u64_x(svptrue_b64(), sx_b, dst_width_), 8)),
-        svreinterpret_u32_u64(svlsl_n_u64_x(
-            svptrue_b64(), svdiv_n_u64_x(svptrue_b64(), sx_t, dst_width_), 8)));
+    // Creates source x coordinates starting with dx, stepping by 2
+    // and finally shifted left by 8, to support the later svaddhn operation
+    uint32_t sx[64];  // maximum possible vector length in u32 units
+    for (size_t i = 0; i < svcntw(); ++i) {
+      sx[i] = scale_x((dx + 2 * i) / kChannels) << 8;
+    }
+    return svld1(svptrue_b32(), sx);
   }
 
   void calculate_indices_fractions_base(
-      size_t i, ptrdiff_t dx, ptrdiff_t sx_base,
-      uint64_t sx_fixp) const KLEIDICV_STREAMING {
-    sxbase_[i] = sx_base;
+      PrecalcIterator<kRatio> &pcit, uint64_t sx_fixp, svuint32_t vsx0b,
+      svuint32_t vsx0t, svuint32_t vsx1b, svuint32_t vsx1t,
+      svuint8_t vsxfrac_bottom_tbl,
+      svuint8_t vsxfrac_top_tbl) const KLEIDICV_STREAMING {
+    *pcit.src_index_ptr_ = (sx_fixp >> kFixpBits) * kChannels;
     // << 8: to prepare for addhn, have the fractional part in the high half
-    uint32_t xfrac0 = static_cast<uint32_t>(sx_fixp - (sx_base << kFixpBits))
+    uint32_t xfrac0 = static_cast<uint32_t>(sx_fixp & ((1 << kFixpBits) - 1))
                       << 8;
     // get the interesting part: 8+8 bits of integer and fractional part
     svuint8x2_t vsx_delta =
         svcreate2(svreinterpret_u8_u16(svaddhnt_n_u32(
-                      svaddhnb_n_u32(vsx0b_, xfrac0), vsx0t_, xfrac0)),
+                      svaddhnb_n_u32(vsx0b, xfrac0), vsx0t, xfrac0)),
                   svreinterpret_u8_u16(svaddhnt_n_u32(
-                      svaddhnb_n_u32(vsx1b_, xfrac0), vsx1t_, xfrac0)));
+                      svaddhnb_n_u32(vsx1b, xfrac0), vsx1t, xfrac0)));
     // left pixels' indices: integer part
     svuint8_t vsx_left_idx =
         svuzp2_u8(svget2(vsx_delta, 0), svget2(vsx_delta, 1));
@@ -182,7 +221,7 @@ class ResizeGenericU8Operation final {
               svdup_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100)));
     }
     if constexpr (kRatio == 2) {
-      svst1(svptrue_b8(), idx_ + dx * kChannels, vsx_left_idx);
+      svst1(svptrue_b8(), pcit.idx_ptr_, vsx_left_idx);
     } else if constexpr (kRatio == 3) {
       svuint8_t vsx_right_idx =
           svadd_n_u8_x(svptrue_b8(), vsx_left_idx, kChannels);
@@ -191,44 +230,76 @@ class ResizeGenericU8Operation final {
       svuint8_t vsx_idx_hi = svzip2_u8(vsx_left_idx, vsx_right_idx);
       vsx_idx_hi =
           svsub_n_u8_x(svptrue_b8(), vsx_idx_hi, static_cast<uint8_t>(kStep_));
-      svst1(svptrue_b8(), idx_ + 2 * dx * kChannels, vsx_idx_lo);
-      svst1_vnum(svptrue_b8(), idx_ + 2 * dx * kChannels, 1, vsx_idx_hi);
+      svst1(svptrue_b8(), pcit.idx_ptr_, vsx_idx_lo);
+      svst1_vnum(svptrue_b8(), pcit.idx_ptr_, 1, vsx_idx_hi);
     }
     // fractional part is widened to 16 bits for further operations
     svuint16_t vsxfrac_b =
-        svreinterpret_u16_u8(svtbl2_u8(vsx_delta, vsxfrac_bottom_tbl_));
+        svreinterpret_u16_u8(svtbl2_u8(vsx_delta, vsxfrac_bottom_tbl));
     svuint16_t vsxfrac_t =
-        svreinterpret_u16_u8(svtbl2_u8(vsx_delta, vsxfrac_top_tbl_));
-    svst1(svptrue_b16(), xfrac_ + dx * kChannels, vsxfrac_b);
-    svst1_vnum(svptrue_b16(), xfrac_ + dx * kChannels, 1, vsxfrac_t);
+        svreinterpret_u16_u8(svtbl2_u8(vsx_delta, vsxfrac_top_tbl));
+    svst1(svptrue_b16(), pcit.frac_ptr_, vsxfrac_b);
+    svst1_vnum(svptrue_b16(), pcit.frac_ptr_, 1, vsxfrac_t);
   }
 
-  void precalculate_indices_fractions_bases() KLEIDICV_STREAMING {
-    // Repeatedly adding sx_fixp_step_ is faster than multiplication, but it
-    // accumulates fixed-point error; periodic recalibration resets it. The
-    // maximum per-addition error of sx_fixp_step_ is 0.5 / (1 << 16). Only the
-    // upper 8 bits of the 16-bit fractional part are used for interpolation, so
-    // once the accumulated error reaches 1 / (1 << 8), it can affect later
-    // stages. This corresponds to 512 additions.
-    constexpr ptrdiff_t kRecalibrateCycle = 512;
-    size_t i = 0;
-    size_t dx = 0;
-    size_t max_i = rounded_width_ / kStep_;
-    uint64_t max_sx = std::max(src_width_ * kChannels - kStep_ * kRatio, 0UL);
-    while (dx < dst_width_) {
-      uint64_t sx_fixp = to_src_x(dx);
-      size_t i_end = std::min(max_i, i + kRecalibrateCycle);
-      while (i < i_end) {
-        uint64_t sx_base = sx_fixp >> kFixpBits;
-        max_2x_vector_path_ = sx_base * kChannels <= max_sx
-                                  ? static_cast<ptrdiff_t>(i) - 1
-                                  : max_2x_vector_path_;
-        calculate_indices_fractions_base(i, dx, sx_base, sx_fixp);
-        sx_fixp += sx_fixp_step_;
-        dx += kStep_ / kChannels;
-        i++;
-      }
+  const size_t src_width_;
+  const size_t dst_width_;
+  size_t n_iterations_;
+  size_t n_iterations_2x_;
+  const ptrdiff_t kStep_;
+  std::unique_ptr<uint64_t, FreeDeleter> precalc_src_bases_;
+  std::unique_ptr<uint8_t, FreeDeleter> precalc_idx_frac_;
+};
+
+// ratio: number of vectors to load and resize to 1 vector
+// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
+template <ptrdiff_t kRatio, ptrdiff_t kChannels>
+class ResizeGenericU8Operation final {
+ public:
+  ResizeGenericU8Operation(const uint8_t *src, size_t src_stride,
+                           size_t src_width, size_t src_height, size_t y_begin,
+                           size_t y_end, uint8_t *dst,  // NOLINT
+                           size_t dst_stride, size_t dst_width,
+                           size_t dst_height) KLEIDICV_STREAMING
+      : src_rows_{src, src_stride, kChannels},
+        dst_rows_{dst, dst_stride, kChannels},
+        src_width_{src_width},
+        src_height_{src_height},
+        y_begin_{y_begin},
+        y_end_{y_end},
+        dst_width_{dst_width},
+        dst_height_{dst_height},
+        kStep_{static_cast<ptrdiff_t>(svcntb())},
+        precalc_{src_width, dst_width, kStep_} {}
+
+  kleidicv_error_t process_rows() KLEIDICV_STREAMING {
+    if (!precalc_.precalculate_indices_fractions_bases()) {
+      return KLEIDICV_ERROR_ALLOCATION;
     }
+
+    for (uint64_t dst_y = y_begin_; dst_y < y_end_; ++dst_y) {
+      process_row(dst_y);
+    }
+
+    return KLEIDICV_OK;
+  }
+
+ private:
+  template <typename T = uint64_t>
+  static T rounding_div(uint64_t nom, uint64_t denom) {
+    return static_cast<T>((nom + denom / 2) / denom);
+  }
+
+  // Scale coordinate using this formula, so the center is aligned:
+  //   source_x = (destination_x + 0.5) / scale - 0.5;
+  //   plus 1/256/2 for later rounding the fractional part to 8bits
+  static uint64_t aligned_scale(uint64_t x, uint64_t nom, uint64_t denom) {
+    return rounding_div(((x << kFixpBits) + kFixpHalf) * nom, denom) -
+           kFixpHalf + (1 << (kFixpBits - 9));
+  }
+
+  uint64_t to_src_y(uint64_t dy) const KLEIDICV_STREAMING {
+    return aligned_scale(dy, src_height_, dst_height_);
   }
 
   static svuint16_t svshll8b(svuint8_t a) KLEIDICV_STREAMING {
@@ -284,16 +355,16 @@ class ResizeGenericU8Operation final {
 #endif
   }
 
-  svuint8_t interpolate(ptrdiff_t dxidx, uint16_t yfrac, svuint8_t a,
-                        svuint8_t b, svuint8_t c,
+  svuint8_t interpolate(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
+                        svuint8_t a, svuint8_t b, svuint8_t c,
                         svuint8_t d) const KLEIDICV_STREAMING {
 #if KLEIDICV_TARGET_SME2
-    svuint16x2_t vsxfrac = svld1_x2(svptrue_c8(), xfrac_ + dxidx);
+    svuint16x2_t vsxfrac = svld1_x2(svptrue_c8(), pcit.frac_ptr_);
     svuint16_t vsxfrac_b = svget2(vsxfrac, 0);
     svuint16_t vsxfrac_t = svget2(vsxfrac, 1);
 #else
-    svuint16_t vsxfrac_b = svld1(svptrue_b16(), xfrac_ + dxidx);
-    svuint16_t vsxfrac_t = svld1_vnum(svptrue_b16(), xfrac_ + dxidx, 1);
+    svuint16_t vsxfrac_b = svld1(svptrue_b16(), pcit.frac_ptr_);
+    svuint16_t vsxfrac_t = svld1_vnum(svptrue_b16(), pcit.frac_ptr_, 1);
 #endif
     svuint16_t half = svdup_n_u16(128);
     svuint8_t left = svaddhnb(
@@ -314,57 +385,50 @@ class ResizeGenericU8Operation final {
   }
 
   svuint8_t common_vector_path_r2(
-      ptrdiff_t dxidx, uint16_t yfrac, svuint8x2_t topsrc,
+      const PrecalcIterator<kRatio> &pcit, uint16_t yfrac, svuint8x2_t topsrc,
       svuint8x2_t bottomsrc) const KLEIDICV_STREAMING {
-    svuint8_t vsx0_idx = svld1(svptrue_b8(), idx_ + dxidx);
+    svuint8_t vsx0_idx = svld1(svptrue_b8(), pcit.idx_ptr_);
     svuint8_t vsx1_idx = svadd_n_u8_x(svptrue_b8(), vsx0_idx, kChannels);
     svuint8_t a = svtbl2_u8(topsrc, vsx0_idx);
     svuint8_t b = svtbl2_u8(topsrc, vsx1_idx);
     svuint8_t c = svtbl2_u8(bottomsrc, vsx0_idx);
     svuint8_t d = svtbl2_u8(bottomsrc, vsx1_idx);
-    return interpolate(dxidx, yfrac, a, b, c, d);
+    return interpolate(pcit, yfrac, a, b, c, d);
   }
 
-  svuint8x2_t vector_path_2x_r2(ptrdiff_t i, ptrdiff_t dxidx, uint16_t yfrac,
-                                Columns<const uint8_t> src_cols_top,
-                                Columns<const uint8_t> src_cols_bottom) const
-      KLEIDICV_STREAMING {
-    ptrdiff_t sx_base0 = sxbase_[i], sx_base1 = sxbase_[i + 1];
-    // Load 2*2*step elements, that's enough for 1/2 < scale < 1.0
-    svuint8x2_t topsrc0 = load8x2_u8(src_cols_top.ptr_at(sx_base0));
-    svuint8x2_t topsrc1 = load8x2_u8(src_cols_top.ptr_at(sx_base1));
-    svuint8x2_t bottomsrc0 = load8x2_u8(src_cols_bottom.ptr_at(sx_base0));
-    svuint8x2_t bottomsrc1 = load8x2_u8(src_cols_bottom.ptr_at(sx_base1));
-    return svcreate2(
-        common_vector_path_r2(dxidx, yfrac, topsrc0, bottomsrc0),
-        common_vector_path_r2(dxidx + kStep_, yfrac, topsrc1, bottomsrc1));
-  }
-
-  svuint8_t vector_path_r2(ptrdiff_t i, ptrdiff_t dxidx, uint16_t yfrac,
-                           Columns<const uint8_t> src_cols_top,
-                           Columns<const uint8_t> src_cols_bottom) const
-      KLEIDICV_STREAMING {
-    ptrdiff_t sx_base = sxbase_[i];
+  svuint8_t vector_path_r2(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
+                           const uint8_t *src_top,
+                           const uint8_t *src_bottom) const KLEIDICV_STREAMING {
     // Load 2*step elements, that's enough for 1/2 < scale < 1.0
-    svuint8x2_t topsrc = load8x2_while_u8(
-        src_cols_top.ptr_at(sx_base),
-        static_cast<uint64_t>(sx_base) * kChannels, src_width_ * kChannels);
-    svuint8x2_t bottomsrc = load8x2_while_u8(
-        src_cols_bottom.ptr_at(sx_base),
-        static_cast<uint64_t>(sx_base) * kChannels, src_width_ * kChannels);
-    return common_vector_path_r2(dxidx, yfrac, topsrc, bottomsrc);
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x2_t topsrc = load8x2_u8(&src_top[src_index]);
+    svuint8x2_t bottomsrc = load8x2_u8(&src_bottom[src_index]);
+    return common_vector_path_r2(pcit, yfrac, topsrc, bottomsrc);
+  }
+
+  svuint8_t remaining_path_r2(const PrecalcIterator<kRatio> &pcit,
+                              uint16_t yfrac, const uint8_t *src_top,
+                              const uint8_t *src_bottom) const
+      KLEIDICV_STREAMING {
+    // Load 2*step elements, that's enough for 1/2 < scale < 1.0
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x2_t topsrc = load8x2_while_u8(&src_top[src_index], src_index,
+                                          src_width_ * kChannels);
+    svuint8x2_t bottomsrc = load8x2_while_u8(&src_bottom[src_index], src_index,
+                                             src_width_ * kChannels);
+    return common_vector_path_r2(pcit, yfrac, topsrc, bottomsrc);
   }
 
   svuint8_t common_vector_path_r3(
-      ptrdiff_t dxidx, uint16_t yfrac, svuint8x3_t topsrc,
+      const PrecalcIterator<kRatio> &pcit, uint16_t yfrac, svuint8x3_t topsrc,
       svuint8x3_t bottomsrc) const KLEIDICV_STREAMING {
 #if KLEIDICV_TARGET_SME2
-    svuint8x2_t vidx = svld1_x2(svptrue_c8(), idx_ + 2 * dxidx);
+    svuint8x2_t vidx = svld1_x2(svptrue_c8(), pcit.idx_ptr_);
     svuint8_t vsx_idx_lo = svget2(vidx, 0);
     svuint8_t vsx_idx_hi = svget2(vidx, 1);
 #else
-    svuint8_t vsx_idx_lo = svld1(svptrue_b8(), idx_ + 2 * dxidx);
-    svuint8_t vsx_idx_hi = svld1_vnum(svptrue_b8(), idx_ + 2 * dxidx, 1);
+    svuint8_t vsx_idx_lo = svld1(svptrue_b8(), pcit.idx_ptr_);
+    svuint8_t vsx_idx_hi = svld1_vnum(svptrue_b8(), pcit.idx_ptr_, 1);
 #endif
     svuint8_t ab_lo =
         svtbl2_u8(svcreate2(svget3(topsrc, 0), svget3(topsrc, 1)), vsx_idx_lo);
@@ -378,85 +442,80 @@ class ResizeGenericU8Operation final {
     svuint8_t b = svuzp2_u8(ab_lo, ab_hi);
     svuint8_t c = svuzp1_u8(cd_lo, cd_hi);
     svuint8_t d = svuzp2_u8(cd_lo, cd_hi);
-    return interpolate(dxidx, yfrac, a, b, c, d);
+    return interpolate(pcit, yfrac, a, b, c, d);
   }
 
-  svuint8x2_t vector_path_2x_r3(ptrdiff_t i, ptrdiff_t dxidx, uint16_t yfrac,
-                                Columns<const uint8_t> src_cols_top,
-                                Columns<const uint8_t> src_cols_bottom) const
-      KLEIDICV_STREAMING {
-    ptrdiff_t sx_base0 = sxbase_[i], sx_base1 = sxbase_[i + 1];
+  svuint8_t vector_path_r3(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
+                           const uint8_t *src_top,
+                           const uint8_t *src_bottom) const KLEIDICV_STREAMING {
     // Load 3*2*step elements, that's enough for 1/3 < scale < 1.0
-    svuint8x3_t topsrc0 = load8x3_u8(src_cols_top.ptr_at(sx_base0));
-    svuint8x3_t topsrc1 = load8x3_u8(src_cols_top.ptr_at(sx_base1));
-    svuint8x3_t bottomsrc0 = load8x3_u8(src_cols_bottom.ptr_at(sx_base0));
-    svuint8x3_t bottomsrc1 = load8x3_u8(src_cols_bottom.ptr_at(sx_base1));
-    return svcreate2(
-        common_vector_path_r3(dxidx, yfrac, topsrc0, bottomsrc0),
-        common_vector_path_r3(dxidx + kStep_, yfrac, topsrc1, bottomsrc1));
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x3_t topsrc = load8x3_u8(&src_top[src_index]);
+    svuint8x3_t bottomsrc = load8x3_u8(&src_bottom[src_index]);
+    return common_vector_path_r3(pcit, yfrac, topsrc, bottomsrc);
   }
 
-  svuint8_t vector_path_r3(ptrdiff_t i, ptrdiff_t dxidx, uint16_t yfrac,
-                           Columns<const uint8_t> src_cols_top,
-                           Columns<const uint8_t> src_cols_bottom) const
+  svuint8_t remaining_path_r3(const PrecalcIterator<kRatio> &pcit,
+                              uint16_t yfrac, const uint8_t *src_top,
+                              const uint8_t *src_bottom) const
       KLEIDICV_STREAMING {
-    ptrdiff_t sx_base = sxbase_[i];
     // Load 3*step elements, that's enough for 1/3 < scale < 1.0
-    svuint8x3_t topsrc = load8x3_while_u8(
-        src_cols_top.ptr_at(sx_base),
-        static_cast<uint64_t>(sx_base) * kChannels, src_width_ * kChannels);
-    svuint8x3_t bottomsrc = load8x3_while_u8(
-        src_cols_bottom.ptr_at(sx_base),
-        static_cast<uint64_t>(sx_base) * kChannels, src_width_ * kChannels);
-    return common_vector_path_r3(dxidx, yfrac, topsrc, bottomsrc);
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x3_t topsrc = load8x3_while_u8(&src_top[src_index], src_index,
+                                          src_width_ * kChannels);
+    svuint8x3_t bottomsrc = load8x3_while_u8(&src_bottom[src_index], src_index,
+                                             src_width_ * kChannels);
+    return common_vector_path_r3(pcit, yfrac, topsrc, bottomsrc);
   }
 
   void process_row(uint64_t dy) const KLEIDICV_STREAMING {
     uint64_t sy_fixp = to_src_y(dy);
     ptrdiff_t sy = static_cast<ptrdiff_t>(sy_fixp >> kFixpBits);
-    auto src_cols_top = src_rows_.at(sy).as_columns();
-    auto src_cols_bottom = src_rows_.at(sy + 1).as_columns();
-    auto dst_cols = dst_rows_.at(static_cast<ptrdiff_t>(dy)).as_columns();
+    const uint8_t *src_top = &src_rows_.at(sy)[0];
+    const uint8_t *src_bottom = &src_rows_.at(sy + 1)[0];
+    uint8_t *dst = &dst_rows_.at(static_cast<ptrdiff_t>(dy))[0];
+    uint8_t *dst_end = dst + dst_width_ * kChannels;
     // Get the highest 8 bits of the fractional part
     // This is a good compromise between accuracy and performance
     // Because the result is 8bits, the error only affects the least
     // significant 1-2 bits, see the accuracy calculation in kleidicv.h
     uint16_t yfrac =
         static_cast<uint16_t>((sy_fixp - (sy << kFixpBits)) >> (kFixpBits - 8));
-
-    // dx is in pixel units, dxidx is in elements, i.e. dxidx = dx * kChannels
-    ptrdiff_t dxidx = 0;
-    ptrdiff_t i = 0;
-    while (i < max_2x_vector_path_) {
-      svuint8x2_t res;
+    auto pcit = precalc_.begin();
+    while (pcit.index_ + 1 < precalc_.n_iterations_2x()) {
+      svuint8_t res0, res1;
       if constexpr (kRatio == 3) {
-        res = vector_path_2x_r3(i, dxidx, yfrac, src_cols_top, src_cols_bottom);
+        res0 = vector_path_r3(pcit, yfrac, src_top, src_bottom);
+        ++pcit;
+        res1 = vector_path_r3(pcit, yfrac, src_top, src_bottom);
+        ++pcit;
       } else if constexpr (kRatio == 2) {
-        res = vector_path_2x_r2(i, dxidx, yfrac, src_cols_top, src_cols_bottom);
+        res0 = vector_path_r2(pcit, yfrac, src_top, src_bottom);
+        ++pcit;
+        res1 = vector_path_r2(pcit, yfrac, src_top, src_bottom);
+        ++pcit;
       }
 #if KLEIDICV_TARGET_SME2
-      svst1(svptrue_c8(), &dst_cols[dxidx], res);
+      svst1(svptrue_c8(), dst, svcreate2(res0, res1));
 #else
-      svst1(svptrue_b8(), &dst_cols[dxidx], svget2(res, 0));
-      svst1_vnum(svptrue_b8(), &dst_cols[dxidx], 1, svget2(res, 1));
+      svst1(svptrue_b8(), dst, res0);
+      svst1_vnum(svptrue_b8(), dst, 1, res1);
 #endif  // KLEIDICV_TARGET_SME2
-      dxidx += 2 * kStep_;
-      i += 2;
+      dst += 2 * kStep_;
     }
 
     // similar to above, but only a single vector path and with predicates
-    for (; dxidx < static_cast<ptrdiff_t>(dst_width_) * kChannels;
-         dxidx += kStep_) {
-      svbool_t pgdst =
-          svwhilelt_b8(dxidx, static_cast<ptrdiff_t>(dst_width_) * kChannels);
+    while (pcit.index_ < precalc_.n_iterations()) {
+      svbool_t pgdst = svwhilelt_b8(0L, dst_end - dst);
       svuint8_t res;
       if constexpr (kRatio == 2) {
-        res = vector_path_r2(i, dxidx, yfrac, src_cols_top, src_cols_bottom);
+        res = remaining_path_r2(pcit, yfrac, src_top, src_bottom);
       } else if constexpr (kRatio == 3) {
-        res = vector_path_r3(i, dxidx, yfrac, src_cols_top, src_cols_bottom);
+        res = remaining_path_r3(pcit, yfrac, src_top, src_bottom);
       }
-      svst1(pgdst, &dst_cols[dxidx], res);
-      ++i;
+      svst1(pgdst, dst, res);
+      ++pcit;
+      dst += kStep_;
     }
   }
 
@@ -468,37 +527,24 @@ class ResizeGenericU8Operation final {
   const size_t y_end_;
   const size_t dst_width_;
   const size_t dst_height_;
-  size_t rounded_width_;
-  ptrdiff_t max_2x_vector_path_;
   const ptrdiff_t kStep_;
-
-  uint8_t *idx_;
-  uint16_t *xfrac_;
-  uint64_t *sxbase_;
-  std::unique_ptr<uint8_t, FreeDeleter> precalc_buffer_;
-
-  svuint32_t &vsx0b_;
-  svuint32_t &vsx0t_;
-  svuint32_t &vsx1b_;
-  svuint32_t &vsx1t_;
-  svuint8_t &vsxfrac_bottom_tbl_;
-  svuint8_t &vsxfrac_top_tbl_;
-  const uint64_t sx_fixp_step_;
+  PrecalcIndicesFractions<kRatio, kChannels> precalc_;
 };
 
+}  // namespace resize_generic_u8
+
 // ratio: number of vectors to load and resize to 1 vector
-// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
+// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3,
+// 2)
 template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end,
     uint8_t *dst,  // NOLINT
     size_t dst_stride, size_t dst_width, size_t dst_height) KLEIDICV_STREAMING {
-  svuint32_t s0, s1, s2, s3;
-  svuint8_t s4, s5;
-  ResizeGenericU8Operation<kRatio, kChannels> operation(
+  resize_generic_u8::ResizeGenericU8Operation<kRatio, kChannels> operation(
       src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
-      dst_width, dst_height, s0, s1, s2, s3, s4, s5);
+      dst_width, dst_height);
   return operation.process_rows();
 }
 
