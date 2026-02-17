@@ -11,7 +11,6 @@
 #include <limits>
 #include <vector>
 
-#include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/arithmetics/scale.h"
 #include "kleidicv/conversions/rgb_to_yuv.h"
 #include "kleidicv/conversions/yuv_to_rgb.h"
@@ -25,6 +24,7 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/resize/resize_linear.h"
 #include "kleidicv/transform/remap.h"
+#include "kleidicv/transform/rotate.h"
 #include "kleidicv/transform/warp_perspective.h"
 
 typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;

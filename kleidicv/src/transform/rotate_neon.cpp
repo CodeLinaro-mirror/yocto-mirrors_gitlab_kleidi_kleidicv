@@ -4,9 +4,9 @@
 
 #include <cassert>
 
-#include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/transform/rotate.h"
 #include "rotate_transpose_common_neon.h"
 
 namespace kleidicv::neon {

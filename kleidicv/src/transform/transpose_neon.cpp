@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/arithmetics/transpose.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
+#include "kleidicv/transform/transpose.h"
 #include "rotate_transpose_common_neon.h"
 
 namespace kleidicv::neon {

@@ -8,7 +8,33 @@ SPDX-License-Identifier: Apache-2.0
 Note: functions listed here are not necessarily exposed to adapter API layer.
 See `doc/opencv.md` for details of the functionality available in OpenCV.
 
-## Arithmetic operations
+**Analysis:**
+
+Analysis and statistics operations.
+
+|                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 | f32 |
+|-----------------|-----|-----|-----|-----|-----|-----|-----|-----|
+| Sum             |     |     |     |     |     |     |     |  x  |
+| Minmax          |  x  |  x  |  x  |  x  |  x  |     |     |  x  |
+| Minmax loc      |     |  x  |     |     |     |     |     |     |
+| Count non-zeros |     |  x  |     |     |     |     |     |     |
+
+- **Optical flow**
+
+|                                  | u8 input |
+|----------------------------------|----------|
+| LK optical-flow pyramid builder  |    x     |
+| LK optical flow from pyramids    |    x     |
+| Standalone Lucas-Kanade solver   |    x     |
+
+Note: LK optical-flow APIs support `uint8_t` input images with 1 to 4 channels.
+
+**Arithmetics:**
+
+Arithmetic and element-wise operations.
+
+- **Numeric operations**
+
 |                              | s8  | u8  | s16 | u16 | s32 | u32 | s64 | u64 | f32 | f64 | u8->f16 |
 |------------------------------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|---------|
 | Exp                          |     |     |     |     |     |     |     |     |  x  |     |         |
@@ -23,15 +49,22 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | CompareGreater               |     |  x  |     |     |     |     |     |     |     |     |         |
 | InRange                      |     |  x  |     |     |     |     |     |     |  x  |     |         |
 
-> ℹ️ **Scale u8->f16 using SVE/SME is significantly faster when `alpha` and `beta` are exact `float16_t` values.** \
-**This can be forced by explicit casting: `static_cast<float16_t>(0.3)`.**
+Note: Scale u8->f16 using SVE/SME is significantly faster when `alpha` and
+`beta` are exact `float16_t` values. This can be forced by explicit casting:
+`static_cast<float16_t>(0.3)`.
 
-# Logical operations
+- **Bitwise operations**
+
 |                              | u8  |
 |------------------------------|-----|
 | Bitwise And                  |  x  |
 
-## Color conversions
+**Conversions:**
+
+Color, data type, and channel packing conversions.
+
+- **Color conversions**
+
 |                                      | u8  |
 |--------------------------------------|-----|
 | Gray-RGB                             |  x  |
@@ -65,34 +98,27 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | BGR - YUV420 (planar & semi-planar)  |  x  |
 | BGRA - YUV420 (planar & semi-planar) |  x  |
 
-## Data type conversions
+- **Data type conversions**
+
 |            | u8  | s8  | f32 |
 |------------|-----|-----|-----|
 | To float32 |  x  |  x  |     |
 | To uint8   |     |     |  x  |
 | To int8    |     |     |  x  |
 
-## Aggregate operations
-|                 | s8  | u8  | s16 | u16 | s32 | u32 | s64 | f32 |
-|-----------------|-----|-----|-----|-----|-----|-----|-----|-----|
-| Sum             |     |     |     |     |     |     |     |  x  |
-| Minmax          |  x  |  x  |  x  |  x  |  x  |     |     |  x  |
-| Minmax loc      |     |  x  |     |     |     |     |     |     |
-| Count non-zeros |     |  x  |     |     |     |     |     |     |
+- **Channel packing and unpacking**
 
-## Matrix transformation functions
 |                               | 8-bit | 16-bit | 32-bit | 64-bit |
 |-------------------------------|-------|--------|--------|--------|
 | Merge                         |   x   |    x   |    x   |    x   |
 | Split                         |   x   |    x   |    x   |    x   |
-| Transpose                     |   x   |    x   |    x   |    x   |
-| Rotate (±90 degrees)          |   x   |    x   |    x   |    x   |
 
-## Image filters
+**Filters:**
+
+Filtering operations.
+
 |                                                   | s8  | u8  | s16 | u16 | s32 | u32 | f32 |
 |---------------------------------------------------|-----|-----|-----|-----|-----|-----|-----|
-| Erode                                             |     |  x  |     |     |     |     |     |
-| Dilate                                            |     |  x  |     |     |     |     |     |
 | Sobel (3x3)                                       |     |  x  |     |     |     |     |     |
 | Separable Filter 2D (5x5)                         |     |  x  |  x  |  x  |     |     |     |
 | Gaussian Blur (3x3, 5x5, 7x7, 9x9, 15x15, 21x21)  |     |  x  |     |     |     |     |     |
@@ -100,14 +126,21 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Median Blur (3x3, 5x5, 7x7)                       |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
 | Median Blur (generic imp, max size 255x255)       |     |  x  |     |     |     |     |     |
 
-## Optical flow helpers
-|                                  | u8 input |
-|----------------------------------|----------|
-| LK optical-flow pyramid builder  |    x     |
+**Morphology:**
 
-> ℹ️ **LK optical-flow pyramid builder supports `uint8_t` input images with 1 to 4 channels.**
+Morphological operations.
 
-## Resize with linear interpolation
+|                                                   | s8  | u8  | s16 | u16 | s32 | u32 | f32 |
+|---------------------------------------------------|-----|-----|-----|-----|-----|-----|-----|
+| Erode                                             |     |  x  |     |     |     |     |     |
+| Dilate                                            |     |  x  |     |     |     |     |     |
+
+**Resize:**
+
+Resize operations.
+
+- **Linear interpolation**
+
 |                                        | u8  | f32 |
 |----------------------------------------|-----|-----|
 | 2x2 (1 channel)                        |  x  |  x  |
@@ -115,9 +148,22 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | 8x8 (1 channel)                        |     |  x  |
 | Downsize 1/3 to 1 (1, 2 or 3 channels) |  x  |     |
 
-> ℹ️ **For the linear downsize, width ratio is limited to 0.33 - 1.0, but height ratio can be anything between 0.0 and 1.0.**
+Note: For the linear downsize, width ratio is limited to 0.33 - 1.0, but
+height ratio can be anything between 0.0 and 1.0.
 
-# Remap
+**Transform:**
+
+Geometric transform operations.
+
+- **Geometric transforms**
+
+|                               | 8-bit | 16-bit | 32-bit | 64-bit |
+|-------------------------------|-------|--------|--------|--------|
+| Transpose                     |   x   |    x   |    x   |    x   |
+| Rotate (90 degrees +/- clockwise) |   x   |    x   |    x   |    x   |
+
+- **Remap**
+
 |                                                   |  1ch u8 | 1ch u16 | 2ch u8 | 2ch u16 | 4ch u8 | 4ch u16 |
 |---------------------------------------------------|---------|---------|--------|---------|--------|---------|
 | Remap int16 coordinates                           |    x    |    x    |        |         |        |         |
@@ -125,7 +171,8 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Remap float32 coordinates - nearest interpolation |    x    |    x    |    x   |    x    |        |         |
 | Remap float32 coordinates - linear interpolation  |    x    |    x    |    x   |    x    |        |         |
 
-# WarpPerspective
+- **WarpPerspective**
+
 |                      |  u8 |
 |----------------------|-----|
 | Nearest neighbour    |  x  |

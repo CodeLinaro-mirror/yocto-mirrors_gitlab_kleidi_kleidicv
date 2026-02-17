@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef KLEIDICV_ARITHMETICS_ROTATE_H
-#define KLEIDICV_ARITHMETICS_ROTATE_H
+#ifndef KLEIDICV_TRANSFORM_ROTATE_H
+#define KLEIDICV_TRANSFORM_ROTATE_H
 
 #include <cstddef>
 #include <cstdint>
@@ -41,4 +41,4 @@ kleidicv_error_t rotate(const void *src, size_t src_stride, size_t width,
 
 }  // namespace kleidicv
 
-#endif  // KLEIDICV_ARITHMETICS_ROTATE_H
+#endif  // KLEIDICV_TRANSFORM_ROTATE_H
