@@ -20,6 +20,7 @@ from collections.abc import Iterable
 
 MAX_LINE_LEN = 72
 WARN_SUBJECT_LEN = 50
+ASCII_MAX = 0x7F
 
 
 def _run_git_log(commit_range: str) -> str:
@@ -72,6 +73,10 @@ def _check_message(message: str) -> tuple[list[str], list[str]]:
         errors.append("subject line is empty")
         return errors, warnings
 
+    # Subject line ASCII-only check
+    if any(ord(ch) > ASCII_MAX for ch in subject):
+        errors.append("subject line contains non-ASCII characters")
+
     # Subject line length checks
     if len(subject) > MAX_LINE_LEN:
         errors.append(
@@ -93,8 +98,11 @@ def _check_message(message: str) -> tuple[list[str], list[str]]:
     if len(lines) > 1 and lines[1].strip() != "":
         errors.append("missing blank line between subject and body")
 
-    # Body line length checks (skip subject)
     for idx, line in enumerate(lines[1:], start=2):
+        # Body line ASCII-only check
+        if any(ord(ch) > ASCII_MAX for ch in line):
+            errors.append(f"line {idx} contains non-ASCII characters")
+        # Body line length checks
         if len(line) > MAX_LINE_LEN:
             errors.append(
                 f"line {idx} exceeds {MAX_LINE_LEN} chars ({len(line)})"
