@@ -516,20 +516,18 @@ kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
   MorphologyWorkspace::Pointer workspace;
   if (kleidicv_error_t error = MorphologyWorkspace::create(
           workspace, kernel_rect, anchor, *morphology_border_type, border_value,
-          channels, iterations, sizeof(uint8_t), rect)) {
+          channels, sizeof(uint8_t), rect)) {
     return error;
   }
 
-  Rows<const T> src_rows{src, src_stride, workspace->channels()};
-  Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
-  Margin margin{kernel_rect, anchor};
+  Rows<const T> src_rows{src, src_stride, channels};
+  Rows<T> dst_rows{dst, dst_stride, channels};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
-  for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
+  for (size_t i = 0; i < iterations; ++i) {
     DilateOperation<T> operation{kernel_rect};
-    workspace->process(rect, current_src_rows, current_dst_rows, margin,
-                       workspace->border_type(), operation);
+    workspace->process(current_src_rows, current_dst_rows, operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
@@ -590,20 +588,18 @@ kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
   MorphologyWorkspace::Pointer workspace;
   if (kleidicv_error_t error = MorphologyWorkspace::create(
           workspace, kernel_rect, anchor, *morphology_border_type, border_value,
-          channels, iterations, sizeof(uint8_t), rect)) {
+          channels, sizeof(uint8_t), rect)) {
     return error;
   }
 
-  Rows<const T> src_rows{src, src_stride, workspace->channels()};
-  Rows<T> dst_rows{dst, dst_stride, workspace->channels()};
-  Margin margin{kernel_rect, anchor};
+  Rows<const T> src_rows{src, src_stride, channels};
+  Rows<T> dst_rows{dst, dst_stride, channels};
 
   Rows<const T> current_src_rows = src_rows;
   Rows<T> current_dst_rows = dst_rows;
-  for (size_t iteration = 0; iteration < workspace->iterations(); ++iteration) {
+  for (size_t i = 0; i < iterations; ++i) {
     ErodeOperation<T> operation{kernel_rect};
-    workspace->process(rect, current_src_rows, current_dst_rows, margin,
-                       workspace->border_type(), operation);
+    workspace->process(current_src_rows, current_dst_rows, operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }

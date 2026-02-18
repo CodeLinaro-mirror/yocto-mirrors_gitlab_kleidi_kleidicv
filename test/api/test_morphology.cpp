@@ -501,7 +501,7 @@ TYPED_TEST(Morphology, WorkspaceBufferOverflow) {
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             Workspace::create(workspace, kernel, anchor,
                               Workspace::BorderType::REPLICATE, nullptr,
-                              KLEIDICV_MAXIMUM_CHANNEL_COUNT, 1,
+                              KLEIDICV_MAXIMUM_CHANNEL_COUNT,
                               KLEIDICV_MAXIMUM_TYPE_SIZE, image));
   EXPECT_EQ(nullptr, workspace.get());
 }
@@ -537,7 +537,7 @@ TYPED_TEST(Morphology, WorkspaceBufferOverflowRows) {
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             Workspace::create(workspace, kernel, anchor,
                               Workspace::BorderType::REPLICATE, nullptr,
-                              KLEIDICV_MAXIMUM_CHANNEL_COUNT, 1,
+                              KLEIDICV_MAXIMUM_CHANNEL_COUNT,
                               KLEIDICV_MAXIMUM_TYPE_SIZE, image));
   EXPECT_EQ(nullptr, workspace.get());
 }
