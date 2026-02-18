@@ -513,12 +513,13 @@ kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
   Rectangle kernel_rect{kernel_width, kernel_height};
   Point anchor{anchor_x, anchor_y};
 
-  MorphologyWorkspace::Pointer workspace;
-  if (kleidicv_error_t error = MorphologyWorkspace::create(
-          workspace, kernel_rect, anchor, *morphology_border_type, border_value,
-          channels, sizeof(uint8_t), rect)) {
-    return error;
+  auto workspace_variant = MorphologyWorkspace::create(
+      kernel_rect, anchor, *morphology_border_type, border_value, channels,
+      sizeof(uint8_t), rect);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
   }
+  auto &workspace = *std::get_if<MorphologyWorkspace>(&workspace_variant);
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
@@ -527,7 +528,7 @@ kleidicv_error_t dilate(const T *src, size_t src_stride, T *dst,
   Rows<T> current_dst_rows = dst_rows;
   for (size_t i = 0; i < iterations; ++i) {
     DilateOperation<T> operation{kernel_rect};
-    workspace->process(current_src_rows, current_dst_rows, operation);
+    workspace.process(current_src_rows, current_dst_rows, operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }
@@ -585,12 +586,14 @@ kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
   Rectangle rect{width, height};
   Rectangle kernel_rect{kernel_width, kernel_height};
   Point anchor{anchor_x, anchor_y};
-  MorphologyWorkspace::Pointer workspace;
-  if (kleidicv_error_t error = MorphologyWorkspace::create(
-          workspace, kernel_rect, anchor, *morphology_border_type, border_value,
-          channels, sizeof(uint8_t), rect)) {
-    return error;
+
+  auto workspace_variant = MorphologyWorkspace::create(
+      kernel_rect, anchor, *morphology_border_type, border_value, channels,
+      sizeof(uint8_t), rect);
+  if (auto *err = std::get_if<kleidicv_error_t>(&workspace_variant)) {
+    return *err;
   }
+  auto &workspace = *std::get_if<MorphologyWorkspace>(&workspace_variant);
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
@@ -599,7 +602,7 @@ kleidicv_error_t erode(const T *src, size_t src_stride, T *dst,
   Rows<T> current_dst_rows = dst_rows;
   for (size_t i = 0; i < iterations; ++i) {
     ErodeOperation<T> operation{kernel_rect};
-    workspace->process(current_src_rows, current_dst_rows, operation);
+    workspace.process(current_src_rows, current_dst_rows, operation);
     // Update source for the next iteration.
     current_src_rows = dst_rows;
   }

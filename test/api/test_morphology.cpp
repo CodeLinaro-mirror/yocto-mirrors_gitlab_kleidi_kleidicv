@@ -484,7 +484,6 @@ TYPED_TEST(Morphology, OversizeImage) {
 TYPED_TEST(Morphology, WorkspaceBufferOverflow) {
   using Workspace = ::KLEIDICV_TARGET_NAMESPACE::MorphologyWorkspace;
 
-  Workspace::Pointer workspace;
   kleidicv::Rectangle kernel{1, 32};
   kleidicv::Point anchor{0, 0};
   constexpr size_t kBufferRowsHeight = 128;
@@ -498,18 +497,17 @@ TYPED_TEST(Morphology, WorkspaceBufferOverflow) {
       1;
   const kleidicv::Rectangle image{image_width, size_t{1}};
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            Workspace::create(workspace, kernel, anchor,
-                              Workspace::BorderType::REPLICATE, nullptr,
-                              KLEIDICV_MAXIMUM_CHANNEL_COUNT,
-                              KLEIDICV_MAXIMUM_TYPE_SIZE, image));
-  EXPECT_EQ(nullptr, workspace.get());
+  auto workspace_variant = Workspace::create(
+      kernel, anchor, Workspace::BorderType::REPLICATE, nullptr,
+      KLEIDICV_MAXIMUM_CHANNEL_COUNT, KLEIDICV_MAXIMUM_TYPE_SIZE, image);
+  auto *error = std::get_if<kleidicv_error_t>(&workspace_variant);
+  ASSERT_NE(nullptr, error);
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE, *error);
 }
 
 TYPED_TEST(Morphology, WorkspaceBufferOverflowRows) {
   using Workspace = ::KLEIDICV_TARGET_NAMESPACE::MorphologyWorkspace;
 
-  Workspace::Pointer workspace;
   const kleidicv::Rectangle kernel{size_t{1},
                                    size_t{KLEIDICV_MAX_IMAGE_PIXELS}};
   const kleidicv::Point anchor{0, 0};
@@ -534,12 +532,12 @@ TYPED_TEST(Morphology, WorkspaceBufferOverflowRows) {
   EXPECT_TRUE(__builtin_mul_overflow(buffer_rows_stride, buffer_rows_height,
                                      &buffer_rows_size));
 
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            Workspace::create(workspace, kernel, anchor,
-                              Workspace::BorderType::REPLICATE, nullptr,
-                              KLEIDICV_MAXIMUM_CHANNEL_COUNT,
-                              KLEIDICV_MAXIMUM_TYPE_SIZE, image));
-  EXPECT_EQ(nullptr, workspace.get());
+  auto workspace_variant = Workspace::create(
+      kernel, anchor, Workspace::BorderType::REPLICATE, nullptr,
+      KLEIDICV_MAXIMUM_CHANNEL_COUNT, KLEIDICV_MAXIMUM_TYPE_SIZE, image);
+  auto *error = std::get_if<kleidicv_error_t>(&workspace_variant);
+  ASSERT_NE(nullptr, error);
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE, *error);
 }
 
 TYPED_TEST(Morphology, NullBorderValue) {

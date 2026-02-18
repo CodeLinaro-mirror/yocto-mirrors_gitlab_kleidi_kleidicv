@@ -7,9 +7,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <optional>
+#include <variant>
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
@@ -20,24 +23,9 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
-// Forward declarations.
-class MorphologyWorkspace;
-
-// Deleter for MorphologyWorkspace instances.
-class MorphologyWorkspaceDeleter {
- public:
-  void operator()(MorphologyWorkspace *ptr) const KLEIDICV_STREAMING {
-    std::free(ptr);
-  };
-};
-
 // Workspace for morphological operations.
 class MorphologyWorkspace final {
  public:
-  // Shorthand for std::unique_ptr<> holding a workspace.
-  using Pointer =
-      std::unique_ptr<MorphologyWorkspace, MorphologyWorkspaceDeleter>;
-
   enum class BorderType {
     CONSTANT,
     REPLICATE,
@@ -75,12 +63,10 @@ class MorphologyWorkspace final {
   // MorphologyWorkspace is only constructible with create().
   MorphologyWorkspace() = delete;
 
-  // Creates a workspace on the heap.
-  static kleidicv_error_t create(Pointer &workspace, Rectangle kernel,
-                                 Point anchor, BorderType border_type,
-                                 const uint8_t *border_value, size_t channels,
-                                 size_t type_size,
-                                 Rectangle image_size) KLEIDICV_STREAMING {
+  static std::variant<MorphologyWorkspace, kleidicv_error_t> create(
+      Rectangle kernel, Point anchor, BorderType border_type,
+      const uint8_t *border_value, size_t channels, size_t type_size,
+      Rectangle image_size) KLEIDICV_STREAMING {
     if (anchor.x() >= kernel.width() || anchor.y() >= kernel.height()) {
       return KLEIDICV_ERROR_RANGE;
     }
@@ -121,46 +107,76 @@ class MorphologyWorkspace final {
     // Storage for indirect row access.
     size_t indirect_row_storage_size = 3 * rows_per_iteration * sizeof(void *);
 
-    // Try to allocate workspace at once.
-    size_t allocation_size = sizeof(MorphologyWorkspace) +
-                             indirect_row_storage_size + buffer_rows_size +
-                             wide_rows_size;
-    void *allocation = std::malloc(allocation_size);
-    workspace = MorphologyWorkspace::Pointer{
-        reinterpret_cast<MorphologyWorkspace *>(allocation)};
-    if (!workspace) {
+    // Try to allocate the buffers at once.
+    size_t allocation_size =
+        indirect_row_storage_size + buffer_rows_size + wide_rows_size;
+    uint8_t *allocation =
+        reinterpret_cast<uint8_t *>(std::malloc(allocation_size));
+    if (!allocation) {
       return KLEIDICV_ERROR_ALLOCATION;
     }
 
-    workspace->rows_per_iteration_ = rows_per_iteration;
-    workspace->wide_rows_src_width_ = image_size.width();
-    workspace->channels_ = channels;
+    size_t wide_rows_src_width = image_size.width();
 
-    auto *buffer_rows_address = &workspace->data_[indirect_row_storage_size];
+    auto *buffer_rows_address = &allocation[indirect_row_storage_size];
     buffer_rows_address = align_up(buffer_rows_address, kAlignment);
-    workspace->buffer_rows_offset_ = buffer_rows_address - &workspace->data_[0];
-    workspace->buffer_rows_stride_ = buffer_rows_stride;
+    ptrdiff_t buffer_rows_offset = buffer_rows_address - allocation;
 
     auto *wide_rows_address =
-        &workspace->data_[indirect_row_storage_size + buffer_rows_size];
+        &allocation[indirect_row_storage_size + buffer_rows_size];
     wide_rows_address += margin.left() * channels;
     wide_rows_address = align_up(wide_rows_address, kAlignment);
     wide_rows_address -= margin.left() * channels;
-    workspace->wide_rows_offset_ = wide_rows_address - &workspace->data_[0];
-    workspace->wide_rows_stride_ = wide_rows_stride;
-    workspace->margin_ = margin;
-    workspace->image_size_ = image_size;
+    ptrdiff_t wide_rows_offset = wide_rows_address - allocation;
 
-    workspace->border_type_ = border_type;
+    std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT> border_values{};
     if (border_type == BorderType::CONSTANT) {
       for (size_t i = 0; i < channels; ++i) {
-        workspace->border_value_[i] = border_value[i];
+        border_values[i] = border_value[i];
       }
     }
 
-    return KLEIDICV_OK;
+    return MorphologyWorkspace{image_size,
+                               margin,
+                               border_type,
+                               border_values,
+                               rows_per_iteration,
+                               wide_rows_src_width,
+                               channels,
+                               0,
+                               0,
+                               buffer_rows_offset,
+                               buffer_rows_stride,
+                               wide_rows_offset,
+                               wide_rows_stride,
+                               allocation};
   }
 
+ private:
+  MorphologyWorkspace(
+      Rectangle image_size, Margin margin, BorderType border_type,
+      std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT> border_values,
+      size_t rows_per_iteration, size_t wide_rows_src_width, size_t channels,
+      size_t horizontal_height, size_t vertical_height,
+      ptrdiff_t buffer_rows_offset, size_t buffer_rows_stride,
+      ptrdiff_t wide_rows_offset, size_t wide_rows_stride,
+      uint8_t *allocation) KLEIDICV_STREAMING
+      : image_size_{image_size},
+        margin_{margin},
+        border_type_{border_type},
+        border_value_{border_values},
+        rows_per_iteration_{rows_per_iteration},
+        wide_rows_src_width_{wide_rows_src_width},
+        channels_{channels},
+        horizontal_height_{horizontal_height},
+        vertical_height_{vertical_height},
+        buffer_rows_offset_{buffer_rows_offset},
+        buffer_rows_stride_{buffer_rows_stride},
+        wide_rows_offset_{wide_rows_offset},
+        wide_rows_stride_{wide_rows_stride},
+        data_{allocation, &std::free} {}
+
+ public:
   // This function is too complex, but disable the warning for now.
   // NOLINTBEGIN(readability-function-cognitive-complexity)
   template <typename O>
@@ -177,13 +193,14 @@ class MorphologyWorkspace final {
     }
 
     // Wide rows which can hold data with left and right margins.
-    auto wide_rows = Rows{reinterpret_cast<S *>(&data_[wide_rows_offset_]),
-                          wide_rows_stride_, channels_};
+    auto wide_rows =
+        Rows{reinterpret_cast<S *>(&data_.get()[wide_rows_offset_]),
+             wide_rows_stride_, channels_};
 
     // Double buffered indirect rows to access the buffer rows.
     auto db_indirect_rows = DoubleBufferedIndirectRows{
-        reinterpret_cast<B **>(&data_[0]), rows_per_iteration_,
-        Rows{reinterpret_cast<B *>(&data_[buffer_rows_offset_]),
+        reinterpret_cast<B **>(&data_.get()[0]), rows_per_iteration_,
+        Rows{reinterpret_cast<B *>(&data_.get()[buffer_rows_offset_]),
              buffer_rows_stride_, channels_}};
 
     // [Step 1] Initialize workspace.
@@ -354,8 +371,6 @@ class MorphologyWorkspace final {
     }
   }
 
-  static_assert(sizeof(Pointer) == sizeof(void *), "Unexpected type size");
-
   Rectangle image_size_;
   Margin margin_;
   BorderType border_type_;
@@ -372,15 +387,15 @@ class MorphologyWorkspace final {
   // Remaining height to process in vertical direction.
   size_t vertical_height_;
   // Offset in bytes to the buffer rows from &data_[0].
-  size_t buffer_rows_offset_;
+  ptrdiff_t buffer_rows_offset_;
   // Stride of the buffer rows.
   size_t buffer_rows_stride_;
   // Offset in bytes to the wide rows from &data_[0].
-  size_t wide_rows_offset_;
+  ptrdiff_t wide_rows_offset_;
   // Stride of the wide rows.
   size_t wide_rows_stride_;
-  // Workspace area begins here.
-  uint8_t data_[0] KLEIDICV_ATTR_ALIGNED(sizeof(void *));
+  // Workspace buffer
+  std::unique_ptr<uint8_t, decltype(&std::free)> data_;
 };  // end of class MorphologyWorkspace
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
