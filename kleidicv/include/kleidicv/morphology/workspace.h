@@ -79,8 +79,8 @@ class MorphologyWorkspace final {
   static kleidicv_error_t create(Pointer &workspace, Rectangle kernel,
                                  Point anchor, BorderType border_type,
                                  const uint8_t *border_value, size_t channels,
-                                 size_t iterations, size_t type_size,
-                                 Rectangle image) KLEIDICV_STREAMING {
+                                 size_t type_size,
+                                 Rectangle image_size) KLEIDICV_STREAMING {
     if (anchor.x() >= kernel.width() || anchor.y() >= kernel.height()) {
       return KLEIDICV_ERROR_RANGE;
     }
@@ -94,7 +94,6 @@ class MorphologyWorkspace final {
         std::max(2 * kernel.height(), static_cast<size_t>(32ULL));
     // To avoid load/store penalties.
     const size_t kAlignment = 16;
-    Rectangle image_size{image};
     Margin margin{kernel, anchor};
 
     // A single wide row which can hold one row worth of data in addition
@@ -149,42 +148,31 @@ class MorphologyWorkspace final {
     wide_rows_address -= margin.left() * channels;
     workspace->wide_rows_offset_ = wide_rows_address - &workspace->data_[0];
     workspace->wide_rows_stride_ = wide_rows_stride;
+    workspace->margin_ = margin;
+    workspace->image_size_ = image_size;
 
-    workspace->kernel_ = kernel;
-    workspace->anchor_ = anchor;
     workspace->border_type_ = border_type;
     if (border_type == BorderType::CONSTANT) {
       for (size_t i = 0; i < channels; ++i) {
         workspace->border_value_[i] = border_value[i];
       }
     }
-    workspace->channels_ = channels;
-    workspace->iterations_ = iterations;
-    workspace->type_size_ = type_size;
-    workspace->image_size_ = image_size;
 
     return KLEIDICV_OK;
   }
 
-  Rectangle kernel() const { return kernel_; }
-  Point anchor() const { return anchor_; }
-  BorderType border_type() const { return border_type_; }
-  size_t channels() const { return channels_; }
-  size_t iterations() const { return iterations_; }
-  size_t type_size() const { return type_size_; }
-  Rectangle image_size() const { return image_size_; }
-
   // This function is too complex, but disable the warning for now.
   // NOLINTBEGIN(readability-function-cognitive-complexity)
   template <typename O>
-  void process(Rectangle rect, Rows<const typename O::SourceType> src_rows,
-               Rows<typename O::DestinationType> dst_rows, Margin margin,
-               BorderType border_type, O operation) KLEIDICV_STREAMING {
+  void process(Rows<const typename O::SourceType> src_rows,
+               Rows<typename O::DestinationType> dst_rows,
+               O operation) KLEIDICV_STREAMING {
     using S = typename O::SourceType;
     using B = typename O::BufferType;
     typename O::CopyData copy_data{};
 
-    if (KLEIDICV_UNLIKELY(rect.width() == 0 || rect.height() == 0)) {
+    if (KLEIDICV_UNLIKELY(image_size_.width() == 0 ||
+                          image_size_.height() == 0)) {
       return;
     }
 
@@ -199,44 +187,45 @@ class MorphologyWorkspace final {
              buffer_rows_stride_, channels_}};
 
     // [Step 1] Initialize workspace.
-    horizontal_height_ = margin.top() + rect.height() + margin.bottom();
-    vertical_height_ = rect.height();
-    row_index_ = 0;
+    horizontal_height_ =
+        margin_.top() + image_size_.height() + margin_.bottom();
+    vertical_height_ = image_size_.height();
+    size_t row_index = 0;
 
     // Used by replicate border type.
     auto first_src_rows = src_rows;
-    auto last_src_rows = src_rows.at(rect.height() - 1);
+    auto last_src_rows = src_rows.at(image_size_.height() - 1);
 
     size_t horizontal_height = get_next_horizontal_height();
     for (size_t index = 0; index < horizontal_height; ++index) {
-      switch (border_type) {
+      switch (border_type_) {
         case BorderType::CONSTANT: {
-          make_constant_border(wide_rows, 0, margin.left());
+          make_constant_border(wide_rows, 0, margin_.left());
 
-          if (row_index_ < margin.top() ||
-              row_index_ >= margin.top() + rect.height()) {
-            make_constant_border(wide_rows, margin.left(),
+          if (row_index < margin_.top() ||
+              row_index >= margin_.top() + image_size_.height()) {
+            make_constant_border(wide_rows, margin_.left(),
                                  wide_rows_src_width_);
           } else {
-            copy_data(src_rows, wide_rows.at(0, margin.left()),
+            copy_data(src_rows, wide_rows.at(0, margin_.left()),
                       wide_rows_src_width_);
             // Advance source rows.
             ++src_rows;
           }
 
-          make_constant_border(wide_rows, margin.left() + wide_rows_src_width_,
-                               margin.right());
+          make_constant_border(wide_rows, margin_.left() + wide_rows_src_width_,
+                               margin_.right());
 
           // Advance counters.
-          ++row_index_;
+          ++row_index;
         } break;
 
         case BorderType::REPLICATE: {
           Rows<const S> current_src_row;
 
-          if (row_index_ < margin.top()) {
+          if (row_index < margin_.top()) {
             current_src_row = first_src_rows;
-          } else if (row_index_ < (margin.top() + rect.height())) {
+          } else if (row_index < (margin_.top() + image_size_.height())) {
             current_src_row = src_rows;
             // Advance source rows.
             ++src_rows;
@@ -244,20 +233,21 @@ class MorphologyWorkspace final {
             current_src_row = last_src_rows;
           }
 
-          replicate_border(current_src_row, wide_rows, 0, 0, margin.left());
-          copy_data(current_src_row, wide_rows.at(0, margin.left()),
+          replicate_border(current_src_row, wide_rows, 0, 0, margin_.left());
+          copy_data(current_src_row, wide_rows.at(0, margin_.left()),
                     wide_rows_src_width_);
           replicate_border(current_src_row, wide_rows, wide_rows_src_width_ - 1,
-                           margin.left() + wide_rows_src_width_,
-                           margin.right());
+                           margin_.left() + wide_rows_src_width_,
+                           margin_.right());
 
           // Advance counters.
-          ++row_index_;
+          ++row_index;
         } break;
-      }  // switch (border_type)
+      }  // switch (border_type_)
 
       // [Step 2] Process the preloaded data.
-      operation.process_horizontal(Rectangle{rect.width(), 1UL}, wide_rows,
+      operation.process_horizontal(Rectangle{image_size_.width(), 1UL},
+                                   wide_rows,
                                    db_indirect_rows.write_at().at(index));
     }  // for (...; index < horizontal_height; ...)
 
@@ -267,27 +257,27 @@ class MorphologyWorkspace final {
     while (vertical_height_) {
       size_t horizontal_height = get_next_horizontal_height();
       for (size_t index = 0; index < horizontal_height; ++index) {
-        switch (border_type) {
+        switch (border_type_) {
           case BorderType::CONSTANT: {
-            if (row_index_ < (margin.top() + rect.height())) {
+            if (row_index < (margin_.top() + image_size_.height())) {
               // Constant left and right borders with source data.
-              copy_data(src_rows, wide_rows.at(0, margin.left()),
+              copy_data(src_rows, wide_rows.at(0, margin_.left()),
                         wide_rows_src_width_);
               // Advance source rows.
               ++src_rows;
             } else {
-              make_constant_border(wide_rows, margin.left(),
+              make_constant_border(wide_rows, margin_.left(),
                                    wide_rows_src_width_);
             }
 
             // Advance row counter.
-            ++row_index_;
+            ++row_index;
           } break;
 
           case BorderType::REPLICATE: {
             Rows<const S> current_src_row;
 
-            if (row_index_ < (margin.top() + rect.height())) {
+            if (row_index < (margin_.top() + image_size_.height())) {
               current_src_row = src_rows;
               // Advance source rows.
               ++src_rows;
@@ -295,25 +285,27 @@ class MorphologyWorkspace final {
               current_src_row = last_src_rows;
             }
 
-            replicate_border(current_src_row, wide_rows, 0, 0, margin.left());
-            copy_data(current_src_row, wide_rows.at(0, margin.left()),
+            replicate_border(current_src_row, wide_rows, 0, 0, margin_.left());
+            copy_data(current_src_row, wide_rows.at(0, margin_.left()),
                       wide_rows_src_width_);
             replicate_border(
                 current_src_row, wide_rows, wide_rows_src_width_ - 1,
-                margin.left() + wide_rows_src_width_, margin.right());
+                margin_.left() + wide_rows_src_width_, margin_.right());
 
             // Advance counters.
-            ++row_index_;
+            ++row_index;
           } break;
-        }  // switch (border_type)
+        }  // switch (border_type_)
 
-        operation.process_horizontal(Rectangle{rect.width(), 1UL}, wide_rows,
+        operation.process_horizontal(Rectangle{image_size_.width(), 1UL},
+                                     wide_rows,
                                      db_indirect_rows.write_at().at(index));
       }  // for (...; index < horizontal_height; ...)
 
       size_t next_vertical_height = get_next_vertical_height();
-      operation.process_vertical(Rectangle{rect.width(), next_vertical_height},
-                                 db_indirect_rows.read_at(), dst_rows);
+      operation.process_vertical(
+          Rectangle{image_size_.width(), next_vertical_height},
+          db_indirect_rows.read_at(), dst_rows);
       dst_rows += next_vertical_height;
 
       db_indirect_rows.swap();
@@ -364,13 +356,10 @@ class MorphologyWorkspace final {
 
   static_assert(sizeof(Pointer) == sizeof(void *), "Unexpected type size");
 
-  Rectangle kernel_;
-  Point anchor_;
+  Rectangle image_size_;
+  Margin margin_;
   BorderType border_type_;
   std::array<uint8_t, KLEIDICV_MAXIMUM_CHANNEL_COUNT> border_value_;
-  size_t iterations_;
-  size_t type_size_;
-  Rectangle image_size_;
 
   // Number of wide rows in this workspace.
   size_t rows_per_iteration_;
@@ -382,8 +371,6 @@ class MorphologyWorkspace final {
   size_t horizontal_height_;
   // Remaining height to process in vertical direction.
   size_t vertical_height_;
-  // Index of the processed row.
-  size_t row_index_;
   // Offset in bytes to the buffer rows from &data_[0].
   size_t buffer_rows_offset_;
   // Stride of the buffer rows.
