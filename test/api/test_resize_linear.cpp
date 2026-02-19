@@ -257,9 +257,9 @@ struct ResizeLinearTypeParam {
 template <typename T>
 class ResizeLinear : public testing::Test {};
 
-using ResizeLinearTypes = testing::Types<ResizeLinearTypeParam<uint8_t, 1>,
-                                         ResizeLinearTypeParam<uint8_t, 2>,
-                                         ResizeLinearTypeParam<float, 1>>;
+using ResizeLinearTypes = testing::Types<
+    ResizeLinearTypeParam<uint8_t, 1>, ResizeLinearTypeParam<uint8_t, 2>,
+    ResizeLinearTypeParam<uint8_t, 3>, ResizeLinearTypeParam<float, 1>>;
 TYPED_TEST_SUITE(ResizeLinear, ResizeLinearTypes);
 
 TYPED_TEST(ResizeLinear, NotImplemented) {
@@ -574,7 +574,8 @@ TEST(ResizeLinearFloat, LargeDimensions8x8) {
 
 class ResizeLinearU8 : public testing::TestWithParam<size_t> {};
 
-INSTANTIATE_TEST_SUITE_P(ResizeLinear, ResizeLinearU8, testing::Values(1, 2));
+INSTANTIATE_TEST_SUITE_P(ResizeLinear, ResizeLinearU8,
+                         testing::Values(1, 2, 3));
 
 TEST_P(ResizeLinearU8, LargeDimensionsGeneric2) {
   size_t channels = GetParam();
@@ -779,7 +780,7 @@ TEST_P(ResizeLinearU8Params, ResizePadSrc) {
 }
 
 TEST(ResizeLinearU8Params, InvalidChannelCount) {
-  size_t channels = 3;
+  size_t channels = 4;
   std::vector<uint8_t> src(48UL * 2UL * channels);
   std::vector<uint8_t> dst(32UL * 1UL * channels);
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,

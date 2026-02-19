@@ -15,7 +15,7 @@ namespace kleidicv::neon {
 
 // ratio: number of vectors to load and resize to 1 vector
 // supported ratio values: 2 and 3
-// supported channel counts: 1 and 2
+// supported channel counts: 1, 2 and 3
 template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -53,7 +53,9 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8(
 
 KLEIDICV_INSTANTIATE_TEMPLATE(2L, 1L);
 KLEIDICV_INSTANTIATE_TEMPLATE(2L, 2L);
+KLEIDICV_INSTANTIATE_TEMPLATE(2L, 3L);
 KLEIDICV_INSTANTIATE_TEMPLATE(3L, 1L);
 KLEIDICV_INSTANTIATE_TEMPLATE(3L, 2L);
+KLEIDICV_INSTANTIATE_TEMPLATE(3L, 3L);
 
 }  // namespace kleidicv::neon
