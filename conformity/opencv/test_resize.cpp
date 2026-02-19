@@ -41,6 +41,13 @@ cv::Mat exec_resize_to_third(cv::Mat& input_mat) {
   return result;
 }
 
+template <int Type>
+cv::Mat exec_resize_to_almost_third(cv::Mat& input_mat) {
+  cv::Mat result;
+  resize(input_mat, result, cv::Size(100, 100), 0, 0, Type);
+  return result;
+}
+
 #if MANAGER
 template <typename T>
 static T get_threshold(int, size_t);
@@ -160,6 +167,28 @@ bool test_resize_to_third(int index, RecreatedMessageQueue& request_queue,
   }
   return false;
 }
+
+template <int Type, size_t Format>
+bool test_resize_to_almost_third(int index,
+                                 RecreatedMessageQueue& request_queue,
+                                 RecreatedMessageQueue& reply_queue) {
+  cv::RNG rng(0);
+
+  for (size_t i = 0; i <= 10; ++i) {
+    cv::Mat input_mat(290, 290, Format);
+    rng.fill(input_mat, cv::RNG::UNIFORM, 0, 255);
+
+    cv::Mat actual_mat = exec_resize_to_almost_third<Type>(input_mat);
+    cv::Mat expected_mat = get_expected_from_subordinate(
+        index, request_queue, reply_queue, input_mat);
+
+    if (are_matrices_different<uint8_t>(5, actual_mat, expected_mat)) {
+      fail_print_matrices(290, 290, input_mat, actual_mat, expected_mat);
+      return true;
+    }
+  }
+  return false;
+}
 #endif
 
 std::vector<test>& resize_tests_get() {
@@ -179,11 +208,18 @@ std::vector<test>& resize_tests_get() {
     TEST("Resize0.3x0.3 uint8, INTER_LINEAR, 1 channel", (test_resize_to_third<CV_HAL_INTER_LINEAR, CV_8UC1>), (exec_resize_to_third<CV_HAL_INTER_LINEAR>)),
     TEST("Resize random downscale uint8, INTER_LINEAR, 1 channel", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC1>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
 
-    TEST("Resize0.5x0.5 uint8, INTER_LINEAR, 2 channel", (test_resize<500, CV_HAL_INTER_LINEAR, 5, 32, CV_8UC2>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
-    TEST("Resize0.777x0.777 uint8, INTER_LINEAR, 2 channel", (test_resize<777, CV_HAL_INTER_LINEAR, 21, 64, CV_8UC2>), (exec_resize<777, CV_HAL_INTER_LINEAR>)),
-    TEST("Resize0.444x0.444 uint8, INTER_LINEAR, 2 channel", (test_resize<444, CV_HAL_INTER_LINEAR, 21, 64, CV_8UC2>), (exec_resize<444, CV_HAL_INTER_LINEAR>)),
-    TEST("Resize0.3x0.3 uint8, INTER_LINEAR, 2 channel", (test_resize_to_third<CV_HAL_INTER_LINEAR, CV_8UC2>), (exec_resize_to_third<CV_HAL_INTER_LINEAR>)),
-    TEST("Resize random downscale uint8, INTER_LINEAR, 2 channel", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC2>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.5x0.5 uint8, INTER_LINEAR, 2 channels", (test_resize<500, CV_HAL_INTER_LINEAR, 5, 32, CV_8UC2>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.777x0.777 uint8, INTER_LINEAR, 2 channels", (test_resize<777, CV_HAL_INTER_LINEAR, 21, 64, CV_8UC2>), (exec_resize<777, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.444x0.444 uint8, INTER_LINEAR, 2 channels", (test_resize<444, CV_HAL_INTER_LINEAR, 21, 64, CV_8UC2>), (exec_resize<444, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.3x0.3 uint8, INTER_LINEAR, 2 channels", (test_resize_to_third<CV_HAL_INTER_LINEAR, CV_8UC2>), (exec_resize_to_third<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize random downscale uint8, INTER_LINEAR, 2 channels", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC2>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
+
+    TEST("Resize0.5x0.5 uint8, INTER_LINEAR, 3 channels", (test_resize<500, CV_HAL_INTER_LINEAR, 5, 32, CV_8UC3>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.777x0.777 uint8, INTER_LINEAR, 3 channels", (test_resize<777, CV_HAL_INTER_LINEAR, 21, 64, CV_8UC3>), (exec_resize<777, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.444x0.444 uint8, INTER_LINEAR, 3 channels", (test_resize<444, CV_HAL_INTER_LINEAR, 21, 64, CV_8UC3>), (exec_resize<444, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.3x0.3 uint8, INTER_LINEAR, 3 channels", (test_resize_to_third<CV_HAL_INTER_LINEAR, CV_8UC3>), (exec_resize_to_third<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.29x0.29 uint8, INTER_LINEAR, 3 channels", (test_resize_to_almost_third<CV_HAL_INTER_LINEAR, CV_8UC3>), (exec_resize_to_almost_third<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize random downscale uint8, INTER_LINEAR, 3 channels", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC3>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
   };
   // clang-format on
   return tests;

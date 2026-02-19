@@ -201,6 +201,7 @@ Notes on parameters:
 | `CV_8UC1`  | `INTER_AREA`  |        0.5x0.5         |
 | `CV_8UC1`  |`INTER_LINEAR` |  0.33 - 1.0, 2x2, 4x4  |
 | `CV_8UC2`  |`INTER_LINEAR` |      0.33 - 1.0        |
+| `CV_8UC3`  |`INTER_LINEAR` |      0.33 - 1.0        |
 | `CV_32FC1` |`INTER_LINEAR` |     2x2, 4x4, 8x8      |
 
 > ℹ️ **For the generic linear resize, width ratio is limited to 0.33 - 1.0, but height ratio can be anything between 0.0 and 1.0.**

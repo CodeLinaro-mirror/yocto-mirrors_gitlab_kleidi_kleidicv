@@ -124,16 +124,18 @@ TEST_P(ResizeThread, ResizeFloat4x4) { test_resize_f32_4x4(); }
 
 TEST_P(ResizeThread, ResizeFloat8x8) { test_resize_f32_8x8(); }
 
+// clang-format off
 INSTANTIATE_TEST_SUITE_P(, ResizeThread,
-                         testing::Values(P{1, 1, 1, 1}, P{1, 2, 1, 2},
-                                         P{1, 2, 2, 1}, P{2, 1, 2, 2},
-                                         P{2, 2, 1, 1}, P{1, 3, 2, 2},
-                                         P{2, 3, 1, 1}, P{6, 4, 1, 2},
-                                         P{4, 5, 2, 1}, P{2, 6, 3, 2},
-                                         P{1, 7, 4, 1}, P{12, 34, 5, 2}));
+                         testing::Values(P{1, 1, 1, 1}, P{ 1,  2, 1, 2}, P{ 1,  2, 1, 3},
+                                         P{1, 2, 2, 1}, P{ 2,  1, 2, 2}, P{ 2,  1, 2, 3},
+                                         P{2, 2, 1, 1}, P{ 1,  3, 2, 2}, P{ 1,  3, 2, 3},
+                                         P{2, 3, 1, 1}, P{ 6,  4, 1, 2}, P{ 6,  4, 1, 3},
+                                         P{4, 5, 2, 1}, P{ 2,  6, 3, 2}, P{ 2,  6, 3, 3},
+                                         P{1, 7, 4, 1}, P{12, 34, 5, 2}, P{12, 34, 5, 3}));
+// clang-format on
 
 TEST(ResizeThreadTest, NotImplemented) {
-  for (size_t channels = 1; channels <= 2; ++channels) {
+  for (size_t channels = 1; channels <= 3; ++channels) {
     // Too small images
     uint8_t src[1] = {}, dst[1] = {};
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
@@ -165,7 +167,7 @@ TEST(ResizeThreadTest, NotImplemented) {
 
   {
     // Invalid channel count
-    size_t channels = 3;
+    size_t channels = 4;
     std::vector<uint8_t> src(48UL * 2UL * channels);
     std::vector<uint8_t> dst(32UL * 1UL * channels);
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
