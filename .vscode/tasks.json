@@ -212,6 +212,23 @@
       }
     },
     {
+      "label": "Neon unit tests",
+      "type": "process",
+      "command": "qemu-aarch64",
+      "args": [
+        "-cpu",
+        "cortex-a35",
+        "${workspaceFolder}/build/kleidicv/test/unit_neon/kleidicv-neon-unit-test",
+        "--vector-length=16"
+      ],
+      "dependsOn": [
+        "Build KleidiCV"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
       "label": "Format source",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/format.sh",
