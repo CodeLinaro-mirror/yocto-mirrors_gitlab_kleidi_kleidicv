@@ -37,30 +37,28 @@ static constexpr ptrdiff_t kFixpHalf = (1UL << (kFixpBits - 1));
 
 // Precalc 1 item:
 // Frac:       2 vectors u16
-// Idx:
-// - ratio=2:  1 vector   u8 (left_idx)
-// - ratio=3:  2 vectors  u8 (left+right interleaved)
+// Idx:        1 vector   u8 (left_idx)
 // Src_index:  uint64 (separate array)
 template <size_t kRatio>
 struct PrecalcIterator {
   size_t index_;
   uint64_t *src_index_ptr_;
   const size_t kStep, kIdxFracStep;
-  uint16_t *frac_ptr_;
   uint8_t *idx_ptr_;
+  uint16_t *frac_ptr_;
   PrecalcIterator(size_t kStepDst, uint64_t *src_indices, uint8_t *p_idx_frac)
       : index_{0},
         src_index_ptr_{src_indices},
         kStep{kStepDst},
-        kIdxFracStep{kStep * (2 + (kRatio == 3 ? 2 : 1))},
-        frac_ptr_{reinterpret_cast<uint16_t *>(p_idx_frac)},
-        idx_ptr_{p_idx_frac + kStep * 2} {}
+        kIdxFracStep{kStep * (2 + 1)},
+        idx_ptr_{p_idx_frac},
+        frac_ptr_{reinterpret_cast<uint16_t *>(p_idx_frac + kStep)} {}
 
   PrecalcIterator &operator++() {
     ++index_;
     ++src_index_ptr_;
-    frac_ptr_ += kIdxFracStep / 2;
     idx_ptr_ += kIdxFracStep;
+    frac_ptr_ += kIdxFracStep / 2;
     return *this;
   }
 };
@@ -68,7 +66,8 @@ struct PrecalcIterator {
 template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 class PrecalcIndicesFractions final {
  public:
-  PrecalcIndicesFractions(size_t src_width, size_t dst_width, ptrdiff_t kStep)
+  PrecalcIndicesFractions(size_t src_width, size_t dst_width,
+                          ptrdiff_t kStep) KLEIDICV_STREAMING
       : src_width_{src_width},
         dst_width_{dst_width},
         n_iterations_{0},
@@ -77,12 +76,12 @@ class PrecalcIndicesFractions final {
         precalc_src_bases_{nullptr, &std::free},
         precalc_idx_frac_{nullptr, &std::free} {}
 
-  PrecalcIterator<kRatio> begin() const {
+  PrecalcIterator<kRatio> begin() const KLEIDICV_STREAMING {
     return PrecalcIterator<kRatio>(kStep_, precalc_src_bases_.get(),
                                    precalc_idx_frac_.get());
   }
 
-  bool precalculate_indices_fractions_bases() KLEIDICV_STREAMING {
+  bool precalculate_indices_fractions_srcindices() KLEIDICV_STREAMING {
     if (!allocate_temp_buffers()) {
       return false;
     }
@@ -100,6 +99,9 @@ class PrecalcIndicesFractions final {
     // from each odd 16bit element, take the low byte, and the high is 0
     svuint8_t vsxfrac_top_tbl =
         svreinterpret_u8_u16(svindex_u16(0xFF02, 0x0004));
+
+    svuint8_t vchannels = svreinterpret_u8_u32(
+        svdup_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100));
 
     // Difference in source x coordinate, for one vector path
     const uint64_t sx_fixp_step = rounding_div(
@@ -126,10 +128,110 @@ class PrecalcIndicesFractions final {
       n_iterations_2x_ = (sx_fixp >> kFixpBits) * kChannels <= max_src_index
                              ? pcit.index_
                              : n_iterations_2x_;
-      calculate_indices_fractions_base(pcit, sx_fixp, vsx0b, vsx0t, vsx1b,
-                                       vsx1t, vsxfrac_bottom_tbl,
-                                       vsxfrac_top_tbl);
+      calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b, vsx0t, vsx1b,
+                                           vsx1t, vsxfrac_bottom_tbl,
+                                           vsxfrac_top_tbl, vchannels);
       sx_fixp += sx_fixp_step;
+    }
+    return true;
+  }
+
+  bool precalculate_indices_fractions_srcindices_3ch() KLEIDICV_STREAMING {
+    if (!allocate_temp_buffers()) {
+      return false;
+    }
+
+    // These starting values are not aligned to center. The center alignment
+    // must be added only once. When added to a center-aligned source_x
+    // value, the result will be center-aligned.
+    svuint32_t vsx0b_R = make_vsx0(0);
+    svuint32_t vsx0t_R = make_vsx0(1);
+    svuint32_t vsx1b_R = make_vsx0(2 * svcntw());
+    svuint32_t vsx1t_R = make_vsx0(2 * svcntw() + 1);
+
+    svuint32_t vsx0b_G = make_vsx0(4 * svcntw());
+    svuint32_t vsx0t_G = make_vsx0(4 * svcntw() + 1);
+    svuint32_t vsx1b_G = make_vsx0(6 * svcntw());
+    svuint32_t vsx1t_G = make_vsx0(6 * svcntw() + 1);
+
+    svuint32_t vsx0b_B = make_vsx0(8 * svcntw());
+    svuint32_t vsx0t_B = make_vsx0(8 * svcntw() + 1);
+    svuint32_t vsx1b_B = make_vsx0(10 * svcntw());
+    svuint32_t vsx1t_B = make_vsx0(10 * svcntw() + 1);
+
+    size_t kVL = svcntb();
+    svuint8_t vchannels_R = svindex_u8(0, 1);
+    svuint8_t vchannels_G = svindex_u8(kVL % 3, 1);
+    svuint8_t vchannels_B = svindex_u8((kVL + kVL) % 3, 1);
+    // Decrease by 3 while they are >= 3 --> so we get the modulo
+    size_t steps = (kVL - 1) / 3;
+    for (size_t i = 0; i < steps; ++i) {
+      vchannels_R = svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), vchannels_R, 3),
+                                 vchannels_R, 3);
+      vchannels_G = svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), vchannels_G, 3),
+                                 vchannels_G, 3);
+      vchannels_B = svsub_n_u8_m(svcmpge_n_u8(svptrue_b8(), vchannels_B, 3),
+                                 vchannels_B, 3);
+    }
+
+    // from each even 16bit element, take the low byte, and the high is 0
+    svuint8_t vsxfrac_bottom_tbl =
+        svreinterpret_u8_u16(svindex_u16(0xFF00, 0x0004));
+    // from each odd 16bit element, take the low byte, and the high is 0
+    svuint8_t vsxfrac_top_tbl =
+        svreinterpret_u8_u16(svindex_u16(0xFF02, 0x0004));
+
+    // Difference in source x coordinate, for three vector paths (one iteration
+    // in this calculation)
+    const uint64_t sx_fixp_step3 =
+        rounding_div((src_width_ * kStep_) << kFixpBits, dst_width_);
+    uint64_t sx_fixp = to_src_x(0);
+    const uint64_t max_src_index =
+        std::max(src_width_ * kChannels - kStep_ * kRatio, 0UL);
+    ptrdiff_t dx = 0;
+    auto pcit = begin();
+    while (pcit.index_ < n_iterations_) {
+      // Repeatedly adding sx_fixp_vector_step is faster than multiplication,
+      // but it accumulates fixed-point error; periodic recalibration resets
+      // it. The maximum per-addition error of sx_fixp_vector_step is 0.5 / (1
+      // << 16). Only the upper 8 bits of the 16-bit fractional part are used
+      // for interpolation, so once the accumulated error reaches 1 / (1 <<
+      // 8), it can affect later stages. This corresponds to 512 additions,
+      // but it will trigger each 3rd time, so the mask should be set to 128.
+      constexpr uint64_t kRecalibrateCycleMask = ((1 << 7) - 1);
+      if ((pcit.index_ & kRecalibrateCycleMask) == 0) {
+        sx_fixp = to_src_x(dx);
+      }
+
+      calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b_R, vsx0t_R,
+                                           vsx1b_R, vsx1t_R, vsxfrac_bottom_tbl,
+                                           vsxfrac_top_tbl, vchannels_R);
+      n_iterations_2x_ = *pcit.src_index_ptr_ <= max_src_index
+                             ? pcit.index_
+                             : n_iterations_2x_;
+      ++pcit;
+      if (pcit.index_ >= n_iterations_) {
+        break;
+      }
+      calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b_G, vsx0t_G,
+                                           vsx1b_G, vsx1t_G, vsxfrac_bottom_tbl,
+                                           vsxfrac_top_tbl, vchannels_G);
+      n_iterations_2x_ = *pcit.src_index_ptr_ <= max_src_index
+                             ? pcit.index_
+                             : n_iterations_2x_;
+      ++pcit;
+      if (pcit.index_ >= n_iterations_) {
+        break;
+      }
+      calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b_B, vsx0t_B,
+                                           vsx1b_B, vsx1t_B, vsxfrac_bottom_tbl,
+                                           vsxfrac_top_tbl, vchannels_B);
+      n_iterations_2x_ = *pcit.src_index_ptr_ <= max_src_index
+                             ? pcit.index_
+                             : n_iterations_2x_;
+      ++pcit;
+      sx_fixp += sx_fixp_step3;
+      dx += kStep_;
     }
     return true;
   }
@@ -150,8 +252,7 @@ class PrecalcIndicesFractions final {
     // Allocate a bit more so don't have to care about overindexing
     ptrdiff_t rounded_width = align_up(dst_width_ * kChannels, kStep_);
     n_iterations_ = rounded_width / kStep_;
-    // When kRatio == 3: store dx0 and dx1 indices (x+1), interleaved
-    size_t idx_bytes = (kRatio - 1) * rounded_width;
+    size_t idx_bytes = sizeof(uint8_t) * rounded_width;
     size_t xfrac_bytes = sizeof(uint16_t) * rounded_width;
     precalc_idx_frac_.reset(
         static_cast<uint8_t *>(malloc(idx_bytes + xfrac_bytes)));
@@ -162,14 +263,15 @@ class PrecalcIndicesFractions final {
   }
 
   template <typename T = uint64_t>
-  static T rounding_div(uint64_t nom, uint64_t denom) {
+  static T rounding_div(uint64_t nom, uint64_t denom) KLEIDICV_STREAMING {
     return static_cast<T>((nom + denom / 2) / denom);
   }
 
   // Scale coordinate using this formula, so the center is aligned:
   //   source_x = (destination_x + 0.5) / scale - 0.5;
   //   plus 1/256/2 for later rounding the fractional part to 8bits
-  static uint64_t aligned_scale(uint64_t x, uint64_t nom, uint64_t denom) {
+  static uint64_t aligned_scale(uint64_t x, uint64_t nom,
+                                uint64_t denom) KLEIDICV_STREAMING {
     return rounding_div(((x << kFixpBits) + kFixpHalf) * nom, denom) -
            kFixpHalf + (1 << (kFixpBits - 9));
   }
@@ -194,50 +296,63 @@ class PrecalcIndicesFractions final {
     return svld1(svptrue_b32(), sx);
   }
 
-  void calculate_indices_fractions_base(
-      PrecalcIterator<kRatio> &pcit, uint64_t sx_fixp, svuint32_t vsx0b,
-      svuint32_t vsx0t, svuint32_t vsx1b, svuint32_t vsx1t,
-      svuint8_t vsxfrac_bottom_tbl,
-      svuint8_t vsxfrac_top_tbl) const KLEIDICV_STREAMING {
-    *pcit.src_index_ptr_ = (sx_fixp >> kFixpBits) * kChannels;
+  void calculate_indices_fractions_srcindex(
+      PrecalcIterator<kRatio> &pcit, uint64_t sx_fixp, const svuint32_t &vsx0b,
+      const svuint32_t &vsx0t, const svuint32_t &vsx1b, const svuint32_t &vsx1t,
+      const svuint8_t &vsxfrac_bottom_tbl, const svuint8_t &vsxfrac_top_tbl,
+      [[maybe_unused]] const svuint8_t &vchannels) const KLEIDICV_STREAMING {
     // << 8: to prepare for addhn, have the fractional part in the high half
     uint32_t xfrac0 = static_cast<uint32_t>(sx_fixp & ((1 << kFixpBits) - 1))
                       << 8;
     // get the interesting part: 8+8 bits of integer and fractional part
-    svuint8x2_t vsx_delta =
-        svcreate2(svreinterpret_u8_u16(svaddhnt_n_u32(
-                      svaddhnb_n_u32(vsx0b, xfrac0), vsx0t, xfrac0)),
-                  svreinterpret_u8_u16(svaddhnt_n_u32(
-                      svaddhnb_n_u32(vsx1b, xfrac0), vsx1t, xfrac0)));
+    svuint16x2_t vsx_delta =
+        svcreate2(svaddhnt_n_u32(svaddhnb_n_u32(vsx0b, xfrac0), vsx0t, xfrac0),
+                  svaddhnt_n_u32(svaddhnb_n_u32(vsx1b, xfrac0), vsx1t, xfrac0));
+    if constexpr (kChannels == 3) {
+      // When vsx0 starts from other than zero, this offset must be subtracted
+      uint16_t start{};
+      svst1(svptrue_pat_b16(SV_VL1), &start, svget2(vsx_delta, 0));
+      start = start & 0xFF00;
+      vsx_delta =
+          svcreate2(svsub_n_u16_x(svptrue_b16(), svget2(vsx_delta, 0), start),
+                    svsub_n_u16_x(svptrue_b16(), svget2(vsx_delta, 1), start));
+      sx_fixp += (start >> 8) << kFixpBits;
+    }
+    svuint8x2_t vsx_delta8 =
+        svcreate2(svreinterpret_u8_u16(svget2(vsx_delta, 0)),
+                  svreinterpret_u8_u16(svget2(vsx_delta, 1)));
     // left pixels' indices: integer part
     svuint8_t vsx_left_idx =
-        svuzp2_u8(svget2(vsx_delta, 0), svget2(vsx_delta, 1));
+        svuzp2_u8(svget2(vsx_delta8, 0), svget2(vsx_delta8, 1));
     if constexpr (kChannels > 1) {
-      vsx_left_idx =
-          svlsl_n_u8_x(svptrue_b8(), vsx_left_idx, kChannels == 4 ? 2 : 1);
-      vsx_left_idx = svadd_u8_x(
-          svptrue_b8(), vsx_left_idx,
-          svreinterpret_u8_u32(
-              svdup_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100)));
+      if constexpr (kChannels == 3) {
+        vsx_left_idx = svmul_n_u8_x(svptrue_b8(), vsx_left_idx, 3);
+      } else {
+        static_assert(kChannels == 2 || kChannels == 4);
+        vsx_left_idx =
+            svlsl_n_u8_x(svptrue_b8(), vsx_left_idx, kChannels == 4 ? 2 : 1);
+      }
+      vsx_left_idx = svadd_u8_x(svptrue_b8(), vsx_left_idx, vchannels);
     }
-    if constexpr (kRatio == 2) {
-      svst1(svptrue_b8(), pcit.idx_ptr_, vsx_left_idx);
-    } else if constexpr (kRatio == 3) {
-      svuint8_t vsx_right_idx =
-          svadd_n_u8_x(svptrue_b8(), vsx_left_idx, kChannels);
-      // left and right pixels' indices, interleaved (LRLRLR...)
-      svuint8_t vsx_idx_lo = svzip1_u8(vsx_left_idx, vsx_right_idx);
-      svuint8_t vsx_idx_hi = svzip2_u8(vsx_left_idx, vsx_right_idx);
-      vsx_idx_hi =
-          svsub_n_u8_x(svptrue_b8(), vsx_idx_hi, static_cast<uint8_t>(kStep_));
-      svst1(svptrue_b8(), pcit.idx_ptr_, vsx_idx_lo);
-      svst1_vnum(svptrue_b8(), pcit.idx_ptr_, 1, vsx_idx_hi);
+
+    uint64_t srcindex = (sx_fixp >> kFixpBits) * kChannels;
+    if constexpr (kChannels == 3) {
+      // When vsx_left_idx starts from other than zero, this offset must be
+      // subtracted
+      uint8_t start{};
+      svst1(svptrue_pat_b8(SV_VL1), &start, vsx_left_idx);
+      vsx_left_idx = svsub_n_u8_x(svptrue_b8(), vsx_left_idx, start);
+      srcindex += start;
     }
+
+    *pcit.src_index_ptr_ = srcindex;
+    svst1(svptrue_b8(), pcit.idx_ptr_, vsx_left_idx);
+
     // fractional part is widened to 16 bits for further operations
     svuint16_t vsxfrac_b =
-        svreinterpret_u16_u8(svtbl2_u8(vsx_delta, vsxfrac_bottom_tbl));
+        svreinterpret_u16_u8(svtbl2_u8(vsx_delta8, vsxfrac_bottom_tbl));
     svuint16_t vsxfrac_t =
-        svreinterpret_u16_u8(svtbl2_u8(vsx_delta, vsxfrac_top_tbl));
+        svreinterpret_u16_u8(svtbl2_u8(vsx_delta8, vsxfrac_top_tbl));
     svst1(svptrue_b16(), pcit.frac_ptr_, vsxfrac_b);
     svst1_vnum(svptrue_b16(), pcit.frac_ptr_, 1, vsxfrac_t);
   }
@@ -252,13 +367,15 @@ class PrecalcIndicesFractions final {
 };
 
 // ratio: number of vectors to load and resize to 1 vector
-// - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3, 2)
+// - supported combinations of (ratio, channel):
+// (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)
 template <ptrdiff_t kRatio, ptrdiff_t kChannels>
 class ResizeGenericU8Operation final {
  public:
   ResizeGenericU8Operation(const uint8_t *src, size_t src_stride,
                            size_t src_width, size_t src_height, size_t y_begin,
-                           size_t y_end, uint8_t *dst,  // NOLINT
+                           size_t y_end,
+                           uint8_t *dst,  // NOLINT
                            size_t dst_stride, size_t dst_width,
                            size_t dst_height) KLEIDICV_STREAMING
       : src_rows_{src, src_stride, kChannels},
@@ -273,7 +390,14 @@ class ResizeGenericU8Operation final {
         precalc_{src_width, dst_width, kStep_} {}
 
   kleidicv_error_t process_rows() KLEIDICV_STREAMING {
-    if (!precalc_.precalculate_indices_fractions_bases()) {
+    bool precalc_success = false;
+    if constexpr (kChannels == 3) {
+      precalc_success =
+          precalc_.precalculate_indices_fractions_srcindices_3ch();
+    } else {
+      precalc_success = precalc_.precalculate_indices_fractions_srcindices();
+    }
+    if (!precalc_success) {
       return KLEIDICV_ERROR_ALLOCATION;
     }
 
@@ -422,26 +546,25 @@ class ResizeGenericU8Operation final {
   svuint8_t common_vector_path_r3(
       const PrecalcIterator<kRatio> &pcit, uint16_t yfrac, svuint8x3_t topsrc,
       svuint8x3_t bottomsrc) const KLEIDICV_STREAMING {
-#if KLEIDICV_TARGET_SME2
-    svuint8x2_t vidx = svld1_x2(svptrue_c8(), pcit.idx_ptr_);
-    svuint8_t vsx_idx_lo = svget2(vidx, 0);
-    svuint8_t vsx_idx_hi = svget2(vidx, 1);
-#else
-    svuint8_t vsx_idx_lo = svld1(svptrue_b8(), pcit.idx_ptr_);
-    svuint8_t vsx_idx_hi = svld1_vnum(svptrue_b8(), pcit.idx_ptr_, 1);
-#endif
-    svuint8_t ab_lo =
-        svtbl2_u8(svcreate2(svget3(topsrc, 0), svget3(topsrc, 1)), vsx_idx_lo);
-    svuint8_t ab_hi =
-        svtbl2_u8(svcreate2(svget3(topsrc, 1), svget3(topsrc, 2)), vsx_idx_hi);
-    svuint8_t cd_lo = svtbl2_u8(
-        svcreate2(svget3(bottomsrc, 0), svget3(bottomsrc, 1)), vsx_idx_lo);
-    svuint8_t cd_hi = svtbl2_u8(
-        svcreate2(svget3(bottomsrc, 1), svget3(bottomsrc, 2)), vsx_idx_hi);
-    svuint8_t a = svuzp1_u8(ab_lo, ab_hi);
-    svuint8_t b = svuzp2_u8(ab_lo, ab_hi);
-    svuint8_t c = svuzp1_u8(cd_lo, cd_hi);
-    svuint8_t d = svuzp2_u8(cd_lo, cd_hi);
+    svuint8_t vsx0_idx = svld1(svptrue_b8(), pcit.idx_ptr_);
+    svuint8_t vsx1_idx = svadd_n_u8_x(svptrue_b8(), vsx0_idx, kChannels);
+    svuint8_t a =
+        svtbl2_u8(svcreate2(svget3(topsrc, 0), svget3(topsrc, 1)), vsx0_idx);
+    svuint8_t b =
+        svtbl2_u8(svcreate2(svget3(topsrc, 0), svget3(topsrc, 1)), vsx1_idx);
+    svuint8_t c = svtbl2_u8(
+        svcreate2(svget3(bottomsrc, 0), svget3(bottomsrc, 1)), vsx0_idx);
+    svuint8_t d = svtbl2_u8(
+        svcreate2(svget3(bottomsrc, 0), svget3(bottomsrc, 1)), vsx1_idx);
+
+    vsx0_idx =
+        svsub_n_u8_x(svptrue_b8(), vsx0_idx, static_cast<uint8_t>(2 * kStep_));
+    vsx1_idx =
+        svsub_n_u8_x(svptrue_b8(), vsx1_idx, static_cast<uint8_t>(2 * kStep_));
+    a = svtbx_u8(a, svget3(topsrc, 2), vsx0_idx);
+    b = svtbx_u8(b, svget3(topsrc, 2), vsx1_idx);
+    c = svtbx_u8(c, svget3(bottomsrc, 2), vsx0_idx);
+    d = svtbx_u8(d, svget3(bottomsrc, 2), vsx1_idx);
     return interpolate(pcit, yfrac, a, b, c, d);
   }
 
@@ -558,8 +681,10 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8_sc(
 
 KLEIDICV_INSTANTIATE_TEMPLATE_SC(2L, 1L);
 KLEIDICV_INSTANTIATE_TEMPLATE_SC(2L, 2L);
+KLEIDICV_INSTANTIATE_TEMPLATE_SC(2L, 3L);
 KLEIDICV_INSTANTIATE_TEMPLATE_SC(3L, 1L);
 KLEIDICV_INSTANTIATE_TEMPLATE_SC(3L, 2L);
+KLEIDICV_INSTANTIATE_TEMPLATE_SC(3L, 3L);
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
 

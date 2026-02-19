@@ -656,7 +656,7 @@ TEST_P(ResizeLinearU8, SmallSourceWidthForVecotrPath2x_r2) {
   do_large_dimensions_test<uint8_t, false>(33, 2, 32, 1, channels);
 }
 
-TEST_P(ResizeLinearU8, SmallSourceWidthForVecotrPath2x_r3) {
+TEST_P(ResizeLinearU8, SmallSourceWidthForVectorPath2x_r3) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t, false>(66, 2, 32, 1, channels);
 }

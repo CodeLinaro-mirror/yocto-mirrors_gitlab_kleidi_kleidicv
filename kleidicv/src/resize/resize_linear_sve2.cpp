@@ -41,8 +41,10 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8(
 
 KLEIDICV_INSTANTIATE_TEMPLATE(2L, 1L);
 KLEIDICV_INSTANTIATE_TEMPLATE(2L, 2L);
+KLEIDICV_INSTANTIATE_TEMPLATE(2L, 3L);
 KLEIDICV_INSTANTIATE_TEMPLATE(3L, 1L);
 KLEIDICV_INSTANTIATE_TEMPLATE(3L, 2L);
+KLEIDICV_INSTANTIATE_TEMPLATE(3L, 3L);
 
 KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t kleidicv_resize_linear_stripe_f32(
     const float *src, size_t src_stride, size_t src_width, size_t src_height,
