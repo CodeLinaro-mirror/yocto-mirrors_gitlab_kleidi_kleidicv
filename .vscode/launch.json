@@ -76,5 +76,20 @@
       "internalConsoleOptions": "openOnSessionStart",
       "preLaunchTask": "Build KleidiCV for debug",
     },
+    {
+      "name": "Neon unit tests",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/kleidicv-debug/test/unit_neon/kleidicv-neon-unit-test",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb-multiarch",
+      "miDebuggerServerAddress": "localhost:2345",
+      "targetArchitecture": "arm64",
+      "debugServerPath" : "${workspaceFolder}/.devcontainer/start_qemu.sh",
+      "debugServerArgs": "-g 2345 -cpu cortex-a35 ${workspaceFolder}/build/kleidicv-debug/test/unit_neon/kleidicv-neon-unit-test --vector-length=16 --gtest_filter=*",
+      "cwd": "${workspaceFolder}",
+      "internalConsoleOptions": "openOnSessionStart",
+      "preLaunchTask": "Build KleidiCV for debug",
+    },
   ]
 }
