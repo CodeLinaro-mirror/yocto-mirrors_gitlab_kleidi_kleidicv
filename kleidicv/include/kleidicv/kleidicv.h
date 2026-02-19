@@ -1044,8 +1044,8 @@ KLEIDICV_API_DECLARATION(kleidicv_count_nonzeros_u8, const uint8_t *src,
 /// Supported channels:
 /// - 1 channel for float data.
 /// - 1 channel for upsizing uint8 data.
-/// - 2 channels for downsizing uint8 data between any width ratio of 0.33
-///   and 1.0, height ratio can be anything between 0 and 1.0.
+/// - 1, 2, or 3 channels for downsizing uint8 data between any width ratio of
+///   0.33 and 1.0, height ratio can be anything between 0 and 1.0.
 ///
 /// Width and height of source and destination images must be less than
 /// (1 << 24), i.e. 16,777,216.

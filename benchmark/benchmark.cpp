@@ -458,7 +458,7 @@ static void resize_downscale(F f, double scale_x, double scale_y,
 
 static void resize_u8_downscale_channels(benchmark::internal::Benchmark* b) {
   b->ArgNames({"channels"});
-  for (int channel : {1, 2}) {
+  for (int channel : {1, 2, 3}) {
     b->Args({channel});
   }
 }

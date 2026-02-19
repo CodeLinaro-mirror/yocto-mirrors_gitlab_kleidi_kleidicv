@@ -47,12 +47,12 @@ inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
 
   // Downsize between horizontal ratios of 1/3 and 1/1: a minimal width is
   // needed to execute vector operations
-  if (channels <= 2 && dst_width * 3 >= src_width && dst_width < src_width &&
+  if (channels <= 3 && dst_width * 3 >= src_width && dst_width < src_width &&
       dst_height < src_height) {
     if (dst_width < 8) {
       return false;
     }
-    if (dst_width * 2 >= src_width) {
+    if ((dst_width * 2 >= src_width) && (channels != 3)) {
       return src_width >= 16;
     }
     return src_width >= 32;

@@ -5,6 +5,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
@@ -257,9 +258,9 @@ struct ResizeLinearTypeParam {
 template <typename T>
 class ResizeLinear : public testing::Test {};
 
-using ResizeLinearTypes = testing::Types<ResizeLinearTypeParam<uint8_t, 1>,
-                                         ResizeLinearTypeParam<uint8_t, 2>,
-                                         ResizeLinearTypeParam<float, 1>>;
+using ResizeLinearTypes = testing::Types<
+    ResizeLinearTypeParam<uint8_t, 1>, ResizeLinearTypeParam<uint8_t, 2>,
+    ResizeLinearTypeParam<uint8_t, 3>, ResizeLinearTypeParam<float, 1>>;
 TYPED_TEST_SUITE(ResizeLinear, ResizeLinearTypes);
 
 TYPED_TEST(ResizeLinear, NotImplemented) {
@@ -574,7 +575,8 @@ TEST(ResizeLinearFloat, LargeDimensions8x8) {
 
 class ResizeLinearU8 : public testing::TestWithParam<size_t> {};
 
-INSTANTIATE_TEST_SUITE_P(ResizeLinear, ResizeLinearU8, testing::Values(1, 2));
+INSTANTIATE_TEST_SUITE_P(ResizeLinear, ResizeLinearU8,
+                         testing::Values(1, 2, 3));
 
 TEST_P(ResizeLinearU8, LargeDimensionsGeneric2) {
   size_t channels = GetParam();
@@ -584,6 +586,40 @@ TEST_P(ResizeLinearU8, LargeDimensionsGeneric2) {
 TEST_P(ResizeLinearU8, LargeDimensionsGeneric3) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t>(2097, 5, 807, 2, channels);
+}
+
+TEST(ResizeLinearU8_3ch, InverzScaleWorksWithoutExtraLane_r2) {
+  size_t src_span = (test::Options::vector_length() * 2) / 3;
+  size_t dst_span = test::Options::vector_length() / 3;
+  float inverz_scale_limit =
+      static_cast<float>(src_span - 1) / static_cast<float>(dst_span);
+  size_t dst_width = 817;
+  // Due to rounding effective inverz scale is smaller than the limit
+  size_t src_width = static_cast<size_t>(
+      std::floor(static_cast<float>(dst_width) * inverz_scale_limit));
+  do_large_dimensions_test<uint8_t>(src_width, 2, dst_width, 1, 3);
+}
+
+TEST(ResizeLinearU8_3ch, InverzScaleWorksWithoutExtraLane_r3) {
+  size_t src_span = ((test::Options::vector_length() * 3) / 3) - 1;
+  size_t dst_span = test::Options::vector_length() / 3;
+  float inverz_scale_limit =
+      static_cast<float>(src_span - 1) / static_cast<float>(dst_span);
+  size_t dst_width = 817;
+  // Due to rounding effective inverz scale is smaller than the limit
+  size_t src_width = static_cast<size_t>(
+      std::floor(static_cast<float>(dst_width) * inverz_scale_limit));
+  do_large_dimensions_test<uint8_t>(src_width, 2, dst_width, 1, 3);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsToOneHalf) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(1808, 8, 904, 3, channels);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsToOneThird) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(2688, 7, 904, 2, channels);
 }
 
 TEST_P(ResizeLinearU8, LargeDimensionsGenericSmaller2) {
@@ -642,12 +678,14 @@ TEST_P(ResizeLinearU8, CannotAllocateBuffer) {
 }
 #endif
 
-TEST(ResizeLinearU8, RecalibrateMechanism2) {
-  do_large_dimensions_test<uint8_t>(503900, 2, 314300, 1);
+TEST_P(ResizeLinearU8, RecalibrateMechanism2) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(503900, 2, 314300, 1, channels);
 }
 
-TEST(ResizeLinearU8, RecalibrateMechanism3) {
-  do_large_dimensions_test<uint8_t>(867500, 2, 321711, 1);
+TEST_P(ResizeLinearU8, RecalibrateMechanism3) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(867500, 2, 321711, 1, channels);
 }
 
 TEST_P(ResizeLinearU8, SmallSourceWidthForVecotrPath2x_r2) {
@@ -779,7 +817,7 @@ TEST_P(ResizeLinearU8Params, ResizePadSrc) {
 }
 
 TEST(ResizeLinearU8Params, InvalidChannelCount) {
-  size_t channels = 3;
+  size_t channels = 4;
   std::vector<uint8_t> src(48UL * 2UL * channels);
   std::vector<uint8_t> dst(32UL * 1UL * channels);
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
