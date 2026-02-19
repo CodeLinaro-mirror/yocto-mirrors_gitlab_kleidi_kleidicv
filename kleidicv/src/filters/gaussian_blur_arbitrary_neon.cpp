@@ -415,8 +415,8 @@ static kleidicv_error_t gaussian_blur_arbitrary_kernel_size(
   if (success) {
     GaussianBlurFilter filter{half_kernel, kHalfKernelSize, rect,
                               src_rows.channels()};
-    workspace.process_arbitrary(rect, kernel_size, y_begin, y_end, src_rows,
-                                dst_rows, channels, border_type, filter);
+    workspace.process_arbitrary(kernel_size, y_begin, y_end, src_rows, dst_rows,
+                                border_type, filter);
   } else {
     // Sigma is too small that the middle point would get all the weight
     // => it's just a copy.

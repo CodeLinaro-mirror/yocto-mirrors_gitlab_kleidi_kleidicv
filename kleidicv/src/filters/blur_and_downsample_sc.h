@@ -266,8 +266,8 @@ static kleidicv_error_t blur_and_downsample_stripe_u8_sc(
 
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<uint8_t> dst_rows{dst, dst_stride, channels};
-  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                    fixed_border_type, BlurAndDownsample{});
+  workspace.process(y_begin, y_end, src_rows, dst_rows, fixed_border_type,
+                    BlurAndDownsample{});
 
   return KLEIDICV_OK;
 }
