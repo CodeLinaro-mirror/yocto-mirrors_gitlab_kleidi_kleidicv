@@ -484,8 +484,7 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
   if constexpr (IsBinomial) {
     GaussianBlurFilter blur;
     SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
-    workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                      border_type, filter);
+    workspace.process(y_begin, y_end, src_rows, dst_rows, border_type, filter);
 
     return KLEIDICV_OK;
   } else {
@@ -496,8 +495,8 @@ static kleidicv_error_t gaussian_blur_fixed_kernel_size(
     if (success) {
       GaussianBlurFilter blur(half_kernel);
       SeparableFilter<GaussianBlurFilter, KernelSize> filter{blur};
-      workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                        border_type, filter);
+      workspace.process(y_begin, y_end, src_rows, dst_rows, border_type,
+                        filter);
     } else {
       // Sigma is too small that the middle point would get all the weight
       // => it's just a copy.

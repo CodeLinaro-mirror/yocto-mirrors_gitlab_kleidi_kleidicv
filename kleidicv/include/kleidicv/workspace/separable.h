@@ -74,7 +74,8 @@ class SeparableFilterWorkspace {
       return KLEIDICV_ERROR_ALLOCATION;
     }
 
-    return SeparableFilterWorkspace{allocation, buffer_rows_stride};
+    return SeparableFilterWorkspace{rect, channels, allocation,
+                                    buffer_rows_stride};
   }
 
  protected:
@@ -98,29 +99,31 @@ class SeparableFilterWorkspace {
     return {allocation, buffer_rows_stride};
   }
 
-  SeparableFilterWorkspace(uint8_t *allocation,
+  SeparableFilterWorkspace(Rectangle rect, size_t channels, uint8_t *allocation,
                            size_t buffer_rows_stride) KLEIDICV_STREAMING
-      : buffer_{allocation, &std::free},
+      : rect_{rect},
+        channels_{channels},
+        buffer_{allocation, &std::free},
         buffer_rows_stride_{buffer_rows_stride} {}
 
  public:
   // Processes rows vertically first along the full width
   template <typename FilterType>
-  void process(Rectangle rect, size_t y_begin, size_t y_end,
+  void process(size_t y_begin, size_t y_end,
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
-               size_t channels, typename FilterType::BorderType border_type,
+               typename FilterType::BorderType border_type,
                FilterType filter) KLEIDICV_STREAMING {
     // Border helper which calculates border offsets.
-    typename FilterType::BorderInfoType vertical_border{rect.height(),
+    typename FilterType::BorderInfoType vertical_border{rect_.height(),
                                                         border_type};
-    typename FilterType::BorderInfoType horizontal_border{rect.width(),
+    typename FilterType::BorderInfoType horizontal_border{rect_.width(),
                                                           border_type};
 
     // Buffer rows which hold intermediate widened data.
     auto buffer_rows =
         Rows{reinterpret_cast<typename FilterType::BufferType *>(buffer_.get()),
-             buffer_rows_stride_, channels};
+             buffer_rows_stride_, channels_};
 
     // Vertical processing loop.
     for (size_t vertical_index = y_begin; vertical_index < y_end;
@@ -128,53 +131,52 @@ class SeparableFilterWorkspace {
       // Recalculate vertical border offsets.
       auto offsets = vertical_border.offsets_with_border(vertical_index);
       // Process in the vertical direction first.
-      filter.process_vertical(rect.width(), src_rows.at(vertical_index),
+      filter.process_vertical(rect_.width(), src_rows.at(vertical_index),
                               buffer_rows, offsets);
       // Process in the horizontal direction last.
-      process_horizontal(rect.width(), buffer_rows, dst_rows.at(vertical_index),
-                         filter, horizontal_border);
+      process_horizontal(rect_.width(), buffer_rows,
+                         dst_rows.at(vertical_index), filter,
+                         horizontal_border);
     }
   }
 
   // Processes rows vertically first along the full width
   template <typename FilterType>
-  void process_arbitrary(Rectangle rect, size_t kernel_size, size_t y_begin,
-                         size_t y_end,
+  void process_arbitrary(size_t kernel_size, size_t y_begin, size_t y_end,
                          Rows<const typename FilterType::SourceType> src_rows,
                          Rows<typename FilterType::DestinationType> dst_rows,
-                         size_t channels,
                          typename FilterType::BorderType /* border_type */,
                          FilterType filter) KLEIDICV_STREAMING {
     // Buffer rows which hold intermediate widened data.
     auto buffer_rows =
         Rows{reinterpret_cast<typename FilterType::BufferType *>(buffer_.get()),
-             buffer_rows_stride_, channels};
+             buffer_rows_stride_, channels_};
     size_t margin = kernel_size / 2;
 
     // Process top rows, affected by border
     for (size_t row_index = y_begin; row_index < std::max(y_begin, margin);
          ++row_index) {
-      filter.process_arbitrary_border_vertical(rect.width(), src_rows,
+      filter.process_arbitrary_border_vertical(rect_.width(), src_rows,
                                                row_index, buffer_rows);
-      filter.process_arbitrary_horizontal(rect.width(), kernel_size,
+      filter.process_arbitrary_horizontal(rect_.width(), kernel_size,
                                           buffer_rows, dst_rows.at(row_index));
     }
 
     // Process middle rows that are not affected by any borders
     for (size_t row_index = std::max(y_begin, margin);
-         row_index < std::min(y_end, rect.height() - margin); ++row_index) {
-      filter.process_arbitrary_vertical(rect.width(), src_rows.at(row_index),
+         row_index < std::min(y_end, rect_.height() - margin); ++row_index) {
+      filter.process_arbitrary_vertical(rect_.width(), src_rows.at(row_index),
                                         buffer_rows);
-      filter.process_arbitrary_horizontal(rect.width(), kernel_size,
+      filter.process_arbitrary_horizontal(rect_.width(), kernel_size,
                                           buffer_rows, dst_rows.at(row_index));
     }
 
     // Process bottom rows, affected by border
-    for (size_t row_index = std::min(y_end, rect.height() - margin);
+    for (size_t row_index = std::min(y_end, rect_.height() - margin);
          row_index < y_end; ++row_index) {
-      filter.process_arbitrary_border_vertical(rect.width(), src_rows,
+      filter.process_arbitrary_border_vertical(rect_.width(), src_rows,
                                                row_index, buffer_rows);
-      filter.process_arbitrary_horizontal(rect.width(), kernel_size,
+      filter.process_arbitrary_horizontal(rect_.width(), kernel_size,
                                           buffer_rows, dst_rows.at(row_index));
     }
   }
@@ -222,6 +224,8 @@ class SeparableFilterWorkspace {
   }
 
  protected:
+  Rectangle rect_;
+  size_t channels_;
   std::unique_ptr<uint8_t, decltype(&std::free)> buffer_;
   size_t buffer_rows_stride_;
 };  // end of class SeparableFilterWorkspace

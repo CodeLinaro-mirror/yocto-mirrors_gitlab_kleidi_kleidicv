@@ -347,8 +347,8 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
 
   Rows<const T> src_rows{src, src_stride, channels};
   Rows<T> dst_rows{dst, dst_stride, channels};
-  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
-                    fixed_border_type, filter);
+  workspace.process(y_begin, y_end, src_rows, dst_rows, fixed_border_type,
+                    filter);
 
   return KLEIDICV_OK;
 }

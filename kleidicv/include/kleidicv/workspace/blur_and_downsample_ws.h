@@ -26,31 +26,34 @@ class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
       return KLEIDICV_ERROR_ALLOCATION;
     }
 
-    return BlurAndDownsampleFilterWorkspace{allocation, buffer_rows_stride};
+    return BlurAndDownsampleFilterWorkspace{rect, channels, allocation,
+                                            buffer_rows_stride};
   }
 
  private:
-  BlurAndDownsampleFilterWorkspace(uint8_t *allocation,
+  BlurAndDownsampleFilterWorkspace(Rectangle rect, size_t channels,
+                                   uint8_t *allocation,
                                    size_t buffer_rows_stride) KLEIDICV_STREAMING
-      : SeparableFilterWorkspace(allocation, buffer_rows_stride) {}
+      : SeparableFilterWorkspace(rect, channels, allocation,
+                                 buffer_rows_stride) {}
 
  public:
   template <typename FilterType>
-  void process(Rectangle rect, size_t y_begin, size_t y_end,
+  void process(size_t y_begin, size_t y_end,
                Rows<const typename FilterType::SourceType> src_rows,
                Rows<typename FilterType::DestinationType> dst_rows,
-               size_t channels, typename FilterType::BorderType border_type,
+               typename FilterType::BorderType border_type,
                FilterType filter) KLEIDICV_STREAMING {
     // Border helper which calculates border offsets.
-    typename FilterType::BorderInfoType vertical_border{rect.height(),
+    typename FilterType::BorderInfoType vertical_border{rect_.height(),
                                                         border_type};
-    typename FilterType::BorderInfoType horizontal_border{rect.width(),
+    typename FilterType::BorderInfoType horizontal_border{rect_.width(),
                                                           border_type};
 
     // Buffer rows which hold intermediate widened data.
     auto buffer_rows =
         Rows{reinterpret_cast<typename FilterType::BufferType *>(buffer_.get()),
-             buffer_rows_stride_, channels};
+             buffer_rows_stride_, channels_};
 
     // Vertical processing loop.
     for (size_t vertical_index = align_up(y_begin, 2); vertical_index < y_end;
@@ -58,10 +61,10 @@ class BlurAndDownsampleFilterWorkspace final : public SeparableFilterWorkspace {
       // Recalculate vertical border offsets.
       auto offsets = vertical_border.offsets_with_border(vertical_index);
       // Process in the vertical direction first.
-      filter.process_vertical(rect.width(), src_rows.at(vertical_index),
+      filter.process_vertical(rect_.width(), src_rows.at(vertical_index),
                               buffer_rows, offsets);
       // Process in the horizontal direction last.
-      process_horizontal(rect.width(), buffer_rows,
+      process_horizontal(rect_.width(), buffer_rows,
                          dst_rows.at(vertical_index / 2), filter,
                          horizontal_border);
     }

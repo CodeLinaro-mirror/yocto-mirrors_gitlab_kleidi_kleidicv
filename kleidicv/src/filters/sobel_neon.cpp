@@ -156,7 +156,7 @@ kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8(
 
   HorizontalSobel3x3_t vertical_sobel;
   SeparableFilter3x3<HorizontalSobel3x3_t> filter{vertical_sobel};
-  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+  workspace.process(y_begin, y_end, src_rows, dst_rows,
                     FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }
@@ -190,7 +190,7 @@ kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8(
 
   VerticalSobel3x3_t vertical_sobel;
   SeparableFilter3x3<VerticalSobel3x3_t> filter{vertical_sobel};
-  workspace.process(rect, y_begin, y_end, src_rows, dst_rows, channels,
+  workspace.process(y_begin, y_end, src_rows, dst_rows,
                     FixedBorderType::REPLICATE, filter);
   return KLEIDICV_OK;
 }
