@@ -21,6 +21,8 @@ This changelog aims to follow the guiding principles of
 - Gaussian Blur 9x9 kernel support for NEON and SVE/SME fixed paths.
 - Scharr interleaved multi-channel support.
 - Blur and downsample multi-channel support.
+- Rotate support for -90 degrees (90 degrees counter-clockwise).
+- Multithreaded transpose for out-of-place calls (in-place remains single-threaded).
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.

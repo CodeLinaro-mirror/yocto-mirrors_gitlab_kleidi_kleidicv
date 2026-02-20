@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -39,28 +39,30 @@ class Rotate : public testing::TestWithParam<size_t> {
   void test(size_t src_width, size_t src_height, size_t padding) const {
     const size_t dst_width = src_height;
     const size_t dst_height = src_width;
-    const int angle = 90;
     size_t element_size = GetParam();
     size_t src_stride = (src_width + padding) * element_size;
     size_t dst_stride = (dst_width + padding) * element_size;
 
     std::vector<uint8_t> source(src_stride * src_height, 0);
-    std::vector<uint8_t> expected(dst_stride * dst_height, 0);
-    std::vector<uint8_t> actual_single(dst_stride * dst_height, 0);
-
     std::mt19937 generator{
         static_cast<std::mt19937::result_type>(test::Options::seed())};
     std::generate(source.begin(), source.end(), generator);
 
-    calculate_expected(source.data(), expected.data(), src_width, src_height,
-                       src_stride, dst_stride, element_size);
+    for (int angle : {90, -90}) {
+      std::vector<uint8_t> expected(dst_stride * dst_height, 0);
+      std::vector<uint8_t> actual_single(dst_stride * dst_height, 0);
 
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_rotate(source.data(), src_stride, src_width,
-                                           src_height, actual_single.data(),
-                                           dst_stride, angle, element_size));
+      calculate_expected(source.data(), expected.data(), src_width, src_height,
+                         src_stride, dst_stride, element_size, angle);
 
-    expect_eq_vector2D(expected.data(), actual_single.data(), dst_width,
-                       dst_height, dst_stride, element_size);
+      ASSERT_EQ(KLEIDICV_OK,
+                kleidicv_rotate(source.data(), src_stride, src_width,
+                                src_height, actual_single.data(), dst_stride,
+                                angle, element_size));
+
+      expect_eq_vector2D(expected.data(), actual_single.data(), dst_width,
+                         dst_height, dst_stride, element_size);
+    }
   }
 
   void expect_eq_vector2D(const uint8_t *lhs, const uint8_t *rhs, size_t width,
@@ -76,12 +78,19 @@ class Rotate : public testing::TestWithParam<size_t> {
   void calculate_expected(const uint8_t *source, uint8_t *expected,
                           size_t src_width, size_t src_height,
                           size_t src_stride, size_t dst_stride,
-                          size_t element_size) const {
+                          size_t element_size, int angle) const {
     for (size_t i = 0; i < src_height; i++) {
       for (size_t j = 0; j < src_width; j++) {
-        // dst[j][src_height - i - 1] = src[i][j]
-        memcpy(expected + j * dst_stride + (src_height - i - 1) * element_size,
-               source + i * src_stride + j * element_size, element_size);
+        if (angle == 90) {
+          // dst[j][src_height - i - 1] = src[i][j]
+          memcpy(
+              expected + j * dst_stride + (src_height - i - 1) * element_size,
+              source + i * src_stride + j * element_size, element_size);
+        } else {
+          // dst[src_width - j - 1][i] = src[i][j]
+          memcpy(expected + (src_width - j - 1) * dst_stride + i * element_size,
+                 source + i * src_stride + j * element_size, element_size);
+        }
       }
     }
   }
@@ -103,34 +112,41 @@ TEST_P(Rotate, NullPointer) {
   std::vector<uint8_t> src(1, 0);
   std::vector<uint8_t> dst(1, 0);
   size_t element_size = GetParam();
-  test::test_null_args(kleidicv_rotate, src.data(), element_size, 1, 1,
-                       dst.data(), element_size, 90, element_size);
+  for (int angle : {90, -90}) {
+    test::test_null_args(kleidicv_rotate, src.data(), element_size, 1, 1,
+                         dst.data(), element_size, angle, element_size);
+  }
 }
 
 TEST_P(Rotate, ZeroImageSize) {
   std::vector<uint8_t> src(1, 0);
   std::vector<uint8_t> dst(1, 0);
   size_t element_size = GetParam();
-  EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_rotate(src.data(), element_size, 0, 1, dst.data(),
-                            element_size, 90, element_size));
-  EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_rotate(src.data(), element_size, 1, 0, dst.data(),
-                            element_size, 90, element_size));
+  for (int angle : {90, -90}) {
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_rotate(src.data(), element_size, 0, 1, dst.data(),
+                              element_size, angle, element_size));
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_rotate(src.data(), element_size, 1, 0, dst.data(),
+                              element_size, angle, element_size));
+  }
 }
 
 TEST_P(Rotate, OversizeImage) {
   std::vector<uint8_t> src(1, 0);
   std::vector<uint8_t> dst(1, 0);
   size_t element_size = GetParam();
-  EXPECT_EQ(
-      KLEIDICV_ERROR_RANGE,
-      kleidicv_rotate(src.data(), element_size, KLEIDICV_MAX_IMAGE_PIXELS + 1,
-                      1, dst.data(), element_size, 90, element_size));
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_rotate(src.data(), element_size, KLEIDICV_MAX_IMAGE_PIXELS,
-                            KLEIDICV_MAX_IMAGE_PIXELS, dst.data(), element_size,
-                            90, element_size));
+  for (int angle : {90, -90}) {
+    EXPECT_EQ(
+        KLEIDICV_ERROR_RANGE,
+        kleidicv_rotate(src.data(), element_size, KLEIDICV_MAX_IMAGE_PIXELS + 1,
+                        1, dst.data(), element_size, angle, element_size));
+    EXPECT_EQ(
+        KLEIDICV_ERROR_RANGE,
+        kleidicv_rotate(src.data(), element_size, KLEIDICV_MAX_IMAGE_PIXELS,
+                        KLEIDICV_MAX_IMAGE_PIXELS, dst.data(), element_size,
+                        angle, element_size));
+  }
 }
 
 TEST_P(Rotate, Misalignment) {
@@ -144,25 +160,27 @@ TEST_P(Rotate, Misalignment) {
   std::vector<uint8_t> src(kBufSize, 0);
   std::vector<uint8_t> dst(kBufSize, 0);
 
-  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_rotate(src.data() + 1, element_size, 1, 1, dst.data(),
-                            element_size, 90, element_size));
-  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_rotate(src.data(), element_size + 1, 1, 2, dst.data(),
-                            element_size, 90, element_size));
-  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_rotate(src.data(), element_size, 1, 1, dst.data() + 1,
-                            element_size, 90, element_size));
-  EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_rotate(src.data(), element_size, 2, 1, dst.data(),
-                            element_size + 1, 90, element_size));
-  // Ignore stride if there's only one row
-  EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_rotate(src.data(), element_size + 1, 1, 1, dst.data(),
-                            element_size, 90, element_size));
-  EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_rotate(src.data(), element_size, 1, 1, dst.data(),
-                            element_size + 1, 90, element_size));
+  for (int angle : {90, -90}) {
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+              kleidicv_rotate(src.data() + 1, element_size, 1, 1, dst.data(),
+                              element_size, angle, element_size));
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+              kleidicv_rotate(src.data(), element_size + 1, 1, 2, dst.data(),
+                              element_size, angle, element_size));
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+              kleidicv_rotate(src.data(), element_size, 1, 1, dst.data() + 1,
+                              element_size, angle, element_size));
+    EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
+              kleidicv_rotate(src.data(), element_size, 2, 1, dst.data(),
+                              element_size + 1, angle, element_size));
+    // Ignore stride if there's only one row
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_rotate(src.data(), element_size + 1, 1, 1, dst.data(),
+                              element_size, angle, element_size));
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_rotate(src.data(), element_size, 1, 1, dst.data(),
+                              element_size + 1, angle, element_size));
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(, Rotate, testing::Values(1, 2, 4, 8),
@@ -173,12 +191,13 @@ TEST(RotateNotImplemented, InPlace) {
   const size_t height = 1;
   const size_t element_size = 1;
   const size_t stride = width * element_size;
-  const int angle = 90;
 
   uint8_t source[width * height] = {};
-  ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_rotate(source, stride, width, height, source, stride,
-                            angle, element_size));
+  for (int angle : {90, -90}) {
+    ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              kleidicv_rotate(source, stride, width, height, source, stride,
+                              angle, element_size));
+  }
 }
 
 TEST(RotateNotImplemented, Angle) {

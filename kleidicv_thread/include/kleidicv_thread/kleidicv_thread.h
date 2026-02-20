@@ -281,6 +281,16 @@ kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
+/// Multithreaded implementation of kleidicv_transpose - see the documentation
+/// of that function for more details.
+kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
+                                           void *dst, size_t dst_stride,
+                                           size_t src_width, size_t src_height,
+                                           size_t element_size,
+                                           kleidicv_thread_multithreading);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
 /// Multithreaded implementation of kleidicv_rotate - see the documentation of
 /// that function for more details.
 kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,

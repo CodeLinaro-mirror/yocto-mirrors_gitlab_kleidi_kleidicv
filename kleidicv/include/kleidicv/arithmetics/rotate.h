@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@ namespace kleidicv {
 
 inline bool rotate_is_implemented(const void *src, void *dst, int angle,
                                   size_t element_size) {
-  if (angle != 90) {
+  if (angle != 90 && angle != -90 && angle != 270) {
     return false;
   }
   if (src == dst) {
