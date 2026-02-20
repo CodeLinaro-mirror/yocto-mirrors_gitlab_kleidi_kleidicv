@@ -25,7 +25,7 @@ export CMAKE_CXX_COMPILER_LAUNCHER=ccache
 cmake -S . -B build/ci/clang -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-  -DCMAKE_CXX_CLANG_TIDY=clang-tidy-20 \
+  -DCMAKE_CXX_CLANG_TIDY="clang-tidy-${CLANG_TIDY_VERSION}" \
   -DCMAKE_CXX_FLAGS="--target=aarch64-linux-gnu --coverage" \
   -DCMAKE_EXE_LINKER_FLAGS="--rtlib=compiler-rt -static -fuse-ld=lld --coverage" \
   -DKLEIDICV_ENABLE_SME2=ON \

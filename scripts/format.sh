@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -23,7 +23,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 KLEIDICV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 
 : "${CHECK_ONLY:=OFF}"
-: "${CLANG_FORMAT_BIN_PATH:=clang-format-20}"
+: "${CLANG_FORMAT_BIN_PATH:=clang-format-${CLANG_FORMAT_VERSION}}"
 : "${VERBOSE:=OFF}"
 
 # ------------------------------------------------------------------------------
