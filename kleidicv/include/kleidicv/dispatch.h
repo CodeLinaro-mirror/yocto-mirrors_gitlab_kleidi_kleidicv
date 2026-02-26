@@ -71,10 +71,10 @@ static inline bool is_sme2_supported() {
   if (!std::is_null_pointer_v<decltype(sve2_impl)> && is_sve2_supported()) { \
     return sve2_impl;                                                        \
   }
-#define KLEIDICV_SVE2_RESOLVE_VECLEN(sve2_impl, minlen, maxlen)               \
-  if (!std::is_null_pointer_v<decltype(sve2_impl)> && is_sve2_supported() &&  \
-      kleidicv::svcntb_sve() >= minlen && kleidicv::svcntb_sve() <= maxlen) { \
-    return sve2_impl;                                                         \
+#define KLEIDICV_SVE2_RESOLVE_VECLEN(sve2_impl, sve_len)                     \
+  if (!std::is_null_pointer_v<decltype(sve2_impl)> && is_sve2_supported() && \
+      kleidicv::svcntb_sve() == (sve_len)) {                                 \
+    return sve2_impl;                                                        \
   }
 #else
 #define KLEIDICV_SVE2_RESOLVE(x)
@@ -86,14 +86,14 @@ static inline bool is_sme2_supported() {
   if (!std::is_null_pointer_v<decltype(sme_impl)> && is_sme_supported()) { \
     return sme_impl;                                                       \
   }
-#define KLEIDICV_SME_RESOLVE_VECLEN(sme_impl, minlen, maxlen)                 \
-  if (!std::is_null_pointer_v<decltype(sme_impl)> && is_sme_supported() &&    \
-      kleidicv::svcntb_sme() >= minlen && kleidicv::svcntb_sme() <= maxlen) { \
-    return sme_impl;                                                          \
+#define KLEIDICV_SME_RESOLVE_VECLEN(sme_impl, sme_len)                     \
+  if (!std::is_null_pointer_v<decltype(sme_impl)> && is_sme_supported() && \
+      kleidicv::svcntb_sme() == (sme_len)) {                               \
+    return sme_impl;                                                       \
   }
 #else
 #define KLEIDICV_SME_RESOLVE(x)
-#define KLEIDICV_SME_RESOLVE_VECLEN(x, minlen, maxlen)
+#define KLEIDICV_SME_RESOLVE_VECLEN(x, sme_len)
 #endif  // KLEIDICV_ENABLE_SME
 
 #if KLEIDICV_ENABLE_SME2
@@ -101,14 +101,14 @@ static inline bool is_sme2_supported() {
   if (!std::is_null_pointer_v<decltype(sme2_impl)> && is_sme2_supported()) { \
     return sme2_impl;                                                        \
   }
-#define KLEIDICV_SME2_RESOLVE_VECLEN(sme2_impl, minlen, maxlen)               \
-  if (!std::is_null_pointer_v<decltype(sme2_impl)> && is_sme2_supported() &&  \
-      kleidicv::svcntb_sme() >= minlen && kleidicv::svcntb_sme() <= maxlen) { \
-    return sme2_impl;                                                         \
+#define KLEIDICV_SME2_RESOLVE_VECLEN(sme2_impl, sme_len)                     \
+  if (!std::is_null_pointer_v<decltype(sme2_impl)> && is_sme2_supported() && \
+      kleidicv::svcntb_sme() == (sme_len)) {                                 \
+    return sme2_impl;                                                        \
   }
 #else
 #define KLEIDICV_SME2_RESOLVE(x)
-#define KLEIDICV_SME2_RESOLVE_VECLEN(x, minlen, maxlen)
+#define KLEIDICV_SME2_RESOLVE_VECLEN(x, sme_len)
 #endif  // KLEIDICV_ENABLE_SME2
 
 #define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl, \
@@ -123,16 +123,16 @@ static inline bool is_sme2_supported() {
   decltype(neon_impl) api_name = api_name##_resolver();                       \
   }
 
-#define KLEIDICV_MULTIVERSION_C_API_VECLEN(                              \
-    api_name, neon_impl, sve2_impl, sme_impl, sme2_impl, minlen, maxlen) \
-  static decltype(neon_impl) api_name##_resolver() {                     \
-    KLEIDICV_SME2_RESOLVE_VECLEN(sme2_impl, minlen, maxlen);             \
-    KLEIDICV_SME_RESOLVE_VECLEN(sme_impl, minlen, maxlen);               \
-    KLEIDICV_SVE2_RESOLVE_VECLEN(sve2_impl, minlen, maxlen);             \
-    return neon_impl;                                                    \
-  }                                                                      \
-  extern "C" {                                                           \
-  decltype(neon_impl) api_name = api_name##_resolver();                  \
+#define KLEIDICV_MULTIVERSION_C_API_VECLEN(                                \
+    api_name, neon_impl, sve2_impl, sme_impl, sme2_impl, sve_len, sme_len) \
+  static decltype(neon_impl) api_name##_resolver() {                       \
+    KLEIDICV_SME2_RESOLVE_VECLEN(sme2_impl, sme_len);                      \
+    KLEIDICV_SME_RESOLVE_VECLEN(sme_impl, sme_len);                        \
+    KLEIDICV_SVE2_RESOLVE_VECLEN(sve2_impl, sve_len);                      \
+    return neon_impl;                                                      \
+  }                                                                        \
+  extern "C" {                                                             \
+  decltype(neon_impl) api_name = api_name##_resolver();                    \
   }
 
 #endif  // __APPLE__

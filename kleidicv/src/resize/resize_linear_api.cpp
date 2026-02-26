@@ -48,16 +48,18 @@ KLEIDICV_MULTIVERSION_C_API_VECLEN(
     (&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<3, 2>),
     (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<3, 2>),
     (&kleidicv::sme2::kleidicv_resize_generic_stripe_u8<3, 2>), 16, 64);
-
-KLEIDICV_MULTIVERSION_C_API(
+KLEIDICV_MULTIVERSION_C_API_VECLEN(
     kleidicv_resize_3ch_r2_stripe_u8,
-    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 3>), nullptr,
-    nullptr, nullptr);
-
-KLEIDICV_MULTIVERSION_C_API(
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 3>),
+    (&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<2, 3>),
+    (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<2, 3>),
+    (&kleidicv::sme2::kleidicv_resize_generic_stripe_u8<2, 3>), 16, 64);
+KLEIDICV_MULTIVERSION_C_API_VECLEN(
     kleidicv_resize_3ch_r3_stripe_u8,
-    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 3>), nullptr,
-    nullptr, nullptr);
+    (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 3>),
+    (&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<3, 3>),
+    (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<3, 3>),
+    (&kleidicv::sme2::kleidicv_resize_generic_stripe_u8<3, 3>), 16, 64);
 
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_linear_stripe_f32,
                           kleidicv_resize_linear_stripe_f32);
@@ -152,14 +154,23 @@ kleidicv_error_t kleidicv_resize_linear_stripe_u8(
   }
 
   assert(channels == 3);
-  if (dst_width * 2 >= src_width) {
+  double inverz_scale =
+      static_cast<double>(src_width) / static_cast<double>(dst_width);
+  // SVE variant does not handle the rightmost lanes of b and d vectors for 3
+  // channel images, so use the r3 and use the Neon variant only over 2.8
+  if (inverz_scale < 1.8) {
     return kleidicv_resize_3ch_r2_stripe_u8(src, src_stride, src_width,
                                             src_height, y_begin, y_end, dst,
                                             dst_stride, dst_width, dst_height);
   }
-  return kleidicv_resize_3ch_r3_stripe_u8(src, src_stride, src_width,
-                                          src_height, y_begin, y_end, dst,
-                                          dst_stride, dst_width, dst_height);
+  if (inverz_scale < 2.8) {
+    return kleidicv_resize_3ch_r3_stripe_u8(src, src_stride, src_width,
+                                            src_height, y_begin, y_end, dst,
+                                            dst_stride, dst_width, dst_height);
+  }
+  return kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 3>(
+      src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
+      dst_width, dst_height);
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
