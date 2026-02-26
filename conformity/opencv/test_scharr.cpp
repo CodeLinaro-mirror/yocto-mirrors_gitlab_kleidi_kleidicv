@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,13 +14,15 @@ cv::Mat exec_scharr_interleaved(cv::Mat& input) {
 }
 
 #if MANAGER
-bool test_scharr_interleaved(int index, RecreatedMessageQueue& request_queue,
-                             RecreatedMessageQueue& reply_queue) {
+bool test_scharr_interleaved_channels(int index,
+                                      RecreatedMessageQueue& request_queue,
+                                      RecreatedMessageQueue& reply_queue,
+                                      int channels) {
   cv::RNG rng(0);
 
   for (size_t x = 1; x <= 16; ++x) {
     for (size_t y = 1; y <= 16; ++y) {
-      cv::Mat input(x, y, CV_8UC1);
+      cv::Mat input(x, y, CV_8UC(channels));
       rng.fill(input, cv::RNG::UNIFORM, 0, 255);
 
       cv::Mat actual = exec_scharr_interleaved(input);
@@ -36,12 +38,33 @@ bool test_scharr_interleaved(int index, RecreatedMessageQueue& request_queue,
 
   return false;
 }
+
+bool test_scharr_interleaved_1ch(int index,
+                                 RecreatedMessageQueue& request_queue,
+                                 RecreatedMessageQueue& reply_queue) {
+  return test_scharr_interleaved_channels(index, request_queue, reply_queue, 1);
+}
+
+bool test_scharr_interleaved_3ch(int index,
+                                 RecreatedMessageQueue& request_queue,
+                                 RecreatedMessageQueue& reply_queue) {
+  return test_scharr_interleaved_channels(index, request_queue, reply_queue, 3);
+}
+
+bool test_scharr_interleaved_4ch(int index,
+                                 RecreatedMessageQueue& request_queue,
+                                 RecreatedMessageQueue& reply_queue) {
+  return test_scharr_interleaved_channels(index, request_queue, reply_queue, 4);
+}
 #endif
 
 std::vector<test>& scharr_interleaved_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
-    TEST("Scharr Interleaved, 1 channel", test_scharr_interleaved, exec_scharr_interleaved)
+    TEST("Scharr Interleaved, 1 channel", test_scharr_interleaved_1ch, exec_scharr_interleaved),
+    TEST("Scharr Interleaved, 2 channel", test_scharr_interleaved_1ch, exec_scharr_interleaved),
+    TEST("Scharr Interleaved, 3 channels", test_scharr_interleaved_3ch, exec_scharr_interleaved),
+    TEST("Scharr Interleaved, 4 channels", test_scharr_interleaved_4ch, exec_scharr_interleaved)
   };
   // clang-format on
   return tests;

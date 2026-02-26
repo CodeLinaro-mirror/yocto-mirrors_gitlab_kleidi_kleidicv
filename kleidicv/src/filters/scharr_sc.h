@@ -159,14 +159,18 @@ class ScharrInterleaved {
   }
 
   void horizontal_vector_path_x2(svbool_t pg, Rows<DestinationType> dst_rows,
-                                 ptrdiff_t index) KLEIDICV_STREAMING {
+                                 ptrdiff_t index,
+                                 ptrdiff_t channel) KLEIDICV_STREAMING {
 #if KLEIDICV_TARGET_SME2
     svcount_t pc16 = BufferVecTraits::svptrue_c();
     BufferVector2Type hori_0 = svld1_x2(pc16, &hori_deriv_buffer_[index]);
-    BufferVector2Type hori_1 = svld1_x2(pc16, &hori_deriv_buffer_[index + 2]);
+    BufferVector2Type hori_1 =
+        svld1_x2(pc16, &hori_deriv_buffer_[index + channel * 2]);
     BufferVector2Type vert_0 = svld1_x2(pc16, &vert_deriv_buffer_[index]);
-    BufferVector2Type vert_1 = svld1_x2(pc16, &vert_deriv_buffer_[index + 1]);
-    BufferVector2Type vert_2 = svld1_x2(pc16, &vert_deriv_buffer_[index + 2]);
+    BufferVector2Type vert_1 =
+        svld1_x2(pc16, &vert_deriv_buffer_[index + channel]);
+    BufferVector2Type vert_2 =
+        svld1_x2(pc16, &vert_deriv_buffer_[index + channel * 2]);
     BufferVector2Type hori_a = svcreate2(svget2(hori_0, 0), svget2(hori_1, 0));
     BufferVector2Type hori_b = svcreate2(svget2(hori_0, 1), svget2(hori_1, 1));
 
@@ -178,19 +182,22 @@ class ScharrInterleaved {
     BufferVectorType hori_buff_0 = svld1(pg, &hori_deriv_buffer_[index]);
     BufferVectorType hori_buff_3 =
         svld1_vnum(pg, &hori_deriv_buffer_[index], 1);
-    BufferVectorType hori_buff_2 = svext(hori_buff_0, hori_buff_3, 2);
+    BufferVectorType hori_buff_2 =
+        svld1(pg, &hori_deriv_buffer_[index + channel * 2]);
     BufferVectorType hori_buff_4 =
-        svld1_vnum(pg, &hori_deriv_buffer_[index + 2], 1);
+        svld1_vnum(pg, &hori_deriv_buffer_[index + channel * 2], 1);
 
     BufferVectorType vert_buff_0 = svld1(pg, &vert_deriv_buffer_[index]);
     BufferVectorType vert_buff_3 =
         svld1_vnum(pg, &vert_deriv_buffer_[index], 1);
-    BufferVectorType vert_buff_1 = svext(vert_buff_0, vert_buff_3, 1);
-    BufferVectorType vert_buff_2 = svext(vert_buff_0, vert_buff_3, 2);
+    BufferVectorType vert_buff_1 =
+        svld1(pg, &vert_deriv_buffer_[index + channel]);
+    BufferVectorType vert_buff_2 =
+        svld1(pg, &vert_deriv_buffer_[index + channel * 2]);
     BufferVectorType vert_buff_4 =
-        svld1_vnum(pg, &vert_deriv_buffer_[index + 1], 1);
+        svld1_vnum(pg, &vert_deriv_buffer_[index + channel], 1);
     BufferVectorType vert_buff_5 =
-        svld1_vnum(pg, &vert_deriv_buffer_[index + 2], 1);
+        svld1_vnum(pg, &vert_deriv_buffer_[index + channel * 2], 1);
 
     BufferVector2Type hori_a = svcreate2(hori_buff_0, hori_buff_2);
     BufferVector2Type hori_b = svcreate2(hori_buff_3, hori_buff_4);
@@ -205,26 +212,27 @@ class ScharrInterleaved {
     svint16x2_t interleaved_result_b =
         horizontal_compute_interleaved(pg, hori_b, vert_b);
 
-    svst2(pg, &dst_rows.at(0, index)[0], interleaved_result_a);
-    svst2_vnum(pg, &dst_rows.at(0, index)[0], 2, interleaved_result_b);
+    svst2(pg, &dst_rows[index * 2], interleaved_result_a);
+    svst2_vnum(pg, &dst_rows[index * 2], 2, interleaved_result_b);
   }
 
   void horizontal_vector_path(svbool_t pg, Rows<DestinationType> dst_rows,
-                              ptrdiff_t index) KLEIDICV_STREAMING {
+                              ptrdiff_t index,
+                              ptrdiff_t channel) KLEIDICV_STREAMING {
     // Horizontal derivative approximation
     BufferVector2Type hori =
         svcreate2(svld1(pg, &hori_deriv_buffer_[index]),
-                  svld1(pg, &hori_deriv_buffer_[index + 2]));
+                  svld1(pg, &hori_deriv_buffer_[index + channel * 2]));
 
     // Vertical derivative approximation
     BufferVector3Type vert =
         svcreate3(svld1(pg, &vert_deriv_buffer_[index]),
-                  svld1(pg, &vert_deriv_buffer_[index + 1]),
-                  svld1(pg, &vert_deriv_buffer_[index + 2]));
+                  svld1(pg, &vert_deriv_buffer_[index + channel]),
+                  svld1(pg, &vert_deriv_buffer_[index + channel * 2]));
 
     svint16x2_t interleaved_result =
         horizontal_compute_interleaved(pg, hori, vert);
-    svst2(pg, &dst_rows.at(0, index)[0], interleaved_result);
+    svst2(pg, &dst_rows[index * 2], interleaved_result);
   }
 
   svint16x2_t horizontal_compute_interleaved(
@@ -249,18 +257,20 @@ class ScharrInterleaved {
     LoopUnroll2 loop{(width_ - 2) * hori_deriv_buffer_.channels(),
                      BufferVecTraits::num_lanes()};
     svbool_t pg_all = BufferVecTraits::svptrue();
+    const ptrdiff_t channel =
+        static_cast<ptrdiff_t>(hori_deriv_buffer_.channels());
 
     loop.unroll_twice([&](ptrdiff_t index) KLEIDICV_STREAMING {
-      horizontal_vector_path_x2(pg_all, dst_rows, index);
+      horizontal_vector_path_x2(pg_all, dst_rows, index, channel);
     });
 
     loop.unroll_once([&](ptrdiff_t index) KLEIDICV_STREAMING {
-      horizontal_vector_path(pg_all, dst_rows, index);
+      horizontal_vector_path(pg_all, dst_rows, index, channel);
     });
 
     loop.remaining([&](ptrdiff_t index, ptrdiff_t length) KLEIDICV_STREAMING {
       svbool_t pg = BufferVecTraits::svwhilelt(index, length);
-      horizontal_vector_path(pg, dst_rows, index);
+      horizontal_vector_path(pg, dst_rows, index, channel);
     });
   }
 
