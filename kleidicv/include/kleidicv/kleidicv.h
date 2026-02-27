@@ -1016,6 +1016,82 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8, const uint8_t *src,
                          kleidicv_border_type_t border_type,
                          const uint8_t *border_value, size_t iterations);
 
+/// Builds image and Scharr pyramids for LK optical flow and stores them in an
+/// opaque container.
+///
+/// The implementation always uses the following border behavior:
+///   - pyramid image generation uses reflect_101
+///   - Scharr derivatives are generated from a reflect_101-expanded image and
+///     stored as interleaved dx/dy pairs
+///
+/// The generated Scharr level has the same width and height as its
+/// corresponding image level. The Scharr destination channel count is
+/// `channels * 2`.
+///
+/// Level generation stops early if the next level would satisfy:
+/// `next_width <= window_width || next_height <= window_height`.
+///
+/// @param pyramid       Pointer where to return the created pyramid address.
+/// @param src           Pointer to source image data. Must be non-null.
+/// @param src_stride    Distance in bytes between source rows. Must not be
+///                      less than `width * channels`, except for single-row
+///                      images.
+/// @param width         Source width in pixels.
+/// @param height        Source height in pixels.
+/// @param channels      Number of channels in source image.
+/// @param level_count   Requested maximum number of pyramid levels.
+/// @param window_width  LK window width.
+/// @param window_height LK window height.
+///
+kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
+    kleidicv_optical_flow_pyr_lk_pyramid_t **pyramid, const uint8_t *src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height);
+
+/// Releases an LK optical-flow pyramid created by
+/// @ref kleidicv_build_optical_flow_pyr_lk_pyramid.
+///
+/// @param pyramid       Pointer to an LK optical-flow pyramid.
+///
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_release(
+    kleidicv_optical_flow_pyr_lk_pyramid_t *pyramid);
+
+/// Gets number of levels available in an LK optical-flow pyramid.
+///
+/// @param pyramid       Pointer to an LK optical-flow pyramid.
+/// @param level_count   Output pointer for level count.
+///
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_get_level_count(
+    const kleidicv_optical_flow_pyr_lk_pyramid_t *pyramid, size_t *level_count);
+
+/// Gets an image-pyramid level from an LK optical-flow pyramid.
+///
+/// @param pyramid       Pointer to an LK optical-flow pyramid.
+/// @param level         Zero-based level index.
+/// @param data          Output pointer to level pixel data.
+/// @param stride        Output row stride in bytes.
+/// @param width         Output level width in pixels.
+/// @param height        Output level height in pixels.
+///
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_get_image_level(
+    const kleidicv_optical_flow_pyr_lk_pyramid_t *pyramid, size_t level,
+    const uint8_t **data, size_t *stride, size_t *width, size_t *height);
+
+/// Gets a Scharr-pyramid level from an LK optical-flow pyramid.
+///
+/// Scharr levels are interleaved dx/dy pairs with element type `int16_t`.
+///
+/// @param pyramid       Pointer to an LK optical-flow pyramid.
+/// @param level         Zero-based level index.
+/// @param data          Output pointer to Scharr level data.
+/// @param stride        Output row stride in bytes.
+/// @param width         Output level width in pixels.
+/// @param height        Output level height in pixels.
+///
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_get_scharr_level(
+    const kleidicv_optical_flow_pyr_lk_pyramid_t *pyramid, size_t level,
+    const int16_t **data, size_t *stride, size_t *width, size_t *height);
+
 /// Counts how many nonzero elements are in the source data. Number of elements
 /// is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///

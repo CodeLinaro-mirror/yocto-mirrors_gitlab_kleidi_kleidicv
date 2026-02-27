@@ -23,6 +23,7 @@
 #include "kleidicv/filters/separable_filter_2d.h"
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/optical_flow/optical_flow_lk_pyramid.h"
 #include "kleidicv/resize/resize_linear.h"
 #include "kleidicv/transform/remap.h"
 #include "kleidicv/transform/warp_perspective.h"
@@ -717,6 +718,79 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
 
   // height is decremented by 2 as the result has less rows.
   return parallel_batches(callback, mt, src_height - 2);
+}
+
+kleidicv_error_t kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
+    kleidicv_optical_flow_pyr_lk_pyramid_t **pyramid, const uint8_t *src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height,
+    kleidicv_thread_multithreading mt) {
+  CHECK_POINTERS(pyramid);
+  *pyramid = nullptr;
+
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
+  if (width == 0 || height == 0 || channels == 0 ||
+      channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT || level_count == 0 ||
+      window_width <= 2 || window_height <= 2) {
+    return KLEIDICV_ERROR_RANGE;
+  }
+  if (height > 1 && src_stride < (width * channels)) {
+    return KLEIDICV_ERROR_RANGE;
+  }
+
+  if (channels != 1) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  size_t actual_level_count = 0;
+  size_t level_width = width;
+  size_t level_height = height;
+  for (size_t requested = 0; requested < level_count; ++requested) {
+    ++actual_level_count;
+    const size_t next_width = (level_width + 1) / 2;
+    const size_t next_height = (level_height + 1) / 2;
+    if (next_width <= window_width || next_height <= window_height) {
+      break;
+    }
+    level_width = next_width;
+    level_height = next_height;
+  }
+
+  using KLEIDICV_TARGET_NAMESPACE::OpticalFlowLKPyramid;
+  OpticalFlowLKPyramid::Pointer pyramid_storage;
+  if (kleidicv_error_t err = OpticalFlowLKPyramid::create(
+          pyramid_storage, actual_level_count, width, height, channels)) {
+    return err;
+  }
+
+  auto blur_and_downsample_fn =
+      [&](const uint8_t *blur_src, size_t blur_src_stride, size_t blur_width,
+          size_t blur_height, uint8_t *blur_dst, size_t blur_dst_stride,
+          size_t blur_channels, kleidicv_border_type_t border_type) {
+        return kleidicv_thread_blur_and_downsample_u8(
+            blur_src, blur_src_stride, blur_width, blur_height, blur_dst,
+            blur_dst_stride, blur_channels, border_type, mt);
+      };
+
+  auto scharr_fn = [&](const uint8_t *scharr_src, size_t scharr_src_stride,
+                       size_t scharr_width, size_t scharr_height,
+                       size_t scharr_channels, int16_t *scharr_dst,
+                       size_t scharr_dst_stride) {
+    return kleidicv_thread_scharr_interleaved_s16_u8(
+        scharr_src, scharr_src_stride, scharr_width, scharr_height,
+        scharr_channels, scharr_dst, scharr_dst_stride, mt);
+  };
+
+  if (kleidicv_error_t err = pyramid_storage->process(
+          src, src_stride, blur_and_downsample_fn, scharr_fn)) {
+    return err;
+  }
+
+  *pyramid = reinterpret_cast<kleidicv_optical_flow_pyr_lk_pyramid_t *>(
+      pyramid_storage.release());
+  return KLEIDICV_OK;
 }
 
 kleidicv_error_t kleidicv_thread_resize_linear_u8(
