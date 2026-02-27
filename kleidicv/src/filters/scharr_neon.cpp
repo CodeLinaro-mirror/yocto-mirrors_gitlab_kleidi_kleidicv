@@ -154,11 +154,14 @@ class ScharrInterleaved {
     // width is decremented by 2 as the result has less columns.
     LoopUnroll2 loop{(width_ - 2) * hori_deriv_buffer_.channels(),
                      kBufferVecNumLanes};
+    const ptrdiff_t channel =
+        static_cast<ptrdiff_t>(hori_deriv_buffer_.channels());
 
     loop.unroll_twice([&](ptrdiff_t index) {
       BufferVector2Type hori_buff[2];
       BufferVecTraits::load(&hori_deriv_buffer_[index], hori_buff[0]);
-      BufferVecTraits::load(&hori_deriv_buffer_[index + 2], hori_buff[1]);
+      BufferVecTraits::load(&hori_deriv_buffer_[index + channel * 2],
+                            hori_buff[1]);
 
       BufferVectorType hori_buff_a[2] = {hori_buff[0].val[0],
                                          hori_buff[1].val[0]};
@@ -172,8 +175,9 @@ class ScharrInterleaved {
 
       BufferVector2Type vert_buff[3];
       BufferVecTraits::load(&vert_deriv_buffer_[index], vert_buff[0]);
-      BufferVecTraits::load(&vert_deriv_buffer_[index + 1], vert_buff[1]);
-      BufferVecTraits::load(&vert_deriv_buffer_[index + 2], vert_buff[2]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + channel], vert_buff[1]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + channel * 2],
+                            vert_buff[2]);
 
       BufferVectorType vert_buff_a[3] = {
           vert_buff[0].val[0], vert_buff[1].val[0], vert_buff[2].val[0]};
@@ -185,40 +189,44 @@ class ScharrInterleaved {
       DestinationVectorType vert_approx_res_b =
           horizontal_vector_path_vert_approx(vert_buff_b);
 
-      vst2q(&dst_rows.at(0, index)[0], {hori_approx_res_a, vert_approx_res_a});
-      vst2q(&dst_rows.at(0, index + kBufferVecNumLanes)[0],
+      vst2q(&dst_rows[index * 2], {hori_approx_res_a, vert_approx_res_a});
+      vst2q(&dst_rows[(index + kBufferVecNumLanes) * 2],
             {hori_approx_res_b, vert_approx_res_b});
     });
 
     loop.unroll_once([&](ptrdiff_t index) {
       BufferVectorType hori_buff[2];
       BufferVecTraits::load(&hori_deriv_buffer_[index], hori_buff[0]);
-      BufferVecTraits::load(&hori_deriv_buffer_[index + 2], hori_buff[1]);
+      BufferVecTraits::load(&hori_deriv_buffer_[index + channel * 2],
+                            hori_buff[1]);
       DestinationVectorType hori_approx_res =
           horizontal_vector_path_hori_approx(hori_buff);
 
       BufferVectorType vert_buff[3];
       BufferVecTraits::load(&vert_deriv_buffer_[index], vert_buff[0]);
-      BufferVecTraits::load(&vert_deriv_buffer_[index + 1], vert_buff[1]);
-      BufferVecTraits::load(&vert_deriv_buffer_[index + 2], vert_buff[2]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + channel], vert_buff[1]);
+      BufferVecTraits::load(&vert_deriv_buffer_[index + channel * 2],
+                            vert_buff[2]);
       DestinationVectorType vert_approx_res =
           horizontal_vector_path_vert_approx(vert_buff);
 
-      vst2q(&dst_rows.at(0, index)[0], {hori_approx_res, vert_approx_res});
+      vst2q(&dst_rows[index * 2], {hori_approx_res, vert_approx_res});
     });
 
     loop.tail([&](ptrdiff_t index) {
-      dst_rows.at(0, index)[0] = static_cast<DestinationType>(
+      dst_rows[index * 2] = static_cast<DestinationType>(
           // For some reason clang-tidy thinks these accesses are invalid
           // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign,
           // clang-analyzer-core.UndefinedBinaryOperatorResult)
-          hori_deriv_buffer_[index + 2] - hori_deriv_buffer_[index]);
+          hori_deriv_buffer_[index + channel * 2] - hori_deriv_buffer_[index]);
       // NOLINTEND(clang-analyzer-core.uninitialized.Assign,
       // clang-analyzer-core.UndefinedBinaryOperatorResult)
 
-      dst_rows.at(0, index)[1] = static_cast<DestinationType>(
-          (vert_deriv_buffer_[index] + vert_deriv_buffer_[index + 2]) * 3 +
-          vert_deriv_buffer_[index + 1] * 10);
+      dst_rows[index * 2 + 1] = static_cast<DestinationType>(
+          (vert_deriv_buffer_[index] +
+           vert_deriv_buffer_[index + channel * 2]) *
+              3 +
+          vert_deriv_buffer_[index + channel] * 10);
     });
   }
 

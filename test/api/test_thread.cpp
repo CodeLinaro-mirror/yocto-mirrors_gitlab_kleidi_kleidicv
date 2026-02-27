@@ -539,39 +539,40 @@ TEST_P(Thread, scharr_interleaved_s16_u8) {
   src_width += 2;
   src_height += 2;
 
-  size_t src_channels = 1;
+  for (size_t src_channels : {size_t{1}, size_t{2}, size_t{3}, size_t{4}}) {
+    test::Array2D<uint8_t> src(size_t{src_width} * src_channels, src_height);
+    test::Array2D<int16_t> dst_single(size_t{src_width - 2} * src_channels * 2,
+                                      size_t{src_height - 2});
+    test::Array2D<int16_t> dst_multi(size_t{src_width - 2} * src_channels * 2,
+                                     size_t{src_height - 2});
 
-  test::Array2D<uint8_t> src(size_t{src_width} * src_channels, src_height);
-  test::Array2D<int16_t> dst_single(size_t{src_width - 2} * src_channels * 2,
-                                    size_t{src_height - 2}),
-      dst_multi(size_t{src_width - 2} * src_channels * 2,
-                size_t{src_height - 2});
+    test::PseudoRandomNumberGenerator<uint8_t> generator;
+    src.fill(generator);
 
-  test::PseudoRandomNumberGenerator<uint8_t> generator;
-  src.fill(generator);
+    kleidicv_error_t single_result = kleidicv_scharr_interleaved_s16_u8(
+        src.data(), src.stride(), src_width, src_height, src_channels,
+        dst_single.data(), dst_single.stride());
 
-  kleidicv_error_t single_result = kleidicv_scharr_interleaved_s16_u8(
-      src.data(), src.stride(), src_width, src_height, src_channels,
-      dst_single.data(), dst_single.stride());
+    kleidicv_error_t multi_result = kleidicv_thread_scharr_interleaved_s16_u8(
+        src.data(), src.stride(), src_width, src_height, src_channels,
+        dst_multi.data(), dst_multi.stride(),
+        get_multithreading_fake(thread_count));
 
-  kleidicv_error_t multi_result = kleidicv_thread_scharr_interleaved_s16_u8(
-      src.data(), src.stride(), src_width, src_height, src_channels,
-      dst_multi.data(), dst_multi.stride(),
-      get_multithreading_fake(thread_count));
-
-  EXPECT_EQ(single_result, multi_result);
-  if (KLEIDICV_OK == single_result) {
-    EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+    EXPECT_EQ(single_result, multi_result);
+    if (KLEIDICV_OK == single_result) {
+      EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+    }
   }
 }
 
 TEST(ThreadScharrInterleaved, NotImplemented) {
   uint8_t src[1] = {};
   int16_t dst[1] = {};
-  // Multichannel input
+  // Unsupported channel count
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_thread_scharr_interleaved_s16_u8(
-                src, 1, 1, 1, 2, dst, sizeof(dst), get_multithreading_fake(2)));
+                src, 1, 3, 3, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, dst,
+                sizeof(dst), get_multithreading_fake(2)));
 }
 
 TEST_P(Thread, separable_filter_2d_u8) {
