@@ -8,5 +8,5 @@
 #include "kleidicv/dispatch.h"
 
 namespace kleidicv {
-uint64_t svcntb_sme() KLEIDICV_STREAMING { return svcntb(); }
+KLEIDICV_LOCALLY_STREAMING uint64_t svcntb_sme() { return svcntb(); }
 }  // namespace kleidicv

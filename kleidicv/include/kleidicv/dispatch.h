@@ -17,7 +17,7 @@ namespace kleidicv {
 uint64_t svcntb_sve();
 #endif
 #if KLEIDICV_ENABLE_SME2 || KLEIDICV_ENABLE_SME
-uint64_t svcntb_sme() KLEIDICV_STREAMING;
+uint64_t svcntb_sme();
 #endif
 }  // namespace kleidicv
 
