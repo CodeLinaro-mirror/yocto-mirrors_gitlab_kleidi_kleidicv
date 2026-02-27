@@ -169,7 +169,10 @@ WarpPerspectiveNear_Linear: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXE
 WarpPerspectiveNear_Nearest_Constant: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXEL_FORMAT, INTER_NEAREST, BORDER_CONSTANT, 8UC1)'
 WarpPerspectiveNear_Linear_Constant: opencv_perf_imgproc '*WarpPerspectiveNear/*' '($PIXEL_FORMAT, INTER_LINEAR, BORDER_CONSTANT, 8UC1)'
 
-BlurAndDownsample: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC1)'
+BlurAndDownsample_8UC1: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC1)'
+BlurAndDownsample_8UC2: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC2)'
+BlurAndDownsample_8UC3: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC3)'
+BlurAndDownsample_8UC4: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC4)'
 
 ScharrInterleaved: opencv_perf_video '*calcScharrDeriv/*' '$PIXEL_FORMAT'
 

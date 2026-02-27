@@ -82,32 +82,39 @@ class BlurAndDownsampleTest : public test::KernelTest<KernelTestParams> {
     return ret;
   }
 
-  // Base class' functionality is ovewritten as pixels in odd rows and columns
-  // are dropped. This test implementation only supports single-channel data.
+  // Base class' functionality is overridden as pixels in odd rows and columns
+  // are dropped.
   void calculate_expected(
       const test::Kernel<IntermediateType> &kernel,
       const test::TwoDimensional<InputType> &source) override {
+    const size_t channels = Base::expected_.channels();
+    const size_t expected_pixel_width = Base::expected_.width() / channels;
     for (size_t row = 0; row < Base::expected_.height(); ++row) {
-      for (size_t column = 0; column < Base::expected_.width(); ++column) {
-        IntermediateType result;
-        result = Base::calculate_expected_at(kernel, source, (row * 2),
-                                             (column * 2));
-        Base::expected_.at(row, column)[0] =
-            static_cast<OutputType>(scale_result(kernel, result));
+      for (size_t pixel_column = 0; pixel_column < expected_pixel_width;
+           ++pixel_column) {
+        const size_t src_column = pixel_column * 2 * channels;
+        for (size_t channel = 0; channel < channels; ++channel) {
+          IntermediateType result = Base::calculate_expected_at(
+              kernel, source, row * 2, src_column + channel);
+          Base::expected_.at(row, pixel_column * channels + channel)[0] =
+              static_cast<OutputType>(scale_result(kernel, result));
+        }
       }
     }
   }
 
-  // Base class' functionality is ovewritten as the output has half the width
+  // Base class' functionality is overridden as the output has half the width
   // and height compared to the input in case of blur_and_downsample
   void create_arrays(const test::Kernel<IntermediateType> &kernel,
                      const test::ArrayLayout &array_layout) override {
     Base::input_ = test::Array2D<InputType>{array_layout};
     ASSERT_TRUE(Base::input_.valid());
 
+    const size_t input_pixel_width = array_layout.width / array_layout.channels;
     test::ArrayLayout output_array_layout{
-        (array_layout.width + 1) / 2, (array_layout.height + 1) / 2,
-        array_layout.padding, array_layout.channels};
+        ((input_pixel_width + 1) / 2) * array_layout.channels,
+        (array_layout.height + 1) / 2, array_layout.padding,
+        array_layout.channels};
 
     Base::expected_ = test::Array2D<OutputType>{output_array_layout};
     ASSERT_TRUE(Base::expected_.valid());
@@ -147,6 +154,16 @@ TYPED_TEST(BlurAndDownsample, API) {
   using KernelTestParams = BlurAndDownsampleKernelTestParams<TypeParam>;
   test::Array2D<typename KernelTestParams::IntermediateType> mask{kKernelSize,
                                                                   kKernelSize};
+  const auto larger_layouts = [](size_t, size_t) {
+    return std::array{
+        // width (interleaved), height, padding, channels
+        test::ArrayLayout{160, 120, 0, 1}, test::ArrayLayout{320, 120, 16, 2},
+        test::ArrayLayout{480, 128, 16, 3}, test::ArrayLayout{640, 128, 16, 4},
+        // Odd pixel widths to exercise scalar tail paths.
+        test::ArrayLayout{322, 121, 0, 2},  // 161 px wide
+        test::ArrayLayout{644, 123, 0, 4},  // 161 px wide
+    };
+  };
   // clang-format off
   mask.set(0, 0, { 1,  4,  6,  4, 1});
   mask.set(1, 0, { 4, 16, 24, 16, 4});
@@ -154,9 +171,8 @@ TYPED_TEST(BlurAndDownsample, API) {
   mask.set(3, 0, { 4, 16, 24, 16, 4});
   mask.set(4, 0, { 1,  4,  6,  4, 1});
   // clang-format on
-  BlurAndDownsampleTest{KernelTestParams{},
-                        test::default_1channel_array_layouts, kAllBorders}
-      .test(mask);
+  BlurAndDownsampleTest{KernelTestParams{}, larger_layouts, kAllBorders}.test(
+      mask);
 }
 
 // A simple test suite to test functionality without the kernel test framework
@@ -262,7 +278,12 @@ TYPED_TEST(BlurAndDownsample, ChannelNumber) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             blur_and_downsample<TypeParam>()(
                 src, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight, dst,
-                sizeof(TypeParam), 2, KLEIDICV_BORDER_TYPE_REFLECT));
+                sizeof(TypeParam), 5, KLEIDICV_BORDER_TYPE_REFLECT));
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            blur_and_downsample<TypeParam>()(
+                src, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight, dst,
+                sizeof(TypeParam), 0, KLEIDICV_BORDER_TYPE_REFLECT));
 }
 
 #ifdef KLEIDICV_ALLOCATION_TESTS

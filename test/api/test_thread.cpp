@@ -486,29 +486,31 @@ TEST(ThreadGaussianBlur, NotImplemented) {
 TEST_P(Thread, blur_and_downsample_u8) {
   unsigned src_width = 0, src_height = 0, thread_count = 0;
   std::tie(src_width, src_height, thread_count) = GetParam();
-  size_t channels = 1;
   kleidicv_border_type_t border_type = KLEIDICV_BORDER_TYPE_REPLICATE;
 
-  test::Array2D<uint8_t> src(size_t{src_width} * channels, src_height);
-  test::Array2D<uint8_t> dst_single(size_t{(src_width + 1) / 2} * channels,
-                                    (src_height + 1) / 2),
-      dst_multi(size_t{(src_width + 1) / 2} * channels, (src_height + 1) / 2);
-
   test::PseudoRandomNumberGenerator<uint8_t> generator;
-  src.fill(generator);
 
-  kleidicv_error_t single_result = kleidicv_blur_and_downsample_u8(
-      src.data(), src.stride(), src_width, src_height, dst_single.data(),
-      dst_single.stride(), channels, border_type);
+  for (size_t channels : {1U, 2U, 3U, 4U}) {
+    test::Array2D<uint8_t> src(size_t{src_width} * channels, src_height);
+    test::Array2D<uint8_t> dst_single(size_t{(src_width + 1) / 2} * channels,
+                                      (src_height + 1) / 2),
+        dst_multi(size_t{(src_width + 1) / 2} * channels, (src_height + 1) / 2);
 
-  kleidicv_error_t multi_result = kleidicv_thread_blur_and_downsample_u8(
-      src.data(), src.stride(), src_width, src_height, dst_multi.data(),
-      dst_multi.stride(), channels, border_type,
-      get_multithreading_fake(thread_count));
+    src.fill(generator);
 
-  EXPECT_EQ(single_result, multi_result);
-  if (KLEIDICV_OK == single_result) {
-    EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+    kleidicv_error_t single_result = kleidicv_blur_and_downsample_u8(
+        src.data(), src.stride(), src_width, src_height, dst_single.data(),
+        dst_single.stride(), channels, border_type);
+
+    kleidicv_error_t multi_result = kleidicv_thread_blur_and_downsample_u8(
+        src.data(), src.stride(), src_width, src_height, dst_multi.data(),
+        dst_multi.stride(), channels, border_type,
+        get_multithreading_fake(thread_count));
+
+    EXPECT_EQ(single_result, multi_result);
+    if (KLEIDICV_OK == single_result) {
+      EXPECT_EQ_ARRAY2D(dst_multi, dst_single);
+    }
   }
 }
 

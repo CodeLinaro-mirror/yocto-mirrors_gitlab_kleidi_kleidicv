@@ -985,16 +985,21 @@ static void in_range(Function f, T lower_bound, T upper_bound,
 BENCH_IN_RANGE(in_range_u8, in_range_u8, 1, 2, uint8_t);
 BENCH_IN_RANGE(in_range_f32, in_range_f32, 1.111, 1.112, float);
 
+template <size_t Channels>
 static void blur_and_downsample_u8(benchmark::State& state) {
   bench_functor(state, []() {
     (void)kleidicv_blur_and_downsample_u8(
-        get_source_buffer_a<uint8_t>(), image_width * sizeof(uint8_t),
-        image_width, image_height, get_destination_buffer_a<uint8_t>(),
-        ((image_width + 1) / 2) * sizeof(uint8_t), 1,
+        get_source_buffer_a<uint8_t, Channels>(),
+        image_width * sizeof(uint8_t) * Channels, image_width, image_height,
+        get_destination_buffer_a<uint8_t, Channels>(),
+        ((image_width + 1) / 2) * sizeof(uint8_t) * Channels, Channels,
         KLEIDICV_BORDER_TYPE_REFLECT);
   });
 }
-BENCHMARK(blur_and_downsample_u8);
+BENCHMARK(blur_and_downsample_u8<1>);
+BENCHMARK(blur_and_downsample_u8<2>);
+BENCHMARK(blur_and_downsample_u8<3>);
+BENCHMARK(blur_and_downsample_u8<4>);
 
 static void scharr_interleaved_s16_u8(benchmark::State& state) {
   bench_functor(state, []() {
