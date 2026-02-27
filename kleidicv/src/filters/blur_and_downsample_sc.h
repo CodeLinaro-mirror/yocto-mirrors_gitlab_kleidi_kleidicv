@@ -65,23 +65,22 @@ class BlurAndDownsample {
                           Rows<DestinationType> dst_rows,
                           BorderOffsets border_offsets) const
       KLEIDICV_STREAMING {
-    svbool_t pg_all = BufferVecTraits::svptrue();
-    LoopUnroll2 loop{width * src_rows.channels(), BufferVecTraits::num_lanes()};
-
-    loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING {
-      horizontal_vector_path_2x(pg_all, pg_all, src_rows, pg_all, dst_rows,
-                                border_offsets, static_cast<ptrdiff_t>(index));
-    });
-
-    loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
-      svbool_t pg_src_0 = BufferVecTraits::svwhilelt(index, length);
-      svbool_t pg_src_1 = BufferVecTraits::svwhilelt(
-          index + BufferVecTraits::num_lanes(), length);
-      svbool_t pg_dst =
-          BufferVecTraits::svwhilelt((index + 1) / 2, (length + 1) / 2);
-      horizontal_vector_path_2x(pg_src_0, pg_src_1, src_rows, pg_dst, dst_rows,
-                                border_offsets, static_cast<ptrdiff_t>(index));
-    });
+    switch (src_rows.channels()) {
+      case 1:
+        process_horizontal_impl<1>(width, src_rows, dst_rows, border_offsets);
+        return;
+      case 2:
+        process_horizontal_impl<2>(width, src_rows, dst_rows, border_offsets);
+        return;
+      case 3:
+        process_horizontal_impl<3>(width, src_rows, dst_rows, border_offsets);
+        return;
+      case 4:
+        process_horizontal_impl<4>(width, src_rows, dst_rows, border_offsets);
+        return;
+      default:
+        return;
+    }
   }
 
   void process_horizontal_borders(
@@ -96,6 +95,38 @@ class BlurAndDownsample {
   }
 
  private:
+  template <ptrdiff_t Channels>
+  void process_horizontal_impl(size_t width, Rows<const BufferType> src_rows,
+                               Rows<DestinationType> dst_rows,
+                               BorderOffsets border_offsets) const
+      KLEIDICV_STREAMING {
+    static_assert(Channels >= 1 && Channels <= 4);
+    if constexpr (Channels == 3) {
+      process_horizontal_3_channel(width, src_rows, dst_rows, border_offsets);
+    } else {
+      svbool_t pg_all = BufferVecTraits::svptrue();
+      LoopUnroll2 loop{width * src_rows.channels(),
+                       BufferVecTraits::num_lanes()};
+
+      loop.unroll_twice([&](size_t index) KLEIDICV_STREAMING {
+        horizontal_vector_path_2x<Channels>(pg_all, pg_all, src_rows, pg_all,
+                                            dst_rows, border_offsets,
+                                            static_cast<ptrdiff_t>(index));
+      });
+
+      loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
+        svbool_t pg_src_0 = BufferVecTraits::svwhilelt(index, length);
+        svbool_t pg_src_1 = BufferVecTraits::svwhilelt(
+            index + BufferVecTraits::num_lanes(), length);
+        size_t dst_length = ((width + 1) / 2) * src_rows.channels();
+        svbool_t pg_dst = BufferVecTraits::svwhilelt(index / 2, dst_length);
+        horizontal_vector_path_2x<Channels>(pg_src_0, pg_src_1, src_rows,
+                                            pg_dst, dst_rows, border_offsets,
+                                            static_cast<ptrdiff_t>(index));
+      });
+    }
+  }
+
   void vertical_vector_path_2x(svbool_t pg, Rows<const SourceType> src_rows,
                                Rows<BufferType> dst_rows,
                                BorderOffsets border_offsets,
@@ -170,6 +201,7 @@ class BlurAndDownsample {
     svst2(pg, &dst[0], interleaved);
   }
 
+  template <ptrdiff_t Channels>
   void horizontal_vector_path_2x(svbool_t pg_src_0, svbool_t pg_src_1,
                                  Rows<const BufferType> src_rows,
                                  svbool_t pg_dst,
@@ -198,8 +230,18 @@ class BlurAndDownsample {
     svuint16_t res_1 = horizontal_vector_path(pg_src_1, src_1_0, src_1_1,
                                               src_1_2, src_1_3, src_1_4);
 
-    svuint16_t res_even_only = svuzp1(res_0, res_1);
-    svst1b(pg_dst, &dst_rows[index / 2], res_even_only);
+    if constexpr (Channels == 1) {
+      svuint16_t res_even_only = svuzp1(res_0, res_1);
+      svst1b(pg_dst, &dst_rows[index / 2], res_even_only);
+    } else if constexpr (Channels == 2) {
+      svuint16_t res_even_only = svreinterpret_u16(
+          svuzp1(svreinterpret_u32(res_0), svreinterpret_u32(res_1)));
+      svst1b(pg_dst, &dst_rows[index / 2], res_even_only);
+    } else if constexpr (Channels == 4) {
+      svuint16_t res_even_only = svreinterpret_u16(
+          svuzp1(svreinterpret_u64(res_0), svreinterpret_u64(res_1)));
+      svst1b(pg_dst, &dst_rows[index / 2], res_even_only);
+    }
   }
 
   // Applies horizontal filtering vector using SIMD operations.
@@ -215,6 +257,98 @@ class BlurAndDownsample {
     acc = svmla_n_u16_x(pg, acc, acc_1_3, 4);
     acc = svrshr_x(pg, acc, 8);
     return acc;
+  }
+
+  // 3-channel data is interleaved per RGB triplet, so even-column decimation
+  // cannot use the shared 1/2/4 packed unzip path.
+  void horizontal_vector_path_3_channel_2x(
+      svbool_t pg_src_0, svbool_t pg_src_1, svbool_t pg_dst,
+      Rows<const BufferType> src_rows, Rows<DestinationType> dst_rows,
+      BorderOffsets border_offsets, ptrdiff_t column,
+      ptrdiff_t vec_stride) const KLEIDICV_STREAMING {
+    constexpr ptrdiff_t channels = 3;
+    const auto *src_0 = &src_rows.at(0, border_offsets.c0())[column * channels];
+    const auto *src_1 = &src_rows.at(0, border_offsets.c1())[column * channels];
+    const auto *src_2 = &src_rows.at(0, border_offsets.c2())[column * channels];
+    const auto *src_3 = &src_rows.at(0, border_offsets.c3())[column * channels];
+    const auto *src_4 = &src_rows.at(0, border_offsets.c4())[column * channels];
+
+    svuint16x3_t src0_a = svld3(pg_src_0, &src_0[0]);
+    svuint16x3_t src1_a = svld3(pg_src_0, &src_1[0]);
+    svuint16x3_t src2_a = svld3(pg_src_0, &src_2[0]);
+    svuint16x3_t src3_a = svld3(pg_src_0, &src_3[0]);
+    svuint16x3_t src4_a = svld3(pg_src_0, &src_4[0]);
+
+    svuint16x3_t src0_b = svld3(pg_src_1, &src_0[vec_stride]);
+    svuint16x3_t src1_b = svld3(pg_src_1, &src_1[vec_stride]);
+    svuint16x3_t src2_b = svld3(pg_src_1, &src_2[vec_stride]);
+    svuint16x3_t src3_b = svld3(pg_src_1, &src_3[vec_stride]);
+    svuint16x3_t src4_b = svld3(pg_src_1, &src_4[vec_stride]);
+
+    svuint16_t res0_a = horizontal_vector_path(
+        pg_src_0, svget3(src0_a, 0), svget3(src1_a, 0), svget3(src2_a, 0),
+        svget3(src3_a, 0), svget3(src4_a, 0));
+    svuint16_t res0_b = horizontal_vector_path(
+        pg_src_1, svget3(src0_b, 0), svget3(src1_b, 0), svget3(src2_b, 0),
+        svget3(src3_b, 0), svget3(src4_b, 0));
+    svuint16_t res1_a = horizontal_vector_path(
+        pg_src_0, svget3(src0_a, 1), svget3(src1_a, 1), svget3(src2_a, 1),
+        svget3(src3_a, 1), svget3(src4_a, 1));
+    svuint16_t res1_b = horizontal_vector_path(
+        pg_src_1, svget3(src0_b, 1), svget3(src1_b, 1), svget3(src2_b, 1),
+        svget3(src3_b, 1), svget3(src4_b, 1));
+    svuint16_t res2_a = horizontal_vector_path(
+        pg_src_0, svget3(src0_a, 2), svget3(src1_a, 2), svget3(src2_a, 2),
+        svget3(src3_a, 2), svget3(src4_a, 2));
+    svuint16_t res2_b = horizontal_vector_path(
+        pg_src_1, svget3(src0_b, 2), svget3(src1_b, 2), svget3(src2_b, 2),
+        svget3(src3_b, 2), svget3(src4_b, 2));
+
+    svuint16_t out0 = svuzp1(res0_a, res0_b);
+    svuint16_t out1 = svuzp1(res1_a, res1_b);
+    svuint16_t out2 = svuzp1(res2_a, res2_b);
+
+    svuint8_t out0_u8 = svuzp1(svreinterpret_u8(out0), svreinterpret_u8(out0));
+    svuint8_t out1_u8 = svuzp1(svreinterpret_u8(out1), svreinterpret_u8(out1));
+    svuint8_t out2_u8 = svuzp1(svreinterpret_u8(out2), svreinterpret_u8(out2));
+
+    svuint8x3_t out_rgb = svcreate3(out0_u8, out1_u8, out2_u8);
+    svst3(pg_dst, &dst_rows.at(0, column / 2)[0], out_rgb);
+  }
+
+  void process_horizontal_3_channel(
+      size_t width, Rows<const BufferType> src_rows,
+      Rows<DestinationType> dst_rows,
+      BorderOffsets border_offsets) const KLEIDICV_STREAMING {
+    constexpr ptrdiff_t channels = 3;
+    const ptrdiff_t vec_lanes =
+        static_cast<ptrdiff_t>(BufferVecTraits::num_lanes());
+    const ptrdiff_t vec_stride = vec_lanes * channels;
+    svbool_t pg_all = BufferVecTraits::svptrue();
+    svbool_t pg_dst_all = svwhilelt_b8(static_cast<uint64_t>(0),
+                                       static_cast<uint64_t>(vec_lanes));
+    LoopUnroll2 loop{width, static_cast<size_t>(vec_lanes)};
+
+    loop.unroll_twice([&](ptrdiff_t column) KLEIDICV_STREAMING {
+      horizontal_vector_path_3_channel_2x(pg_all, pg_all, pg_dst_all, src_rows,
+                                          dst_rows, border_offsets, column,
+                                          vec_stride);
+    });
+
+    loop.remaining([&](ptrdiff_t column, ptrdiff_t length) KLEIDICV_STREAMING {
+      column = align_up(column, static_cast<ptrdiff_t>(2));
+      if (column < length) {
+        svbool_t pg_src_0 = BufferVecTraits::svwhilelt(column, length);
+        svbool_t pg_src_1 =
+            BufferVecTraits::svwhilelt(column + vec_lanes, length);
+        size_t dst_length = (width + 1) / 2;
+        svbool_t pg_dst = svwhilelt_b8(static_cast<uint64_t>(column / 2),
+                                       static_cast<uint64_t>(dst_length));
+        horizontal_vector_path_3_channel_2x(pg_src_0, pg_src_1, pg_dst,
+                                            src_rows, dst_rows, border_offsets,
+                                            column, vec_stride);
+      }
+    });
   }
 
   // Applies horizontal filtering for the borders using SIMD operations.
@@ -241,7 +375,7 @@ class BlurAndDownsample {
     acc = svmla_n_u16_x(pg, acc, acc_1_3, 4);
     acc = svrshr_x(pg, acc, 8);
 
-    svst1b(pg, &dst_rows[index / 2], acc);
+    svst1b(pg, &dst_rows[index], acc);
   }
 };  // end of class BlurAndDownsample
 

@@ -94,55 +94,69 @@ class BlurAndDownsample {
   void process_horizontal(size_t width, Rows<const BufferType> src_rows,
                           Rows<DestinationType> dst_rows,
                           BorderOffsets border_offsets) const {
-    LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
-                                         BufferVecTraits::num_lanes()};
-
-    loop.unroll_twice([&](ptrdiff_t index) {
-      const auto *src_0 = &src_rows.at(0, border_offsets.c0())[index];
-      const auto *src_1 = &src_rows.at(0, border_offsets.c1())[index];
-      const auto *src_2 = &src_rows.at(0, border_offsets.c2())[index];
-      const auto *src_3 = &src_rows.at(0, border_offsets.c3())[index];
-      const auto *src_4 = &src_rows.at(0, border_offsets.c4())[index];
-
-      BufferVectorType src_a[5], src_b[5];
-      src_a[0] = vld1q(&src_0[0]);
-      src_b[0] = vld1q(&src_0[BufferVecTraits::num_lanes()]);
-      src_a[1] = vld1q(&src_1[0]);
-      src_b[1] = vld1q(&src_1[BufferVecTraits::num_lanes()]);
-      src_a[2] = vld1q(&src_2[0]);
-      src_b[2] = vld1q(&src_2[BufferVecTraits::num_lanes()]);
-      src_a[3] = vld1q(&src_3[0]);
-      src_b[3] = vld1q(&src_3[BufferVecTraits::num_lanes()]);
-      src_a[4] = vld1q(&src_4[0]);
-      src_b[4] = vld1q(&src_4[BufferVecTraits::num_lanes()]);
-
-      uint8x8_t res_a = horizontal_vector_path(src_a);
-      uint8x8_t res_b = horizontal_vector_path(src_b);
-
-      // Only store even indices
-      vst1(&dst_rows[index / 2], vuzp1_u8(res_a, res_b));
-    });
-
-    loop.remaining([&](ptrdiff_t index, size_t max_index) {
-      index = align_up(index, 2);
-      while (index < static_cast<ptrdiff_t>(max_index)) {
-        process_horizontal_scalar(src_rows, dst_rows, border_offsets, index);
-        index += 2;
-      }
-    });
+    switch (src_rows.channels()) {
+      case 1:
+        process_horizontal_dispatch<1>(width, src_rows, dst_rows,
+                                       border_offsets);
+        break;
+      case 2:
+        process_horizontal_dispatch<2>(width, src_rows, dst_rows,
+                                       border_offsets);
+        break;
+      case 3:
+        process_horizontal_dispatch<3>(width, src_rows, dst_rows,
+                                       border_offsets);
+        break;
+      default /* channel == 4 */:
+        process_horizontal_dispatch<4>(width, src_rows, dst_rows,
+                                       border_offsets);
+        break;
+    }
   }
 
   void process_horizontal_borders(Rows<const BufferType> src_rows,
                                   Rows<DestinationType> dst_rows,
                                   BorderOffsets border_offsets) const {
-    for (ptrdiff_t index = 0;
-         index < static_cast<ptrdiff_t>(src_rows.channels()); ++index) {
+    const ptrdiff_t channels = static_cast<ptrdiff_t>(src_rows.channels());
+    for (ptrdiff_t channel = 0; channel < channels; ++channel) {
       disable_loop_vectorization();
-      process_horizontal_scalar(src_rows, dst_rows, border_offsets, index);
+      process_horizontal_scalar(src_rows, dst_rows, border_offsets, channel,
+                                channel);
     }
   }
 
  private:
+  template <ptrdiff_t Channels>
+  static uint8x8_t unzip_even_lanes(uint8x8_t res_a,
+                                    uint8x8_t res_b) KLEIDICV_STREAMING {
+    if constexpr (Channels == 1) {
+      return vuzp1_u8(res_a, res_b);
+    } else if constexpr (Channels == 2) {
+      return vuzp1_u16(res_a, res_b);
+    } else {
+      static_assert(Channels == 4);
+      return vuzp1_u32(res_a, res_b);
+    }
+  }
+
+  template <ptrdiff_t Channels>
+  void process_horizontal_dispatch(size_t width,
+                                   Rows<const BufferType> src_rows,
+                                   Rows<DestinationType> dst_rows,
+                                   BorderOffsets border_offsets) const {
+    static_assert(Channels >= 1 && Channels <= 4);
+    if constexpr (Channels == 3) {
+      process_horizontal_multi_channel_3(width, src_rows, dst_rows,
+                                         border_offsets);
+    } else {
+      process_horizontal_multi_channel<Channels>(
+          width, src_rows, dst_rows, border_offsets,
+          [](uint8x8_t res_a, uint8x8_t res_b) KLEIDICV_STREAMING {
+            return unzip_even_lanes<Channels>(res_a, res_b);
+          });
+    }
+  }
+
   // Applies vertical filtering vector using SIMD operations.
   //
   // DST = [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
@@ -184,8 +198,8 @@ class BlurAndDownsample {
   // DST = 1/256 * [ SRC0, SRC1, SRC2, SRC3, SRC4 ] * [ 1, 4, 6, 4, 1 ]T
   void process_horizontal_scalar(Rows<const BufferType> src_rows,
                                  Rows<DestinationType> dst_rows,
-                                 BorderOffsets border_offsets,
-                                 ptrdiff_t index) const {
+                                 BorderOffsets border_offsets, ptrdiff_t index,
+                                 ptrdiff_t dst_index) const {
     BufferType src[5];
     src[0] = src_rows.at(0, border_offsets.c0())[index];
     src[1] = src_rows.at(0, border_offsets.c1())[index];
@@ -194,7 +208,132 @@ class BlurAndDownsample {
     src[4] = src_rows.at(0, border_offsets.c4())[index];
 
     auto acc = src[0] + src[4] + 4 * (src[1] + src[3]) + 6 * src[2];
-    dst_rows[index / 2] = rounding_shift_right(acc, 8);
+    dst_rows[dst_index] = rounding_shift_right(acc, 8);
+  }
+
+  template <ptrdiff_t Channels, typename UnzipOp>
+  void process_horizontal_multi_channel(size_t width,
+                                        Rows<const BufferType> src_rows,
+                                        Rows<DestinationType> dst_rows,
+                                        BorderOffsets border_offsets,
+                                        UnzipOp unzip_op) const {
+    static_assert(Channels == 1 || Channels == 2 || Channels == 4);
+    LoopUnroll2<TryToAvoidTailLoop> loop{width * src_rows.channels(),
+                                         BufferVecTraits::num_lanes()};
+
+    loop.unroll_twice([&](ptrdiff_t index) {
+      const auto *src_0 = &src_rows.at(0, border_offsets.c0())[index];
+      const auto *src_1 = &src_rows.at(0, border_offsets.c1())[index];
+      const auto *src_2 = &src_rows.at(0, border_offsets.c2())[index];
+      const auto *src_3 = &src_rows.at(0, border_offsets.c3())[index];
+      const auto *src_4 = &src_rows.at(0, border_offsets.c4())[index];
+
+      BufferVectorType src_a[5], src_b[5];
+      src_a[0] = vld1q(&src_0[0]);
+      src_b[0] = vld1q(&src_0[BufferVecTraits::num_lanes()]);
+      src_a[1] = vld1q(&src_1[0]);
+      src_b[1] = vld1q(&src_1[BufferVecTraits::num_lanes()]);
+      src_a[2] = vld1q(&src_2[0]);
+      src_b[2] = vld1q(&src_2[BufferVecTraits::num_lanes()]);
+      src_a[3] = vld1q(&src_3[0]);
+      src_b[3] = vld1q(&src_3[BufferVecTraits::num_lanes()]);
+      src_a[4] = vld1q(&src_4[0]);
+      src_b[4] = vld1q(&src_4[BufferVecTraits::num_lanes()]);
+
+      uint8x8_t res_a = horizontal_vector_path(src_a);
+      uint8x8_t res_b = horizontal_vector_path(src_b);
+
+      // Only store even indices.
+      vst1(&dst_rows[index / 2], unzip_op(res_a, res_b));
+    });
+
+    loop.remaining([&](ptrdiff_t index, size_t max_index) {
+      ptrdiff_t pixel = index / Channels;
+      pixel = align_up(pixel, static_cast<ptrdiff_t>(2));
+      index = pixel * Channels;
+      while (index < static_cast<ptrdiff_t>(max_index)) {
+        for (ptrdiff_t channel = 0; channel < Channels; ++channel) {
+          process_horizontal_scalar(src_rows, dst_rows, border_offsets,
+                                    index + channel, index / 2 + channel);
+        }
+        index += 2 * Channels;
+      }
+    });
+  }
+
+  void process_horizontal_multi_channel_3(size_t width,
+                                          Rows<const BufferType> src_rows,
+                                          Rows<DestinationType> dst_rows,
+                                          BorderOffsets border_offsets) const {
+    constexpr ptrdiff_t channels = 3;
+    const ptrdiff_t vec_stride =
+        static_cast<ptrdiff_t>(BufferVecTraits::num_lanes()) * channels;
+    LoopUnroll2<TryToAvoidTailLoop> loop{width, BufferVecTraits::num_lanes()};
+
+    loop.unroll_twice([&](ptrdiff_t column) {
+      const auto *src_0 =
+          &src_rows.at(0, border_offsets.c0())[column * channels];
+      const auto *src_1 =
+          &src_rows.at(0, border_offsets.c1())[column * channels];
+      const auto *src_2 =
+          &src_rows.at(0, border_offsets.c2())[column * channels];
+      const auto *src_3 =
+          &src_rows.at(0, border_offsets.c3())[column * channels];
+      const auto *src_4 =
+          &src_rows.at(0, border_offsets.c4())[column * channels];
+
+      uint16x8x3_t src0_a = vld3q_u16(&src_0[0]);
+      uint16x8x3_t src1_a = vld3q_u16(&src_1[0]);
+      uint16x8x3_t src2_a = vld3q_u16(&src_2[0]);
+      uint16x8x3_t src3_a = vld3q_u16(&src_3[0]);
+      uint16x8x3_t src4_a = vld3q_u16(&src_4[0]);
+
+      uint16x8x3_t src0_b = vld3q_u16(&src_0[vec_stride]);
+      uint16x8x3_t src1_b = vld3q_u16(&src_1[vec_stride]);
+      uint16x8x3_t src2_b = vld3q_u16(&src_2[vec_stride]);
+      uint16x8x3_t src3_b = vld3q_u16(&src_3[vec_stride]);
+      uint16x8x3_t src4_b = vld3q_u16(&src_4[vec_stride]);
+
+      uint16x8_t ch0_a[5] = {src0_a.val[0], src1_a.val[0], src2_a.val[0],
+                             src3_a.val[0], src4_a.val[0]};
+      uint16x8_t ch0_b[5] = {src0_b.val[0], src1_b.val[0], src2_b.val[0],
+                             src3_b.val[0], src4_b.val[0]};
+      uint16x8_t ch1_a[5] = {src0_a.val[1], src1_a.val[1], src2_a.val[1],
+                             src3_a.val[1], src4_a.val[1]};
+      uint16x8_t ch1_b[5] = {src0_b.val[1], src1_b.val[1], src2_b.val[1],
+                             src3_b.val[1], src4_b.val[1]};
+      uint16x8_t ch2_a[5] = {src0_a.val[2], src1_a.val[2], src2_a.val[2],
+                             src3_a.val[2], src4_a.val[2]};
+      uint16x8_t ch2_b[5] = {src0_b.val[2], src1_b.val[2], src2_b.val[2],
+                             src3_b.val[2], src4_b.val[2]};
+
+      uint8x8_t res0_a = horizontal_vector_path(ch0_a);
+      uint8x8_t res0_b = horizontal_vector_path(ch0_b);
+      uint8x8_t res1_a = horizontal_vector_path(ch1_a);
+      uint8x8_t res1_b = horizontal_vector_path(ch1_b);
+      uint8x8_t res2_a = horizontal_vector_path(ch2_a);
+      uint8x8_t res2_b = horizontal_vector_path(ch2_b);
+
+      uint8x8_t out0 = vuzp1_u8(res0_a, res0_b);
+      uint8x8_t out1 = vuzp1_u8(res1_a, res1_b);
+      uint8x8_t out2 = vuzp1_u8(res2_a, res2_b);
+
+      uint8x8x3_t interleaved{out0, out1, out2};
+      vst3_u8(&dst_rows.at(0, column / 2)[0], interleaved);
+    });
+
+    loop.remaining([&](ptrdiff_t column, size_t max_column) {
+      column = align_up(column, 2);
+      while (column < static_cast<ptrdiff_t>(max_column)) {
+        Rows<const BufferType> src_row = src_rows.at(0, column);
+        Rows<DestinationType> dst_row = dst_rows.at(0, column / 2);
+        for (ptrdiff_t channel = 0; channel < channels; ++channel) {
+          process_horizontal_scalar(src_row, dst_row, border_offsets, channel,
+                                    channel);
+        }
+        column += 2;
+      }
+    });
   }
 
   uint8x8_t const_6_u8_half_;

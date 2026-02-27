@@ -27,7 +27,8 @@ namespace kleidicv {
 inline bool blur_and_downsample_is_implemented(size_t src_width,
                                                size_t src_height,
                                                size_t channels) {
-  return (src_width >= 4 && src_height >= 4) && (channels == 1);
+  return (src_width >= 4 && src_height >= 4) && (channels >= 1) &&
+         (channels <= KLEIDICV_MAXIMUM_CHANNEL_COUNT);
 }
 
 namespace neon {
