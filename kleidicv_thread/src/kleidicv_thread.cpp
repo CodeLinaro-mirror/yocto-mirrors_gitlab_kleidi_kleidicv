@@ -740,7 +740,7 @@ kleidicv_error_t kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
     return KLEIDICV_ERROR_RANGE;
   }
 
-  if (channels != 1) {
+  if ((channels < 1) || (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 

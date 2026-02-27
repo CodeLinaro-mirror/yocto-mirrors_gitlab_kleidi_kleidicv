@@ -42,14 +42,19 @@ size_t border_index_reflect_101(ptrdiff_t index, size_t length) {
 // the input interior image.
 void build_reflect_101_with_1px_border(const uint8_t* src, size_t src_stride,
                                        size_t width, size_t height,
-                                       uint8_t* dst, size_t dst_stride) {
+                                       size_t channels, uint8_t* dst,
+                                       size_t dst_stride) {
   for (size_t y = 0; y < height + 2; ++y) {
     const size_t src_y =
         border_index_reflect_101(static_cast<ptrdiff_t>(y) - 1, height);
     for (size_t x = 0; x < width + 2; ++x) {
       const size_t src_x =
           border_index_reflect_101(static_cast<ptrdiff_t>(x) - 1, width);
-      dst[y * dst_stride + x] = src[src_y * src_stride + src_x];
+      const auto* src_pixel = src + src_y * src_stride + src_x * channels;
+      auto* dst_pixel = dst + y * dst_stride + x * channels;
+      for (size_t c = 0; c < channels; ++c) {
+        dst_pixel[c] = src_pixel[c];
+      }
     }
   }
 }
@@ -57,7 +62,8 @@ void build_reflect_101_with_1px_border(const uint8_t* src, size_t src_stride,
 // Compute one output pixel for scalar pyramid downsampling with a separable
 // 5x5 Gaussian kernel [1 4 6 4 1] and reflect-101 borders.
 uint8_t pyr_down_scalar_at(const uint8_t* src, size_t src_stride, size_t width,
-                           size_t height, size_t dst_x, size_t dst_y) {
+                           size_t height, size_t channels, size_t channel,
+                           size_t dst_x, size_t dst_y) {
   static constexpr int kernel[5] = {1, 4, 6, 4, 1};
   const ptrdiff_t source_x = static_cast<ptrdiff_t>(dst_x * 2);
   const ptrdiff_t source_y = static_cast<ptrdiff_t>(dst_y * 2);
@@ -67,7 +73,8 @@ uint8_t pyr_down_scalar_at(const uint8_t* src, size_t src_stride, size_t width,
     const size_t sy = border_index_reflect_101(source_y + ky, height);
     for (ptrdiff_t kx = -2; kx <= 2; ++kx) {
       const size_t sx = border_index_reflect_101(source_x + kx, width);
-      sum += kernel[ky + 2] * kernel[kx + 2] * src[sy * src_stride + sx];
+      sum += kernel[ky + 2] * kernel[kx + 2] *
+             src[sy * src_stride + sx * channels + channel];
     }
   }
 
@@ -78,15 +85,17 @@ uint8_t pyr_down_scalar_at(const uint8_t* src, size_t src_stride, size_t width,
 
 // Scalar reference implementation for one full pyramid level downsample.
 void pyr_down_scalar_reflect_101(const uint8_t* src, size_t src_stride,
-                                 size_t width, size_t height, uint8_t* dst,
-                                 size_t dst_stride) {
+                                 size_t width, size_t height, size_t channels,
+                                 uint8_t* dst, size_t dst_stride) {
   const size_t out_width = (width + 1) / 2;
   const size_t out_height = (height + 1) / 2;
 
   for (size_t y = 0; y < out_height; ++y) {
     for (size_t x = 0; x < out_width; ++x) {
-      dst[y * dst_stride + x] =
-          pyr_down_scalar_at(src, src_stride, width, height, x, y);
+      for (size_t c = 0; c < channels; ++c) {
+        dst[y * dst_stride + x * channels + c] = pyr_down_scalar_at(
+            src, src_stride, width, height, channels, c, x, y);
+      }
     }
   }
 }
@@ -106,8 +115,8 @@ int16_t saturate_to_s16(int value) {
 // reflect-101 border around the source image.
 void scharr_interleaved_scalar_reflect_101(const uint8_t* src,
                                            size_t src_stride, size_t width,
-                                           size_t height, int16_t* dst,
-                                           size_t dst_stride) {
+                                           size_t height, size_t channels,
+                                           int16_t* dst, size_t dst_stride) {
   static constexpr int kx[3][3] = {
       {-3, 0, 3},
       {-10, 0, 10},
@@ -119,26 +128,30 @@ void scharr_interleaved_scalar_reflect_101(const uint8_t* src,
       {3, 10, 3},
   };
 
-  test::Array2D<uint8_t> bordered(width + 2, height + 2);
+  test::Array2D<uint8_t> bordered((width + 2) * channels, height + 2);
   ASSERT_TRUE(bordered.valid());
-  build_reflect_101_with_1px_border(src, src_stride, width, height,
+  build_reflect_101_with_1px_border(src, src_stride, width, height, channels,
                                     bordered.data(), bordered.stride());
 
   for (size_t y = 0; y < height; ++y) {
     auto* out_row = reinterpret_cast<int16_t*>(reinterpret_cast<uint8_t*>(dst) +
                                                y * dst_stride);
     for (size_t x = 0; x < width; ++x) {
-      int dx = 0;
-      int dy = 0;
-      for (size_t ky_i = 0; ky_i < 3; ++ky_i) {
-        for (size_t kx_i = 0; kx_i < 3; ++kx_i) {
-          const int pixel = bordered.at(y + ky_i, x + kx_i)[0];
-          dx += kx[ky_i][kx_i] * pixel;
-          dy += ky[ky_i][kx_i] * pixel;
+      for (size_t c = 0; c < channels; ++c) {
+        int dx = 0;
+        int dy = 0;
+        for (size_t ky_i = 0; ky_i < 3; ++ky_i) {
+          for (size_t kx_i = 0; kx_i < 3; ++kx_i) {
+            const auto* bordered_row = bordered.at(y + ky_i, 0);
+            const int pixel = bordered_row[(x + kx_i) * channels + c];
+            dx += kx[ky_i][kx_i] * pixel;
+            dy += ky[ky_i][kx_i] * pixel;
+          }
         }
+        const size_t dst_base = (x * channels + c) * 2;
+        out_row[dst_base] = saturate_to_s16(dx);
+        out_row[dst_base + 1] = saturate_to_s16(dy);
       }
-      out_row[x * 2] = saturate_to_s16(dx);
-      out_row[x * 2 + 1] = saturate_to_s16(dy);
     }
   }
 }
@@ -152,142 +165,172 @@ void scharr_interleaved_scalar_reflect_101(const uint8_t* src,
 // - compare each Scharr level against scalar Scharr reference
 // - verify out-of-range level access fails
 TEST(OpticalFlowPyrLKPyramid, API) {
-  constexpr size_t width = 32;
-  constexpr size_t height = 24;
-  constexpr size_t channels = 1;
-  constexpr size_t requested_levels = 5;
-  constexpr size_t window_width = 5;
-  constexpr size_t window_height = 5;
+  struct ApiCase {
+    test::ArrayLayout layout;  // width is interleaved: pixel_width * channels
+    size_t requested_levels;
+    size_t window_width;
+    size_t window_height;
+  };
 
-  test::Array2D<uint8_t> src(width, height);
-  ASSERT_TRUE(src.valid());
+  const std::vector<ApiCase> cases = {
+      {test::ArrayLayout{160, 120, 0, 1}, 5, 5, 5},
+      {test::ArrayLayout{320, 120, 16, 2}, 6, 7, 7},
+      {test::ArrayLayout{480, 128, 16, 3}, 6, 9, 9},
+      {test::ArrayLayout{640, 128, 16, 4}, 7, 15, 15},
+      {test::ArrayLayout{322, 121, 0, 2}, 5, 5, 7},
+      {test::ArrayLayout{644, 123, 0, 4}, 5, 7, 5},
+  };
+
   test::PseudoRandomNumberGenerator<uint8_t> input_value_random_range;
-  src.fill(input_value_random_range);
+  for (size_t case_index = 0; case_index < cases.size(); ++case_index) {
+    const auto& c = cases[case_index];
+    ASSERT_GT(c.layout.channels, static_cast<size_t>(0));
+    ASSERT_EQ(c.layout.width % c.layout.channels, static_cast<size_t>(0));
+    const size_t width = c.layout.width / c.layout.channels;
+    const size_t height = c.layout.height;
+    const size_t channels = c.layout.channels;
+    SCOPED_TRACE(::testing::Message()
+                 << "case=" << case_index << ", width=" << width
+                 << ", height=" << height << ", channels=" << channels
+                 << ", requested_levels=" << c.requested_levels
+                 << ", window=" << c.window_width << "x" << c.window_height);
 
-  kleidicv_optical_flow_pyr_lk_pyramid_t* pyramid = nullptr;
-  ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_build_optical_flow_pyr_lk_pyramid(
-                &pyramid, src.data(), src.stride(), width, height, channels,
-                requested_levels, window_width, window_height));
-  ASSERT_NE(nullptr, pyramid);
+    test::Array2D<uint8_t> src(c.layout);
+    ASSERT_TRUE(src.valid());
+    src.fill(input_value_random_range);
 
-  size_t actual_levels = 0;
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_optical_flow_pyr_lk_pyramid_get_level_count(
-                             pyramid, &actual_levels));
-
-  size_t expected_levels = 0;
-  size_t expected_width = width;
-  size_t expected_height = height;
-  for (size_t i = 0; i < requested_levels; ++i) {
-    ++expected_levels;
-    const size_t next_width = (expected_width + 1) / 2;
-    const size_t next_height = (expected_height + 1) / 2;
-    if (next_width <= window_width || next_height <= window_height) {
-      break;
-    }
-    expected_width = next_width;
-    expected_height = next_height;
-  }
-
-  ASSERT_EQ(expected_levels, actual_levels);
-
-  // Build scalar reference image levels.
-  std::vector<test::Array2D<uint8_t>> expected_images(actual_levels);
-  std::vector<size_t> expected_image_width(actual_levels);
-  std::vector<size_t> expected_image_height(actual_levels);
-
-  expected_image_width[0] = width;
-  expected_image_height[0] = height;
-  expected_images[0] = test::Array2D<uint8_t>{width, height};
-  ASSERT_TRUE(expected_images[0].valid());
-  expected_images[0].set(0, 0, &src);
-
-  for (size_t level = 1; level < actual_levels; ++level) {
-    expected_image_width[level] = (expected_image_width[level - 1] + 1) / 2;
-    expected_image_height[level] = (expected_image_height[level - 1] + 1) / 2;
-
-    expected_images[level] = test::Array2D<uint8_t>{
-        expected_image_width[level], expected_image_height[level]};
-    ASSERT_TRUE(expected_images[level].valid());
-
-    pyr_down_scalar_reflect_101(
-        expected_images[level - 1].data(), expected_images[level - 1].stride(),
-        expected_image_width[level - 1], expected_image_height[level - 1],
-        expected_images[level].data(), expected_images[level].stride());
-  }
-
-  for (size_t level = 0; level < actual_levels; ++level) {
-    const uint8_t* image_data = nullptr;
-    size_t image_stride = 0;
-    size_t image_width = 0;
-    size_t image_height = 0;
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_optical_flow_pyr_lk_pyramid_get_image_level(
-                               pyramid, level, &image_data, &image_stride,
-                               &image_width, &image_height));
-
-    ASSERT_EQ(expected_image_width[level], image_width);
-    ASSERT_EQ(expected_image_height[level], image_height);
-    ASSERT_GE(image_stride, image_width * channels);
-
-    // Compare image level pixels.
-    for (size_t y = 0; y < image_height; ++y) {
-      for (size_t x = 0; x < image_width; ++x) {
-        ASSERT_EQ(expected_images[level].at(y, x)[0],
-                  image_data[y * image_stride + x]);
-      }
-    }
-
-    const int16_t* scharr_data = nullptr;
-    size_t scharr_stride = 0;
-    size_t scharr_width = 0;
-    size_t scharr_height = 0;
+    kleidicv_optical_flow_pyr_lk_pyramid_t* pyramid = nullptr;
     ASSERT_EQ(KLEIDICV_OK,
-              kleidicv_optical_flow_pyr_lk_pyramid_get_scharr_level(
-                  pyramid, level, &scharr_data, &scharr_stride, &scharr_width,
-                  &scharr_height));
+              kleidicv_build_optical_flow_pyr_lk_pyramid(
+                  &pyramid, src.data(), src.stride(), width, height, channels,
+                  c.requested_levels, c.window_width, c.window_height));
+    ASSERT_NE(nullptr, pyramid);
 
-    ASSERT_EQ(image_width, scharr_width);
-    ASSERT_EQ(image_height, scharr_height);
-    ASSERT_GE(scharr_stride, image_width * channels * 2 * sizeof(int16_t));
+    size_t actual_levels = 0;
+    ASSERT_EQ(KLEIDICV_OK, kleidicv_optical_flow_pyr_lk_pyramid_get_level_count(
+                               pyramid, &actual_levels));
 
-    // Build and compare scalar Scharr reference for this level.
-    test::Array2D<int16_t> expected_scharr(image_width * 2, image_height);
-    ASSERT_TRUE(expected_scharr.valid());
-    scharr_interleaved_scalar_reflect_101(image_data, image_stride, image_width,
-                                          image_height, expected_scharr.data(),
-                                          expected_scharr.stride());
+    size_t expected_levels = 0;
+    size_t expected_width = width;
+    size_t expected_height = height;
+    for (size_t i = 0; i < c.requested_levels; ++i) {
+      ++expected_levels;
+      const size_t next_width = (expected_width + 1) / 2;
+      const size_t next_height = (expected_height + 1) / 2;
+      if (next_width <= c.window_width || next_height <= c.window_height) {
+        break;
+      }
+      expected_width = next_width;
+      expected_height = next_height;
+    }
 
-    for (size_t y = 0; y < scharr_height; ++y) {
-      const auto* actual_row =
-          reinterpret_cast<const uint8_t*>(scharr_data) + y * scharr_stride;
-      const auto* expected_row =
-          reinterpret_cast<const uint8_t*>(expected_scharr.data()) +
-          y * expected_scharr.stride();
-      for (size_t b = 0; b < image_width * 2 * sizeof(int16_t); ++b) {
-        ASSERT_EQ(expected_row[b], actual_row[b]);
+    ASSERT_EQ(expected_levels, actual_levels);
+
+    // Build scalar reference image levels.
+    std::vector<test::Array2D<uint8_t>> expected_images(actual_levels);
+    std::vector<size_t> expected_image_width(actual_levels);
+    std::vector<size_t> expected_image_height(actual_levels);
+
+    expected_image_width[0] = width;
+    expected_image_height[0] = height;
+    expected_images[0] = test::Array2D<uint8_t>{width * channels, height};
+    ASSERT_TRUE(expected_images[0].valid());
+    expected_images[0].set(0, 0, &src);
+
+    for (size_t level = 1; level < actual_levels; ++level) {
+      expected_image_width[level] = (expected_image_width[level - 1] + 1) / 2;
+      expected_image_height[level] = (expected_image_height[level - 1] + 1) / 2;
+
+      expected_images[level] = test::Array2D<uint8_t>{
+          expected_image_width[level] * channels, expected_image_height[level]};
+      ASSERT_TRUE(expected_images[level].valid());
+
+      pyr_down_scalar_reflect_101(
+          expected_images[level - 1].data(),
+          expected_images[level - 1].stride(), expected_image_width[level - 1],
+          expected_image_height[level - 1], channels,
+          expected_images[level].data(), expected_images[level].stride());
+    }
+
+    for (size_t level = 0; level < actual_levels; ++level) {
+      const uint8_t* image_data = nullptr;
+      size_t image_stride = 0;
+      size_t image_width = 0;
+      size_t image_height = 0;
+      ASSERT_EQ(KLEIDICV_OK,
+                kleidicv_optical_flow_pyr_lk_pyramid_get_image_level(
+                    pyramid, level, &image_data, &image_stride, &image_width,
+                    &image_height));
+
+      ASSERT_EQ(expected_image_width[level], image_width);
+      ASSERT_EQ(expected_image_height[level], image_height);
+      ASSERT_GE(image_stride, image_width * channels);
+
+      // Compare image level pixels.
+      for (size_t y = 0; y < image_height; ++y) {
+        const auto* expected_row =
+            expected_images[level].data() + y * expected_images[level].stride();
+        const auto* actual_row = image_data + y * image_stride;
+        for (size_t x = 0; x < image_width * channels; ++x) {
+          ASSERT_EQ(expected_row[x], actual_row[x]);
+        }
+      }
+
+      const int16_t* scharr_data = nullptr;
+      size_t scharr_stride = 0;
+      size_t scharr_width = 0;
+      size_t scharr_height = 0;
+      ASSERT_EQ(KLEIDICV_OK,
+                kleidicv_optical_flow_pyr_lk_pyramid_get_scharr_level(
+                    pyramid, level, &scharr_data, &scharr_stride, &scharr_width,
+                    &scharr_height));
+
+      ASSERT_EQ(image_width, scharr_width);
+      ASSERT_EQ(image_height, scharr_height);
+      ASSERT_GE(scharr_stride, image_width * channels * 2 * sizeof(int16_t));
+
+      // Build and compare scalar Scharr reference for this level.
+      test::Array2D<int16_t> expected_scharr(image_width * channels * 2,
+                                             image_height);
+      ASSERT_TRUE(expected_scharr.valid());
+      scharr_interleaved_scalar_reflect_101(
+          image_data, image_stride, image_width, image_height, channels,
+          expected_scharr.data(), expected_scharr.stride());
+
+      for (size_t y = 0; y < scharr_height; ++y) {
+        const auto* actual_row =
+            reinterpret_cast<const uint8_t*>(scharr_data) + y * scharr_stride;
+        const auto* expected_row =
+            reinterpret_cast<const uint8_t*>(expected_scharr.data()) +
+            y * expected_scharr.stride();
+        for (size_t b = 0; b < image_width * channels * 2 * sizeof(int16_t);
+             ++b) {
+          ASSERT_EQ(expected_row[b], actual_row[b]);
+        }
       }
     }
+
+    const uint8_t* bad_image_data = nullptr;
+    size_t bad_image_stride = 0;
+    size_t bad_image_width = 0;
+    size_t bad_image_height = 0;
+    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+              kleidicv_optical_flow_pyr_lk_pyramid_get_image_level(
+                  pyramid, actual_levels, &bad_image_data, &bad_image_stride,
+                  &bad_image_width, &bad_image_height));
+
+    const int16_t* bad_scharr_data = nullptr;
+    size_t bad_scharr_stride = 0;
+    size_t bad_scharr_width = 0;
+    size_t bad_scharr_height = 0;
+    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+              kleidicv_optical_flow_pyr_lk_pyramid_get_scharr_level(
+                  pyramid, actual_levels, &bad_scharr_data, &bad_scharr_stride,
+                  &bad_scharr_width, &bad_scharr_height));
+
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_optical_flow_pyr_lk_pyramid_release(pyramid));
   }
-
-  const uint8_t* bad_image_data = nullptr;
-  size_t bad_image_stride = 0;
-  size_t bad_image_width = 0;
-  size_t bad_image_height = 0;
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_optical_flow_pyr_lk_pyramid_get_image_level(
-                pyramid, actual_levels, &bad_image_data, &bad_image_stride,
-                &bad_image_width, &bad_image_height));
-
-  const int16_t* bad_scharr_data = nullptr;
-  size_t bad_scharr_stride = 0;
-  size_t bad_scharr_width = 0;
-  size_t bad_scharr_height = 0;
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_optical_flow_pyr_lk_pyramid_get_scharr_level(
-                pyramid, actual_levels, &bad_scharr_data, &bad_scharr_stride,
-                &bad_scharr_width, &bad_scharr_height));
-
-  ASSERT_EQ(KLEIDICV_OK, kleidicv_optical_flow_pyr_lk_pyramid_release(pyramid));
 }
 
 // Fixed golden-data regression test.
@@ -518,15 +561,20 @@ TEST(OpticalFlowPyrLKPyramidBuild, SingleRowStrideBelowWidth) {
   ASSERT_EQ(KLEIDICV_OK, kleidicv_optical_flow_pyr_lk_pyramid_release(pyramid));
 }
 
-// Current implementation supports only single-channel input.
+// Invalid channel counts must be rejected.
 TEST(OpticalFlowPyrLKPyramidBuild, UnsupportedChannels) {
   test::Array2D<uint8_t> src{6, 3};
   ASSERT_TRUE(src.valid());
   kleidicv_optical_flow_pyr_lk_pyramid_t* pyramid = nullptr;
 
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
             kleidicv_build_optical_flow_pyr_lk_pyramid(
-                &pyramid, src.data(), src.stride(), 3, 3, 2, 1, 3, 3));
+                &pyramid, src.data(), src.stride(), 3, 3, 0, 1, 3, 3));
+
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            kleidicv_build_optical_flow_pyr_lk_pyramid(
+                &pyramid, src.data(), src.stride(), 3, 3,
+                KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, 1, 3, 3));
 }
 
 // Release API must reject null handle.

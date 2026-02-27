@@ -85,7 +85,8 @@ static kleidicv_error_t test_thread_parallel(kleidicv_thread_callback callback,
 static bool compare_pyramid_against_expected(
     kleidicv_optical_flow_pyr_lk_pyramid_t* actual_pyramid,
     const std::vector<cv::Mat>& expected_pyramid, const cv::Mat& input,
-    size_t width, size_t height, cv::Size win_size, size_t max_level) {
+    size_t width, size_t height, size_t channels, cv::Size win_size,
+    size_t max_level) {
   size_t actual_levels = 0;
   kleidicv_error_t err = kleidicv_optical_flow_pyr_lk_pyramid_get_level_count(
       actual_pyramid, &actual_levels);
@@ -94,7 +95,8 @@ static bool compare_pyramid_against_expected(
                  "failed: "
               << err << " (window=" << win_size.width << "x" << win_size.height
               << ", image=" << width << "x" << height
-              << ", max_level=" << max_level << ")" << std::endl;
+              << ", channels=" << channels << ", max_level=" << max_level << ")"
+              << std::endl;
     return true;
   }
 
@@ -104,7 +106,8 @@ static bool compare_pyramid_against_expected(
               << " expected=" << expected_levels
               << " (window=" << win_size.width << "x" << win_size.height
               << ", image=" << width << "x" << height
-              << ", max_level=" << max_level << ")" << std::endl;
+              << ", channels=" << channels << ", max_level=" << max_level << ")"
+              << std::endl;
     return true;
   }
 
@@ -120,19 +123,22 @@ static bool compare_pyramid_against_expected(
       std::cout << "get_image_level failed on level " << level << ": " << err
                 << " (window=" << win_size.width << "x" << win_size.height
                 << ", image=" << width << "x" << height
-                << ", max_level=" << max_level << ")" << std::endl;
+                << ", channels=" << channels << ", max_level=" << max_level
+                << ")" << std::endl;
       return true;
     }
 
+    const int image_type = CV_MAKETYPE(CV_8U, static_cast<int>(channels));
     cv::Mat actual_image(static_cast<int>(image_height),
-                         static_cast<int>(image_width), CV_8UC1,
+                         static_cast<int>(image_width), image_type,
                          const_cast<uint8_t*>(image_data), image_stride);
     cv::Mat expected_image = expected_pyramid[level * 2];
     if (are_matrices_different<uint8_t>(0, actual_image, expected_image)) {
       std::cout << "Image pyramid mismatch at level " << level
                 << " (window=" << win_size.width << "x" << win_size.height
                 << ", image=" << width << "x" << height
-                << ", max_level=" << max_level << ")" << std::endl;
+                << ", channels=" << channels << ", max_level=" << max_level
+                << ")" << std::endl;
       fail_print_matrices(height, width, const_cast<cv::Mat&>(input),
                           actual_image, expected_image);
       return true;
@@ -149,19 +155,22 @@ static bool compare_pyramid_against_expected(
       std::cout << "get_scharr_level failed on level " << level << ": " << err
                 << " (window=" << win_size.width << "x" << win_size.height
                 << ", image=" << width << "x" << height
-                << ", max_level=" << max_level << ")" << std::endl;
+                << ", channels=" << channels << ", max_level=" << max_level
+                << ")" << std::endl;
       return true;
     }
 
+    const int scharr_type = CV_MAKETYPE(CV_16S, static_cast<int>(channels * 2));
     cv::Mat actual_scharr(static_cast<int>(scharr_height),
-                          static_cast<int>(scharr_width), CV_16SC2,
+                          static_cast<int>(scharr_width), scharr_type,
                           const_cast<int16_t*>(scharr_data), scharr_stride);
     cv::Mat expected_scharr = expected_pyramid[level * 2 + 1];
     if (are_matrices_different<int16_t>(0, actual_scharr, expected_scharr)) {
       std::cout << "Scharr pyramid mismatch at level " << level
                 << " (window=" << win_size.width << "x" << win_size.height
                 << ", image=" << width << "x" << height
-                << ", max_level=" << max_level << ")" << std::endl;
+                << ", channels=" << channels << ", max_level=" << max_level
+                << ")" << std::endl;
       fail_print_matrices(height, width, const_cast<cv::Mat&>(input),
                           actual_scharr, expected_scharr);
       return true;
@@ -172,7 +181,7 @@ static bool compare_pyramid_against_expected(
 }
 
 static bool run_optical_flow_case(cv::Size win_size, size_t max_level,
-                                  int /* index */,
+                                  size_t channels, int /* index */,
                                   RecreatedMessageQueue& /* request_queue */,
                                   RecreatedMessageQueue& /* reply_queue */) {
   cv::RNG rng(0);
@@ -181,7 +190,9 @@ static bool run_optical_flow_case(cv::Size win_size, size_t max_level,
 
   for (size_t height = 16; height <= 64; height += 8) {
     for (size_t width = 16; width <= 64; width += 8) {
-      cv::Mat input(static_cast<int>(height), static_cast<int>(width), CV_8UC1);
+      const int image_type = CV_MAKETYPE(CV_8U, static_cast<int>(channels));
+      cv::Mat input(static_cast<int>(height), static_cast<int>(width),
+                    image_type);
       rng.fill(input, cv::RNG::UNIFORM, 0, 255);
 
       std::vector<cv::Mat> expected_pyramid;
@@ -191,14 +202,15 @@ static bool run_optical_flow_case(cv::Size win_size, size_t max_level,
       kleidicv_optical_flow_pyr_lk_pyramid_t* actual_pyramid = nullptr;
       kleidicv_error_t err = kleidicv_build_optical_flow_pyr_lk_pyramid(
           &actual_pyramid, input.ptr<uint8_t>(0), input.step,
-          static_cast<size_t>(input.cols), static_cast<size_t>(input.rows), 1,
-          max_level + 1, static_cast<size_t>(win_size.width),
+          static_cast<size_t>(input.cols), static_cast<size_t>(input.rows),
+          channels, max_level + 1, static_cast<size_t>(win_size.width),
           static_cast<size_t>(win_size.height));
       if (err != KLEIDICV_OK) {
         std::cout << "kleidicv_build_optical_flow_pyr_lk_pyramid failed: "
                   << err << " (window=" << win_size.width << "x"
                   << win_size.height << ", image=" << width << "x" << height
-                  << ", max_level=" << max_level << ")" << std::endl;
+                  << ", channels=" << channels << ", max_level=" << max_level
+                  << ")" << std::endl;
         return true;
       }
 
@@ -206,8 +218,8 @@ static bool run_optical_flow_case(cv::Size win_size, size_t max_level,
           static_cast<size_t>(expected_last_level + 1);
       expected_pyramid.resize(expected_levels * 2);
       if (compare_pyramid_against_expected(actual_pyramid, expected_pyramid,
-                                           input, width, height, win_size,
-                                           max_level)) {
+                                           input, width, height, channels,
+                                           win_size, max_level)) {
         (void)kleidicv_optical_flow_pyr_lk_pyramid_release(actual_pyramid);
         return true;
       }
@@ -216,28 +228,30 @@ static bool run_optical_flow_case(cv::Size win_size, size_t max_level,
       if (err != KLEIDICV_OK) {
         std::cout << "release failed: " << err << " (window=" << win_size.width
                   << "x" << win_size.height << ", image=" << width << "x"
-                  << height << ", max_level=" << max_level << ")" << std::endl;
+                  << height << ", channels=" << channels
+                  << ", max_level=" << max_level << ")" << std::endl;
         return true;
       }
 
       kleidicv_optical_flow_pyr_lk_pyramid_t* threaded_pyramid = nullptr;
       err = kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
           &threaded_pyramid, input.ptr<uint8_t>(0), input.step,
-          static_cast<size_t>(input.cols), static_cast<size_t>(input.rows), 1,
-          max_level + 1, static_cast<size_t>(win_size.width),
+          static_cast<size_t>(input.cols), static_cast<size_t>(input.rows),
+          channels, max_level + 1, static_cast<size_t>(win_size.width),
           static_cast<size_t>(win_size.height), mt);
       if (err != KLEIDICV_OK) {
-        std::cout
-            << "kleidicv_thread_build_optical_flow_pyr_lk_pyramid failed: "
-            << err << " (window=" << win_size.width << "x" << win_size.height
-            << ", image=" << width << "x" << height
-            << ", max_level=" << max_level << ")" << std::endl;
+        std::cout << "kleidicv_thread_build_optical_flow_pyr_lk_pyramid "
+                     "failed: "
+                  << err << " (window=" << win_size.width << "x"
+                  << win_size.height << ", image=" << width << "x" << height
+                  << ", channels=" << channels << ", max_level=" << max_level
+                  << ")" << std::endl;
         return true;
       }
 
       if (compare_pyramid_against_expected(threaded_pyramid, expected_pyramid,
-                                           input, width, height, win_size,
-                                           max_level)) {
+                                           input, width, height, channels,
+                                           win_size, max_level)) {
         (void)kleidicv_optical_flow_pyr_lk_pyramid_release(threaded_pyramid);
         return true;
       }
@@ -247,7 +261,8 @@ static bool run_optical_flow_case(cv::Size win_size, size_t max_level,
         std::cout << "threaded release failed: " << err
                   << " (window=" << win_size.width << "x" << win_size.height
                   << ", image=" << width << "x" << height
-                  << ", max_level=" << max_level << ")" << std::endl;
+                  << ", channels=" << channels << ", max_level=" << max_level
+                  << ")" << std::endl;
         return true;
       }
     }
@@ -256,62 +271,80 @@ static bool run_optical_flow_case(cv::Size win_size, size_t max_level,
   return false;
 }
 
-#define DEFINE_OPTICAL_FLOW_TEST(win_w, win_h, lvl)                  \
-  bool test_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl(     \
-      int index, RecreatedMessageQueue& request_queue,               \
-      RecreatedMessageQueue& reply_queue) {                          \
-    return run_optical_flow_case(cv::Size{win_w, win_h}, lvl, index, \
-                                 request_queue, reply_queue);        \
+#define DEFINE_OPTICAL_FLOW_TEST(win_w, win_h, lvl, ch)                  \
+  bool test_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c##ch( \
+      int index, RecreatedMessageQueue& request_queue,                   \
+      RecreatedMessageQueue& reply_queue) {                              \
+    return run_optical_flow_case(cv::Size{win_w, win_h}, lvl, ch, index, \
+                                 request_queue, reply_queue);            \
   }
 
-DEFINE_OPTICAL_FLOW_TEST(3, 3, 0)
-DEFINE_OPTICAL_FLOW_TEST(3, 3, 1)
-DEFINE_OPTICAL_FLOW_TEST(3, 3, 2)
-DEFINE_OPTICAL_FLOW_TEST(3, 3, 3)
-DEFINE_OPTICAL_FLOW_TEST(3, 3, 4)
-DEFINE_OPTICAL_FLOW_TEST(5, 5, 0)
-DEFINE_OPTICAL_FLOW_TEST(5, 5, 1)
-DEFINE_OPTICAL_FLOW_TEST(5, 5, 2)
-DEFINE_OPTICAL_FLOW_TEST(5, 5, 3)
-DEFINE_OPTICAL_FLOW_TEST(5, 5, 4)
-DEFINE_OPTICAL_FLOW_TEST(9, 9, 0)
-DEFINE_OPTICAL_FLOW_TEST(9, 9, 1)
-DEFINE_OPTICAL_FLOW_TEST(9, 9, 2)
-DEFINE_OPTICAL_FLOW_TEST(9, 9, 3)
-DEFINE_OPTICAL_FLOW_TEST(9, 9, 4)
-DEFINE_OPTICAL_FLOW_TEST(15, 15, 0)
-DEFINE_OPTICAL_FLOW_TEST(15, 15, 1)
-DEFINE_OPTICAL_FLOW_TEST(15, 15, 2)
-DEFINE_OPTICAL_FLOW_TEST(15, 15, 3)
-DEFINE_OPTICAL_FLOW_TEST(15, 15, 4)
+#define DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(win_w, win_h, lvl) \
+  DEFINE_OPTICAL_FLOW_TEST(win_w, win_h, lvl, 1)                 \
+  DEFINE_OPTICAL_FLOW_TEST(win_w, win_h, lvl, 2)                 \
+  DEFINE_OPTICAL_FLOW_TEST(win_w, win_h, lvl, 3)                 \
+  DEFINE_OPTICAL_FLOW_TEST(win_w, win_h, lvl, 4)
 
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(3, 3, 0)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(3, 3, 1)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(3, 3, 2)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(3, 3, 3)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(3, 3, 4)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(5, 5, 0)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(5, 5, 1)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(5, 5, 2)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(5, 5, 3)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(5, 5, 4)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(9, 9, 0)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(9, 9, 1)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(9, 9, 2)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(9, 9, 3)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(9, 9, 4)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(15, 15, 0)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(15, 15, 1)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(15, 15, 2)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(15, 15, 3)
+DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS(15, 15, 4)
+
+#undef DEFINE_OPTICAL_FLOW_TEST_ALL_CHANNELS
 #undef DEFINE_OPTICAL_FLOW_TEST
 #endif
 
 std::vector<test>& optical_flow_lk_pyramid_tests_get() {
   // clang-format off
+  #define OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(win_w, win_h, lvl)                                              \
+    TEST("Optical Flow LK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 1 channel",                     \
+         test_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c1, exec_optical_flow_lk_pyramid),          \
+    TEST("Optical Flow LK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 2 channel",                     \
+         test_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c2, exec_optical_flow_lk_pyramid),          \
+    TEST("Optical Flow LK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 3 channel",                     \
+         test_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c3, exec_optical_flow_lk_pyramid),          \
+    TEST("Optical Flow LK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 4 channel",                     \
+         test_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c4, exec_optical_flow_lk_pyramid)
+
   static std::vector<test> tests = {
-    TEST("Optical Flow LK Pyramid window 3x3 level 0", test_optical_flow_lk_pyramid_w3x3_l0, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 3x3 level 1", test_optical_flow_lk_pyramid_w3x3_l1, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 3x3 level 2", test_optical_flow_lk_pyramid_w3x3_l2, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 3x3 level 3", test_optical_flow_lk_pyramid_w3x3_l3, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 3x3 level 4", test_optical_flow_lk_pyramid_w3x3_l4, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 5x5 level 0", test_optical_flow_lk_pyramid_w5x5_l0, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 5x5 level 1", test_optical_flow_lk_pyramid_w5x5_l1, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 5x5 level 2", test_optical_flow_lk_pyramid_w5x5_l2, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 5x5 level 3", test_optical_flow_lk_pyramid_w5x5_l3, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 5x5 level 4", test_optical_flow_lk_pyramid_w5x5_l4, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 9x9 level 0", test_optical_flow_lk_pyramid_w9x9_l0, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 9x9 level 1", test_optical_flow_lk_pyramid_w9x9_l1, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 9x9 level 2", test_optical_flow_lk_pyramid_w9x9_l2, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 9x9 level 3", test_optical_flow_lk_pyramid_w9x9_l3, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 9x9 level 4", test_optical_flow_lk_pyramid_w9x9_l4, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 15x15 level 0", test_optical_flow_lk_pyramid_w15x15_l0, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 15x15 level 1", test_optical_flow_lk_pyramid_w15x15_l1, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 15x15 level 2", test_optical_flow_lk_pyramid_w15x15_l2, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 15x15 level 3", test_optical_flow_lk_pyramid_w15x15_l3, exec_optical_flow_lk_pyramid),
-    TEST("Optical Flow LK Pyramid window 15x15 level 4", test_optical_flow_lk_pyramid_w15x15_l4, exec_optical_flow_lk_pyramid)
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 0),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 1),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 2),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 3),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 4),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(5, 5, 0),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(5, 5, 1),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(5, 5, 2),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(5, 5, 3),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(5, 5, 4),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(9, 9, 0),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(9, 9, 1),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(9, 9, 2),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(9, 9, 3),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(9, 9, 4),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(15, 15, 0),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(15, 15, 1),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(15, 15, 2),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(15, 15, 3),
+    OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(15, 15, 4)
   };
+  #undef OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS
   // clang-format on
   return tests;
 }

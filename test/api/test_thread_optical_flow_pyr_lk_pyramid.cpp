@@ -14,21 +14,25 @@
 #include "kleidicv_thread/kleidicv_thread.h"
 #include "multithreading_fake.h"
 
-// Tuple of width, height, requested_level_count, window_size, thread_count.
-typedef std::tuple<unsigned, unsigned, unsigned, unsigned, unsigned> P;
+// Tuple of width, height, channels, requested_level_count, window_size,
+// thread_count.
+typedef std::tuple<unsigned, unsigned, unsigned, unsigned, unsigned, unsigned>
+    P;
 
 class OpticalFlowPyrLkThread : public testing::TestWithParam<P> {
  public:
   void check_builders_match() {
     unsigned width = 0;
     unsigned height = 0;
+    unsigned channels = 0;
     unsigned requested_level_count = 0;
     unsigned window = 0;
     unsigned thread_count = 0;
-    std::tie(width, height, requested_level_count, window, thread_count) =
-        GetParam();
+    std::tie(width, height, channels, requested_level_count, window,
+             thread_count) = GetParam();
 
-    test::Array2D<uint8_t> src(width, height);
+    const size_t width_bytes = static_cast<size_t>(width) * channels;
+    test::Array2D<uint8_t> src(width_bytes, height);
     test::PseudoRandomNumberGenerator<uint8_t> generator;
     src.fill(generator);
 
@@ -37,12 +41,12 @@ class OpticalFlowPyrLkThread : public testing::TestWithParam<P> {
 
     const kleidicv_error_t single_result =
         kleidicv_build_optical_flow_pyr_lk_pyramid(
-            &single, src.data(), src.stride(), width, height, 1,
+            &single, src.data(), src.stride(), width, height, channels,
             requested_level_count, window, window);
 
     const kleidicv_error_t multi_result =
         kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
-            &multi, src.data(), src.stride(), width, height, 1,
+            &multi, src.data(), src.stride(), width, height, channels,
             requested_level_count, window, window,
             get_multithreading_fake(thread_count));
 
@@ -82,7 +86,7 @@ class OpticalFlowPyrLkThread : public testing::TestWithParam<P> {
       ASSERT_EQ(single_image_width, multi_image_width);
       ASSERT_EQ(single_image_height, multi_image_height);
       for (size_t y = 0; y < single_image_height; ++y) {
-        for (size_t x = 0; x < single_image_width; ++x) {
+        for (size_t x = 0; x < single_image_width * channels; ++x) {
           ASSERT_EQ(single_image_data[y * single_image_stride + x],
                     multi_image_data[y * multi_image_stride + x]);
         }
@@ -116,7 +120,7 @@ class OpticalFlowPyrLkThread : public testing::TestWithParam<P> {
         const auto* multi_row = reinterpret_cast<const int16_t*>(
             reinterpret_cast<const uint8_t*>(multi_scharr_data) +
             y * multi_scharr_stride);
-        for (size_t x = 0; x < single_scharr_width * 2; ++x) {
+        for (size_t x = 0; x < single_scharr_width * channels * 2; ++x) {
           ASSERT_EQ(single_row[x], multi_row[x]);
         }
       }
@@ -162,10 +166,11 @@ class OpticalFlowPyrLkThread : public testing::TestWithParam<P> {
                   &pyramid, src.data(), 7, 8, 8, 1, 1, 5, 5,
                   get_multithreading_fake(2)));
 
-    EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
-                  &pyramid, src.data(), 16, 8, 8, 2, 1, 5, 5,
-                  get_multithreading_fake(2)));
+    EXPECT_EQ(
+        KLEIDICV_ERROR_RANGE,
+        kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
+            &pyramid, src.data(), 16, 8, 8, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1,
+            1, 5, 5, get_multithreading_fake(2)));
   }
 };
 
@@ -184,8 +189,10 @@ TEST_F(OpticalFlowPyrLkThread, NullPointer) {
                        get_multithreading_fake(2));
 }
 
-INSTANTIATE_TEST_SUITE_P(, OpticalFlowPyrLkThread,
-                         testing::Values(P{16, 16, 4, 5, 1}, P{16, 16, 4, 5, 2},
-                                         P{31, 27, 6, 5, 3}, P{64, 48, 6, 9, 4},
-                                         P{48, 64, 6, 15, 6},
-                                         P{33, 65, 8, 5, 8}));
+INSTANTIATE_TEST_SUITE_P(
+    , OpticalFlowPyrLkThread,
+    testing::Values(P{16, 16, 1, 4, 5, 1}, P{16, 16, 1, 4, 5, 2},
+                    P{31, 27, 1, 6, 5, 3}, P{64, 48, 1, 6, 9, 4},
+                    P{48, 64, 1, 6, 15, 6}, P{33, 65, 1, 8, 5, 8},
+                    P{32, 24, 2, 5, 5, 3}, P{32, 24, 3, 5, 5, 4},
+                    P{32, 24, 4, 5, 5, 5}));

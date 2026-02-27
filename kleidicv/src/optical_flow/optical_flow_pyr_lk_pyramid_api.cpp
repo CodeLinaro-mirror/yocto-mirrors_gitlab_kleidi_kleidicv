@@ -31,8 +31,7 @@ kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
     return KLEIDICV_ERROR_RANGE;
   }
 
-  // Current underlying kernels used by this builder only support 1 channel.
-  if (channels != 1) {
+  if ((channels < 1) || (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
