@@ -17,7 +17,7 @@ workflow:
 
 .common:
   tags:
-    - arm64
+    - arm64_new
 
 lint-docs:
   extends: .common
