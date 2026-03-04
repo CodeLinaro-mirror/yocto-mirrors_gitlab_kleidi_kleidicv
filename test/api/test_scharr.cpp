@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -27,8 +27,8 @@ class ScharrInterleavedTest {
         horizontal_mask_{create_horizontal_mask()} {}
 
   void test() {
-    // Use the default array layouts with one channel for testing.
-    for (auto layout : test::default_1channel_array_layouts(3, 3)) {
+    // Use the default array layouts for testing.
+    for (auto layout : test::default_array_layouts(3, 3)) {
       test(layout);
     }
   }
@@ -63,8 +63,10 @@ class ScharrInterleavedTest {
 
     // Output has less rows and columns as borders are not handled in the same
     // way as in case of most of the other filter operations.
-    test::ArrayLayout output_layout{(layout.width - 2) * 2, layout.height - 2,
-                                    layout.padding, layout.channels * 2};
+    size_t src_width = layout.width / layout.channels;
+    test::ArrayLayout output_layout{(src_width - 2) * layout.channels * 2,
+                                    layout.height - 2, layout.padding,
+                                    layout.channels * 2};
 
     // Expected
     expected_ = test::Array2D<OutputType>{output_layout};
@@ -85,30 +87,39 @@ class ScharrInterleavedTest {
   }
 
   void calculate_expected() {
-    for (size_t row = 0; row < expected_.height(); ++row) {
-      for (size_t column = 0; column < expected_.width(); column += 2) {
-        IntermediateType horizontal_result =
-            calculate_expected_at(horizontal_mask_, input_, row, column / 2);
-        expected_.at(row, column)[0] =
-            static_cast<OutputType>(horizontal_result);
+    size_t src_channels = input_.channels();
+    size_t src_width = input_.width() / src_channels;
+    size_t dst_channels = src_channels * 2;
+    size_t dst_width = src_width - 2;
 
-        IntermediateType vertical_result =
-            calculate_expected_at(vertical_mask_, input_, row, column / 2);
-        expected_.at(row, column)[1] = static_cast<OutputType>(vertical_result);
+    for (size_t row = 0; row < expected_.height(); ++row) {
+      for (size_t column = 0; column < dst_width; ++column) {
+        size_t dst_base = column * dst_channels;
+        for (size_t channel = 0; channel < src_channels; ++channel) {
+          IntermediateType horizontal_result = calculate_expected_at(
+              horizontal_mask_, input_, row, column, channel);
+          expected_.at(row, dst_base + channel * 2)[0] =
+              static_cast<OutputType>(horizontal_result);
+
+          IntermediateType vertical_result = calculate_expected_at(
+              vertical_mask_, input_, row, column, channel);
+          expected_.at(row, dst_base + channel * 2 + 1)[0] =
+              static_cast<OutputType>(vertical_result);
+        }
       }
     }
   }
 
   IntermediateType calculate_expected_at(
       const test::Kernel<IntermediateType>& kernel,
-      const test::TwoDimensional<InputType>& source, size_t row,
-      size_t column) {
+      const test::TwoDimensional<InputType>& source, size_t row, size_t column,
+      size_t channel) {
     IntermediateType result{0};
     for (size_t height = 0; height < kernel.height(); ++height) {
       for (size_t width = 0; width < kernel.width(); ++width) {
         IntermediateType coefficient = kernel.at(height, width)[0];
-        InputType value =
-            source.at(row + height, column + width * source.channels())[0];
+        InputType value = source.at(
+            row + height, (column + width) * source.channels() + channel)[0];
         result = test::saturating_add(
             result, test::saturating_mul(coefficient,
                                          static_cast<IntermediateType>(value)));
@@ -173,7 +184,12 @@ TEST(ScharrInterleaved, ChannelNumber) {
   uint8_t src[1] = {};
   int16_t dst[1];
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_scharr_interleaved_s16_u8(src, sizeof(uint8_t), 1, 1, 2,
+            kleidicv_scharr_interleaved_s16_u8(
+                src, sizeof(uint8_t), 3, 3, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1,
+                dst, sizeof(int16_t)));
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_scharr_interleaved_s16_u8(src, sizeof(uint8_t), 3, 3, 0,
                                                dst, sizeof(int16_t)));
 }
 

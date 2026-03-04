@@ -24,7 +24,8 @@ namespace kleidicv {
 inline bool scharr_interleaved_is_implemented(size_t src_width,
                                               size_t src_height,
                                               size_t src_channels) {
-  return src_width > 2 && src_height > 2 && src_channels == 1;
+  return src_width > 2 && src_height > 2 && src_channels >= 1 &&
+         src_channels <= KLEIDICV_MAXIMUM_CHANNEL_COUNT;
 }
 
 namespace neon {
