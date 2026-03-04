@@ -310,6 +310,10 @@ TYPED_TEST(ResizeLinear, NotImplemented) {
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       kleidicv_resize_linear(src.data(), src_stride(32), 32, 2, dst.data(),
                              dst_stride(11), 11, 3, channels));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_resize_linear(src.data(), src_stride(35), 35, 2, dst.data(),
+                             dst_stride(11), 11, 3, channels));
 }
 
 TYPED_TEST(ResizeLinear, InvalidImageSize) {
@@ -348,7 +352,7 @@ TYPED_TEST(ResizeLinear, InvalidImageSize) {
 TYPED_TEST(ResizeLinear, ZeroImageSize) {
   using Elem = typename TypeParam::type;
   constexpr size_t channels = TypeParam::channels;
-  if constexpr (channels > 1 && !std::is_same_v<Elem, uint8_t>) {
+  if constexpr (channels == 1 || std::is_same_v<Elem, uint8_t>) {
     std::vector<Elem> src(channels);
     std::vector<Elem> dst(channels);
     EXPECT_EQ(KLEIDICV_OK,
@@ -588,27 +592,27 @@ TEST_P(ResizeLinearU8, LargeDimensionsGeneric3) {
   do_large_dimensions_test<uint8_t>(2097, 5, 807, 2, channels);
 }
 
-TEST(ResizeLinearU8_3ch, InverzScaleWorksWithoutExtraLane_r2) {
+TEST(ResizeLinearU8_3ch, InverseScaleWorksWithoutExtraLane_r2) {
   size_t src_span = (test::Options::vector_length() * 2) / 3;
   size_t dst_span = test::Options::vector_length() / 3;
-  float inverz_scale_limit =
+  float inverse_scale_limit =
       static_cast<float>(src_span - 1) / static_cast<float>(dst_span);
   size_t dst_width = 817;
-  // Due to rounding effective inverz scale is smaller than the limit
+  // Due to rounding effective inverse scale is smaller than the limit
   size_t src_width = static_cast<size_t>(
-      std::floor(static_cast<float>(dst_width) * inverz_scale_limit));
+      std::floor(static_cast<float>(dst_width) * inverse_scale_limit));
   do_large_dimensions_test<uint8_t>(src_width, 2, dst_width, 1, 3);
 }
 
-TEST(ResizeLinearU8_3ch, InverzScaleWorksWithoutExtraLane_r3) {
+TEST(ResizeLinearU8_3ch, InverseScaleWorksWithoutExtraLane_r3) {
   size_t src_span = ((test::Options::vector_length() * 3) / 3) - 1;
   size_t dst_span = test::Options::vector_length() / 3;
-  float inverz_scale_limit =
+  float inverse_scale_limit =
       static_cast<float>(src_span - 1) / static_cast<float>(dst_span);
   size_t dst_width = 817;
-  // Due to rounding effective inverz scale is smaller than the limit
+  // Due to rounding effective inverse scale is smaller than the limit
   size_t src_width = static_cast<size_t>(
-      std::floor(static_cast<float>(dst_width) * inverz_scale_limit));
+      std::floor(static_cast<float>(dst_width) * inverse_scale_limit));
   do_large_dimensions_test<uint8_t>(src_width, 2, dst_width, 1, 3);
 }
 

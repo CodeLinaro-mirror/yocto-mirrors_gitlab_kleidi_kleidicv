@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -521,9 +522,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
       return (src_idx + (kStep * kRatio)) > (Base::src_width_ * kChannels);
     };
 
-    if (num_of_full_vector_constants == 0) {
-      return 0;
-    }
+    assert(num_of_full_vector_constants != 0);
 
     size_t candidate_last_vector_wout_pullback =
         num_of_full_vector_constants - 1;
@@ -535,11 +534,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
       candidate_last_vector_wout_pullback--;
     } while (candidate_last_vector_wout_pullback > 0);
 
-    if (candidate_last_vector_wout_pullback == 0) {
-      if (vector_needs_pullback(candidate_last_vector_wout_pullback * kStep)) {
-        return 0;
-      }
-    }
+    assert(candidate_last_vector_wout_pullback != 0);
 
     return candidate_last_vector_wout_pullback + 1;
   }
@@ -799,17 +794,7 @@ class ResizeGenericU8Operation final {
       b = vqtbl2q_u8(topsrc, vsx1_idx);
       c = vqtbl2q_u8(bottomsrc, vsx0_idx);
       d = vqtbl2q_u8(bottomsrc, vsx1_idx);
-      if constexpr (kSetRightmostLanes) {
-        // table lookup would overindex topsrc and bottomsrc
-        ptrdiff_t last_but_one_right_elem_idx =
-            src_element_index + constants.idx[14] + kChannels;
-        ptrdiff_t last_right_elem_idx =
-            src_element_index + constants.idx[15] + kChannels;
-        b = vsetq_lane_u8(src_top[last_but_one_right_elem_idx], b, 14);
-        b = vsetq_lane_u8(src_top[last_right_elem_idx], b, 15);
-        d = vsetq_lane_u8(src_bottom[last_but_one_right_elem_idx], d, 14);
-        d = vsetq_lane_u8(src_bottom[last_right_elem_idx], d, 15);
-      }
+      static_assert(!kSetRightmostLanes);
     } else if constexpr (kRatio == 3) {
       a = vqtbl3q_u8(topsrc, vsx0_idx);
       b = vqtbl3q_u8(topsrc, vsx1_idx);

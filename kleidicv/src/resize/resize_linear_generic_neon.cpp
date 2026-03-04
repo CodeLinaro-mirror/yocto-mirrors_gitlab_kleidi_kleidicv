@@ -35,11 +35,10 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8(
       *std::get_if<resize_linear_generic_u8::RowInterpolationConstants>(
           &row_interpolation_constants_variant);
 
-  if constexpr (kChannels == 3) {
-    double inverz_scale =
+  if constexpr (kChannels == 3 && kRatio == 3) {
+    double inverse_scale =
         static_cast<double>(src_width) / static_cast<double>(dst_width);
-    if ((kRatio == 2 && inverz_scale >= 1.8) ||
-        (kRatio == 3 && inverz_scale >= 2.8)) {
+    if (inverse_scale >= 2.8) {
       // Rightmost lanes of b and d vectors need to be set by scalar code, as
       // the table lookup overindexes the src registers
       resize_linear_generic_u8::ResizeGenericU8Operation<kRatio, kChannels,
