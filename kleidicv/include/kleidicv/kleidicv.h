@@ -1347,8 +1347,8 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.
 ///
-/// Applies 5x5 binomial Gaussian blur to the source image and downsaples the
-/// result by keeping odd rows and columns only.
+/// Applies 5x5 binomial Gaussian blur to the source image and downsamples the
+/// result by keeping even rows and columns only.
 /// This function can be used to generate an Image Pyramid.
 /// In-place operation is not supported.
 ///
@@ -1384,7 +1384,8 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
 ///                      a multiple of `sizeof(type)` and no less than
 ///                      `dst_width * sizeof(type) * channels`, except for
 ///                      single-row images.
-/// @param channels      Number of channels in the data. Must be equal to 1.
+/// @param channels      Number of channels in the data. Must be in the range
+///                      [1, @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT].
 /// @param border_type   Way of handling the border.
 ///
 kleidicv_error_t kleidicv_blur_and_downsample_u8(
