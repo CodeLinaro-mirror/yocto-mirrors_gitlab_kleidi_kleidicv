@@ -334,7 +334,7 @@ Notes on parameters:
 Blurs and downsamples an image.
 
 Notes on parameters:
-* `src.type()` - only supports `CV_8UC1`.
+* `src.type()` - only supports `CV_8U`.
 * `src.cols`,`src.rows` - image width and height must be greater than or equal to `kernel size (== 5) - 1`
 * if `dstsize` is specified it must be equal to `Size((src.cols + 1) / 2, (src.rows + 1) / 2)`
 

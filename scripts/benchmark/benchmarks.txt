@@ -174,7 +174,10 @@ BlurAndDownsample_8UC2: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC2)'
 BlurAndDownsample_8UC3: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC3)'
 BlurAndDownsample_8UC4: opencv_perf_imgproc '*pyrDown/*' '($PIXEL_FORMAT, 8UC4)'
 
-ScharrInterleaved: opencv_perf_video '*calcScharrDeriv/*' '$PIXEL_FORMAT'
+ScharrInterleaved_8UC1: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 8UC1)'
+ScharrInterleaved_8UC2: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 8UC2)'
+ScharrInterleaved_8UC3: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 8UC3)'
+ScharrInterleaved_8UC4: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 8UC4)'
 
 Rotate_90_CLOCKWISE_8UC1:  opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 8UC1)'
 Rotate_90_CLOCKWISE_16SC1: opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 16SC1)'

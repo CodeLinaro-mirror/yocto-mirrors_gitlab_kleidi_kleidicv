@@ -1001,15 +1001,20 @@ BENCHMARK(blur_and_downsample_u8<2>);
 BENCHMARK(blur_and_downsample_u8<3>);
 BENCHMARK(blur_and_downsample_u8<4>);
 
+template <size_t Channels>
 static void scharr_interleaved_s16_u8(benchmark::State& state) {
   bench_functor(state, []() {
     (void)kleidicv_scharr_interleaved_s16_u8(
-        get_source_buffer_a<uint8_t>(), image_width * sizeof(uint8_t),
-        image_width, image_height, 1, get_destination_buffer_a<int16_t>(),
-        (image_width - 2) * sizeof(int16_t));
+        get_source_buffer_a<uint8_t, Channels>(),
+        image_width * sizeof(uint8_t) * Channels, image_width, image_height,
+        Channels, get_destination_buffer_a<int16_t, Channels * 2>(),
+        (image_width - 2) * sizeof(int16_t) * Channels * 2);
   });
 }
-BENCHMARK(scharr_interleaved_s16_u8);
+BENCHMARK(scharr_interleaved_s16_u8<1>);
+BENCHMARK(scharr_interleaved_s16_u8<2>);
+BENCHMARK(scharr_interleaved_s16_u8<3>);
+BENCHMARK(scharr_interleaved_s16_u8<4>);
 
 template <class ScalarType>
 static const ScalarType* get_random_mapxy() {
