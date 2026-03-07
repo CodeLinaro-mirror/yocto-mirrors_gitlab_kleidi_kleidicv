@@ -100,6 +100,13 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Median Blur (3x3, 5x5, 7x7)                       |  x  |  x  |  x  |  x  |  x  |  x  |  x  |
 | Median Blur (generic imp, max size 255x255)       |     |  x  |     |     |     |     |     |
 
+## Optical flow helpers
+|                                  | u8 input |
+|----------------------------------|----------|
+| LK optical-flow pyramid builder  |    x     |
+
+> ℹ️ **LK optical-flow pyramid builder supports `uint8_t` input images with 1 to 4 channels.**
+
 ## Resize with linear interpolation
 |                                        | u8  | f32 |
 |----------------------------------------|-----|-----|

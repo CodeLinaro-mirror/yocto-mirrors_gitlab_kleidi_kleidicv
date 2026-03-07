@@ -21,6 +21,7 @@ This changelog aims to follow the guiding principles of
 - Gaussian Blur 9x9 kernel support for NEON and SVE/SME fixed paths.
 - Scharr interleaved multi-channel support.
 - Blur and downsample multi-channel support.
+- LK optical-flow pyramid builder multi-channel support.
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.
