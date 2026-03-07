@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <algorithm>
 #include <vector>
 
 #include "opencv2/video/tracking.hpp"
@@ -9,6 +10,7 @@
 
 #if MANAGER
 #include <cstddef>
+#include <cstdint>
 
 extern "C" {
 
@@ -18,11 +20,25 @@ typedef enum {
 
 typedef struct kleidicv_optical_flow_pyr_lk_pyramid_t_
     kleidicv_optical_flow_pyr_lk_pyramid_t;
+typedef kleidicv_error_t (*kleidicv_thread_callback)(unsigned begin,
+                                                     unsigned end, void* data);
+typedef kleidicv_error_t (*kleidicv_thread_parallel)(
+    kleidicv_thread_callback callback, void* callback_data, void* parallel_data,
+    unsigned task_count);
+typedef struct {
+  kleidicv_thread_parallel parallel;
+  void* parallel_data;
+} kleidicv_thread_multithreading;
 
 kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
     kleidicv_optical_flow_pyr_lk_pyramid_t** pyramid, const uint8_t* src,
     size_t src_stride, size_t width, size_t height, size_t channels,
     size_t level_count, size_t window_width, size_t window_height);
+kleidicv_error_t kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
+    kleidicv_optical_flow_pyr_lk_pyramid_t** pyramid, const uint8_t* src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height,
+    kleidicv_thread_multithreading mt);
 
 kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_release(
     kleidicv_optical_flow_pyr_lk_pyramid_t* pyramid);
@@ -43,12 +59,32 @@ kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_get_scharr_level(
 
 // Conformity tests in this file validate the build APIs:
 // - kleidicv_build_optical_flow_pyr_lk_pyramid
+// - kleidicv_thread_build_optical_flow_pyr_lk_pyramid
 cv::Mat exec_build_optical_flow_pyr_lk_pyramid(cv::Mat& input) {
   // Subordinate is unused by this test runner. Return deterministic output.
   return input.clone();
 }
 
 #if MANAGER
+static kleidicv_error_t test_thread_parallel(kleidicv_thread_callback callback,
+                                             void* callback_data,
+                                             void* parallel_data,
+                                             unsigned task_count) {
+  const auto thread_count = std::max<unsigned>(
+      1U, static_cast<unsigned>(reinterpret_cast<uintptr_t>(parallel_data)));
+  const auto task_batch_size =
+      std::max<unsigned>(1U, (task_count + thread_count - 1U) / thread_count);
+
+  for (unsigned begin = 0; begin < task_count; begin += task_batch_size) {
+    const unsigned end = std::min(task_count, begin + task_batch_size);
+    kleidicv_error_t err = callback(begin, end, callback_data);
+    if (err != KLEIDICV_OK) {
+      return err;
+    }
+  }
+  return KLEIDICV_OK;
+}
+
 static bool compare_pyramid_against_expected(
     kleidicv_optical_flow_pyr_lk_pyramid_t* actual_pyramid,
     const std::vector<cv::Mat>& expected_pyramid, const cv::Mat& input,
@@ -152,6 +188,8 @@ static bool run_build_optical_flow_case(
     RecreatedMessageQueue& /* request_queue */,
     RecreatedMessageQueue& /* reply_queue */) {
   cv::RNG rng(0);
+  const kleidicv_thread_multithreading mt{
+      test_thread_parallel, reinterpret_cast<void*>(uintptr_t{4})};
 
   for (size_t height = 16; height <= 64; height += 8) {
     for (size_t width = 16; width <= 64; width += 8) {
@@ -195,6 +233,39 @@ static bool run_build_optical_flow_case(
                   << "x" << win_size.height << ", image=" << width << "x"
                   << height << ", channels=" << channels
                   << ", max_level=" << max_level << ")" << std::endl;
+        return true;
+      }
+
+      kleidicv_optical_flow_pyr_lk_pyramid_t* threaded_pyramid = nullptr;
+      err = kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
+          &threaded_pyramid, input.ptr<uint8_t>(0), input.step,
+          static_cast<size_t>(input.cols), static_cast<size_t>(input.rows),
+          channels, max_level + 1, static_cast<size_t>(win_size.width),
+          static_cast<size_t>(win_size.height), mt);
+      if (err != KLEIDICV_OK) {
+        std::cout << "kleidicv_thread_build_optical_flow_pyr_lk_pyramid "
+                     "failed: "
+                  << err << " (window=" << win_size.width << "x"
+                  << win_size.height << ", image=" << width << "x" << height
+                  << ", channels=" << channels << ", max_level=" << max_level
+                  << ")" << std::endl;
+        return true;
+      }
+
+      if (compare_pyramid_against_expected(threaded_pyramid, expected_pyramid,
+                                           input, width, height, channels,
+                                           win_size, max_level)) {
+        (void)kleidicv_optical_flow_pyr_lk_pyramid_release(threaded_pyramid);
+        return true;
+      }
+
+      err = kleidicv_optical_flow_pyr_lk_pyramid_release(threaded_pyramid);
+      if (err != KLEIDICV_OK) {
+        std::cout << "threaded release failed: " << err
+                  << " (window=" << win_size.width << "x" << win_size.height
+                  << ", image=" << width << "x" << height
+                  << ", channels=" << channels << ", max_level=" << max_level
+                  << ")" << std::endl;
         return true;
       }
     }

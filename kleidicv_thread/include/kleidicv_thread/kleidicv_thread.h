@@ -397,6 +397,16 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
 
 /// Internal - not part of the public API and its direct use is not supported.
 ///
+/// Multithreaded implementation of kleidicv_build_optical_flow_pyr_lk_pyramid
+/// - see the documentation of that function for more details.
+kleidicv_error_t kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
+    kleidicv_optical_flow_pyr_lk_pyramid_t **pyramid, const uint8_t *src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height,
+    kleidicv_thread_multithreading mt);
+
+/// Internal - not part of the public API and its direct use is not supported.
+///
 /// Multithreaded implementation of kleidicv_resize_to_quarter_u8 - see the
 /// documentation of that function for more details.
 kleidicv_error_t kleidicv_thread_resize_to_quarter_u8(

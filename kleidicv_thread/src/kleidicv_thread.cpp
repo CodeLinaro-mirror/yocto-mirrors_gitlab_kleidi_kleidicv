@@ -11,6 +11,7 @@
 #include <limits>
 #include <vector>
 
+#include "kleidicv/analysis/build_optical_flow_pyr_lk_pyramid.h"
 #include "kleidicv/arithmetics/rotate.h"
 #include "kleidicv/arithmetics/scale.h"
 #include "kleidicv/conversions/rgb_to_yuv.h"
@@ -717,6 +718,63 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
 
   // height is decremented by 2 as the result has less rows.
   return parallel_batches(callback, mt, src_height - 2);
+}
+
+kleidicv_error_t kleidicv_thread_build_optical_flow_pyr_lk_pyramid(
+    kleidicv_optical_flow_pyr_lk_pyramid_t **pyramid, const uint8_t *src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height,
+    kleidicv_thread_multithreading mt) {
+  CHECK_POINTERS(pyramid);
+  *pyramid = nullptr;
+
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
+  size_t actual_level_count = 0;
+  using KLEIDICV_TARGET_NAMESPACE::OpticalFlowLKPyramid;
+  using KLEIDICV_TARGET_NAMESPACE::
+      validate_and_compute_build_optical_flow_pyr_lk_levels;
+  if (kleidicv_error_t err =
+          validate_and_compute_build_optical_flow_pyr_lk_levels(
+              src_stride, width, height, channels, level_count, window_width,
+              window_height, &actual_level_count)) {
+    return err;
+  }
+
+  OpticalFlowLKPyramid::Pointer pyramid_storage;
+  if (kleidicv_error_t err = OpticalFlowLKPyramid::allocate(
+          pyramid_storage, actual_level_count, width, height, channels,
+          window_width, window_height)) {
+    return err;
+  }
+
+  auto blur_and_downsample_fn =
+      [&](const uint8_t *blur_src, size_t blur_src_stride, size_t blur_width,
+          size_t blur_height, uint8_t *blur_dst, size_t blur_dst_stride,
+          size_t blur_channels, kleidicv_border_type_t border_type) {
+        return kleidicv_thread_blur_and_downsample_u8(
+            blur_src, blur_src_stride, blur_width, blur_height, blur_dst,
+            blur_dst_stride, blur_channels, border_type, mt);
+      };
+
+  auto scharr_fn = [&](const uint8_t *scharr_src, size_t scharr_src_stride,
+                       size_t scharr_width, size_t scharr_height,
+                       size_t scharr_channels, int16_t *scharr_dst,
+                       size_t scharr_dst_stride) {
+    return kleidicv_thread_scharr_interleaved_s16_u8(
+        scharr_src, scharr_src_stride, scharr_width, scharr_height,
+        scharr_channels, scharr_dst, scharr_dst_stride, mt);
+  };
+
+  if (kleidicv_error_t err = pyramid_storage->create(
+          src, src_stride, blur_and_downsample_fn, scharr_fn)) {
+    return err;
+  }
+
+  *pyramid = reinterpret_cast<kleidicv_optical_flow_pyr_lk_pyramid_t *>(
+      pyramid_storage.release());
+  return KLEIDICV_OK;
 }
 
 kleidicv_error_t kleidicv_thread_resize_linear_u8(
