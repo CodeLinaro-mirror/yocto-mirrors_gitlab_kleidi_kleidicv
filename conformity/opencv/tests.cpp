@@ -45,6 +45,7 @@ std::vector<test> all_tests = merge_tests({
     median_blur_tests_get,
     rgb2yuv420_tests_get,
     rgb_to_yuv_422_tests_get,
+    build_optical_flow_pyr_lk_pyramid_tests_get,
 });
 
 #if MANAGER
