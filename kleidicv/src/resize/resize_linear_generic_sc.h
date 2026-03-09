@@ -631,7 +631,7 @@ class ResizeGenericU8Operation final {
 
     // similar to above, but only a single vector path and with predicates
     while (pcit.index_ < precalc_.n_iterations()) {
-      svbool_t pgdst = svwhilelt_b8(0L, dst_end - dst);
+      svbool_t pgdst = svwhilelt_b8_s64(0L, dst_end - dst);
       svuint8_t res;
       if constexpr (kRatio == 2) {
         res = remaining_path_r2(pcit, yfrac, src_top, src_bottom);

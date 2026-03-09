@@ -471,7 +471,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     // Calculate constants for half vectors
 
     // Maximum source coordinate for half vector path
-    uint64_t half_vector_path_src_read_size =
+    size_t half_vector_path_src_read_size =
         kChannels == 3 ? sizeof(uint8x16x2_t)
                        : (sizeof(uint8x16_t) * (kRatio - 1));
     const uint64_t max_src_base_index = std::max(

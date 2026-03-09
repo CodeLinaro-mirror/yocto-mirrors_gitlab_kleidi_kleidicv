@@ -59,7 +59,6 @@ static inline bool is_sme_supported() {
   return getauxval(AT_HWCAP2) & (1UL << 23);
 }
 
-#if KLEIDICV_ENABLE_SVE2
 static inline bool is_sme2_supported() {
   return getauxval(AT_HWCAP2) & (1UL << 37);
 }
@@ -78,7 +77,7 @@ static inline bool is_sme2_supported() {
   }
 #else
 #define KLEIDICV_SVE2_RESOLVE(x)
-#define KLEIDICV_SVE2_RESOLVE_VECLEN(x, minlen, maxlen)
+#define KLEIDICV_SVE2_RESOLVE_VECLEN(x, sve_len)
 #endif  // KLEIDICV_ENABLE_SVE2
 
 #if KLEIDICV_ENABLE_SME
@@ -134,8 +133,6 @@ static inline bool is_sme2_supported() {
   extern "C" {                                                             \
   decltype(neon_impl) api_name = api_name##_resolver();                    \
   }
-
-#endif  // __APPLE__
 
 #else  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME || KLEIDICV_HAVE_SME2
 
