@@ -177,7 +177,8 @@ class MorphologyWorkspace final {
         data_{allocation, &std::free} {}
 
  public:
-  // This function is too complex, but disable the warning for now.
+  // Function complexity is just above the threshold, but this is readable this
+  // way, ignore the warning.
   // NOLINTBEGIN(readability-function-cognitive-complexity)
   template <typename O>
   void process(Rows<const typename O::SourceType> src_rows,

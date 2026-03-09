@@ -40,6 +40,12 @@
 /// In case of AArch64 it is limited to (almost) 256 terapixels. This way 16 bit
 /// is left for any arithmetic operations around image size or width or height.
 #define KLEIDICV_MAX_IMAGE_PIXELS ((1ULL << 48) - 1)
+
+/// Maximum LK optical-flow window dimension the library accepts.
+///
+/// The limit keeps internal stride/size arithmetic within range for supported
+/// image/channel limits on AArch64.
+#define KLEIDICV_MAX_OPTICAL_FLOW_PYR_LK_WINDOW_SIZE (2047)
 #endif
 
 /// Size in bytes of the largest possible element type
@@ -2071,6 +2077,90 @@ KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s8, int8_t);
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s32, int32_t);
 /// @copydoc kleidicv_median_blur_u8
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u32, uint32_t);
+
+/// Tracks feature points between two frames using a single-level
+/// Lucas-Kanade optical flow solver.
+///
+/// Gradients for the previous frame must be precomputed with a Scharr operator
+/// and stored in `prev_deriv_data` as interleaved x/y derivatives (int16_t) for
+/// each channel. `next_points` is both the initial guess and the output for the
+/// tracked positions; points that go out of bounds or fail the texture check
+/// are marked in `status`. If `get_min_eigen_vals` is true, `err` stores the
+/// minimum eigenvalue per point; otherwise it stores the photometric error.
+/// When `status` is provided, photometric error is only written for points with
+/// non-zero status.
+///
+/// @param prev_data                 Pointer to the previous frame data. Must be
+///                                  non-null.
+/// @param prev_data_stride          Distance in bytes from the start of one row
+///                                  to the start of the next row in
+///                                  `prev_data`. Must be no less than
+///                                  `width * channels * sizeof(uint8_t)`.
+/// @param prev_deriv_data           Pointer to the precomputed Scharr
+///                                  derivatives of the previous frame.
+///                                  Derivatives are interleaved as Ix/Iy. Must
+///                                  be non-null.
+/// @param prev_deriv_stride         Distance in bytes from the start of one
+///                                  derivative row to the start of the next
+///                                  derivative row. Must be a multiple of
+///                                  `sizeof(int16_t)` and no less than
+///                                  `2 * width * channels * sizeof(int16_t)`.
+/// @param next_data                 Pointer to the next frame data. Must be
+///                                  non-null.
+/// @param next_data_stride          Distance in bytes from the start of one row
+///                                  to the start of the next row in
+///                                  `next_data`. Must be no less than
+///                                  `width * channels * sizeof(uint8_t)`.
+/// @param width                     Number of elements in a row.
+/// @param height                    Number of rows in the data.
+/// @param channels                  Number of channels. Must be greater than 0
+///                                  and no more than
+///                                  @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
+/// @param prev_points               Pointer to `2 * point_count` floats with
+///                                  x/y coordinates in the previous frame. Must
+///                                  be non-null when `point_count > 0`.
+/// @param next_points               Pointer to `2 * point_count` floats with
+///                                  x/y coordinates in the next frame. Serves
+///                                  as both the input guess and the output.
+///                                  Must be non-null when `point_count > 0`.
+/// @param point_count               Number of points to track.
+/// @param status                    Optional pointer to `point_count` bytes.
+///                                  Each element is set to non-zero on success
+///                                  and zero on failure.
+/// @param err                       Optional pointer to `point_count` floats.
+///                                  If `get_min_eigen_vals` is true, write
+///                                  minimum eigenvalues into `err`; otherwise
+///                                  write photometric errors. If `status` is
+///                                  provided, photometric error is only written
+///                                  for points with non-zero status.
+/// @param window_width              Width of the integration window. Must be
+///                                  no more than
+///                                  @ref
+///                                  KLEIDICV_MAX_OPTICAL_FLOW_PYR_LK_WINDOW_SIZE.
+/// @param window_height             Height of the integration window. Must be
+///                                  no more than
+///                                  @ref
+///                                  KLEIDICV_MAX_OPTICAL_FLOW_PYR_LK_WINDOW_SIZE.
+/// @param termination_count         Maximum number of Newton iterations per
+///                                  point.
+/// @param termination_epsilon       Early stopping threshold on the squared
+///                                  update step.
+/// @param get_min_eigen_vals        Whether to write minimum eigenvalues (true)
+///                                  or photometric errors (false) into `err`.
+/// @param min_eigen_vals_threshold  Points whose minimum eigenvalue is strictly
+///                                  less than this threshold are rejected and
+///                                  marked as failed in `status`.
+KLEIDICV_API_DECLARATION(kleidicv_standalone_lucas_kanade_alg_u8,
+                         const uint8_t *prev_data, size_t prev_data_stride,
+                         const int16_t *prev_deriv_data,
+                         size_t prev_deriv_stride, const uint8_t *next_data,
+                         size_t next_data_stride, int width, int height,
+                         int channels, const float *prev_points,
+                         float *next_points, size_t point_count,
+                         uint8_t *status, float *err, int window_width,
+                         int window_height, int termination_count,
+                         double termination_epsilon, bool get_min_eigen_vals,
+                         float min_eigen_vals_threshold);
 
 #ifdef __cplusplus
 }  // extern "C"
