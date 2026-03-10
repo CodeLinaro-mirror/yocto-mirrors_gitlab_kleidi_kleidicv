@@ -294,26 +294,29 @@ TYPED_TEST(ResizeLinear, NotImplemented) {
             kleidicv_resize_linear(src.data(), src_stride(1), 1, 1, dst.data(),
                                    dst_stride(4), 4, 8, channels));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_resize_linear(src.data(), src_stride(16), 16, 2,
-                                   dst.data(), dst_stride(7), 7, 1, channels));
+            kleidicv_resize_linear(src.data(), src_stride(16), 16, 4,
+                                   dst.data(), dst_stride(7 / channels),
+                                   7 / channels, 3, channels));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_resize_linear(src.data(), src_stride(14), 14, 2,
-                                   dst.data(), dst_stride(8), 8, 1, channels));
+            kleidicv_resize_linear(src.data(), src_stride(15 / channels),
+                                   15 / channels, 4, dst.data(),
+                                   dst_stride(111 / channels), 11 / channels, 3,
+                                   channels));
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_resize_linear(src.data(), src_stride(23), 23, 2,
-                                   dst.data(), dst_stride(8), 8, 1, channels));
+            kleidicv_resize_linear(src.data(), src_stride(31 / channels),
+                                   31 / channels, 4, dst.data(),
+                                   dst_stride(11 / channels), 11 / channels, 3,
+                                   channels));
+  // Same dst height as src height
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       kleidicv_resize_linear(src.data(), src_stride(31), 31, 1, dst.data(),
                              dst_stride(11), 11, 1, channels));
+  // Too big ratio
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      kleidicv_resize_linear(src.data(), src_stride(32), 32, 2, dst.data(),
-                             dst_stride(11), 11, 3, channels));
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      kleidicv_resize_linear(src.data(), src_stride(35), 35, 2, dst.data(),
-                             dst_stride(11), 11, 3, channels));
+      kleidicv_resize_linear(src.data(), src_stride(35), 35, 3, dst.data(),
+                             dst_stride(11), 11, 2, channels));
 }
 
 TYPED_TEST(ResizeLinear, InvalidImageSize) {
@@ -626,6 +629,26 @@ TEST_P(ResizeLinearU8, LargeDimensionsToOneThird) {
   do_large_dimensions_test<uint8_t>(2688, 7, 904, 2, channels);
 }
 
+TEST_P(ResizeLinearU8, LargeDimensionsGenericTiny2) {
+  size_t channels = GetParam();
+  size_t src_width{}, dst_width{};
+  if (channels == 3) {
+    src_width = 33 / 3;
+    dst_width = 18 / 3;
+  } else {
+    src_width = (16 + channels - 1) / channels;
+    dst_width = (8 + channels - 1) / channels;
+  }
+  do_large_dimensions_test<uint8_t>(src_width, 4, dst_width, 3, channels);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsGenericTiny3) {
+  size_t channels = GetParam();
+  size_t src_width = (32 + channels - 1) / channels;
+  size_t dst_width = (12 + channels - 1) / channels;
+  do_large_dimensions_test<uint8_t>(src_width, 3, dst_width, 2, channels);
+}
+
 TEST_P(ResizeLinearU8, LargeDimensionsGenericSmaller2) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t>(66, 19, 37, 13, channels);
@@ -692,12 +715,12 @@ TEST_P(ResizeLinearU8, RecalibrateMechanism3) {
   do_large_dimensions_test<uint8_t>(867500, 2, 321711, 1, channels);
 }
 
-TEST_P(ResizeLinearU8, SmallSourceWidthForVecotrPath2x_r2) {
+TEST_P(ResizeLinearU8, SmallSourceWidthForVectorPath2x_r2) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t, false>(33, 2, 32, 1, channels);
 }
 
-TEST_P(ResizeLinearU8, SmallSourceWidthForVecotrPath2x_r3) {
+TEST_P(ResizeLinearU8, SmallSourceWidthForVectorPath2x_r3) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t, false>(66, 2, 32, 1, channels);
 }

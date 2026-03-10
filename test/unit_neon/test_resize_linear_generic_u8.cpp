@@ -194,6 +194,22 @@ TEST(GenericResize_u8, rounding_div) {
   EXPECT_EQ(1, kleidicv::neon::resize_linear_generic_u8::rounding_div(4, 5));
 }
 
+TEST(GenericResize_u8_Generator, 1channel_r2_short) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<1, 29, 15>();
+}
+
+TEST(GenericResize_u8_Generator, 1channel_r2_long) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<1, 33, 17>();
+}
+
+TEST(GenericResize_u8_Generator, 1channel_r3_short) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<1, 47, 15>();
+}
+
+TEST(GenericResize_u8_Generator, 1channel_r3_long) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<1, 49, 17>();
+}
+
 TEST(GenericResize_u8_Generator, 2channels_two_x_only_no_pullback) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<2, 63, 32>();
 }
@@ -210,14 +226,26 @@ TEST(GenericResize_u8_Generator, 2channels_long) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<2, 149, 101>();
 }
 
+TEST(GenericResize_u8_Generator, 2channels_r2_short) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 13, 7>();
+}
+
+TEST(GenericResize_u8_Generator, 2channels_r3_short) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 17, 7>();
+}
+
 TEST(GenericResize_u8_Generator, 3channels_half_only_with_pullback) {
-  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 11, 5>();
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 9, 5>();
 }
 
-TEST(GenericResize_u8_Generator, 3channels_short) {
-  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 14, 11>();
-}
-
-TEST(GenericResize_u8_Generator, 3channels_long) {
+TEST(GenericResize_u8_Generator, 3channels_r2_long) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<3, 149, 101>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r3_short) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 8, 3>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r3_long) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 17, 6>();
 }

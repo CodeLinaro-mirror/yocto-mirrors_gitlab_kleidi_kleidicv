@@ -88,7 +88,10 @@ class RowInterpolationConstants {
         return KLEIDICV_ERROR_ALLOCATION;
       }
 
+      // Gcov incorrectly thinks this line has branches
+      // GCOVR_EXCL_START
       return RowInterpolationConstants{num_of_vector_paths, allocation};
+      // GCOVR_EXCL_STOP
     }
     return KLEIDICV_OK;
   }
@@ -136,6 +139,8 @@ class RowInterpolationConstantsGeneratorBase {
                        ? ((dst_width_ * kChannels) / (2 * kStep))
                        : 0;
 
+    // Branch calculation is wrong here, skip that
+    // GCOVR_EXCL_START
     size_t remaining_dx_after_2x_cycle =
         (dst_width_ * kChannels) - (two_x * 2 * kStep);
     size_t half = align_up(remaining_dx_after_2x_cycle, kHalfStep) / kHalfStep;
@@ -151,6 +156,7 @@ class RowInterpolationConstantsGeneratorBase {
   uint64_t to_src_x(uint64_t dx) const {
     return aligned_scale(dx, src_width_, dst_width_);
   }
+  // GCOVR_EXCL_STOP
 
   const size_t src_width_;
   const size_t dst_width_;
@@ -196,8 +202,7 @@ class RowInterpolationConstantsGenerator final
 
     // Maximum source coordinate for vector path 2x
     const uint64_t max_sx_2x =
-        std::max(Base::src_width_ * kChannels - (sizeof(uint8x16_t) * kRatio),
-                 0UL) /
+        (Base::src_width_ * kChannels - (sizeof(uint8x16_t) * kRatio)) /
         kChannels;
     // Difference in source x coordinate for one vector path
     const uint64_t sx_fixp_vector_step = rounding_div(
@@ -247,10 +252,7 @@ class RowInterpolationConstantsGenerator final
         rounding_div(Base::src_width_ << kFixpBits, Base::dst_width_);
     // Maximum source coordinate for half vector path
     const uint64_t max_sx_half =
-        std::max(Base::src_width_ * kChannels -
-
-                     (sizeof(uint8x16_t) * (kRatio - 1)),
-                 0UL) /
+        (Base::src_width_ * kChannels - (sizeof(uint8x16_t) * (kRatio - 1))) /
         kChannels;
     // Maximum destination coordinate for half vector path
     const uint64_t max_dx_half = Base::dst_width_ - (kHalfStep / kChannels);
@@ -282,6 +284,8 @@ class RowInterpolationConstantsGenerator final
   }
 
  private:
+  // Branch calculation is wrong here, skip that
+  // GCOVR_EXCL_START
   void calculate_indices_fractions_base_2x(
       FullVectorInterpolationConstants &constants, uint64_t sx_base,
       uint64_t sx_fixp) {
@@ -334,6 +338,7 @@ class RowInterpolationConstantsGenerator final
     constants.src_element_index = static_cast<ptrdiff_t>(sx_base * kChannels);
     constants.dst_element_index = static_cast<ptrdiff_t>(dx * kChannels);
   }
+  // GCOVR_EXCL_STOP
 
   const uint32x4_t vsx0_0_;
   const uint32x4_t vsx0_1_;
@@ -384,6 +389,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
         sx_fixp = Base::to_src_x(0);
         unsigned recalibrate_cnt = 0;
         for (size_t i = 0; i < vector_path_triplets_wout_pullback; ++i) {
+          // Branch calculation is wrong here, skip that
+          // GCOVR_EXCL_START
           const uint32x4x4_t vsx_r = gen_vsx_r();
           const uint8x16_t vsx_idx_diff_r = gen_vsx_idx_diff_r();
 
@@ -399,6 +406,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
           // Difference in source x coordinate for 6 destination pixels
           const uint64_t sx_fixp_six_dst_pixel = rounding_div(
               (Base::src_width_ * 6) << kFixpBits, Base::dst_width_);
+          // GCOVR_EXCL_STOP
 
           // Repeatedly adding sx_fixp_five_dst_pixel and sx_fixp_six_dst_pixel
           // is faster than scaling dx to sx, but it accumulates fixed-point
@@ -415,6 +423,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
             recalibrate_cnt++;
           }
 
+          // Branch calculation is wrong here, skip that
+          // GCOVR_EXCL_START
           unsigned in_pixel_index = 0;
           fill_full_constants_vectorially(
               row_interpolation_constants
@@ -438,6 +448,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
           sx_fixp += sx_fixp_six_dst_pixel;
           handled_full_vector_paths += 3;
           dst_element_index += kStep * 3;
+          // GCOVR_EXCL_STOP
         }
       }
 
@@ -475,8 +486,11 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     size_t half_vector_path_src_read_size =
         kChannels == 3 ? sizeof(uint8x16x2_t)
                        : (sizeof(uint8x16_t) * (kRatio - 1));
+    // Gcov incorrectly thinks this line has branches
+    // GCOVR_EXCL_START
     const uint64_t max_src_base_index = std::max(
         Base::src_width_ * kChannels - half_vector_path_src_read_size, 0UL);
+    // GCOVR_EXCL_STOP
     // Maximum destination coordinate for half vector path
     const uint64_t max_dst_index_half =
         (Base::dst_width_ * kChannels) - kHalfStep;
@@ -572,6 +586,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     return uint8x16_t{0, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2};
   }
 
+  // Branch calculation is wrong here, skip that
+  // GCOVR_EXCL_START
   void fill_full_constants_vectorially(
       FullVectorInterpolationConstants &constants, uint32x4x4_t vsx,
       uint8x16_t vsx_idx_diff, uint64_t sx_fixp, unsigned in_pixel_index) {
@@ -609,6 +625,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta_hi, Base::vsfrac_tbl_));
     VecTraits<uint16_t>::store(vsxfrac, constants.xfrac);
   }
+  // GCOVR_EXCL_STOP
 
   void fill_full_constants_scalarly(FullVectorInterpolationConstants &constants,
                                     unsigned in_pixel_index,
