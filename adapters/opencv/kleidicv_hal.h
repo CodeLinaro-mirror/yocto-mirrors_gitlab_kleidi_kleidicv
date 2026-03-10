@@ -157,6 +157,15 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
                 size_t dst_step, int dst_depth, int width, int height, int cn,
                 double lower_bound, double upper_bound);
 
+int standalone_lucas_kanade_alg_u8(
+    const uchar *prev_data, size_t prev_data_stride,
+    const int16_t *prev_deriv_data, size_t prev_deriv_stride,
+    const uchar *next_data, size_t next_data_stride, int width, int height,
+    int cn, const float *prev_points, float *next_points, size_t point_count,
+    uchar *status, float *err, const int win_width, const int win_height,
+    int termination_count, double termination_epsilon, bool get_min_eigen_vals,
+    float min_eigen_vals_threshold);
+
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
               int dst_width, int dst_height, int16_t *mapx, size_t mapx_step,
@@ -629,6 +638,27 @@ static inline int kleidicv_in_range_f32_with_fallback(
 #endif  // OPENCV_CORE_HAL_REPLACEMENT_HPP
 
 #ifdef OPENCV_VIDEO_HAL_REPLACEMENT_HPP
+
+#ifdef cv_hal_LKOpticalFlowLevel
+static inline int kleidicv_standalone_lucas_kanade_alg_u8_with_fallback(
+    const uchar *prev_data, size_t prev_data_stride,
+    const int16_t *prev_deriv_data, size_t prev_deriv_stride,
+    const uchar *next_data, size_t next_data_stride, int width, int height,
+    int cn, const float *prev_points, float *next_points, size_t point_count,
+    uchar *status, float *err, const int win_width, const int win_height,
+    int termination_count, double termination_epsilon, bool get_min_eigen_vals,
+    float min_eigen_vals_threshold) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(
+      standalone_lucas_kanade_alg_u8, cv_hal_LKOpticalFlowLevel, prev_data,
+      prev_data_stride, prev_deriv_data, prev_deriv_stride, next_data,
+      next_data_stride, width, height, cn, prev_points, next_points,
+      point_count, status, err, win_width, win_height, termination_count,
+      termination_epsilon, get_min_eigen_vals, min_eigen_vals_threshold);
+}
+#undef cv_hal_LKOpticalFlowLevel
+#define cv_hal_LKOpticalFlowLevel \
+  kleidicv_standalone_lucas_kanade_alg_u8_with_fallback
+#endif  // cv_hal_LKOpticalFlowLevel
 
 static inline int kleidicv_ScharrDeriv_with_fallback(const uchar *src_data,
                                                      size_t src_step,

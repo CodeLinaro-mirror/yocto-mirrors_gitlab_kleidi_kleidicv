@@ -1240,6 +1240,21 @@ int inRange_f32(const uchar *src_data, size_t src_step, uchar *dst_data,
                 static_cast<float>(upper_bound), mt));
 }
 
+int standalone_lucas_kanade_alg_u8(
+    const uchar *prev_data, size_t prev_data_stride,
+    const int16_t *prev_deriv_data, size_t prev_deriv_stride,
+    const uchar *next_data, size_t next_data_stride, int width, int height,
+    int cn, const float *prev_points, float *next_points, size_t point_count,
+    uchar *status, float *err, const int win_width, const int win_height,
+    int termination_count, double termination_epsilon, bool get_min_eigen_vals,
+    float min_eigen_vals_threshold) {
+  return convert_error(kleidicv_standalone_lucas_kanade_alg_u8(
+      prev_data, prev_data_stride, prev_deriv_data, prev_deriv_stride,
+      next_data, next_data_stride, width, height, cn, prev_points, next_points,
+      point_count, status, err, win_width, win_height, termination_count,
+      termination_epsilon, get_min_eigen_vals, min_eigen_vals_threshold));
+}
+
 int remap_s16(int src_type, const uchar *src_data, size_t src_step,
               int src_width, int src_height, uchar *dst_data, size_t dst_step,
               int dst_width, int dst_height, int16_t *mapx, size_t mapx_step,

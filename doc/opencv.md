@@ -338,6 +338,9 @@ Notes on parameters:
 * `src.cols`,`src.rows` - image width and height must be greater than or equal to `kernel size (== 5) - 1`
 * if `dstsize` is specified it must be equal to `Size((src.cols + 1) / 2, (src.rows + 1) / 2)`
 
+### [`cv::calcOpticalFlowPyrLK()`](https://docs.opencv.org/4.10.0/dc/d6b/group__video__track.html#ga473e4b886d0bcc6b65831eb88ed93323)
+Finds optical flow of points from one image to another.
+
 ### [`cv::buildOpticalFlowPyramid()`](https://docs.opencv.org/4.10.0/dc/d6b/group__video__track.html#ga86640c1c470f87b2660c096d2b22b2ce)
 Constructs an image pyramid which can be passed to `cv::calcOpticalFlowPyrLK`.
 
