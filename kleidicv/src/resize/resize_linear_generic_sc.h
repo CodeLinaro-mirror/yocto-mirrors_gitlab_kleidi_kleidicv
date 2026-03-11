@@ -64,7 +64,7 @@ struct PrecalcIterator {
   }
 };
 
-template <ptrdiff_t kRatio, ptrdiff_t kChannels>
+template <int kRatio, int kChannels>
 class PrecalcIndicesFractions final {
  public:
   PrecalcIndicesFractions(size_t src_width, size_t dst_width,
@@ -370,7 +370,7 @@ class PrecalcIndicesFractions final {
 // ratio: number of vectors to load and resize to 1 vector
 // - supported combinations of (ratio, channel):
 // (2, 1), (2, 2), (2, 3), (3, 1), (3, 2), (3, 3)
-template <ptrdiff_t kRatio, ptrdiff_t kChannels>
+template <int kRatio, int kChannels>
 class ResizeGenericU8Operation final {
  public:
   ResizeGenericU8Operation(const uint8_t *src, size_t src_stride,
@@ -661,7 +661,7 @@ class ResizeGenericU8Operation final {
 // ratio: number of vectors to load and resize to 1 vector
 // - supported combinations of (ratio, channel): (2, 1), (2, 2), (3, 1), (3,
 // 2)
-template <ptrdiff_t kRatio, ptrdiff_t kChannels>
+template <int kRatio, int kChannels>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end,

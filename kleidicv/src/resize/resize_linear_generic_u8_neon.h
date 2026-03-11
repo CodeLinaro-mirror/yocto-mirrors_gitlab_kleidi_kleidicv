@@ -120,7 +120,7 @@ class RowInterpolationConstants {
   const VectorPathNums num_of_vector_paths_;
 };
 
-template <ptrdiff_t kRatio, ptrdiff_t kChannels>
+template <int kRatio, int kChannels>
 class RowInterpolationConstantsGeneratorBase {
  protected:
   RowInterpolationConstantsGeneratorBase(size_t src_width, size_t dst_width)
@@ -157,7 +157,7 @@ class RowInterpolationConstantsGeneratorBase {
   const uint8x16_t vsfrac_tbl_;
 };
 
-template <ptrdiff_t kRatio, ptrdiff_t kChannels>
+template <int kRatio, int kChannels>
 class RowInterpolationConstantsGenerator final
     : RowInterpolationConstantsGeneratorBase<kRatio, kChannels> {
  public:
@@ -195,9 +195,9 @@ class RowInterpolationConstantsGenerator final
 
     // Maximum source coordinate for vector path 2x
     const uint64_t max_sx_2x =
-        std::max(Base::src_width_ * kChannels - (sizeof(uint8x16_t) * kRatio),
-                 0UL) /
+        (Base::src_width_ * kChannels - (sizeof(uint8x16_t) * kRatio)) /
         kChannels;
+
     // Difference in source x coordinate for one vector path
     const uint64_t sx_fixp_vector_step = rounding_div(
         (Base::src_width_ * kStep / kChannels) << kFixpBits, Base::dst_width_);
@@ -246,10 +246,7 @@ class RowInterpolationConstantsGenerator final
         rounding_div(Base::src_width_ << kFixpBits, Base::dst_width_);
     // Maximum source coordinate for half vector path
     const uint64_t max_sx_half =
-        std::max(Base::src_width_ * kChannels -
-
-                     (sizeof(uint8x16_t) * (kRatio - 1)),
-                 0UL) /
+        (Base::src_width_ * kChannels - (sizeof(uint8x16_t) * (kRatio - 1))) /
         kChannels;
     // Maximum destination coordinate for half vector path
     const uint64_t max_dx_half = Base::dst_width_ - (kHalfStep / kChannels);
@@ -340,7 +337,7 @@ class RowInterpolationConstantsGenerator final
   const uint32x4_t vsx0_3_;
 };
 
-template <ptrdiff_t kRatio>
+template <int kRatio>
 class RowInterpolationConstantsGenerator<kRatio, 3> final
     : RowInterpolationConstantsGeneratorBase<kRatio, 3> {
  public:
@@ -445,9 +442,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
             row_interpolation_constants
                 .full_vector_constants_array()[handled_full_vector_paths];
         // Maximum source coordinate for full vector path
-        const uint64_t max_src_base_index = std::max(
-            (Base::src_width_ * kChannels) - (sizeof(uint8x16_t) * kRatio),
-            0UL);
+        const uint64_t max_src_base_index = std::max<uint64_t>(
+            (Base::src_width_ * kChannels) - (sizeof(uint8x16_t) * kRatio), 0);
 
         uint64_t dx = dst_element_index / kChannels;
         unsigned in_pixel_index = dst_element_index % kChannels;
@@ -474,8 +470,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     size_t half_vector_path_src_read_size =
         kChannels == 3 ? sizeof(uint8x16x2_t)
                        : (sizeof(uint8x16_t) * (kRatio - 1));
-    const uint64_t max_src_base_index = std::max(
-        Base::src_width_ * kChannels - half_vector_path_src_read_size, 0UL);
+    const uint64_t max_src_base_index = std::max<uint64_t>(
+        Base::src_width_ * kChannels - half_vector_path_src_read_size, 0);
     // Maximum destination coordinate for half vector path
     const uint64_t max_dst_index_half =
         (Base::dst_width_ * kChannels) - kHalfStep;
@@ -680,8 +676,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
   const size_t sx_fixp_one_dst_pixel_;
 };
 
-template <ptrdiff_t kRatio, ptrdiff_t kChannels,
-          bool kSetRightmostLanes = false>
+template <int kRatio, int kChannels, bool kSetRightmostLanes = false>
 class ResizeGenericU8Operation final {
  public:
   ResizeGenericU8Operation(const uint8_t *src, size_t src_stride,

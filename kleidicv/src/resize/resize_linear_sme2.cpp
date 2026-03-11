@@ -26,7 +26,7 @@ kleidicv_resize_4x4_stripe_u8(const uint8_t *src, size_t src_stride,
                                    y_begin, y_end, dst, dst_stride);
 }
 
-template <ptrdiff_t kRatio, ptrdiff_t kChannels>
+template <int kRatio, int kChannels>
 KLEIDICV_LOCALLY_STREAMING kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
@@ -43,12 +43,12 @@ KLEIDICV_LOCALLY_STREAMING kleidicv_error_t kleidicv_resize_generic_stripe_u8(
       size_t src_height, size_t y_begin, size_t y_end, uint8_t *dst, \
       size_t dst_stride, size_t dst_width, size_t dst_height)
 
-KLEIDICV_INSTANTIATE_TEMPLATE(2L, 1L);
-KLEIDICV_INSTANTIATE_TEMPLATE(2L, 2L);
-KLEIDICV_INSTANTIATE_TEMPLATE(2L, 3L);
-KLEIDICV_INSTANTIATE_TEMPLATE(3L, 1L);
-KLEIDICV_INSTANTIATE_TEMPLATE(3L, 2L);
-KLEIDICV_INSTANTIATE_TEMPLATE(3L, 3L);
+KLEIDICV_INSTANTIATE_TEMPLATE(2, 1);
+KLEIDICV_INSTANTIATE_TEMPLATE(2, 2);
+KLEIDICV_INSTANTIATE_TEMPLATE(2, 3);
+KLEIDICV_INSTANTIATE_TEMPLATE(3, 1);
+KLEIDICV_INSTANTIATE_TEMPLATE(3, 2);
+KLEIDICV_INSTANTIATE_TEMPLATE(3, 3);
 
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
 kleidicv_resize_linear_stripe_f32(const float *src, size_t src_stride,
