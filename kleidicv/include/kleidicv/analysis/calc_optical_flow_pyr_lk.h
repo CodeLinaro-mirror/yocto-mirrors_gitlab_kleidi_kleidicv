@@ -24,6 +24,7 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 
 class OpticalFlowPyrLKCalc final {
  public:
+  template <bool kUseSME>
   static kleidicv_error_t calc_from_pyramid(
       const kleidicv_optical_flow_pyr_lk_pyramid_t* prev_pyramid,
       const kleidicv_optical_flow_pyr_lk_pyramid_t* next_pyramid,
@@ -68,7 +69,7 @@ class OpticalFlowPyrLKCalc final {
                            pyramid_pair.effective_max_level, level_i,
                            point_buffers.prev.get(), point_buffers.next.get());
 
-      if (kleidicv_error_t error_code = run_level_calc(
+      if (kleidicv_error_t error_code = run_level_calc<kUseSME>(
               pyramid_pair, level_i, point_count, status, err, context,
               point_buffers.prev.get(), point_buffers.next.get())) {
         return error_code;
@@ -79,6 +80,7 @@ class OpticalFlowPyrLKCalc final {
     return KLEIDICV_OK;
   }
 
+  template <bool kUseSME>
   static kleidicv_error_t calc_from_images(
       const uint8_t* prev_image, size_t prev_image_stride,
       const uint8_t* next_image, size_t next_image_stride, size_t width,
@@ -94,24 +96,40 @@ class OpticalFlowPyrLKCalc final {
     }
 
     kleidicv_optical_flow_pyr_lk_pyramid_t* prev_pyramid{};
-    kleidicv_error_t kle_err = kleidicv_build_optical_flow_pyr_lk_pyramid(
-        &prev_pyramid, prev_image, prev_image_stride, width, height, channels,
-        context.max_level + 1, context.window_width, context.window_height);
+    kleidicv_error_t kle_err{};
+    if constexpr (kUseSME) {
+      kle_err = kleidicv_build_optical_flow_pyr_lk_pyramid_sme(
+          &prev_pyramid, prev_image, prev_image_stride, width, height, channels,
+          context.max_level + 1, context.window_width, context.window_height);
+
+    } else {
+      kle_err = kleidicv_build_optical_flow_pyr_lk_pyramid(
+          &prev_pyramid, prev_image, prev_image_stride, width, height, channels,
+          context.max_level + 1, context.window_width, context.window_height);
+    }
     if (kle_err != KLEIDICV_OK) {
       return kle_err;
     }
 
     kleidicv_optical_flow_pyr_lk_pyramid_t* next_pyramid{};
-    kle_err = kleidicv_build_optical_flow_pyr_lk_pyramid(
-        &next_pyramid, next_image, next_image_stride, width, height, channels,
-        context.max_level + 1, context.window_width, context.window_height);
+    if constexpr (kUseSME) {
+      kle_err = kleidicv_build_optical_flow_pyr_lk_pyramid_sme(
+          &next_pyramid, next_image, next_image_stride, width, height, channels,
+          context.max_level + 1, context.window_width, context.window_height);
+
+    } else {
+      kle_err = kleidicv_build_optical_flow_pyr_lk_pyramid(
+          &next_pyramid, next_image, next_image_stride, width, height, channels,
+          context.max_level + 1, context.window_width, context.window_height);
+    }
     if (kle_err != KLEIDICV_OK) {
       (void)kleidicv_optical_flow_pyr_lk_pyramid_release(prev_pyramid);
       return kle_err;
     }
 
-    kle_err = calc_from_pyramid(prev_pyramid, next_pyramid, prev_points,
-                                next_points, point_count, status, err, context);
+    kle_err = calc_from_pyramid<kUseSME>(prev_pyramid, next_pyramid,
+                                         prev_points, next_points, point_count,
+                                         status, err, context);
 
     (void)kleidicv_optical_flow_pyr_lk_pyramid_release(prev_pyramid);
     (void)kleidicv_optical_flow_pyr_lk_pyramid_release(next_pyramid);
@@ -225,6 +243,7 @@ class OpticalFlowPyrLKCalc final {
     next_points_level[y_index] = prev_points_level[y_index];
   }
 
+  template <bool kUseSME>
   static kleidicv_error_t run_level_calc(const PyramidPair& pyramid_pair,
                                          int level_i, size_t point_count,
                                          uint8_t* status, float* err,
@@ -244,6 +263,22 @@ class OpticalFlowPyrLKCalc final {
         static_cast<double>(context.termination_epsilon) *
         static_cast<double>(context.termination_epsilon);
 
+    if constexpr (kUseSME) {
+      return kleidicv_standalone_lucas_kanade_alg_u8_sme(
+          prev_level.image_data, prev_level.image_stride,
+          prev_level.scharr_data, prev_level.scharr_stride,
+          next_level.image_data, next_level.image_stride,
+          static_cast<int>(prev_level.width),
+          static_cast<int>(prev_level.height),
+          static_cast<int>(pyramid_pair.channels), prev_points_level,
+          next_points_level, point_count, status_at_level, error_at_level,
+          static_cast<int>(context.window_width),
+          static_cast<int>(context.window_height),
+          static_cast<int>(context.termination_count),
+          squared_termination_epsilon,
+          (context.flags & KLEIDICV_GET_MIN_EIG) != 0,
+          context.min_eig_threshold);
+    }
     return kleidicv_standalone_lucas_kanade_alg_u8(
         prev_level.image_data, prev_level.image_stride, prev_level.scharr_data,
         prev_level.scharr_stride, next_level.image_data,

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -45,7 +45,7 @@ kleidicv_error_t min_max(const T *src, size_t src_stride, size_t width,
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_MINMAX_API(name, type)               \
-  KLEIDICV_MULTIVERSION_C_API(                               \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                      \
       name, &kleidicv::neon::min_max<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::min_max<type>), \
       &kleidicv::sme::min_max<type>,                         \
@@ -58,8 +58,8 @@ KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_s16, int16_t);
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_s32, int32_t);
 KLEIDICV_DEFINE_MINMAX_API(kleidicv_min_max_f32, float);
 
-#define KLEIDICV_DEFINE_MINMAXLOC_API(name, type)                       \
-  KLEIDICV_MULTIVERSION_C_API(name, &kleidicv::neon::min_max_loc<type>, \
-                              nullptr, nullptr, nullptr)
+#define KLEIDICV_DEFINE_MINMAXLOC_API(name, type) \
+  KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(        \
+      name, &kleidicv::neon::min_max_loc<type>, nullptr)
 
 KLEIDICV_DEFINE_MINMAXLOC_API(kleidicv_min_max_loc_u8, uint8_t);

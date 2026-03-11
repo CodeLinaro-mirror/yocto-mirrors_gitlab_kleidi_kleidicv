@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -7,7 +7,7 @@
 #include "kleidicv/kleidicv.h"
 
 #define KLEIDICV_DEFINE_C_API(name, partialname)           \
-  KLEIDICV_MULTIVERSION_C_API(                             \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                    \
       name, &kleidicv::neon::partialname,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname), \
       &kleidicv::sme::partialname, &kleidicv::sme2::partialname)

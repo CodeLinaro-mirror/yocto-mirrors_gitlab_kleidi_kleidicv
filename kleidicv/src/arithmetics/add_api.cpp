@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -45,10 +45,10 @@ kleidicv_error_t saturating_add(const T *src_a, size_t src_a_stride,
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_C_API(name, type)                           \
-  KLEIDICV_MULTIVERSION_C_API(                                      \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                             \
       name, &kleidicv::neon::saturating_add<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_add<type>), \
-      KLEIDICV_SME_IMPL_IF(&kleidicv::sme::saturating_add<type>),   \
+      &kleidicv::sme::saturating_add<type>,                         \
       KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::saturating_add<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_saturating_add_s8, int8_t);

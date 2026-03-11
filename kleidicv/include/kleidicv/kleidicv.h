@@ -19,6 +19,31 @@
 /// @file
 /// @brief For an overview of the functions and their supported types see
 /// @ref doc/functionality.md.
+///
+/// Dispatching mechanism:
+/// - Each function without the `_sme` postfix uses the Neon or SVE2
+///   backends by default, unless the `KLEIDICV_PREFER_SME_BACKEND`
+///   environment variable is set to `ON` when the library is loaded.
+///   If this variable is set, the function uses the same dispatching
+///   strategy as its `_sme` counterpart. If no `_sme` counterpart exists,
+///   setting this variable has no effect.
+///
+/// - Functions with the `_sme` postfix use the SME/SME2 backends if they
+///   are available, and fall back to the Neon or SVE2 backends otherwise.
+///
+/// - The default decision path between Neon and SVE2 checks whether SVE2
+///   is available and whether it is expected to provide a benefit over
+///   the Neon code path. If so, SVE2 is used. This behavior can be
+///   overridden by setting the
+///   `KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS` CMake variable to `OFF`,
+///   in which case SVE2 is always used when available.
+///
+/// - The decision path between SME and SME2 is similar: it checks whether
+///   SME2 is available and whether it is expected to provide a benefit
+///   over the SME code path. If so, SME2 is used. This behavior can be
+///   overridden by setting the
+///   `KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS` CMake variable to `OFF`,
+///   in which case SME2 is always used when available.
 
 #ifndef KLEIDICV_H
 #define KLEIDICV_H
@@ -106,19 +131,35 @@ extern "C" {
 ///
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_s8, int8_t);
 /// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_s8_sme, int8_t);
+/// @copydoc kleidicv_saturating_add_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_u8, uint8_t);
+/// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_u8_sme, uint8_t);
 /// @copydoc kleidicv_saturating_add_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_s16, int16_t);
 /// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_s16_sme, int16_t);
+/// @copydoc kleidicv_saturating_add_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_u16, uint16_t);
+/// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_u16_sme, uint16_t);
 /// @copydoc kleidicv_saturating_add_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_s32, int32_t);
 /// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_s32_sme, int32_t);
+/// @copydoc kleidicv_saturating_add_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_u32, uint32_t);
+/// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_u32_sme, uint32_t);
 /// @copydoc kleidicv_saturating_add_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_s64, int64_t);
 /// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_s64_sme, int64_t);
+/// @copydoc kleidicv_saturating_add_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_add_u64, uint64_t);
+/// @copydoc kleidicv_saturating_add_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_add_u64_sme, uint64_t);
 
 /// Subtracts the value of the corresponding element in `src_b` from `src_a`,
 /// and puts the result into `dst`.
@@ -149,19 +190,35 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_add_u64, uint64_t);
 ///
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s8, int8_t);
 /// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s8_sme, int8_t);
+/// @copydoc kleidicv_saturating_sub_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u8, uint8_t);
+/// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u8_sme, uint8_t);
 /// @copydoc kleidicv_saturating_sub_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s16, int16_t);
 /// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s16_sme, int16_t);
+/// @copydoc kleidicv_saturating_sub_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u16, uint16_t);
+/// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u16_sme, uint16_t);
 /// @copydoc kleidicv_saturating_sub_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s32, int32_t);
 /// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s32_sme, int32_t);
+/// @copydoc kleidicv_saturating_sub_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u32, uint32_t);
+/// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u32_sme, uint32_t);
 /// @copydoc kleidicv_saturating_sub_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s64, int64_t);
 /// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_s64_sme, int64_t);
+/// @copydoc kleidicv_saturating_sub_s8
 KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u64, uint64_t);
+/// @copydoc kleidicv_saturating_sub_s8
+KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u64_sme, uint64_t);
 
 /// From the corresponding elements in `src_a` and `src_b`, subtracts the lower
 /// one from the higher one, and puts the result into `dst`.
@@ -192,13 +249,23 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u64, uint64_t);
 ///
 KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_u8, uint8_t);
 /// @copydoc kleidicv_saturating_absdiff_u8
+KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_u8_sme, uint8_t);
+/// @copydoc kleidicv_saturating_absdiff_u8
 KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s8, int8_t);
+/// @copydoc kleidicv_saturating_absdiff_u8
+KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s8_sme, int8_t);
 /// @copydoc kleidicv_saturating_absdiff_u8
 KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_u16, uint16_t);
 /// @copydoc kleidicv_saturating_absdiff_u8
+KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_u16_sme, uint16_t);
+/// @copydoc kleidicv_saturating_absdiff_u8
 KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s16, int16_t);
 /// @copydoc kleidicv_saturating_absdiff_u8
+KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s16_sme, int16_t);
+/// @copydoc kleidicv_saturating_absdiff_u8
 KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s32, int32_t);
+/// @copydoc kleidicv_saturating_absdiff_u8
+KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s32_sme, int32_t);
 
 /// Multiplies the values of the corresponding elements in `src_a` and `src_b`,
 /// and puts the result into `dst`.
@@ -230,13 +297,24 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s32, int32_t);
 ///
 KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_u8, uint8_t, double);
 /// @copydoc kleidicv_saturating_multiply_u8
+KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_u8_sme, uint8_t, double);
+/// @copydoc kleidicv_saturating_multiply_u8
 KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s8, int8_t, double);
+/// @copydoc kleidicv_saturating_multiply_u8
+KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s8_sme, int8_t, double);
 /// @copydoc kleidicv_saturating_multiply_u8
 KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_u16, uint16_t, double);
 /// @copydoc kleidicv_saturating_multiply_u8
+KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_u16_sme, uint16_t,
+                         double);
+/// @copydoc kleidicv_saturating_multiply_u8
 KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s16, int16_t, double);
 /// @copydoc kleidicv_saturating_multiply_u8
+KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s16_sme, int16_t, double);
+/// @copydoc kleidicv_saturating_multiply_u8
 KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s32, int32_t, double);
+/// @copydoc kleidicv_saturating_multiply_u8
+KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s32_sme, int32_t, double);
 
 /// Adds the absolute values of the corresponding elements in `src_a` and
 /// `src_b`. Then, performs a comparison of each element's value in the result
@@ -274,6 +352,12 @@ KLEIDICV_API_DECLARATION(kleidicv_saturating_add_abs_with_threshold_s16,
                          const int16_t *src_b, size_t src_b_stride,
                          int16_t *dst, size_t dst_stride, size_t width,
                          size_t height, int16_t threshold);
+/// @copydoc kleidicv_saturating_add_abs_with_threshold_s16
+KLEIDICV_API_DECLARATION(kleidicv_saturating_add_abs_with_threshold_s16_sme,
+                         const int16_t *src_a, size_t src_a_stride,
+                         const int16_t *src_b, size_t src_b_stride,
+                         int16_t *dst, size_t dst_stride, size_t width,
+                         size_t height, int16_t threshold);
 
 /// Bitwise-ands the values of the corresponding elements in `src_a` and
 /// `src_b`, and puts the result into `dst`.
@@ -301,6 +385,8 @@ KLEIDICV_API_DECLARATION(kleidicv_saturating_add_abs_with_threshold_s16,
 /// @param height       Number of rows in the data.
 ///
 KLEIDICV_BINARY_OP(kleidicv_bitwise_and, uint8_t);
+/// @copydoc kleidicv_bitwise_and
+KLEIDICV_BINARY_OP(kleidicv_bitwise_and_sme, uint8_t);
 
 /// Converts a grayscale image to RGB. All channels are 8-bit wide.
 ///
@@ -326,6 +412,10 @@ KLEIDICV_BINARY_OP(kleidicv_bitwise_and, uint8_t);
 /// @param height      Number of rows in the data.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgb_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_gray_to_rgb_u8
+KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgb_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -355,6 +445,10 @@ KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgb_u8, const uint8_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgba_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
+/// @copydoc kleidicv_gray_to_rgba_u8
+KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgba_u8_sme, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGB image to BGR. All channels are 8-bit wide.
 ///
@@ -380,6 +474,10 @@ KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgba_u8, const uint8_t *src,
 /// @param height      Number of rows in the data.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgr_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_rgb_to_bgr_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgr_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -430,6 +528,10 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgb_u8, const uint8_t *src,
 /// @param height      Number of rows in the data.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgra_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_rgba_to_bgra_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgra_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -483,6 +585,10 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgba_u8, const uint8_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgra_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
+/// @copydoc kleidicv_rgb_to_bgra_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgra_u8_sme, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGB image to RGBA. All channels are 8-bit wide.
 ///
@@ -509,6 +615,10 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgra_u8, const uint8_t *src,
 /// @param height      Number of rows in the data.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgba_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_rgb_to_rgba_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgba_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -539,6 +649,10 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgba_u8, const uint8_t *src,
 KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgr_u8, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
+/// @copydoc kleidicv_rgba_to_bgr_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgr_u8_sme, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts an RGBA image to RGB. All channels are 8-bit wide.
 ///
@@ -565,6 +679,10 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgr_u8, const uint8_t *src,
 /// @param height      Number of rows in the data.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_rgba_to_rgb_u8
+KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -643,6 +761,10 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
 kleidicv_error_t kleidicv_yuv_to_rgb_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, kleidicv_color_conversion_t color_format);
+/// @copydoc kleidicv_yuv_to_rgb_u8
+kleidicv_error_t kleidicv_yuv_to_rgb_u8_sme(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, kleidicv_color_conversion_t color_format);
 
 /// Converts a semi-planar YUV image (NV12 or NV21 layout) to RGB, RGBA, BGR, or
 /// BGRA format. All channels are 8-bit wide. If the output format includes an
@@ -698,6 +820,13 @@ kleidicv_error_t kleidicv_yuv_to_rgb_u8(
 ///                      destination RGB(A)/BGR(A) format.
 ///                      Must be one of @ref kleidicv_color_conversion_t.
 KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8,
+                         const uint8_t *src_y, size_t src_y_stride,
+                         const uint8_t *src_uv, size_t src_uv_stride,
+                         uint8_t *dst, size_t dst_stride, size_t width,
+                         size_t height,
+                         kleidicv_color_conversion_t color_format);
+/// @copydoc kleidicv_yuv_semiplanar_to_rgb_u8
+KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8_sme,
                          const uint8_t *src_y, size_t src_y_stride,
                          const uint8_t *src_uv, size_t src_uv_stride,
                          uint8_t *dst, size_t dst_stride, size_t width,
@@ -793,6 +922,10 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8,
 kleidicv_error_t kleidicv_rgb_to_yuv_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, kleidicv_color_conversion_t color_format);
+/// @copydoc kleidicv_rgb_to_yuv_u8
+kleidicv_error_t kleidicv_rgb_to_yuv_u8_sme(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, kleidicv_color_conversion_t color_format);
 
 /// Converts an interleaved RGB-like image to a semi-planar YUV420 format
 /// (NV12 or NV21). All channels are 8-bit wide. If the source format includes
@@ -859,6 +992,11 @@ kleidicv_error_t kleidicv_rgb_to_yuv_semiplanar_u8(
     const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
     uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
     kleidicv_color_conversion_t color_format);
+/// @copydoc kleidicv_rgb_to_yuv_semiplanar_u8
+kleidicv_error_t kleidicv_rgb_to_yuv_semiplanar_u8_sme(
+    const uint8_t *src, size_t src_stride, uint8_t *y_dst, size_t y_stride,
+    uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
+    kleidicv_color_conversion_t color_format);
 
 /// Performs a comparison of each element's value in `src` with respect to a
 /// caller defined threshold. The strictly larger elements are set to
@@ -884,6 +1022,11 @@ kleidicv_error_t kleidicv_rgb_to_yuv_semiplanar_u8(
 /// @param value        The value that the larger elements are set to.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_threshold_binary_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, uint8_t threshold,
+                         uint8_t value);
+/// @copydoc kleidicv_threshold_binary_u8
+KLEIDICV_API_DECLARATION(kleidicv_threshold_binary_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, uint8_t threshold,
                          uint8_t value);
@@ -919,6 +1062,11 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_equal_u8, const uint8_t *src_a,
                          size_t src_a_stride, const uint8_t *src_b,
                          size_t src_b_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
+/// @copydoc kleidicv_compare_equal_u8
+KLEIDICV_API_DECLARATION(kleidicv_compare_equal_u8_sme, const uint8_t *src_a,
+                         size_t src_a_stride, const uint8_t *src_b,
+                         size_t src_b_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Performs a 'strictly greater than' comparison of each element's value in
 /// `src_a` with respect to the corresponding element's value in `src_b`.
@@ -948,6 +1096,11 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_equal_u8, const uint8_t *src_a,
 /// @param height       Number of rows in the data.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_compare_greater_u8, const uint8_t *src_a,
+                         size_t src_a_stride, const uint8_t *src_b,
+                         size_t src_b_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_compare_greater_u8
+KLEIDICV_API_DECLARATION(kleidicv_compare_greater_u8_sme, const uint8_t *src_a,
                          size_t src_a_stride, const uint8_t *src_b,
                          size_t src_b_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
@@ -1012,10 +1165,25 @@ KLEIDICV_API_DECLARATION(kleidicv_dilate_u8, const uint8_t *src,
                          size_t anchor_x, size_t anchor_y,
                          kleidicv_border_type_t border_type,
                          const uint8_t *border_value, size_t iterations);
+/// @copydoc kleidicv_dilate_u8
+KLEIDICV_API_DECLARATION(kleidicv_dilate_u8_sme, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         size_t anchor_x, size_t anchor_y,
+                         kleidicv_border_type_t border_type,
+                         const uint8_t *border_value, size_t iterations);
 
 /// @copydoc kleidicv_dilate_u8
-///
 KLEIDICV_API_DECLARATION(kleidicv_erode_u8, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, size_t channels,
+                         size_t kernel_width, size_t kernel_height,
+                         size_t anchor_x, size_t anchor_y,
+                         kleidicv_border_type_t border_type,
+                         const uint8_t *border_value, size_t iterations);
+/// @copydoc kleidicv_dilate_u8
+KLEIDICV_API_DECLARATION(kleidicv_erode_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, size_t channels,
                          size_t kernel_width, size_t kernel_height,
@@ -1089,6 +1257,11 @@ kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
     kleidicv_optical_flow_pyr_lk_pyramid_t **pyramid, const uint8_t *src,
     size_t src_stride, size_t width, size_t height, size_t channels,
     size_t level_count, size_t window_width, size_t window_height);
+/// @copydoc kleidicv_build_optical_flow_pyr_lk_pyramid
+kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid_sme(
+    kleidicv_optical_flow_pyr_lk_pyramid_t **pyramid, const uint8_t *src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height);
 
 /// Releases an LK optical-flow pyramid created by
 /// @ref kleidicv_build_optical_flow_pyr_lk_pyramid.
@@ -1142,6 +1315,12 @@ kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_release(
 /// @param context      LK tracking context. See @ref
 ///                     kleidicv_optflow_lk_context_t.
 kleidicv_error_t kleidicv_optical_flow_pyr_lk_u8_from_pyramid(
+    const kleidicv_optical_flow_pyr_lk_pyramid_t *prev_pyramid,
+    const kleidicv_optical_flow_pyr_lk_pyramid_t *next_pyramid,
+    const float *prev_points, float *next_points, size_t point_count,
+    uint8_t *status, float *err, kleidicv_optflow_lk_context_t context);
+/// @copydoc kleidicv_optical_flow_pyr_lk_u8_from_pyramid
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_u8_from_pyramid_sme(
     const kleidicv_optical_flow_pyr_lk_pyramid_t *prev_pyramid,
     const kleidicv_optical_flow_pyr_lk_pyramid_t *next_pyramid,
     const float *prev_points, float *next_points, size_t point_count,
@@ -1206,6 +1385,12 @@ kleidicv_error_t kleidicv_optical_flow_pyr_lk_u8_from_pyramid(
 /// @param context          LK tracking context. See
 ///                         @ref kleidicv_optflow_lk_context_t.
 kleidicv_error_t kleidicv_optical_flow_pyr_lk_u8(
+    const uint8_t *prev_img, size_t prev_img_stride, const uint8_t *next_img,
+    size_t next_img_stride, size_t width, size_t height, size_t channels,
+    const float *prev_points, float *next_points, size_t point_count,
+    uint8_t *status, float *err, kleidicv_optflow_lk_context_t context);
+/// @copydoc kleidicv_optical_flow_pyr_lk_u8
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_u8_sme(
     const uint8_t *prev_img, size_t prev_img_stride, const uint8_t *next_img,
     size_t next_img_stride, size_t width, size_t height, size_t channels,
     const float *prev_points, float *next_points, size_t point_count,
@@ -1365,6 +1550,11 @@ kleidicv_error_t kleidicv_resize_linear_u8(const uint8_t *src,
                                            size_t src_height, uint8_t *dst,
                                            size_t dst_stride, size_t dst_width,
                                            size_t dst_height, size_t channels);
+/// @copydoc kleidicv_resize_linear_u8
+kleidicv_error_t kleidicv_resize_linear_u8_sme(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    size_t channels);
 
 /// @copydoc kleidicv_resize_linear_u8
 kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
@@ -1372,6 +1562,11 @@ kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
                                             float *dst, size_t dst_stride,
                                             size_t dst_width, size_t dst_height,
                                             size_t channels);
+/// @copydoc kleidicv_resize_linear_u8
+kleidicv_error_t kleidicv_resize_linear_f32_sme(
+    const float *src, size_t src_stride, size_t src_width, size_t src_height,
+    float *dst, size_t dst_stride, size_t dst_width, size_t dst_height,
+    size_t channels);
 
 /// Calculates vertical derivative approximation with Sobel filter.
 ///
@@ -1412,6 +1607,10 @@ kleidicv_error_t kleidicv_resize_linear_f32(const float *src, size_t src_stride,
 kleidicv_error_t kleidicv_sobel_3x3_vertical_s16_u8(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels);
+/// @copydoc kleidicv_sobel_3x3_vertical_s16_u8
+kleidicv_error_t kleidicv_sobel_3x3_vertical_s16_u8_sme(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels);
 
 /// Calculates horizontal derivative approximation with Sobel filter.
 ///
@@ -1450,6 +1649,10 @@ kleidicv_error_t kleidicv_sobel_3x3_vertical_s16_u8(
 ///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///
 kleidicv_error_t kleidicv_sobel_3x3_horizontal_s16_u8(
+    const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels);
+/// @copydoc kleidicv_sobel_3x3_horizontal_s16_u8
+kleidicv_error_t kleidicv_sobel_3x3_horizontal_s16_u8_sme(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels);
 
@@ -1527,7 +1730,19 @@ kleidicv_error_t kleidicv_separable_filter_2d_u8(
     size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
     kleidicv_border_type_t border_type);
 /// @copydoc kleidicv_separable_filter_2d_u8
+kleidicv_error_t kleidicv_separable_filter_2d_u8_sme(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const uint8_t *kernel_x,
+    size_t kernel_width, const uint8_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type);
+/// @copydoc kleidicv_separable_filter_2d_u8
 kleidicv_error_t kleidicv_separable_filter_2d_u16(
+    const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
+    size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type);
+/// @copydoc kleidicv_separable_filter_2d_u8
+kleidicv_error_t kleidicv_separable_filter_2d_u16_sme(
     const uint16_t *src, size_t src_stride, uint16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t channels, const uint16_t *kernel_x,
     size_t kernel_width, const uint16_t *kernel_y, size_t kernel_height,
@@ -1582,6 +1797,12 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, float sigma_x, float sigma_y,
     kleidicv_border_type_t border_type);
+/// @copydoc kleidicv_gaussian_blur_u8
+kleidicv_error_t kleidicv_gaussian_blur_u8_sme(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, size_t channels, size_t kernel_width,
+    size_t kernel_height, float sigma_x, float sigma_y,
+    kleidicv_border_type_t border_type);
 
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.
@@ -1628,6 +1849,11 @@ kleidicv_error_t kleidicv_gaussian_blur_u8(
 /// @param border_type   Way of handling the border.
 ///
 kleidicv_error_t kleidicv_blur_and_downsample_u8(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t channels,
+    kleidicv_border_type_t border_type);
+/// @copydoc kleidicv_blur_and_downsample_u8
+kleidicv_error_t kleidicv_blur_and_downsample_u8_sme(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride, size_t channels,
     kleidicv_border_type_t border_type);
@@ -1791,7 +2017,15 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_u8, const uint8_t *src,
                          size_t src_stride, size_t width, size_t height,
                          uint8_t *min_value, uint8_t *max_value);
 /// @copydoc kleidicv_min_max_u8
+KLEIDICV_API_DECLARATION(kleidicv_min_max_u8_sme, const uint8_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         uint8_t *min_value, uint8_t *max_value);
+/// @copydoc kleidicv_min_max_u8
 KLEIDICV_API_DECLARATION(kleidicv_min_max_s8, const int8_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         int8_t *min_value, int8_t *max_value);
+/// @copydoc kleidicv_min_max_u8
+KLEIDICV_API_DECLARATION(kleidicv_min_max_s8_sme, const int8_t *src,
                          size_t src_stride, size_t width, size_t height,
                          int8_t *min_value, int8_t *max_value);
 /// @copydoc kleidicv_min_max_u8
@@ -1799,7 +2033,15 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_u16, const uint16_t *src,
                          size_t src_stride, size_t width, size_t height,
                          uint16_t *min_value, uint16_t *max_value);
 /// @copydoc kleidicv_min_max_u8
+KLEIDICV_API_DECLARATION(kleidicv_min_max_u16_sme, const uint16_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         uint16_t *min_value, uint16_t *max_value);
+/// @copydoc kleidicv_min_max_u8
 KLEIDICV_API_DECLARATION(kleidicv_min_max_s16, const int16_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         int16_t *min_value, int16_t *max_value);
+/// @copydoc kleidicv_min_max_u8
+KLEIDICV_API_DECLARATION(kleidicv_min_max_s16_sme, const int16_t *src,
                          size_t src_stride, size_t width, size_t height,
                          int16_t *min_value, int16_t *max_value);
 /// @copydoc kleidicv_min_max_u8
@@ -1807,7 +2049,15 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_s32, const int32_t *src,
                          size_t src_stride, size_t width, size_t height,
                          int32_t *min_value, int32_t *max_value);
 /// @copydoc kleidicv_min_max_u8
+KLEIDICV_API_DECLARATION(kleidicv_min_max_s32_sme, const int32_t *src,
+                         size_t src_stride, size_t width, size_t height,
+                         int32_t *min_value, int32_t *max_value);
+/// @copydoc kleidicv_min_max_u8
 KLEIDICV_API_DECLARATION(kleidicv_min_max_f32, const float *src,
+                         size_t src_stride, size_t width, size_t height,
+                         float *min_value, float *max_value);
+/// @copydoc kleidicv_min_max_u8
+KLEIDICV_API_DECLARATION(kleidicv_min_max_f32_sme, const float *src,
                          size_t src_stride, size_t width, size_t height,
                          float *min_value, float *max_value);
 
@@ -1845,6 +2095,10 @@ KLEIDICV_API_DECLARATION(kleidicv_min_max_loc_u8, const uint8_t *src,
 ///
 KLEIDICV_API_DECLARATION(kleidicv_sum_f32, const float *src, size_t src_stride,
                          size_t width, size_t height, float *sum);
+/// @copydoc kleidicv_sum_f32
+KLEIDICV_API_DECLARATION(kleidicv_sum_f32_sme, const float *src,
+                         size_t src_stride, size_t width, size_t height,
+                         float *sum);
 
 /// Multiplies the elements in `src` by `scale`, then adds `shift` to the
 /// result and stores it in `dst`.
@@ -1884,7 +2138,17 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_u8_f16, const uint8_t *src,
                          size_t width, size_t height, double scale,
                          double shift);
 /// @copydoc kleidicv_scale_u8
+KLEIDICV_API_DECLARATION(kleidicv_scale_u8_f16_sme, const uint8_t *src,
+                         size_t src_stride, float16_t *dst, size_t dst_stride,
+                         size_t width, size_t height, double scale,
+                         double shift);
+/// @copydoc kleidicv_scale_u8
 KLEIDICV_API_DECLARATION(kleidicv_scale_f32, const float *src,
+                         size_t src_stride, float *dst, size_t dst_stride,
+                         size_t width, size_t height, double scale,
+                         double shift);
+/// @copydoc kleidicv_scale_u8
+KLEIDICV_API_DECLARATION(kleidicv_scale_f32_sme, const float *src,
                          size_t src_stride, float *dst, size_t dst_stride,
                          size_t width, size_t height, double scale,
                          double shift);
@@ -1914,6 +2178,10 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_f32, const float *src,
 KLEIDICV_API_DECLARATION(kleidicv_exp_f32, const float *src, size_t src_stride,
                          float *dst, size_t dst_stride, size_t width,
                          size_t height);
+/// @copydoc kleidicv_exp_f32
+KLEIDICV_API_DECLARATION(kleidicv_exp_f32_sme, const float *src,
+                         size_t src_stride, float *dst, size_t dst_stride,
+                         size_t width, size_t height);
 
 /// Converts the elements in `src` from a floating-point type to an integer
 /// type, then stores the result in `dst`.
@@ -1940,7 +2208,15 @@ KLEIDICV_API_DECLARATION(kleidicv_f32_to_s8, const float *src,
                          size_t src_stride, int8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 /// @copydoc kleidicv_f32_to_s8
+KLEIDICV_API_DECLARATION(kleidicv_f32_to_s8_sme, const float *src,
+                         size_t src_stride, int8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_f32_to_s8
 KLEIDICV_API_DECLARATION(kleidicv_f32_to_u8, const float *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_f32_to_s8
+KLEIDICV_API_DECLARATION(kleidicv_f32_to_u8_sme, const float *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -1970,7 +2246,15 @@ KLEIDICV_API_DECLARATION(kleidicv_s8_to_f32, const int8_t *src,
                          size_t src_stride, float *dst, size_t dst_stride,
                          size_t width, size_t height);
 /// @copydoc kleidicv_s8_to_f32
+KLEIDICV_API_DECLARATION(kleidicv_s8_to_f32_sme, const int8_t *src,
+                         size_t src_stride, float *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_s8_to_f32
 KLEIDICV_API_DECLARATION(kleidicv_u8_to_f32, const uint8_t *src,
+                         size_t src_stride, float *dst, size_t dst_stride,
+                         size_t width, size_t height);
+/// @copydoc kleidicv_s8_to_f32
+KLEIDICV_API_DECLARATION(kleidicv_u8_to_f32_sme, const uint8_t *src,
                          size_t src_stride, float *dst, size_t dst_stride,
                          size_t width, size_t height);
 
@@ -2002,7 +2286,17 @@ KLEIDICV_API_DECLARATION(kleidicv_in_range_u8, const uint8_t *src,
                          size_t width, size_t height, uint8_t lower_bound,
                          uint8_t upper_bound);
 /// @copydoc kleidicv_in_range_u8
+KLEIDICV_API_DECLARATION(kleidicv_in_range_u8_sme, const uint8_t *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, uint8_t lower_bound,
+                         uint8_t upper_bound);
+/// @copydoc kleidicv_in_range_u8
 KLEIDICV_API_DECLARATION(kleidicv_in_range_f32, const float *src,
+                         size_t src_stride, uint8_t *dst, size_t dst_stride,
+                         size_t width, size_t height, float lower_bound,
+                         float upper_bound);
+/// @copydoc kleidicv_in_range_u8
+KLEIDICV_API_DECLARATION(kleidicv_in_range_f32_sme, const float *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height, float lower_bound,
                          float upper_bound);
@@ -2209,6 +2503,10 @@ KLEIDICV_API_DECLARATION(kleidicv_remap_f32_u16, const uint16_t *src,
 kleidicv_error_t kleidicv_scharr_interleaved_s16_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t src_channels, int16_t *dst, size_t dst_stride);
+/// @copydoc kleidicv_scharr_interleaved_s16_u8
+kleidicv_error_t kleidicv_scharr_interleaved_s16_u8_sme(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    size_t src_channels, int16_t *dst, size_t dst_stride);
 #endif  // DOXYGEN
 
 /// Performs a perspective transformation on an image.
@@ -2302,17 +2600,31 @@ kleidicv_error_t kleidicv_warp_perspective_u8(
 ///                         - @ref KLEIDICV_BORDER_TYPE_REVERSE
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u8, uint8_t);
 /// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u8_sme, uint8_t);
+/// @copydoc kleidicv_median_blur_u8
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s16, int16_t);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s16_sme, int16_t);
 /// @copydoc kleidicv_median_blur_u8
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u16, uint16_t);
 /// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u16_sme, uint16_t);
+/// @copydoc kleidicv_median_blur_u8
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_f32, float);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_f32_sme, float);
 /// @copydoc kleidicv_median_blur_u8
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s8, int8_t);
 /// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s8_sme, int8_t);
+/// @copydoc kleidicv_median_blur_u8
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s32, int32_t);
 /// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_s32_sme, int32_t);
+/// @copydoc kleidicv_median_blur_u8
 KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u32, uint32_t);
+/// @copydoc kleidicv_median_blur_u8
+KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u32_sme, uint32_t);
 
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.
@@ -2390,6 +2702,18 @@ KLEIDICV_FILTER_OP_MEDIAN(kleidicv_median_blur_u32, uint32_t);
 ///                                  less than this threshold are rejected and
 ///                                  marked as failed in `status`.
 KLEIDICV_API_DECLARATION(kleidicv_standalone_lucas_kanade_alg_u8,
+                         const uint8_t *prev_data, size_t prev_data_stride,
+                         const int16_t *prev_deriv_data,
+                         size_t prev_deriv_stride, const uint8_t *next_data,
+                         size_t next_data_stride, int width, int height,
+                         int channels, const float *prev_points,
+                         float *next_points, size_t point_count,
+                         uint8_t *status, float *err, int window_width,
+                         int window_height, int termination_count,
+                         double termination_epsilon, bool get_min_eigen_vals,
+                         float min_eigen_vals_threshold);
+/// @copydoc kleidicv_standalone_lucas_kanade_alg_u8
+KLEIDICV_API_DECLARATION(kleidicv_standalone_lucas_kanade_alg_u8_sme,
                          const uint8_t *prev_data, size_t prev_data_stride,
                          const int16_t *prev_deriv_data,
                          size_t prev_deriv_stride, const uint8_t *next_data,

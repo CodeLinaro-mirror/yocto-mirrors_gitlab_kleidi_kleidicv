@@ -30,6 +30,11 @@ This changelog aims to follow the guiding principles of
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.
 - Switch project versioning from Semantic Versioning to Calendar Versioning using 0Y.0M.
+- API functions without the `_sme` postfix prefer the Neon/SVE2 backends,
+  unless the `KLEIDICV_PREFER_SME_BACKEND` environment variable is set to
+  `ON` when the library is loaded. Functions with the `_sme` postfix prefer
+  the SME/SME2 backends when available, and otherwise fall back to the
+  Neon/SVE2 backends.
 
 ### Fixed
 - Return `CV_HAL_ERROR_NOT_IMPLEMENTED` in the OpenCV HAL for Morphology and Median Blur when called in-place,

@@ -768,7 +768,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
 
   if (dst_height > src_height) {
     auto callback = [=](unsigned y_begin, unsigned y_end) {
-      return kleidicv_resize_linear_stripe_u8(
+      return kleidicv::resize_linear_stripe_u8<false>(
           src, src_stride, src_width, src_height, y_begin,
           std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
           dst_height, channels);
@@ -776,7 +776,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
     return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
   }
   auto callback = [=](unsigned y_begin, unsigned y_end) {
-    return kleidicv_resize_linear_stripe_u8(
+    return kleidicv::resize_linear_stripe_u8<false>(
         src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
         dst_width, dst_height, channels);
   };

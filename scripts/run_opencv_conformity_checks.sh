@@ -28,7 +28,7 @@ CLEAN="${CLEAN}" \
 
 TESTRESULT=0
 for cpu in ${OPENCV_CONFORMITY_CPUS}; do
-    qemu-aarch64 -cpu "${cpu}" "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
+    KLEIDICV_PREFER_SME_BACKEND=ON qemu-aarch64 -cpu "${cpu}" "${OPENCV_KLEIDICV_PATH}/bin/manager" "${OPENCV_DEFAULT_PATH}/bin/subordinate" || TESTRESULT=1
 done
 
 exit $TESTRESULT

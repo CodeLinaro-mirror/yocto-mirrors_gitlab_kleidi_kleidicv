@@ -10,6 +10,8 @@
 #if KLEIDICV_ENABLE_SME2 || KLEIDICV_ENABLE_SME || KLEIDICV_ENABLE_SVE2
 
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <type_traits>
 
 namespace kleidicv {
@@ -65,6 +67,16 @@ static inline bool is_sme2_supported() {
 
 #endif  // __APPLE__
 
+static inline bool is_prefer_sme_backend_env_var_set() {
+  const char* v = std::getenv("KLEIDICV_PREFER_SME_BACKEND");
+  if (v) {
+    if (strcmp(v, "ON") == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 #if KLEIDICV_ENABLE_SVE2
 #define KLEIDICV_SVE2_RESOLVE(sve2_impl)                                     \
   if (!std::is_null_pointer_v<decltype(sve2_impl)> && is_sve2_supported()) { \
@@ -110,43 +122,79 @@ static inline bool is_sme2_supported() {
 #define KLEIDICV_SME2_RESOLVE_VECLEN(x, sme_len)
 #endif  // KLEIDICV_ENABLE_SME2
 
-#define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl, \
-                                    sme2_impl)                                \
-  static decltype(neon_impl) api_name##_resolver() {                          \
-    KLEIDICV_SME2_RESOLVE(sme2_impl);                                         \
-    KLEIDICV_SME_RESOLVE(sme_impl);                                           \
-    KLEIDICV_SVE2_RESOLVE(sve2_impl);                                         \
-    return neon_impl;                                                         \
-  }                                                                           \
-  extern "C" {                                                                \
-  decltype(neon_impl) api_name = api_name##_resolver();                       \
+#define KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(api_name, neon_impl, \
+                                                sve2_impl)           \
+  static decltype(neon_impl) api_name##_resolver() {                 \
+    KLEIDICV_SVE2_RESOLVE(sve2_impl);                                \
+    return neon_impl;                                                \
+  }                                                                  \
+  extern "C" {                                                       \
+  decltype(neon_impl) api_name = api_name##_resolver();              \
+  }
+
+#define KLEIDICV_MULTIVERSION_C_API_WITH_SME(api_name, neon_impl, sve2_impl, \
+                                             sme_impl, sme2_impl)            \
+  static decltype(neon_impl) api_name##_resolver_default() {                 \
+    if (is_prefer_sme_backend_env_var_set()) {                               \
+      KLEIDICV_SME2_RESOLVE(sme2_impl);                                      \
+      KLEIDICV_SME_RESOLVE(sme_impl);                                        \
+    }                                                                        \
+    KLEIDICV_SVE2_RESOLVE(sve2_impl);                                        \
+    return neon_impl;                                                        \
+  }                                                                          \
+  static decltype(neon_impl) api_name##_resolver_for_sme() {                 \
+    KLEIDICV_SME2_RESOLVE(sme2_impl);                                        \
+    KLEIDICV_SME_RESOLVE(sme_impl);                                          \
+    KLEIDICV_SVE2_RESOLVE(sve2_impl);                                        \
+    return neon_impl;                                                        \
+  }                                                                          \
+  extern "C" {                                                               \
+  decltype(neon_impl) api_name = api_name##_resolver_default();              \
+  decltype(neon_impl) api_name##_sme = api_name##_resolver_for_sme();        \
   }
 
 #define KLEIDICV_MULTIVERSION_C_API_VECLEN(                                \
     api_name, neon_impl, sve2_impl, sme_impl, sme2_impl, sve_len, sme_len) \
-  static decltype(neon_impl) api_name##_resolver() {                       \
+  static decltype(neon_impl) api_name##_resolver_default() {               \
+    if (is_prefer_sme_backend_env_var_set()) {                             \
+      KLEIDICV_SME2_RESOLVE_VECLEN(sme2_impl, sme_len);                    \
+      KLEIDICV_SME_RESOLVE_VECLEN(sme_impl, sme_len);                      \
+    }                                                                      \
+    KLEIDICV_SVE2_RESOLVE_VECLEN(sve2_impl, sve_len);                      \
+    return neon_impl;                                                      \
+  }                                                                        \
+  static decltype(neon_impl) api_name##_resolver_for_sme() {               \
     KLEIDICV_SME2_RESOLVE_VECLEN(sme2_impl, sme_len);                      \
     KLEIDICV_SME_RESOLVE_VECLEN(sme_impl, sme_len);                        \
     KLEIDICV_SVE2_RESOLVE_VECLEN(sve2_impl, sve_len);                      \
     return neon_impl;                                                      \
   }                                                                        \
   extern "C" {                                                             \
-  decltype(neon_impl) api_name = api_name##_resolver();                    \
+  decltype(neon_impl) api_name = api_name##_resolver_default();            \
+  decltype(neon_impl) api_name##_sme = api_name##_resolver_for_sme();      \
   }
 
 #else  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME || KLEIDICV_HAVE_SME2
 
-#define KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl, \
-                                    sme2_impl)                                \
-                                                                              \
-  extern "C" {                                                                \
-  decltype(neon_impl) api_name = neon_impl;                                   \
+#define KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(api_name, neon_impl, \
+                                                sve2_impl)           \
+                                                                     \
+  extern "C" {                                                       \
+  decltype(neon_impl) api_name = neon_impl;                          \
+  }
+
+#define KLEIDICV_MULTIVERSION_C_API_WITH_SME(api_name, neon_impl, sve2_impl, \
+                                             sme_impl, sme2_impl)            \
+                                                                             \
+  extern "C" {                                                               \
+  decltype(neon_impl) api_name = neon_impl;                                  \
+  decltype(neon_impl) api_name##_sme = neon_impl;                            \
   }
 
 #define KLEIDICV_MULTIVERSION_C_API_VECLEN(                              \
     api_name, neon_impl, sve2_impl, sme_impl, sme2_impl, minlen, maxlen) \
-  KLEIDICV_MULTIVERSION_C_API(api_name, neon_impl, sve2_impl, sme_impl,  \
-                              sme2_impl)
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(api_name, neon_impl, sve2_impl,   \
+                                       sme_impl, sme2_impl)
 
 #endif  // KLEIDICV_ENABLE_SME2 || KLEIDICV_ENABLE_SME ||  KLEIDICV_ENABLE_SVE2
 
@@ -155,12 +203,6 @@ static inline bool is_sme2_supported() {
 #else
 #define KLEIDICV_SME2_IMPL_IF(func) nullptr
 #endif  // KLEIDICV_ALWAYS_ENABLE_SME2
-
-#if KLEIDICV_ALWAYS_ENABLE_SME
-#define KLEIDICV_SME_IMPL_IF(func) func
-#else
-#define KLEIDICV_SME_IMPL_IF(func) nullptr
-#endif  // KLEIDICV_ALWAYS_ENABLE_SME
 
 #if KLEIDICV_ALWAYS_ENABLE_SVE2
 #define KLEIDICV_SVE2_IMPL_IF(func) func

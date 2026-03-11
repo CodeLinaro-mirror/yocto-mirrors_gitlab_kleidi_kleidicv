@@ -15,7 +15,7 @@
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/scharr.h"
 
-namespace KLEIDICV_TARGET_NAMESPACE {
+namespace kleidicv {
 
 // Shared parameter validation and actual-level computation used by the
 // build entry points.
@@ -262,11 +262,17 @@ class OpticalFlowLKPyramid final {
   // 1) this one: convenience wrapper with default kernel selection
   // 2) the templated overload: shared implementation with injectable
   //    kernels (used by both single-thread and threaded builders).
+  template <bool kUseSME>
   kleidicv_error_t create(const uint8_t* src, size_t src_stride) {
     auto blur_and_downsample_fn =
         [](const uint8_t* blur_src, size_t blur_src_stride, size_t blur_width,
            size_t blur_height, uint8_t* blur_dst, size_t blur_dst_stride,
            size_t blur_channels, kleidicv_border_type_t border_type) {
+          if constexpr (kUseSME) {
+            return kleidicv_blur_and_downsample_u8_sme(
+                blur_src, blur_src_stride, blur_width, blur_height, blur_dst,
+                blur_dst_stride, blur_channels, border_type);
+          }
           return kleidicv_blur_and_downsample_u8(
               blur_src, blur_src_stride, blur_width, blur_height, blur_dst,
               blur_dst_stride, blur_channels, border_type);
@@ -276,6 +282,11 @@ class OpticalFlowLKPyramid final {
                         size_t scharr_width, size_t scharr_height,
                         size_t scharr_channels, int16_t* scharr_dst,
                         size_t scharr_dst_stride) {
+      if constexpr (kUseSME) {
+        return kleidicv_scharr_interleaved_s16_u8_sme(
+            scharr_src, scharr_src_stride, scharr_width, scharr_height,
+            scharr_channels, scharr_dst, scharr_dst_stride);
+      }
       return kleidicv_scharr_interleaved_s16_u8(
           scharr_src, scharr_src_stride, scharr_width, scharr_height,
           scharr_channels, scharr_dst, scharr_dst_stride);
@@ -612,6 +623,6 @@ inline void OpticalFlowLKPyramidDeleter::operator()(
   }
 }
 
-}  // namespace KLEIDICV_TARGET_NAMESPACE
+}  // namespace kleidicv
 
 #endif  // KLEIDICV_BUILD_OPTICAL_FLOW_LK_PYRAMID_H

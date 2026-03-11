@@ -7,13 +7,10 @@
 #include "kleidicv/analysis/build_optical_flow_pyr_lk_pyramid.h"
 #include "kleidicv/utils.h"
 
-extern "C" {
+namespace kleidicv {
 
-using KLEIDICV_TARGET_NAMESPACE::OpticalFlowLKPyramid;
-using KLEIDICV_TARGET_NAMESPACE::
-    validate_and_compute_build_optical_flow_pyr_lk_levels;
-
-kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
+template <bool kUseSME>
+kleidicv_error_t build_optical_flow_pyr_lk_pyramid(
     kleidicv_optical_flow_pyr_lk_pyramid_t** pyramid, const uint8_t* src,
     size_t src_stride, size_t width, size_t height, size_t channels,
     size_t level_count, size_t window_width, size_t window_height) {
@@ -37,13 +34,38 @@ kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
     return err;
   }
 
-  if (kleidicv_error_t err = pyramid_storage->create(src, src_stride)) {
+  if (kleidicv_error_t err =
+          pyramid_storage->create<kUseSME>(src, src_stride)) {
     return err;
   }
 
   *pyramid = reinterpret_cast<kleidicv_optical_flow_pyr_lk_pyramid_t*>(
       pyramid_storage.release());
   return KLEIDICV_OK;
+}
+
+}  // namespace kleidicv
+
+extern "C" {
+
+using kleidicv::OpticalFlowLKPyramid;
+
+kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
+    kleidicv_optical_flow_pyr_lk_pyramid_t** pyramid, const uint8_t* src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height) {
+  return kleidicv::build_optical_flow_pyr_lk_pyramid<false>(
+      pyramid, src, src_stride, width, height, channels, level_count,
+      window_width, window_height);
+}
+
+kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid_sme(
+    kleidicv_optical_flow_pyr_lk_pyramid_t** pyramid, const uint8_t* src,
+    size_t src_stride, size_t width, size_t height, size_t channels,
+    size_t level_count, size_t window_width, size_t window_height) {
+  return kleidicv::build_optical_flow_pyr_lk_pyramid<true>(
+      pyramid, src, src_stride, width, height, channels, level_count,
+      window_width, window_height);
 }
 
 kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_release(

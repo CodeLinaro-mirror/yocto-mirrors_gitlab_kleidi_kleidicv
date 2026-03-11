@@ -40,11 +40,6 @@ else()
 endif()
 
 option(
-  KLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS
-  "Limits SME code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SME is false."
-  ON
-)
-option(
   KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS
   "Limits SVE2 code paths to selected algorithms. Has no effect if KLEIDICV_ENABLE_SVE2 is false."
   ON
@@ -77,10 +72,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   option(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS "Controls whether to use continous multivector load/store instructions for Neon." ON)
 else()
   option(KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS "Controls whether to use continous multivector load/store instructions for Neon." OFF)
-endif()
-
-if(KLEIDICV_ENABLE_SME AND NOT KLEIDICV_LIMIT_SME_TO_SELECTED_ALGORITHMS)
-  set(KLEIDICV_ALWAYS_ENABLE_SME ON)
 endif()
 
 if(KLEIDICV_ENABLE_SVE2 AND NOT KLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS)

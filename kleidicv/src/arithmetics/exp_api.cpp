@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -43,7 +43,7 @@ kleidicv_error_t exp(const T* src, size_t src_stride, T* dst, size_t dst_stride,
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_C_API(name, type)                           \
-  KLEIDICV_MULTIVERSION_C_API(                                      \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                             \
       name, &kleidicv::neon::exp<type>, &kleidicv::sve2::exp<type>, \
       &kleidicv::sme::exp<type>, &kleidicv::sme2::exp<type>)
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -49,7 +49,10 @@
 
 // <stdlib.h>
 #pragma GCC poison atof atoi atol atoll
-#pragma GCC poison bsearch getenv mbstowcs qsort
+// NOTE: `getenv` is intentionally not poisoned for a narrow, read-only use:
+// checking specific configuration environment variables against fixed literals.
+// And no environment mutation is performed to avoid thread-safety issues.
+#pragma GCC poison bsearch mbstowcs qsort
 
 // <string.h>
 // NOTE: memcpy and memmove are still useful. Their *_s alternatives would not

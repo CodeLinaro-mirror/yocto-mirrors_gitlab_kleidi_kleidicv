@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -38,7 +38,7 @@ kleidicv_error_t threshold_binary(const T *src, size_t src_stride, T *dst,
 }  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_C_API(name, type)                             \
-  KLEIDICV_MULTIVERSION_C_API(                                        \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                               \
       name, &kleidicv::neon::threshold_binary<type>,                  \
       KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::threshold_binary<type>), \
       &kleidicv::sme::threshold_binary<type>,                         \

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -45,18 +45,17 @@ kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
 
 }  // namespace kleidicv
 
-KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8,
-                            &(kleidicv::neon::scale<uint8_t, uint8_t>), nullptr,
-                            nullptr, nullptr);
+KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(
+    kleidicv_scale_u8, &(kleidicv::neon::scale<uint8_t, uint8_t>), nullptr);
 
-KLEIDICV_MULTIVERSION_C_API(kleidicv_scale_u8_f16,
-                            &(kleidicv::neon::scale<uint8_t, float16_t>),
-                            &(kleidicv::sve2::scale<uint8_t, float16_t>),
-                            &(kleidicv::sme::scale<uint8_t, float16_t>),
-                            &(kleidicv::sme2::scale<uint8_t, float16_t>));
+KLEIDICV_MULTIVERSION_C_API_WITH_SME(
+    kleidicv_scale_u8_f16, &(kleidicv::neon::scale<uint8_t, float16_t>),
+    &(kleidicv::sve2::scale<uint8_t, float16_t>),
+    &(kleidicv::sme::scale<uint8_t, float16_t>),
+    &(kleidicv::sme2::scale<uint8_t, float16_t>));
 
-KLEIDICV_MULTIVERSION_C_API(
+KLEIDICV_MULTIVERSION_C_API_WITH_SME(
     kleidicv_scale_f32, &(kleidicv::neon::scale<float, float>),
     KLEIDICV_SVE2_IMPL_IF((&kleidicv::sve2::scale<float, float>)),
-    KLEIDICV_SME_IMPL_IF((&kleidicv::sme::scale<float, float>)),
+    (&kleidicv::sme::scale<float, float>),
     KLEIDICV_SME2_IMPL_IF((&kleidicv::sme2::scale<float, float>)));
