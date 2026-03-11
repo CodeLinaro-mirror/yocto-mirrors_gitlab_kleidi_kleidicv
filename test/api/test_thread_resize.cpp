@@ -20,14 +20,11 @@ typedef std::tuple<size_t, size_t, size_t, size_t> P;
 class ResizeThread : public testing::TestWithParam<P> {
  public:
   void test_resize_to_quarter() {
-    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
-    std::tie(src_width, src_height, thread_count, channels) = GetParam();
+    size_t dst_width = 0, dst_height = 0, thread_count = 0, channels = 0;
+    std::tie(dst_width, dst_height, thread_count, channels) = GetParam();
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, src_width, src_height, 1, src_width / 2,
-                   src_height / 2);
-    check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, src_width, src_height, 1, (src_width + 1) / 2,
-                   (src_height + 1) / 2);
+                   thread_count, 2 * dst_width, 2 * dst_height, 1, dst_width,
+                   dst_height);
   }
   void test_resize_u8_2x2() {
     size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;

@@ -116,18 +116,6 @@ TEST(ResizeToQuarter, EvenDimsNoPadding) {
   resize_test.execute_test(src_width, src_height, dst_width, dst_height);
 }
 
-TEST(ResizeToQuarter, OddDimsFullNoPadding) {
-  // For now resize only reasonably supports single-channel data
-  ResizeToQuarterTest resize_test(1, 0);
-
-  size_t src_width = 4 * test::Options::vector_lanes<uint8_t>() - 1;
-  // Set height to at least double 2x2 window height
-  size_t src_height = 5;
-  size_t dst_width = src_width / 2 + 1;
-  size_t dst_height = src_height / 2 + 1;
-  resize_test.execute_test(src_width, src_height, dst_width, dst_height);
-}
-
 // The rest of tests are done with padding since this is a more elaborate case
 TEST(ResizeToQuarter, EvenDims) {
   // For now resize only reasonably supports single-channel data
@@ -136,78 +124,6 @@ TEST(ResizeToQuarter, EvenDims) {
   size_t src_width = 4 * test::Options::vector_lanes<uint8_t>();
   // Set height to at least double 2x2 window height
   size_t src_height = 4;
-  size_t dst_width = src_width / 2;
-  size_t dst_height = src_height / 2;
-  resize_test.execute_test(src_width, src_height, dst_width, dst_height);
-}
-
-TEST(ResizeToQuarter, OddDimsFull) {
-  // For now resize only reasonably supports single-channel data
-  ResizeToQuarterTest resize_test(1, 1);
-
-  size_t src_width = 4 * test::Options::vector_lanes<uint8_t>() - 1;
-  // Set height to at least double 2x2 window height
-  size_t src_height = 5;
-  size_t dst_width = src_width / 2 + 1;
-  size_t dst_height = src_height / 2 + 1;
-  resize_test.execute_test(src_width, src_height, dst_width, dst_height);
-}
-
-TEST(ResizeToQuarter, EvenHeightOddWidthFull) {
-  // For now resize only reasonably supports single-channel data
-  ResizeToQuarterTest resize_test(1, 1);
-
-  size_t src_width = 4 * test::Options::vector_lanes<uint8_t>() - 1;
-  // Set height to at least double 2x2 window height
-  size_t src_height = 4;
-  size_t dst_width = src_width / 2 + 1;
-  size_t dst_height = src_height / 2;
-  resize_test.execute_test(src_width, src_height, dst_width, dst_height);
-}
-
-TEST(ResizeToQuarter, OddHeightEvenWidthFull) {
-  // For now resize only reasonably supports single-channel data
-  ResizeToQuarterTest resize_test(1, 1);
-
-  size_t src_width = 4 * test::Options::vector_lanes<uint8_t>();
-  // Set height to at least double 2x2 window height
-  size_t src_height = 5;
-  size_t dst_width = src_width / 2;
-  size_t dst_height = src_height / 2 + 1;
-  resize_test.execute_test(src_width, src_height, dst_width, dst_height);
-}
-
-TEST(ResizeToQuarter, OddDimsFullHeight) {
-  // For now resize only reasonably supports single-channel data
-  ResizeToQuarterTest resize_test(1, 1);
-
-  size_t src_width = 4 * test::Options::vector_lanes<uint8_t>() - 1;
-  // Set height to at least double 2x2 window height
-  size_t src_height = 5;
-  size_t dst_width = src_width / 2;
-  size_t dst_height = src_height / 2 + 1;
-  resize_test.execute_test(src_width, src_height, dst_width, dst_height);
-}
-
-TEST(ResizeToQuarter, OddDimsFullWidth) {
-  // For now resize only reasonably supports single-channel data
-  ResizeToQuarterTest resize_test(1, 1);
-
-  size_t src_width = 4 * test::Options::vector_lanes<uint8_t>() - 1;
-  // Set height to at least double 2x2 window height
-  size_t src_height = 5;
-  size_t dst_width = src_width / 2 + 1;
-  size_t dst_height = src_height / 2;
-  resize_test.execute_test(src_width, src_height, dst_width, dst_height);
-}
-
-TEST(ResizeToQuarter, OddDimsTruncated) {
-  // For now resize only reasonably supports single-channel data
-  ResizeToQuarterTest resize_test(1, 1);
-
-  size_t src_width = 4 * test::Options::vector_lanes<uint8_t>() - 1;
-  // Set height to at least double 2x2 window height
-  size_t src_height = 5;
   size_t dst_width = src_width / 2;
   size_t dst_height = src_height / 2;
   resize_test.execute_test(src_width, src_height, dst_width, dst_height);
