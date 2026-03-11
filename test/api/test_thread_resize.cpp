@@ -25,9 +25,6 @@ class ResizeThread : public testing::TestWithParam<P> {
     check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
                    thread_count, src_width, src_height, 1, src_width / 2,
                    src_height / 2);
-    check<uint8_t>(kleidicv_resize_linear_u8, kleidicv_thread_resize_linear_u8,
-                   thread_count, src_width, src_height, 1, (src_width + 1) / 2,
-                   (src_height + 1) / 2);
   }
   void test_resize_u8_2x2() {
     size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;

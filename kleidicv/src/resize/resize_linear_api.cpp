@@ -105,21 +105,19 @@ kleidicv_error_t kleidicv_resize_linear_stripe_u8(
   }
 
   if (channels == 1) {
-    if ((src_width / 2 == dst_width || (src_width + 1) / 2 == dst_width) &&
-        (src_height / 2 == dst_height || (src_height + 1) / 2 == dst_height)) {
+    if (src_width == 2 * dst_width && src_height == 2 * dst_height) {
       size_t src_begin = y_begin * 2;
       size_t src_end = std::min<size_t>(src_height, y_end * 2);
       size_t dst_begin = y_begin;
       size_t dst_end = std::min<size_t>(dst_height, y_end);
 
-      if (dst_begin == dst_end) {
+      if (KLEIDICV_UNLIKELY(dst_begin == dst_end)) {
         return KLEIDICV_OK;
       }
 
       return kleidicv_resize_to_quarter_u8(
           src + src_begin * src_stride, src_stride, src_width,
-          src_end - src_begin, dst + dst_begin * dst_stride, dst_stride,
-          dst_width, dst_end - dst_begin);
+          src_end - src_begin, dst + dst_begin * dst_stride, dst_stride);
     }
     if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
       return kleidicv_resize_2x2_stripe_u8(src, src_stride, src_width,

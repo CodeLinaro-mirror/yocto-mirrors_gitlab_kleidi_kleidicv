@@ -91,8 +91,7 @@ inline bool resize_linear_f32_is_implemented(size_t src_width,
 namespace neon {
 kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       size_t src_width, size_t src_height,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t dst_width, size_t dst_height);
+                                      uint8_t *dst, size_t dst_stride);
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
@@ -113,8 +112,7 @@ kleidicv_error_t kleidicv_resize_linear_stripe_f32(
 namespace sve2 {
 kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       size_t src_width, size_t src_height,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t dst_width, size_t dst_height);
+                                      uint8_t *dst, size_t dst_stride);
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
@@ -135,8 +133,7 @@ kleidicv_error_t kleidicv_resize_linear_stripe_f32(
 namespace sme {
 kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       size_t src_width, size_t src_height,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t dst_width, size_t dst_height);
+                                      uint8_t *dst, size_t dst_stride);
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
@@ -157,8 +154,7 @@ kleidicv_error_t kleidicv_resize_linear_stripe_f32(
 namespace sme2 {
 kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       size_t src_width, size_t src_height,
-                                      uint8_t *dst, size_t dst_stride,
-                                      size_t dst_width, size_t dst_height);
+                                      uint8_t *dst, size_t dst_stride);
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);

@@ -53,7 +53,9 @@ float get_threshold(int, size_t) {
 template <>
 uint8_t get_threshold(int Factor, size_t channels) {
   if ((Factor == 500 || Factor == 2000 || Factor == 4000) && (channels == 1)) {
-    return 1;
+    // Temporarily, since Factor = 500 gets to the generic linear if not exactly
+    // 1/2 * 1/2
+    return 2;
   }
 
   // OpenCV uses 7 bit fractionl part for interpolation, that results in a
@@ -69,7 +71,7 @@ bool test_resize(int index, RecreatedMessageQueue& request_queue,
   for (size_t h = MinSize; h <= MaxSize; h += 2) {
     for (size_t w = MinSize; w <= MaxSize; w += 3) {
       cv::Mat input_mat;
-      if constexpr (Factor < 1000) {
+      if constexpr (Factor < 1000 && Factor != 500) {
         input_mat.create(h * 1000 / Factor, w * 1000 / Factor, Format);
       } else {
         input_mat.create(h, w, Format);
