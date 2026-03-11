@@ -620,13 +620,13 @@ TEST(StandaloneLKAlgTest, Fuzz) {
   uint8_t status[point_count] = {};
 
   std::mt19937_64 rng(test::Options::seed());
-  std::uniform_int_distribution<uint8_t> dist(0, 255);
+  std::uniform_int_distribution<uint16_t> dist(0, 255);
   std::uniform_real_distribution<float> distpt(0, width);
 
   for (int j = 0; j < 1000; ++j) {
     for (int i = 0; i < width * height; ++i) {
-      prev_image[i] = dist(rng);
-      next_image[i] = dist(rng);
+      prev_image[i] = static_cast<uint8_t>(dist(rng));
+      next_image[i] = static_cast<uint8_t>(dist(rng));
     }
 
     const std::vector<uint8_t> padded_prev_image = pad_image_border_reverse(
