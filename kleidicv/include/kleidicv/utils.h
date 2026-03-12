@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -53,6 +53,15 @@ static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
   }
 
   return static_cast<DstType>(value);
+}
+
+// Saturating subtract for unsigned types
+template <typename T, std::enable_if_t<std::is_unsigned_v<T>, bool> = true>
+static T saturating_sub(T a, T b) KLEIDICV_STREAMING {
+  if (b > a) {
+    return static_cast<T>(0);
+  }
+  return static_cast<T>(a - b);
 }
 
 // Rounding shift right.

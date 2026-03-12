@@ -1104,10 +1104,10 @@ KLEIDICV_API_DECLARATION(kleidicv_count_nonzeros_u8, const uint8_t *src,
 ///                     start of the next row for the source data.
 ///                     Must be a multiple of `sizeof(type)` and no less than
 ///                     `width * sizeof(type)`, except for single-row images.
-/// @param src_width    Number of elements in the source row. For downsizing, it
-///                     must be at least 16 if the ratio is between 1/2 and 1,
-///                     and at least 32 if the ratio is between 1/3 and 1/2.
-///                     Must be less than (1 << 24).
+/// @param src_width    Number of elements in the source row. For downsizing,
+///                     `src_width * channels` must be at least 16 if the ratio
+///                     is between 1/2 and 1, and at least 32 if the ratio is
+///                     between 1/3 and 1/2. Must be less than (1 << 24).
 /// @param src_height   Number of rows in the source data.
 ///                     Must be less than (1 << 24).
 /// @param dst          Pointer to the destination data. Must be non-null.
@@ -1116,8 +1116,8 @@ KLEIDICV_API_DECLARATION(kleidicv_count_nonzeros_u8, const uint8_t *src,
 ///                     Must be a multiple of `sizeof(type)` and no less than
 ///                     `width * sizeof(type)`, except for single-row images.
 /// @param dst_width    Number of elements in the destination row.
-///                     For downsizing, it must be at least 8.
-///                     For upsizing, it must be inline with the chosen
+///                     For downsizing, `dst_width * channels` must be at
+///                     least 8. For upsizing, it must be inline with the chosen
 ///                     operation, for example `src_width * 2` in case of 2x2.
 ///                     Must be less than (1 << 24).
 /// @param dst_height   Number of rows in the destination data.

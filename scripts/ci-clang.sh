@@ -44,6 +44,7 @@ ninja -C build/ci/clang/
 LONG_VECTOR_TESTS="GRAY2.*:RGB*:Yuv*:Rgb*:Resize*"
 TESTRESULT=0
 qemu-aarch64 build/ci/clang/test/framework/kleidicv-framework-test --gtest_output=xml:build/ci/test-results/clang-framework/ || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a35 build/ci/clang/test/unit_neon/kleidicv-neon-unit-test --gtest_output=xml:build/ci/test-results/clang-unit-neon/ || TESTRESULT=1
 qemu-aarch64 -cpu cortex-a35 build/ci/clang/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-neon/ || TESTRESULT=1
 qemu-aarch64 -cpu max,sve128=on,sme=off \
   build/ci/clang/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sve128/ --vector-length=16 || TESTRESULT=1
@@ -54,6 +55,7 @@ qemu-aarch64 -cpu max,sve128=on,sme512=on \
 armie -mvl=16 -msvl=64 -mfeatures=scripts/armie_features.txt \
   build/ci/clang/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme2/ --vector-length=64 || TESTRESULT=1
 
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-unit-neon/kleidicv-neon-unit-test.xml "clang-unit-neon."
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-neon/kleidicv-api-test.xml "clang-neon."
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve128/kleidicv-api-test.xml "clang-sve128."
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve2048/kleidicv-api-test.xml "clang-sve2048."

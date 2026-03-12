@@ -152,20 +152,22 @@ kleidicv_error_t kleidicv_resize_linear_stripe_u8(
   }
 
   assert(channels == 3);
-  double inverz_scale =
+  double inverse_scale =
       static_cast<double>(src_width) / static_cast<double>(dst_width);
-  // SVE variant does not handle the rightmost lanes of b and d vectors for 3
-  // channel images, so use the r3 and use the Neon variant only over 2.8
-  if (inverz_scale < 1.8) {
+  // Loading 3 vectors and TBL3 is faster than loading extra lanes
+  // Use the r3 variant over 1/1.8
+  if (inverse_scale < 1.8) {
     return kleidicv_resize_3ch_r2_stripe_u8(src, src_stride, src_width,
                                             src_height, y_begin, y_end, dst,
                                             dst_stride, dst_width, dst_height);
   }
-  if (inverz_scale < 2.8) {
+  if (inverse_scale < 2.8) {
     return kleidicv_resize_3ch_r3_stripe_u8(src, src_stride, src_width,
                                             src_height, y_begin, y_end, dst,
                                             dst_stride, dst_width, dst_height);
   }
+  // SVE variant does not handle the rightmost lanes of b and d vectors for 3
+  // channel images, so if over 2.8, use the Neon variant only
   return kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 3>(
       src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
       dst_width, dst_height);

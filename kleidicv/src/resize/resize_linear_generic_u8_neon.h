@@ -195,8 +195,7 @@ class RowInterpolationConstantsGenerator final
 
     // Maximum source coordinate for vector path 2x
     const uint64_t max_sx_2x =
-        std::max(Base::src_width_ * kChannels - (sizeof(uint8x16_t) * kRatio),
-                 0UL) /
+        (Base::src_width_ * kChannels - (sizeof(uint8x16_t) * kRatio)) /
         kChannels;
     // Difference in source x coordinate for one vector path
     const uint64_t sx_fixp_vector_step = rounding_div(
@@ -246,10 +245,7 @@ class RowInterpolationConstantsGenerator final
         rounding_div(Base::src_width_ << kFixpBits, Base::dst_width_);
     // Maximum source coordinate for half vector path
     const uint64_t max_sx_half =
-        std::max(Base::src_width_ * kChannels -
-
-                     (sizeof(uint8x16_t) * (kRatio - 1)),
-                 0UL) /
+        (Base::src_width_ * kChannels - (sizeof(uint8x16_t) * (kRatio - 1))) /
         kChannels;
     // Maximum destination coordinate for half vector path
     const uint64_t max_dx_half = Base::dst_width_ - (kHalfStep / kChannels);
@@ -474,8 +470,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     size_t half_vector_path_src_read_size =
         kChannels == 3 ? sizeof(uint8x16x2_t)
                        : (sizeof(uint8x16_t) * (kRatio - 1));
-    const uint64_t max_src_base_index = std::max(
-        Base::src_width_ * kChannels - half_vector_path_src_read_size, 0UL);
+    const uint64_t max_src_base_index = saturating_sub(
+        Base::src_width_ * kChannels, half_vector_path_src_read_size);
     // Maximum destination coordinate for half vector path
     const uint64_t max_dst_index_half =
         (Base::dst_width_ * kChannels) - kHalfStep;
@@ -799,17 +795,7 @@ class ResizeGenericU8Operation final {
       b = vqtbl2q_u8(topsrc, vsx1_idx);
       c = vqtbl2q_u8(bottomsrc, vsx0_idx);
       d = vqtbl2q_u8(bottomsrc, vsx1_idx);
-      if constexpr (kSetRightmostLanes) {
-        // table lookup would overindex topsrc and bottomsrc
-        ptrdiff_t last_but_one_right_elem_idx =
-            src_element_index + constants.idx[14] + kChannels;
-        ptrdiff_t last_right_elem_idx =
-            src_element_index + constants.idx[15] + kChannels;
-        b = vsetq_lane_u8(src_top[last_but_one_right_elem_idx], b, 14);
-        b = vsetq_lane_u8(src_top[last_right_elem_idx], b, 15);
-        d = vsetq_lane_u8(src_bottom[last_but_one_right_elem_idx], d, 14);
-        d = vsetq_lane_u8(src_bottom[last_right_elem_idx], d, 15);
-      }
+      static_assert(!kSetRightmostLanes);
     } else if constexpr (kRatio == 3) {
       a = vqtbl3q_u8(topsrc, vsx0_idx);
       b = vqtbl3q_u8(topsrc, vsx1_idx);

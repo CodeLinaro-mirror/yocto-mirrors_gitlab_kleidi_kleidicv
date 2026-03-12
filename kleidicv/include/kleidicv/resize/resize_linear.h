@@ -48,13 +48,13 @@ inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
   // needed to execute vector operations
   if (channels <= 3 && dst_width * 3 >= src_width && dst_width < src_width &&
       dst_height < src_height) {
-    if (dst_width < 8) {
+    if (dst_width * channels < 8) {
       return false;
     }
     if ((dst_width * 2 >= src_width) && (channels != 3)) {
-      return src_width >= 16;
+      return src_width * channels >= 16;
     }
-    return src_width >= 32;
+    return src_width * channels >= 32;
   }
 
   return false;
