@@ -22,6 +22,7 @@ This changelog aims to follow the guiding principles of
 - Scharr interleaved multi-channel support.
 - Blur and downsample multi-channel support.
 - Standalone lucas kanade alg.
+- LK optical-flow pyramid builder.
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.

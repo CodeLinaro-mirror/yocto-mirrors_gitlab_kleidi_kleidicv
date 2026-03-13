@@ -86,6 +86,10 @@ typedef enum {
   KLEIDICV_INTERPOLATION_LINEAR,
 } kleidicv_interpolation_type_t;
 
+/// Internal structure where optical flow LK pyramid stores its state
+typedef struct kleidicv_optical_flow_pyr_lk_pyramid_t_
+    kleidicv_optical_flow_pyr_lk_pyramid_t;
+
 /// Supported color conversions and base formats/modifier flags.
 typedef enum {
   // Base formats:
