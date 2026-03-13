@@ -22,6 +22,8 @@ This changelog aims to follow the guiding principles of
 - Scharr interleaved multi-channel support.
 - Blur and downsample multi-channel support.
 - Standalone lucas kanade alg.
+- Rotate support for -90 degrees (90 degrees counter-clockwise).
+- Multithreaded transpose for out-of-place calls (in-place remains single-threaded).
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.

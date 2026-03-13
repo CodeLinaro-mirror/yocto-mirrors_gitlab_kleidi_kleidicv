@@ -1472,8 +1472,8 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
 
 /// Matrix rotate operation.
 /// In-place operation is not supported.
-/// Only supports 90 degrees clockwise rotate
-/// Example for `src[3,2]` to `dst[2,3]`:
+/// Supports 90-degree clockwise and 90-degree counter-clockwise rotation.
+/// Example (90-degree clockwise) for `src[3,2]` to `dst[2,3]`:
 /// ```
 /// | 0 | 1 | 2 |    | 4 | 0 |
 /// | 4 | 5 | 6 | -> | 5 | 1 |
@@ -1496,7 +1496,7 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
 ///                     Must be a multiple of `element_size` and no less than
 ///                     `height * element_size`, except for single-column
 ///                     images.
-/// @param angle        Degrees to rotate clockwise. Must be 90.
+/// @param angle        Degrees to rotate clockwise. Must be 90, -90, or 270.
 /// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_rotate, const void *src, size_t src_stride,

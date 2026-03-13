@@ -86,7 +86,7 @@ See `doc/opencv.md` for details of the functionality available in OpenCV.
 | Merge                         |   x   |    x   |    x   |    x   |
 | Split                         |   x   |    x   |    x   |    x   |
 | Transpose                     |   x   |    x   |    x   |    x   |
-| Rotate (90 degrees clockwise) |   x   |    x   |    x   |    x   |
+| Rotate (±90 degrees)          |   x   |    x   |    x   |    x   |
 
 ## Image filters
 |                                                   | s8  | u8  | s16 | u16 | s32 | u32 | f32 |

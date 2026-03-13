@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -42,33 +42,34 @@ class RotateThread : public testing::TestWithParam<size_t> {
   void test(size_t src_width, size_t src_height, size_t padding) const {
     const size_t dst_width = src_height;
     const size_t dst_height = src_width;
-    const int angle = 90;
     unsigned thread_count = 2;
     size_t element_size = GetParam();
     size_t src_stride = (src_width + padding) * element_size;
     size_t dst_stride = (dst_width + padding) * element_size;
 
     std::vector<uint8_t> source(src_stride * src_height, 0);
-    std::vector<uint8_t> expected(dst_stride * dst_height, 0);
-    std::vector<uint8_t> actual_single(dst_stride * dst_height, 0);
-    std::vector<uint8_t> actual_multi(dst_stride * dst_height, 0);
-
     std::mt19937 generator{
         static_cast<std::mt19937::result_type>(test::Options::seed())};
     std::generate(source.begin(), source.end(), generator);
 
-    ASSERT_EQ(KLEIDICV_OK, kleidicv_rotate(source.data(), src_stride, src_width,
-                                           src_height, actual_single.data(),
-                                           dst_stride, angle, element_size));
+    for (int angle : {90, -90}) {
+      std::vector<uint8_t> actual_single(dst_stride * dst_height, 0);
+      std::vector<uint8_t> actual_multi(dst_stride * dst_height, 0);
 
-    ASSERT_EQ(KLEIDICV_OK,
-              kleidicv_thread_rotate(source.data(), src_stride, src_width,
-                                     src_height, actual_multi.data(),
-                                     dst_stride, angle, element_size,
-                                     get_multithreading_fake(thread_count)));
+      ASSERT_EQ(KLEIDICV_OK,
+                kleidicv_rotate(source.data(), src_stride, src_width,
+                                src_height, actual_single.data(), dst_stride,
+                                angle, element_size));
 
-    expect_eq_vector2D(actual_multi.data(), actual_single.data(), dst_width,
-                       dst_height, dst_stride, element_size);
+      ASSERT_EQ(KLEIDICV_OK,
+                kleidicv_thread_rotate(source.data(), src_stride, src_width,
+                                       src_height, actual_multi.data(),
+                                       dst_stride, angle, element_size,
+                                       get_multithreading_fake(thread_count)));
+
+      expect_eq_vector2D(actual_multi.data(), actual_single.data(), dst_width,
+                         dst_height, dst_stride, element_size);
+    }
   }
 
   void expect_eq_vector2D(const uint8_t *lhs, const uint8_t *rhs, size_t width,
@@ -104,14 +105,15 @@ TEST(RotateThreadNotImplemented, InPlace) {
   const size_t height = 1;
   const size_t element_size = 1;
   const size_t stride = width * element_size;
-  const int angle = 90;
   unsigned thread_count = 2;
 
   uint8_t source[width * height] = {};
-  ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_thread_rotate(source, stride, width, height, source,
-                                   stride, angle, element_size,
-                                   get_multithreading_fake(thread_count)));
+  for (int angle : {90, -90}) {
+    ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+              kleidicv_thread_rotate(source, stride, width, height, source,
+                                     stride, angle, element_size,
+                                     get_multithreading_fake(thread_count)));
+  }
 }
 
 TEST(RotateThreadNotImplemented, Angle) {

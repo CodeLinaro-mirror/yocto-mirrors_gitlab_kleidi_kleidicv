@@ -46,6 +46,8 @@ std::vector<test> all_tests = merge_tests({
     rgb2yuv420_tests_get,
     rgb_to_yuv_422_tests_get,
     standalone_lucas_kanade_alg_tests_get,
+    rotate_tests_get,
+    transpose_tests_get,
 });
 
 #if MANAGER

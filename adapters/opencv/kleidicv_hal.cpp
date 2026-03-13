@@ -46,6 +46,8 @@ enum {
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8 = 13000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8_F16 = 9000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_F32 = 20000,
+  MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_U8 = 40000,
+  MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_U16 = 30000,
   MULTITHREAD_MIN_ELEMENTS_ROTATE_U8 = 40000,
   MULTITHREAD_MIN_ELEMENTS_ROTATE_U16 = 30000,
 };
@@ -890,20 +892,42 @@ int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height,
               int element_size) {
+#if !KLEIDICV_ENABLE_ALL_OPENCV_HAL
+  // KleidiCV has regression on some devices for 4-byte and 8-byte element size
   if ((element_size != 1) && (element_size != 2)) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
+#endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
   // Inplace transpose is only implemented if width and height is equal
   if (src_data == dst_data && src_width != src_height) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
-  return convert_error(kleidicv_transpose(
-      reinterpret_cast<const void *>(src_data), src_step,
-      reinterpret_cast<void *>(dst_data), dst_step,
-      static_cast<size_t>(src_width), static_cast<size_t>(src_height),
-      static_cast<size_t>(element_size)));
+  size_t multithread_min_elements = 0;
+  switch (element_size) {
+    case sizeof(uint8_t):
+      multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_U8;
+      break;
+    case sizeof(uint16_t):
+      multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_U16;
+      break;
+    default:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return convert_error(
+      static_cast<size_t>(src_width * src_height) < multithread_min_elements
+          ? kleidicv_transpose(reinterpret_cast<const void *>(src_data),
+                               src_step, reinterpret_cast<void *>(dst_data),
+                               dst_step, static_cast<size_t>(src_width),
+                               static_cast<size_t>(src_height),
+                               static_cast<size_t>(element_size))
+          : kleidicv_thread_transpose(
+                reinterpret_cast<const void *>(src_data), src_step,
+                reinterpret_cast<void *>(dst_data), dst_step,
+                static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+                static_cast<size_t>(element_size), get_multithreading()));
 }
 
 int sum(const uchar *src_data, size_t src_step, int src_type, int width,
@@ -938,7 +962,7 @@ int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
   }
 #endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
 
-  int multithread_min_elements = 0;
+  size_t multithread_min_elements = 0;
   switch (element_size) {
     case sizeof(uint8_t):
       multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_ROTATE_U8;
@@ -949,7 +973,7 @@ int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
   }
 
   return convert_error(
-      src_width * src_height < multithread_min_elements
+      static_cast<size_t>(src_width * src_height) < multithread_min_elements
           ? kleidicv_rotate(reinterpret_cast<const void *>(src_data), src_step,
                             static_cast<size_t>(src_width),
                             static_cast<size_t>(src_height),
