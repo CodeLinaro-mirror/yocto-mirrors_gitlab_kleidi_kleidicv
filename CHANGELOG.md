@@ -8,12 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 This file documents significant changes between KleidiCV releases.
 
-KleidiCV uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+KleidiCV uses [Calendar Versioning](https://calver.org/) with the format of 0Y.0M.
 
 This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 0.8.0 - not yet released
+## 26.03 - not yet released
 
 ### Added
 - Support for OpenCV 4.13.
@@ -28,6 +28,7 @@ This changelog aims to follow the guiding principles of
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.
+- Switch project versioning from Semantic Versioning to Calendar Versioning using 0Y.0M.
 
 ### Fixed
 - Return `CV_HAL_ERROR_NOT_IMPLEMENTED` in the OpenCV HAL for Morphology and Median Blur when called in-place,
