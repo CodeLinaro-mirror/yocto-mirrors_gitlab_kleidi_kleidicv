@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -56,7 +56,7 @@ class YUV422ToRGBxOrBGRx {
           // Because we unroll twice, we must process two pixels at once.
           // Each pixel contributes two components (Y + chroma), so 4 vectors
           // are required: Y0, Y1, U, and V. This is why we perform 4 loads
-          // instead of 2 — they directly correspond to the unrolled iteration.
+          // instead of 2 - they directly correspond to the unrolled iteration.
           svuint8x4_t yuv422 = svld4(pg, src_row + index * scn);
           svuint8_t y_even_lanes = svget4(yuv422, y_idx);
           svuint8_t y_odd_lanes = svget4(yuv422, y_idx + scn);
@@ -142,9 +142,9 @@ class YUV422ToRGBxOrBGRx {
     // not the Y component itself.
     //
     // In YUV422, pixels are stored as (Y0, U0, Y1, V0).
-    // - The "even" vectors collect Y0, Y2, Y4, ... → these generate the
+    // - The "even" vectors collect Y0, Y2, Y4, ... - these generate the
     //   even-positioned RGB outputs.
-    // - The "odd" vectors collect Y1, Y3, Y5, ... → these generate the
+    // - The "odd" vectors collect Y1, Y3, Y5, ... - these generate the
     //   odd-positioned RGB outputs.
     //
     // How it works here:
@@ -152,11 +152,11 @@ class YUV422ToRGBxOrBGRx {
     // 2. Widen each half to 32-bit lanes with svunpklo()/svunpkhi().
     //
     // Why this may look unusual:
-    // - At first glance, you might expect “_lo_hi” to come from *_hi, but
+    // - At first glance, you might expect "_lo_hi" to come from *_hi, but
     //   that would require extra moves and shuffles.
-    // - Current scheme uses only 2× svmov + 4× svunpk per group, which is
+    // - Current scheme uses only 2x svmov + 4x svunpk per group, which is
     //   efficient since the pipeline can issue two svunpk in parallel.
-    // - A more “intuitive” pairing would need 4× svmov + 2× svunpk, which is
+    // - A more "intuitive" pairing would need 4x svmov + 2x svunpk, which is
     //   slower because svmov has less bundling freedom.
     // - Using svmovlb/svmovlt also aligns lanes so later narrowing can run
     //   without additional shuffles, improving overall performance.
@@ -227,7 +227,7 @@ class YUV422ToRGBxOrBGRx {
     // Scale the Y (luma) values by the fixed coefficient kYWeight.
     // This produces the weighted luma contribution (Y') that forms the
     // base term for all R, G, and B channel calculations in the
-    // YUV → RGB conversion.
+    // YUV to RGB conversion.
     y_even_lo_lo = svmul_x(pg, y_even_lo_lo, kYWeight);
     y_even_lo_hi = svmul_x(pg, y_even_lo_hi, kYWeight);
     y_even_hi_lo = svmul_x(pg, y_even_hi_lo, kYWeight);
@@ -241,7 +241,7 @@ class YUV422ToRGBxOrBGRx {
     // These include the rounding term (1 << (kWeightScale - 1)) and the
     // bias correction for centering U and V around 128.
     // This ensures that chroma values (U,V) are properly zero-based before
-    // applying their respective weighting factors in the YUV → RGB formulas.
+    // applying their respective weighting factors in the YUV to RGB formulas.
     constexpr int32_t kOffset = 1 << (kWeightScale - 1);
     svint32_t r_base = svdup_s32(kOffset - 128 * kUVWeights[kRVWeightIndex]);
     svint32_t g_base =
@@ -271,7 +271,7 @@ class YUV422ToRGBxOrBGRx {
     //   r_even_hi_lo (even pixels 8..11),  r_even_hi_hi (even 12..15)
     // The same chroma sums drive the odd pixels, so we reuse the r_even_*
     // vectors when adding the odd Y lanes below.
-    // normalize_and_pack(...) saturates → shifts → narrows s32→u8 *and*
+    // normalize_and_pack(...) saturates, shifts, narrows s32 to u8 *and*
     // interleaves even/odd so the output is in raster order:
     //   [R0, R1, R2, R3, ...] (i.e., even0, odd0, even1, odd1, ...).
     // r0 packs the first 16 R samples; r1 packs the next 16, which come from

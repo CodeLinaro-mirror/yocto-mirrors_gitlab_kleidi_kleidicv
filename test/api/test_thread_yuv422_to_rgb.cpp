@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -53,7 +53,7 @@ class Yuv422Thread : public testing::TestWithParam<P> {
 
   template <typename Func>
   void run_unsupported(Func impl, kleidicv_color_conversion_t color_format) {
-    // 20 pixels wide → 40 bytes per row in YUV422.
+    // 20 pixels wide, 40 bytes per row in YUV422.
     test::Array2D<uint8_t> src{40, 10};
     size_t channel = get_dcn(color_format);
     test::Array2D<uint8_t> dst{60, 10, 0, channel};

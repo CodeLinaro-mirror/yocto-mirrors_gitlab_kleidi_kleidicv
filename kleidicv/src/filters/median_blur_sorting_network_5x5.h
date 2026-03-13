@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,7 +13,7 @@
 namespace KLEIDICV_TARGET_NAMESPACE {
 // R. B. Kent and M. S. Pattichis, ''Design of high-speed multiway merge
 // sorting networks using fast single-stage N-sorters and N-filters,'' *IEEE
-// Access*, vol. 10, pp. 79565–79581, Jul. 2022,
+// Access*, vol. 10, pp. 79565-79581, Jul. 2022,
 // doi: 10.1109/ACCESS.2022.3193370. The paper is currently available at:
 // https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9837930
 template <class Comparator, typename KernelWindowFunctor, typename T,

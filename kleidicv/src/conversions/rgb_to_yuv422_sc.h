@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -51,7 +51,7 @@ class RGBxOrBGRxToYUV422 {
       Columns<uint8_t> dst_row{dst + dst_stride * h, dcn};
       LoopUnroll2 loop{width, kVectorLength};
 
-      // Unroll by 2: convert two RGB pixels → one YVYU pair [Y0, V0, Y1, U0].
+      // Unroll by 2: convert two RGB pixels to one YVYU pair [Y0, V0, Y1, U0].
       // Compute Y0 and Y1 per pixel; compute V0/U0 once for the pair (shared
       // chroma); then pack as [Y0, V0, Y1, U0] each iteration for higher
       // throughput.

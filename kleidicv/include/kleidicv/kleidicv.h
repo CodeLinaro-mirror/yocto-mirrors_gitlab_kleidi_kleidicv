@@ -576,9 +576,9 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8, const uint8_t *src,
 /// - Planar YUV420 (I420 or YV12 layout)
 ///
 ///   The input buffer consists of three planes stored sequentially in memory:
-///   - Y plane: full resolution, `size = width × height`
-///   - U plane: quarter resolution, `size = (width / 2) × (height / 2)`
-///   - V plane: quarter resolution, `size = (width / 2) × (height / 2)`
+///   - Y plane: full resolution, `size = width x height`
+///   - U plane: quarter resolution, `size = (width / 2) x (height / 2)`
+///   - V plane: quarter resolution, `size = (width / 2) x (height / 2)`
 ///
 ///   The layout order (Y + U + V or Y + V + U) is determined by `color_format`.
 ///
@@ -652,8 +652,8 @@ kleidicv_error_t kleidicv_yuv_to_rgb_u8(
 /// - Semi-Planar YUV420
 ///
 ///   The input consists of two planes:
-///   - Y plane:  full resolution, `size = width × height`
-///   - UV plane: half resolution, `size = (width / 2) × (height / 2)`
+///   - Y plane:  full resolution, `size = width x height`
+///   - UV plane: half resolution, `size = (width / 2) x (height / 2)`
 ///
 ///   The UV plane contains interleaved chroma samples:
 ///   - NV12: UVUVUV...
@@ -727,9 +727,9 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8,
 ///
 ///   The destination buffer consists of three planes stored sequentially
 ///   in memory:
-///   - Y plane: full resolution, `size = width × height`
-///   - U plane: quarter resolution, `size = (width / 2) × (height / 2)`
-///   - V plane: quarter resolution, `size = (width / 2) × (height / 2)`
+///   - Y plane: full resolution, `size = width x height`
+///   - U plane: quarter resolution, `size = (width / 2) x (height / 2)`
+///   - V plane: quarter resolution, `size = (width / 2) x (height / 2)`
 ///
 ///   The layout order (Y + U + V or Y + V + U) is determined by `color_format`.
 ///
@@ -756,7 +756,7 @@ KLEIDICV_API_DECLARATION(kleidicv_yuv_semiplanar_to_rgb_u8,
 ///   - YVYU: [Y0 V0 Y1 U0] [Y2 V2 Y3 U2] ...
 ///
 ///   Each pair of output pixels shares one U and one V sample, computed as the
-///   average of the two corresponding source pixels’ chroma values. Because
+///   average of the two corresponding source pixels` chroma values. Because
 ///   pixels are processed in pairs, the image width must be at least 2 and kept
 ///   even for all YUV422 conversions.
 ///
@@ -816,8 +816,8 @@ kleidicv_error_t kleidicv_rgb_to_yuv_u8(
 /// - Semi-Planar YUV420
 ///
 ///    The destination consists of two planes:
-///    - Y plane:  full resolution, `size = width × height`
-///    - UV plane: half resolution, `size = (width / 2) × (height / 2) × 2`
+///    - Y plane:  full resolution, `size = width x height`
+///    - UV plane: half resolution, `size = (width / 2) x (height / 2) x 2`
 ///      bytes per chroma sample pair
 ///
 ///    The UV plane contains interleaved chroma samples:

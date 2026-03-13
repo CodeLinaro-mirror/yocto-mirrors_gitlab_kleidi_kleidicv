@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -147,7 +147,7 @@ class MedianBlurLargeHist {
   // patched_coarse:
   //   - Conceptually a 3D array:
   //       coarse[channel_idx][patch_offset][coarse_bin]
-  //   - coarse_bin = incoming_pixel >> 4 ∈ [0, 15]
+  //   - coarse_bin = incoming_pixel >> 4 (in the range of [0, 15])
   //   - Flattened as:
   //       coarse_offset = 16 * (patch_length * channel_idx + patch_offset)
   //                       + (incoming_pixel >> 4);
@@ -155,8 +155,8 @@ class MedianBlurLargeHist {
   // patched_fine:
   //   - Conceptually a 4D array:
   //       fine[channel_idx][coarse_bin][patch_offset][fine_bin]
-  //   - coarse_bin = incoming_pixel >> 4 ∈ [0, 15]
-  //   - fine_bin   = incoming_pixel & 0xF ∈ [0, 15]
+  //   - coarse_bin = incoming_pixel >> 4 (in the range of [0, 15])
+  //   - fine_bin   = incoming_pixel & 0xF (in the range of [0, 15])
   //   - Flattened as:
   //       fine_offset = 16 * (patch_length * (16 * channel_idx + coarse_bin)
   //                           + patch_offset) + fine_bin;
@@ -170,7 +170,7 @@ class MedianBlurLargeHist {
   // Clear only the portion of the patched histogram buffers that will be used
   // for the current patch.
   // Since these buffers are large, there's no need to zero out the entire
-  // allocation— only the section relevant to the current total patch size is
+  // allocation - only the section relevant to the current total patch size is
   // cleared for efficiency.
   void clear_patched_histogram(size_t total_patch_size) {
     std::memset(patched_coarse, 0,
@@ -542,7 +542,7 @@ class MedianBlurLargeHist {
       // locality between neighboring pixels.
       //
       // This lookup-based optimization significantly improves performance,
-      // as neighboring filter windows often overlap heavily—especially for
+      // as neighboring filter windows often overlap heavily - especially for
       // small strides and moderate kernel sizes.
       //
       // After this step, the fine histogram is ready. The next phase scans

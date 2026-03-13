@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 set -eu
 
 # ------------------------------------------------------------------------------
-# Runs benchmarks described in benchmark specification file(s).
+# Runs benchmarks described in benchmark specification file(s).
 #
 # Benchmark specification should follow this pattern:
 #   <NAME>: <BINARY NAME> '<GTEST_FILTER>' '<GTEST_PARAM_FILTER>'
@@ -51,14 +51,14 @@ CURRENT_BENCHMARK=0
 # ------------------------------------------------------------------------------
 
 # Prints a warning message.
-# Arguments:
+# Arguments:
 #   1: Message to print.
 warn() {
     >&2 echo "WARNING: $1"
 }
 
 # Selects which resolution to use.
-# Arguments: none
+# Arguments: none
 select_resolution() {
     if [ -z "${RESOLUTION:-}" ]; then
         warn "Resolution is not specified, falling back to 4K UHD."
@@ -80,7 +80,7 @@ select_resolution() {
     esac
 }
 
-# Calls a user-supplied function for every benchmark.
+# Calls a user-supplied function for every benchmark.
 # Arguments:
 #   1: Path to a benchmark specification.
 #   2: Function to call for a benchmark.
@@ -88,9 +88,9 @@ foreach_benchmark() {
     [ ! -f "${1}" ] && return
 
     while IFS= read -r line; do
-        # Skip empty lines
+        # Skip empty lines
         [ -z "${line}" ] && continue
-        # Skip lines starting with '#'
+        # Skip lines starting with '#'
         [ -z "${line%\#*}" ] && continue
 
         "${2}" "${line}"
@@ -114,12 +114,12 @@ run_benchmark() {
     # Replace multiple spaces with one.
     spec="$(echo "${spec}" | tr -s ' ')"
 
-    # Resolve $PIXEL_FORMAT
+    # Resolve $PIXEL_FORMAT
     # shellcheck disable=SC3060
     # Targeted shell support string replacement.
     spec="${spec//\$PIXEL_FORMAT/${PIXEL_FORMAT}}"
 
-    # Be informative to user.
+    # Be informative to user.
     CURRENT_BENCHMARK=$((CURRENT_BENCHMARK+1))
     >&2 echo RUNNING ["${CURRENT_BENCHMARK}"/"${NUM_BENCHMARKS}"]: "${spec}"
 
@@ -128,7 +128,7 @@ run_benchmark() {
     local -r disp_name="${spec%%:*}"
 
     # shellcheck disable=SC2086
-    # Word splitting at the end is required here to produce PERF_TEST_BINARY_BASENAME, GTEST_FILTER and GTEST_PARAM_FILTER.
+    # Word splitting at the end is required here to produce PERF_TEST_BINARY_BASENAME, GTEST_FILTER and GTEST_PARAM_FILTER.
     eval "${DEV_DIR}"/perf_test_op.sh "${CUSTOM_BUILD_SUFFIX}" "${CPU}" "${THERMAL_ZONE_ID}" "${disp_name}" ${spec#*:}
     >&2 echo
 }
@@ -140,7 +140,7 @@ select_resolution
 foreach_benchmark "${DEV_DIR}"/benchmarks.txt count_benchmark
 foreach_benchmark "${DEV_DIR}"/benchmarks_"${RESOLUTION}".txt count_benchmark
 
-# Print tsv header overwriting any existing files.
+# Print tsv header overwriting any existing files.
 printf "Operation\tOpenCV\tstd\tKleidiCV\tstd\tKleidiCV_%s\tstd\n" "${CUSTOM_BUILD_SUFFIX}"
 
 foreach_benchmark "${DEV_DIR}"/benchmarks.txt run_benchmark

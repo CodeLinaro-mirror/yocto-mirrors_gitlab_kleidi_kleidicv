@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,7 +11,7 @@
 namespace kleidicv::neon {
 
 // B. Weiss, "Fast Median and Bilateral Filtering," in *ACM SIGGRAPH 2006
-// Papers*, ACM, New York, NY, USA, pp. 519–526, 2006.
+// Papers*, ACM, New York, NY, USA, pp. 519-526, 2006.
 // The paper is currently available at:
 // http://mesh.brown.edu/engn1610/refs/Weiss-siggraph2006.pdf
 class MedianBlurSmallHist {

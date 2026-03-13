@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -45,7 +45,7 @@ class YUV422ToRGBxOrBGRx {
           // Because we unroll twice, we must process two pixels at once.
           // Each pixel contributes two components (Y + chroma), so 4 vectors
           // are required: Y0, Y1, U, and V. This is why we perform 4 loads
-          // instead of 2 — they directly correspond to the unrolled iteration.
+          // instead of 2 - they directly correspond to the unrolled iteration.
           uint8x16x4_t yuv422 = vld4q_u8(src_row + index * scn);
           uint8x16_t y_even_lanes = yuv422.val[y_idx];
           uint8x16_t y_odd_lanes = yuv422.val[y_idx + scn];
@@ -128,13 +128,13 @@ class YUV422ToRGBxOrBGRx {
     uint8x16_t y_even_lanes_m16 = vqsubq_u8(y_even_lanes, vdupq_n_u8(16));
     uint8x16_t y_odd_lanes_m16 = vqsubq_u8(y_odd_lanes, vdupq_n_u8(16));
 
-    // --- Zero-extend (8 → 32) via table lookups ---
+    // --- Zero-extend (8 to 32) via table lookups ---
     // The masks feed vqtbl1q_u8 so each lookup pulls 4 bytes out of a 16-lane
     // u8 vector and places the selected byte as the least-significant byte of a
     // 32-bit lane while zeroing the remaining three bytes.
-    // vqtbl1q_u8 inserts 0 for indices ≥ 16 (e.g., 0xFF), letting us build
-    // [x,0,0,0] groups that we reinterpret as int32x4_t to get u8→s32 lanes in
-    // one step.
+    // vqtbl1q_u8 inserts 0 for indices >= 16 (e.g., 0xFF), letting us build
+    // [x,0,0,0] groups that we reinterpret as int32x4_t to get u8 to s32 lanes
+    // in one step.
     const uint8x16_t index_0 = {0, 0xff, 0xff, 0xff, 1, 0xff, 0xff, 0xff,
                                 2, 0xff, 0xff, 0xff, 3, 0xff, 0xff, 0xff};
     const uint8x16_t index_1 = {4, 0xff, 0xff, 0xff, 5, 0xff, 0xff, 0xff,
@@ -149,9 +149,9 @@ class YUV422ToRGBxOrBGRx {
     // not the Y component itself.
     //
     // In YUV422, pixels are stored as (Y0, U0, Y1, V0).
-    // - The "even" vectors collect Y0, Y2, Y4, ... → these generate the
+    // - The "even" vectors collect Y0, Y2, Y4, ... - these generate the
     //   even-positioned RGB outputs.
-    // - The "odd" vectors collect Y1, Y3, Y5, ... → these generate the
+    // - The "odd" vectors collect Y1, Y3, Y5, ... - these generate the
     //   odd-positioned RGB outputs.
     int32x4_t y_even_lo_lo =
         vreinterpretq_s32_u8(vqtbl1q_u8(y_even_lanes_m16, index_0));
@@ -187,7 +187,7 @@ class YUV422ToRGBxOrBGRx {
     // Scale the Y (luma) values by the fixed coefficient kYWeight.
     // This produces the weighted luma contribution (Y') that forms the
     // base term for all R, G, and B channel calculations in the
-    // YUV → RGB conversion.
+    // YUV to RGB conversion.
     y_even_lo_lo = vmulq_n_s32(y_even_lo_lo, kYWeight);
     y_even_lo_hi = vmulq_n_s32(y_even_lo_hi, kYWeight);
     y_even_hi_lo = vmulq_n_s32(y_even_hi_lo, kYWeight);
@@ -201,7 +201,7 @@ class YUV422ToRGBxOrBGRx {
     // These include the rounding term (1 << (kWeightScale - 1)) and the
     // bias correction for centering U and V around 128.
     // This ensures that chroma values (U,V) are properly zero-based before
-    // applying their respective weighting factors in the YUV → RGB formulas.
+    // applying their respective weighting factors in the YUV to RGB formulas.
     int32x4_t r_base_{vdupq_n_s32((1 << (kWeightScale - 1)) -
                                   128 * kUVWeights[kRVWeightIndex])};
     int32x4_t g_base_{vdupq_n_s32(
@@ -243,7 +243,7 @@ class YUV422ToRGBxOrBGRx {
     // We computed R in four 4-lane chunks split by pixel parity:
     //   r_even_lo_lo (even pixels 0..3),   r_even_lo_hi (even 4..7)
     //   r_odd_lo_lo  (odd  pixels 0..3),   r_odd_lo_hi  (odd  4..7)
-    // normalize_and_pack(...) saturates → shifts → narrows s32→u8 *and*
+    // normalize_and_pack(...) saturates, shifts, narrows s32 to u8 *and*
     // interleaves even/odd so the output is in raster order:
     //   [R0, R1, R2, R3, ...] (i.e., even0, odd0, even1, odd1, ...).
     // r0 packs the first 16 R samples; r1 packs the next 16, which come from
