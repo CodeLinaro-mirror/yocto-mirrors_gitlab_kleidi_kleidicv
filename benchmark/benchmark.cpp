@@ -1033,85 +1033,200 @@ static void scharr_xy_border_reverse(const uint8_t* src, size_t src_stride,
   }
 }
 
-static void standalone_lucas_kanade_alg_u8(benchmark::State& state) {
-  const size_t max_window_width = 40;
-  const size_t padded_image_width = image_width + max_window_width * 2;
-  const size_t padded_image_height = image_height + max_window_width * 2;
-  std::minstd_rand generator;
+static constexpr size_t optical_flow_max_window_width = 40;
 
-  auto make_prev_image = [&]() {
-    std::vector<uint8_t> prev_image(padded_image_width * padded_image_height);
-    std::generate(prev_image.begin(), prev_image.end(), generator);
-    return prev_image;
-  };
-  static const std::vector<uint8_t> prev_image = make_prev_image();
+struct OpticalFlowBenchmarkData {
+  std::vector<uint8_t> prev_image;
+  std::vector<uint8_t> next_image;
+  std::vector<int16_t> deriv;
+  std::vector<float> prev_points;
+  size_t point_count;
+};
 
-  auto make_next_image = [&]() {
-    std::vector<uint8_t> next_image(prev_image.size());
-    for (size_t i = 0; i != prev_image.size(); ++i) {
+static const OpticalFlowBenchmarkData& get_optical_flow_benchmark_data() {
+  static const OpticalFlowBenchmarkData data = []() {
+    const size_t padded_image_width =
+        image_width + optical_flow_max_window_width * 2;
+    const size_t padded_image_height =
+        image_height + optical_flow_max_window_width * 2;
+    std::minstd_rand generator;
+
+    OpticalFlowBenchmarkData result{};
+
+    result.prev_image.resize(padded_image_width * padded_image_height);
+    std::generate(result.prev_image.begin(), result.prev_image.end(),
+                  generator);
+
+    result.next_image.resize(result.prev_image.size());
+    for (size_t i = 0; i != result.prev_image.size(); ++i) {
       // Make the next image the same as the previous image but with some noise
       // added.
-      next_image[i] = prev_image[i] + (generator() & 0xF);
+      result.next_image[i] = result.prev_image[i] + (generator() & 0xF);
     }
-    return next_image;
-  };
-  static const std::vector<uint8_t> next_image = make_next_image();
 
-  auto make_deriv = [&]() {
-    std::vector<int16_t> deriv(prev_image.size() * 2);
-    scharr_xy_border_reverse(prev_image.data(), padded_image_width,
-                             deriv.data(),
+    result.deriv.resize(result.prev_image.size() * 2);
+    scharr_xy_border_reverse(result.prev_image.data(), padded_image_width,
+                             result.deriv.data(),
                              padded_image_width * 2 * sizeof(int16_t),
                              padded_image_width, padded_image_height);
-    return deriv;
-  };
-  static const std::vector<int16_t> deriv = make_deriv();
 
-  const size_t point_count_x =
-      std::max<size_t>(1, image_width / max_window_width);
-  const size_t point_count_y =
-      std::max<size_t>(1, image_height / max_window_width);
-  const size_t point_count = point_count_x * point_count_y;
+    const size_t point_count_x =
+        std::max<size_t>(1, image_width / optical_flow_max_window_width);
+    const size_t point_count_y =
+        std::max<size_t>(1, image_height / optical_flow_max_window_width);
+    result.point_count = point_count_x * point_count_y;
+    result.prev_points.reserve(result.point_count * 2);
 
-  auto make_prev_points = [&]() {
-    std::vector<float> prev_points;
-    prev_points.reserve(point_count * 2);
-
-    // Generate regularly spaced but jittered points to sample
+    // Generate regularly spaced but jittered points to sample.
     std::uniform_real_distribution<float> point_jitter{0.0F, 1.0F};
     for (size_t j = 0; j != point_count_y; ++j) {
       for (size_t i = 0; i != point_count_x; ++i) {
         float x = (i + point_jitter(generator)) * image_width / point_count_x;
         float y = (j + point_jitter(generator)) * image_height / point_count_y;
-        prev_points.push_back(x);
-        prev_points.push_back(y);
+        result.prev_points.push_back(x);
+        result.prev_points.push_back(y);
       }
     }
-    return prev_points;
-  };
-  static const std::vector<float> prev_points = make_prev_points();
-  std::vector<float> next_points(point_count * 2);
 
-  std::vector<uint8_t> status(point_count);
+    return result;
+  }();
+  return data;
+}
+
+static void standalone_lucas_kanade_alg_u8(benchmark::State& state) {
+  const auto& data = get_optical_flow_benchmark_data();
+  const size_t padded_image_width =
+      image_width + optical_flow_max_window_width * 2;
+  std::vector<float> next_points(data.point_count * 2);
+  std::vector<uint8_t> status(data.point_count);
 
   const size_t window_width = state.range(0);
   const size_t window_height = window_width;
 
   bench_functor(state, [&]() {
     (void)kleidicv_standalone_lucas_kanade_alg_u8(
-        prev_image.data() + padded_image_width * window_height + window_width,
+        data.prev_image.data() + padded_image_width * window_height +
+            window_width,
         padded_image_width,
-        deriv.data() + (padded_image_width * window_height + window_width) * 2,
+        data.deriv.data() +
+            (padded_image_width * window_height + window_width) * 2,
         padded_image_width * 2 * sizeof(int16_t),
-        next_image.data() + padded_image_width * window_height + window_width,
+        data.next_image.data() + padded_image_width * window_height +
+            window_width,
         padded_image_width, image_width, image_height, 1 /*channels*/,
-        prev_points.data(), next_points.data(), point_count, status.data(),
-        nullptr /*err*/, window_width, window_height, 30 /*termination_count*/,
-        0.0001 /*termination_epsilon*/, true /*get_min_eigen_vals*/,
-        0.0001 /*min_eigen_vals_threshold*/);
+        data.prev_points.data(), next_points.data(), data.point_count,
+        status.data(), nullptr /*err*/, window_width, window_height,
+        30 /*termination_count*/, 0.0001 /*termination_epsilon*/,
+        true /*get_min_eigen_vals*/, 0.0001 /*min_eigen_vals_threshold*/);
   });
 }
 BENCHMARK(standalone_lucas_kanade_alg_u8)
+    ->ArgName("window_width")
+    ->Arg(7)
+    ->Arg(9)
+    ->Arg(11)
+    ->Arg(21);
+
+static void optical_flow_pyr_lk_u8_from_pyramid(benchmark::State& state) {
+  const auto& data = get_optical_flow_benchmark_data();
+  const size_t padded_image_width =
+      image_width + optical_flow_max_window_width * 2;
+  const size_t image_offset =
+      padded_image_width * optical_flow_max_window_width +
+      optical_flow_max_window_width;
+  const size_t window_width = state.range(0);
+  const kleidicv_optflow_lk_context_t context{window_width,
+                                              window_width,
+                                              2 /*max_level*/,
+                                              30 /*termination_count*/,
+                                              0.0001F /*termination_epsilon*/,
+                                              0.0001F /*min_eig_threshold*/,
+                                              KLEIDICV_GET_MIN_EIG};
+
+  kleidicv_optical_flow_pyr_lk_pyramid_t* prev_pyramid = nullptr;
+  kleidicv_optical_flow_pyr_lk_pyramid_t* next_pyramid = nullptr;
+  if (kleidicv_build_optical_flow_pyr_lk_pyramid(
+          &prev_pyramid, data.prev_image.data() + image_offset,
+          padded_image_width, image_width, image_height, 1 /*channels*/,
+          context.max_level + 1, context.window_width,
+          context.window_height) != KLEIDICV_OK) {
+    state.SkipWithError("Failed to build the previous optical flow pyramid");
+    return;
+  }
+  if (kleidicv_build_optical_flow_pyr_lk_pyramid(
+          &next_pyramid, data.next_image.data() + image_offset,
+          padded_image_width, image_width, image_height, 1 /*channels*/,
+          context.max_level + 1, context.window_width,
+          context.window_height) != KLEIDICV_OK) {
+    (void)kleidicv_optical_flow_pyr_lk_pyramid_release(prev_pyramid);
+    state.SkipWithError("Failed to build the next optical flow pyramid");
+    return;
+  }
+
+  std::vector<float> next_points(data.point_count * 2);
+  std::vector<uint8_t> status(data.point_count);
+  std::vector<float> err(data.point_count);
+
+  bench_functor(state, [&]() {
+    if (kleidicv_optical_flow_pyr_lk_u8_from_pyramid(
+            prev_pyramid, next_pyramid, data.prev_points.data(),
+            next_points.data(), data.point_count, status.data(), err.data(),
+            context) != KLEIDICV_OK) {
+      state.SkipWithError(
+          "kleidicv_optical_flow_pyr_lk_u8_from_pyramid failed");
+      return;
+    }
+    benchmark::DoNotOptimize(next_points.data());
+    benchmark::DoNotOptimize(status.data());
+    benchmark::DoNotOptimize(err.data());
+  });
+
+  (void)kleidicv_optical_flow_pyr_lk_pyramid_release(next_pyramid);
+  (void)kleidicv_optical_flow_pyr_lk_pyramid_release(prev_pyramid);
+}
+BENCHMARK(optical_flow_pyr_lk_u8_from_pyramid)
+    ->ArgName("window_width")
+    ->Arg(7)
+    ->Arg(9)
+    ->Arg(11)
+    ->Arg(21);
+
+static void optical_flow_pyr_lk_u8(benchmark::State& state) {
+  const auto& data = get_optical_flow_benchmark_data();
+  const size_t padded_image_width =
+      image_width + optical_flow_max_window_width * 2;
+  const size_t image_offset =
+      padded_image_width * optical_flow_max_window_width +
+      optical_flow_max_window_width;
+  const size_t window_width = state.range(0);
+  const kleidicv_optflow_lk_context_t context{window_width,
+                                              window_width,
+                                              2 /*max_level*/,
+                                              30 /*termination_count*/,
+                                              0.0001F /*termination_epsilon*/,
+                                              0.0001F /*min_eig_threshold*/,
+                                              KLEIDICV_GET_MIN_EIG};
+
+  std::vector<float> next_points(data.point_count * 2);
+  std::vector<uint8_t> status(data.point_count);
+  std::vector<float> err(data.point_count);
+
+  bench_functor(state, [&]() {
+    if (kleidicv_optical_flow_pyr_lk_u8(
+            data.prev_image.data() + image_offset, padded_image_width,
+            data.next_image.data() + image_offset, padded_image_width,
+            image_width, image_height, 1 /*channels*/, data.prev_points.data(),
+            next_points.data(), data.point_count, status.data(), err.data(),
+            context) != KLEIDICV_OK) {
+      state.SkipWithError("kleidicv_optical_flow_pyr_lk_u8 failed");
+      return;
+    }
+    benchmark::DoNotOptimize(next_points.data());
+    benchmark::DoNotOptimize(status.data());
+    benchmark::DoNotOptimize(err.data());
+  });
+}
+BENCHMARK(optical_flow_pyr_lk_u8)
     ->ArgName("window_width")
     ->Arg(7)
     ->Arg(9)

@@ -55,6 +55,7 @@ std::vector<test> all_tests = merge_tests({
 
 std::vector<manager_only_test> all_manager_only_tests = merge_tests({
     build_optical_flow_pyr_lk_pyramid_tests_get,
+    calc_optical_flow_pyr_lk_tests_get,
 });
 
 void fail_print_matrices(size_t height, size_t width, cv::Mat& input,

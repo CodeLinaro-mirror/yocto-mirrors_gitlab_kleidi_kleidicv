@@ -1098,6 +1098,119 @@ kleidicv_error_t kleidicv_build_optical_flow_pyr_lk_pyramid(
 kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_release(
     kleidicv_optical_flow_pyr_lk_pyramid_t *pyramid);
 
+/// Computes pyramidal LK optical flow using prebuilt pyramids.
+///
+/// Pyramids must be handles originally created by
+/// @ref kleidicv_build_optical_flow_pyr_lk_pyramid. Foreign handles,
+/// reinterpreted objects, or pyramid objects modified after creation are not
+/// valid inputs.
+/// Level 0 dimensions and channel count must match between `prev_pyramid` and
+/// `next_pyramid`.
+///
+/// `prev_points` stores the source point coordinates as interleaved x/y pairs.
+/// `next_points` stores the tracked coordinates as interleaved x/y pairs.
+/// If @ref KLEIDICV_USE_INITIAL_FLOW is set in `context.flags`, the values in
+/// `next_points` are used as initial guesses. Otherwise, `prev_points` are used
+/// as initial guesses.
+///
+/// If `point_count` is 0, the function returns success without accessing point
+/// arrays.
+///
+/// @param prev_pyramid Pointer to the previous-frame LK pyramid. Must be
+///                     non-null.
+/// @param next_pyramid Pointer to the next-frame LK pyramid. Must be non-null.
+/// @param prev_points  Pointer to `2 * point_count` float values containing
+///                     x/y coordinates in the previous image. Must be non-null
+///                     when `point_count > 0`.
+/// @param next_points  Pointer to `2 * point_count` float values containing
+///                     initial guesses and receiving tracked coordinates.
+///                     Must be non-null when `point_count > 0`.
+/// @param point_count  Number of points to track.
+/// @param status       Pointer to `point_count` bytes with tracking status per
+///                     point. Must be non-null when `point_count > 0`.
+/// @param err          Optional pointer to `point_count` float values.
+///                     When @ref KLEIDICV_GET_MIN_EIG is set, minimum
+///                     eigenvalues are written. Otherwise, `err` receives the
+///                     photometric error last produced by the coarse-to-fine
+///                     solve. For points that remain valid through level 0,
+///                     this is the level-0 photometric error. If a point is
+///                     rejected at a finer level after a coarser level has
+///                     already produced a photometric error, `err` may retain
+///                     that earlier-level value. Callers should therefore use
+///                     `status` to decide whether a photometric error value is
+///                     meaningful.
+/// @param context      LK tracking context. See @ref
+///                     kleidicv_optflow_lk_context_t.
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_u8_from_pyramid(
+    const kleidicv_optical_flow_pyr_lk_pyramid_t *prev_pyramid,
+    const kleidicv_optical_flow_pyr_lk_pyramid_t *next_pyramid,
+    const float *prev_points, float *next_points, size_t point_count,
+    uint8_t *status, float *err, kleidicv_optflow_lk_context_t context);
+
+/// Computes pyramidal LK optical flow and builds pyramids internally.
+///
+/// This function builds LK pyramids for `prev_img` and `next_img` using
+/// @ref kleidicv_build_optical_flow_pyr_lk_pyramid, then performs tracking with
+/// @ref kleidicv_optical_flow_pyr_lk_u8_from_pyramid.
+///
+/// The direct path still builds the full opaque pyramid for `next_img`,
+/// including Scharr levels, even though the current solver only samples the
+/// next-frame image levels. This keeps the prev/next pyramid handles
+/// interchangeable, avoids a second pyramid representation with different
+/// ownership rules, and helps streaming pipelines reuse one call's `next`
+/// pyramid as a later call's `prev` pyramid through the from-pyramid API
+/// instead of rebuilding or converting it.
+///
+/// `prev_points` stores the source point coordinates as interleaved x/y pairs.
+/// `next_points` stores the tracked coordinates as interleaved x/y pairs.
+/// If @ref KLEIDICV_USE_INITIAL_FLOW is set in `context.flags`, the values in
+/// `next_points` are used as initial guesses. Otherwise, `prev_points` are used
+/// as initial guesses.
+///
+/// If `point_count` is 0, the function returns success without accessing point
+/// arrays.
+///
+/// @param prev_img         Pointer to previous image data. Must be non-null.
+/// @param prev_img_stride  Distance in bytes between previous-image rows. Must
+///                         not be less than `width * channels`, except for
+///                         single-row images.
+/// @param next_img         Pointer to next image data. Must be non-null.
+/// @param next_img_stride  Distance in bytes between next-image rows. Must not
+///                         be less than `width * channels`, except for
+///                         single-row images.
+/// @param width            Image width in pixels. Must be greater than 0.
+/// @param height           Image height in pixels. Must be greater than 0.
+/// @param channels         Number of image channels. Must be in range
+///                         `[1, @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT]`.
+/// @param prev_points      Pointer to `2 * point_count` float values containing
+///                         x/y coordinates in the previous image. Must be
+///                         non-null when `point_count > 0`.
+/// @param next_points      Pointer to `2 * point_count` float values containing
+///                         initial guesses and receiving tracked coordinates.
+///                         Must be non-null when `point_count > 0`.
+/// @param point_count      Number of points to track.
+/// @param status           Pointer to `point_count` bytes with tracking status
+///                         per point. Must be non-null when `point_count > 0`.
+/// @param err              Optional pointer to `point_count` float values.
+///                         When @ref KLEIDICV_GET_MIN_EIG is set, minimum
+///                         eigenvalues are written. Otherwise, `err` receives
+///                         the photometric error last produced by the
+///                         coarse-to-fine solve. For points that remain valid
+///                         through level 0, this is the level-0 photometric
+///                         error. If a point is rejected at a finer level
+///                         after a coarser level has already produced a
+///                         photometric error, `err` may retain that
+///                         earlier-level value. Callers should therefore use
+///                         `status` to decide whether a photometric error
+///                         value is meaningful.
+/// @param context          LK tracking context. See
+///                         @ref kleidicv_optflow_lk_context_t.
+kleidicv_error_t kleidicv_optical_flow_pyr_lk_u8(
+    const uint8_t *prev_img, size_t prev_img_stride, const uint8_t *next_img,
+    size_t next_img_stride, size_t width, size_t height, size_t channels,
+    const float *prev_points, float *next_points, size_t point_count,
+    uint8_t *status, float *err, kleidicv_optflow_lk_context_t context);
+
 #ifndef DOXYGEN
 /// Internal - not part of the public API and its direct use is not supported.
 ///

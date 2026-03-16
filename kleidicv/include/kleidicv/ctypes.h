@@ -90,6 +90,61 @@ typedef enum {
 typedef struct kleidicv_optical_flow_pyr_lk_pyramid_t_
     kleidicv_optical_flow_pyr_lk_pyramid_t;
 
+/// Flags for pyramidal LK optical flow.
+enum {
+  /// @brief `next_points` provides the initial flow estimate.
+  ///
+  /// The input guess is scaled to the coarsest used pyramid level and then
+  /// refined down to level 0.
+  KLEIDICV_USE_INITIAL_FLOW = 1 << 0,
+  /// `err` stores minimum eigenvalues. When unset, `err` stores photometric
+  /// error.
+  KLEIDICV_GET_MIN_EIG = 1 << 1
+};
+
+/// Controls for pyramidal Lucas-Kanade optical flow.
+typedef struct {
+  /// Width of the window, must be greater than 2.
+  size_t window_width;
+  /// Width of the window, must be greater than 2.
+  size_t window_height;
+  /// @brief Maximum pyramid level index to use during tracking.
+  ///
+  /// `max_level = N` uses levels `N` down to 0 (inclusive).
+  ///
+  /// Examples:
+  /// * `max_level = 0` uses level 0 only.
+  /// * `max_level = 1` uses levels 1 and 0.
+  /// * `max_level = 2` uses levels 2, 1, and 0.
+  ///
+  /// The effective top level may be lower if the input images are too small
+  /// for that many levels or if prebuilt pyramids contain fewer levels.
+  size_t max_level;
+  /// @brief Maximum number of LK refinement iterations per point at each
+  /// pyramid level.
+  ///
+  /// Must be greater than 0.
+  size_t termination_count;
+  /// @brief Early-stopping tolerance for the per-level LK update step.
+  ///
+  /// Uses the same unsquared epsilon semantics as OpenCV's pyramidal LK API.
+  /// Must be non-negative.
+  ///
+  /// Internally, the single-level LK solver compares the squared update length
+  /// (`dx*dx + dy*dy`) against the squared epsilon threshold.
+  float termination_epsilon;
+  /// @brief Minimum eigenvalue threshold used to reject weak features.
+  ///
+  /// Points whose local structure tensor is too weak are marked as not tracked.
+  /// Must be non-negative.
+  float min_eig_threshold;
+  /// @brief More control flags.
+  ///
+  /// Can contain @ref KLEIDICV_USE_INITIAL_FLOW and/or
+  /// @ref KLEIDICV_GET_MIN_EIG.
+  int flags;
+} kleidicv_optflow_lk_context_t;
+
 /// Supported color conversions and base formats/modifier flags.
 typedef enum {
   // Base formats:

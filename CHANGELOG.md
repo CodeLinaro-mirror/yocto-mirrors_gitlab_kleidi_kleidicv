@@ -25,6 +25,7 @@ This changelog aims to follow the guiding principles of
 - Rotate support for -90 degrees (90 degrees counter-clockwise).
 - Multithreaded transpose for out-of-place calls (in-place remains single-threaded).
 - LK optical-flow pyramid builder.
+- Pyramidal LK optical-flow calculation API.
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.
