@@ -1149,6 +1149,46 @@ BENCHMARK(scharr_interleaved_s16_u8<2>);
 BENCHMARK(scharr_interleaved_s16_u8<3>);
 BENCHMARK(scharr_interleaved_s16_u8<4>);
 
+template <size_t Channels>
+static void build_optical_flow_pyr_lk_pyramid(benchmark::State& state) {
+  const size_t requested_level_count = static_cast<size_t>(state.range(0));
+  const size_t window_width = static_cast<size_t>(state.range(1));
+  const size_t window_height = window_width;
+
+  bench_functor(state, [&]() {
+    kleidicv_optical_flow_pyr_lk_pyramid_t* pyramid = nullptr;
+    const kleidicv_error_t err = kleidicv_build_optical_flow_pyr_lk_pyramid(
+        &pyramid, get_source_buffer_a<uint8_t, Channels>(),
+        image_width * sizeof(uint8_t) * Channels, image_width, image_height,
+        Channels, requested_level_count, window_width, window_height);
+    benchmark::DoNotOptimize(static_cast<int>(err));
+
+    if (err == KLEIDICV_OK) {
+      benchmark::DoNotOptimize(pyramid);
+      (void)kleidicv_optical_flow_pyr_lk_pyramid_release(pyramid);
+    }
+  });
+}
+
+static void build_optical_flow_pyr_lk_pyramid_args(
+    benchmark::internal::Benchmark* b) {
+  b->ArgNames({"level_count", "window_width"});
+  for (int level_count : {1, 3, 5}) {
+    for (int window_width : {7, 15, 21}) {
+      b->Args({level_count, window_width});
+    }
+  }
+}
+
+BENCHMARK(build_optical_flow_pyr_lk_pyramid<1>)
+    ->Apply(build_optical_flow_pyr_lk_pyramid_args);
+BENCHMARK(build_optical_flow_pyr_lk_pyramid<2>)
+    ->Apply(build_optical_flow_pyr_lk_pyramid_args);
+BENCHMARK(build_optical_flow_pyr_lk_pyramid<3>)
+    ->Apply(build_optical_flow_pyr_lk_pyramid_args);
+BENCHMARK(build_optical_flow_pyr_lk_pyramid<4>)
+    ->Apply(build_optical_flow_pyr_lk_pyramid_args);
+
 template <class ScalarType>
 static const ScalarType* get_random_mapxy() {
   auto generate_mapxy = [&]() {

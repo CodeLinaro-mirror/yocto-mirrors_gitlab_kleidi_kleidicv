@@ -48,6 +48,7 @@ std::vector<test> all_tests = merge_tests({
     standalone_lucas_kanade_alg_tests_get,
     rotate_tests_get,
     transpose_tests_get,
+    build_optical_flow_pyr_lk_pyramid_tests_get,
 });
 
 #if MANAGER

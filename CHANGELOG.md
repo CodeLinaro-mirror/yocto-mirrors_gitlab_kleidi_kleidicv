@@ -24,6 +24,7 @@ This changelog aims to follow the guiding principles of
 - Standalone lucas kanade alg.
 - Rotate support for -90 degrees (90 degrees counter-clockwise).
 - Multithreaded transpose for out-of-place calls (in-place remains single-threaded).
+- LK optical-flow pyramid builder.
 
 ### Changed
 - sepFilter2D is enabled in the OpenCV HAL.

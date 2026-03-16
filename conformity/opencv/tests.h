@@ -34,5 +34,6 @@ std::vector<test>& rgb_to_yuv_422_tests_get();
 std::vector<test>& standalone_lucas_kanade_alg_tests_get();
 std::vector<test>& rotate_tests_get();
 std::vector<test>& transpose_tests_get();
+std::vector<test>& build_optical_flow_pyr_lk_pyramid_tests_get();
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TESTS_H_
