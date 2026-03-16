@@ -892,6 +892,9 @@ int canny(const uchar *src_data, size_t src_step, uchar *dst_data,
 int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
               size_t dst_step, int src_width, int src_height,
               int element_size) {
+  // This file uses OpenCV's style, so the argument name element_size is kept as
+  // it is, but in KleidiCV this abstraction is called pixel_size
+
 #if !KLEIDICV_ENABLE_ALL_OPENCV_HAL
   // KleidiCV has regression on some devices for 4-byte and 8-byte element size
   if ((element_size != 1) && (element_size != 2)) {
@@ -954,6 +957,8 @@ int sum(const uchar *src_data, size_t src_step, int src_type, int width,
 
 int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int angle) {
+  // This file uses OpenCV's style, so this is kept as element_size, but in
+  // KleidiCV this abstraction is called pixel_size
   int element_size = CV_ELEM_SIZE(src_type);
 #if !KLEIDICV_ENABLE_ALL_OPENCV_HAL
   // KleidiCV has regression on some devices for 4-byte and 8-byte element size

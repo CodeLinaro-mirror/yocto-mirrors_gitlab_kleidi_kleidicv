@@ -248,7 +248,7 @@ kleidicv_error_t kleidicv_thread_saturating_add_abs_with_threshold_s16(
 kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
                                            void *dst, size_t dst_stride,
                                            size_t src_width, size_t src_height,
-                                           size_t element_size,
+                                           size_t pixel_size,
                                            kleidicv_thread_multithreading mt) {
   if (src == dst) {
     if (src_width != src_height) {
@@ -259,11 +259,11 @@ kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
     // matrix, so parallel tiles can touch overlapping rows/cols and race.
     // Call the single-threaded implementation to avoid data corruption.
     return kleidicv_transpose(src, src_stride, dst, dst_stride, src_width,
-                              src_height, element_size);
+                              src_height, pixel_size);
   }
   // Validate supported element sizes before spinning up worker threads for a
   // call that the underlying transpose implementation would reject anyway.
-  switch (element_size) {
+  switch (pixel_size) {
     case sizeof(uint8_t):
     case sizeof(uint16_t):
     case sizeof(uint32_t):
@@ -274,9 +274,9 @@ kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
   }
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_transpose(
-        static_cast<const uint8_t *>(src) + begin * element_size, src_stride,
+        static_cast<const uint8_t *>(src) + begin * pixel_size, src_stride,
         static_cast<uint8_t *>(dst) + begin * dst_stride, dst_stride,
-        end - begin, src_height, element_size);
+        end - begin, src_height, pixel_size);
   };
   return parallel_batches(callback, mt, src_width, 64);
 }
@@ -284,19 +284,19 @@ kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
 kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,
                                         size_t width, size_t height, void *dst,
                                         size_t dst_stride, int angle,
-                                        size_t element_size,
+                                        size_t pixel_size,
                                         kleidicv_thread_multithreading mt) {
-  if (!kleidicv::rotate_is_implemented(src, dst, angle, element_size)) {
+  if (!kleidicv::rotate_is_implemented(src, dst, angle, pixel_size)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
   // reading in columns and writing out rows tends to perform better
   auto callback = [=](unsigned begin, unsigned end) {
     const size_t dst_column_offset = (angle == 90) ? begin : (width - end);
     return kleidicv_rotate(
-        static_cast<const uint8_t *>(src) + begin * element_size, src_stride,
+        static_cast<const uint8_t *>(src) + begin * pixel_size, src_stride,
         end - begin, height,
         static_cast<uint8_t *>(dst) + dst_column_offset * dst_stride,
-        dst_stride, angle, element_size);
+        dst_stride, angle, pixel_size);
   };
   return parallel_batches(callback, mt, width, 64);
 }

@@ -133,8 +133,8 @@ static kleidicv_error_t transpose(const void *src_void, size_t src_stride,
 KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t transpose(const void *src, size_t src_stride, void *dst,
                            size_t dst_stride, size_t src_width,
-                           size_t src_height, size_t element_size) {
-  switch (element_size) {
+                           size_t src_height, size_t pixel_size) {
+  switch (pixel_size) {
     case sizeof(uint8_t):
       return transpose<uint8_t>(src, src_stride, dst, dst_stride, src_width,
                                 src_height);

@@ -103,12 +103,12 @@ static kleidicv_error_t rotate(const void *src_void, size_t src_stride,
 KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t rotate(const void *src, size_t src_stride, size_t src_width,
                         size_t src_height, void *dst, size_t dst_stride,
-                        int angle, size_t element_size) {
-  if (!rotate_is_implemented(src, dst, angle, element_size)) {
+                        int angle, size_t pixel_size) {
+  if (!rotate_is_implemented(src, dst, angle, pixel_size)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  switch (element_size) {
+  switch (pixel_size) {
     case sizeof(uint8_t):
       return rotate<uint8_t>(src, src_stride, src_width, src_height, dst,
                              dst_stride, angle);
@@ -123,7 +123,7 @@ kleidicv_error_t rotate(const void *src, size_t src_stride, size_t src_width,
                               dst_stride, angle);
     // GCOVR_EXCL_START
     default:
-      assert(!"element size not implemented");
+      assert(!"pixel size not implemented");
       return KLEIDICV_ERROR_NOT_IMPLEMENTED;
       // GCOVR_EXCL_STOP
   }

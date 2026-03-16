@@ -13,7 +13,7 @@
 namespace kleidicv {
 
 inline bool rotate_is_implemented(const void *src, void *dst, int angle,
-                                  size_t element_size) {
+                                  size_t pixel_size) {
   if (angle != 90 && angle != -90 && angle != 270) {
     return false;
   }
@@ -21,7 +21,7 @@ inline bool rotate_is_implemented(const void *src, void *dst, int angle,
     // Do not support inplace rotate at the moment
     return false;
   }
-  switch (element_size) {
+  switch (pixel_size) {
     case sizeof(uint8_t):
     case sizeof(uint16_t):
     case sizeof(uint32_t):
@@ -36,7 +36,7 @@ namespace neon {
 
 kleidicv_error_t rotate(const void *src, size_t src_stride, size_t width,
                         size_t height, void *dst, size_t dst_stride, int angle,
-                        size_t element_size);
+                        size_t pixel_size);
 }  // namespace neon
 
 }  // namespace kleidicv
