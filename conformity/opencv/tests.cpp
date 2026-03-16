@@ -12,11 +12,12 @@
 #include "opencv2/imgproc.hpp"
 #include "utils.h"
 
-static std::vector<test> merge_tests(
-    std::initializer_list<std::vector<test>& (*)()> test_groups) {
-  std::vector<test> all_tests;
+template <typename test_>
+std::vector<test_> merge_tests(
+    std::initializer_list<std::vector<test_>& (*)()> test_groups) {
+  std::vector<test_> all_tests;
   for (auto getter : test_groups) {
-    std::vector<test>& group = getter();
+    std::vector<test_>& group = getter();
     all_tests.insert(all_tests.cend(), group.cbegin(), group.cend());
   }
   return all_tests;
@@ -48,10 +49,14 @@ std::vector<test> all_tests = merge_tests({
     standalone_lucas_kanade_alg_tests_get,
     rotate_tests_get,
     transpose_tests_get,
-    build_optical_flow_pyr_lk_pyramid_tests_get,
 });
 
 #if MANAGER
+
+std::vector<manager_only_test> all_manager_only_tests = merge_tests({
+    build_optical_flow_pyr_lk_pyramid_tests_get,
+});
+
 void fail_print_matrices(size_t height, size_t width, cv::Mat& input,
                          cv::Mat& manager_result, cv::Mat& subord_result) {
   std::cout << "[FAIL]" << std::endl;
@@ -90,6 +95,13 @@ int run_tests(RecreatedMessageQueue& request_queue,
     }
   }
   request_queue.request_exit();
+
+  for (auto [name, test_func] : all_manager_only_tests) {
+    std::cout << "Testing " + name << std::endl;
+    if (test_func()) {
+      ret_val = 1;
+    }
+  }
 
   return ret_val;
 }

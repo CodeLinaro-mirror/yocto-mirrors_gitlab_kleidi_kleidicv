@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -134,7 +134,13 @@ typedef bool (*test_function)(int index, RecreatedMessageQueue& request_queue,
                               RecreatedMessageQueue& reply_queue);
 using test = std::pair<std::string, test_function>;
 #define TEST(name, test_func, x) {name, test_func}
-#else
+
+typedef bool (*manager_only_test_function)();
+using manager_only_test = std::pair<std::string, manager_only_test_function>;
+#define MANAGER_ONLY_TEST(name, test_func) {name, test_func}
+
+#else  // #if MANAGER
+
 void wait_for_requests(OpenedMessageQueue& request_queue,
                        OpenedMessageQueue& reply_queue);
 

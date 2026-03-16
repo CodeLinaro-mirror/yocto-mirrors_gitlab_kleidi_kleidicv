@@ -70,16 +70,7 @@ kleidicv_error_t kleidicv_optical_flow_pyr_lk_pyramid_get_scharr_level(
     const int16_t** data, size_t* stride, size_t* width, size_t* height);
 
 }  // extern "C"
-#endif
 
-// Conformity tests in this file validate the build APIs:
-// - kleidicv_build_optical_flow_pyr_lk_pyramid
-cv::Mat exec_build_optical_flow_pyr_lk_pyramid(cv::Mat& input) {
-  // Subordinate is unused by this test runner. Return deterministic output.
-  return input.clone();
-}
-
-#if MANAGER
 static bool compare_pyramid_against_expected(
     kleidicv_optical_flow_pyr_lk_pyramid_t* actual_pyramid,
     const std::vector<cv::Mat>& expected_pyramid, const cv::Mat& input,
@@ -174,10 +165,8 @@ static bool compare_pyramid_against_expected(
   return false;
 }
 
-static bool run_build_optical_flow_case(
-    cv::Size win_size, size_t max_level, size_t channels, int /* index */,
-    RecreatedMessageQueue& /* request_queue */,
-    RecreatedMessageQueue& /* reply_queue */) {
+static bool run_build_optical_flow_case(cv::Size win_size, size_t max_level,
+                                        size_t channels) {
   cv::RNG rng(0);
 
   struct GeometryCase {
@@ -311,12 +300,10 @@ static bool run_build_optical_flow_case(
   return false;
 }
 
-#define DEFINE_BUILD_OPTICAL_FLOW_TEST(win_w, win_h, lvl, ch)                  \
-  bool test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c##ch( \
-      int index, RecreatedMessageQueue& request_queue,                         \
-      RecreatedMessageQueue& reply_queue) {                                    \
-    return run_build_optical_flow_case(cv::Size{win_w, win_h}, lvl, ch, index, \
-                                       request_queue, reply_queue);            \
+#define DEFINE_BUILD_OPTICAL_FLOW_TEST(win_w, win_h, lvl, ch)                \
+  bool                                                                       \
+  test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c##ch() { \
+    return run_build_optical_flow_case(cv::Size{win_w, win_h}, lvl, ch);     \
   }
 
 #define DEFINE_BUILD_OPTICAL_FLOW_TEST_ALL_CHANNELS(win_w, win_h, lvl) \
@@ -363,21 +350,20 @@ DEFINE_BUILD_OPTICAL_FLOW_TEST_ALL_CHANNELS(15, 15, 4)
 
 #undef DEFINE_BUILD_OPTICAL_FLOW_TEST_ALL_CHANNELS
 #undef DEFINE_BUILD_OPTICAL_FLOW_TEST
-#endif
 
-std::vector<test>& build_optical_flow_pyr_lk_pyramid_tests_get() {
+std::vector<manager_only_test>& build_optical_flow_pyr_lk_pyramid_tests_get() {
   // clang-format off
-  #define BUILD_OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(win_w, win_h, lvl)                                              \
-    TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 1 channel",            \
-         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c1, exec_build_optical_flow_pyr_lk_pyramid), \
-    TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 2 channel",            \
-         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c2, exec_build_optical_flow_pyr_lk_pyramid), \
-    TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 3 channel",            \
-         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c3, exec_build_optical_flow_pyr_lk_pyramid), \
-    TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 4 channel",            \
-         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c4, exec_build_optical_flow_pyr_lk_pyramid)
+  #define BUILD_OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(win_w, win_h, lvl)                                           \
+    MANAGER_ONLY_TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 1 channel",   \
+         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c1),                                      \
+    MANAGER_ONLY_TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 2 channel",   \
+         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c2),                                      \
+    MANAGER_ONLY_TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 3 channel",   \
+         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c3),                                      \
+    MANAGER_ONLY_TEST("Build Optical Flow PyrLK Pyramid window " #win_w "x" #win_h ", level " #lvl ", 4 channel",   \
+         test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c4)
 
-  static std::vector<test> tests = {
+  static std::vector<manager_only_test> tests = {
     BUILD_OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 0),
     BUILD_OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 1),
     BUILD_OPTICAL_FLOW_TEST_ENTRIES_ALL_CHANNELS(3, 3, 2),
@@ -418,3 +404,5 @@ std::vector<test>& build_optical_flow_pyr_lk_pyramid_tests_get() {
   // clang-format on
   return tests;
 }
+
+#endif
