@@ -37,6 +37,7 @@ std::vector<test>& transpose_tests_get();
 
 #if MANAGER
 std::vector<manager_only_test>& build_optical_flow_pyr_lk_pyramid_tests_get();
+std::vector<manager_only_test>& calc_optical_flow_pyr_lk_tests_get();
 #endif
 
 #endif  // KLEIDICV_OPENCV_CONFORMITY_TESTS_H_
