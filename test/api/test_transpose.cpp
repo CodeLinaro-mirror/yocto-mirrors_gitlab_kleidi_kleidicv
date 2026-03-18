@@ -1,250 +1,300 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "framework/array.h"
 #include "framework/generator.h"
 #include "kleidicv/kleidicv.h"
-#include "test_config.h"
 
-template <typename ElementType, bool inplace>
-class TestTranspose final {
+class Transpose : public testing::TestWithParam<size_t> {
  public:
-  explicit TestTranspose(size_t padding) : padding_(padding) {}
-
-  void scalar_test() {
-    size_t first_dim = test::Options::vector_lanes<ElementType>() - 1;
-    size_t second_dim =
-        inplace ? first_dim : test::Options::vector_lanes<ElementType>() + 1;
-    // Exercise horizontal scalar path
-    test(first_dim, second_dim);
-    if (!inplace) {
-      // Exercise vertical scalar path
-      test(second_dim, first_dim);
-    }
+  void scalar_test(size_t padding) {
+    const size_t lanes = lanes_for_element_size();
+    size_t first_dim = lanes - 1;
+    size_t second_dim = lanes + 1;
+    // Exercise scalar paths
+    test_out_of_place(first_dim, second_dim, padding);
+    test_out_of_place(second_dim, first_dim, padding);
+    test_in_place(first_dim, padding);
   }
 
-  void vector_test() {
+  void vector_test(size_t padding) {
+    const size_t lanes = lanes_for_element_size();
     // Make at least two full vector passes
-    size_t src_width = 2 * test::Options::vector_lanes<ElementType>();
-    // Set height to be different from width but still bigger than vector_lanes
-    size_t src_height =
-        inplace ? src_width : 3 * test::Options::vector_lanes<ElementType>();
-    test(src_width, src_height);
+    size_t src_width = 2 * lanes;
+    size_t src_height = 3 * lanes;
+    test_out_of_place(src_width, src_height, padding);
+    test_in_place(src_width, padding);
   }
 
-  // For the 'remaining' part of the outer vector loop of inplace transpose
-  void vector_plus_scalar_test() {
-    // Two full vector passes, plus some scalar
-    size_t first_dim = 3 * test::Options::vector_lanes<ElementType>() - 1;
-    size_t second_dim =
-        inplace ? first_dim
-                : 3 * test::Options::vector_lanes<ElementType>() + 1;
-    test(first_dim, second_dim);
-    if (!inplace) {
-      test(second_dim, first_dim);
-    }
+  void vector_plus_scalar_test(size_t padding) {
+    const size_t lanes = lanes_for_element_size();
+    size_t first_dim = 3 * lanes - 1;
+    size_t second_dim = 3 * lanes + 1;
+    test_out_of_place(first_dim, second_dim, padding);
+    test_out_of_place(second_dim, first_dim, padding);
+    test_in_place(first_dim, padding);
   }
 
  protected:
-  void test(size_t src_width, size_t src_height) const {
-    const size_t dst_width = src_height;
-    const size_t dst_height = src_width;
-
-    test::Array2D<ElementType> source(src_width, src_height, padding_, 1);
-    test::Array2D<ElementType> expected(dst_width, dst_height, padding_, 1);
-    test::Array2D<ElementType> actual;
-    test::Array2D<ElementType> *p_actual = &source;
-
-    // Only allocate actual array if needed
-    if constexpr (!inplace) {
-      actual = test::Array2D<ElementType>(dst_width, dst_height, padding_, 1);
-      p_actual = &actual;
+  size_t lanes_for_element_size() const {
+    const size_t element_size = GetParam();
+    switch (element_size) {
+      case sizeof(uint8_t):
+        return test::Options::vector_lanes<uint8_t>();
+      case sizeof(uint16_t):
+        return test::Options::vector_lanes<uint16_t>();
+      case sizeof(uint32_t):
+        return test::Options::vector_lanes<uint32_t>();
+      case sizeof(uint64_t):
+        return test::Options::vector_lanes<uint64_t>();
+      case sizeof(uint8_t) * 3:
+        return test::Options::vector_lanes<uint8_t>();
+      case sizeof(uint16_t) * 3:
+        return test::Options::vector_lanes<uint16_t>();
+      default:
+        return test::Options::vector_lanes<uint8_t>();
     }
-
-    // No specific values to test
-    test::PseudoRandomNumberGenerator<ElementType> generator;
-    source.fill(generator);
-
-    calculate_expected(source, expected);
-
-    ASSERT_EQ(KLEIDICV_OK,
-              kleidicv_transpose(source.data(), source.stride(),
-                                 p_actual->data(), p_actual->stride(),
-                                 src_width, src_height, sizeof(ElementType)));
-
-    EXPECT_EQ_ARRAY2D(expected, *p_actual);
   }
 
-  void calculate_expected(const test::Array2D<ElementType> &source,
-                          test::Array2D<ElementType> &expected) const {
-    for (size_t hindex = 0; hindex < source.height(); ++hindex) {
-      for (size_t vindex = 0; vindex < source.width(); ++vindex) {
-        // NOLINTBEGIN(clang-analyzer-core.uninitialized.Assign)
-        *expected.at(vindex, hindex) = *source.at(hindex, vindex);
-        // NOLINTEND(clang-analyzer-core.uninitialized.Assign)
+  template <typename ScalarType, size_t kChannels>
+  void test_out_of_place_impl(size_t src_width, size_t src_height,
+                              size_t padding) const {
+    const size_t dst_width = src_height;
+    const size_t dst_height = src_width;
+    const size_t element_size = sizeof(ScalarType) * kChannels;
+    const size_t src_width_elements = src_width * kChannels;
+    const size_t dst_width_elements = dst_width * kChannels;
+    const size_t padding_elements = padding * kChannels;
+
+    test::Array2D<ScalarType> source(src_width_elements, src_height,
+                                     padding_elements, kChannels);
+    test::Array2D<ScalarType> expected(dst_width_elements, dst_height,
+                                       padding_elements, kChannels);
+    test::Array2D<ScalarType> actual(dst_width_elements, dst_height,
+                                     padding_elements, kChannels);
+
+    test::PseudoRandomNumberGenerator<ScalarType> input_value_random_range;
+    source.fill(input_value_random_range);
+
+    calculate_expected(reinterpret_cast<const uint8_t *>(source.data()),
+                       reinterpret_cast<uint8_t *>(expected.data()), src_width,
+                       src_height, source.stride(), expected.stride(),
+                       element_size);
+
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_transpose(source.data(), source.stride(), actual.data(),
+                                 actual.stride(), src_width, src_height,
+                                 element_size));
+
+    expect_eq_vector2D(reinterpret_cast<const uint8_t *>(expected.data()),
+                       reinterpret_cast<const uint8_t *>(actual.data()),
+                       dst_width, dst_height, actual.stride(), element_size);
+  }
+
+  template <typename ScalarType, size_t kChannels>
+  void test_in_place_impl(size_t size, size_t padding) const {
+    const size_t element_size = sizeof(ScalarType) * kChannels;
+    const size_t width_elements = size * kChannels;
+    const size_t padding_elements = padding * kChannels;
+
+    test::Array2D<ScalarType> source(width_elements, size, padding_elements,
+                                     kChannels);
+    test::Array2D<ScalarType> expected(width_elements, size, padding_elements,
+                                       kChannels);
+    test::Array2D<ScalarType> actual;
+
+    test::PseudoRandomNumberGenerator<ScalarType> input_value_random_range;
+    source.fill(input_value_random_range);
+
+    calculate_expected(reinterpret_cast<const uint8_t *>(source.data()),
+                       reinterpret_cast<uint8_t *>(expected.data()), size, size,
+                       source.stride(), source.stride(), element_size);
+    actual = source;
+
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_transpose(actual.data(), actual.stride(), actual.data(),
+                                 actual.stride(), size, size, element_size));
+
+    expect_eq_vector2D(reinterpret_cast<const uint8_t *>(expected.data()),
+                       reinterpret_cast<const uint8_t *>(actual.data()), size,
+                       size, actual.stride(), element_size);
+  }
+
+  void test_out_of_place(size_t src_width, size_t src_height,
+                         size_t padding) const {
+    switch (GetParam()) {
+      case sizeof(uint8_t):
+        test_out_of_place_impl<uint8_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint16_t):
+        test_out_of_place_impl<uint16_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint32_t):
+        test_out_of_place_impl<uint32_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint64_t):
+        test_out_of_place_impl<uint64_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint8_t) * 3:
+        test_out_of_place_impl<uint8_t, 3>(src_width, src_height, padding);
+        break;
+      case sizeof(uint16_t) * 3:
+        test_out_of_place_impl<uint16_t, 3>(src_width, src_height, padding);
+        break;
+      default:
+        FAIL() << "Unsupported element size for transpose test.";
+    }
+  }
+
+  void test_in_place(size_t size, size_t padding) const {
+    switch (GetParam()) {
+      case sizeof(uint8_t):
+        test_in_place_impl<uint8_t, 1>(size, padding);
+        break;
+      case sizeof(uint16_t):
+        test_in_place_impl<uint16_t, 1>(size, padding);
+        break;
+      case sizeof(uint32_t):
+        test_in_place_impl<uint32_t, 1>(size, padding);
+        break;
+      case sizeof(uint64_t):
+        test_in_place_impl<uint64_t, 1>(size, padding);
+        break;
+      case sizeof(uint8_t) * 3:
+        test_in_place_impl<uint8_t, 3>(size, padding);
+        break;
+      case sizeof(uint16_t) * 3:
+        test_in_place_impl<uint16_t, 3>(size, padding);
+        break;
+      default:
+        FAIL() << "Unsupported element size for transpose test.";
+    }
+  }
+
+  void expect_eq_vector2D(const uint8_t *lhs, const uint8_t *rhs, size_t width,
+                          size_t height, size_t stride,
+                          size_t element_size) const {
+    for (size_t i = 0; i < height; i++) {
+      for (size_t j = 0; j < width * element_size; j++) {
+        ASSERT_EQ(lhs[i * stride + j], rhs[i * stride + j]);
       }
     }
   }
 
-  size_t padding_;
-};
-
-class TestNotImplemented {
- public:
-  template <typename ElementType>
-  static void wrong_dimensions() {
-    const size_t width = 1;
-    const size_t height = 2;
-    size_t stride = width * sizeof(ElementType);
-
-    ElementType source[width * height] = {0xFF};
-
-    ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              kleidicv_transpose(source, stride, source, stride, width, height,
-                                 sizeof(ElementType)));
-  }
-
-  template <typename WrongType>
-  static void wrong_type() {
-    const size_t width = 1, height = 1;
-    size_t stride = width * sizeof(WrongType);
-
-    WrongType source[width * height] = {0xFF};
-
-    ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              kleidicv_transpose(source, stride, source, stride, width, height,
-                                 sizeof(WrongType)));
+  void calculate_expected(const uint8_t *source, uint8_t *expected,
+                          size_t src_width, size_t src_height,
+                          size_t src_stride, size_t dst_stride,
+                          size_t element_size) const {
+    for (size_t i = 0; i < src_height; i++) {
+      for (size_t j = 0; j < src_width; j++) {
+        std::memcpy(expected + j * dst_stride + i * element_size,
+                    source + i * src_stride + j * element_size, element_size);
+      }
+    }
   }
 };
 
-template <typename ElementType>
-class Transpose : public testing::Test {};
+TEST_P(Transpose, ScalarNoPadding) { scalar_test(0); }
 
-using ElementTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
-TYPED_TEST_SUITE(Transpose, ElementTypes);
+TEST_P(Transpose, VectorNoPadding) { vector_test(0); }
 
-TYPED_TEST(Transpose, ScalarToNewBufferNoPadding) {
-  TestTranspose<TypeParam, false> test(0);
-  test.scalar_test();
+TEST_P(Transpose, ScalarWithPadding) { scalar_test(1); }
+
+TEST_P(Transpose, VectorWithPadding) { vector_test(1); }
+
+TEST_P(Transpose, VectorPlusScalarNoPadding) { vector_plus_scalar_test(0); }
+
+TEST_P(Transpose, VectorPlusScalarWithPadding) { vector_plus_scalar_test(1); }
+
+TEST_P(Transpose, NullPointer) {
+  std::vector<uint8_t> src(1, 0);
+  std::vector<uint8_t> dst(1, 0);
+  size_t element_size = GetParam();
+  test::test_null_args(kleidicv_transpose, src.data(), element_size, dst.data(),
+                       element_size, 1, 1, element_size);
 }
 
-TYPED_TEST(Transpose, VectorToNewBufferNoPadding) {
-  TestTranspose<TypeParam, false> test(0);
-  test.vector_test();
+TEST_P(Transpose, NotImplementedDims) {
+  std::vector<uint8_t> src(2, 0);
+  size_t element_size = GetParam();
+  size_t stride = element_size;
+  ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_transpose(src.data(), stride, src.data(), stride, 1, 2,
+                               element_size));
 }
 
-TYPED_TEST(Transpose, ScalarToNewBufferWithPadding) {
-  TestTranspose<TypeParam, false> test(1);
-  test.scalar_test();
+TEST(TransposeNotImplemented, ElementSize) {
+  const size_t width = 1;
+  const size_t height = 1;
+  const size_t element_size = 16;
+  const size_t stride = width * element_size;
+
+  std::vector<uint8_t> source(width * element_size * height, 0);
+  std::vector<uint8_t> dst(width * element_size * height, 0);
+  ASSERT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_transpose(source.data(), stride, dst.data(), stride, width,
+                               height, element_size));
 }
 
-TYPED_TEST(Transpose, VectorToNewBufferWithPadding) {
-  TestTranspose<TypeParam, false> test(1);
-  test.vector_test();
-}
-
-TYPED_TEST(Transpose, ScalarInplaceNoPadding) {
-  TestTranspose<TypeParam, true> test(0);
-  test.scalar_test();
-}
-
-TYPED_TEST(Transpose, VectorInplaceNoPadding) {
-  TestTranspose<TypeParam, true> test(0);
-  test.vector_test();
-}
-
-TYPED_TEST(Transpose, ScalarInplaceWithPadding) {
-  TestTranspose<TypeParam, true> test(1);
-  test.scalar_test();
-}
-
-TYPED_TEST(Transpose, VectorInplaceWithPadding) {
-  TestTranspose<TypeParam, true> test(1);
-  test.vector_test();
-}
-
-TYPED_TEST(Transpose, VectorPlusScalarNoPadding) {
-  TestTranspose<TypeParam, false> test(0);
-  test.vector_plus_scalar_test();
-}
-
-TYPED_TEST(Transpose, VectorPlusScalarWithPadding) {
-  TestTranspose<TypeParam, false> test(1);
-  test.vector_plus_scalar_test();
-}
-
-TYPED_TEST(Transpose, VectorPlusScalarInplaceNoPadding) {
-  TestTranspose<TypeParam, true> test(0);
-  test.vector_plus_scalar_test();
-}
-
-TYPED_TEST(Transpose, VectorPlusScalarInplaceWithPadding) {
-  TestTranspose<TypeParam, true> test(1);
-  test.vector_plus_scalar_test();
-}
-
-TYPED_TEST(Transpose, NullPointer) {
-  TypeParam src[1] = {}, dst[1];
-  test::test_null_args(kleidicv_transpose, src, sizeof(TypeParam), dst,
-                       sizeof(TypeParam), 1, 1, sizeof(TypeParam));
-}
-
-TYPED_TEST(Transpose, NotImplementedDims) {
-  TestNotImplemented::wrong_dimensions<TypeParam>();
-}
-
-TEST(Transpose, NotImplementedType) {
-  TestNotImplemented::wrong_type<__uint128_t>();
-}
-
-TYPED_TEST(Transpose, Misalignment) {
-  if (sizeof(TypeParam) == 1) {
+TEST_P(Transpose, Misalignment) {
+  size_t element_size = GetParam();
+  if (element_size == 1 || element_size == 3) {
     // misalignment impossible
     return;
   }
 
-  const size_t kBufSize = sizeof(TypeParam) * 10;
-  char src[kBufSize] = {}, dst[kBufSize] = {};
+  const size_t kBufSize = element_size * 10;
+  std::vector<uint8_t> src(kBufSize, 0);
+  std::vector<uint8_t> dst(kBufSize, 0);
 
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_transpose(src + 1, sizeof(TypeParam), dst,
-                               sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
+            kleidicv_transpose(src.data() + 1, element_size, dst.data(),
+                               element_size, 1, 1, element_size));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_transpose(src, sizeof(TypeParam) + 1, dst,
-                               sizeof(TypeParam), 1, 2, sizeof(TypeParam)));
+            kleidicv_transpose(src.data(), element_size + 1, dst.data(),
+                               element_size, 1, 2, element_size));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_transpose(src, sizeof(TypeParam), dst + 1,
-                               sizeof(TypeParam), 1, 1, sizeof(TypeParam)));
+            kleidicv_transpose(src.data(), element_size, dst.data() + 1,
+                               element_size, 1, 1, element_size));
   EXPECT_EQ(KLEIDICV_ERROR_ALIGNMENT,
-            kleidicv_transpose(src, sizeof(TypeParam), dst,
-                               sizeof(TypeParam) + 1, 2, 1, sizeof(TypeParam)));
+            kleidicv_transpose(src.data(), element_size, dst.data(),
+                               element_size + 1, 2, 1, element_size));
   // Ignore stride if there's only one row
   EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_transpose(src, sizeof(TypeParam), dst,
-                               sizeof(TypeParam) + 1, 1, 1, sizeof(TypeParam)));
+            kleidicv_transpose(src.data(), element_size, dst.data(),
+                               element_size + 1, 1, 1, element_size));
 }
 
-TYPED_TEST(Transpose, ZeroImageSize) {
-  TypeParam src[1] = {}, dst[1];
+TEST_P(Transpose, ZeroImageSize) {
+  std::vector<uint8_t> src(1, 0);
+  std::vector<uint8_t> dst(1, 0);
+  size_t element_size = GetParam();
   EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_transpose(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                               0, 1, sizeof(TypeParam)));
+            kleidicv_transpose(src.data(), element_size, dst.data(),
+                               element_size, 0, 1, element_size));
   EXPECT_EQ(KLEIDICV_OK,
-            kleidicv_transpose(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                               1, 0, sizeof(TypeParam)));
+            kleidicv_transpose(src.data(), element_size, dst.data(),
+                               element_size, 1, 0, element_size));
 }
 
-TYPED_TEST(Transpose, OversizeImage) {
-  TypeParam src[1] = {}, dst[1];
+TEST_P(Transpose, OversizeImage) {
+  std::vector<uint8_t> src(1, 0);
+  std::vector<uint8_t> dst(1, 0);
+  size_t element_size = GetParam();
   EXPECT_EQ(
       KLEIDICV_ERROR_RANGE,
-      kleidicv_transpose(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                         KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, sizeof(TypeParam)));
+      kleidicv_transpose(src.data(), element_size, dst.data(), element_size,
+                         KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, element_size));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-            kleidicv_transpose(src, sizeof(TypeParam), dst, sizeof(TypeParam),
-                               KLEIDICV_MAX_IMAGE_PIXELS,
-                               KLEIDICV_MAX_IMAGE_PIXELS, sizeof(TypeParam)));
+            kleidicv_transpose(src.data(), element_size, dst.data(),
+                               element_size, KLEIDICV_MAX_IMAGE_PIXELS,
+                               KLEIDICV_MAX_IMAGE_PIXELS, element_size));
 }
+
+INSTANTIATE_TEST_SUITE_P(, Transpose, testing::Values(1, 2, 3, 4, 6, 8),
+                         testing::PrintToStringParamName());

@@ -2534,7 +2534,7 @@ kleidicv_error_t kleidicv_resize_linear_f32_sme(
 ///                     images.
 /// @param src_width    Number of pixels in a row.
 /// @param src_height   Number of rows in the data.
-/// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 4 or 8.
+/// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 3, 4, 6 or 8.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
                          void *dst, size_t dst_stride, size_t src_width,
@@ -2566,7 +2566,7 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
 ///                     `height * pixel_size`, except for single-column
 ///                     images.
 /// @param angle        Degrees to rotate clockwise. Must be 90, -90, or 270.
-/// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 4 or 8.
+/// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 3, 4, 6 or 8.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_rotate, const void *src, size_t src_stride,
                          size_t width, size_t height, void *dst,

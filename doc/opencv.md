@@ -415,8 +415,8 @@ Geometric transform operations in the OpenCV HAL.
 Transposes a matrix.
 
 Notes on parameters:
-
-* The size of each matrix element must be either 1 or 2 bytes, for example `CV_8UC1`, `CV_8SC2` or `CV_16UC1`.
+* The size of each matrix element must be either 1, 2, 3, or 6 bytes, for example `CV_8UC1`, `CV_8SC2`, `CV_8UC3`, or `CV_16SC3`.
+* In-place transpose is supported only for square matrices.
 
 #### [`cv::rotate()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga4ad01c0978b0ce64baa246811deeac24)
 Rotates a 2D array in multiples of 90 degrees.
@@ -425,7 +425,7 @@ Notes on parameters:
 
 * In-place `rotate` is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
 * `rotateCode` - supports `ROTATE_90_CLOCKWISE` and `ROTATE_90_COUNTERCLOCKWISE`.
-* The size of each matrix element must be either 1 or 2 bytes, for example `CV_8UC1`, `CV_8SC2` or `CV_16UC1`.
+* The size of each matrix element must be either 1, 2, 3, or 6 bytes, for example `CV_8UC1`, `CV_8SC2`, `CV_8UC3`, or `CV_16SC3`.
 
 #### [`cv::remap()`](https://docs.opencv.org/4.10.0/da/d54/group__imgproc__transform.html#gab75ef31ce5cdfb5c44b6da5f3b908ea4)
 Geometrically transforms the `src` image by taking the pixels specified by the coordinates from the `map` image.

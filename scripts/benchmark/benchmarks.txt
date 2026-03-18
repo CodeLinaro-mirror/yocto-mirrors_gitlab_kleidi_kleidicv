@@ -181,10 +181,14 @@ ScharrInterleaved_8UC4: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 
 
 Rotate_90_CLOCKWISE_8UC1:  opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 8UC1)'
 Rotate_90_CLOCKWISE_16SC1: opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 16SC1)'
+Rotate_90_CLOCKWISE_8UC3:  opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 8UC3)'
+Rotate_90_CLOCKWISE_16SC3: opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 16SC3)'
 Rotate_90_CLOCKWISE_8UC4:  opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 8UC4)'
 Rotate_90_CLOCKWISE_16SC4: opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 16SC4)'
 
 Transpose_8UC1:  opencv_perf_core '*transpose2d/*' '($PIXEL_FORMAT, 8UC1)'
 Transpose_16SC1: opencv_perf_core '*transpose2d/*' '($PIXEL_FORMAT, 16SC1)'
+Transpose_8UC3:  opencv_perf_core '*transpose2d/*' '($PIXEL_FORMAT, 8UC3)'
+Transpose_16SC3: opencv_perf_core '*transpose2d/*' '($PIXEL_FORMAT, 16SC3)'
 Transpose_8UC4:  opencv_perf_core '*transpose2d/*' '($PIXEL_FORMAT, 8UC4)'
 Transpose_16SC4: opencv_perf_core '*transpose2d/*' '($PIXEL_FORMAT, 16SC4)'
