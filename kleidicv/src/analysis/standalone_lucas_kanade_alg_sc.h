@@ -141,7 +141,7 @@ struct StandaloneLucasKanadeAlg {
       });
 
       loop.remaining([&](size_t index, size_t end) KLEIDICV_STREAMING {
-        svbool_t pg16 = svwhilelt_b16(index, end);
+        svbool_t pg16 = svwhilelt_b16_u64(index, end);
         calc_scharr_x_scharr_y(index, pg16);
       });
     }
@@ -223,7 +223,7 @@ struct StandaloneLucasKanadeAlg {
       });
 
       loop.remaining([&](size_t index, size_t end) KLEIDICV_STREAMING {
-        svbool_t pg16 = svwhilelt_b16(index, end);
+        svbool_t pg16 = svwhilelt_b16_u64(index, end);
         accumulate_diff_row(index, pg16);
       });
     }
