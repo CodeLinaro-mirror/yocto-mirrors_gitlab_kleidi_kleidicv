@@ -257,10 +257,12 @@ class PrecalcIndicesFractions final {
     size_t xfrac_bytes = sizeof(uint16_t) * rounded_width;
     precalc_idx_frac_.reset(
         static_cast<uint8_t *>(malloc(idx_bytes + xfrac_bytes)));
+    if (!precalc_idx_frac_) {
+      return false;
+    }
     size_t src_bases_bytes = sizeof(uint64_t) * rounded_width / kStep_;
     precalc_src_bases_.reset(static_cast<uint64_t *>(malloc(src_bases_bytes)));
-    return (reinterpret_cast<uintptr_t>(precalc_idx_frac_.get()) &
-            reinterpret_cast<uintptr_t>(precalc_src_bases_.get()));
+    return static_cast<bool>(precalc_src_bases_);
   }
 
   template <typename T = uint64_t>
