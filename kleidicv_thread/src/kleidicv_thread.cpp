@@ -266,6 +266,8 @@ kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
   switch (pixel_size) {
     case sizeof(uint8_t):
     case sizeof(uint16_t):
+    case sizeof(uint8_t) * 3:
+    case sizeof(uint16_t) * 3:
     case sizeof(uint32_t):
     case sizeof(uint64_t):
       break;

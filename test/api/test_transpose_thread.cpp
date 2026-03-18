@@ -98,7 +98,7 @@ TEST_P(TransposeThread, VectorPlusScalarWithPadding) {
   vector_plus_scalar_test(1);
 }
 
-INSTANTIATE_TEST_SUITE_P(, TransposeThread, testing::Values(1, 2, 4, 8),
+INSTANTIATE_TEST_SUITE_P(, TransposeThread, testing::Values(1, 2, 3, 4, 6, 8),
                          testing::PrintToStringParamName());
 
 TEST(TransposeThreadNotImplemented, ElementSize) {

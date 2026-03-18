@@ -151,7 +151,7 @@ TEST_P(Rotate, OversizeImage) {
 
 TEST_P(Rotate, Misalignment) {
   size_t element_size = GetParam();
-  if (element_size == 1) {
+  if (element_size == 1 || element_size == 3) {
     // misalignment impossible
     return;
   }
@@ -183,7 +183,7 @@ TEST_P(Rotate, Misalignment) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(, Rotate, testing::Values(1, 2, 4, 8),
+INSTANTIATE_TEST_SUITE_P(, Rotate, testing::Values(1, 2, 3, 4, 6, 8),
                          testing::PrintToStringParamName());
 
 TEST(RotateNotImplemented, InPlace) {

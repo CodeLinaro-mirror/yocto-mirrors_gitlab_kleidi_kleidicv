@@ -173,10 +173,10 @@ Geometric transform operations.
 
 Geometric transform operations.
 
-|                               | 8-bit | 16-bit | 32-bit | 64-bit |
-|-------------------------------|-------|--------|--------|--------|
-| Transpose                     |   x   |    x   |    x   |    x   |
-| Rotate (90 degrees +/- clockwise) |   x   |    x   |    x   |    x   |
+|                               | 8-bit | 16-bit | 24-bit | 32-bit | 48-bit | 64-bit |
+|-------------------------------|-------|--------|--------|--------|--------|--------|
+| Transpose                     |   x   |    x   |    x   |    x   |    x   |    x   |
+| Rotate (+-90 degrees)         |   x   |    x   |    x   |    x   |    x   |    x   |
 
 ### Remap
 

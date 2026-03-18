@@ -83,15 +83,19 @@ std::vector<test>& transpose_tests_get() {
   static std::vector<test> tests = {
       TRANSPOSE_TEST(uint8_t, 1, "U8"),
       TRANSPOSE_TEST(uint8_t, 2, "U8"),
+      TRANSPOSE_TEST(uint8_t, 3, "U8"),
       TRANSPOSE_TEST(uint8_t, 4, "U8"),
       TRANSPOSE_TEST(uint16_t, 1, "U16"),
       TRANSPOSE_TEST(uint16_t, 2, "U16"),
+      TRANSPOSE_TEST(uint16_t, 3, "U16"),
       TRANSPOSE_TEST(uint16_t, 4, "U16"),
       TRANSPOSE_INPLACE_TEST(uint8_t, 1, "U8"),
       TRANSPOSE_INPLACE_TEST(uint8_t, 2, "U8"),
+      TRANSPOSE_INPLACE_TEST(uint8_t, 3, "U8"),
       TRANSPOSE_INPLACE_TEST(uint8_t, 4, "U8"),
       TRANSPOSE_INPLACE_TEST(uint16_t, 1, "U16"),
       TRANSPOSE_INPLACE_TEST(uint16_t, 2, "U16"),
+      TRANSPOSE_INPLACE_TEST(uint16_t, 3, "U16"),
       TRANSPOSE_INPLACE_TEST(uint16_t, 4, "U16"),
   };
   return tests;

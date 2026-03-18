@@ -24,6 +24,8 @@ inline bool rotate_is_implemented(const void *src, void *dst, int angle,
   switch (pixel_size) {
     case sizeof(uint8_t):
     case sizeof(uint16_t):
+    case sizeof(uint8_t) * 3:
+    case sizeof(uint16_t) * 3:
     case sizeof(uint32_t):
     case sizeof(uint64_t):
       return true;

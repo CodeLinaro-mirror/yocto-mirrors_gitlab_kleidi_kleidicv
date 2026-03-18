@@ -15,6 +15,9 @@ This changelog aims to follow the guiding principles of
 
 ## 26.06 - not yet released
 
+### Added
+- Rotate +-90 and transpose support for 3-channel images.
+
 ## 26.03 - 2026-03-26
 
 ### Added

@@ -11,7 +11,7 @@
 
 namespace kleidicv::neon {
 
-template <typename ScalarType>
+template <typename ScalarType, bool k3Channels>
 static kleidicv_error_t rotate_cw(Rectangle rect,
                                   Rows<const ScalarType> src_rows,
                                   Rows<ScalarType> dst_rows) {
@@ -35,18 +35,25 @@ static kleidicv_error_t rotate_cw(Rectangle rect,
   };
   auto row_index = [](size_t index, size_t) { return index; };
   auto scalar_store = [](Rows<ScalarType> &rows, size_t col, size_t row,
-                         size_t height, const ScalarType value, size_t) {
+                         size_t height, const auto value, size_t) {
     // dst[j][src_height - i - 1] = src[i][j]
-    rows.at(col)[height - row - 1] = value;
+    if constexpr (k3Channels) {
+      ScalarType *dst = &rows.at(col, height - row - 1)[0];
+      dst[0] = value[0];
+      dst[1] = value[1];
+      dst[2] = value[2];
+    } else {
+      rows.at(col)[height - row - 1] = value;
+    }
   };
-  return rotate_transpose_rect<true>(
+  return rotate_transpose_rect<ScalarType, k3Channels, true>(
       rect, src_rows, dst_rows, vector_dst_row_from_src_col,
       vector_dst_col_from_src_row, scalar_dst_row_from_src_col,
       scalar_dst_col_from_src_row, vertical_dst_col_base, row_index,
       scalar_store);
 }
 
-template <typename ScalarType>
+template <typename ScalarType, bool k3Channels>
 static kleidicv_error_t rotate_ccw(Rectangle rect,
                                    Rows<const ScalarType> src_rows,
                                    Rows<ScalarType> dst_rows) {
@@ -69,18 +76,25 @@ static kleidicv_error_t rotate_ccw(Rectangle rect,
   auto row_index = [](size_t index, size_t lanes) { return lanes - index - 1; };
   auto scalar_store = [width = rect.width()](
                           Rows<ScalarType> &rows, size_t col, size_t row,
-                          size_t, const ScalarType value, size_t row_width) {
+                          size_t, const auto value, size_t row_width) {
     // dst[width - j - 1][i] = src[i][j]
-    rows.at(row_width - col - 1)[row] = value;
+    if constexpr (k3Channels) {
+      ScalarType *dst = &rows.at(row_width - col - 1, row)[0];
+      dst[0] = value[0];
+      dst[1] = value[1];
+      dst[2] = value[2];
+    } else {
+      rows.at(row_width - col - 1)[row] = value;
+    }
   };
-  return rotate_transpose_rect<false>(
+  return rotate_transpose_rect<ScalarType, k3Channels, false>(
       rect, src_rows, dst_rows, vector_dst_row_from_src_col,
       vector_dst_col_from_src_row, scalar_dst_row_from_src_col,
       scalar_dst_col_from_src_row, vertical_dst_col_base, row_index,
       scalar_store);
 }
 
-template <typename T>
+template <typename T, bool k3Channels = false>
 static kleidicv_error_t rotate(const void *src_void, size_t src_stride,
                                size_t src_width, size_t src_height,
                                void *dst_void, size_t dst_stride, int angle) {
@@ -91,13 +105,13 @@ static kleidicv_error_t rotate(const void *src_void, size_t src_stride,
   CHECK_IMAGE_SIZE(src_width, src_height);
 
   Rectangle rect{src_width, src_height};
-  Rows<T> dst_rows{dst, dst_stride};
-  Rows<const T> src_rows{src, src_stride};
+  Rows<T> dst_rows{dst, dst_stride, k3Channels ? 3 : 1};
+  Rows<const T> src_rows{src, src_stride, k3Channels ? 3 : 1};
 
   if (angle == 90) {
-    return rotate_cw(rect, src_rows, dst_rows);
+    return rotate_cw<T, k3Channels>(rect, src_rows, dst_rows);
   }
-  return rotate_ccw(rect, src_rows, dst_rows);
+  return rotate_ccw<T, k3Channels>(rect, src_rows, dst_rows);
 }
 
 KLEIDICV_TARGET_FN_ATTRS
@@ -121,6 +135,12 @@ kleidicv_error_t rotate(const void *src, size_t src_stride, size_t src_width,
     case sizeof(uint64_t):
       return rotate<uint64_t>(src, src_stride, src_width, src_height, dst,
                               dst_stride, angle);
+    case sizeof(uint8_t) * 3:
+      return rotate<uint8_t, true>(src, src_stride, src_width, src_height, dst,
+                                   dst_stride, angle);
+    case sizeof(uint16_t) * 3:
+      return rotate<uint16_t, true>(src, src_stride, src_width, src_height, dst,
+                                    dst_stride, angle);
     // GCOVR_EXCL_START
     default:
       assert(!"pixel size not implemented");
