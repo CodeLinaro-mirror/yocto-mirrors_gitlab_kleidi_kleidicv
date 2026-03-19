@@ -97,7 +97,8 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
 
 template <typename ConstantsStruct>
 void compare_constants(ConstantsStruct* actual_array,
-                       std::vector<ConstantsStruct> ref_vector) {
+                       std::vector<ConstantsStruct> ref_vector,
+                       int xfrac_tolerance) {
   constexpr size_t kIdxFracLen =
       std::is_same_v<ConstantsStruct, FullVectorInterpolationConstants> ? 16
                                                                         : 8;
@@ -138,21 +139,20 @@ void compare_constants(ConstantsStruct* actual_array,
                     << static_cast<int>(actual.idx[diff]);
     }
 
-    if (std::memcmp(expected.xfrac, actual.xfrac, sizeof(expected.xfrac)) !=
-        0) {
-      size_t diff = 0;
-      while (diff < kIdxFracLen && expected.xfrac[diff] == actual.xfrac[diff]) {
-        ++diff;
+    for (size_t i = 0; i < kIdxFracLen; ++i) {
+      if (std::abs(static_cast<int>(expected.xfrac[i]) -
+                   static_cast<int>(actual.xfrac[i])) > xfrac_tolerance) {
+        ADD_FAILURE() << vector_name_log_message << i
+                      << "].xfrac mismatch at offset " << i << ", expected "
+                      << expected.xfrac[i] << " got " << actual.xfrac[i];
+        break;
       }
-      ADD_FAILURE() << vector_name_log_message << i
-                    << "].xfrac mismatch at offset " << diff << ", expected "
-                    << expected.xfrac[diff] << " got " << actual.xfrac[diff];
     }
   }
 }
 
 template <size_t kChannels, size_t kSrcWidth, size_t kDstWidth>
-void generator_test() {
+void generator_test(int xfrac_tolerance = 0) {
   double ratio = double{kSrcWidth} / double{kDstWidth};
   ASSERT_TRUE(ratio > 1.0 && ratio < 3.0);
   constexpr size_t kRatio = (kSrcWidth / kDstWidth) + 1;
@@ -175,14 +175,14 @@ void generator_test() {
   ASSERT_NE(nullptr, actual_full);
   ASSERT_EQ(ref_full.size(), actual_constants.num_of_vector_paths().two_x * 2);
 
-  compare_constants(actual_full, ref_full);
+  compare_constants(actual_full, ref_full, xfrac_tolerance);
 
   // Comparisons of half vectors
   auto* actual_half = actual_constants.half_vector_constants_array();
   ASSERT_NE(nullptr, actual_half);
   ASSERT_EQ(ref_half.size(), actual_constants.num_of_vector_paths().half);
 
-  compare_constants(actual_half, ref_half);
+  compare_constants(actual_half, ref_half, xfrac_tolerance);
 }
 
 }  // namespace kleidicv::neon::resize_linear_generic_u8
@@ -245,4 +245,28 @@ TEST(GenericResize_u8_Generator, 3channels_r3_short) {
 
 TEST(GenericResize_u8_Generator, 3channels_r3_long) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<3, 17, 6>();
+}
+
+TEST(GenericResize_u8_Generator, 2channels_extra_long) {
+  // For this test, the tolerance is set to 1 because it cannot be guaranteed
+  // that the reference implementation produces exactly the same values as the
+  // actual algorithm.
+  //
+  // Reasoning:
+  // The reference implementation computes results directly using the simplified
+  // formula:
+  //      source_x = destination_x * source_width / destination_width
+  // ---> rounded to integers.
+  //
+  // The actual algorithm uses an iterative approach instead of multiplication
+  // and division (for better performance), which introduces very small errors,
+  // i.e. on the order of 1/256 in the xfrac values.
+  //
+  // In some corner cases, these small errors can affect rounding. For example,
+  // a reference value of 0.4996 may be rounded down, while the actual value is
+  // slightly higher and rounded up to 1.
+  //
+  // These differences are negligible in practice; they only increase the xfrac
+  // error from approximately 0.5 to about 0.504.
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 1479, 813>(1);
 }
