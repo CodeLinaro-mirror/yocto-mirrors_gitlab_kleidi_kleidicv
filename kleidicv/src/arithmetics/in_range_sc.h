@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -33,25 +33,17 @@ class InRange<uint8_t> : public UnrollTwice {
   VectorType vector_path(ContextType ctx, VectorType src) KLEIDICV_STREAMING {
     svbool_t pg = ctx.predicate();
 
-    VectorType diff_low = svsub_x(pg, src, vec_lower_bound_);
-    // Shift subtraction result 7 bits to the right, i.e. divide by 2^7 to keep
-    // sign bit only.
-    VectorType result_within_low =
-        VecTraits::svreinterpret(SignedVecTraits::svasr_n(
-            pg, SignedVecTraits::svreinterpret(diff_low), 7));
-
-    VectorType diff_up = svsub_x(pg, vec_upper_bound_, src);
-    VectorType result_within_up =
-        VecTraits::svreinterpret(SignedVecTraits::svasr_n(
-            pg, SignedVecTraits::svreinterpret(diff_up), 7));
-
-    // src[i] < lower_bound OR src[i] > upper_bound
-    VectorType out_of_range = svorr_x(pg, result_within_low, result_within_up);
-    // NOT(out_of_range) to set within elements to 1 and the rest to 0.
-    VectorType within_range = svcnot_x(pg, out_of_range);
-    // Negate to set elements within to 0xFF (all 1s).
-    return VecTraits::svreinterpret(
-        svqneg_x(pg, SignedVecTraits::svreinterpret(within_range)));
+    // >0: out of range, 0 if in_range
+    VectorType outrange_lower = svqsub_u8_x(pg, vec_lower_bound_, src);
+    VectorType outrange_upper = svqsub_u8_x(pg, src, vec_upper_bound_);
+    // 0 if in_range, not 0 if out of range
+    VectorType outrange = svorr_x(pg, outrange_lower, outrange_upper);
+    // 8 if outrange==0, else 0..7
+    svuint8_t lz = svclz_u8_x(pg, outrange);
+    // 1 if outrange==0, else 0
+    svuint8_t bit = svlsr_n_u8_x(pg, lz, 3);
+    // 0-1 -> 255, 0-0 -> 0
+    return svsub_u8_x(pg, svdup_u8(0), bit);
   }
   // NOLINTEND(readability-make-member-function-const)
 

@@ -1977,6 +1977,7 @@ KLEIDICV_API_DECLARATION(kleidicv_u8_to_f32, const uint8_t *src,
 /// Performs a per element comparison in `src` with respect to caller defined
 /// lower and upper bounds. For the elements exceeding these bounds, the
 /// corresponding elements in `dst` are set to 0 and elements within to 255.
+/// The bounds are inclusive.
 ///
 /// Width and height are the same for the source and for the destination. Number
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.

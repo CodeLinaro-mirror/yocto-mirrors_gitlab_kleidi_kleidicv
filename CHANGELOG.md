@@ -34,6 +34,7 @@ This changelog aims to follow the guiding principles of
 ### Fixed
 - Return `CV_HAL_ERROR_NOT_IMPLEMENTED` in the OpenCV HAL for Morphology and Median Blur when called in-place,
   because the aliasing of the input and the output might yield invalid results.
+- Fixed in_range_u8 SVE/SSVE variant, it was wrong in cases where upper_limit - x >= 128.
 
 ### Removed
 - Support for OpenCV 4.12.

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -77,8 +77,7 @@ class InRangeTest final {
 
   void calculate_expected(const test::Array2D<ElementType>& source,
                           test::Array2D<uint8_t>& expected,
-                          ElementType lower_bound = 50,
-                          ElementType upper_bound = 100) {
+                          ElementType lower_bound, ElementType upper_bound) {
     for (size_t hindex = 0; hindex < source.height(); ++hindex) {
       for (size_t vindex = 0; vindex < source.width(); ++vindex) {
         uint8_t calculated = 0;
@@ -110,7 +109,7 @@ class InRangeTest final {
 
   template <typename T>
   std::tuple<test::Array2D<T>, test::Array2D<uint8_t>, test::Array2D<uint8_t>>
-  get_linear_arrays(size_t width, size_t height) {
+  get_linear_arrays(size_t width, size_t height, T lower_bound, T upper_bound) {
     test::Array2D<T> source(width, height, 1, 1);
     test::Array2D<uint8_t> expected(width, height, 1, 1);
     test::Array2D<uint8_t> actual(width, height, 1, 1);
@@ -118,7 +117,7 @@ class InRangeTest final {
     test::GenerateLinearSeries<T> generator(0);
     source.fill(generator);
 
-    calculate_expected(source, expected);
+    calculate_expected(source, expected, lower_bound, upper_bound);
 
     return {source, expected, actual};
   }
@@ -322,12 +321,12 @@ class InRangeTest final {
 
   // minimum_size set by caller to trigger the 'big' conversion path.
   template <typename T>
-  void test_linear(size_t width, size_t minimum_size = 1, T lower_bound = 50,
-                   T upper_bound = 100) {
+  void test_linear(T lower_bound, T upper_bound, size_t width,
+                   size_t minimum_size = 1) {
     size_t height = 0;
     height = get_linear_height<uint8_t>(width, minimum_size);
 
-    auto arrays = get_linear_arrays<T>(width, height);
+    auto arrays = get_linear_arrays<T>(width, height, lower_bound, upper_bound);
 
     test::Array2D<T>& source = std::get<0>(arrays);
     test::Array2D<uint8_t>& expected = std::get<1>(arrays);
@@ -399,14 +398,34 @@ TYPED_TEST(InRange, Padding) {
   InRangeTest<TypeParam>{}.with_paddings({1}, {1}).test(elements_list);
 }
 
-TYPED_TEST(InRange, Scalar) {
+TYPED_TEST(InRange, Scalar1) {
   InRangeTest<TypeParam>{}.template test_linear<TypeParam>(
-      test::Options::vector_length() - 1);
+      23, 100, test::Options::vector_length() - 1);
 }
 
-TYPED_TEST(InRange, Vector) {
+TYPED_TEST(InRange, Scalar2) {
   InRangeTest<TypeParam>{}.template test_linear<TypeParam>(
-      test::Options::vector_length() * 2);
+      29, 167, test::Options::vector_length() - 1);
+}
+
+TYPED_TEST(InRange, Scalar3) {
+  InRangeTest<TypeParam>{}.template test_linear<TypeParam>(
+      129, 203, test::Options::vector_length() - 1);
+}
+
+TYPED_TEST(InRange, Vector1) {
+  InRangeTest<TypeParam>{}.template test_linear<TypeParam>(
+      13, 31, test::Options::vector_length() * 2);
+}
+
+TYPED_TEST(InRange, Vector2) {
+  InRangeTest<TypeParam>{}.template test_linear<TypeParam>(
+      123, 223, test::Options::vector_length() * 2);
+}
+
+TYPED_TEST(InRange, Vector3) {
+  InRangeTest<TypeParam>{}.template test_linear<TypeParam>(
+      193, 241, test::Options::vector_length() * 2);
 }
 
 TYPED_TEST(InRange, TestEmptyInterval) {
