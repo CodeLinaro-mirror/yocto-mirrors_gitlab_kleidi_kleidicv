@@ -21,7 +21,7 @@ This changelog aims to follow the guiding principles of
 - Gaussian Blur 9x9 kernel support for NEON and SVE/SME fixed paths.
 - Scharr interleaved multi-channel support.
 - Blur and downsample multi-channel support.
-- Standalone lucas kanade alg.
+- Standalone Lucas-Kanade algorithm.
 - Rotate support for -90 degrees (90 degrees counter-clockwise).
 - Multithreaded transpose for out-of-place calls (in-place remains single-threaded).
 - LK optical-flow pyramid builder.
@@ -38,6 +38,9 @@ This changelog aims to follow the guiding principles of
 
 ### Removed
 - Support for OpenCV 4.12.
+- Context creation and release functions for filters and morphology. All filter and morphology functions were
+  made stateless.
+- `kleidicv_resize_to_quarter_u8` API function. `kleidicv_resize_linear_u8` covers the same functionality.
 
 ## 0.7.0 - 2025-12-17
 
