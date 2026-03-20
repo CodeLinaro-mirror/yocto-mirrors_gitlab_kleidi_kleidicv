@@ -17,7 +17,9 @@ implementations targeting Neon, SVE2, SME, and SME2, selecting the best availabl
 path at runtime. It focuses on performance-critical, low-level operations such
 as color conversions, filtering, morphology, resize, and geometric transforms.
 
-## Backend Selection {#backend-selection .section}
+<a id="backend-selection"></a>
+
+## Backend Selection {.section}
 
 Most APIs are exposed in a default form, for example
 `kleidicv_resize_linear_u8(...)`. This form uses the default runtime dispatch
