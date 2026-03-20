@@ -1804,7 +1804,7 @@ kleidicv_error_t kleidicv_rgb_to_yuv_semiplanar_u8_sme(
 /// @param height       Number of rows in the source data.
 /// @param channels     Number of channels in the source data. Must be 2, 3 or
 ///                     4.
-/// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 4 or 8.
+/// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_split, const void *src_data,
                          size_t src_stride, void **dst_data,
@@ -1838,7 +1838,7 @@ KLEIDICV_API_DECLARATION(kleidicv_split, const void *src_data,
 /// @param height       Number of rows in the data.
 /// @param channels     Number of channels in the destination data. Must be 2,
 ///                     3 or 4.
-/// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 4 or 8.
+/// @param element_size Size of one element in bytes. Must be 1, 2, 4 or 8.
 ///
 KLEIDICV_API_DECLARATION(kleidicv_merge, const void **srcs,
                          const size_t *src_strides, void *dst,
