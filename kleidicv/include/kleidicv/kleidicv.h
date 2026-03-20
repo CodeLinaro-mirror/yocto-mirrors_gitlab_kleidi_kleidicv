@@ -28,8 +28,11 @@
 ///   strategy as its `_sme` counterpart. If no `_sme` counterpart exists,
 ///   setting this variable has no effect.
 ///
-/// - Functions with the `_sme` postfix use the SME/SME2 backends if they
-///   are available, and fall back to the Neon or SVE2 backends otherwise.
+/// - Functions with the `_sme` postfix are backend-selection variants of
+///   the same operations. They use the SME/SME2 backends if these are
+///   available, and fall back to the Neon or SVE2 backends otherwise.
+///   The `_sme` postfix does not change algorithm semantics or parameter
+///   contracts.
 ///
 /// - The default decision path between Neon and SVE2 checks whether SVE2
 ///   is available and whether it is expected to provide a benefit over

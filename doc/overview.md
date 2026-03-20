@@ -17,6 +17,23 @@ implementations targeting Neon, SVE2, SME, and SME2, selecting the best availabl
 path at runtime. It focuses on performance-critical, low-level operations such
 as color conversions, filtering, morphology, resize, and geometric transforms.
 
+## Backend Selection {.section}
+
+Most APIs are exposed in a default form, for example
+`kleidicv_resize_linear_u8(...)`. This form uses the default runtime dispatch
+path, which prefers Neon or SVE2 backends.
+
+Some APIs also provide a variant whose name ends in `_sme`, for example
+`kleidicv_resize_linear_u8_sme(...)`. The `_sme` suffix does not change the
+algorithm, parameter contract, or result format. It only changes backend
+selection: the `_sme` form prefers SME or SME2 backends when they are
+available, and otherwise falls back to the same non-SME paths as the default
+form.
+
+The default form can be made to use the SME-preferred dispatch path by setting
+`KLEIDICV_PREFER_SME_BACKEND=ON` before the library is loaded. This setting only
+affects APIs that provide an `_sme` variant.
+
 This guide covers the public C API:
 
 - Function groups (conversions, filters, morphology, resize, transform,
