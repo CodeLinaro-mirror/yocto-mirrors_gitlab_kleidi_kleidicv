@@ -1,9 +1,10 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
 
+#include "framework/generator.h"
 #include "framework/operation.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
@@ -120,6 +121,32 @@ TYPED_TEST(ThresholdBinary, Padding) {
   ThresholdBinaryTest<TypeParam>{}.with_paddings({0}, {1}).test();
   ThresholdBinaryTest<TypeParam>{}.with_paddings({1}, {0}).test();
   ThresholdBinaryTest<TypeParam>{}.with_paddings({1}, {1}).test();
+}
+
+TYPED_TEST(ThresholdBinary, InPlaceOperation) {
+  const size_t kWidth = test::Options::vector_length() + 1;
+  constexpr size_t kHeight = 19;
+  constexpr size_t kPadding = 3;
+  constexpr TypeParam kThreshold = 113;
+  constexpr TypeParam kValue = 201;
+
+  test::PseudoRandomNumberGenerator<TypeParam> generator;
+  test::Array2D<TypeParam> source{kWidth, kHeight, kPadding};
+  test::Array2D<TypeParam> in_place{kWidth, kHeight, kPadding};
+  test::Array2D<TypeParam> out_of_place{kWidth, kHeight, kPadding};
+
+  source.fill(generator);
+  in_place = source;
+
+  ASSERT_EQ(KLEIDICV_OK,
+            threshold_binary<TypeParam>()(in_place.data(), in_place.stride(),
+                                          in_place.data(), in_place.stride(),
+                                          kWidth, kHeight, kThreshold, kValue));
+  ASSERT_EQ(KLEIDICV_OK,
+            threshold_binary<TypeParam>()(
+                source.data(), source.stride(), out_of_place.data(),
+                out_of_place.stride(), kWidth, kHeight, kThreshold, kValue));
+  EXPECT_EQ_ARRAY2D(in_place, out_of_place);
 }
 
 TYPED_TEST(ThresholdBinary, TestMin) {

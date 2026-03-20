@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -213,6 +213,29 @@ TYPED_TEST(Exp, SpecialValues) {
 }
 
 TYPED_TEST(Exp, RandomValues) { ExpTestRandom<TypeParam>{}.test(); }
+
+TYPED_TEST(Exp, InPlaceOperation) {
+  const size_t kWidth = test::Options::vector_length() + 1;
+  constexpr size_t kHeight = 19;
+  constexpr size_t kPadding = 3;
+
+  test::PseudoRandomNumberGenerator<TypeParam> generator;
+  test::Array2D<TypeParam> source{kWidth, kHeight, kPadding};
+  test::Array2D<TypeParam> in_place{kWidth, kHeight, kPadding};
+  test::Array2D<TypeParam> out_of_place{kWidth, kHeight, kPadding};
+
+  source.fill(generator);
+  in_place = source;
+
+  ASSERT_EQ(
+      KLEIDICV_OK,
+      exp<TypeParam>()(source.data(), source.stride(), out_of_place.data(),
+                       out_of_place.stride(), kWidth, kHeight));
+  ASSERT_EQ(KLEIDICV_OK, exp<TypeParam>()(in_place.data(), in_place.stride(),
+                                          in_place.data(), in_place.stride(),
+                                          kWidth, kHeight));
+  EXPECT_EQ_ARRAY2D(in_place, out_of_place);
+}
 
 TYPED_TEST(Exp, AllValues) {
   if (test::Options::are_long_running_tests_skipped()) {

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,8 +11,7 @@ namespace kleidicv::neon {
 
 template <typename ScalarType>
 class SaturatingAddAbsWithThreshold final : public UnrollOnce,
-                                            public UnrollTwice,
-                                            public TryToAvoidTailLoop {
+                                            public UnrollTwice {
  public:
   using VecTraits = neon::VecTraits<ScalarType>;
   using VectorType = typename VecTraits::VectorType;

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,6 +6,7 @@
 
 #include <type_traits>
 
+#include "framework/generator.h"
 #include "framework/operation.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
@@ -67,6 +68,39 @@ TYPED_TEST(BitwiseAnd, API) {
   TypeParam src[1], dst[1];
   test::test_null_args(bitwise_and<TypeParam>(), src, sizeof(TypeParam), src,
                        sizeof(TypeParam), dst, sizeof(TypeParam), 1, 1);
+}
+
+TYPED_TEST(BitwiseAnd, InPlaceOperation) {
+  const size_t kWidth = test::Options::vector_length() + 1;
+  constexpr size_t kHeight = 19;
+  constexpr size_t kPadding = 3;
+
+  test::PseudoRandomNumberGenerator<TypeParam> generator;
+  test::Array2D<TypeParam> src_a{kWidth, kHeight, kPadding};
+  test::Array2D<TypeParam> src_b{kWidth, kHeight, kPadding};
+  test::Array2D<TypeParam> in_place{kWidth, kHeight, kPadding};
+  test::Array2D<TypeParam> out_of_place{kWidth, kHeight, kPadding};
+
+  src_a.fill(generator);
+  src_b.fill(generator);
+  in_place = src_a;
+
+  ASSERT_EQ(KLEIDICV_OK, bitwise_and<TypeParam>()(
+                             in_place.data(), in_place.stride(), src_b.data(),
+                             src_b.stride(), in_place.data(), in_place.stride(),
+                             kWidth, kHeight));
+  ASSERT_EQ(KLEIDICV_OK,
+            bitwise_and<TypeParam>()(src_a.data(), src_a.stride(), src_b.data(),
+                                     src_b.stride(), out_of_place.data(),
+                                     out_of_place.stride(), kWidth, kHeight));
+  EXPECT_EQ_ARRAY2D(in_place, out_of_place);
+
+  in_place = src_b;
+  ASSERT_EQ(KLEIDICV_OK, bitwise_and<TypeParam>()(
+                             src_a.data(), src_a.stride(), in_place.data(),
+                             in_place.stride(), in_place.data(),
+                             in_place.stride(), kWidth, kHeight));
+  EXPECT_EQ_ARRAY2D(in_place, out_of_place);
 }
 
 TYPED_TEST(BitwiseAnd, Misalignment) {

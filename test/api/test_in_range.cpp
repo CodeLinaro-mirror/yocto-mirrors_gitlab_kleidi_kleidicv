@@ -398,6 +398,35 @@ TYPED_TEST(InRange, Padding) {
   InRangeTest<TypeParam>{}.with_paddings({1}, {1}).test(elements_list);
 }
 
+TYPED_TEST(InRange, InPlaceOperation) {
+  // In-place operation is only supported for uint8_t
+  if constexpr (std::is_same_v<TypeParam, uint8_t>) {
+    const size_t kWidth = test::Options::vector_length() + 1;
+    constexpr size_t kHeight = 19;
+    constexpr size_t kPadding = 3;
+    constexpr TypeParam kLowerBound = 17;
+    constexpr TypeParam kUpperBound = 203;
+
+    test::PseudoRandomNumberGenerator<TypeParam> generator;
+    test::Array2D<TypeParam> source{kWidth, kHeight, kPadding};
+    test::Array2D<TypeParam> in_place{kWidth, kHeight, kPadding};
+    test::Array2D<uint8_t> out_of_place{kWidth, kHeight, kPadding};
+
+    source.fill(generator);
+    in_place = source;
+
+    ASSERT_EQ(KLEIDICV_OK,
+              in_range<TypeParam>()(source.data(), source.stride(),
+                                    out_of_place.data(), out_of_place.stride(),
+                                    kWidth, kHeight, kLowerBound, kUpperBound));
+    ASSERT_EQ(KLEIDICV_OK,
+              in_range<TypeParam>()(in_place.data(), in_place.stride(),
+                                    in_place.data(), in_place.stride(), kWidth,
+                                    kHeight, kLowerBound, kUpperBound));
+    EXPECT_EQ_ARRAY2D(in_place, out_of_place);
+  }
+}
+
 TYPED_TEST(InRange, Scalar1) {
   InRangeTest<TypeParam>{}.template test_linear<TypeParam>(
       23, 100, test::Options::vector_length() - 1);

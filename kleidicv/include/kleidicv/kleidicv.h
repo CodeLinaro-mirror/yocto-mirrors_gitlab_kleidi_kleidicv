@@ -44,6 +44,8 @@
 ///   overridden by setting the
 ///   `KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS` CMake variable to `OFF`,
 ///   in which case SME2 is always used when available.
+///
+/// Unless stated otherwise, in-place operations are not supported.
 
 #ifndef KLEIDICV_H
 #define KLEIDICV_H
@@ -111,6 +113,8 @@ extern "C" {
 /// for the two sources and for the destination. Number of elements is limited
 /// to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// In-place operations supported.
+///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
@@ -169,6 +173,8 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_add_u64_sme, uint64_t);
 /// would underflow. Source data length (in bytes) is `stride * height`.
 /// Width and height are the same for the two sources and for the destination.
 /// Number of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
@@ -229,6 +235,8 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_sub_u64_sme, uint64_t);
 /// and height are the same for the two sources and for the destination. Number
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// In-place operations supported.
+///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
@@ -275,6 +283,8 @@ KLEIDICV_BINARY_OP(kleidicv_saturating_absdiff_s32_sme, int32_t);
 /// data length (in bytes) is `stride * height`. Width and height are the
 /// same for the two sources and for the destination. Number of elements is
 /// limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
@@ -327,6 +337,8 @@ KLEIDICV_BINARY_OP_SCALE(kleidicv_saturating_multiply_s32_sme, int32_t, double);
 /// for the two sources and for the destination. Number of elements is limited
 /// to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// In-place operations supported.
+///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
 ///                     start of the next row for the first source data.
@@ -365,6 +377,8 @@ KLEIDICV_API_DECLARATION(kleidicv_saturating_add_abs_with_threshold_s16_sme,
 /// Source data length (in bytes) is `stride * height`. Width and height are
 /// the same for the two sources and for the destination. Number of elements is
 /// limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
@@ -460,6 +474,8 @@ KLEIDICV_API_DECLARATION(kleidicv_gray_to_rgba_u8_sme, const uint8_t *src,
 /// Width and height are the same for the source and for the destination. Number
 /// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// In-place operations supported.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -486,6 +502,8 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_bgr_u8_sme, const uint8_t *src,
 ///
 /// Width and height are the same for the source and for the destination. Number
 /// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -514,6 +532,8 @@ KLEIDICV_API_DECLARATION(kleidicv_rgb_to_rgb_u8, const uint8_t *src,
 /// Width and height are the same for the source and for the destination. Number
 /// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// In-place operations supported.
+///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
 ///                    start of the next row for the source data.
@@ -540,6 +560,8 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_bgra_u8_sme, const uint8_t *src,
 ///
 /// Width and height are the same for the source and for the destination. Number
 /// of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src         Pointer to the source data. Must be non-null.
 /// @param src_stride  Distance in bytes from the start of one row to the
@@ -1005,6 +1027,8 @@ kleidicv_error_t kleidicv_rgb_to_yuv_semiplanar_u8_sme(
 /// Width and height are the same for the source and for the destination. Number
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// In-place operations supported.
+///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data. Must
@@ -1039,6 +1063,8 @@ KLEIDICV_API_DECLARATION(kleidicv_threshold_binary_u8_sme, const uint8_t *src,
 ///
 /// Width and height are the same for the source and for the destination. Number
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
@@ -1076,6 +1102,8 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_equal_u8_sme, const uint8_t *src_a,
 ///
 /// Width and height are the same for the source and for the destination. Number
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src_a        Pointer to the first source data. Must be non-null.
 /// @param src_a_stride Distance in bytes from the start of one row to the
@@ -1123,6 +1151,8 @@ KLEIDICV_API_DECLARATION(kleidicv_compare_greater_u8_sme, const uint8_t *src_a,
 ///    [ 4, 3, 6, 8, 1 ]  border: replicate     [ 7, 7, 8, 8, 8 ]
 ///    [ 1, 2, 5, 3, 7 ]                        [ 4, 6, 8, 8, 8 ]
 /// ```
+///
+/// In-place operations supported.
 ///
 /// @param src           Pointer to the source data. Must be non-null.
 /// @param src_stride    Distance in bytes from the start of one row to the
@@ -1907,6 +1937,8 @@ KLEIDICV_API_DECLARATION(kleidicv_split, const void *src_data,
 ///
 /// Number of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
 ///
+/// In-place operations supported if `src_width` equals `src_height`.
+///
 /// @param src          Pointer to the source data. Must be non-null.
 ///                     Must be aligned to `pixel_size`.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -1914,7 +1946,6 @@ KLEIDICV_API_DECLARATION(kleidicv_split, const void *src_data,
 ///                     Must be a multiple of `pixel_size` and no less than
 ///                     `width * pixel_size`, except for single-row images.
 /// @param dst          Pointer to the destination data. Must be non-null.
-///                     Can be the same as source data for in-place operation.
 ///                     Must be aligned to `pixel_size`.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
@@ -2113,6 +2144,9 @@ KLEIDICV_API_DECLARATION(kleidicv_sum_f32_sme, const float *src,
 /// significantly faster when `alpha` and `beta` are exact `float16_t` values.
 /// This can be forced by explicit casting:  `static_cast<float16_t>(0.3)`.
 ///
+/// In-place operations are supported if the types of `src` and `dst` are the
+/// same.
+///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the source data.
@@ -2161,6 +2195,8 @@ KLEIDICV_API_DECLARATION(kleidicv_scale_f32_sme, const float *src,
 ///
 /// Source and destination data length is `width * height`. Number of elements
 /// is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations supported.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the
@@ -2265,6 +2301,8 @@ KLEIDICV_API_DECLARATION(kleidicv_u8_to_f32_sme, const uint8_t *src,
 ///
 /// Width and height are the same for the source and for the destination. Number
 /// of elements is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// In-place operations are supported for the `u8` variant.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the

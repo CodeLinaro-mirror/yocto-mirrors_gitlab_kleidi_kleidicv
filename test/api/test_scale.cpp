@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -9,6 +9,7 @@
 #include <limits>
 
 #include "framework/array.h"
+#include "framework/generator.h"
 #include "framework/operation.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
@@ -550,6 +551,39 @@ TYPED_TEST(ScaleTest, TestVector3Tbx) {
   using InputType = typename TypeParam::InputType;
   using OutputType = typename TypeParam::OutputType;
   ScaleTestLinear3<InputType, OutputType>{}.test_vector(700);
+}
+
+TYPED_TEST(ScaleTest, InPlaceOperation) {
+  using InputType = typename TypeParam::InputType;
+  using OutputType = typename TypeParam::OutputType;
+
+  // In-place operation is only supported for same-type scale variants
+  if constexpr (std::is_same_v<InputType, OutputType>) {
+    const size_t kWidth = test::Options::vector_length() + 1;
+    constexpr size_t kHeight = 19;
+    constexpr size_t kPadding = 3;
+    constexpr double kScale = 14.69;
+    constexpr double kShift = 10.13;
+
+    test::PseudoRandomNumberGenerator<InputType> generator;
+    test::Array2D<InputType> source{kWidth, kHeight, kPadding};
+    test::Array2D<OutputType> in_place{kWidth, kHeight, kPadding};
+    test::Array2D<OutputType> out_of_place{kWidth, kHeight, kPadding};
+
+    source.fill(generator);
+    in_place = source;
+
+    auto out_of_place_err = scale_api<InputType, OutputType>()(
+        source.data(), source.stride(), out_of_place.data(),
+        out_of_place.stride(), kWidth, kHeight, kScale, kShift);
+    ASSERT_EQ(KLEIDICV_OK, out_of_place_err);
+
+    auto in_place_err = scale_api<InputType, OutputType>()(
+        in_place.data(), in_place.stride(), in_place.data(), in_place.stride(),
+        kWidth, kHeight, kScale, kShift);
+    ASSERT_EQ(KLEIDICV_OK, in_place_err);
+    EXPECT_EQ_ARRAY2D(in_place, out_of_place);
+  }
 }
 
 TYPED_TEST(ScaleTest, InPlaceScalar2) {

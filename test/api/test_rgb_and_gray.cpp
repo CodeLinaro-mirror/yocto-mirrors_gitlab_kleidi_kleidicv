@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -128,6 +128,31 @@ class ColorTest final {
              KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS));
   }
 
+  template <typename F>
+  void execute_in_place_test(F impl) {
+    ASSERT_EQ(inChannels_, outChannels_);
+
+    constexpr size_t kPadding = 3;
+    size_t logical_width = test::Options::vector_length() + 1;
+    test::Array2D<uint8_t> source{logical_width * inChannels_, 3, kPadding};
+    test::Array2D<uint8_t> in_place{logical_width * inChannels_, 3, kPadding};
+    test::Array2D<uint8_t> out_of_place{logical_width * outChannels_, 3,
+                                        kPadding};
+
+    source.set(0, 0, {123, 230, 11, 203});
+    source.set(1, 0, {0xFF, 0xFF, 0xFF, 0});
+    source.set(2, 0, {0, 0, 0, 0xFF});
+    in_place = source;
+
+    ASSERT_EQ(KLEIDICV_OK,
+              impl(source.data(), source.stride(), out_of_place.data(),
+                   out_of_place.stride(), logical_width, source.height()));
+    ASSERT_EQ(KLEIDICV_OK,
+              impl(in_place.data(), in_place.stride(), in_place.data(),
+                   in_place.stride(), logical_width, in_place.height()));
+    EXPECT_EQ_ARRAY2D(in_place, out_of_place);
+  }
+
  private:
   void calculate_expected(test::Array2D<uint8_t> &src,
                           test::Array2D<uint8_t> &expected) const {
@@ -185,21 +210,25 @@ TEST(GRAY2, RGBA) {
 TEST(RGB2, RGB) {
   ColorTest color_test(3, 3, false);
   color_test.execute_test(kleidicv_rgb_to_rgb_u8);
+  color_test.execute_in_place_test(kleidicv_rgb_to_rgb_u8);
 }
 
 TEST(RGBA2, RGBA) {
   ColorTest color_test(4, 4, false);
   color_test.execute_test(kleidicv_rgba_to_rgba_u8);
+  color_test.execute_in_place_test(kleidicv_rgba_to_rgba_u8);
 }
 
 TEST(RGB2, BGR) {
   ColorTest color_test(3, 3, true);
   color_test.execute_test(kleidicv_rgb_to_bgr_u8);
+  color_test.execute_in_place_test(kleidicv_rgb_to_bgr_u8);
 }
 
 TEST(RGBA2, BGRA) {
   ColorTest color_test(4, 4, true);
   color_test.execute_test(kleidicv_rgba_to_bgra_u8);
+  color_test.execute_in_place_test(kleidicv_rgba_to_bgra_u8);
 }
 
 TEST(RGB2, BGRA) {
