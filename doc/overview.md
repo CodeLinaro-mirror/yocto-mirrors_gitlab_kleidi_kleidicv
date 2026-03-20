@@ -17,6 +17,22 @@ implementations targeting Neon, SVE2, SME, and SME2, selecting the best availabl
 path at runtime. It focuses on performance-critical, low-level operations such
 as color conversions, filtering, morphology, resize, and geometric transforms.
 
+This guide covers the public C API:
+
+- Function groups (conversions, filters, morphology, resize, transform,
+  analysis, arithmetics)
+- Supported data types and constraints for each operation
+- Required types, constants, and error handling
+- Per-function reference pages
+
+Platform support is organized into tiers (Tier 1 includes AArch64 Ubuntu on
+Neoverse N1 and Android on Galaxy S22; Tier 3 includes Apple silicon and
+Windows Arm). Integration examples are available, including OpenCV HAL
+integration and extracting a single operation into a standalone library.
+
+For build, test, benchmark, and integration workflows, refer to the main
+KleidiCV documentation at <https://gitlab.arm.com/kleidi/kleidicv>.
+
 ## Backend Selection {.section}
 
 Most APIs are exposed in a default form, for example
@@ -33,19 +49,3 @@ form.
 The default form can be made to use the SME-preferred dispatch path by setting
 `KLEIDICV_PREFER_SME_BACKEND=ON` before the library is loaded. This setting only
 affects APIs that provide an `_sme` variant.
-
-This guide covers the public C API:
-
-- Function groups (conversions, filters, morphology, resize, transform,
-  analysis, arithmetics)
-- Supported data types and constraints for each operation
-- Required types, constants, and error handling
-- Per-function reference pages
-
-Platform support is organized into tiers (Tier 1 includes AArch64 Ubuntu on
-Neoverse N1 and Android on Galaxy S22; Tier 3 includes Apple silicon and
-Windows Arm). Integration examples are available, including OpenCV HAL
-integration and extracting a single operation into a standalone library.
-
-For build, test, benchmark, and integration workflows, refer to the main
-KleidiCV documentation at <https://gitlab.arm.com/kleidi/kleidicv>.
