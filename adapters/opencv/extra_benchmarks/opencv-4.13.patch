@@ -296,7 +296,7 @@ index 0000000000..7c6a4afaf2
 +
 +} // namespace
 diff --git a/modules/imgproc/perf/perf_blur.cpp b/modules/imgproc/perf/perf_blur.cpp
-index fd649b08c6..94536f2c0b 100644
+index fd649b08c6..5c491bbb37 100644
 --- a/modules/imgproc/perf/perf_blur.cpp
 +++ b/modules/imgproc/perf/perf_blur.cpp
 @@ -10,9 +10,9 @@ typedef perf::TestBaseWithParam<Size_MatType_kSize_t> Size_MatType_kSize;
@@ -371,7 +371,7 @@ index fd649b08c6..94536f2c0b 100644
                  testing::Values(CV_8UC1, CV_8UC4, CV_16UC1, CV_16SC1, CV_32FC1),
                  BorderType::all()
                  )
-@@ -218,6 +243,182 @@ PERF_TEST_P(Size_MatType_BorderType, gaussianBlur5x5,
+@@ -218,6 +243,204 @@ PERF_TEST_P(Size_MatType_BorderType, gaussianBlur5x5,
      SANITY_CHECK(dst, 1);
  }
  
@@ -459,6 +459,28 @@ index fd649b08c6..94536f2c0b 100644
 +    declare.in(src, WARMUP_RNG).out(dst);
 +
 +    TEST_CYCLE() GaussianBlur(src, dst, Size(15,15), 0, 0, btype);
++
++    SANITY_CHECK(dst, 1);
++}
++
++PERF_TEST_P(Size_MatType_BorderTypeKleidiCV, gaussianBlur9x9,
++            testing::Combine(
++                testing::Values(sz1080p, sz2160p),
++                testing::Values(CV_8UC1, CV_8UC4),
++                BorderTypeKleidiCV::all()
++                )
++            )
++{
++    Size size = get<0>(GetParam());
++    int type = get<1>(GetParam());
++    BorderTypeKleidiCV btype = get<2>(GetParam());
++
++    Mat src(size, type);
++    Mat dst(size, type);
++
++    declare.in(src, WARMUP_RNG).out(dst);
++
++    TEST_CYCLE() GaussianBlur(src, dst, Size(9,9), 0, 0, btype);
 +
 +    SANITY_CHECK(dst, 1);
 +}
@@ -655,18 +677,20 @@ index dc9e975a21..1b73c5eaee 100644
 +
  } // namespace
 diff --git a/modules/imgproc/perf/perf_pyramids.cpp b/modules/imgproc/perf/perf_pyramids.cpp
-index 5dd5b9cece..42c83b2903 100644
+index 5dd5b9cece..a96f2a3065 100644
 --- a/modules/imgproc/perf/perf_pyramids.cpp
 +++ b/modules/imgproc/perf/perf_pyramids.cpp
-@@ -6,7 +6,7 @@
+@@ -6,8 +6,8 @@
  namespace opencv_test {
  
  PERF_TEST_P(Size_MatType, pyrDown, testing::Combine(
 -                testing::Values(sz1080p, sz720p, szVGA, szQVGA, szODD),
+-                testing::Values(CV_8UC1, CV_8UC3, CV_8UC4, CV_16SC1, CV_16SC3, CV_16SC4, CV_32FC1, CV_32FC3, CV_32FC4)
 +                testing::Values(sz1080p, sz720p, szVGA, szQVGA, szODD, sz2160p),
-                 testing::Values(CV_8UC1, CV_8UC3, CV_8UC4, CV_16SC1, CV_16SC3, CV_16SC4, CV_32FC1, CV_32FC3, CV_32FC4)
++                testing::Values(CV_8UC1, CV_8UC2, CV_8UC3, CV_8UC4, CV_16SC1, CV_16SC3, CV_16SC4, CV_32FC1, CV_32FC3, CV_32FC4)
                  )
              )
+ {
 diff --git a/modules/imgproc/perf/perf_remap.cpp b/modules/imgproc/perf/perf_remap.cpp
 index bd2129d233..0ce3d9c870 100644
 --- a/modules/imgproc/perf/perf_remap.cpp
@@ -715,7 +739,7 @@ index bd2129d233..0ce3d9c870 100644
      SANITY_CHECK(dst);
  }
 diff --git a/modules/imgproc/perf/perf_resize.cpp b/modules/imgproc/perf/perf_resize.cpp
-index 0f470a5f81..4e31ffec82 100644
+index 0f470a5f81..a427348f89 100644
 --- a/modules/imgproc/perf/perf_resize.cpp
 +++ b/modules/imgproc/perf/perf_resize.cpp
 @@ -67,7 +67,18 @@ PERF_TEST_P(MatInfo_SizePair, resizeUpLinearNonExact,
@@ -738,18 +762,23 @@ index 0f470a5f81..4e31ffec82 100644
                  )
               )
  {
-@@ -142,7 +153,9 @@ PERF_TEST_P(MatInfo_SizePair, resizeDownLinearNonExact,
+@@ -142,7 +153,14 @@ PERF_TEST_P(MatInfo_SizePair, resizeDownLinearNonExact,
                      Size_Size_t(szqHD, szVGA),
                      Size_Size_t(sz720p, Size(120 * sz720p.width / sz720p.height, 120)),
                      Size_Size_t(sz720p, szVGA),
 -                    Size_Size_t(sz720p, szQVGA)
 +                    Size_Size_t(sz720p, szQVGA),
 +                    Size_Size_t(sz1080p, szqHD),
-+                    Size_Size_t(sz2160p, sz1080p)
++                    Size_Size_t(sz1080p, sz720p),
++                    Size_Size_t(sz1080p, szVGA),
++                    Size_Size_t(szWQHD, sz1080p),
++                    Size_Size_t(sz2160p, sz1080p),
++                    Size_Size_t(sz2160p, szWQHD),
++                    Size_Size_t(sz2160p, sz720p)
                      )
                  )
              )
-@@ -173,7 +186,7 @@ typedef TestBaseWithParam<MatInfo_Size_Scale_t> MatInfo_Size_Scale;
+@@ -173,7 +191,7 @@ typedef TestBaseWithParam<MatInfo_Size_Scale_t> MatInfo_Size_Scale;
  PERF_TEST_P(MatInfo_Size_Scale, ResizeAreaFast,
              testing::Combine(
                  testing::Values(CV_8UC1, CV_8UC3, CV_8UC4, CV_16UC1, CV_16UC3, CV_16UC4),
@@ -849,21 +878,27 @@ index c2926c9c28..1cee467251 100644
  #define TYPICAL_MATS testing::Combine( testing::Values( TYPICAL_MAT_SIZES ), testing::Values( TYPICAL_MAT_TYPES ) )
  #define TYPICAL_MATS_C1 testing::Combine( testing::Values( TYPICAL_MAT_SIZES ), testing::Values( CV_8UC1, CV_32FC1 ) )
 diff --git a/modules/video/perf/perf_optflowpyrlk.cpp b/modules/video/perf/perf_optflowpyrlk.cpp
-index aca8a1399b..6bae000b2d 100644
+index aca8a1399b..4ff055d1b0 100644
 --- a/modules/video/perf/perf_optflowpyrlk.cpp
 +++ b/modules/video/perf/perf_optflowpyrlk.cpp
-@@ -266,4 +266,26 @@ PERF_TEST_P(Path_Win_Deriv_Border_Reuse, OpticalFlowPyrLK_pyr, testing::Combine(
+@@ -266,4 +266,32 @@ PERF_TEST_P(Path_Win_Deriv_Border_Reuse, OpticalFlowPyrLK_pyr, testing::Combine(
      SANITY_CHECK_NOTHING();
  }
  
-+typedef perf::TestBaseWithParam<cv::Size> calcScharrDerivParams;
-+PERF_TEST_P(calcScharrDerivParams, calcScharrDeriv, testing::Values(sz1080p, sz2160p))
++typedef perf::TestBaseWithParam<Size_MatType_t> calcScharrDerivParams;
++PERF_TEST_P(calcScharrDerivParams, calcScharrDeriv, testing::Combine(
++                testing::Values(sz1080p, sz2160p),
++                testing::Values(CV_8UC1, CV_8UC2, CV_8UC3, CV_8UC4)
++                )
++            )
 +{
 +    cv::RNG rng(0);
 +
-+    Size sz = GetParam();
++    Size sz = get<0>(GetParam());
++    int type = get<1>(GetParam());
 +
-+    Mat src(sz, CV_8UC1);
++    Mat src(sz, type);
++    rng.fill(src, cv::RNG::UNIFORM, 0, 256);
 +    std::vector<Mat> pyramid;
 +
 +    // `winSize` is not take into account when `maxLevel` is set to 0.
