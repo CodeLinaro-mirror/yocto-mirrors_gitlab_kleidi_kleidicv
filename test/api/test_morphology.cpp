@@ -274,6 +274,67 @@ TYPED_TEST(Morphology, Iterations) {
   MorphologyTest{DilateParams<TypeParam>{}, 2, 7}.with_iterations(4).test();
 }
 
+TYPED_TEST(Morphology, InPlaceOperation) {
+  constexpr size_t kWidth = 47;
+  constexpr size_t kHeight = 96;
+  constexpr size_t kChannels = 3;
+  constexpr size_t kKernelWidth = 5;
+  constexpr size_t kKernelHeight = 5;
+  constexpr size_t kAnchorX = 2;
+  constexpr size_t kAnchorY = 2;
+  constexpr size_t kIterations = 2;
+
+  test::PseudoRandomNumberGenerator<TypeParam> generator;
+  test::Array2D<TypeParam> src{kWidth * kChannels, kHeight,
+                               test::Options::vector_length(), kChannels};
+  test::Array2D<TypeParam> in_place{kWidth * kChannels, kHeight,
+                                    test::Options::vector_length(), kChannels};
+  test::Array2D<TypeParam> out_of_place_src{
+      kWidth * kChannels, kHeight, test::Options::vector_length(), kChannels};
+  test::Array2D<TypeParam> out_of_place_dst{
+      kWidth * kChannels, kHeight, test::Options::vector_length(), kChannels};
+
+  src.fill(generator);
+  in_place = src;
+  out_of_place_src = src;
+
+  const uint8_t border_value[] = {7, 42, 99, 9};
+
+  ASSERT_EQ(KLEIDICV_OK,
+            DilateParams<TypeParam>::api()(
+                in_place.data(), in_place.stride(), in_place.data(),
+                in_place.stride(), kWidth, kHeight, kChannels, kKernelWidth,
+                kKernelHeight, kAnchorX, kAnchorY,
+                KLEIDICV_BORDER_TYPE_REPLICATE, border_value, kIterations));
+  ASSERT_EQ(
+      KLEIDICV_OK,
+      DilateParams<TypeParam>::api()(
+          out_of_place_src.data(), out_of_place_src.stride(),
+          out_of_place_dst.data(), out_of_place_dst.stride(), kWidth, kHeight,
+          kChannels, kKernelWidth, kKernelHeight, kAnchorX, kAnchorY,
+          KLEIDICV_BORDER_TYPE_REPLICATE, border_value, kIterations));
+  EXPECT_EQ_ARRAY2D(in_place, out_of_place_dst);
+
+  in_place = src;
+  out_of_place_src = src;
+  out_of_place_dst.fill(static_cast<TypeParam>(0));
+
+  ASSERT_EQ(KLEIDICV_OK,
+            ErodeParams<TypeParam>::api()(
+                in_place.data(), in_place.stride(), in_place.data(),
+                in_place.stride(), kWidth, kHeight, kChannels, kKernelWidth,
+                kKernelHeight, kAnchorX, kAnchorY,
+                KLEIDICV_BORDER_TYPE_REPLICATE, border_value, kIterations));
+  ASSERT_EQ(
+      KLEIDICV_OK,
+      ErodeParams<TypeParam>::api()(
+          out_of_place_src.data(), out_of_place_src.stride(),
+          out_of_place_dst.data(), out_of_place_dst.stride(), kWidth, kHeight,
+          kChannels, kKernelWidth, kKernelHeight, kAnchorX, kAnchorY,
+          KLEIDICV_BORDER_TYPE_REPLICATE, border_value, kIterations));
+  EXPECT_EQ_ARRAY2D(in_place, out_of_place_dst);
+}
+
 TYPED_TEST(Morphology, Anchors) {
   MorphologyTest{ErodeParams<TypeParam>{}, 3, 5}.with_anchor({0, 0}).test();
 

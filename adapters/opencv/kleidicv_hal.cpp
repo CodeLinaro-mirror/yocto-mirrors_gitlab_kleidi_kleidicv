@@ -583,11 +583,7 @@ int morphology(int operation, const uchar *src_data, size_t src_step,
                const uchar *kernel_data, size_t kernel_step, int kernel_type,
                int kernel_width, int kernel_height, int anchor_x, int anchor_y,
                int cvborder_type, const double border_value_f64[4],
-               int iterations, bool allowSubmatrix, bool allowInplace) {
-  if (allowInplace) {
-    return CV_HAL_ERROR_NOT_IMPLEMENTED;
-  }
-
+               int iterations, bool allowSubmatrix, bool) {
   if (src_type != dst_type) {
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,15 +11,16 @@
 
 template <bool Erode, bool DefaultBorder>
 static cv::Mat exec_morphology(cv::Mat& input_mat) {
-  cv::Mat result;
+  // Running the operation in-place
+  cv::Mat in_place = input_mat.clone();
   cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
   cv::Scalar border_value = DefaultBorder
                                 ? cv::morphologyDefaultBorderValue()
                                 : cv::Scalar(123, -DBL_MAX, FLT_MAX, 0);
   auto func = Erode ? &cv::erode : &cv::dilate;
-  func(input_mat, result, kernel, cv::Point(-1, -1), 1, cv::BORDER_CONSTANT,
+  func(in_place, in_place, kernel, cv::Point(-1, -1), 3, cv::BORDER_CONSTANT,
        border_value);
-  return result;
+  return in_place;
 }
 
 #if MANAGER
