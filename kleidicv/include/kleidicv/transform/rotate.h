@@ -41,6 +41,18 @@ kleidicv_error_t rotate(const void *src, size_t src_stride, size_t width,
                         size_t pixel_size);
 }  // namespace neon
 
+namespace sme {
+kleidicv_error_t rotate(const void *src, size_t src_stride, size_t width,
+                        size_t height, void *dst, size_t dst_stride, int angle,
+                        size_t element_size);
+}  // namespace sme
+
+namespace sme2 {
+kleidicv_error_t rotate(const void *src, size_t src_stride, size_t width,
+                        size_t height, void *dst, size_t dst_stride, int angle,
+                        size_t element_size);
+}  // namespace sme2
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_TRANSFORM_ROTATE_H
