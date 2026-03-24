@@ -2,8 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "kleidicv/arithmetics/rotate.h"
-#include "kleidicv/kleidicv.h"
+#include "kleidicv/transform/rotate.h"
 #include "kleidicv/types.h"
 #include "transpose_sme_common.h"
 

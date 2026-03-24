@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cfloat>
+#include <climits>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -951,7 +952,8 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
       multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_ROTATE_U48;
       break;
     default:
-      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+      // TODO benchmark it and determine threshold
+      multithread_min_elements = ULONG_MAX;
   }
 
   return convert_error(
