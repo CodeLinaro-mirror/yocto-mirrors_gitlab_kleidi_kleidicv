@@ -22,6 +22,8 @@ namespace kleidicv::sme {
     }                                                                   \
   } while (false)
 
+// Most of the complexity comes from parameter checking.
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
 transpose(const void *src_void, size_t src_stride, void *dst_void,
           size_t dst_stride, size_t width, size_t height, size_t pixel_size) {
@@ -29,7 +31,8 @@ transpose(const void *src_void, size_t src_stride, void *dst_void,
   const uint8_t *src = reinterpret_cast<const uint8_t *>(src_void);
   uint8_t *dst = reinterpret_cast<uint8_t *>(dst_void);
 
-  if (src == dst) {
+  if (src == dst && width != height) {
+    // Inplace transpose only implemented if width and height are the same
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -54,4 +57,6 @@ transpose(const void *src_void, size_t src_stride, void *dst_void,
       return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 }
+// NOLINTEND(readability-function-cognitive-complexity)
+
 }  // namespace kleidicv::sme

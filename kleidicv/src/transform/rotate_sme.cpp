@@ -16,11 +16,9 @@ rotate(const void *src_void, size_t src_stride, size_t src_width,
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (element_size != sizeof(uint8_t)) {
-    return kleidicv::neon::rotate(src_void, src_stride, src_width, src_height,
-                                  dst_void, dst_stride, angle, element_size);
-  }
-
+  return kleidicv::neon::rotate(src_void, src_stride, src_width, src_height,
+                                dst_void, dst_stride, angle, element_size);
+  /*
   MAKE_POINTER_CHECK_ALIGNMENT(const uint8_t, src, src_void);
   MAKE_POINTER_CHECK_ALIGNMENT(uint8_t, dst, dst_void);
   CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
@@ -32,12 +30,12 @@ rotate(const void *src_void, size_t src_stride, size_t src_width,
   Rows<const uint8_t> src_rows{src, src_stride};
   Rows<uint8_t> dst_rows{dst, dst_stride};
 
-  if (normalized_angle == 90) {
-    //    rotate_u8_cw_out_of_place_sc(src_rows, dst_rows, rect);
-  } else {
-    //    rotate_u8_ccw_out_of_place_sc(src_rows, dst_rows, rect);
-  }
-
+    if (normalized_angle == 90) {
+      rotate_u8_cw_out_of_place_sc(src_rows, dst_rows, rect);
+    } else {
+      rotate_u8_ccw_out_of_place_sc(src_rows, dst_rows, rect);
+    }
+  */
   return KLEIDICV_OK;
 }
 

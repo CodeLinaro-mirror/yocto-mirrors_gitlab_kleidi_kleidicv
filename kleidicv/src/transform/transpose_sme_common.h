@@ -125,10 +125,31 @@ void transpose_partial_tile(const uint8_t *src, size_t src_stride,
 };
 
 template <size_t kPixelSize>
-KLEIDICV_NEW_ZA kleidicv_error_t transpose(const uint8_t *src,
-                                           size_t src_stride, uint8_t *dst,
-                                           size_t dst_stride, size_t width,
-                                           size_t height) KLEIDICV_STREAMING {
+void copy_tile(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
+               uint8_t *dst, size_t dst_stride,
+               size_t height) KLEIDICV_STREAMING {
+  for (size_t row = 0; row < height; ++row) {
+    if constexpr (kPixelSize == 1) {
+      svst1(pgsrc, dst, svld1_u8(pgsrc, src));
+    } else if constexpr (kPixelSize == 2) {
+      svst1(pgsrc, reinterpret_cast<uint16_t *>(dst),
+            svld1_u16(pgsrc, reinterpret_cast<const uint16_t *>(src)));
+    } else if constexpr (kPixelSize == 4) {
+      svst1(pgsrc, reinterpret_cast<uint32_t *>(dst),
+            svld1_u32(pgsrc, reinterpret_cast<const uint32_t *>(src)));
+    } else if constexpr (kPixelSize == 8) {
+      svst1(pgsrc, reinterpret_cast<uint64_t *>(dst),
+            svld1_u64(pgsrc, reinterpret_cast<const uint64_t *>(src)));
+    }
+    src += src_stride;
+    dst += dst_stride;
+  }
+}
+
+template <size_t kPixelSize>
+KLEIDICV_NEW_ZA kleidicv_error_t transpose_out_of_place(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height) KLEIDICV_STREAMING {
   // For 1,2,4,8 size pixels
   const size_t kBlkSize = svcntb() / kPixelSize;
   size_t col = 0;
@@ -172,74 +193,59 @@ KLEIDICV_NEW_ZA kleidicv_error_t transpose(const uint8_t *src,
   svzero_za();
   return KLEIDICV_OK;
 }
-/*
+
 template <size_t kPixelSize>
 KLEIDICV_NEW_ZA kleidicv_error_t transpose_in_place(
-    Rectangle rect, Rows<ScalarType> data_rows) KLEIDICV_STREAMING {
-  constexpr size_t num_of_lanes = VecTraits<ScalarType>::num_lanes();
+    uint8_t *img, size_t img_stride, size_t width) KLEIDICV_STREAMING {
+  const size_t kBlkSize = svcntb() / kPixelSize;
+  // Allocate temporary memory for one tile - maximum length is 2048 bits
+  uint8_t tmp[256 * 256];  // NOLINT(runtime/arrays)
+  uint8_t tmp_stride = svcntb();
 
-  // rect.width() needs to be equal to rect.height()
-  LoopUnroll2 outer_loop(rect.width(), num_of_lanes);
-
-  outer_loop.unroll_once([&](size_t vindex) {
-    auto row_index = [](size_t index, size_t) { return index; };
+  for (size_t vindex = 0; vindex < width; vindex += kBlkSize) {
     // Handle tiles on the diagonal line
-    rotate_transpose_tile<false, ScalarType>(
-        data_rows.at(vindex, vindex), data_rows.at(vindex, vindex), row_index);
+    uint8_t *ptile = img + vindex * kPixelSize + vindex * img_stride;
+    svbool_t pg_v = whilelt<kPixelSize>(vindex, width);
+    const size_t size_v = std::min(kBlkSize, width - vindex);
+    transpose_partial_tile<kPixelSize>(ptile, img_stride, pg_v, size_v, ptile,
+                                       img_stride, pg_v, size_v);
 
-    // Handle the top right half
-    if (rect.width() > (vindex + num_of_lanes)) {
-      // Indexes are running through only the top right half
-      LoopUnroll2 inner_loop(vindex + num_of_lanes, rect.width(), num_of_lanes);
+    // Transpose tiles from/to the right/bottom of diagonal
+    for (size_t hindex = vindex + kBlkSize; hindex < width;
+         hindex += kBlkSize) {
+      // Going downwards
+      uint8_t *tile1 = img + vindex * kPixelSize + hindex * img_stride;
 
-      inner_loop.unroll_once([&](size_t hindex) {
-        // Allocate temporary memory for one tile
-        ScalarType tmp[num_of_lanes * num_of_lanes];  // NOLINT(runtime/arrays)
-        Rows<ScalarType> tmp_rows{tmp, num_of_lanes * sizeof(ScalarType)};
+      // Going right
+      svbool_t pg_h = whilelt<kPixelSize>(hindex, width);
+      const size_t size_h = std::min(kBlkSize, width - hindex);
+      uint8_t *tile2 = img + hindex * kPixelSize + vindex * img_stride;
 
-        // Transpose a tile from the top right area, save the result
-        // into temporary memory
-        rotate_transpose_tile<false, ScalarType>(data_rows.at(vindex, hindex),
-                                                 tmp_rows, row_index);
-        // Transpose its mirror tile from the left bottom area, save the
-        // result to its final space
-        rotate_transpose_tile<false, ScalarType>(data_rows.at(hindex, vindex),
-                                                 data_rows.at(vindex, hindex),
-                                                 row_index);
-        // Copy the temprory result to its final destination
-        Rows<const ScalarType> const_tmp_rows{
-            tmp, num_of_lanes * sizeof(ScalarType)};
-        CopyNonOverlappingRows<ScalarType>::copy_rows(
-            Rectangle{num_of_lanes, num_of_lanes}, const_tmp_rows,
-            data_rows.at(hindex, vindex));
-      });
-
-      inner_loop.remaining([&](size_t hindex, size_t final_hindex) {
-        // As this is the unroll_once path of the outer_loop there is
-        // num_of_lanes worth of data in the vertical direction
-        for (size_t i = vindex; i < vindex + num_of_lanes; ++i) {
-          disable_loop_vectorization();
-          for (size_t j = hindex; j < final_hindex; ++j) {
-            disable_loop_vectorization();
-            std::swap(data_rows.at(i)[j], data_rows.at(j)[i]);
-          }
-        }
-      });
+      // Transpose a tile from the left bottom area, save the result
+      // into temporary memory
+      transpose_partial_tile<kPixelSize>(tile1, img_stride, pg_v, size_v, tmp,
+                                         tmp_stride, pg_h, size_h);
+      // Transpose its mirror tile from the top right area, save the
+      // result to its final space
+      transpose_partial_tile<kPixelSize>(tile2, img_stride, pg_h, size_h, tile1,
+                                         img_stride, pg_v, size_v);
+      // Copy the temporary result to its final destination
+      copy_tile<kPixelSize>(tmp, tmp_stride, pg_h, tile2, img_stride, size_v);
     }
-  });
-
-  outer_loop.remaining([&](size_t vindex, size_t final_vindex) {
-    for (size_t i = vindex; i < final_vindex; ++i) {
-      disable_loop_vectorization();
-      // Only the top right half pixels need to be indexed
-      for (size_t j = i + 1; j < final_vindex; ++j) {
-        disable_loop_vectorization();
-        std::swap(data_rows.at(i)[j], data_rows.at(j)[i]);
-      }
-    }
-  });
+  }
   return KLEIDICV_OK;
-}*/
+}
+
+template <size_t kPixelSize>
+kleidicv_error_t transpose(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                           size_t dst_stride, size_t width,
+                           size_t height) KLEIDICV_STREAMING {
+  if (src == dst) {
+    return transpose_in_place<kPixelSize>(dst, dst_stride, width);
+  }
+  return transpose_out_of_place<kPixelSize>(src, src_stride, dst, dst_stride,
+                                            width, height);
+}
 
 }  // namespace kleidicv::sme
 
