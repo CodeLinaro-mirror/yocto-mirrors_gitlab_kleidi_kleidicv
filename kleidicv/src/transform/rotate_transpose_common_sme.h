@@ -13,34 +13,30 @@
 #include <cstddef>
 
 #include "kleidicv/config.h"
-#include "kleidicv/ctypes.h"
 
-// For 3channels, the indirect load is needed for interleaving:
-/* if constexpr (Channels == 3) {
-          svuint8x3_t c = svld3(pred, p);
-          svwrite_hor_za8_m(0, row_index + 0 * za_channel_padding,
-   svptrue_b8(), svget3(c, 0)); svwrite_hor_za8_m(0, row_index + 1 *
-   za_channel_padding, svptrue_b8(), svget3(c, 1)); svwrite_hor_za8_m(0,
-   row_index + 2 * za_channel_padding, svptrue_b8(), svget3(c, 2));
-        }*/
-// src:          0  1  2  3  4  5
-//              10 11 12 13 14 15
+// Transpose, Rotate-90 and Rotate+90 are done similarly:
+// - load rows (horizontally)
+// - store vertical columns into horizontal output rows
 //
-// transpose:    0 10 20 30 40 50
-//               1 11 21 31 41 51
-// -- load hor, store ver
-// rotate cw:    50 40 30 20 10  0
-//               51 41 31 21 11  1
-// -- load hor/reversed, store ver
-// [src_row, src_col] --> [src_col, height - 1 - src_row]
-// rotate ccw:    5 15 25 35 45 55
-//                4 14 24 34 44 54
-// -- load hor, store ver/reversed
-// [src_row, src_col] --> [width - 1 - src_col, src_row]
-
-// inplace: ONLY FOR TRANSPOSE NOW!!!
-// rotate: 4way: load A, rotate B to A, rotate C to B, rotate D to
-// C, rotate loaded to D
+// Example source:
+//              0  1  2
+//             10 11 12
+//             20 21 22
+//
+// The difference is a flipping somewhere:
+// - transpose: no flipping, load rows from 0 to height-1, store columns from 0
+// to width-1:
+//              0 10 20
+//              1 11 21
+//              2 12 22
+// - rotate clockwise: load rows in reverse order, from height-1 to 0:
+//             20 10  0
+//             21 11  1
+//             22 12  2
+// - rotate clockwise: store columns in reverse order, from width-1 to 0:
+//              2 12 22
+//              1 11 21
+//              0 10 20
 
 namespace kleidicv::sme {
 
@@ -104,6 +100,20 @@ svbool_t whilelt(uint64_t i,
   return svwhilelt_b64_u64(i, len);
 }
 
+template <size_t kPixelSize, bool kReverseLoadRows = false,
+          bool kReverseStoreCols = false>
+void transform_tile_3ch(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
+                        size_t width, uint8_t *dst, size_t dst_stride,
+                        svbool_t pgdst,
+                        size_t height) KLEIDICV_INOUT_ZA KLEIDICV_STREAMING;
+
+template <size_t kPixelSize, bool kReverseLoadRows = false,
+          bool kReverseStoreCols = false>
+void transform_tile_1ch(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
+                        size_t width, uint8_t *dst, size_t dst_stride,
+                        svbool_t pgdst,
+                        size_t height) KLEIDICV_INOUT_ZA KLEIDICV_STREAMING;
+
 /*
 This should make it faster, but does not really make a difference
 TODO have a look at it later again, when all features are in.
@@ -129,107 +139,129 @@ void transpose_full_tile(const uint8_t *src, size_t src_stride, uint8_t *dst,
   }
 };*/
 
-template <size_t kPixelSize, bool kReverseLoadRows = false,
-          bool kReverseStoreCols = false>
-void transpose_partial_tile(const uint8_t *src, size_t src_stride,
-                            svbool_t pgsrc, size_t width, uint8_t *dst,
-                            size_t dst_stride, svbool_t pgdst, size_t height)
-    KLEIDICV_INOUT_ZA KLEIDICV_STREAMING {
-  if constexpr (kChannelCount<kPixelSize> == 3) {
-    uint8_t tmp_r[256 * 256];  // NOLINT(runtime/arrays)
-    uint8_t tmp_g[256 * 256];  // NOLINT(runtime/arrays)
-    uint8_t tmp_b[256 * 256];  // NOLINT(runtime/arrays)
-    const size_t tmp_stride = svcntb();
+// To transform a 3-channel tile, a 3x1-tile big tile is loaded deinterleaved,
+// and the channels are transformed one by one. In this way, the full tile is
+// utilized, and the loads and stores are organized to minimize the memory
+// operations. Finally, the three channels are stored interleaved.
+template <size_t kPixelSize, bool kReverseLoadRows, bool kReverseStoreCols>
+void transform_tile_3ch(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
+                        size_t width, uint8_t *dst, size_t dst_stride,
+                        svbool_t pgdst,
+                        size_t height) KLEIDICV_INOUT_ZA KLEIDICV_STREAMING {
+  static_assert(kChannelCount<kPixelSize> == 3);
+  uint8_t tmp_r[256 * 256];  // NOLINT(runtime/arrays)
+  uint8_t tmp_g[256 * 256];  // NOLINT(runtime/arrays)
+  uint8_t tmp_b[256 * 256];  // NOLINT(runtime/arrays)
+  const size_t tmp_stride = svcntb();
 
-    const uint8_t *src_row = src;
+  const uint8_t *src_row = src;
+  if constexpr (kReverseLoadRows) {
+    src_row += src_stride * (height - 1);
+  }
+  uint8_t *tmp_g_row = tmp_g;
+  uint8_t *tmp_b_row = tmp_b;
+  for (size_t row = 0; row < height; ++row) {
+    if constexpr (kPixelSize == 3) {
+      svuint8x3_t rgb = svld3_u8(pgsrc, src_row);
+      svwrite_hor_za8_m(0, row, pgsrc, svget3(rgb, 0));
+      svst1_u8(pgsrc, tmp_g_row, svget3(rgb, 1));
+      svst1_u8(pgsrc, tmp_b_row, svget3(rgb, 2));
+    } else {
+      svuint16x3_t rgb =
+          svld3_u16(pgsrc, reinterpret_cast<const uint16_t *>(src_row));
+      svwrite_hor_za16_m(0, row, pgsrc, svget3(rgb, 0));
+      svst1_u16(pgsrc, reinterpret_cast<uint16_t *>(tmp_g_row), svget3(rgb, 1));
+      svst1_u16(pgsrc, reinterpret_cast<uint16_t *>(tmp_b_row), svget3(rgb, 2));
+    }
+    tmp_g_row += tmp_stride;
+    tmp_b_row += tmp_stride;
     if constexpr (kReverseLoadRows) {
-      src_row += src_stride * (height - 1);
-    }
-    uint8_t *tmp_g_row = tmp_g;
-    uint8_t *tmp_b_row = tmp_b;
-    for (size_t row = 0; row < height; ++row) {
-      if constexpr (kPixelSize == 3) {
-        svuint8x3_t rgb = svld3_u8(pgsrc, src_row);
-        svwrite_hor_za8_m(0, row, pgsrc, svget3(rgb, 0));
-        svst1_u8(pgsrc, tmp_g_row, svget3(rgb, 1));
-        svst1_u8(pgsrc, tmp_b_row, svget3(rgb, 2));
-      } else {
-        svuint16x3_t rgb =
-            svld3_u16(pgsrc, reinterpret_cast<const uint16_t *>(src_row));
-        svwrite_hor_za16_m(0, row, pgsrc, svget3(rgb, 0));
-        svst1_u16(pgsrc, reinterpret_cast<uint16_t *>(tmp_g_row),
-                  svget3(rgb, 1));
-        svst1_u16(pgsrc, reinterpret_cast<uint16_t *>(tmp_b_row),
-                  svget3(rgb, 2));
-      }
-      tmp_g_row += tmp_stride;
-      tmp_b_row += tmp_stride;
-      if constexpr (kReverseLoadRows) {
-        src_row -= src_stride;
-      } else {
-        src_row += src_stride;
-      }
-    }
-
-    uint8_t *tmp_r_row = tmp_r;
-    for (size_t i = 0; i < width; ++i) {
-      const size_t za_col = kReverseStoreCols ? (width - i - 1) : i;
-      store_za_col<kElementSize<kPixelSize>, 0>(za_col, pgdst, tmp_r_row);
-      tmp_r_row += tmp_stride;
-    }
-
-    transpose_partial_tile<kElementSize<kPixelSize>, false, kReverseStoreCols>(
-        tmp_g, tmp_stride, pgsrc, width, tmp_g, tmp_stride, pgdst, height);
-
-    const uint8_t *tmp_b_row_in = tmp_b;
-    for (size_t row = 0; row < height; ++row) {
-      load_za_row<kElementSize<kPixelSize>, 0>(row, pgsrc, tmp_b_row_in);
-      tmp_b_row_in += tmp_stride;
-    }
-
-    const uint8_t *tmp_r_row_in = tmp_r;
-    const uint8_t *tmp_g_row_in = tmp_g;
-    uint8_t *dst_row = dst;
-    for (size_t i = 0; i < width; ++i) {
-      const size_t za_col = kReverseStoreCols ? (width - i - 1) : i;
-      if constexpr (kPixelSize == 3) {
-        svuint8_t red = svld1_u8(pgdst, tmp_r_row_in);
-        svuint8_t green = svld1_u8(pgdst, tmp_g_row_in);
-        svuint8_t blue = read_za_col<1, 0>(za_col, pgdst);
-        svst3_u8(pgdst, dst_row, svcreate3(red, green, blue));
-      } else {
-        svuint16_t red =
-            svld1_u16(pgdst, reinterpret_cast<const uint16_t *>(tmp_r_row_in));
-        svuint16_t green =
-            svld1_u16(pgdst, reinterpret_cast<const uint16_t *>(tmp_g_row_in));
-        svuint16_t blue = read_za_col<2, 0>(za_col, pgdst);
-        svst3_u16(pgdst, reinterpret_cast<uint16_t *>(dst_row),
-                  svcreate3(red, green, blue));
-      }
-      tmp_r_row_in += tmp_stride;
-      tmp_g_row_in += tmp_stride;
-      dst_row += dst_stride;
-    }
-  } else {
-    if (kReverseLoadRows) {
-      src = src + src_stride * (height - 1);
-    }
-    for (size_t row = 0; row < height; ++row) {
-      load_za_row<kPixelSize, 0>(row, pgsrc, src);
-      if constexpr (kReverseLoadRows) {
-        src -= src_stride;
-      } else {
-        src += src_stride;
-      }
-    }
-
-    for (size_t i = 0; i < width; i++) {
-      const size_t src_col = kReverseStoreCols ? (width - i - 1) : i;
-      store_za_col<kPixelSize, 0>(src_col, pgdst, dst);
-      dst += dst_stride;
+      src_row -= src_stride;
+    } else {
+      src_row += src_stride;
     }
   }
-};
+
+  uint8_t *tmp_r_row = tmp_r;
+  for (size_t i = 0; i < width; ++i) {
+    const size_t za_col = kReverseStoreCols ? (width - i - 1) : i;
+    store_za_col<kElementSize<kPixelSize>, 0>(za_col, pgdst, tmp_r_row);
+    tmp_r_row += tmp_stride;
+  }
+
+  transform_tile_1ch<kElementSize<kPixelSize>, false, kReverseStoreCols>(
+      tmp_g, tmp_stride, pgsrc, width, tmp_g, tmp_stride, pgdst, height);
+
+  const uint8_t *tmp_b_row_in = tmp_b;
+  for (size_t row = 0; row < height; ++row) {
+    load_za_row<kElementSize<kPixelSize>, 0>(row, pgsrc, tmp_b_row_in);
+    tmp_b_row_in += tmp_stride;
+  }
+
+  const uint8_t *tmp_r_row_in = tmp_r;
+  const uint8_t *tmp_g_row_in = tmp_g;
+  uint8_t *dst_row = dst;
+  for (size_t i = 0; i < width; ++i) {
+    const size_t za_col = kReverseStoreCols ? (width - i - 1) : i;
+    if constexpr (kPixelSize == 3) {
+      svuint8_t red = svld1_u8(pgdst, tmp_r_row_in);
+      svuint8_t green = svld1_u8(pgdst, tmp_g_row_in);
+      svuint8_t blue = read_za_col<1, 0>(za_col, pgdst);
+      svst3_u8(pgdst, dst_row, svcreate3(red, green, blue));
+    } else {
+      svuint16_t red =
+          svld1_u16(pgdst, reinterpret_cast<const uint16_t *>(tmp_r_row_in));
+      svuint16_t green =
+          svld1_u16(pgdst, reinterpret_cast<const uint16_t *>(tmp_g_row_in));
+      svuint16_t blue = read_za_col<2, 0>(za_col, pgdst);
+      svst3_u16(pgdst, reinterpret_cast<uint16_t *>(dst_row),
+                svcreate3(red, green, blue));
+    }
+    tmp_r_row_in += tmp_stride;
+    tmp_g_row_in += tmp_stride;
+    dst_row += dst_stride;
+  }
+}
+
+template <size_t kPixelSize, bool kReverseLoadRows, bool kReverseStoreCols>
+void transform_tile_1ch(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
+                        size_t width, uint8_t *dst, size_t dst_stride,
+                        svbool_t pgdst,
+                        size_t height) KLEIDICV_INOUT_ZA KLEIDICV_STREAMING {
+  static_assert(kChannelCount<kPixelSize> == 1);
+  if (kReverseLoadRows) {
+    src = src + src_stride * (height - 1);
+  }
+  for (size_t row = 0; row < height; ++row) {
+    load_za_row<kPixelSize, 0>(row, pgsrc, src);
+    if constexpr (kReverseLoadRows) {
+      src -= src_stride;
+    } else {
+      src += src_stride;
+    }
+  }
+
+  for (size_t i = 0; i < width; i++) {
+    const size_t src_col = kReverseStoreCols ? (width - i - 1) : i;
+    store_za_col<kPixelSize, 0>(src_col, pgdst, dst);
+    dst += dst_stride;
+  }
+}
+
+template <size_t kPixelSize, bool kReverseLoadRows = false,
+          bool kReverseStoreCols = false>
+void transform_tile(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
+                    size_t width, uint8_t *dst, size_t dst_stride,
+                    svbool_t pgdst,
+                    size_t height) KLEIDICV_INOUT_ZA KLEIDICV_STREAMING {
+  if constexpr (kChannelCount<kPixelSize> == 3) {
+    transform_tile_3ch<kPixelSize, kReverseLoadRows, kReverseStoreCols>(
+        src, src_stride, pgsrc, width, dst, dst_stride, pgdst, height);
+  } else {
+    transform_tile_1ch<kPixelSize, kReverseLoadRows, kReverseStoreCols>(
+        src, src_stride, pgsrc, width, dst, dst_stride, pgdst, height);
+  }
+}
 
 template <size_t kPixelSize>
 void copy_tile(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
@@ -267,7 +299,7 @@ KLEIDICV_NEW_ZA kleidicv_error_t rotate_transpose_to_dst(
     size_t width, size_t height) KLEIDICV_STREAMING {
   const size_t kBlkSize = svcntb() / kElementSize<kPixelSize>;
   size_t col = 0;
-  /* This should make it faster, but does not really make a difference
+  /* This should make it faster, but it did not really make a difference
      TODO have a look at it later again, when all features are in.
   for (; col + kBlkSize <= width; col += kBlkSize) {
       const uint8_t *psrc = src + col * kPixelSize;
@@ -300,7 +332,7 @@ KLEIDICV_NEW_ZA kleidicv_error_t rotate_transpose_to_dst(
       size_t dst_row = kReverseStoreCols ? width - col - kBlkWidth : col;
       size_t dst_col = kReverseLoadRows ? height - row - kBlkHeight : row;
       uint8_t *pdst = dst + dst_row * dst_stride + dst_col * kPixelSize;
-      transpose_partial_tile<kPixelSize, kReverseLoadRows, kReverseStoreCols>(
+      transform_tile<kPixelSize, kReverseLoadRows, kReverseStoreCols>(
           psrc, src_stride, pgsrc, kBlkWidth, pdst, dst_stride, pgdst,
           kBlkHeight);
     }
@@ -313,7 +345,8 @@ template <size_t kPixelSize>
 KLEIDICV_NEW_ZA kleidicv_error_t transpose_in_place(
     uint8_t *img, size_t img_stride, size_t width) KLEIDICV_STREAMING {
   const size_t kBlkSize = svcntb() / kElementSize<kPixelSize>;
-  // Allocate temporary memory for one tile - maximum length is 2048 bits
+  // Allocate temporary memory for one tile. Maximum length is 2048 bits =
+  // 256 bytes.
   uint8_t tmp[256 * 256 * kChannelCount<kPixelSize>];  // NOLINT(runtime/arrays)
   const size_t tmp_stride = svcntb() * kChannelCount<kPixelSize>;
 
@@ -322,8 +355,8 @@ KLEIDICV_NEW_ZA kleidicv_error_t transpose_in_place(
     uint8_t *ptile = img + vindex * kPixelSize + vindex * img_stride;
     svbool_t pg_v = whilelt<kElementSize<kPixelSize>>(vindex, width);
     const size_t size_v = std::min(kBlkSize, width - vindex);
-    transpose_partial_tile<kPixelSize>(ptile, img_stride, pg_v, size_v, ptile,
-                                       img_stride, pg_v, size_v);
+    transform_tile<kPixelSize>(ptile, img_stride, pg_v, size_v, ptile,
+                               img_stride, pg_v, size_v);
 
     // Transpose tiles from/to the right/bottom of diagonal
     for (size_t hindex = vindex + kBlkSize; hindex < width;
@@ -338,12 +371,12 @@ KLEIDICV_NEW_ZA kleidicv_error_t transpose_in_place(
 
       // Transpose a tile from the left bottom area, save the result
       // into temporary memory
-      transpose_partial_tile<kPixelSize>(tile1, img_stride, pg_v, size_v, tmp,
-                                         tmp_stride, pg_h, size_h);
+      transform_tile<kPixelSize>(tile1, img_stride, pg_v, size_v, tmp,
+                                 tmp_stride, pg_h, size_h);
       // Transpose its mirror tile from the top right area, save the
       // result to its final space
-      transpose_partial_tile<kPixelSize>(tile2, img_stride, pg_h, size_h, tile1,
-                                         img_stride, pg_v, size_v);
+      transform_tile<kPixelSize>(tile2, img_stride, pg_h, size_h, tile1,
+                                 img_stride, pg_v, size_v);
       // Copy the temporary result to its final destination
       copy_tile<kPixelSize>(tmp, tmp_stride, pg_h, tile2, img_stride, size_v);
     }
@@ -351,6 +384,7 @@ KLEIDICV_NEW_ZA kleidicv_error_t transpose_in_place(
   return KLEIDICV_OK;
 }
 
+// In-place operation is only supported for transpose.
 template <size_t kPixelSize>
 kleidicv_error_t transpose(const uint8_t *src, size_t src_stride, uint8_t *dst,
                            size_t dst_stride, size_t width,
