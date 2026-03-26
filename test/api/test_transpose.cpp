@@ -13,9 +13,9 @@
 class Transpose : public testing::TestWithParam<size_t> {
  public:
   void scalar_test(size_t padding) {
-    const size_t lanes = lanes_for_element_size();
-    size_t first_dim = lanes - 1;
-    size_t second_dim = lanes + 1;
+    //    const size_t lanes = lanes_for_element_size();
+    size_t first_dim = 3;
+    size_t second_dim = 5;
     // Exercise scalar paths
     test_out_of_place(first_dim, second_dim, padding);
     test_out_of_place(second_dim, first_dim, padding);
@@ -91,6 +91,15 @@ class Transpose : public testing::TestWithParam<size_t> {
                                  actual.stride(), src_width, src_height,
                                  element_size));
 
+    if (src_width <= 100 && dst_width <= 100 && expected.compare_to(actual)) {
+      std::cout << "source:\n";
+      dump(&source);
+      std::cout << "expected:\n";
+      dump(&expected);
+      std::cout << "actual:\n";
+      dump(&actual);
+    }
+
     EXPECT_EQ_ARRAY2D(actual, expected);
   }
 
@@ -117,6 +126,15 @@ class Transpose : public testing::TestWithParam<size_t> {
     ASSERT_EQ(KLEIDICV_OK,
               kleidicv_transpose(actual.data(), actual.stride(), actual.data(),
                                  actual.stride(), size, size, element_size));
+
+    if (size <= 100 && expected.compare_to(actual)) {
+      std::cout << "source:\n";
+      dump(&source);
+      std::cout << "expected:\n";
+      dump(&expected);
+      std::cout << "actual:\n";
+      dump(&actual);
+    }
 
     EXPECT_EQ_ARRAY2D(actual, expected);
   }

@@ -36,42 +36,72 @@ class Rotate : public testing::TestWithParam<size_t> {
   }
 
  protected:
-  void test(size_t src_width, size_t src_height, size_t padding) const {
+  template <typename ScalarType, size_t kChannels>
+  void test_impl(size_t src_width, size_t src_height, size_t padding) const {
     const size_t dst_width = src_height;
     const size_t dst_height = src_width;
-    size_t element_size = GetParam();
-    size_t src_stride = (src_width + padding) * element_size;
-    size_t dst_stride = (dst_width + padding) * element_size;
+    const size_t element_size = sizeof(ScalarType) * kChannels;
+    const size_t src_width_elements = src_width * kChannels;
+    const size_t dst_width_elements = dst_width * kChannels;
+    const size_t padding_elements = padding * kChannels;
 
-    std::vector<uint8_t> source(src_stride * src_height, 0);
-    std::mt19937 generator{
-        static_cast<std::mt19937::result_type>(test::Options::seed())};
-    std::generate(source.begin(), source.end(), generator);
+    test::Array2D<ScalarType> source(src_width_elements, src_height,
+                                     padding_elements, kChannels);
+    test::PseudoRandomNumberGenerator<ScalarType> input_value_random_range;
+    source.fill(input_value_random_range);
 
     for (int angle : {90, -90}) {
-      std::vector<uint8_t> expected(dst_stride * dst_height, 0);
-      std::vector<uint8_t> actual_single(dst_stride * dst_height, 0);
+      test::Array2D<ScalarType> expected(dst_width_elements, dst_height,
+                                         padding_elements, kChannels);
+      test::Array2D<ScalarType> actual(dst_width_elements, dst_height,
+                                       padding_elements, kChannels);
 
-      calculate_expected(source.data(), expected.data(), src_width, src_height,
-                         src_stride, dst_stride, element_size, angle);
+      calculate_expected(reinterpret_cast<const uint8_t *>(source.data()),
+                         reinterpret_cast<uint8_t *>(expected.data()),
+                         src_width, src_height, source.stride(),
+                         expected.stride(), element_size, angle);
 
-      ASSERT_EQ(KLEIDICV_OK,
-                kleidicv_rotate(source.data(), src_stride, src_width,
-                                src_height, actual_single.data(), dst_stride,
-                                angle, element_size));
+      ASSERT_EQ(
+          KLEIDICV_OK,
+          kleidicv_rotate(source.data(), source.stride(), src_width, src_height,
+                          actual.data(), actual.stride(), angle, element_size));
 
-      expect_eq_vector2D(expected.data(), actual_single.data(), dst_width,
-                         dst_height, dst_stride, element_size);
+      if (src_width <= 100 && src_height <= 100 &&
+          expected.compare_to(actual)) {
+        std::cout << "source:\n";
+        dump(&source);
+        std::cout << "expected:\n";
+        dump(&expected);
+        std::cout << "actual:\n";
+        dump(&actual);
+      }
+
+      EXPECT_EQ_ARRAY2D(expected, actual);
     }
   }
 
-  void expect_eq_vector2D(const uint8_t *lhs, const uint8_t *rhs, size_t width,
-                          size_t height, size_t stride,
-                          size_t element_size) const {
-    for (size_t i = 0; i < height; i++) {
-      for (size_t j = 0; j < width * element_size; j++) {
-        ASSERT_EQ(lhs[i * stride + j], rhs[i * stride + j]);
-      }
+  void test(size_t src_width, size_t src_height, size_t padding) const {
+    switch (GetParam()) {
+      case sizeof(uint8_t):
+        test_impl<uint8_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint16_t):
+        test_impl<uint16_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint32_t):
+        test_impl<uint32_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint64_t):
+        test_impl<uint64_t, 1>(src_width, src_height, padding);
+        break;
+      case sizeof(uint8_t) * 3:
+        test_impl<uint8_t, 3>(src_width, src_height, padding);
+        break;
+      case sizeof(uint16_t) * 3:
+        test_impl<uint16_t, 3>(src_width, src_height, padding);
+        break;
+      default:
+        FAIL() << "Unsupported element size for rotate test.";
     }
   }
 

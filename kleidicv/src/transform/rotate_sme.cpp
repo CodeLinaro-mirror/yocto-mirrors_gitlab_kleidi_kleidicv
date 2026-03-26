@@ -61,15 +61,18 @@ rotate(const void *src_void, size_t src_stride, size_t src_width,
                                 src_height, normalized_angle);
     case 3:
       CHECK_POINTERS(src, dst);
-      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+      return rotate_by_angle<3>(src, src_stride, dst, dst_stride, src_width,
+                                src_height, normalized_angle);
     case 4:
       CHECKPTR(uint32_t, src, src_stride, src_height);
       CHECKPTR(uint32_t, dst, dst_stride, src_width);
       return rotate_by_angle<4>(src, src_stride, dst, dst_stride, src_width,
                                 src_height, normalized_angle);
     case 6:
-      CHECK_POINTERS(src, dst);
-      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+      CHECKPTR(uint16_t, src, src_stride, src_height);
+      CHECKPTR(uint16_t, dst, dst_stride, src_width);
+      return rotate_by_angle<6>(src, src_stride, dst, dst_stride, src_width,
+                                src_height, normalized_angle);
     case 8:
       CHECKPTR(uint64_t, src, src_stride, src_height);
       CHECKPTR(uint64_t, dst, dst_stride, src_width);

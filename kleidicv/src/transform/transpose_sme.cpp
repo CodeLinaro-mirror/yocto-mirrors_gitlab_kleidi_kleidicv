@@ -44,10 +44,17 @@ transpose(const void *src_void, size_t src_stride, void *dst_void,
       CHECKPTR(uint16_t, src, src_stride, height);
       CHECKPTR(uint16_t, dst, dst_stride, width);
       return transpose<2>(src, src_stride, dst, dst_stride, width, height);
+    case 3:
+      CHECK_POINTERS(src, dst);
+      return transpose<3>(src, src_stride, dst, dst_stride, width, height);
     case 4:
       CHECKPTR(uint32_t, src, src_stride, height);
       CHECKPTR(uint32_t, dst, dst_stride, width);
       return transpose<4>(src, src_stride, dst, dst_stride, width, height);
+    case 6:
+      CHECKPTR(uint16_t, src, src_stride, height);
+      CHECKPTR(uint16_t, dst, dst_stride, width);
+      return transpose<6>(src, src_stride, dst, dst_stride, width, height);
     case 8:
       CHECKPTR(uint64_t, src, src_stride, height);
       CHECKPTR(uint64_t, dst, dst_stride, width);
