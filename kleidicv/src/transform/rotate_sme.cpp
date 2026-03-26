@@ -8,7 +8,7 @@
 
 #include "kleidicv/transform/rotate.h"
 #include "kleidicv/utils.h"
-#include "transpose_sme_common.h"
+#include "rotate_transpose_common_sme.h"
 
 namespace kleidicv::sme {
 
