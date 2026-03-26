@@ -31,9 +31,11 @@
 // rotate cw:    50 40 30 20 10  0
 //               51 41 31 21 11  1
 // -- load hor/reversed, store ver
+// [src_row, src_col] --> [src_col, height - 1 - src_row]
 // rotate ccw:    5 15 25 35 45 55
 //                4 14 24 34 44 54
 // -- load hor, store ver/reversed
+// [src_row, src_col] --> [width - 1 - src_col, src_row]
 
 // inplace: ONLY FOR TRANSPOSE NOW!!!
 // rotate: 4way: load A, rotate B to A, rotate C to B, rotate D to
@@ -108,18 +110,27 @@ void transpose_full_tile(const uint8_t *src, size_t src_stride, uint8_t *dst,
   }
 };*/
 
-template <size_t kPixelSize>
+template <size_t kPixelSize, bool kReverseLoadRows = false,
+          bool kReverseStoreCols = false>
 void transpose_partial_tile(const uint8_t *src, size_t src_stride,
                             svbool_t pgsrc, size_t width, uint8_t *dst,
                             size_t dst_stride, svbool_t pgdst, size_t height)
     KLEIDICV_INOUT_ZA KLEIDICV_STREAMING {
+  if (kReverseLoadRows) {
+    src = src + src_stride * (height - 1);
+  }
   for (size_t row = 0; row < height; ++row) {
     load_za_row<kPixelSize, 0>(row, pgsrc, src);
-    src += src_stride;
+    if constexpr (kReverseLoadRows) {
+      src -= src_stride;
+    } else {
+      src += src_stride;
+    }
   }
 
   for (size_t i = 0; i < width; i++) {
-    store_za_col<kPixelSize, 0>(i, pgdst, dst);
+    const size_t src_col = kReverseStoreCols ? (width - i - 1) : i;
+    store_za_col<kPixelSize, 0>(src_col, pgdst, dst);
     dst += dst_stride;
   }
 };
@@ -146,8 +157,9 @@ void copy_tile(const uint8_t *src, size_t src_stride, svbool_t pgsrc,
   }
 }
 
-template <size_t kPixelSize>
-KLEIDICV_NEW_ZA kleidicv_error_t transpose_out_of_place(
+template <size_t kPixelSize, bool kReverseLoadRows = false,
+          bool kReverseStoreCols = false>
+KLEIDICV_NEW_ZA kleidicv_error_t rotate_transpose_to_dst(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height) KLEIDICV_STREAMING {
   // For 1,2,4,8 size pixels
@@ -177,17 +189,18 @@ KLEIDICV_NEW_ZA kleidicv_error_t transpose_out_of_place(
     }*/
 
   for (; col < width; col += kBlkSize) {
-    const uint8_t *psrc = src + col * kPixelSize;
-    uint8_t *pdst = dst + col * dst_stride;
     svbool_t pgsrc = whilelt<kPixelSize>(col, width);
     const size_t kBlkWidth = std::min(kBlkSize, width - col);
     for (size_t row = 0; row < height; row += kBlkSize) {
+      const uint8_t *psrc = src + row * src_stride + col * kPixelSize;
       svbool_t pgdst = whilelt<kPixelSize>(row, height);
       const size_t kBlkHeight = std::min(kBlkSize, height - row);
-      transpose_partial_tile<kPixelSize>(psrc, src_stride, pgsrc, kBlkWidth,
-                                         pdst, dst_stride, pgdst, kBlkHeight);
-      psrc += kBlkSize * src_stride;
-      pdst += kBlkSize * kPixelSize;
+      size_t dst_row = kReverseStoreCols ? width - col - kBlkWidth : col;
+      size_t dst_col = kReverseLoadRows ? height - row - kBlkHeight : row;
+      uint8_t *pdst = dst + dst_row * dst_stride + dst_col * kPixelSize;
+      transpose_partial_tile<kPixelSize, kReverseLoadRows, kReverseStoreCols>(
+          psrc, src_stride, pgsrc, kBlkWidth, pdst, dst_stride, pgdst,
+          kBlkHeight);
     }
   }
   svzero_za();
@@ -243,8 +256,24 @@ kleidicv_error_t transpose(const uint8_t *src, size_t src_stride, uint8_t *dst,
   if (src == dst) {
     return transpose_in_place<kPixelSize>(dst, dst_stride, width);
   }
-  return transpose_out_of_place<kPixelSize>(src, src_stride, dst, dst_stride,
-                                            width, height);
+  return rotate_transpose_to_dst<kPixelSize, false, false>(
+      src, src_stride, dst, dst_stride, width, height);
+}
+
+template <size_t kPixelSize>
+kleidicv_error_t rotate_cw(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                           size_t dst_stride, size_t width,
+                           size_t height) KLEIDICV_STREAMING {
+  return rotate_transpose_to_dst<kPixelSize, true, false>(
+      src, src_stride, dst, dst_stride, width, height);
+}
+
+template <size_t kPixelSize>
+kleidicv_error_t rotate_ccw(const uint8_t *src, size_t src_stride, uint8_t *dst,
+                            size_t dst_stride, size_t width,
+                            size_t height) KLEIDICV_STREAMING {
+  return rotate_transpose_to_dst<kPixelSize, false, true>(
+      src, src_stride, dst, dst_stride, width, height);
 }
 
 }  // namespace kleidicv::sme
