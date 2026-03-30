@@ -7,7 +7,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/../../kleidicv_thread/CMakeLists.txt")
 
 project("KleidiCV OpenCV HAL")
 
-set(KLEIDICV_HAL_VERSION "26.03" CACHE INTERNAL "")
+set(KLEIDICV_HAL_VERSION "26.06" CACHE INTERNAL "")
 set(KLEIDICV_HAL_LIBRARIES "kleidicv_hal" "kleidicv" "kleidicv_thread" CACHE INTERNAL "")
 set(KLEIDICV_HAL_HEADERS "${CMAKE_CURRENT_LIST_DIR}/kleidicv_hal.h" CACHE INTERNAL "")
 set(KLEIDICV_HAL_INCLUDE_DIRS "$<TARGET_PROPERTY:kleidicv_thread,INCLUDE_DIRECTORIES>" CACHE INTERNAL "")
