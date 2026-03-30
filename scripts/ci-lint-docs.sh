@@ -30,3 +30,9 @@ shellcheck $(find scripts -name '*.sh' | tr '\n' ' ')
 
 # Check license headers.
 reuse lint
+
+# Check for non-ASCII characters or tab.
+if git grep -n '[^ -~]'; then
+  echo "ERROR: non-ASCII characters or tab found."
+  exit 1
+fi

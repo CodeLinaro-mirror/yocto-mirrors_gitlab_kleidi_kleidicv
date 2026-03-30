@@ -14,3 +14,9 @@ CHECK_ONLY=ON ./scripts/format.sh
 
 # Verifies that scripts are somewhat correct
 shellcheck $(find scripts -name '*.sh' | tr '\n' ' ')
+
+# Check staged files for non-ASCII characters or tab
+if git diff --cached --name-only -z | xargs -0 grep -n '[^ -~]'; then
+  echo "ERROR: non-ASCII characters or tab found in staged files."
+  exit 1
+fi

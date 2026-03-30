@@ -231,9 +231,9 @@ The difference between the two formats is the layout order of U and V:
 
 Notes on parameters:
 
-- `src.depth()` — only supports `CV_8U` depth.
-- `src.channels()` — supports 3 (RGB/BGR), 4 (RGBA/BGRA). For RGBA/BGRA, the A channel is ignored.
-- `dst` — output is a single image containing the Y plane followed by U and V planes (IYUV layout) or V and U planes (YV12 layout).
+- `src.depth()` - only supports `CV_8U` depth.
+- `src.channels()` - supports 3 (RGB/BGR), 4 (RGBA/BGRA). For RGBA/BGRA, the A channel is ignored.
+- `dst` - output is a single image containing the Y plane followed by U and V planes (IYUV layout) or V and U planes (YV12 layout).
 
 
 #### [`cv::Mat::convertTo()`](https://docs.opencv.org/4.10.0/d3/d63/classcv_1_1Mat.html#adf88c60c5b4980e05bb556080916978b)
@@ -310,8 +310,8 @@ In-place filtering is not supported i.e. `src` and `dst` must be different (non-
 Notes on parameters:
 
 * `src.cols`,`src.rows` - image width and height must be greater than or equal to `ksize - 1` (e.g., `>= 4` for 5x5, `>= 14` for 15x15).
-* `ksize` - for `CV_8U`, supported kernel sizes are 3×3 to 255x255.\
-  For other types, only 3x3, 5×5 and 7×7 are supported.
+* `ksize` - for `CV_8U`, supported kernel sizes are 3x3 to 255x255.\
+  For other types, only 3x3, 5x5 and 7x7 are supported.
 
 #### [`cv::sepFilter2D()`](https://docs.opencv.org/4.13.0/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d)
 Applies a separable filter to a given image.
