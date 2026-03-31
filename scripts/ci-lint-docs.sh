@@ -32,7 +32,7 @@ shellcheck $(find scripts -name '*.sh' | tr '\n' ' ')
 reuse lint
 
 # Check for non-ASCII characters or tab.
-if git grep -n '[^ -~]'; then
+if git --no-pager grep -n '[^ -~]'; then
   echo "ERROR: non-ASCII characters or tab found."
   exit 1
 fi
