@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -65,11 +65,6 @@ class ScaleIntBase : public UnrollTwice {
 
   float scale_, shift_;
 };
-
-template <typename T, typename U>
-kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
-                       size_t dst_stride, size_t width, size_t height,
-                       double scale, double shift);
 
 template <typename T>
 T scale_value(T value, double scale, double shift) {

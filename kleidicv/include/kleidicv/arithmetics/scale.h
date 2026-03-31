@@ -12,7 +12,9 @@
 #include "kleidicv/traits.h"
 #include "kleidicv/types.h"
 
-namespace kleidicv::neon {
+namespace kleidicv {
+
+namespace neon {
 
 std::array<uint8_t, 256> precalculate_scale_table_u8(double scale,
                                                      double shift);
@@ -22,6 +24,39 @@ kleidicv_error_t scale_with_precalculated_table_u8(
     size_t width, size_t height, double scale, double shift,
     const std::array<uint8_t, 256> &precalculated_table);
 
-}  // namespace kleidicv::neon
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       double scale, double shift);
+}  // namespace neon
+
+namespace sve2 {
+
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       double scale, double shift);
+
+}  // namespace sve2
+
+namespace sme {
+
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       double scale, double shift);
+
+}  // namespace sme
+
+namespace sme2 {
+
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       double scale, double shift);
+
+}  // namespace sme2
+
+}  // namespace kleidicv
 
 #endif  // KLEIDICV_ARITHMETICS_SCALE_H

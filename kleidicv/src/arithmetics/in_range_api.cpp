@@ -2,40 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include "kleidicv/arithmetics/in_range.h"
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
-
-namespace kleidicv {
-
-namespace neon {
-template <typename T>
-kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
-                          size_t dst_stride, size_t width, size_t height,
-                          T lower_bound, T upper_bound);
-}  // namespace neon
-
-namespace sve2 {
-template <typename T>
-kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
-                          size_t dst_stride, size_t width, size_t height,
-                          T lower_bound, T upper_bound);
-}  // namespace sve2
-
-namespace sme {
-template <typename T>
-kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
-                          size_t dst_stride, size_t width, size_t height,
-                          T lower_bound, T upper_bound);
-}  // namespace sme
-
-namespace sme2 {
-template <typename T>
-kleidicv_error_t in_range(const T *src, size_t src_stride, uint8_t *dst,
-                          size_t dst_stride, size_t width, size_t height,
-                          T lower_bound, T upper_bound);
-}  // namespace sme2
-
-}  // namespace kleidicv
 
 #define KLEIDICV_DEFINE_C_API(name, type)                     \
   KLEIDICV_MULTIVERSION_C_API_WITH_SME(                       \

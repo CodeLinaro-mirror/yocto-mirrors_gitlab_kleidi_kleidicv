@@ -59,6 +59,39 @@ inline bool separable_filter_2d_is_implemented(size_t width, size_t height,
   return true;
 }
 
+namespace neon {
+
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
+    size_t kernel_height, FixedBorderType border_type);
+
+}  // namespace neon
+
+namespace sve2 {
+
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
+    size_t kernel_height, FixedBorderType border_type);
+
+}  // namespace sve2
+
+namespace sme {
+
+template <typename T>
+kleidicv_error_t separable_filter_2d_stripe(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t y_begin, size_t y_end, size_t channels,
+    const T *kernel_x, size_t kernel_width, const T *kernel_y,
+    size_t kernel_height, FixedBorderType border_type);
+
+}  // namespace sme
+
 }  // namespace kleidicv
 
 #endif  // KLEIDICV_FILTERS_SEPARABLE_FILTER_2D_H
