@@ -6,5 +6,6 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/transform/transpose.h"
 
-KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(kleidicv_transpose,
-                                        &kleidicv::neon::transpose, nullptr);
+KLEIDICV_MULTIVERSION_C_API_WITH_SME(kleidicv_transpose,
+                                     &kleidicv::neon::transpose, nullptr,
+                                     &kleidicv::sme::transpose, nullptr);

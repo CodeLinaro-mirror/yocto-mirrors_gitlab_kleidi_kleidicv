@@ -28,7 +28,6 @@ This changelog aims to follow the guiding principles of
 - Blur and downsample multi-channel support.
 - Standalone Lucas-Kanade algorithm.
 - Rotate support for -90 degrees (90 degrees counter-clockwise).
-- Rotate ±90 and transpose support for 3-channel images.
 - Multithreaded transpose for out-of-place calls (in-place remains single-threaded).
 - LK optical-flow pyramid builder.
 - Pyramidal LK optical-flow calculation API.

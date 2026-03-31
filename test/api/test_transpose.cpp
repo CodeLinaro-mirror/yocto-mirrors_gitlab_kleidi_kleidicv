@@ -91,9 +91,16 @@ class Transpose : public testing::TestWithParam<size_t> {
                                  actual.stride(), src_width, src_height,
                                  element_size));
 
-    expect_eq_vector2D(reinterpret_cast<const uint8_t *>(expected.data()),
-                       reinterpret_cast<const uint8_t *>(actual.data()),
-                       dst_width, dst_height, actual.stride(), element_size);
+    if (src_width <= 100 && dst_width <= 100 && expected.compare_to(actual)) {
+      std::cout << "source:\n";
+      dump(&source);
+      std::cout << "expected:\n";
+      dump(&expected);
+      std::cout << "actual:\n";
+      dump(&actual);
+    }
+
+    EXPECT_EQ_ARRAY2D(actual, expected);
   }
 
   template <typename ScalarType, size_t kChannels>
@@ -120,9 +127,16 @@ class Transpose : public testing::TestWithParam<size_t> {
               kleidicv_transpose(actual.data(), actual.stride(), actual.data(),
                                  actual.stride(), size, size, element_size));
 
-    expect_eq_vector2D(reinterpret_cast<const uint8_t *>(expected.data()),
-                       reinterpret_cast<const uint8_t *>(actual.data()), size,
-                       size, actual.stride(), element_size);
+    if (size <= 100 && expected.compare_to(actual)) {
+      std::cout << "source:\n";
+      dump(&source);
+      std::cout << "expected:\n";
+      dump(&expected);
+      std::cout << "actual:\n";
+      dump(&actual);
+    }
+
+    EXPECT_EQ_ARRAY2D(actual, expected);
   }
 
   void test_out_of_place(size_t src_width, size_t src_height,
@@ -173,16 +187,6 @@ class Transpose : public testing::TestWithParam<size_t> {
         break;
       default:
         FAIL() << "Unsupported element size for transpose test.";
-    }
-  }
-
-  void expect_eq_vector2D(const uint8_t *lhs, const uint8_t *rhs, size_t width,
-                          size_t height, size_t stride,
-                          size_t element_size) const {
-    for (size_t i = 0; i < height; i++) {
-      for (size_t j = 0; j < width * element_size; j++) {
-        ASSERT_EQ(lhs[i * stride + j], rhs[i * stride + j]);
-      }
     }
   }
 
