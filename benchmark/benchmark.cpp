@@ -198,24 +198,35 @@ static void count_nonzeros_u8(benchmark::State& state) {
 }
 BENCHMARK(count_nonzeros_u8);
 
-template <typename T>
+template <typename T, int kAngle>
 static void bench_rotate(benchmark::State& state) {
   bench_functor(state, []() {
     (void)kleidicv_rotate(get_source_buffer_a<T>(), image_width * sizeof(T),
                           image_width, image_height,
                           get_destination_buffer_a<T>(),
-                          image_height * sizeof(T), 90, sizeof(T));
+                          image_height * sizeof(T), kAngle, sizeof(T));
   });
 }
 
-#define BENCH_ROTATE(name, type)                                           \
-  static void name(benchmark::State& state) { bench_rotate<type>(state); } \
+#define BENCH_ROTATE(name, type, angle)       \
+  static void name(benchmark::State& state) { \
+    bench_rotate<type, angle>(state);         \
+  }                                           \
   BENCHMARK(name)
 
-BENCH_ROTATE(rotate_u8, uint8_t);
-BENCH_ROTATE(rotate_u16, uint16_t);
-BENCH_ROTATE(rotate_u32, uint32_t);
-BENCH_ROTATE(rotate_u64, uint64_t);
+BENCH_ROTATE(rotate_cw_u8, uint8_t, 90);
+BENCH_ROTATE(rotate_cw_u16, uint16_t, 90);
+BENCH_ROTATE(rotate_cw_u32, uint32_t, 90);
+BENCH_ROTATE(rotate_cw_u64, uint64_t, 90);
+BENCH_ROTATE(rotate_cw_u24, uint8_t[3], 90);
+BENCH_ROTATE(rotate_cw_u48, uint16_t[3], 90);
+
+BENCH_ROTATE(rotate_ccw_u8, uint8_t, -90);
+BENCH_ROTATE(rotate_ccw_u16, uint16_t, -90);
+BENCH_ROTATE(rotate_ccw_u32, uint32_t, -90);
+BENCH_ROTATE(rotate_ccw_u64, uint64_t, -90);
+BENCH_ROTATE(rotate_ccw_u24, uint8_t[3], -90);
+BENCH_ROTATE(rotate_ccw_u48, uint16_t[3], -90);
 
 template <typename T>
 static void bench_transpose(benchmark::State& state) {
@@ -235,6 +246,8 @@ BENCH_TRANSPOSE(transpose_u8, uint8_t);
 BENCH_TRANSPOSE(transpose_u16, uint16_t);
 BENCH_TRANSPOSE(transpose_u32, uint32_t);
 BENCH_TRANSPOSE(transpose_u64, uint64_t);
+BENCH_TRANSPOSE(transpose_u24, uint8_t[3]);
+BENCH_TRANSPOSE(transpose_u48, uint16_t[3]);
 
 template <typename T, size_t channels>
 static void bench_split(benchmark::State& state) {
