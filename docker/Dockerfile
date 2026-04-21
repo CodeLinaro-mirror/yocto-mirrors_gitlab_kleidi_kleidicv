@@ -9,6 +9,7 @@ RUN apt-get update \
       ca-certificates \
       ccache \
       cmake \
+      curl \
       doxygen \
       electric-fence \
       g++-aarch64-linux-gnu \
