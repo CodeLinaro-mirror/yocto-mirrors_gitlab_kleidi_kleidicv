@@ -138,12 +138,20 @@ def parse_args():
         "Give the device a little cooldown / time for other processes so all the runs will have more similar situation",
     )
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "--enable_sme",
+        action="store_true",
+        help="Enable SME backend selection via KLEIDICV_PREFER_SME_BACKEND=ON",
+    )
     parser.add_argument("--gtest_filter")
     parser.add_argument("--gtest_param_filter")
     parser.add_argument("--perf_min_samples", type=int, default=100)
     parser.add_argument("--perf_time_limit", type=int, default=6)
     parser.add_argument("--perf_force_samples", type=int, default=0)
     args = parser.parse_args()
+
+    if args.thermal_zones is None:
+        args.thermal_zones = [None] * len(args.taskset_masks)
 
     assert len(args.taskset_masks) == len(args.thermal_zones)
 
@@ -173,15 +181,21 @@ class ADBRunner:
         self._print_command(command)
         if self.verbose:
             print("+ ", script)
+
+        def dump_output(output: bytes, *, should_print: bool):
+            decoded = output.decode()
+            if should_print and decoded:
+                print(decoded, file=sys.stderr, end="" if decoded.endswith("\n") else "\n")
+            return decoded
+
         try:
-            return subprocess.check_output(
+            return dump_output(subprocess.check_output(
                 command,
                 stderr=subprocess.STDOUT,
                 input=script.encode(),
-            ).decode()
+            ), should_print=self.verbose)
         except subprocess.CalledProcessError as e:
-            out = e.stdout.decode()
-            print(out, file=sys.stderr)
+            dump_output(e.stdout, should_print=True)
             raise
 
     def push(self, filenames, dst):
@@ -203,6 +217,9 @@ class ADBRunner:
 
 
 def wait_for_cooldown(runner, thermal_zone):
+    if thermal_zone is None:
+        return
+
     temp_filename = (
         f"/sys/devices/virtual/thermal/thermal_zone{thermal_zone}/temp"
     )
@@ -217,7 +234,6 @@ def wait_for_cooldown(runner, thermal_zone):
             return
         print(f"Temperature {temp} - waiting to cool down")
         time.sleep(3)
-
 
 def get_run_name(rep, executable, taskset_mask, threads):
     return f"{executable}-{taskset_mask:x}-threads:{threads}-#{rep}"
@@ -264,8 +280,11 @@ def run_executable_tests(
     for test_name in test_list:
         wait_for_cooldown(runner, thermal_zone)
         try:
+            env_prefix = ""
+            if args.enable_sme:
+                env_prefix = "KLEIDICV_PREFER_SME_BACKEND=ON"
             runner.check_output(
-                f"cd {shlex.quote(args.tmpdir)} && OPENCV_FOR_THREADS_NUM={threads} "
+                f"cd {shlex.quote(args.tmpdir)} && {env_prefix} OPENCV_FOR_THREADS_NUM={threads} "
                 + shlex.join(
                     [
                         "taskset",
@@ -275,7 +294,7 @@ def run_executable_tests(
                         f"--gtest_filter={test_name}",
                         f"--perf_min_samples={args.perf_min_samples}",
                         f"--perf_time_limit={args.perf_time_limit}",
-                        f"--perf_force_samples={args.perf_force_samples}",
+                        f"--perf_force_samples={args.perf_force_samples}"
                     ]
                 )
             )
