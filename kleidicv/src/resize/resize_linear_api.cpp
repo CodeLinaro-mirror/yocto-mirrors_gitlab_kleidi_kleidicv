@@ -130,17 +130,9 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
                        src_width, src_height, y_begin, y_end, dst, dst_stride,
                        dst_width, dst_height);
   }
-  if (inverse_scale < 2.8) {
-    return CALL_RESIZE(kleidicv_resize_3ch_r3_stripe_u8, src, src_stride,
-                       src_width, src_height, y_begin, y_end, dst, dst_stride,
-                       dst_width, dst_height);
-  }
-
-  // SVE variant does not handle the rightmost lanes of b and d vectors for 3
-  // channel images, so if over 2.8, use the Neon variant only
-  return neon::kleidicv_resize_generic_stripe_u8<3, 3>(
-      src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
-      dst_width, dst_height);
+  return CALL_RESIZE(kleidicv_resize_3ch_r3_stripe_u8, src, src_stride,
+                     src_width, src_height, y_begin, y_end, dst, dst_stride,
+                     dst_width, dst_height);
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
