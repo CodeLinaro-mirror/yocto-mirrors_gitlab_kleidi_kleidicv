@@ -17,6 +17,10 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Rotate +-90 and transpose support for 3-channel images.
+- Resize to quarter 4 channels.
+
+### Changed
+- Resize to quarter 2 and 3 channels: optimized.
 
 ## 26.03 - 2026-03-26
 
