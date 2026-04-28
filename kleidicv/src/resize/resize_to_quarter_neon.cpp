@@ -50,24 +50,6 @@ static inline void load_and_deinterleave_2_channels(const uint8_t *src,
   channel_1.val[1] = interleaved_hi.val[1];
 }
 
-static inline void load_and_deinterleave_4_channels(const uint8_t *src,
-                                                    uint8x16x2_t &channel_0,
-                                                    uint8x16x2_t &channel_1,
-                                                    uint8x16x2_t &channel_2,
-                                                    uint8x16x2_t &channel_3) {
-  uint8x16x4_t interleaved_lo = vld4q_u8(src);
-  uint8x16x4_t interleaved_hi = vld4q_u8(src + kVectorLength * 4);
-
-  channel_0.val[0] = interleaved_lo.val[0];
-  channel_0.val[1] = interleaved_hi.val[0];
-  channel_1.val[0] = interleaved_lo.val[1];
-  channel_1.val[1] = interleaved_hi.val[1];
-  channel_2.val[0] = interleaved_lo.val[2];
-  channel_2.val[1] = interleaved_hi.val[2];
-  channel_3.val[0] = interleaved_lo.val[3];
-  channel_3.val[1] = interleaved_hi.val[3];
-}
-
 static inline void load_and_deinterleave_3_channels(const uint8_t *src,
                                                     uint8x16x2_t &channel_0,
                                                     uint8x16x2_t &channel_1,
@@ -159,20 +141,39 @@ void resize_to_quarter_vector_path<4>(const uint8_t *src_l, size_t src_stride,
   KLEIDICV_PREFETCH(src_l + 1024);
   KLEIDICV_PREFETCH(src_l + src_stride + 1024);
 
-  uint8x16x2_t top_ch_0, top_ch_1, top_ch_2, top_ch_3;
-  uint8x16x2_t bottom_ch_0, bottom_ch_1, bottom_ch_2, bottom_ch_3;
+  auto vector_path = [src_stride](const uint8_t *src_l) {
+    uint8x16_t top0, top1, bottom0, bottom1;
+    VecTraits<uint8_t>::load(src_l, top0);
+    VecTraits<uint8_t>::load(src_l + src_stride, bottom0);
+    VecTraits<uint8_t>::load(src_l + kVectorLength, top1);
+    VecTraits<uint8_t>::load(src_l + src_stride + kVectorLength, bottom1);
 
-  load_and_deinterleave_4_channels(src_l, top_ch_0, top_ch_1, top_ch_2,
-                                   top_ch_3);
-  load_and_deinterleave_4_channels(src_l + src_stride, bottom_ch_0, bottom_ch_1,
-                                   bottom_ch_2, bottom_ch_3);
+    uint16x8_t sum_0 =
+        vaddq_u16(vmovl_u8(vget_low_u8(top0)), vmovl_u8(vget_low_u8(bottom0)));
+    uint16x8_t sum_1 = vaddq_u16(vmovl_u8(vget_high_u8(top0)),
+                                 vmovl_u8(vget_high_u8(bottom0)));
+    uint16x8_t sum_2 =
+        vaddq_u16(vmovl_u8(vget_low_u8(top1)), vmovl_u8(vget_low_u8(bottom1)));
+    uint16x8_t sum_3 = vaddq_u16(vmovl_u8(vget_high_u8(top1)),
+                                 vmovl_u8(vget_high_u8(bottom1)));
 
-  uint8x16x4_t result = {average_2x2_blocks_u8(top_ch_0, bottom_ch_0),
-                         average_2x2_blocks_u8(top_ch_1, bottom_ch_1),
-                         average_2x2_blocks_u8(top_ch_2, bottom_ch_2),
-                         average_2x2_blocks_u8(top_ch_3, bottom_ch_3)};
+    sum_0 = vaddq_u16(sum_0, vextq_u16(sum_0, sum_0, 4));
+    sum_1 = vaddq_u16(sum_1, vextq_u16(sum_1, sum_1, 4));
+    sum_2 = vaddq_u16(sum_2, vextq_u16(sum_2, sum_2, 4));
+    sum_3 = vaddq_u16(sum_3, vextq_u16(sum_3, sum_3, 4));
 
-  vst4q_u8(dst_l, result);
+    uint16x8_t lo = vreinterpretq_u16_u8(
+        vextq_u8(vreinterpretq_u8_u16(sum_0), vreinterpretq_u8_u16(sum_1), 8));
+    uint16x8_t hi = vreinterpretq_u16_u8(
+        vextq_u8(vreinterpretq_u8_u16(sum_2), vreinterpretq_u8_u16(sum_3), 8));
+
+    return vrshrn_high_n_u16(vrshrn_n_u16(lo, 2), hi, 2);
+  };
+
+  auto res =
+      uint8x16x2_t{vector_path(src_l), vector_path(src_l + 2 * kVectorLength)};
+
+  VecTraits<uint8_t>::store(res, dst_l);
 }
 
 template <int kChannels>
@@ -180,7 +181,8 @@ static kleidicv_error_t resize_to_quarter_u8_imp(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride) {
   // When channels == 1, unroll twice
-  constexpr size_t kDstStep = kVectorLength * (kChannels == 1 ? 2 : kChannels);
+  constexpr size_t kDstStep =
+      kVectorLength * (kChannels == 1 || kChannels == 4 ? 2 : kChannels);
   constexpr size_t kSrcStep = 2 * kDstStep;
 
   LoopUnroll2 vertical_loop{src_height, /* Process two rows */ 2};
