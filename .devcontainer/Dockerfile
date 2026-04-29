@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # If changing this image ID, please also change it in .gitlab-ci.yml
-FROM registry.gitlab.arm.com/kleidi/kleidicv:23
+FROM registry.gitlab.arm.com/kleidi/kleidicv:24
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
@@ -32,5 +32,7 @@ ARG USERNAME
 RUN useradd -s /usr/bin/zsh -m ${USERNAME} \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
     && chmod 0440 /etc/sudoers.d/${USERNAME}
+
+ENV PATH=${PATH}:/home/${USERNAME}/.local/bin:/root/.local/bin
 
 USER $USERNAME
