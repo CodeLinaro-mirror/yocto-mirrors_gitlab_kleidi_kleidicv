@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -31,7 +31,6 @@
 #   CMAKE_SHARED_LINKER_FLAGS:     General flags for all linker commands for shared libraries.
 #   CMAKE_TOOLCHAIN_FILE:          If set, it is the full path to the CMake toolchain file.
 #   CMAKE_VERBOSE_MAKEFILE:        Enables verbose logs during builds. Defaults to 'OFF'.
-#   COVERAGE:                      Enables collection of coverage metrics if set to 'ON'. Defaults to 'OFF'.
 #   EXTRA_CMAKE_ARGS:              Any additional args to pass to CMake.
 #   SOURCE_PATH:                   Path of KleidiCV source directory. Defaults to parent directory of this script.
 # ------------------------------------------------------------------------------
@@ -57,21 +56,11 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 : "${CMAKE_SHARED_LINKER_FLAGS:=}"
 : "${CMAKE_TOOLCHAIN_FILE:=}"
 : "${CMAKE_VERBOSE_MAKEFILE:=OFF}"
-: "${COVERAGE:=OFF}"
 : "${EXTRA_CMAKE_ARGS:=}"
 : "${SOURCE_PATH:="$(realpath "${SCRIPT_PATH}"/../)"}"
 
 IFS=' ' read -r -a CMAKE_TARGETS <<< "${@:-kleidicv}"
 IFS=' ' read -r -a EXTRA_CMAKE_ARGS_ARRAY <<< "${EXTRA_CMAKE_ARGS}"
-
-# ------------------------------------------------------------------------------
-# Compose compile flags.
-# ------------------------------------------------------------------------------
-
-if [[ "${COVERAGE}" == "ON" ]]; then
-    CMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} --coverage"
-    CMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS} --coverage"
-fi
 
 # ------------------------------------------------------------------------------
 # Configuration
