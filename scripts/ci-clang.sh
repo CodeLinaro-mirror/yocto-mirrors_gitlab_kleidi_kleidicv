@@ -71,6 +71,7 @@ scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme2/kleidicv-api-
 
 # Generate test coverage report.
 LLVM_COV=llvm-cov scripts/generate_coverage_report.py build/ci/clang
+mkdir -p build/ci/html/coverage
 mv build/ci/clang/html/coverage build/ci/html
 
 # Sanitizers don't work when run through qemu so must be run natively.
