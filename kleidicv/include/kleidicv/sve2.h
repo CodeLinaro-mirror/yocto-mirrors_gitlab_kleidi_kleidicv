@@ -389,7 +389,7 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
     int64_t length =
         static_cast<int64_t>(sizeof...(pg_multi)) * svcntp(pg_single);
 
-    auto assign = [&](svbool_t &out) {
+    auto assign = [&](svbool_t &out) KLEIDICV_STREAMING {
       out = svwhilelt(int64_t{0}, length);
       length -= static_cast<int64_t>(num_lanes());
     };

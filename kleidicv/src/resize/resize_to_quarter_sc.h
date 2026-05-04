@@ -95,7 +95,7 @@ void parallel_rows_vectors_path<1>(svbool_t pg_src,
                                    Rows<const uint8_t> src_rows,
                                    Rows<uint8_t> dst_rows) KLEIDICV_STREAMING {
   size_t dst_length = svcntp_b8(pg_src, pg_src) / 2;
-  svbool_t pg_dst = svwhilelt_b16(size_t{0}, dst_length);
+  svbool_t pg_dst = svwhilelt_b16_u64(size_t{0}, dst_length);
   svuint8_t top_line = svld1(pg_src, &src_rows.at(0)[0]);
   svuint8_t bottom_line = svld1(pg_src, &src_rows.at(1)[0]);
   svuint16_t result = resize_parallel_vectors(top_line, bottom_line);
@@ -275,7 +275,7 @@ void process_parallel_rows(Rows<const ScalarType> src_rows, size_t src_width,
                                           dst_rows.at(0, index / 2));
   });
   loop.remaining([&](size_t index, size_t length) KLEIDICV_STREAMING {
-    parallel_rows_vectors_path<kChannels>(svwhilelt_b8(index, length),
+    parallel_rows_vectors_path<kChannels>(svwhilelt_b8_u64(index, length),
                                           src_rows.at(0, index),
                                           dst_rows.at(0, index / 2));
   });
