@@ -580,9 +580,10 @@ class ResizeGenericU8Operation final {
     d = svtbx_u8(d, svget3(bottomsrc, 2), vsx1_idx);
     if constexpr (kSetRightmostLanes) {
       svbool_t pg = svptrue_pat_b8(SV_VL1);
-      ptrdiff_t last_index = std::min(
-          src_width_ * kChannels - 1,
-          pcit.idx_ptr_[kStep_ - 1] + *pcit.src_index_ptr_ + kChannels);
+      ptrdiff_t last_index =
+          std::min(src_width_ * kChannels - 1,
+                   static_cast<size_t>(pcit.idx_ptr_[kStep_ - 1] +
+                                       *pcit.src_index_ptr_ + kChannels));
       b = svext_u8(b, svld1_u8(pg, src_top_ptr + last_index), 1UL);
       d = svext_u8(d, svld1_u8(pg, src_bottom_ptr + last_index), 1UL);
     }
