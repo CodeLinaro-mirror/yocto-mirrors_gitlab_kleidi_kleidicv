@@ -1171,10 +1171,8 @@ kleidicv_resize_linear_stripe_f32_sc(const float *src, size_t src_stride,
                                     y_begin, y_end, dst, dst_stride);
   }
   // resize_linear_f32_is_implemented checked the kernel size already.
-  // GCOVR_EXCL_START
-  assert(!"resize ratio not implemented");
-  return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  // GCOVR_EXCL_STOP
+  assert(!"resize ratio not implemented");  // GCOVR_EXCL_LINE
+  return KLEIDICV_ERROR_NOT_IMPLEMENTED;    // GCOVR_EXCL_LINE
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE

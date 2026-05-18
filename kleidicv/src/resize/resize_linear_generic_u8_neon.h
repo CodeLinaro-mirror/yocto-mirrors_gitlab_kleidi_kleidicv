@@ -78,18 +78,15 @@ class RowInterpolationConstants {
 
   static std::variant<RowInterpolationConstants, kleidicv_error_t> create(
       VectorPathNums num_of_vector_paths) {
-    {
-      uint8_t *allocation = static_cast<uint8_t *>(malloc(
-          num_of_vector_paths.two_x * 2 *
-              sizeof(FullVectorInterpolationConstants) +
-          num_of_vector_paths.half * sizeof(HalfVectorInterpolationConstants)));
-      if (!allocation) {
-        return KLEIDICV_ERROR_ALLOCATION;
-      }
-
-      return RowInterpolationConstants{num_of_vector_paths, allocation};
+    uint8_t *allocation = static_cast<uint8_t *>(malloc(
+        num_of_vector_paths.two_x * 2 *
+            sizeof(FullVectorInterpolationConstants) +
+        num_of_vector_paths.half * sizeof(HalfVectorInterpolationConstants)));
+    if (!allocation) {
+      return KLEIDICV_ERROR_ALLOCATION;
     }
-    return KLEIDICV_OK;
+
+    return RowInterpolationConstants{num_of_vector_paths, allocation};
   }
 
   VectorPathNums num_of_vector_paths() const { return num_of_vector_paths_; }
