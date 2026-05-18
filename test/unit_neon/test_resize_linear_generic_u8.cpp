@@ -169,7 +169,7 @@ void generator_test(int xfrac_tolerance = 0) {
   ASSERT_TRUE(ratio > 1.0 && ratio < 3.0);
   constexpr size_t kRatio = (kSrcWidth / kDstWidth) + 1;
 
-  // Refenence
+  // Reference
   auto [ref_full, ref_half] =
       reference_interpolation_constants<kRatio, kChannels>(kSrcWidth,
                                                            kDstWidth);
@@ -255,8 +255,16 @@ TEST(GenericResize_u8_Generator, 3channels_r3_short) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<3, 11, 4>();
 }
 
-TEST(GenericResize_u8_Generator, 3channels_r3_long) {
+TEST(GenericResize_u8_Generator, 3channels_r3_mid) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<3, 17, 6>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r3_long1) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 32, 11>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r3_long2) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 98, 33>();
 }
 
 TEST(GenericResize_u8_Generator, 2channels_extra_long) {

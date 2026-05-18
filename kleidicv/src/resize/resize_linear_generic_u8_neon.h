@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#ifndef KLEIDICV_RESIZE_RESIZE_LINEAR_GENERIC_U8_NEON_H
+#define KLEIDICV_RESIZE_RESIZE_LINEAR_GENERIC_U8_NEON_H
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -345,6 +348,27 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
   using Base = RowInterpolationConstantsGeneratorBase<kRatio, 3>;
   RowInterpolationConstantsGenerator(size_t src_width, size_t dst_width)
       : Base{src_width, dst_width},
+        vsx_r_{Base::scale_x(0), Base::scale_x(0), Base::scale_x(0),
+               Base::scale_x(1), Base::scale_x(1), Base::scale_x(1),
+               Base::scale_x(2), Base::scale_x(2), Base::scale_x(2),
+               Base::scale_x(3), Base::scale_x(3), Base::scale_x(3),
+               Base::scale_x(4), Base::scale_x(4), Base::scale_x(4),
+               Base::scale_x(5)},
+        vsx_channel_offsets_r_{0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0},
+        vsx_g_{Base::scale_x(5), Base::scale_x(5), Base::scale_x(6),
+               Base::scale_x(6), Base::scale_x(6), Base::scale_x(7),
+               Base::scale_x(7), Base::scale_x(7), Base::scale_x(8),
+               Base::scale_x(8), Base::scale_x(8), Base::scale_x(9),
+               Base::scale_x(9), Base::scale_x(9), Base::scale_x(10),
+               Base::scale_x(10)},
+        vsx_channel_offsets_g_{1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1},
+        vsx_b_{Base::scale_x(10), Base::scale_x(11), Base::scale_x(11),
+               Base::scale_x(11), Base::scale_x(12), Base::scale_x(12),
+               Base::scale_x(12), Base::scale_x(13), Base::scale_x(13),
+               Base::scale_x(13), Base::scale_x(14), Base::scale_x(14),
+               Base::scale_x(14), Base::scale_x(15), Base::scale_x(15),
+               Base::scale_x(15)},
+        vsx_channel_offsets_b_{2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2},
         sx_fixp_one_dst_pixel_{
             rounding_div(src_width << kFixpBits, dst_width)} {}
 
@@ -370,109 +394,69 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     if (num_of_full_vector_constants > 0) {
       size_t handled_full_vector_paths = 0;
 
-      if (num_of_full_vector_constants > 3) {
-        size_t num_of_vector_paths_wout_pullback =
-            get_num_of_vector_paths_wout_pullback(num_of_full_vector_constants);
-        // Handle 3 vectors at a time, that way in pixel index is known at
-        // compile time
-        size_t vector_path_triplets_wout_pullback =
-            num_of_vector_paths_wout_pullback / 3;
+      // Maximum source coordinate for full vector path
+      const uint64_t max_src_base_index = saturating_sub(
+          Base::src_width_ * kChannels, sizeof(uint8x16_t) * kRatio);
 
-        sx_fixp = Base::to_src_x(0);
-        unsigned recalibrate_cnt = 0;
-        for (size_t i = 0; i < vector_path_triplets_wout_pullback; ++i) {
-          const uint32x4x4_t vsx_r = gen_vsx_r();
-          const uint8x16_t vsx_idx_diff_r = gen_vsx_idx_diff_r();
+      const uint64_t sx_fixp_triplet_step =
+          rounding_div(Base::src_width_ << (kFixpBits + 4), Base::dst_width_);
 
-          const uint32x4x4_t vsx_g = gen_vsx_g();
-          const uint8x16_t vsx_idx_diff_g = gen_vsx_idx_diff_g();
-
-          const uint32x4x4_t vsx_b = gen_vsx_b();
-          const uint8x16_t vsx_idx_diff_b = gen_vsx_idx_diff_b();
-
-          // Difference in source x coordinate for 5 destination pixels
-          const uint64_t sx_fixp_five_dst_pixel = rounding_div(
-              (Base::src_width_ * 5) << kFixpBits, Base::dst_width_);
-          // Difference in source x coordinate for 6 destination pixels
-          const uint64_t sx_fixp_six_dst_pixel = rounding_div(
-              (Base::src_width_ * 6) << kFixpBits, Base::dst_width_);
-
-          // Repeatedly adding sx_fixp_five_dst_pixel and sx_fixp_six_dst_pixel
-          // is faster than scaling dx to sx, but it accumulates fixed-point
-          // error; periodic recalibration resets it. The maximum per-addition
-          // error of these values is 0.5 / (1 << 16). Only the upper 8
-          // bits of the 16-bit fractional part are used for interpolation, so
-          // once the accumulated error reaches 1 / (1 << 8), it can affect
-          // later stages. This corresponds to 512 additions. Since three
-          // additions are performed per cycle, we recalibrate every 170 cycles.
-          if (recalibrate_cnt == 170) {
-            sx_fixp = Base::to_src_x(dst_element_index / 3);
-            recalibrate_cnt = 0;
-          } else {
-            recalibrate_cnt++;
-          }
-
-          unsigned in_pixel_index = 0;
-          fill_full_constants_vectorially(
-              row_interpolation_constants
-                  .full_vector_constants_array()[handled_full_vector_paths],
-              vsx_r, vsx_idx_diff_r, sx_fixp, in_pixel_index);
-
-          sx_fixp += sx_fixp_five_dst_pixel;
-          in_pixel_index = 1;
-          fill_full_constants_vectorially(
-              row_interpolation_constants
-                  .full_vector_constants_array()[handled_full_vector_paths + 1],
-              vsx_g, vsx_idx_diff_g, sx_fixp, in_pixel_index);
-
-          sx_fixp += sx_fixp_five_dst_pixel;
-          in_pixel_index = 2;
-          fill_full_constants_vectorially(
-              row_interpolation_constants
-                  .full_vector_constants_array()[handled_full_vector_paths + 2],
-              vsx_b, vsx_idx_diff_b, sx_fixp, in_pixel_index);
-
-          sx_fixp += sx_fixp_six_dst_pixel;
-          handled_full_vector_paths += 3;
-          dst_element_index += kStep * 3;
+      sx_fixp = Base::to_src_x(0);
+      unsigned recalibrate_cnt = 0;
+      while (true) {
+        // Repeatedly adding the 16-destination-pixel step is faster than
+        // scaling dx to sx, but it accumulates fixed-point error; periodic
+        // recalibration resets it. The maximum per-addition error is
+        // 0.5 / (1 << 16). Only the upper 8 bits of the 16-bit fractional
+        // part are used for interpolation, so once the accumulated error
+        // reaches 1 / (1 << 8), it can affect later stages. This corresponds
+        // to 512 additions.
+        if (recalibrate_cnt == 512) {
+          sx_fixp = Base::to_src_x(dst_element_index / 3);
+          recalibrate_cnt = 0;
+        } else {
+          recalibrate_cnt++;
         }
-      }
 
-      while (handled_full_vector_paths < num_of_full_vector_constants) {
-        auto &constants =
+        fill_full_constants_vectorially(
             row_interpolation_constants
-                .full_vector_constants_array()[handled_full_vector_paths];
-        // Maximum source coordinate for full vector path
-        const uint64_t max_src_base_index = std::max<uint64_t>(
-            (Base::src_width_ * kChannels) - (sizeof(uint8x16_t) * kRatio), 0);
-
-        uint64_t dx = dst_element_index / kChannels;
-        unsigned in_pixel_index = dst_element_index % kChannels;
-        sx_fixp = Base::to_src_x(dx);
-
-        uint64_t src_element_index =
-            ((sx_fixp >> kFixpBits) * kChannels) + in_pixel_index;
-
-        // Pull back src if it would overrun
-        uint64_t src_element_base =
-            std::min(max_src_base_index, src_element_index);
-
-        fill_full_constants_scalarly(constants, in_pixel_index,
-                                     src_element_index, src_element_base,
-                                     sx_fixp);
+                .full_vector_constants_array()[handled_full_vector_paths],
+            vsx_r_, vsx_channel_offsets_r_, sx_fixp, max_src_base_index);
         handled_full_vector_paths++;
         dst_element_index += kStep;
+        if (handled_full_vector_paths == num_of_full_vector_constants) {
+          break;
+        }
+
+        fill_full_constants_vectorially(
+            row_interpolation_constants
+                .full_vector_constants_array()[handled_full_vector_paths],
+            vsx_g_, vsx_channel_offsets_g_, sx_fixp, max_src_base_index);
+        handled_full_vector_paths++;
+        dst_element_index += kStep;
+        if (handled_full_vector_paths == num_of_full_vector_constants) {
+          break;
+        }
+
+        fill_full_constants_vectorially(
+            row_interpolation_constants
+                .full_vector_constants_array()[handled_full_vector_paths],
+            vsx_b_, vsx_channel_offsets_b_, sx_fixp, max_src_base_index);
+        handled_full_vector_paths++;
+        dst_element_index += kStep;
+        if (handled_full_vector_paths == num_of_full_vector_constants) {
+          break;
+        }
+
+        sx_fixp += sx_fixp_triplet_step;
       }
     }
 
     // Calculate constants for half vectors
 
     // Maximum source coordinate for half vector path
-    size_t half_vector_path_src_read_size =
-        kChannels == 3 ? sizeof(uint8x16x2_t)
-                       : (sizeof(uint8x16_t) * (kRatio - 1));
-    const uint64_t max_src_base_index = saturating_sub(
-        Base::src_width_ * kChannels, half_vector_path_src_read_size);
+    const uint64_t max_src_base_index =
+        saturating_sub(Base::src_width_ * kChannels, sizeof(uint8x16x2_t));
     // Maximum destination coordinate for half vector path
     const uint64_t max_dst_index_half =
         (Base::dst_width_ * kChannels) - kHalfStep;
@@ -507,80 +491,11 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
   }
 
  private:
-  size_t get_num_of_vector_paths_wout_pullback(
-      size_t num_of_full_vector_constants) {
-    auto vector_needs_pullback = [this](size_t dst_idx) {
-      unsigned in_pixel_idx = dst_idx % kChannels;
-      uint64_t dx = dst_idx / kChannels;
-      uint64_t sx_fixp = Base::to_src_x(dx);
-      uint64_t src_idx = ((sx_fixp >> kFixpBits) * kChannels) + in_pixel_idx;
-
-      return (src_idx + (kStep * kRatio)) > (Base::src_width_ * kChannels);
-    };
-
-    if (num_of_full_vector_constants == 0) {
-      return 0;
-    }
-
-    size_t candidate_last_vector_wout_pullback =
-        num_of_full_vector_constants - 1;
-
-    do {
-      if (!vector_needs_pullback(candidate_last_vector_wout_pullback * kStep)) {
-        break;
-      }
-      candidate_last_vector_wout_pullback--;
-    } while (candidate_last_vector_wout_pullback > 0);
-
-    if (candidate_last_vector_wout_pullback == 0) {
-      if (vector_needs_pullback(candidate_last_vector_wout_pullback * kStep)) {
-        return 0;
-      }
-    }
-
-    return candidate_last_vector_wout_pullback + 1;
-  }
-
-  uint32x4x4_t gen_vsx_r() {
-    return uint32x4x4_t{
-        Base::scale_x(0), Base::scale_x(0), Base::scale_x(0), Base::scale_x(1),
-        Base::scale_x(1), Base::scale_x(1), Base::scale_x(2), Base::scale_x(2),
-        Base::scale_x(2), Base::scale_x(3), Base::scale_x(3), Base::scale_x(3),
-        Base::scale_x(4), Base::scale_x(4), Base::scale_x(4), Base::scale_x(5)};
-  }
-  uint8x16_t gen_vsx_idx_diff_r() {
-    return uint8x16_t{0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0};
-  }
-
-  uint32x4x4_t gen_vsx_g() {
-    return uint32x4x4_t{
-        Base::scale_x(0), Base::scale_x(0), Base::scale_x(1), Base::scale_x(1),
-        Base::scale_x(1), Base::scale_x(2), Base::scale_x(2), Base::scale_x(2),
-        Base::scale_x(3), Base::scale_x(3), Base::scale_x(3), Base::scale_x(4),
-        Base::scale_x(4), Base::scale_x(4), Base::scale_x(5), Base::scale_x(5)};
-  }
-  uint8x16_t gen_vsx_idx_diff_g() {
-    return uint8x16_t{0, 1, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1};
-  }
-
-  uint32x4x4_t gen_vsx_b() {
-    return uint32x4x4_t{
-        Base::scale_x(0), Base::scale_x(1), Base::scale_x(1), Base::scale_x(1),
-        Base::scale_x(2), Base::scale_x(2), Base::scale_x(2), Base::scale_x(3),
-        Base::scale_x(3), Base::scale_x(3), Base::scale_x(4), Base::scale_x(4),
-        Base::scale_x(4), Base::scale_x(5), Base::scale_x(5), Base::scale_x(5)};
-  }
-  uint8x16_t gen_vsx_idx_diff_b() {
-    return uint8x16_t{0, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2};
-  }
-
   void fill_full_constants_vectorially(
-      FullVectorInterpolationConstants &constants, uint32x4x4_t vsx,
-      uint8x16_t vsx_idx_diff, uint64_t sx_fixp, unsigned in_pixel_index) {
-    uint64_t src_element_index_base =
-        ((sx_fixp >> kFixpBits) * kChannels) + in_pixel_index;
-    constants.src_element_index =
-        static_cast<ptrdiff_t>(src_element_index_base);
+      FullVectorInterpolationConstants &constants, const uint32x4x4_t &vsx,
+      const uint8x16_t &vsx_channel_offsets, uint64_t sx_fixp,
+      uint64_t max_src_base_index) {
+    uint64_t src_element_index_base = (sx_fixp >> kFixpBits) * kChannels;
 
     // Create x coordinate for all lanes
     uint32_t xfrac0 = static_cast<uint32_t>(sx_fixp & ((1 << kFixpBits) - 1));
@@ -591,16 +506,19 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     vsx_delta_hi.val[0] = vreinterpretq_u8_u32(vaddq_u32(vsx.val[2], vfrac));
     vsx_delta_hi.val[1] = vreinterpretq_u8_u32(vaddq_u32(vsx.val[3], vfrac));
 
-    // Get index from coordinate
+    // The integer part makes the index
     uint8x8_t idx0 = vqtbl2_u8(vsx_delta_lo, Base::vsidx_tbl_);
     uint8x8_t idx1 = vqtbl2_u8(vsx_delta_hi, Base::vsidx_tbl_);
     uint8x16_t vsx0_idx = vcombine_u8(idx0, idx1);
-    // One step in x means 3 steps in elements
-    vsx0_idx = vmulq_u8(vsx0_idx, vdupq_n_u8(3));
-    // Align the stepping if the first lane is green or blue
-    vsx0_idx = vqsubq_u8(vsx0_idx, vdupq_n_u8(in_pixel_index));
-    // Add in-pixel index
-    vsx0_idx = vaddq_u8(vsx0_idx, vsx_idx_diff);
+    // One step in x means 3 steps in elements. The channel offsets are 0,1,2.
+    vsx0_idx = vaddq_u8(vmulq_u8(vsx0_idx, vdupq_n_u8(3)), vsx_channel_offsets);
+    uint64_t lane0_src_index =
+        src_element_index_base + vgetq_lane_u8(vsx0_idx, 0);
+    uint64_t final_base = std::min(max_src_base_index, lane0_src_index);
+    constants.src_element_index = static_cast<ptrdiff_t>(final_base);
+    uint8_t adjustment =
+        static_cast<uint8_t>(final_base - src_element_index_base);
+    vsx0_idx = vsubq_u8(vsx0_idx, vdupq_n_u8(adjustment));
     vst1q(constants.idx0, vsx0_idx);
     vst1q(constants.idx1, vaddq_u8(vsx0_idx, vdupq_n_u8(kChannels)));
 
@@ -611,17 +529,6 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     vsxfrac.val[1] =
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta_hi, Base::vsfrac_tbl_));
     VecTraits<uint16_t>::store(vsxfrac, constants.xfrac);
-  }
-
-  void fill_full_constants_scalarly(FullVectorInterpolationConstants &constants,
-                                    unsigned in_pixel_index,
-                                    uint64_t src_element_index,
-                                    uint64_t src_element_base,
-                                    uint64_t sx_fixp) {
-    constants.src_element_index = static_cast<ptrdiff_t>(src_element_base);
-
-    fill_idx_xfrac(constants, in_pixel_index, src_element_index,
-                   src_element_base, sx_fixp);
   }
 
   void fill_half_constants_scalarly(HalfVectorInterpolationConstants &constants,
@@ -677,6 +584,12 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
   }
 
   static constexpr size_t kChannels = 3;
+  const uint32x4x4_t vsx_r_;
+  const uint8x16_t vsx_channel_offsets_r_;
+  const uint32x4x4_t vsx_g_;
+  const uint8x16_t vsx_channel_offsets_g_;
+  const uint32x4x4_t vsx_b_;
+  const uint8x16_t vsx_channel_offsets_b_;
   // Difference in source x coordinate for one destination pixel
   const size_t sx_fixp_one_dst_pixel_;
 };
@@ -845,3 +758,5 @@ class ResizeGenericU8Operation final {
 };
 
 }  // namespace kleidicv::neon::resize_linear_generic_u8
+
+#endif  // KLEIDICV_RESIZE_RESIZE_LINEAR_GENERIC_U8_NEON_H
