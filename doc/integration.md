@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 
 SPDX-License-Identifier: Apache-2.0
 -->
@@ -9,6 +9,10 @@ SPDX-License-Identifier: Apache-2.0
 KleidiCV is designed to be easily reusable as it is a single C++ library with a
 C API and its only runtime dependency is the C standard library. (Only
 compile-time C++ constructs are used in the library.)
+
+For multithreaded usage, see [Threading](threading.md). KleidiCV exposes
+threaded entry points that run through callbacks implemented by the integrating
+application.
 
 KleidiCV is already integrated into OpenCV, `adapters/opencv/kleidicv_hal.h` and
 `adapters/opencv/kleidicv_hal.cpp` contains the implementation of it. It can be

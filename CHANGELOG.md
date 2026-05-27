@@ -20,6 +20,7 @@ This changelog aims to follow the guiding principles of
 - Resize to quarter 4 channels.
 
 ### Changed
+- The `kleidicv_thread` threading API is now documented as part of the public API.
 - Resize to quarter 2 and 3 channels: optimized.
 
 ## 26.03 - 2026-03-26

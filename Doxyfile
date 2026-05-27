@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,7 +9,7 @@ HIDE_UNDOC_CLASSES     = YES
 SHOW_INCLUDE_FILES     = NO
 QUIET                  = YES
 WARN_AS_ERROR          = FAIL_ON_WARNINGS
-INPUT                  = kleidicv adapters/opencv/kleidicv_hal.h doc/functionality.md
+INPUT                  = kleidicv adapters/opencv/kleidicv_hal.h kleidicv_thread/include doc/functionality.md doc/threading.md
 RECURSIVE              = YES
 EXCLUDE                = build
 VERBATIM_HEADERS       = NO
