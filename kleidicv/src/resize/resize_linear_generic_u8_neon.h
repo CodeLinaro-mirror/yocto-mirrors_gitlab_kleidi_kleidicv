@@ -38,13 +38,15 @@ static constexpr ptrdiff_t kStep = kVectorLength / sizeof(uint8_t);
 static constexpr ptrdiff_t kHalfStep = kStep / 2;
 
 struct FullVectorInterpolationConstants {
-  uint8_t idx[kStep];
+  uint8_t idx0[kStep];
+  uint8_t idx1[kStep];
   uint16_t xfrac[kStep];
   ptrdiff_t src_element_index;
 };
 
 struct HalfVectorInterpolationConstants {
-  uint8_t idx[kHalfStep];
+  uint8_t idx0[kHalfStep];
+  uint8_t idx1[kHalfStep];
   uint16_t xfrac[kHalfStep];
   ptrdiff_t src_element_index;
   ptrdiff_t dst_element_index;
@@ -295,7 +297,8 @@ class RowInterpolationConstantsGenerator final
           vaddq_u8(vsx0_idx, vreinterpretq_u8_u32(vdupq_n_u32(
                                  kChannels == 4 ? 0x03020100U : 0x01000100)));
     }
-    vst1q(constants.idx, vsx0_idx);
+    vst1q(constants.idx0, vsx0_idx);
+    vst1q(constants.idx1, vaddq_u8(vsx0_idx, vdupq_n_u8(kChannels)));
     uint16x8x2_t vsxfrac;
     vsxfrac.val[0] =
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta_lo, Base::vsfrac_tbl_));
@@ -320,7 +323,8 @@ class RowInterpolationConstantsGenerator final
           vsx0_idx, vreinterpret_u8_u32(
                         vdup_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100)));
     }
-    vst1(constants.idx, vsx0_idx);
+    vst1(constants.idx0, vsx0_idx);
+    vst1(constants.idx1, vadd_u8(vsx0_idx, vdup_n_u8(kChannels)));
     uint16x8_t vsxfrac =
         vreinterpretq_u16_u8(vqtbl2q_u8(vsx_delta, Base::vsfrac_tbl_));
     VecTraits<uint16_t>::store(vsxfrac, constants.xfrac);
@@ -597,7 +601,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     vsx0_idx = vqsubq_u8(vsx0_idx, vdupq_n_u8(in_pixel_index));
     // Add in-pixel index
     vsx0_idx = vaddq_u8(vsx0_idx, vsx_idx_diff);
-    vst1q(constants.idx, vsx0_idx);
+    vst1q(constants.idx0, vsx0_idx);
+    vst1q(constants.idx1, vaddq_u8(vsx0_idx, vdupq_n_u8(kChannels)));
 
     // Get fraction from coordinate
     uint16x8x2_t vsxfrac;
@@ -643,7 +648,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     uint16_t xfrac = (sx_fixp & ((1 << kFixpBits) - 1)) >> (kFixpBits / 2);
 
     for (; j < (kChannels - in_pixel_index); ++j) {
-      constants.idx[j] = idx + j;
+      constants.idx0[j] = static_cast<uint8_t>(idx + j);
+      constants.idx1[j] = static_cast<uint8_t>(idx + j + kChannels);
       constants.xfrac[j] = xfrac;
     }
 
@@ -652,13 +658,15 @@ class RowInterpolationConstantsGenerator<kRatio, 3> final
     idx = (src_element_index - src_element_base);
     xfrac = (sx_fixp & ((1 << kFixpBits) - 1)) >> (kFixpBits / 2);
 
-    constexpr size_t idx_frac_elem_num = sizeof(VectorConstants::idx);
+    constexpr size_t idx_frac_elem_num =
+        sizeof(constants.xfrac) / sizeof(constants.xfrac[0]);
 
     while (j < idx_frac_elem_num) {
       // k is the index for the elements in one pixel
       for (unsigned k = 0; (j < idx_frac_elem_num) && (k < kChannels);
            ++j, ++k) {
-        constants.idx[j] = idx + k;
+        constants.idx0[j] = static_cast<uint8_t>(idx + k);
+        constants.idx1[j] = static_cast<uint8_t>(idx + k + kChannels);
         constants.xfrac[j] = xfrac;
       }
       sx_fixp += sx_fixp_one_dst_pixel_;
@@ -738,8 +746,8 @@ class ResizeGenericU8Operation final {
   uint8x8_t vector_path_half(const HalfVectorInterpolationConstants &constants,
                              uint16_t yfrac, const uint8_t *src_top,
                              const uint8_t *src_bottom) const {
-    uint8x8_t vsx0_idx = vld1_u8(constants.idx);
-    uint8x8_t vsx1_idx = vadd_u8(vsx0_idx, vdup_n_u8(kChannels));
+    uint8x8_t vsx0_idx = vld1_u8(constants.idx0);
+    uint8x8_t vsx1_idx = vld1_u8(constants.idx1);
     uint16x8_t vsxfrac;
     VecTraits<uint16_t>::load(constants.xfrac, vsxfrac);
     ptrdiff_t src_element_index = constants.src_element_index;
@@ -774,8 +782,8 @@ class ResizeGenericU8Operation final {
   uint8x16_t vector_path(const FullVectorInterpolationConstants &constants,
                          const uint8_t *src_top, const uint8_t *src_bottom,
                          uint16_t yfrac) const {
-    uint8x16_t vsx0_idx = vld1q(constants.idx);
-    uint8x16_t vsx1_idx = vaddq_u8(vsx0_idx, vdupq_n_u8(kChannels));
+    uint8x16_t vsx0_idx = vld1q(constants.idx0);
+    uint8x16_t vsx1_idx = vld1q(constants.idx1);
     uint16x8x2_t vsxfrac2;
     VecTraits<uint16_t>::load(constants.xfrac, vsxfrac2);
     ptrdiff_t src_element_index = constants.src_element_index;
@@ -799,8 +807,7 @@ class ResizeGenericU8Operation final {
       d = vqtbl3q_u8(bottomsrc, vsx1_idx);
       // table lookup would overindex topsrc and bottomsrc
       if constexpr (kSetRightmostLanes) {
-        ptrdiff_t last_right_elem_idx =
-            src_element_index + constants.idx[15] + kChannels;
+        ptrdiff_t last_right_elem_idx = src_element_index + constants.idx1[15];
         b = vsetq_lane_u8(src_top[last_right_elem_idx], b, 15);
         d = vsetq_lane_u8(src_bottom[last_right_elem_idx], d, 15);
       }
