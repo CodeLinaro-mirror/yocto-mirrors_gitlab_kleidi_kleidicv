@@ -67,6 +67,27 @@
       }
     },
     {
+      "label": "Build threading example",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build.sh",
+      "problemMatcher": "$gcc",
+      "args": [
+        "kleidicv-threading-example"
+      ],
+      "options": {
+        "env": {
+          "BUILD_ID": "kleidicv-threading-example",
+          "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
+          "CMAKE_C_FLAGS": "--target=aarch64-linux-gnu",
+          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
+          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
       "label": "Build KleidiCV benchmarks",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
