@@ -51,7 +51,8 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
       unsigned in_pixel_index = dst_index % kChannels;
       ptrdiff_t src_index = static_cast<ptrdiff_t>(
           ((sx >> kFixpBits) * kChannels) + in_pixel_index);
-      constants.idx[i] = src_index - src_element_base;
+      constants.idx0[i] = src_index - src_element_base;
+      constants.idx1[i] = static_cast<uint8_t>(constants.idx0[i] + kChannels);
     }
   }
 
@@ -88,7 +89,8 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
       unsigned in_pixel_index = dst_index % kChannels;
       ptrdiff_t src_index = static_cast<ptrdiff_t>(
           ((sx >> kFixpBits) * kChannels) + in_pixel_index);
-      constants.idx[i] = src_index - src_element_base;
+      constants.idx0[i] = src_index - src_element_base;
+      constants.idx1[i] = static_cast<uint8_t>(constants.idx0[i] + kChannels);
     }
   }
 
@@ -128,23 +130,33 @@ void compare_constants(ConstantsStruct* actual_array,
       }
     }
 
-    if (std::memcmp(expected.idx, actual.idx, sizeof(expected.idx)) != 0) {
+    auto compare_idx = [&](const uint8_t* expected_idx,
+                           const uint8_t* actual_idx, const char* idx_name) {
+      if (std::memcmp(expected_idx, actual_idx, kIdxFracLen) == 0) {
+        return;
+      }
+
       size_t diff = 0;
-      while (diff < kIdxFracLen && expected.idx[diff] == actual.idx[diff]) {
+      while (diff < kIdxFracLen && expected_idx[diff] == actual_idx[diff]) {
         ++diff;
       }
-      ADD_FAILURE() << vector_name_log_message << i
-                    << "].idx mismatch at offset " << diff << ", expected "
-                    << static_cast<int>(expected.idx[diff]) << " got "
-                    << static_cast<int>(actual.idx[diff]);
-    }
+      ADD_FAILURE() << vector_name_log_message << i << "]." << idx_name
+                    << " mismatch at offset " << diff << ", expected "
+                    << static_cast<int>(expected_idx[diff]) << " got "
+                    << static_cast<int>(actual_idx[diff]);
+    };
 
-    for (size_t i = 0; i < kIdxFracLen; ++i) {
-      if (std::abs(static_cast<int>(expected.xfrac[i]) -
-                   static_cast<int>(actual.xfrac[i])) > xfrac_tolerance) {
+    compare_idx(expected.idx0, actual.idx0, "idx0");
+    compare_idx(expected.idx1, actual.idx1, "idx1");
+
+    for (size_t xfrac_index = 0; xfrac_index < kIdxFracLen; ++xfrac_index) {
+      if (std::abs(static_cast<int>(expected.xfrac[xfrac_index]) -
+                   static_cast<int>(actual.xfrac[xfrac_index])) >
+          xfrac_tolerance) {
         ADD_FAILURE() << vector_name_log_message << i
-                      << "].xfrac mismatch at offset " << i << ", expected "
-                      << expected.xfrac[i] << " got " << actual.xfrac[i];
+                      << "].xfrac mismatch at offset " << xfrac_index
+                      << ", expected " << expected.xfrac[xfrac_index] << " got "
+                      << actual.xfrac[xfrac_index];
         break;
       }
     }
