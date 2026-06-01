@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,19 +11,28 @@
 #include "utils.h"
 
 // clang-format off
-double transform[] = {
+double transform1[] = {
   0.8, 0.1, 2,
   0.1, 0.8, -2,
   0.001, 0.001, 1.7
+};
+
+// Division by zero
+double transform2[] = {
+    1, 0, 0,
+    0, 1, 0,
+    1.0 / 8, 1.0 / 4, -1
 };
 // clang-format on
 
 // BorderValue is interpreted as 1/1000, i.e. 500 for 0.5
 template <class ScalarType, int Format, int Interpolation, int BorderMode,
-          int BorderValue>
+          int BorderValue, int SelectedTransform>
 cv::Mat exec_warp_perspective(cv::Mat& source_mat) {
   cv::Mat result(source_mat.rows, source_mat.cols, Format);
-  cv::Mat M(3, 3, CV_64FC1, reinterpret_cast<uint8_t*>(transform));
+  cv::Mat M(3, 3, CV_64FC1,
+            reinterpret_cast<uint8_t*>(SelectedTransform == 1 ? transform2
+                                                              : transform1));
   cv::warpPerspective(source_mat, result, M, result.size(), Interpolation,
                       BorderMode, BorderValue / 1000.0);
   return result;
@@ -33,7 +42,7 @@ cv::Mat exec_warp_perspective(cv::Mat& source_mat) {
 const int kMaxHeight = 16, kMaxWidth = 65;
 
 template <class ScalarType, int Format, int Interpolation, int BorderMode,
-          int BorderValue>
+          int BorderValue, int SelectedTransform>
 bool test_warp_perspective(int index, RecreatedMessageQueue& request_queue,
                            RecreatedMessageQueue& reply_queue) {
   for (size_t w = 8; w <= kMaxWidth; w += 3) {
@@ -58,12 +67,14 @@ bool test_warp_perspective(int index, RecreatedMessageQueue& request_queue,
 
       cv::Mat actual_mat =
           exec_warp_perspective<ScalarType, Format, Interpolation, BorderMode,
-                                BorderValue>(source_mat);
+                                BorderValue, SelectedTransform>(source_mat);
       cv::Mat expected_mat = get_expected_from_subordinate(
           index, request_queue, reply_queue, source_mat);
 
-      bool success =
-          !are_matrices_different<ScalarType>(1, actual_mat, expected_mat);
+      // For Constant borders, the neighbouring values cannot be ensured
+      ScalarType tolerance = BorderMode == cv::BORDER_CONSTANT ? 2 : 1;
+      bool success = !are_matrices_different<ScalarType>(tolerance, actual_mat,
+                                                         expected_mat);
       if (!success) {
         fail_print_matrices(h, w, source_mat, actual_mat, expected_mat);
         return true;
@@ -77,8 +88,14 @@ bool test_warp_perspective(int index, RecreatedMessageQueue& request_queue,
 std::vector<test>& warp_perspective_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
-    TEST("WarpPerspectiveNearest uint8", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0>)),
-    TEST("WarpPerspectiveLinear uint8", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0>)),
+    TEST("WarpPerspectiveNearest uint8 replicate", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0, 0>)),
+    TEST("WarpPerspectiveLinear uint8 replicate", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0, 0>)),
+    TEST("WarpPerspectiveNearest uint8 constant", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 200000, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 200000, 0>)),
+    TEST("WarpPerspectiveLinear uint8 constant", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 200000, 0>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 200000, 0>)),
+    TEST("WarpPerspectiveNearest uint8 replicate DivisionByZero", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0, 1>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_REPLICATE, 0, 1>)),
+    TEST("WarpPerspectiveNearest uint8 constant DivisionByZero", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 200000, 1>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_NEAREST, cv::BORDER_CONSTANT, 200000, 1>)),
+    TEST("WarpPerspectiveLinear uint8 replicate DivisionByZero", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0, 1>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_REPLICATE, 0, 1>)),
+    TEST("WarpPerspectiveLinear uint8 constant DivisionByZero", (test_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 200000, 1>), (exec_warp_perspective<uint8_t, CV_8UC1, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 200000, 1>)),
   };
   // clang-format on
   return tests;

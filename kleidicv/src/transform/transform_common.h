@@ -1,7 +1,8 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <algorithm>
 #include <utility>
 
 #include "kleidicv/types.h"
@@ -11,6 +12,33 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 template <typename T>
 bool is_image_large(const Rows<T> &rows, size_t height) {
   return rows.stride() * height >= 1ULL << 32;
+}
+
+static inline bool weight_may_be_zero(const float transform[9],
+                                      size_t dst_width, size_t y_begin,
+                                      size_t y_end) {
+  auto calculate_weight = [&](float x, float y) {
+    return transform[6] * x + transform[7] * y + transform[8];
+  };
+
+  const float x0 = 0.F;
+  const float x1 = static_cast<float>(dst_width - 1);
+  const float y0 = static_cast<float>(y_begin);
+  const float y1 = static_cast<float>(y_end - 1);
+
+  float min_weight = calculate_weight(x0, y0);
+  float max_weight = min_weight;
+
+  auto update_minmax = [&](float weight) {
+    min_weight = std::min(weight, min_weight);
+    max_weight = std::max(weight, max_weight);
+  };
+
+  update_minmax(calculate_weight(x1, y0));
+  update_minmax(calculate_weight(x0, y1));
+  update_minmax(calculate_weight(x1, y1));
+
+  return min_weight * max_weight <= 0.F;
 }
 
 // Convert channels to a template argument.

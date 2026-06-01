@@ -1,8 +1,9 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <cassert>
+#include <type_traits>
 
 #include "kleidicv/ctypes.h"
 #include "kleidicv/neon.h"
@@ -48,91 +49,109 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
   uint32x4_t v_ymax = vdupq_n_u32(static_cast<uint32_t>(src_height - 1));
   float32x4_t tx0, ty0, tw0;
 
-  auto calculate_coordinates = [&](uint32_t x) {
-    // The next few values can be calculated by adding the corresponding Tn*x
-    float32x4_t fx = vcvtq_f32_u32(vaddq_u32(x0123_, vdupq_n_u32(x)));
-    float32x4_t tx = vmlaq_n_f32(tx0, fx, transform[0]);
-    float32x4_t ty = vmlaq_n_f32(ty0, fx, transform[3]);
-    float32x4_t tw = vmlaq_n_f32(tw0, fx, transform[6]);
+  auto process_rows = [&](auto check_zero_divisor) {
+    using CheckZeroDivisor = decltype(check_zero_divisor);
 
-    // Calculate inverse weight because division is expensive
-    float32x4_t iw = vdivq_f32(vdupq_n_f32(1.F), tw);
-    // Calculate coordinates into the source image
-    float32x4_t xf = vmulq_f32(tx, iw);
-    float32x4_t yf = vmulq_f32(ty, iw);
-    return FloatVectorPair{xf, yf};
-  };
+    auto calculate_coordinates = [&](uint32_t x) {
+      // The next few values can be calculated by adding the corresponding Tn*x
+      float32x4_t fx = vcvtq_f32_u32(vaddq_u32(x0123_, vdupq_n_u32(x)));
+      float32x4_t tx = vmlaq_n_f32(tx0, fx, transform[0]);
+      float32x4_t ty = vmlaq_n_f32(ty0, fx, transform[3]);
+      float32x4_t tw = vmlaq_n_f32(tw0, fx, transform[6]);
 
-  auto calculate_linear = [&](uint32_t x) {
-    float32x4_t a, b, c, d, xfrac, yfrac;
-    if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
-      load_quad_pixels_replicate<ScalarType, IsLarge>(
-          calculate_coordinates(x), v_xmax, v_ymax, v_src_stride, src_rows,
-          xfrac, yfrac, a, b, c, d);
-    } else {
-      static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
-      load_quad_pixels_constant<ScalarType, IsLarge>(
-          calculate_coordinates(x), v_xmax, v_ymax, v_src_stride, border_values,
-          src_rows, xfrac, yfrac, a, b, c, d);
-    }
-    return lerp_2d(xfrac, yfrac, a, b, c, d);
-  };
+      // Calculate inverse weight because division is expensive
+      float32x4_t iw;
+      if constexpr (CheckZeroDivisor::value) {
+        uint32x4_t zero_tw = vceqq_f32(tw, vdupq_n_f32(0.F));
+        iw = vbslq_f32(zero_tw, vdupq_n_f32(0.F),
+                       vdivq_f32(vdupq_n_f32(1.F), tw));
+      } else {
+        iw = vdivq_f32(vdupq_n_f32(1.F), tw);
+      }
 
-  for (size_t y = y_begin; y < y_end; ++y) {
-    float dy = static_cast<float>(y);
-    Columns<ScalarType> dst = dst_rows.as_columns();
-    // Calculate half-transformed values at the first pixel (nominators)
-    // tw =  T6*x + T7*y + T8
-    // tx = (T0*x + T1*y + T2) / tw
-    // ty = (T3*x + T4*y + T5) / tw
-    tx0 = vdupq_n_f32(transform[1] * dy + transform[2]);
-    ty0 = vdupq_n_f32(transform[4] * dy + transform[5]);
-    tw0 = vdupq_n_f32(transform[7] * dy + transform[8]);
+      // Calculate coordinates into the source image
+      float32x4_t xf = vmulq_f32(tx, iw);
+      float32x4_t yf = vmulq_f32(ty, iw);
+      return FloatVectorPair{xf, yf};
+    };
 
-    static const size_t kStep = VecTraits<float>::num_lanes();
-    LoopUnroll2<TryToAvoidTailLoop> loop{dst_width, kStep};
-    if constexpr (Inter == KLEIDICV_INTERPOLATION_NEAREST) {
+    auto calculate_linear = [&](uint32_t x) {
+      float32x4_t a, b, c, d, xfrac, yfrac;
       if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
-        loop.unroll_once([&](size_t x) {
-          auto &&[xf, yf] = calculate_coordinates(x);
-          transform_pixels_replicate<ScalarType, IsLarge, Channels>(
-              xf, yf, v_xmax, v_ymax, v_src_stride, src_rows, dst.at(x));
-        });
+        load_quad_pixels_replicate<ScalarType, IsLarge>(
+            calculate_coordinates(x), v_xmax, v_ymax, v_src_stride, src_rows,
+            xfrac, yfrac, a, b, c, d);
       } else {
         static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
+        load_quad_pixels_constant<ScalarType, IsLarge>(
+            calculate_coordinates(x), v_xmax, v_ymax, v_src_stride,
+            border_values, src_rows, xfrac, yfrac, a, b, c, d);
+      }
+      return lerp_2d(xfrac, yfrac, a, b, c, d);
+    };
+
+    for (size_t y = y_begin; y < y_end; ++y) {
+      float dy = static_cast<float>(y);
+      Columns<ScalarType> dst = dst_rows.as_columns();
+      // Calculate half-transformed values at the first pixel (nominators)
+      // tw =  T6*x + T7*y + T8
+      // tx = (T0*x + T1*y + T2) / tw
+      // ty = (T3*x + T4*y + T5) / tw
+      tx0 = vdupq_n_f32(transform[1] * dy + transform[2]);
+      ty0 = vdupq_n_f32(transform[4] * dy + transform[5]);
+      tw0 = vdupq_n_f32(transform[7] * dy + transform[8]);
+
+      static const size_t kStep = VecTraits<float>::num_lanes();
+      LoopUnroll2<TryToAvoidTailLoop> loop{dst_width, kStep};
+      if constexpr (Inter == KLEIDICV_INTERPOLATION_NEAREST) {
+        if constexpr (Border == KLEIDICV_BORDER_TYPE_REPLICATE) {
+          loop.unroll_once([&](size_t x) {
+            auto &&[xf, yf] = calculate_coordinates(x);
+            transform_pixels_replicate<ScalarType, IsLarge, Channels>(
+                xf, yf, v_xmax, v_ymax, v_src_stride, src_rows, dst.at(x));
+          });
+        } else {
+          static_assert(Border == KLEIDICV_BORDER_TYPE_CONSTANT);
+          loop.unroll_once([&](size_t x) {
+            auto &&[xf, yf] = calculate_coordinates(x);
+            transform_pixels_constant<ScalarType, IsLarge, Channels>(
+                xf, yf, v_xmax, v_ymax, v_src_stride, src_rows, dst.at(x),
+                border_values);
+          });
+        }
+      } else {
+        static_assert(Inter == KLEIDICV_INTERPOLATION_LINEAR);
+        loop.unroll_four_times([&](size_t _x) {
+          uint32_t x = static_cast<uint32_t>(_x);
+          ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(_x)];
+          uint32x4_t res0 = calculate_linear(x);
+          x += kStep;
+          uint32x4_t res1 = calculate_linear(x);
+          uint16x8_t result16_0 = vuzp1q_u16(res0, res1);
+          x += kStep;
+          res0 = calculate_linear(x);
+          x += kStep;
+          res1 = calculate_linear(x);
+          uint16x8_t result16_1 = vuzp1q_u16(res0, res1);
+          vst1q_u8(p_dst, vuzp1q_u8(result16_0, result16_1));
+        });
         loop.unroll_once([&](size_t x) {
-          auto &&[xf, yf] = calculate_coordinates(x);
-          transform_pixels_constant<ScalarType, IsLarge, Channels>(
-              xf, yf, v_xmax, v_ymax, v_src_stride, src_rows, dst.at(x),
-              border_values);
+          ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
+          uint32x4_t res = calculate_linear(static_cast<uint32_t>(x));
+          p_dst[0] = vgetq_lane_u32(res, 0);
+          p_dst[1] = vgetq_lane_u32(res, 1);
+          p_dst[2] = vgetq_lane_u32(res, 2);
+          p_dst[3] = vgetq_lane_u32(res, 3);
         });
       }
-    } else {
-      static_assert(Inter == KLEIDICV_INTERPOLATION_LINEAR);
-      loop.unroll_four_times([&](size_t _x) {
-        uint32_t x = static_cast<uint32_t>(_x);
-        ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(_x)];
-        uint32x4_t res0 = calculate_linear(x);
-        x += kStep;
-        uint32x4_t res1 = calculate_linear(x);
-        uint16x8_t result16_0 = vuzp1q_u16(res0, res1);
-        x += kStep;
-        res0 = calculate_linear(x);
-        x += kStep;
-        res1 = calculate_linear(x);
-        uint16x8_t result16_1 = vuzp1q_u16(res0, res1);
-        vst1q_u8(p_dst, vuzp1q_u8(result16_0, result16_1));
-      });
-      loop.unroll_once([&](size_t x) {
-        ScalarType *p_dst = &dst[static_cast<ptrdiff_t>(x)];
-        uint32x4_t res = calculate_linear(static_cast<uint32_t>(x));
-        p_dst[0] = vgetq_lane_u32(res, 0);
-        p_dst[1] = vgetq_lane_u32(res, 1);
-        p_dst[2] = vgetq_lane_u32(res, 2);
-        p_dst[3] = vgetq_lane_u32(res, 3);
-      });
+      ++dst_rows;
     }
-    ++dst_rows;
+  };
+
+  if (weight_may_be_zero(transform, dst_width, y_begin, y_end)) {
+    process_rows(std::true_type{});
+  } else {
+    process_rows(std::false_type{});
   }
 }
 
