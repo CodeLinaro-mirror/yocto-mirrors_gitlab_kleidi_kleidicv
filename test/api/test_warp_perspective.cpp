@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -250,8 +250,8 @@ class WarpPerspectiveBase : public testing::Test {
       for (size_t x = 0; x < expected.width() / src.channels(); ++x) {
         if constexpr (Interpolation == KLEIDICV_INTERPOLATION_NEAREST) {
           float dx = static_cast<float>(x), dy = static_cast<float>(y);
-          float dw = transform[6] * dx + transform[7] * dy + transform[8];
-          float inv_w = 1.F / dw;
+          float tw = transform[6] * dx + transform[7] * dy + transform[8];
+          float inv_w = tw == .0F ? .0F : 1.F / tw;
           float fx =
               inv_w * (transform[0] * dx + transform[1] * dy + transform[2]);
           float fy =
@@ -269,7 +269,7 @@ class WarpPerspectiveBase : public testing::Test {
         if constexpr (Interpolation == KLEIDICV_INTERPOLATION_LINEAR) {
           double dx = static_cast<double>(x), dy = static_cast<double>(y);
           double tw = transform[6] * dx + transform[7] * dy + transform[8];
-          double inv_w = 1.F / tw;
+          double inv_w = tw == 0.0 ? 0.0 : 1.0 / tw;
           double tx = transform[0] * dx + transform[1] * dy + transform[2];
           double ty = transform[3] * dx + transform[4] * dy + transform[5];
           double fx = inv_w * tx;
@@ -806,26 +806,13 @@ TYPED_TEST(WarpPerspectiveLinear, DivisionByZero) {
   };
   // clang-format on
 
-  size_t kW = 3 * test::Options::vector_lanes<TypeParam>() - 1;
-  size_t kH = 2;
-
-  test::Array2D<TypeParam> source{kW, kH, 1, 1};
-  test::Array2D<TypeParam> dst{kW, kH, 1, 1};
-
-  for (int64_t y = 0; y < static_cast<int64_t>(source.height()); ++y) {
-    for (int64_t x = 0; x < static_cast<int64_t>(source.width()); ++x) {
-      const int64_t kMaxVal = std::numeric_limits<TypeParam>::max() / 2;
-      *source.at(y, x) =
-          kMaxVal / 4 + abs((x + y) % (2 * kMaxVal + 1) - kMaxVal);
-    }
-  }
-
+  size_t src_w = 3 * test::Options::vector_lanes<TypeParam>() - 1;
+  size_t src_h = 4;
+  size_t dst_w = src_w;
+  size_t dst_h = src_h;
   for (auto [border_type, border_value] : get_borders<TypeParam>()) {
-    EXPECT_EQ(KLEIDICV_OK,
-              kleidicv_warp_perspective_u8(
-                  source.data(), source.stride(), kW, kH, dst.data(),
-                  dst.stride(), kW, kH, transform_div_by_zero, 1,
-                  KLEIDICV_INTERPOLATION_LINEAR, border_type, border_value));
+    TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1,
+                      border_type, border_value, 3);
   }
 }
 
