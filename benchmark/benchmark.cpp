@@ -26,55 +26,55 @@ uint8_t* get_buffer() {
 }
 
 // Get a buffer suitable for using as the first input buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 const T* get_source_buffer_a() {
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0xA3>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0xA3>());
 }
 
 // Get a buffer suitable for using as the second input buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 const T* get_source_buffer_b() {
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0x9E>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0x9E>());
 }
 
 // Get a buffer suitable for using as the third input buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 const T* get_source_buffer_c() {
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0xB8>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0xB8>());
 }
 
 // Get a buffer suitable for using as the forth input buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 const T* get_source_buffer_d() {
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0x4A>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0x4A>());
 }
 
 // Get a buffer suitable for using as the destination buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 T* get_destination_buffer_a() {
   // Value argument is only used here to differentiate from the source buffers.
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0xC1>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0xC1>());
 }
 
 // Get a buffer suitable for using as the second destination buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 T* get_destination_buffer_b() {
   // Value argument is only used here to differentiate from the source buffers.
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0x83>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0x83>());
 }
 
 // Get a buffer suitable for using as the third destination buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 T* get_destination_buffer_c() {
   // Value argument is only used here to differentiate from the source buffers.
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0xF6>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0xF6>());
 }
 
 // Get a buffer suitable for using as the forth destination buffer.
-template <typename T, int Channels = 1>
+template <typename T, int kChannels = 1>
 T* get_destination_buffer_d() {
   // Value argument is only used here to differentiate from the source buffers.
-  return reinterpret_cast<T*>(get_buffer<sizeof(T) * Channels, 0x7D>());
+  return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0x7D>());
 }
 
 // A hook before and after the benchmarks can be useful in some environments.
@@ -249,7 +249,7 @@ BENCH_TRANSPOSE(transpose_u64, uint64_t);
 BENCH_TRANSPOSE(transpose_u24, uint8_t[3]);
 BENCH_TRANSPOSE(transpose_u48, uint16_t[3]);
 
-template <typename T, size_t channels>
+template <typename T, size_t kChannels>
 static void bench_split(benchmark::State& state) {
   bench_functor(state, []() {
     void* dst_data[] = {
@@ -257,9 +257,10 @@ static void bench_split(benchmark::State& state) {
         get_destination_buffer_c<T>(), get_destination_buffer_d<T>()};
     size_t dst_strides[] = {image_width * sizeof(T), image_width * sizeof(T),
                             image_width * sizeof(T), image_width * sizeof(T)};
-    (void)kleidicv_split(
-        get_source_buffer_a<T, channels>(), image_width * sizeof(T) * channels,
-        dst_data, dst_strides, image_width, image_height, channels, sizeof(T));
+    (void)kleidicv_split(get_source_buffer_a<T, kChannels>(),
+                         image_width * sizeof(T) * kChannels, dst_data,
+                         dst_strides, image_width, image_height, kChannels,
+                         sizeof(T));
   });
 }
 
@@ -284,7 +285,7 @@ BENCH_SPLIT(split_u16_4ch, uint16_t, 4);
 BENCH_SPLIT(split_u32_4ch, uint32_t, 4);
 BENCH_SPLIT(split_u64_4ch, uint64_t, 4);
 
-template <typename T, size_t channels>
+template <typename T, size_t kChannels>
 static void bench_merge(benchmark::State& state) {
   bench_functor(state, []() {
     const void* src_data[] = {
@@ -293,9 +294,9 @@ static void bench_merge(benchmark::State& state) {
     size_t src_strides[] = {image_width * sizeof(T), image_width * sizeof(T),
                             image_width * sizeof(T), image_width * sizeof(T)};
     (void)kleidicv_merge(src_data, src_strides,
-                         get_destination_buffer_a<T, channels>(),
-                         image_width * sizeof(T) * channels, image_width,
-                         image_height, channels, sizeof(T));
+                         get_destination_buffer_a<T, kChannels>(),
+                         image_width * sizeof(T) * kChannels, image_width,
+                         image_height, kChannels, sizeof(T));
   });
 }
 
@@ -436,73 +437,64 @@ BENCH_MIN_MAX(min_max_u16, uint16_t);
 BENCH_MIN_MAX(min_max_s32, int32_t);
 BENCH_MIN_MAX(min_max_f32, float);
 
-template <typename T, typename F>
+template <typename T, size_t kChannels, typename F>
 static void resize(F f, size_t src_width, size_t src_height, size_t dst_width,
-                   size_t dst_height, benchmark::State& state,
-                   size_t channels) {
-  bench_functor(
-      state, [f, src_width, src_height, dst_width, dst_height, channels]() {
-        (void)f(get_source_buffer_a<T>(), src_width * sizeof(T), src_width,
-                src_height, get_destination_buffer_a<T>(),
-                dst_width * sizeof(T), dst_width, dst_height, channels);
-      });
+                   size_t dst_height, benchmark::State& state) {
+  bench_functor(state, [f, src_width, src_height, dst_width, dst_height]() {
+    (void)f(
+        get_source_buffer_a<T, kChannels>(), src_width * kChannels * sizeof(T),
+        src_width, src_height, get_destination_buffer_a<T, kChannels>(),
+        dst_width * kChannels * sizeof(T), dst_width, dst_height, kChannels);
+  });
 }
 
-template <typename T, typename F>
+template <typename T, size_t kChannels = 1, typename F>
 static void resize_upscale(F f, size_t scale_x, size_t scale_y,
-                           benchmark::State& state, size_t channels = 1) {
+                           benchmark::State& state) {
   size_t src_width = image_width / scale_x;
   size_t src_height = image_height / scale_y;
-  resize<T>(f, src_width, src_height, src_width * scale_x, src_height * scale_y,
-            state, channels);
+  resize<T, kChannels>(f, src_width, src_height, src_width * scale_x,
+                       src_height * scale_y, state);
 }
 
-template <typename T, typename F>
+template <typename T, size_t kChannels = 1, typename F>
 static void resize_downscale(F f, double scale_x, double scale_y,
-                             benchmark::State& state, size_t channels = 1) {
+                             benchmark::State& state) {
   // Casting to uint32 to avoid clang-tidy errors
   uint32_t image_width_u32 = static_cast<uint32_t>(image_width);
   uint32_t image_height_u32 = static_cast<uint32_t>(image_height);
   uint32_t dst_width = static_cast<uint32_t>(image_width_u32 / scale_x);
   uint32_t dst_height = static_cast<uint32_t>(image_height_u32 / scale_y);
-  resize<T>(f, dst_width * scale_x, dst_height * scale_y, dst_width, dst_height,
-            state, channels);
+  resize<T, kChannels>(f, dst_width * scale_x, dst_height * scale_y, dst_width,
+                       dst_height, state);
 }
 
-static void resize_quarter_channels(benchmark::internal::Benchmark* b) {
-  b->ArgNames({"channels"});
-  for (int channel : {1, 2, 3, 4}) {
-    b->Args({channel});
-  }
-}
-
+template <size_t kChannels>
 static void resize_quarter_u8(benchmark::State& state) {
-  int channels = state.range(0);
-  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 2, 2, state,
-                            static_cast<size_t>(channels));
+  resize_downscale<uint8_t, kChannels>(kleidicv_resize_linear_u8, 2, 2, state);
 }
-BENCHMARK(resize_quarter_u8)->Apply(resize_quarter_channels);
+BENCHMARK(resize_quarter_u8<1>);
+BENCHMARK(resize_quarter_u8<2>);
+BENCHMARK(resize_quarter_u8<3>);
+BENCHMARK(resize_quarter_u8<4>);
 
-static void resize_downscale_channels(benchmark::internal::Benchmark* b) {
-  b->ArgNames({"channels"});
-  for (int channel : {1, 2, 3}) {
-    b->Args({channel});
-  }
-}
-
+template <size_t kChannels>
 static void resize_linear_u8_r2(benchmark::State& state) {
-  int channels = state.range(0);
-  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 1.7, 2, state,
-                            static_cast<size_t>(channels));
+  resize_downscale<uint8_t, kChannels>(kleidicv_resize_linear_u8, 1.7, 2,
+                                       state);
 }
-BENCHMARK(resize_linear_u8_r2)->Apply(resize_downscale_channels);
+BENCHMARK(resize_linear_u8_r2<1>);
+BENCHMARK(resize_linear_u8_r2<2>);
+BENCHMARK(resize_linear_u8_r2<3>);
 
+template <size_t kChannels>
 static void resize_linear_u8_r3(benchmark::State& state) {
-  int channels = state.range(0);
-  resize_downscale<uint8_t>(kleidicv_resize_linear_u8, 2.7, 2, state,
-                            static_cast<size_t>(channels));
+  resize_downscale<uint8_t, kChannels>(kleidicv_resize_linear_u8, 2.7, 2,
+                                       state);
 }
-BENCHMARK(resize_linear_u8_r3)->Apply(resize_downscale_channels);
+BENCHMARK(resize_linear_u8_r3<1>);
+BENCHMARK(resize_linear_u8_r3<2>);
+BENCHMARK(resize_linear_u8_r3<3>);
 
 static void resize_linear_2x2_u8_1ch(benchmark::State& state) {
   resize_upscale<uint8_t>(kleidicv_resize_linear_u8, 2, 2, state);
@@ -529,16 +521,16 @@ static void resize_linear_8x8_f32_1ch(benchmark::State& state) {
 }
 BENCHMARK(resize_linear_8x8_f32_1ch);
 
-template <typename T, size_t KernelSize, int Channels, typename F>
+template <typename T, size_t KernelSize, int kChannels, typename F>
 static void separable_filter_2d(benchmark::State& state, F function) {
   std::vector<T> kernel(KernelSize, 2);
 
   bench_functor(state, [kernel, function]() {
-    (void)function(get_source_buffer_a<T, Channels>(),
-                   image_width * Channels * sizeof(T),
-                   get_destination_buffer_a<T, Channels>(),
-                   image_width * Channels * sizeof(T), image_width,
-                   image_height, Channels, kernel.data(), KernelSize,
+    (void)function(get_source_buffer_a<T, kChannels>(),
+                   image_width * kChannels * sizeof(T),
+                   get_destination_buffer_a<T, kChannels>(),
+                   image_width * kChannels * sizeof(T), image_width,
+                   image_height, kChannels, kernel.data(), KernelSize,
                    kernel.data(), KernelSize, KLEIDICV_BORDER_TYPE_REPLICATE);
   });
 }
@@ -563,15 +555,16 @@ static void separable_filter_2d_u16_5x5_3ch(benchmark::State& state) {
 }
 BENCHMARK(separable_filter_2d_u16_5x5_3ch);
 
-template <typename T, size_t KernelSize, int Channels, bool Binomial>
+template <typename T, size_t KernelSize, int kChannels, bool Binomial>
 static void gaussian_blur(benchmark::State& state) {
   bench_functor(state, []() {
     (void)kleidicv_gaussian_blur_u8(
-        get_source_buffer_a<T, Channels>(), image_width * Channels * sizeof(T),
-        get_destination_buffer_a<T, Channels>(),
-        image_width * Channels * sizeof(T), image_width, image_height, Channels,
-        KernelSize, KernelSize, (Binomial ? 0.0 : 2.0), (Binomial ? 0.0 : 2.0),
-        KLEIDICV_BORDER_TYPE_REFLECT);
+        get_source_buffer_a<T, kChannels>(),
+        image_width * kChannels * sizeof(T),
+        get_destination_buffer_a<T, kChannels>(),
+        image_width * kChannels * sizeof(T), image_width, image_height,
+        kChannels, KernelSize, KernelSize, (Binomial ? 0.0 : 2.0),
+        (Binomial ? 0.0 : 2.0), KLEIDICV_BORDER_TYPE_REFLECT);
   });
 }
 
@@ -611,16 +604,17 @@ BENCH_GAUSSIAN_BLUR(21, 1);
 BENCH_GAUSSIAN_BLUR(21, 3);
 BENCH_GAUSSIAN_BLUR(21, 4);
 
-template <typename T, int Channels, typename Function>
+template <typename T, int kChannels, typename Function>
 static void median_blur(benchmark::State& state, Function func) {
   int kernel_size = state.range(0);
 
   bench_functor(state, [&]() {
-    (void)func(
-        get_source_buffer_a<T, Channels>(), image_width * Channels * sizeof(T),
-        get_destination_buffer_a<T, Channels>(),
-        image_width * Channels * sizeof(T), image_width, image_height, Channels,
-        kernel_size, kernel_size, KLEIDICV_BORDER_TYPE_REPLICATE);
+    (void)func(get_source_buffer_a<T, kChannels>(),
+               image_width * kChannels * sizeof(T),
+               get_destination_buffer_a<T, kChannels>(),
+               image_width * kChannels * sizeof(T), image_width, image_height,
+               kChannels, kernel_size, kernel_size,
+               KLEIDICV_BORDER_TYPE_REPLICATE);
   });
 }
 
@@ -724,7 +718,7 @@ static void sobel_filter_horizontal(benchmark::State& state) {
 }
 BENCHMARK(sobel_filter_horizontal);
 
-template <size_t Channels>
+template <size_t kChannels>
 static void yuv422_to_rgbx(benchmark::State& state,
                            kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&]() {
@@ -732,8 +726,8 @@ static void yuv422_to_rgbx(benchmark::State& state,
         get_source_buffer_a<uint8_t, 2>(),
         image_width * 2 *
             sizeof(uint8_t),  // YUV422: 2 bytes per pixel (interleaved)
-        get_destination_buffer_a<uint8_t, Channels>(),
-        image_width * Channels * sizeof(uint8_t), image_width, image_height,
+        get_destination_buffer_a<uint8_t, kChannels>(),
+        image_width * kChannels * sizeof(uint8_t), image_width, image_height,
         color_format);
   });
 }
@@ -763,15 +757,15 @@ BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_UYVY_TO_RGBA)
 BENCHMARK_CAPTURE(yuv422_to_rgbx<4>, , KLEIDICV_YVYU_TO_RGBA)
     ->Name("yvyu_to_rgba");
 
-template <size_t Channels>
+template <size_t kChannels>
 static void yuv420sp_to_rgbx(benchmark::State& state,
                              kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&] {
     (void)kleidicv_yuv_semiplanar_to_rgb_u8(
         get_source_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
         get_source_buffer_b<uint8_t, 1>(), (image_width / 2) * sizeof(uint8_t),
-        get_destination_buffer_a<uint8_t, Channels>(),
-        image_width * Channels * sizeof(uint8_t), image_width, image_height,
+        get_destination_buffer_a<uint8_t, kChannels>(),
+        image_width * kChannels * sizeof(uint8_t), image_width, image_height,
         color_format);
   });
 }
@@ -793,14 +787,14 @@ BENCHMARK_CAPTURE(yuv420sp_to_rgbx<4>, , KLEIDICV_NV21_TO_BGRA)
 BENCHMARK_CAPTURE(yuv420sp_to_rgbx<4>, , KLEIDICV_NV21_TO_RGBA)
     ->Name("nv21_to_rgba");
 
-template <size_t Channels>
+template <size_t kChannels>
 static void yuv420p_to_rgbx(benchmark::State& state,
                             kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&] {
     (void)kleidicv_yuv_to_rgb_u8(get_source_buffer_a<uint8_t, 2>(),
                                  image_width * sizeof(uint8_t),
-                                 get_destination_buffer_a<uint8_t, Channels>(),
-                                 image_width * Channels * sizeof(uint8_t),
+                                 get_destination_buffer_a<uint8_t, kChannels>(),
+                                 image_width * kChannels * sizeof(uint8_t),
                                  image_width, image_height, color_format);
   });
 }
@@ -822,14 +816,14 @@ BENCHMARK_CAPTURE(yuv420p_to_rgbx<4>, , KLEIDICV_IYUV_TO_BGRA)
 BENCHMARK_CAPTURE(yuv420p_to_rgbx<4>, , KLEIDICV_IYUV_TO_RGBA)
     ->Name("iyuv_to_rgba");
 
-template <size_t Channels>
+template <size_t kChannels>
 static void yuv444_to_rgbx(benchmark::State& state,
                            kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&] {
     (void)kleidicv_yuv_to_rgb_u8(get_source_buffer_a<uint8_t, 3>(),
                                  image_width * 3 * sizeof(uint8_t),
-                                 get_destination_buffer_a<uint8_t, Channels>(),
-                                 image_width * Channels * sizeof(uint8_t),
+                                 get_destination_buffer_a<uint8_t, kChannels>(),
+                                 image_width * kChannels * sizeof(uint8_t),
                                  image_width, image_height, color_format);
   });
 }
@@ -843,13 +837,13 @@ BENCHMARK_CAPTURE(yuv444_to_rgbx<4>, , KLEIDICV_YUV444_TO_BGRA)
 BENCHMARK_CAPTURE(yuv444_to_rgbx<4>, , KLEIDICV_YUV444_TO_RGBA)
     ->Name("yuv444_to_rgba");
 
-template <size_t Channels>
+template <size_t kChannels>
 static void rgbx_to_yuv420sp(benchmark::State& state,
                              kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&] {
     (void)kleidicv_rgb_to_yuv_semiplanar_u8(
-        get_source_buffer_a<uint8_t, Channels>(),
-        Channels * image_width * sizeof(uint8_t),
+        get_source_buffer_a<uint8_t, kChannels>(),
+        kChannels * image_width * sizeof(uint8_t),
         get_destination_buffer_a<uint8_t, 1>(), image_width * sizeof(uint8_t),
         get_destination_buffer_b<uint8_t, 2>(),
         (image_width / 2) * sizeof(uint8_t), image_width, image_height,
@@ -874,12 +868,12 @@ BENCHMARK_CAPTURE(rgbx_to_yuv420sp<4>, , KLEIDICV_BGRA_TO_NV21)
 BENCHMARK_CAPTURE(rgbx_to_yuv420sp<4>, , KLEIDICV_RGBA_TO_NV21)
     ->Name("rgba_to_nv21");
 
-template <size_t Channels>
+template <size_t kChannels>
 static void rgbx_to_yuv420p(benchmark::State& state,
                             kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&] {
-    (void)kleidicv_rgb_to_yuv_u8(get_source_buffer_a<uint8_t, Channels>(),
-                                 Channels * image_width * sizeof(uint8_t),
+    (void)kleidicv_rgb_to_yuv_u8(get_source_buffer_a<uint8_t, kChannels>(),
+                                 kChannels * image_width * sizeof(uint8_t),
                                  get_destination_buffer_a<uint8_t, 3>(),
                                  image_width * sizeof(uint8_t), image_width,
                                  image_height, color_format);
@@ -903,12 +897,12 @@ BENCHMARK_CAPTURE(rgbx_to_yuv420p<4>, , KLEIDICV_BGRA_TO_IYUV)
 BENCHMARK_CAPTURE(rgbx_to_yuv420p<4>, , KLEIDICV_RGBA_TO_IYUV)
     ->Name("rgba_to_iyuv");
 
-template <size_t Channels>
+template <size_t kChannels>
 static void rgbx_to_yuv444(benchmark::State& state,
                            kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&] {
-    (void)kleidicv_rgb_to_yuv_u8(get_source_buffer_a<uint8_t, Channels>(),
-                                 image_width * Channels * sizeof(uint8_t),
+    (void)kleidicv_rgb_to_yuv_u8(get_source_buffer_a<uint8_t, kChannels>(),
+                                 image_width * kChannels * sizeof(uint8_t),
                                  get_destination_buffer_a<uint8_t, 3>(),
                                  image_width * 3 * sizeof(uint8_t), image_width,
                                  image_height, color_format);
@@ -924,12 +918,12 @@ BENCHMARK_CAPTURE(rgbx_to_yuv444<4>, , KLEIDICV_BGRA_TO_YUV444)
 BENCHMARK_CAPTURE(rgbx_to_yuv444<4>, , KLEIDICV_RGBA_TO_YUV444)
     ->Name("rgba_to_yuv444");
 
-template <size_t Channels>
+template <size_t kChannels>
 static void rgbx_to_yuv422(benchmark::State& state,
                            kleidicv_color_conversion_t color_format) {
   bench_functor(state, [&]() {
-    (void)kleidicv_rgb_to_yuv_u8(get_source_buffer_a<uint8_t, Channels>(),
-                                 image_width * Channels * sizeof(uint8_t),
+    (void)kleidicv_rgb_to_yuv_u8(get_source_buffer_a<uint8_t, kChannels>(),
+                                 image_width * kChannels * sizeof(uint8_t),
                                  get_destination_buffer_a<uint8_t, 2>(),
                                  image_width * 2 * sizeof(uint8_t), image_width,
                                  image_height, color_format);
@@ -1253,14 +1247,14 @@ BENCHMARK(optical_flow_pyr_lk_u8)
     ->Arg(11)
     ->Arg(21);
 
-template <size_t Channels>
+template <size_t kChannels>
 static void blur_and_downsample_u8(benchmark::State& state) {
   bench_functor(state, []() {
     (void)kleidicv_blur_and_downsample_u8(
-        get_source_buffer_a<uint8_t, Channels>(),
-        image_width * sizeof(uint8_t) * Channels, image_width, image_height,
-        get_destination_buffer_a<uint8_t, Channels>(),
-        ((image_width + 1) / 2) * sizeof(uint8_t) * Channels, Channels,
+        get_source_buffer_a<uint8_t, kChannels>(),
+        image_width * sizeof(uint8_t) * kChannels, image_width, image_height,
+        get_destination_buffer_a<uint8_t, kChannels>(),
+        ((image_width + 1) / 2) * sizeof(uint8_t) * kChannels, kChannels,
         KLEIDICV_BORDER_TYPE_REFLECT);
   });
 }
@@ -1269,14 +1263,14 @@ BENCHMARK(blur_and_downsample_u8<2>);
 BENCHMARK(blur_and_downsample_u8<3>);
 BENCHMARK(blur_and_downsample_u8<4>);
 
-template <size_t Channels>
+template <size_t kChannels>
 static void scharr_interleaved_s16_u8(benchmark::State& state) {
   bench_functor(state, []() {
     (void)kleidicv_scharr_interleaved_s16_u8(
-        get_source_buffer_a<uint8_t, Channels>(),
-        image_width * sizeof(uint8_t) * Channels, image_width, image_height,
-        Channels, get_destination_buffer_a<int16_t, Channels * 2>(),
-        (image_width - 2) * sizeof(int16_t) * Channels * 2);
+        get_source_buffer_a<uint8_t, kChannels>(),
+        image_width * sizeof(uint8_t) * kChannels, image_width, image_height,
+        kChannels, get_destination_buffer_a<int16_t, kChannels * 2>(),
+        (image_width - 2) * sizeof(int16_t) * kChannels * 2);
   });
 }
 BENCHMARK(scharr_interleaved_s16_u8<1>);
@@ -1284,7 +1278,7 @@ BENCHMARK(scharr_interleaved_s16_u8<2>);
 BENCHMARK(scharr_interleaved_s16_u8<3>);
 BENCHMARK(scharr_interleaved_s16_u8<4>);
 
-template <size_t Channels>
+template <size_t kChannels>
 static void build_optical_flow_pyr_lk_pyramid(benchmark::State& state) {
   const size_t requested_level_count = static_cast<size_t>(state.range(0));
   const size_t window_width = static_cast<size_t>(state.range(1));
@@ -1293,9 +1287,9 @@ static void build_optical_flow_pyr_lk_pyramid(benchmark::State& state) {
   bench_functor(state, [&]() {
     kleidicv_optical_flow_pyr_lk_pyramid_t* pyramid = nullptr;
     const kleidicv_error_t err = kleidicv_build_optical_flow_pyr_lk_pyramid(
-        &pyramid, get_source_buffer_a<uint8_t, Channels>(),
-        image_width * sizeof(uint8_t) * Channels, image_width, image_height,
-        Channels, requested_level_count, window_width, window_height);
+        &pyramid, get_source_buffer_a<uint8_t, kChannels>(),
+        image_width * sizeof(uint8_t) * kChannels, image_width, image_height,
+        kChannels, requested_level_count, window_width, window_height);
     benchmark::DoNotOptimize(static_cast<int>(err));
 
     if (err == KLEIDICV_OK) {
@@ -1563,22 +1557,24 @@ static const uint16_t* get_random_mapfrac() {
   return mapfrac.data();
 }
 
-template <typename T, typename Function, typename MapFunc>
-static void remap_s16(Function f, MapFunc mf, size_t channels,
+template <size_t kChannels, typename T, typename Function, typename MapFunc>
+static void remap_s16(Function f, MapFunc mf,
                       kleidicv_border_type_t border_type,
                       benchmark::State& state) {
   const T border_value[4] = {};
-  bench_functor(state, [f, mf, channels, border_type, border_value]() {
-    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
-            image_height, get_destination_buffer_a<T>(),
-            image_width * sizeof(T), image_width, image_height, channels, mf(),
-            image_width * 2 * sizeof(int16_t), border_type, border_value);
+  bench_functor(state, [f, mf, border_type, border_value]() {
+    (void)f(get_source_buffer_a<T, kChannels>(),
+            image_width * kChannels * sizeof(T), image_width, image_height,
+            get_destination_buffer_a<T, kChannels>(),
+            image_width * kChannels * sizeof(T), image_width, image_height,
+            kChannels, mf(), image_width * 2 * sizeof(int16_t), border_type,
+            border_value);
   });
 }
 
 #define BENCH_REMAP_S16(benchname, name, mapfunc, channels, border_type, type) \
   static void benchname(benchmark::State& state) {                             \
-    remap_s16<type>(kleidicv_##name, mapfunc, channels, border_type, state);   \
+    remap_s16<channels, type>(kleidicv_##name, mapfunc, border_type, state);   \
   }                                                                            \
   BENCHMARK(benchname)
 
@@ -1608,25 +1604,27 @@ BENCH_REMAP_S16(remap_s16_u16_identity, remap_s16_u16,
                 get_identity_mapxy<int16_t>, 1, KLEIDICV_BORDER_TYPE_REPLICATE,
                 uint16_t);
 
-template <typename T, typename Function, typename MapFunc>
-static void remap_s16point5(Function f, MapFunc mf, size_t channels,
+template <size_t kChannels, typename T, typename Function, typename MapFunc>
+static void remap_s16point5(Function f, MapFunc mf,
                             kleidicv_border_type_t border_type,
                             benchmark::State& state) {
   const T border_value[4] = {};
-  bench_functor(state, [f, mf, channels, border_type, border_value]() {
-    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
-            image_height, get_destination_buffer_a<T>(),
-            image_width * sizeof(T), image_width, image_height, channels, mf(),
-            image_width * 2 * sizeof(int16_t), get_random_mapfrac(),
-            image_width * sizeof(uint16_t), border_type, border_value);
+  bench_functor(state, [f, mf, border_type, border_value]() {
+    (void)f(get_source_buffer_a<T, kChannels>(),
+            image_width * kChannels * sizeof(T), image_width, image_height,
+            get_destination_buffer_a<T, kChannels>(),
+            image_width * kChannels * sizeof(T), image_width, image_height,
+            kChannels, mf(), image_width * 2 * sizeof(int16_t),
+            get_random_mapfrac(), image_width * sizeof(uint16_t), border_type,
+            border_value);
   });
 }
 
 #define BENCH_REMAP_S16POINT5(benchname, name, mapfunc, channels, border_type, \
                               type)                                            \
   static void benchname(benchmark::State& state) {                             \
-    remap_s16point5<type>(kleidicv_##name, mapfunc, channels, border_type,     \
-                          state);                                              \
+    remap_s16point5<channels, type>(kleidicv_##name, mapfunc, border_type,     \
+                                    state);                                    \
   }                                                                            \
   BENCHMARK(benchname)
 
@@ -1662,27 +1660,30 @@ BENCH_REMAP_S16POINT5(remap_s16point5_u16_identity, remap_s16point5_u16,
                       get_identity_mapxy<int16_t>, 1,
                       KLEIDICV_BORDER_TYPE_REPLICATE, uint16_t);
 
-template <typename T, typename Function, typename MapFuncX, typename MapFuncY>
-static void remap_f32(Function f, MapFuncX mfx, MapFuncY mfy, size_t channels,
+template <size_t kChannels, typename T, typename Function, typename MapFuncX,
+          typename MapFuncY>
+static void remap_f32(Function f, MapFuncX mfx, MapFuncY mfy,
                       kleidicv_interpolation_type_t interpolation,
                       kleidicv_border_type_t border_type,
                       benchmark::State& state) {
   const T border_value[4] = {};
-  bench_functor(state, [f, mfx, mfy, channels, interpolation, border_type,
-                        border_value]() {
-    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
-            image_height, get_destination_buffer_a<T>(),
-            image_width * sizeof(T), image_width, image_height, channels, mfx(),
-            image_width * sizeof(float), mfy(), image_width * sizeof(float),
-            interpolation, border_type, border_value);
-  });
+  bench_functor(
+      state, [f, mfx, mfy, interpolation, border_type, border_value]() {
+        (void)f(get_source_buffer_a<T, kChannels>(),
+                image_width * kChannels * sizeof(T), image_width, image_height,
+                get_destination_buffer_a<T, kChannels>(),
+                image_width * kChannels * sizeof(T), image_width, image_height,
+                kChannels, mfx(), image_width * sizeof(float), mfy(),
+                image_width * sizeof(float), interpolation, border_type,
+                border_value);
+      });
 }
 
 #define BENCH_REMAP_F32(benchname, name, mapxfunc, mapyfunc, channels, \
                         interpolation, border_type, type)              \
   static void benchname(benchmark::State& state) {                     \
-    remap_f32<type>(kleidicv_##name, mapxfunc, mapyfunc, channels,     \
-                    interpolation, border_type, state);                \
+    remap_f32<channels, type>(kleidicv_##name, mapxfunc, mapyfunc,     \
+                              interpolation, border_type, state);      \
   }                                                                    \
   BENCHMARK(benchname)
 
@@ -1773,28 +1774,28 @@ static const float transform_near[] = {
  -2.763770366739386e-06, -4.019862712379178e-05, 1.003055095661408};
 // clang-format on
 
-template <typename T, typename Function>
+template <size_t kChannels, typename T, typename Function>
 static void warp_perspective(Function f, const float transform[9],
-                             size_t channels,
                              kleidicv_interpolation_type_t interpolation,
                              kleidicv_border_type_t border_type,
                              benchmark::State& state) {
   const T border_value[4] = {};
-  bench_functor(state, [f, transform, channels, interpolation, border_type,
-                        border_value]() {
-    (void)f(get_source_buffer_a<T>(), image_width * sizeof(T), image_width,
-            image_height, get_destination_buffer_a<T>(),
-            image_width * sizeof(T), image_width, image_height, transform,
-            channels, interpolation, border_type, border_value);
-  });
+  bench_functor(
+      state, [f, transform, interpolation, border_type, border_value]() {
+        (void)f(get_source_buffer_a<T, kChannels>(),
+                image_width * kChannels * sizeof(T), image_width, image_height,
+                get_destination_buffer_a<T, kChannels>(),
+                image_width * kChannels * sizeof(T), image_width, image_height,
+                transform, kChannels, interpolation, border_type, border_value);
+      });
 }
 
-#define BENCH_WARP_PERSPECTIVE(benchname, name, transform, channels, \
-                               interpolation, border_type, type)     \
-  static void benchname(benchmark::State& state) {                   \
-    warp_perspective<type>(kleidicv_##name, transform, channels,     \
-                           interpolation, border_type, state);       \
-  }                                                                  \
+#define BENCH_WARP_PERSPECTIVE(benchname, name, transform, channels,     \
+                               interpolation, border_type, type)         \
+  static void benchname(benchmark::State& state) {                       \
+    warp_perspective<channels, type>(kleidicv_##name, transform,         \
+                                     interpolation, border_type, state); \
+  }                                                                      \
   BENCHMARK(benchname)
 
 BENCH_WARP_PERSPECTIVE(warp_perspective_u8_nearest_identity,
