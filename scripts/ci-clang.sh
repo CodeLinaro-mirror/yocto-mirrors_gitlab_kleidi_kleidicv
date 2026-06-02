@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -exu
+set -exuo pipefail
 
 # Ensure we're at the root of the repo.
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -70,7 +70,7 @@ scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme-api/kleidicv-a
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme2/kleidicv-api-test.xml "clang-sme2."
 
 # Generate test coverage report.
-LLVM_COV=llvm-cov scripts/generate_coverage_report.py build/ci/clang
+LLVM_COV=llvm-cov scripts/generate_coverage_report.py build/ci/clang | tee build/ci/coverage-summary.txt
 mkdir -p build/ci/html/coverage
 mv build/ci/clang/html/coverage build/ci/html
 

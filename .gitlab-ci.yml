@@ -38,9 +38,10 @@ clang-build-test:
       junit: build/ci/test-results/**/*.xml
       coverage_report:
         coverage_format: cobertura
-        path: build/ci/cobertura-coverage.xml
+        path: build/ci/clang/cobertura-coverage.xml
     paths:
       - build/ci/html
+      - build/ci/coverage-summary.txt
   coverage: /^line and branch coverage:\s+([\d\.]+\%)/
 
 gcc-build-test:
@@ -101,4 +102,6 @@ pages:
       artifacts: true
   script:
     - echo "Publishing pages"
+    - cat build/ci/coverage-summary.txt
   publish: build/ci/html
+  coverage: /^line and branch coverage:\s+([\d\.]+\%)/
