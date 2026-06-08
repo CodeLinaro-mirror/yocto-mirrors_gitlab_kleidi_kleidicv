@@ -100,6 +100,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
     '*Imgproc_Remap*'
     '*Imgproc_MedianBlur*'
     '*Imgproc_Warp*'
+    '*Imgproc_CopyMakeBorder*'
   )
   IMGPROC_TEST_PATTERNS_STR="$(join_strings_with_colon "${IMGPROC_TEST_PATTERNS[*]}")"
   ../../../conformity/opencv_kleidicv/bin/opencv_test_imgproc \
@@ -122,6 +123,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
     '*Core_Array*'
     'Compare*'
     '*Core_InRangeS/*'
+    '*Core_Mat.copyMakeBoderUndefinedBehavior*'
   )
   CORE_TEST_PATTERNS_STR="$(join_strings_with_colon "${CORE_TEST_PATTERNS[*]}")"
   ../../../conformity/opencv_kleidicv/bin/opencv_test_core \

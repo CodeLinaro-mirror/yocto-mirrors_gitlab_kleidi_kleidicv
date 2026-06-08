@@ -8,6 +8,53 @@
 // SPDX-FileCopyrightText: Copyright (C) 2019-2023, Xperience AI, all rights reserved.
 // SPDX-FileCopyrightText: Copyright (C) 2019-2022, Shenzhen Institute of Artificial Intelligence and Robotics for Society, all rights reserved.
 // SPDX-FileCopyrightText: Copyright (C) 2022-2023, Southern University of Science And Technology, all rights reserved.
+// SPDX-FileCopyrightText: Copyright (C) 2023-2025, OpenCV AI, all rights reserved.
 // SPDX-FileCopyrightText: Third party copyrights are property of their respective owners.
 //
 // SPDX-License-Identifier: Apache-2.0
+
+diff --git a/modules/core/src/copy.cpp b/modules/core/src/copy.cpp
+index 271858ad5b..ac09140ba3 100644
+--- a/modules/core/src/copy.cpp
++++ b/modules/core/src/copy.cpp
+@@ -1217,3 +1217,7 @@ void cv::copyMakeBorder( InputArray _src, OutputArray _dst, int top, int bottom,
+     borderType &= ~BORDER_ISOLATED;
+-
++
++    CALL_HAL(copyMakeBorder, cv_hal_copyMakeBorder, src.ptr(), src.step,
++             src.type(), src.cols, src.rows, dst.ptr(), dst.step,
++             top, bottom, left, right, borderType, value.val);
++
+     CV_IPP_RUN_FAST(ipp_copyMakeBorder(src, dst, top, bottom, left, right, borderType, value))
+diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
+index c573a97117..aabf4f7ba0 100644
+--- a/modules/core/src/hal_replacement.hpp
++++ b/modules/core/src/hal_replacement.hpp
+@@ -1149,6 +1149,27 @@ inline int hal_ni_copyToMasked(const uchar* src_data, size_t src_step, uchar* ds
+ #define cv_hal_copyToMasked hal_ni_copyToMasked
+ //! @endcond
+ 
++/**
++   @brief copyMakeBorder
++   @param src_data, src_step Source image after OpenCV ROI adjustment
++   @param src_type Type of source and destination images, for example CV_8UC1 or CV_32FC3
++   @param src_width, src_height Source dimensions after OpenCV ROI adjustment
++   @param dst_data, dst_step Destination image
++   @param top, bottom, left, right Border sizes after OpenCV ROI adjustment
++   @param border_type Border processing mode
++   @param border_value Border value in OpenCV Scalar(double[4]) form
++*/
++inline int hal_ni_copyMakeBorder(const uchar* src_data, size_t src_step, int src_type,
++                                 int src_width, int src_height,
++                                 uchar* dst_data, size_t dst_step,
++                                 int top, int bottom, int left, int right,
++                                 int border_type, const double border_value[4])
++{ return CV_HAL_ERROR_NOT_IMPLEMENTED; }
++
++//! @cond IGNORED
++#define cv_hal_copyMakeBorder hal_ni_copyMakeBorder
++//! @endcond
++
+ /**
+  @ brief sum
+  @param src_data Source image data

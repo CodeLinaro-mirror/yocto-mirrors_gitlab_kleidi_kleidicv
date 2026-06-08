@@ -4,14 +4,12 @@
 
 #include "kleidicv_hal.h"
 
-#include <algorithm>
+#include <array>
 #include <atomic>
 #include <cfloat>
 #include <cstddef>
-#include <cstdlib>
 #include <cstring>
 #include <limits>
-#include <memory>
 
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
@@ -110,12 +108,54 @@ static size_t get_type_size(int depth) {
 
 template <typename T>
 static std::array<T, KLEIDICV_MAXIMUM_CHANNEL_COUNT> get_border_value(
-    const double border_f64[4]) {
+    const double border_f64[4],
+    size_t channels = KLEIDICV_MAXIMUM_CHANNEL_COUNT, uchar *dst = nullptr) {
   std::array<T, KLEIDICV_MAXIMUM_CHANNEL_COUNT> result = {};
   for (int i = 0; i < 4; ++i) {
     result[i] = cv::saturate_cast<T>(border_f64[i]);
   }
+
+  if (dst != nullptr) {
+    const bool repeat_first_channel = channels > result.size();
+    for (size_t i = 0; i < channels; ++i) {
+      const T value = result[repeat_first_channel ? 0 : i];
+      std::memcpy(dst + i * sizeof(T), &value, sizeof(T));
+    }
+  }
+
   return result;
+}
+
+static int get_border_value(const double border_f64[4], int type,
+                            size_t channels, uchar *dst) {
+  switch (CV_MAT_DEPTH(type)) {
+    case CV_8U:
+      get_border_value<uint8_t>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    case CV_8S:
+      get_border_value<int8_t>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    case CV_16U:
+      get_border_value<uint16_t>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    case CV_16S:
+      get_border_value<int16_t>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    case CV_32S:
+      get_border_value<int32_t>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    case CV_16F:
+      get_border_value<float16_t>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    case CV_32F:
+      get_border_value<float>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    case CV_64F:
+      get_border_value<double>(border_f64, channels, dst);
+      return CV_HAL_ERROR_OK;
+    default:
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
 }
 
 static kleidicv_error_t parallel(kleidicv_thread_callback callback,
@@ -967,6 +1007,51 @@ int transpose(const uchar *src_data, size_t src_step, uchar *dst_data,
                 reinterpret_cast<void *>(dst_data), dst_step,
                 static_cast<size_t>(src_width), static_cast<size_t>(src_height),
                 static_cast<size_t>(element_size), get_multithreading()));
+}
+
+int add_padding_by_copy(const uchar *src_data, size_t src_step, int src_type,
+                        int src_width, int src_height, uchar *dst_data,
+                        size_t dst_step, int top, int bottom, int left,
+                        int right, int border_type,
+                        const double border_value[4]) {
+  kleidicv_border_type_t kleidicv_border_type;
+  if (from_opencv(border_type, kleidicv_border_type)) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  if (src_width < 0 || src_height < 0 || top < 0 || bottom < 0 || left < 0 ||
+      right < 0) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
+  const size_t element_size = CV_ELEM_SIZE(src_type);
+  const uchar *constant_pixel_ptr = nullptr;
+  std::array<uchar, KLEIDICV_MAXIMUM_TYPE_SIZE * KLEIDICV_MAXIMUM_CHANNEL_COUNT>
+      constant_pixel{};
+
+  if (kleidicv_border_type == KLEIDICV_BORDER_TYPE_CONSTANT) {
+    const size_t channels = static_cast<size_t>(CV_MAT_CN(src_type));
+    if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT &&
+        (border_value[0] != border_value[1] ||
+         border_value[0] != border_value[2] ||
+         border_value[0] != border_value[3])) {
+      return CV_HAL_ERROR_NOT_IMPLEMENTED;
+    }
+
+    const int border_value_error = get_border_value(
+        border_value, src_type, channels, constant_pixel.data());
+    if (border_value_error != CV_HAL_ERROR_OK) {
+      return border_value_error;
+    }
+    constant_pixel_ptr = constant_pixel.data();
+  }
+
+  return convert_error(kleidicv_thread_add_padding_by_copy(
+      src_data, src_step, dst_data, dst_step, static_cast<size_t>(src_width),
+      static_cast<size_t>(src_height), static_cast<size_t>(top),
+      static_cast<size_t>(bottom), static_cast<size_t>(left),
+      static_cast<size_t>(right), element_size, kleidicv_border_type,
+      constant_pixel_ptr, get_multithreading()));
 }
 
 int sum(const uchar *src_data, size_t src_step, int src_type, int width,
