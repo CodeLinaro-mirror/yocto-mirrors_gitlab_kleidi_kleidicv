@@ -587,41 +587,6 @@ AddPaddingByCopyIndexed<PixelSize, Backend>::process_stripe(
 // -----------------------------------------------------------------------------
 template <typename Operation>
 static AddPaddingByCopyOpPointer allocate_operation(
-    const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING;
-
-template <template <size_t> class Operation, size_t PixelSize>
-static AddPaddingByCopyOpPointer allocate_matching_pixel_size_operation(
-    const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING;
-
-template <template <size_t> class Operation>
-static AddPaddingByCopyOpPointer allocate_pixel_size_operation(
-    const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING {
-  // The factory passes a border strategy template here, for example
-  // ConstantBorder. Select the specialization that matches the runtime
-  // pixel_size, then allocate that concrete operation.
-  return allocate_matching_pixel_size_operation<Operation, 1>(parameters);
-}
-
-template <template <size_t> class Operation, size_t PixelSize>
-static AddPaddingByCopyOpPointer allocate_matching_pixel_size_operation(
-    const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING {
-  constexpr size_t kMaxPixelSize =
-      static_cast<size_t>(KLEIDICV_MAXIMUM_TYPE_SIZE) *
-      KLEIDICV_MAXIMUM_CHANNEL_COUNT;
-
-  if constexpr (PixelSize > kMaxPixelSize) {
-    return nullptr;
-  } else {
-    if (parameters.pixel_size == PixelSize) {
-      return allocate_operation<Operation<PixelSize>>(parameters);
-    }
-    return allocate_matching_pixel_size_operation<Operation, PixelSize + 1>(
-        parameters);
-  }
-}
-
-template <typename Operation>
-static AddPaddingByCopyOpPointer allocate_operation(
     const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING {
   // The allocation packs [operation object][size_t tables]. Align the table
   // start so vertical row maps and horizontal indices can be accessed as
@@ -642,6 +607,33 @@ static AddPaddingByCopyOpPointer allocate_operation(
   auto *state = new (allocation) Operation{parameters, storage};
 
   return AddPaddingByCopyOpPointer{static_cast<AddPaddingByCopyBase *>(state)};
+}
+
+template <template <size_t> class Operation, size_t PixelSize>
+static AddPaddingByCopyOpPointer allocate_matching_pixel_size_operation(
+    const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING {
+  constexpr size_t kMaxPixelSize =
+      static_cast<size_t>(KLEIDICV_MAXIMUM_TYPE_SIZE) *
+      KLEIDICV_MAXIMUM_CHANNEL_COUNT;
+
+  if constexpr (PixelSize > kMaxPixelSize) {
+    return nullptr;
+  } else {
+    if (parameters.pixel_size == PixelSize) {
+      return allocate_operation<Operation<PixelSize>>(parameters);
+    }
+    return allocate_matching_pixel_size_operation<Operation, PixelSize + 1>(
+        parameters);
+  }
+}
+
+template <template <size_t> class Operation>
+static AddPaddingByCopyOpPointer allocate_pixel_size_operation(
+    const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING {
+  // The factory passes a border strategy template here, for example
+  // ConstantBorder. Select the specialization that matches the runtime
+  // pixel_size, then allocate that concrete operation.
+  return allocate_matching_pixel_size_operation<Operation, 1>(parameters);
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
