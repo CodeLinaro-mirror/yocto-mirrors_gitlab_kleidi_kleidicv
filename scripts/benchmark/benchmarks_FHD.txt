@@ -13,6 +13,12 @@ ResizeDown2_8b_3ch:  opencv_perf_imgproc '*resizeDownLinearNonExact/*' '(8UC3, (
 ResizeDown3_8b:  opencv_perf_imgproc '*resizeDownLinearNonExact/*' '(8UC1, (1920x1080, 640x480))'
 ResizeDown3_8b_2ch:  opencv_perf_imgproc '*resizeDownLinearNonExact/*' '(8UC2, (1920x1080, 640x480))'
 ResizeDown3_8b_3ch:  opencv_perf_imgproc '*resizeDownLinearNonExact/*' '(8UC3, (1920x1080, 640x480))'
+ResizeUp1_8b_1ch:  opencv_perf_imgproc '*resizeUpLinearNonExact/*' '(8UC1, (1440x810, 1920x1080))'
+ResizeUp1_8b_2ch:  opencv_perf_imgproc '*resizeUpLinearNonExact/*' '(8UC2, (1200x675, 1920x1080))'
+ResizeUp1_8b_3ch:  opencv_perf_imgproc '*resizeUpLinearNonExact/*' '(8UC3, (1200x675, 1920x1080))'
+ResizeUp2_8b_1ch:  opencv_perf_imgproc '*resizeUpLinearNonExact/*' '(8UC1, (1840x1035, 1920x1080))'
+ResizeUp2_8b_2ch:  opencv_perf_imgproc '*resizeUpLinearNonExact/*' '(8UC2, (1840x1035, 1920x1080))'
+ResizeUp2_8b_3ch:  opencv_perf_imgproc '*resizeUpLinearNonExact/*' '(8UC3, (1840x1035, 1920x1080))'
 
 # 720p, not FHD but it's non-trivial to create FHD tests for optical flow and
 # the cost of creating a separate category for them outweighs the benefit.

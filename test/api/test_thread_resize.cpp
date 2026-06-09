@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "framework/array.h"
@@ -39,6 +38,48 @@ class ResizeThread : public testing::TestWithParam<P> {
       check<uint8_t>(kleidicv_resize_linear_u8,
                      kleidicv_thread_resize_linear_u8, thread_count, src_width,
                      src_height, channels, 4 * src_width, 4 * src_height);
+    }
+  }
+  void test_resize_u8_up_1_05() {
+    size_t test_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(test_width, src_height, thread_count, channels) = GetParam();
+    size_t src_width = 16 + test_width, dst_width = 21 * src_width / 20;
+    if (channels <= 1) {
+      check<uint8_t>(kleidicv_resize_linear_u8,
+                     kleidicv_thread_resize_linear_u8, thread_count, src_width,
+                     src_height, channels, dst_width, src_height + 1);
+    }
+  }
+  void test_resize_u8_up_1_05_vertical_down() {
+    size_t test_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(test_width, src_height, thread_count, channels) = GetParam();
+    size_t src_width = 16 + test_width, dst_width = 21 * src_width / 20;
+    if (channels <= 1) {
+      check<uint8_t>(kleidicv_resize_linear_u8,
+                     kleidicv_thread_resize_linear_u8, thread_count, src_width,
+                     src_height, channels, dst_width,
+                     std::max<size_t>(1, src_height - 1));
+    }
+  }
+  void test_resize_u8_up_1_6() {
+    size_t test_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(test_width, src_height, thread_count, channels) = GetParam();
+    size_t src_width = 16 + test_width, dst_width = 8 * src_width / 5;
+    if (channels <= 1) {
+      check<uint8_t>(kleidicv_resize_linear_u8,
+                     kleidicv_thread_resize_linear_u8, thread_count, src_width,
+                     src_height, channels, dst_width, src_height + 3);
+    }
+  }
+  void test_resize_u8_up_1_6_vertical_down() {
+    size_t test_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(test_width, src_height, thread_count, channels) = GetParam();
+    size_t src_width = 16 + test_width, dst_width = 8 * src_width / 5;
+    if (channels <= 1) {
+      check<uint8_t>(kleidicv_resize_linear_u8,
+                     kleidicv_thread_resize_linear_u8, thread_count, src_width,
+                     src_height, channels, dst_width,
+                     std::max<size_t>(4, src_height) - 3);
     }
   }
   void test_resize_u8_down2() {
@@ -134,6 +175,17 @@ TEST_P(ResizeThread, ResizeUint4x4) { test_resize_u8_4x4(); }
 TEST_P(ResizeThread, ResizeUintDown2) { test_resize_u8_down2(); }
 
 TEST_P(ResizeThread, ResizeUintDown3) { test_resize_u8_down3(); }
+
+TEST_P(ResizeThread, ResizeUintUp105) { test_resize_u8_up_1_05(); }
+
+TEST_P(ResizeThread, ResizeUintUp105Down) {
+  test_resize_u8_up_1_05_vertical_down();
+}
+TEST_P(ResizeThread, ResizeUintUp16) { test_resize_u8_up_1_6(); }
+
+TEST_P(ResizeThread, ResizeUintUp16Down) {
+  test_resize_u8_up_1_6_vertical_down();
+}
 
 TEST_P(ResizeThread, ResizeFloat2x2) { test_resize_f32_2x2(); }
 

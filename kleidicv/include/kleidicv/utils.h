@@ -40,16 +40,18 @@ static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
   return static_cast<DstType>(value);
 }
 
-// Saturating cast from unsigned to signed type.
-template <
-    typename SrcType, typename DstType,
-    std::enable_if_t<std::is_signed_v<DstType> && std::is_unsigned_v<SrcType>,
-                     bool> = true>
+// Saturating cast to signed type.
+template <typename SrcType, typename DstType,
+          std::enable_if_t<std::is_signed_v<DstType>, bool> = true>
 static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
-  DstType max_value = std::numeric_limits<DstType>::max();
+  if (value > static_cast<SrcType>(std::numeric_limits<DstType>::max())) {
+    return std::numeric_limits<DstType>::max();
+  }
 
-  if (value > static_cast<SrcType>(max_value)) {
-    return max_value;
+  if constexpr (std::is_signed_v<SrcType>) {
+    if (value < static_cast<SrcType>(std::numeric_limits<DstType>::min())) {
+      return std::numeric_limits<DstType>::min();
+    }
   }
 
   return static_cast<DstType>(value);

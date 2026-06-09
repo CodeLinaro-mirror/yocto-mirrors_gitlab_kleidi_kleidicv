@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstring>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "kleidicv/src/resize/resize_linear_generic_u8_neon.h"
@@ -16,43 +15,72 @@
 // the production namespace
 namespace kleidicv::neon::resize_linear_generic_u8 {
 
-template <size_t kRatio, size_t kChannels>
+template <size_t kRatio, size_t kChannels, bool kUpsize>
 static std::pair<std::vector<FullVectorInterpolationConstants>,
                  std::vector<HalfVectorInterpolationConstants>>
 reference_interpolation_constants(size_t src_width, size_t dst_width) {
-  auto to_src_x = [src_width, dst_width](uint64_t dx) {
-    return aligned_scale(dx, src_width, dst_width);
+  auto to_src_x = [src_width, dst_width](size_t dx) {
+    return aligned_scale(static_cast<int64_t>(dx),
+                         static_cast<int64_t>(src_width),
+                         static_cast<int64_t>(dst_width));
   };
 
   size_t two_x = 0;
   if ((src_width * kChannels) >= (kStep * kRatio)) {
     two_x = (dst_width * kChannels) / (kStep * 2);
   }
-  uint64_t dst_index = 0;
+  int64_t dst_index = 0;
   std::vector<FullVectorInterpolationConstants> full_result(two_x * 2);
   for (auto& constants : full_result) {
-    uint64_t dx = dst_index / kChannels;
-    uint64_t sx_base = to_src_x(dx);
+    int64_t dx = dst_index / kChannels;
+    int64_t sx_base = to_src_x(dx);
     ptrdiff_t src_element_base = static_cast<ptrdiff_t>(
-        ((sx_base >> kFixpBits) * kChannels) + (dst_index % kChannels));
+        (sx_base >> kFixpBits) * kChannels + (dst_index % kChannels));
 
     // Pullback if needed
-    if ((src_element_base + (kStep * kRatio)) > (src_width * kChannels)) {
-      src_element_base = (src_width * kChannels) - (kStep * kRatio);
-    }
+    ptrdiff_t max_src_base_index =
+        static_cast<ptrdiff_t>(src_width * kChannels) - kStep * kRatio;
+    src_element_base =
+        std::clamp<ptrdiff_t>(src_element_base, 0, max_src_base_index);
     constants.src_element_index = src_element_base;
 
     for (size_t i = 0; i < kStep; ++i, ++dst_index) {
       dx = dst_index / kChannels;
-      uint64_t sx = to_src_x(dx);
+      int64_t sx = to_src_x(dx);
       // Get the high half of the fractional part
-      constants.xfrac[i] = (sx & ((1 << kFixpBits) - 1)) >> (kFixpBits / 2);
+      constants.xfrac[i] = (sx & ((1 << kFixpBits) - 1)) >> (kFixpBits - 8);
 
       unsigned in_pixel_index = dst_index % kChannels;
-      ptrdiff_t src_index = static_cast<ptrdiff_t>(
-          ((sx >> kFixpBits) * kChannels) + in_pixel_index);
-      constants.idx0[i] = src_index - src_element_base;
-      constants.idx1[i] = static_cast<uint8_t>(constants.idx0[i] + kChannels);
+      int64_t sx0 = sx >> kFixpBits;
+      int64_t sx1 = sx0 + 1;
+      int64_t max_sx = static_cast<int64_t>(src_width - 1);
+      sx0 = std::clamp(sx0, int64_t{0}, max_sx);
+      sx1 = std::clamp(sx1, int64_t{0}, max_sx);
+      int64_t src_index0 =
+          static_cast<int64_t>((sx0 * kChannels) + in_pixel_index);
+      int64_t src_index1 =
+          static_cast<int64_t>((sx1 * kChannels) + in_pixel_index);
+      constants.idx0[i] =
+          saturating_cast<int64_t, int8_t>(src_index0 - src_element_base);
+      constants.idx1[i] =
+          saturating_cast<int64_t, int8_t>(src_index1 - src_element_base);
+    }
+
+    if constexpr (kChannels == 3) {
+      int8_t min_lane = static_cast<int8_t>(constants.idx0[0]);
+      min_lane = std::min(min_lane, static_cast<int8_t>(constants.idx0[1]));
+      min_lane = std::min(min_lane, static_cast<int8_t>(constants.idx0[2]));
+      ptrdiff_t final_base = std::clamp<ptrdiff_t>(src_element_base + min_lane,
+                                                   0, max_src_base_index);
+      int8_t adjustment = static_cast<int8_t>(final_base - src_element_base);
+
+      constants.src_element_index = final_base;
+      for (size_t i = 0; i < kStep; ++i) {
+        constants.idx0[i] =
+            static_cast<uint8_t>(constants.idx0[i] - adjustment);
+        constants.idx1[i] =
+            static_cast<uint8_t>(constants.idx1[i] - adjustment);
+      }
     }
   }
 
@@ -62,35 +90,46 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
   std::vector<HalfVectorInterpolationConstants> half_result(half);
   for (auto& constants : half_result) {
     // Pullback dst if needed
-    if ((dst_index + kHalfStep) > (dst_width * kChannels)) {
-      dst_index = (dst_width * kChannels) - kHalfStep;
-    }
+    dst_index = std::min(
+        dst_index, static_cast<int64_t>(dst_width * kChannels) - kHalfStep);
     constants.dst_element_index = static_cast<ptrdiff_t>(dst_index);
 
-    uint64_t dx = dst_index / kChannels;
-    uint64_t sx_base = to_src_x(dx);
-    ptrdiff_t src_element_base = static_cast<ptrdiff_t>(
-        ((sx_base >> kFixpBits) * kChannels) + (dst_index % kChannels));
+    int64_t dx = dst_index / kChannels;
+    int64_t sx_base_fixp = to_src_x(dx);
+    ptrdiff_t src_element_base_index =
+        static_cast<ptrdiff_t>(((sx_base_fixp >> kFixpBits) * kChannels) +
+                               (!kUpsize ? (dst_index % kChannels) : 0));
 
-    // Pullback src if needed
+    // Pullback / pull front src if needed
     size_t src_read_size =
-        (kChannels == 3) ? (kStep * 2) : (kStep * (kRatio - 1));
-    if ((src_element_base + src_read_size) > (src_width * kChannels)) {
-      src_element_base = (src_width * kChannels) - src_read_size;
-    }
-    constants.src_element_index = src_element_base;
+        kStep *
+        (!kUpsize && ((kRatio == 2 && kChannels == 3) || kRatio == 3) ? 2 : 1);
+    src_element_base_index = std::clamp<ptrdiff_t>(
+        src_element_base_index, 0,
+        static_cast<ptrdiff_t>(src_width * kChannels) - src_read_size);
+    constants.src_element_index = src_element_base_index;
 
     for (size_t i = 0; i < kHalfStep; ++i, ++dst_index) {
       dx = dst_index / kChannels;
-      uint64_t sx = to_src_x(dx);
+      int64_t sx_fixp = to_src_x(dx);
       // Get the high half of the fractional part
-      constants.xfrac[i] = (sx & ((1 << kFixpBits) - 1)) >> (kFixpBits / 2);
+      constants.xfrac[i] =
+          (sx_fixp & ((1 << kFixpBits) - 1)) >> (kFixpBits - 8);
 
       unsigned in_pixel_index = dst_index % kChannels;
-      ptrdiff_t src_index = static_cast<ptrdiff_t>(
-          ((sx >> kFixpBits) * kChannels) + in_pixel_index);
-      constants.idx0[i] = src_index - src_element_base;
-      constants.idx1[i] = static_cast<uint8_t>(constants.idx0[i] + kChannels);
+      ptrdiff_t sx0 = sx_fixp >> kFixpBits;
+      ptrdiff_t sx1 = sx0 + 1;
+      ptrdiff_t max_sx = static_cast<ptrdiff_t>(src_width - 1);
+      sx0 = std::clamp(sx0, ptrdiff_t{0}, max_sx);
+      sx1 = std::clamp(sx1, ptrdiff_t{0}, max_sx);
+      ptrdiff_t src_index0 =
+          static_cast<ptrdiff_t>((sx0 * kChannels) + in_pixel_index);
+      ptrdiff_t src_index1 =
+          static_cast<ptrdiff_t>((sx1 * kChannels) + in_pixel_index);
+      constants.idx0[i] =
+          saturating_cast<int64_t, int8_t>(src_index0 - src_element_base_index);
+      constants.idx1[i] =
+          saturating_cast<int64_t, int8_t>(src_index1 - src_element_base_index);
     }
   }
 
@@ -165,18 +204,24 @@ void compare_constants(ConstantsStruct* actual_array,
 
 template <size_t kChannels, size_t kSrcWidth, size_t kDstWidth>
 void generator_test(int xfrac_tolerance = 0) {
+  constexpr size_t kRatio =
+      kDstWidth > kSrcWidth && kDstWidth * 14 <= kSrcWidth * 15
+          ? 2
+          : (kSrcWidth / kDstWidth) + 1;
+  constexpr bool kUpsize = kDstWidth >= kSrcWidth;
+  static_assert(kRatio >= 1 && kRatio <= 3);
+
   double ratio = double{kSrcWidth} / double{kDstWidth};
-  ASSERT_TRUE(ratio > 1.0 && ratio < 3.0);
-  constexpr size_t kRatio = (kSrcWidth / kDstWidth) + 1;
+  ASSERT_TRUE(ratio > 0.0 && ratio < 3.0);
 
   // Reference
   auto [ref_full, ref_half] =
-      reference_interpolation_constants<kRatio, kChannels>(kSrcWidth,
-                                                           kDstWidth);
+      reference_interpolation_constants<kRatio, kChannels, kUpsize>(kSrcWidth,
+                                                                    kDstWidth);
 
   // Actual
-  RowInterpolationConstantsGenerator<kRatio, kChannels> generator{kSrcWidth,
-                                                                  kDstWidth};
+  RowInterpolationConstantsGenerator<kRatio, kChannels, kUpsize> generator{
+      kSrcWidth, kDstWidth};
   auto actual_variant = generator();
   auto* ptr = std::get_if<RowInterpolationConstants>(&actual_variant);
   ASSERT_NE(nullptr, ptr);
@@ -203,6 +248,14 @@ TEST(GenericResize_u8, rounding_div) {
   EXPECT_EQ(1, kleidicv::neon::resize_linear_generic_u8::rounding_div(4, 5));
 }
 
+TEST(GenericResize_u8_Generator, 1channel_r1_short) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<1, 16, 17>();
+}
+
+TEST(GenericResize_u8_Generator, 1channel_r1_short_big) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<1, 16, 23>();
+}
+
 TEST(GenericResize_u8_Generator, 1channel_r2_short) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<1, 29, 15>();
 }
@@ -217,6 +270,18 @@ TEST(GenericResize_u8_Generator, 1channel_r3_short) {
 
 TEST(GenericResize_u8_Generator, 1channel_r3_long) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<1, 49, 17>();
+}
+
+TEST(GenericResize_u8_Generator, 2channels_r1_short) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 9, 10>();
+}
+
+TEST(GenericResize_u8_Generator, 2channels_r1_short_big) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 9, 15>();
+}
+
+TEST(GenericResize_u8_Generator, 2channels_r1_mid) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 31, 32>();
 }
 
 TEST(GenericResize_u8_Generator, 2channels_two_x_only_no_pullback) {
@@ -245,6 +310,38 @@ TEST(GenericResize_u8_Generator, 2channels_r3_short) {
 
 TEST(GenericResize_u8_Generator, 3channels_half_only_with_pullback) {
   kleidicv::neon::resize_linear_generic_u8::generator_test<3, 11, 5>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_short_small) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 11, 12>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_short_big1) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 7, 11>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_short_big2) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 11, 17>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_short_big3) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 12, 23>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_short_big4) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 13, 23>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_mid1) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 23, 35>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_mid2) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 43, 71>();
+}
+
+TEST(GenericResize_u8_Generator, 3channels_r1_long) {
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 142, 283>(1);
 }
 
 TEST(GenericResize_u8_Generator, 3channels_r2_long) {

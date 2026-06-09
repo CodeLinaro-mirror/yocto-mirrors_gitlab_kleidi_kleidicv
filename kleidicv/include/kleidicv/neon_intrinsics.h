@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -474,6 +474,15 @@ static inline uint8x16_t vreinterpretq_u8(int32x4_t  vec) { return vreinterpretq
 static inline uint8x16_t vreinterpretq_u8(uint32x4_t vec) { return vreinterpretq_u8_u32(vec); }
 static inline uint8x16_t vreinterpretq_u8(int64x2_t  vec) { return vreinterpretq_u8_s64(vec); }
 static inline uint8x16_t vreinterpretq_u8(uint64x2_t vec) { return vreinterpretq_u8_u64(vec); }
+
+template <typename T>
+static inline int8x16x2_t vreinterpretq_s8_x2(T vec) { return __builtin_bit_cast(int8x16x2_t, vec); }
+
+template <typename T>
+static inline uint8x16x2_t vreinterpretq_u8_x2(T vec) { return __builtin_bit_cast(uint8x16x2_t, vec); }
+
+template <typename T>
+static inline int32x4x4_t vreinterpretq_s32_x4(T vec) { return __builtin_bit_cast(int32x4x4_t, vec); }
 
 static inline uint64x2_t vreinterpretq_u64(int8x16_t  vec) { return vreinterpretq_u64_s8(vec); }
 static inline uint64x2_t vreinterpretq_u64(uint8x16_t vec) { return vreinterpretq_u64_u8(vec); }

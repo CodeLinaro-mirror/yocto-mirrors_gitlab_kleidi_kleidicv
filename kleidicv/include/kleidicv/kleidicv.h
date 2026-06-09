@@ -109,6 +109,9 @@
 /// Maximum number of channels
 #define KLEIDICV_MAXIMUM_CHANNEL_COUNT (4)
 
+/// Maximum resize image width or height
+#define KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT ((1ULL << 24) - 1)
+
 /// Maximum LK optical-flow window dimension accepted by pyramid builders.
 ///
 /// The limit keeps internal stride/size arithmetic within range for supported
@@ -2391,20 +2394,19 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8_sme, const uint8_t *src,
 /// Resize image using linear interpolation.
 /// In-place operation not supported.
 ///
-/// Supported ratios:
-/// - 2x2 and 4x4 upsizing, and 8x8 for float data.
-/// - downsizing to any width ratio between 0.33 and 1.0 for uint8 data,
-///   height ratio can be anything between 0 and 1.0
-/// For other ratios KLEIDICV_ERROR_NOT_IMPLEMENTED is returned.
+/// Supported scaling factors:
+/// - float32 data: 2x2, 4x4, and 8x8 upsizing
+/// - uint8 data: down- and upsizing to any horizontal scaling factor between
+///   0.33 and infinity, vertical scaling factor can be anything
+/// For other ratios, KLEIDICV_ERROR_NOT_IMPLEMENTED is returned.
 ///
 /// Supported channels:
-/// - 1 channel for float data.
-/// - 1 channel for upsizing uint8 data.
-/// - 1, 2, or 3 channels for downsizing uint8 data between any width ratio of
-///   0.33 and 1.0, height ratio can be anything between 0 and 1.0.
+/// - float32 data: 1 channel only
+/// - uint8 data: 1, 2, or 3 channels for horizontal scaling factor between 0.33
+///   and infinity, vertical scaling factor can be anything
 ///
-/// Width and height of source and destination images must be less than
-/// (1 << 24), i.e. 16,777,216.
+/// Width and height of source and destination images must not exceed @ref
+/// KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT.
 ///
 /// \par Generic downsizing algorithm accuracy for uint8 data:
 /// For the best performance, 2-D linear interpolation uses 8-bit weights.
@@ -2454,12 +2456,14 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8_sme, const uint8_t *src,
 ///                     start of the next row for the source data.
 ///                     Must be a multiple of `sizeof(type)` and no less than
 ///                     `width * sizeof(type)`, except for single-row images.
-/// @param src_width    Number of elements in the source row. For downsizing,
-///                     `src_width * channels` must be at least 16 if the ratio
-///                     is between 1/2 and 1, and at least 32 if the ratio is
-///                     between 1/3 and 1/2. Must be less than (1 << 24).
+/// @param src_width    Number of elements in the source row. `src_width *
+///                     channels` must be at least 32 if the horizontal scaling
+///                     is below 1/2.8 and channels = 3, and at least 16 in
+///                     other cases. Must not exceed @ref
+///                     KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT.
 /// @param src_height   Number of rows in the source data.
-///                     Must be less than (1 << 24).
+///                     Must not exceed @ref
+///                     KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT.
 /// @param dst          Pointer to the destination data. Must be non-null.
 /// @param dst_stride   Distance in bytes from the start of one row to the
 ///                     start of the next row for the destination data.
@@ -2467,13 +2471,12 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8_sme, const uint8_t *src,
 ///                     `width * sizeof(type)`, except for single-row images.
 /// @param dst_width    Number of elements in the destination row.
 ///                     For downsizing, `dst_width * channels` must be at
-///                     least 8. For upsizing, it must be inline with the chosen
-///                     operation, for example `src_width * 2` in case of 2x2.
-///                     Must be less than (1 << 24).
+///                     least 8. For upsizing, it must be at least
+///                     `src_width`. Must not exceed @ref
+///                     KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT.
 /// @param dst_height   Number of rows in the destination data.
-///                     For upsizing, it must be inline with the chosen
-///                     operation, for example `src_height * 2` in case of 2x2.
-///                     Must be less than (1 << 24).
+///                     Must not exceed @ref
+///                     KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT.
 /// @param channels     Number of channels in the data. Must be no more than
 ///                     @ref KLEIDICV_MAXIMUM_CHANNEL_COUNT.
 ///

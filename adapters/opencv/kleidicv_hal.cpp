@@ -774,6 +774,11 @@ int resize(int src_type, const uchar *src_data, size_t src_step, int src_width,
     return CV_HAL_ERROR_NOT_IMPLEMENTED;
   }
 
+  // KleidiCV's performance is worse than other HALs for these cases
+  if (inv_scale_x > 1.4 && channels == 1 && cv::getNumThreads() == 1) {
+    return CV_HAL_ERROR_NOT_IMPLEMENTED;
+  }
+
   switch (CV_MAT_DEPTH(src_type)) {
     case CV_8U:
       return convert_error(kleidicv_thread_resize_linear_u8(

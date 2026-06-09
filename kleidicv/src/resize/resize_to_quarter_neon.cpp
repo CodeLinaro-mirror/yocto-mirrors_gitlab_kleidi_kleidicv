@@ -181,8 +181,7 @@ static kleidicv_error_t resize_to_quarter_u8_imp(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     uint8_t *dst, size_t dst_stride) {
   // When channels == 1, unroll twice
-  constexpr size_t kDstStep =
-      kVectorLength * (kChannels == 1 || kChannels == 4 ? 2 : kChannels);
+  constexpr size_t kDstStep = kVectorLength * (kChannels == 3 ? 3 : 2);
   constexpr size_t kSrcStep = 2 * kDstStep;
 
   LoopUnroll2 vertical_loop{src_height, /* Process two rows */ 2};
