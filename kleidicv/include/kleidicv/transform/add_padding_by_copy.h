@@ -226,6 +226,109 @@ class AddPaddingByCopyBase {
 
     return {body_begin, body_end};
   }
+
+  static inline ptrdiff_t positive_remainder(ptrdiff_t value, ptrdiff_t period)
+      KLEIDICV_STREAMING {
+    ptrdiff_t remainder = value % period;
+    if (remainder < 0) {
+      remainder += period;
+    }
+    return remainder;
+  }
+
+  static inline size_t wrap_index(ptrdiff_t position,
+                                  size_t length) KLEIDICV_STREAMING {
+    const ptrdiff_t signed_length = static_cast<ptrdiff_t>(length);
+    return static_cast<size_t>(positive_remainder(position, signed_length));
+  }
+
+  static inline size_t reflect_index(ptrdiff_t position,
+                                     size_t length) KLEIDICV_STREAMING {
+    if (length == 1) {
+      return 0;
+    }
+
+    const ptrdiff_t period = static_cast<ptrdiff_t>(length << 1);
+    ptrdiff_t reflected = positive_remainder(position, period);
+    if (reflected >= static_cast<ptrdiff_t>(length)) {
+      reflected = period - reflected - 1;
+    }
+    return static_cast<size_t>(reflected);
+  }
+
+  static inline size_t reverse_index(ptrdiff_t position,
+                                     size_t length) KLEIDICV_STREAMING {
+    if (length == 1) {
+      return 0;
+    }
+
+    const ptrdiff_t period = static_cast<ptrdiff_t>((length - 1) << 1);
+    ptrdiff_t reflected = positive_remainder(position, period);
+    if (reflected >= static_cast<ptrdiff_t>(length)) {
+      reflected = period - reflected;
+    }
+    return static_cast<size_t>(reflected);
+  }
+
+  template <auto MapIndex>
+  static void build_coordinate_sequence(size_t *generated_indices, size_t count,
+                                        ptrdiff_t start,
+                                        size_t length) KLEIDICV_STREAMING {
+    for (size_t i = 0; i < count; ++i) {
+      generated_indices[i] =
+          MapIndex(start + static_cast<ptrdiff_t>(i), length);
+    }
+  }
+
+  template <auto MapIndex>
+  static void build_vertical_border_rows(size_t *generated_top_rows,
+                                         size_t top_padding,
+                                         size_t *generated_bottom_rows,
+                                         size_t bottom_padding,
+                                         size_t height) KLEIDICV_STREAMING {
+    build_coordinate_sequence<MapIndex>(generated_top_rows, top_padding,
+                                        -static_cast<ptrdiff_t>(top_padding),
+                                        height);
+    build_coordinate_sequence<MapIndex>(generated_bottom_rows, bottom_padding,
+                                        static_cast<ptrdiff_t>(height), height);
+  }
+
+  template <auto MapIndex>
+  static void build_horizontal_border_indices(size_t *generated_border_indices,
+                                              size_t left, size_t right,
+                                              size_t width) KLEIDICV_STREAMING {
+    build_coordinate_sequence<MapIndex>(generated_border_indices, left,
+                                        -static_cast<ptrdiff_t>(left), width);
+    build_coordinate_sequence<MapIndex>(generated_border_indices + left, right,
+                                        static_cast<ptrdiff_t>(width), width);
+  }
+
+  template <typename FillRow>
+  void process_vertical_mapped_stripe(
+      size_t body_begin, size_t body_end, const size_t *top_rows,
+      const size_t *bottom_rows, size_t dst_y_begin, size_t dst_y_end,
+      FillRow fill_row) const KLEIDICV_STREAMING {
+    uint8_t *dst_row = dst_ + dst_y_begin * dst_stride_;
+
+    for (size_t dst_y = dst_y_begin; dst_y < body_begin;
+         ++dst_y, dst_row += dst_stride_) {
+      fill_row(src_ + top_rows[dst_y] * src_stride_, dst_row);
+    }
+
+    if (body_begin < body_end) {
+      const uint8_t *src_row = src_ + (body_begin - top_padding_) * src_stride_;
+      for (size_t dst_y = body_begin; dst_y < body_end;
+           ++dst_y, dst_row += dst_stride_, src_row += src_stride_) {
+        fill_row(src_row, dst_row);
+      }
+    }
+
+    const size_t bottom_base = top_padding_ + src_height_;
+    for (size_t dst_y = body_end; dst_y < dst_y_end;
+         ++dst_y, dst_row += dst_stride_) {
+      fill_row(src_ + bottom_rows[dst_y - bottom_base] * src_stride_, dst_row);
+    }
+  }
 };
 
 struct AddPaddingByCopyBaseDeleter {
