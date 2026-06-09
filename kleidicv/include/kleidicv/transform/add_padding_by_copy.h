@@ -164,6 +164,10 @@ struct AddPaddingByCopyParameters {
 // Base operation class
 class AddPaddingByCopyBase {
  public:
+  virtual kleidicv_error_t process_stripe(size_t dst_y_begin,
+                                          size_t dst_y_end) const = 0;
+
+ protected:
   explicit AddPaddingByCopyBase(const AddPaddingByCopyParameters &parameters)
       KLEIDICV_STREAMING
       : src_{parameters.src},
@@ -188,9 +192,6 @@ class AddPaddingByCopyBase {
         right_offset_{(parameters.left_padding + parameters.src_width) *
                       parameters.pixel_size} {}
 
-  virtual kleidicv_error_t process_stripe(size_t dst_y_begin,
-                                          size_t dst_y_end) const = 0;
-
   const uint8_t *const src_;
   uint8_t *const dst_;
   const size_t src_stride_;
@@ -210,7 +211,6 @@ class AddPaddingByCopyBase {
   const size_t inner_offset_;
   const size_t right_offset_;
 
- protected:
   ~AddPaddingByCopyBase() = default;
 
   // Intersect a destination stripe with the source-backed body rows.
