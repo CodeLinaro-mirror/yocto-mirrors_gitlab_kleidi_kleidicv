@@ -155,16 +155,20 @@ Resize operations.
 
 Resize operations using linear interpolation.
 
-|                                        | u8  | f32 |
-|----------------------------------------|-----|-----|
-| 2x2 (1 channel)                        |  x  |  x  |
-| 4x4 (1 channel)                        |  x  |  x  |
-| 8x8 (1 channel)                        |     |  x  |
-| Downsize 1/3 to 1 (1, 2 or 3 channels) |  x  |     |
-| Downsize to 0.5x0.5 (4 channels)       |  x  |     |
+Float32 data:
+* 1-channel 2x2, 4x4 and 8x8 upsize
 
-Note: For the linear downsize, width ratio is limited to 0.33 - 1.0, but
-height ratio can be anything between 0.0 and 1.0.
+Uint8 data:
+| Channels                               | 1 | 2 | 3 | 4 |
+|----------------------------------------|---|---|---|---|
+| Downsize 1/3 to 1                      | x | x | x |   |
+| Downsize 0.5x0.5                       | x | x | x | x |
+| Upsize                                 | x | x | x |   |
+
+Note: For uint8 downsize and upsize, table specifies horizontal scaling. Vertical scaling factor is independent, it can be anything, even vertical upsizing is supported when the horizontal dimension is downsized, and vice versa.
+
+Note: For the linear upsize, horizontal scaling factor practically has no limit, but for
+bigger factors the performance is worse.
 
 ## Transform
 

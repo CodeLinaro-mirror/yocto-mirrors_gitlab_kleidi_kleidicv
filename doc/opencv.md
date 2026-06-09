@@ -382,14 +382,18 @@ Notes on parameters:
 | `CV_8UC2`  | `INTER_AREA`  |        0.5x0.5         |
 | `CV_8UC3`  | `INTER_AREA`  |        0.5x0.5         |
 | `CV_8UC4`  | `INTER_AREA`  |        0.5x0.5         |
-| `CV_8UC1`  |`INTER_LINEAR` |  0.33 - 1.0, 2x2, 4x4  |
-| `CV_8UC2`  |`INTER_LINEAR` |      0.33 - 1.0        |
-| `CV_8UC3`  |`INTER_LINEAR` |      0.33 - 1.0        |
+| `CV_8UC1`  |`INTER_LINEAR` | 0.33 - 1.4, 2x2, 4x4   |
+| `CV_8UC2`  |`INTER_LINEAR` |      0.33 - infinity   |
+| `CV_8UC3`  |`INTER_LINEAR` |      0.33 - infinity   |
 | `CV_8UC4`  |`INTER_LINEAR` |        0.5x0.5         |
 | `CV_32FC1` |`INTER_LINEAR` |     2x2, 4x4, 8x8      |
 
-Note: For the generic linear resize, width ratio is limited to 0.33 - 1.0, but
-height ratio can be anything between 0.0 and 1.0.
+Note: For single-channel (CV_8UC1) upscaling in single-threaded mode, KleidiCV
+is disabled when the horizontal scaling factor exceeds 1.4 and the scaling is
+not exactly 2x2 or 4x4. All other supported configurations use KleidiCV.
+
+Note: For the generic linear resize, horizontal scaling factor is limited to
+0.33 - infinity, but vertical scaling factor can be anything.
 
 #### [`cv::pyrDown()`](https://docs.opencv.org/4.10.0/d4/d86/group__imgproc__filter.html#gaf9bba239dfca11654cb7f50f889fc2ff)
 Blurs and downsamples an image.

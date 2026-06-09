@@ -810,7 +810,10 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (dst_height > src_height) {
+  // Specialized upscale operations iterate by source rows
+  if (((dst_width == src_width * 2 && dst_height == src_height * 2) ||
+       (dst_width == src_width * 4 && dst_height == src_height * 4)) &&
+      channels == 1) {
     auto callback = [=](unsigned y_begin, unsigned y_end) {
       return kleidicv::resize_linear_stripe_u8<false>(
           src, src_stride, src_width, src_height, y_begin,
@@ -819,6 +822,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
     };
     return parallel_batches(callback, mt, std::max<size_t>(1, src_height - 1));
   }
+  // Others iterate by destination rows
   auto callback = [=](unsigned y_begin, unsigned y_end) {
     return kleidicv::resize_linear_stripe_u8<false>(
         src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,

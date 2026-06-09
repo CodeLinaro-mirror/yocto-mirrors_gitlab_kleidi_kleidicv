@@ -5,6 +5,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -152,7 +153,7 @@ static void resize_linear_unaccelerated_generic_upscale(
 }
 
 template <typename T>
-static void resize_linear_unaccelerated_generic_downscale(
+static void resize_linear_unaccelerated_generic(
     const T *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t channels, T *dst, size_t dst_stride, size_t dst_width,
     size_t dst_height) {
@@ -164,32 +165,38 @@ static void resize_linear_unaccelerated_generic_downscale(
       static_cast<double>(src_height) / static_cast<double>(dst_height);
 
   for (size_t dst_y = 0; dst_y < dst_height; ++dst_y) {
-    // Adding and subtracting 0.5 is needed to keep the image center aligned
+    // Map destination pixel centers back into the source image and clamp to
+    // edge pixels, so the same reference works for both upscales and
+    // downscales.
     double src_y =
         (static_cast<double>(dst_y) + 0.5F) * inv_scale_height - 0.5F;
-    // Truncate (take the integer part)
-    uint32_t usy = static_cast<uint32_t>(src_y);
-    const T *src_row0 = src + src_stride * usy;
-    const T *src_row1 = src_row0 + src_stride;
-    double yfrac = src_y - static_cast<double>(usy);
+    ptrdiff_t sy0 = static_cast<ptrdiff_t>(std::floor(src_y));
+    ptrdiff_t sy1 = sy0 + 1;
+    double yfrac = src_y - static_cast<double>(sy0);
+    sy0 = std::clamp<ptrdiff_t>(sy0, 0, static_cast<ptrdiff_t>(src_height) - 1);
+    sy1 = std::clamp<ptrdiff_t>(sy1, 0, static_cast<ptrdiff_t>(src_height) - 1);
+    const T *src_row0 = src + src_stride * sy0;
+    const T *src_row1 = src + src_stride * sy1;
     T *dst_row = dst + dst_stride * dst_y;
     for (ptrdiff_t dx = 0; dx < static_cast<ptrdiff_t>(dst_width); ++dx) {
       for (ptrdiff_t ch = 0; ch < static_cast<ptrdiff_t>(channels); ++ch) {
-        // Adding and subtracting 0.5 is needed to keep the image center aligned
         double sx = (static_cast<double>(dx) + 0.5F) * inv_scale_width - 0.5F;
-        ptrdiff_t usx = static_cast<ptrdiff_t>(sx);
-        double xfrac = sx - std::floor(sx);
+        ptrdiff_t sx0 = static_cast<ptrdiff_t>(std::floor(sx));
+        ptrdiff_t sx1 = sx0 + 1;
+        double xfrac = sx - static_cast<double>(sx0);
+        sx0 = std::clamp<ptrdiff_t>(sx0, 0,
+                                    static_cast<ptrdiff_t>(src_width) - 1);
+        sx1 = std::clamp<ptrdiff_t>(sx1, 0,
+                                    static_cast<ptrdiff_t>(src_width) - 1);
         double nxfrac = 1.0F - xfrac;
         double nyfrac = 1.0F - yfrac;
         dst_row[dx * channels + ch] = static_cast<T>(lroundf(
             nyfrac *
-                (nxfrac * static_cast<double>(src_row0[usx * channels + ch]) +
-                 xfrac *
-                     static_cast<double>(src_row0[(usx + 1) * channels + ch])) +
+                (nxfrac * static_cast<double>(src_row0[sx0 * channels + ch]) +
+                 xfrac * static_cast<double>(src_row0[sx1 * channels + ch])) +
             yfrac *
-                (nxfrac * static_cast<double>(src_row1[usx * channels + ch]) +
-                 xfrac * static_cast<double>(
-                             src_row1[(usx + 1) * channels + ch]))));
+                (nxfrac * static_cast<double>(src_row1[sx0 * channels + ch]) +
+                 xfrac * static_cast<double>(src_row1[sx1 * channels + ch]))));
       }
     }
   }
@@ -209,9 +216,9 @@ static void resize_linear_unaccelerated(const T *src, size_t src_stride,
                                                 src_height, dst, dst_stride,
                                                 dst_width, dst_height);
   } else {
-    resize_linear_unaccelerated_generic_downscale(
-        src, src_stride, src_width, src_height, channels, dst, dst_stride,
-        dst_width, dst_height);
+    resize_linear_unaccelerated_generic(src, src_stride, src_width, src_height,
+                                        channels, dst, dst_stride, dst_width,
+                                        dst_height);
   }
 }
 
@@ -275,48 +282,101 @@ TYPED_TEST(ResizeLinear, NotImplemented) {
     return sizeof(Elem) * width * channels;
   };
 
+  // 2x1 upsize is not supported for very small images
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(1), 1, 1, dst.data(),
                                    dst_stride(2), 2, 1, channels));
+  // 1x2 upsize is not supported for very small images
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(1), 1, 1, dst.data(),
                                    dst_stride(1), 1, 2, channels));
+  // 4x2 upsize is not supported for very small images
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(1), 1, 1, dst.data(),
                                    dst_stride(4), 4, 2, channels));
+  // 2x4 upsize is not supported for very small images
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(1), 1, 1, dst.data(),
                                    dst_stride(2), 2, 4, channels));
+  // 8x4 upsize is not supported for very small images
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(1), 1, 1, dst.data(),
                                    dst_stride(8), 8, 4, channels));
+  // 4x8 upsize is not supported for very small images
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(1), 1, 1, dst.data(),
                                    dst_stride(4), 4, 8, channels));
+  // dst_width is too small
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(16), 16, 4,
                                    dst.data(), dst_stride(7 / channels),
                                    7 / channels, 3, channels));
+  // src_width is too small
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(15 / channels),
                                    15 / channels, 4, dst.data(),
                                    dst_stride(111 / channels), 11 / channels, 3,
                                    channels));
+  // dst_width is too small for 1/3 downsize
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_resize_linear(src.data(), src_stride(31 / channels),
                                    31 / channels, 4, dst.data(),
                                    dst_stride(11 / channels), 11 / channels, 3,
                                    channels));
-  // Same dst height as src height
-  EXPECT_EQ(
-      KLEIDICV_ERROR_NOT_IMPLEMENTED,
-      kleidicv_resize_linear(src.data(), src_stride(31), 31, 1, dst.data(),
-                             dst_stride(11), 11, 1, channels));
-  // Too big ratio
+  // horizontal scaling factor is below 1/3
   EXPECT_EQ(
       KLEIDICV_ERROR_NOT_IMPLEMENTED,
       kleidicv_resize_linear(src.data(), src_stride(35), 35, 3, dst.data(),
                              dst_stride(11), 11, 2, channels));
+
+  constexpr size_t min_dst = (8 + channels - 1) / channels;
+  constexpr size_t min_r2 =
+      ((channels == 3 ? 32 : 16) + channels - 1) / channels;
+  constexpr size_t min_r3 = (32 + channels - 1) / channels;
+  constexpr size_t min_up = (16 + channels - 1) / channels;
+
+  // Source width is one below the 1/2..1 downsize minimum.
+  const size_t r2_src = min_r2 - 1;
+  const size_t r2_dst = std::max(min_dst, (r2_src + 1) / 2);
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(src.data(), src_stride(r2_src), r2_src, 4,
+                                   dst.data(), dst_stride(r2_dst), r2_dst, 3,
+                                   channels));
+  // Destination width is one below the 1/2..1 downsize minimum.
+  const size_t r2_low_dst = min_dst - 1;
+  const size_t r2_pair_src = r2_low_dst + 1;
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(
+                src.data(), src_stride(r2_pair_src), r2_pair_src, 4, dst.data(),
+                dst_stride(r2_low_dst), r2_low_dst, 3, channels));
+  // Source width is one below the 1/3..1/2 downsize minimum.
+  const size_t r3_src = min_r3 - 1;
+  const size_t r3_dst = std::max(min_dst, (r3_src + 2) / 3);
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(src.data(), src_stride(r3_src), r3_src, 4,
+                                   dst.data(), dst_stride(r3_dst), r3_dst, 3,
+                                   channels));
+  // Destination width is one below the 1/3..1/2 downsize minimum.
+  const size_t r3_low_dst = min_dst - 1;
+  const size_t r3_pair_src = 2 * r3_low_dst + 1;
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(
+                src.data(), src_stride(r3_pair_src), r3_pair_src, 4, dst.data(),
+                dst_stride(r3_low_dst), r3_low_dst, 3, channels));
+  // Source width is one below the 1x..1.4x upsize minimum.
+  const size_t up_src = min_up - 1;
+  const size_t up_dst = min_up;
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(src.data(), src_stride(up_src), up_src, 4,
+                                   dst.data(), dst_stride(up_dst), up_dst, 5,
+                                   channels));
+  // Destination width is one below the 1x..1.4x upsize minimum.
+  const size_t up_low_dst = min_up - 1;
+  const size_t up_pair_src = (up_low_dst * 5 + 6) / 7;
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_resize_linear(
+                src.data(), src_stride(up_pair_src), up_pair_src, 4, dst.data(),
+                dst_stride(up_low_dst), up_low_dst, 5, channels));
 }
 
 TYPED_TEST(ResizeLinear, InvalidImageSize) {
@@ -388,13 +448,13 @@ static uint8_t kleidicv_resize_linear_u8_accuracy(size_t src_width,
                                                   size_t src_height,
                                                   size_t dst_width,
                                                   size_t dst_height) {
-  (void)src_height;
-  (void)dst_height;
-  if (dst_width < src_width) {
-    return 2;
+  if ((dst_width == 2 * src_width && dst_height == 2 * src_height) ||
+      (dst_width == 4 * src_width && dst_height == 4 * src_height) ||
+      (2 * dst_width == src_width && 2 * dst_height == src_height)) {
+    return 0;
   }
 
-  return 0;
+  return 2;
 }
 
 template <typename T, bool kPadding = true>
@@ -440,7 +500,7 @@ static void do_large_dimensions_test(size_t src_width, size_t src_height,
       EXPECT_THAT(actual, ::testing::Pointwise(FloatSimilar(2e-6F), expected))
           << "Row #" << y;
     } else {
-      EXPECT_THAT(actual,
+      ASSERT_THAT(actual,
                   ::testing::Pointwise(
                       IntSimilar<T>(kleidicv_resize_linear_u8_accuracy(
                           src_width, src_height, dst_width, dst_height)),
@@ -453,47 +513,47 @@ static void do_large_dimensions_test(size_t src_width, size_t src_height,
 template <typename T>
 static void cross_pattern_test(size_t src_width, size_t src_height,
                                size_t dst_width, size_t dst_height,
-                               size_t channels = 1) {
-  size_t src_stride_pixels = src_width * channels + 6;
-  size_t dst_stride_pixels = dst_width * channels + 3;
+                               size_t channels = 1, size_t incr = 10) {
+  size_t src_stride_elements = src_width * channels + 6;
+  size_t dst_stride_elements = dst_width * channels + 3;
 
   std::vector<T> src, dst, expected_data;
-  src.resize(src_stride_pixels * src_height, 0xFF);
-  dst.resize(dst_stride_pixels * dst_height);
-  expected_data.resize(dst_stride_pixels * dst_height);
+  src.resize(src_stride_elements * src_height, 0xFF);
+  dst.resize(dst_stride_elements * dst_height);
+  expected_data.resize(dst_stride_elements * dst_height);
   for (size_t y = 0; y < src_height; ++y) {
-    for (size_t x = 10; x < src_width; x += 10) {
+    for (size_t x = incr; x < src_width; x += incr) {
       for (size_t ch = 0; ch < channels; ++ch) {
-        src[y * src_stride_pixels + x * channels + ch] = 0;
+        src[y * src_stride_elements + x * channels + ch] = 0;
       }
     }
   }
-  for (size_t y = 10; y < src_height; y += 10) {
+  for (size_t y = incr; y < src_height; y += incr) {
     for (size_t x = 0; x < src_width; ++x) {
       for (size_t ch = 0; ch < channels; ++ch) {
-        src[y * src_stride_pixels + x * channels + ch] = 0;
+        src[y * src_stride_elements + x * channels + ch] = 0;
       }
     }
   }
   resize_linear_unaccelerated(
-      src.data(), src_stride_pixels * sizeof(T), src_width, src_height,
-      channels, expected_data.data(), dst_stride_pixels * sizeof(T), dst_width,
-      dst_height);
+      src.data(), src_stride_elements * sizeof(T), src_width, src_height,
+      channels, expected_data.data(), dst_stride_elements * sizeof(T),
+      dst_width, dst_height);
   ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_resize_linear(src.data(), src_stride_pixels * sizeof(T),
+            kleidicv_resize_linear(src.data(), src_stride_elements * sizeof(T),
                                    src_width, src_height, dst.data(),
-                                   dst_stride_pixels * sizeof(T), dst_width,
+                                   dst_stride_elements * sizeof(T), dst_width,
                                    dst_height, channels));
 
   for (size_t y = 0; y < dst_height; ++y) {
     std::vector<typename PrintTypeGetter<T>::type> actual{
-        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels),
-        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels +
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_elements),
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_elements +
                                              dst_width * channels)},
         expected{expected_data.begin() +
-                     static_cast<ptrdiff_t>(y * dst_stride_pixels),
+                     static_cast<ptrdiff_t>(y * dst_stride_elements),
                  expected_data.begin() +
-                     static_cast<ptrdiff_t>(y * dst_stride_pixels +
+                     static_cast<ptrdiff_t>(y * dst_stride_elements +
                                             dst_width * channels)};
     if constexpr (std::is_floating_point_v<T>) {
       EXPECT_THAT(actual, ::testing::Pointwise(FloatSimilar(2e-6F), expected))
@@ -513,38 +573,38 @@ template <typename T>
 static void checkerboard_pattern_test(size_t src_width, size_t src_height,
                                       size_t dst_width, size_t dst_height,
                                       size_t channels = 1) {
-  size_t src_stride_pixels = src_width * channels + 6;
-  size_t dst_stride_pixels = dst_width * channels + 3;
+  size_t src_stride_elements = src_width * channels + 6;
+  size_t dst_stride_elements = dst_width * channels + 3;
 
   std::vector<T> src, dst, expected_data;
-  src.resize(src_stride_pixels * src_height, 0xFF);
-  dst.resize(dst_stride_pixels * dst_height);
-  expected_data.resize(dst_stride_pixels * dst_height);
+  src.resize(src_stride_elements * src_height, 0xFF);
+  dst.resize(dst_stride_elements * dst_height);
+  expected_data.resize(dst_stride_elements * dst_height);
   for (size_t y = 0; y < src_height; ++y) {
     for (size_t x = y % 2; x < src_width; x += 2) {
       for (size_t ch = 0; ch < channels; ++ch) {
-        src[y * src_stride_pixels + x * channels + ch] = 0;
+        src[y * src_stride_elements + x * channels + ch] = 0;
       }
     }
   }
   resize_linear_unaccelerated(
-      src.data(), src_stride_pixels * sizeof(T), src_width, src_height,
-      channels, expected_data.data(), dst_stride_pixels * sizeof(T), dst_width,
-      dst_height);
+      src.data(), src_stride_elements * sizeof(T), src_width, src_height,
+      channels, expected_data.data(), dst_stride_elements * sizeof(T),
+      dst_width, dst_height);
   ASSERT_EQ(KLEIDICV_OK,
-            kleidicv_resize_linear(src.data(), src_stride_pixels * sizeof(T),
+            kleidicv_resize_linear(src.data(), src_stride_elements * sizeof(T),
                                    src_width, src_height, dst.data(),
-                                   dst_stride_pixels * sizeof(T), dst_width,
+                                   dst_stride_elements * sizeof(T), dst_width,
                                    dst_height, channels));
   for (size_t y = 0; y < dst_height; ++y) {
     std::vector<typename PrintTypeGetter<T>::type> actual{
-        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels),
-        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_pixels +
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_elements),
+        dst.begin() + static_cast<ptrdiff_t>(y * dst_stride_elements +
                                              dst_width * channels)},
         expected{expected_data.begin() +
-                     static_cast<ptrdiff_t>(y * dst_stride_pixels),
+                     static_cast<ptrdiff_t>(y * dst_stride_elements),
                  expected_data.begin() +
-                     static_cast<ptrdiff_t>(y * dst_stride_pixels +
+                     static_cast<ptrdiff_t>(y * dst_stride_elements +
                                             dst_width * channels)};
     if constexpr (std::is_floating_point_v<T>) {
       EXPECT_THAT(actual, ::testing::Pointwise(FloatSimilar(2e-6F), expected))
@@ -584,6 +644,16 @@ class ResizeLinearU8 : public testing::TestWithParam<size_t> {};
 
 INSTANTIATE_TEST_SUITE_P(ResizeLinear, ResizeLinearU8,
                          testing::Values(1, 2, 3));
+
+TEST_P(ResizeLinearU8, LargeDimensionsUpsizeSmall) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(1987, 3, 2097, 5, channels);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsUpsizeBig) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(1400, 3, 2097, 5, channels);
+}
 
 TEST_P(ResizeLinearU8, LargeDimensionsGeneric2) {
   size_t channels = GetParam();
@@ -629,7 +699,28 @@ TEST_P(ResizeLinearU8, LargeDimensionsToOneThird) {
   do_large_dimensions_test<uint8_t>(2688, 7, 904, 2, channels);
 }
 
-TEST_P(ResizeLinearU8, LargeDimensionsGenericTiny2) {
+TEST_P(ResizeLinearU8, GenericUpsizeTiny1) {
+  size_t channels = GetParam();
+  size_t src_width = (16 + channels - 1) / channels;
+  size_t dst_width = src_width + 1;
+  do_large_dimensions_test<uint8_t>(src_width, 3, dst_width, 5, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsizeTiny2) {
+  size_t channels = GetParam();
+  size_t src_width = (16 + channels - 1) / channels;
+  size_t dst_width = (src_width * 3 + 1) / 2;
+  do_large_dimensions_test<uint8_t>(src_width, 3, dst_width, 4, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsizeTiny3) {
+  size_t channels = GetParam();
+  size_t src_width = (21 + channels - 1) / channels;
+  size_t dst_width = (33 + channels - 1) / channels;
+  do_large_dimensions_test<uint8_t>(src_width, 2, dst_width, 3, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericDownsizeTiny2) {
   size_t channels = GetParam();
   size_t src_width{}, dst_width{};
   if (channels == 3) {
@@ -642,21 +733,71 @@ TEST_P(ResizeLinearU8, LargeDimensionsGenericTiny2) {
   do_large_dimensions_test<uint8_t>(src_width, 4, dst_width, 3, channels);
 }
 
-TEST_P(ResizeLinearU8, LargeDimensionsGenericTiny3) {
+TEST_P(ResizeLinearU8, GenericDownsizeTiny3) {
   size_t channels = GetParam();
   size_t src_width = (32 + channels - 1) / channels;
   size_t dst_width = (12 + channels - 1) / channels;
   do_large_dimensions_test<uint8_t>(src_width, 3, dst_width, 2, channels);
 }
 
-TEST_P(ResizeLinearU8, LargeDimensionsGenericSmall3) {
+TEST_P(ResizeLinearU8, GenericUpsizeSmall) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(43, 11, 47, 19, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsizeSmallVerticalDown) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(43, 11, 47, 8, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsize2x1p5) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(17, 2, 34, 3, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsize1p5x4p3) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(23, 3, 35, 4, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsize4x7r3) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(19, 3, 76, 7, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsizeBigger) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(43, 11, 71, 19, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsizeBiggerVerticalDown) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(43, 11, 71, 7, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericUpsizeBiggerVerticalDownCheckerboard) {
+  size_t channels = GetParam();
+  checkerboard_pattern_test<uint8_t>(40, 14, 51, 10, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericDownsize2) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(66, 19, 37, 13, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericDownsize2VerticalUp) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(66, 7, 37, 13, channels);
+}
+
+TEST_P(ResizeLinearU8, GenericDownsizeSmall3) {
   size_t channels = GetParam();
   size_t src_width = 72 / channels;
   size_t dst_width = 24 / channels;
   do_large_dimensions_test<uint8_t>(src_width, 4, dst_width, 3, channels);
 }
 
-TEST_P(ResizeLinearU8, LargeDimensionsGenericTail3) {
+TEST_P(ResizeLinearU8, GenericDownsizeTail3) {
   size_t channels = GetParam();
   size_t dst_width = 18 / channels;
   size_t src_width = 3 * dst_width;
@@ -664,32 +805,37 @@ TEST_P(ResizeLinearU8, LargeDimensionsGenericTail3) {
                                            channels);
 }
 
-TEST_P(ResizeLinearU8, LargeDimensionsGenericSmaller2) {
-  size_t channels = GetParam();
-  do_large_dimensions_test<uint8_t>(66, 19, 37, 13, channels);
-}
-
-TEST_P(ResizeLinearU8, LargeDimensionsGenericSmaller3) {
+TEST_P(ResizeLinearU8, GenericDownsize3) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t>(203, 29, 101, 13, channels);
 }
 
-TEST_P(ResizeLinearU8, CrossPattern06) {
+TEST_P(ResizeLinearU8, GenericDownsize3VerticalUp) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(203, 11, 101, 13, channels);
+}
+
+TEST_P(ResizeLinearU8, CrossPatternUpsize1) {
+  size_t channels = GetParam();
+  cross_pattern_test<uint8_t>(99, 11, 175, 19, channels, 3);
+}
+
+TEST_P(ResizeLinearU8, CrossPatternDownsize2) {
   size_t channels = GetParam();
   cross_pattern_test<uint8_t>(409, 13, 261, 6, channels);
 }
 
-TEST_P(ResizeLinearU8, CrossPattern04) {
+TEST_P(ResizeLinearU8, CrossPatternDownsize3) {
   size_t channels = GetParam();
   cross_pattern_test<uint8_t>(409, 13, 181, 6, channels);
 }
 
-TEST_P(ResizeLinearU8, CheckerboardGeneric2) {
+TEST_P(ResizeLinearU8, CheckerboardGenericDownsize2) {
   size_t channels = GetParam();
   checkerboard_pattern_test<uint8_t>(266, 138, 245, 117, channels);
 }
 
-TEST_P(ResizeLinearU8, CheckerboardGeneric3) {
+TEST_P(ResizeLinearU8, CheckerboardGenericDownsize3) {
   size_t channels = GetParam();
   checkerboard_pattern_test<uint8_t>(266, 138, 115, 61, channels);
 }
@@ -758,17 +904,6 @@ TEST_P(ResizeLinearU8, NullPointer) {
   test::test_null_args(kleidicv_resize_linear_u8, src.data(),
                        sizeof(uint8_t) * 32 * channels, 32, 2, dst.data(),
                        sizeof(uint8_t) * 16 * channels, 16, 1, channels);
-}
-
-TEST_P(ResizeLinearU8, NotImplemented_SameHeight) {
-  size_t channels = GetParam();
-  std::vector<uint8_t> src(34UL * 1UL * channels);
-  std::vector<uint8_t> dst(16UL * 1UL * channels);
-
-  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-            kleidicv_resize_linear(
-                src.data(), sizeof(uint8_t) * 34 * channels, 34, 1, dst.data(),
-                sizeof(uint8_t) * 16 * channels, 16, 1, channels));
 }
 
 // Parameterised tests
@@ -866,6 +1001,14 @@ TEST(ResizeLinearU8Params, InvalidChannelCount) {
             kleidicv_resize_linear_u8(
                 src.data(), sizeof(uint8_t) * channels * 48, 48, 2, dst.data(),
                 sizeof(uint8_t) * channels * 32, 32, 1, channels));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_resize_linear_u8(src.data(), sizeof(uint8_t) * 48, 48, 2,
+                                dst.data(), sizeof(uint8_t) * 32, 32, 1, 0));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_resize_linear_u8(src.data(), sizeof(uint8_t) * 48, 48, 2,
+                                dst.data(), sizeof(uint8_t) * 32, 32, 1, 5));
 }
 
 using Pu8 = ResizeTestParams<uint8_t>;
