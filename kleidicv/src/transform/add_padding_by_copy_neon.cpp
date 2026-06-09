@@ -25,7 +25,8 @@ template <size_t PixelSize>
 class RepeatedPixelWriter : public ContiguousByteCopier {
  public:
   // Use the stripe-selected repeated-value writer for this pixel layout.
-  static inline void fill_repeated_pixel(const uint8_t *value_bytes,
+  static inline void fill_repeated_pixel(size_t pixel_size,
+                                         const uint8_t *value_bytes,
                                          uint8_t *dst, size_t row_size) {
     if constexpr (PixelSize == sizeof(uint8_t)) {
       fill_single_channel<uint8_t>(value_bytes, dst, row_size);
@@ -42,7 +43,7 @@ class RepeatedPixelWriter : public ContiguousByteCopier {
     } else if constexpr (PixelSize == 3 * sizeof(uint32_t)) {
       fill_interleaved_3<uint32_t>(value_bytes, dst, row_size);
     } else {
-      fill_repeated_by_bytes<PixelSize>(value_bytes, dst, row_size);
+      fill_repeated_by_bytes(pixel_size, value_bytes, dst, row_size);
     }
   }
 
@@ -84,8 +85,8 @@ class RepeatedPixelWriter : public ContiguousByteCopier {
     loop.unroll_twice(store_repeated_pair);
     loop.unroll_once(store_repeated_vector);
     loop.remaining([&](size_t index, size_t length) {
-      fill_repeated_by_bytes<sizeof(ScalarType)>(value_bytes, dst + index,
-                                                 length - index);
+      fill_repeated_by_bytes(sizeof(ScalarType), value_bytes, dst + index,
+                             length - index);
     });
   }
 
@@ -116,16 +117,16 @@ class RepeatedPixelWriter : public ContiguousByteCopier {
     loop.unroll_twice(store_twice);
     loop.unroll_once(store);
     loop.remaining([&](size_t index, size_t length) {
-      fill_repeated_by_bytes<3 * sizeof(ScalarType)>(value_bytes, dst + index,
-                                                     length - index);
+      fill_repeated_by_bytes(3 * sizeof(ScalarType), value_bytes, dst + index,
+                             length - index);
     });
   }
 
-  template <size_t BytePixelSize>
-  static inline void fill_repeated_by_bytes(const uint8_t *value_bytes,
+  static inline void fill_repeated_by_bytes(size_t pixel_size,
+                                            const uint8_t *value_bytes,
                                             uint8_t *dst, size_t row_size) {
-    for (size_t offset = 0; offset < row_size; offset += BytePixelSize) {
-      copy_contiguous_bytes(value_bytes, dst + offset, BytePixelSize);
+    for (size_t offset = 0; offset < row_size; offset += pixel_size) {
+      copy_contiguous_bytes(value_bytes, dst + offset, pixel_size);
     }
   }
 
@@ -142,7 +143,8 @@ template <size_t PixelSize>
 class ReversedPixelCopier : public ContiguousByteCopier {
  public:
   // Copy row_size bytes using the stripe-selected reverse-copy strategy.
-  static inline void copy_reversed_pixels(const uint8_t *src_last, uint8_t *dst,
+  static inline void copy_reversed_pixels(size_t pixel_size,
+                                          const uint8_t *src_last, uint8_t *dst,
                                           size_t row_size) {
     if constexpr (PixelSize == sizeof(uint8_t)) {
       copy_reversed_packed<uint8_t>(src_last, dst, row_size);
@@ -159,7 +161,7 @@ class ReversedPixelCopier : public ContiguousByteCopier {
     } else if constexpr (PixelSize == 3 * sizeof(uint32_t)) {
       copy_reversed_interleaved_3<uint32_t>(src_last, dst, row_size);
     } else {
-      copy_reversed_by_bytes<PixelSize>(src_last, dst, row_size);
+      copy_reversed_by_bytes(pixel_size, src_last, dst, row_size);
     }
   }
 
@@ -249,9 +251,9 @@ class ReversedPixelCopier : public ContiguousByteCopier {
     loop.unroll_twice(copy_block_pair);
     loop.unroll_once(copy_block);
     loop.remaining([&](size_t index, size_t length) {
-      copy_reversed_by_bytes<sizeof(PixelType)>(
-          src_last - static_cast<ptrdiff_t>(index), dst + index,
-          length - index);
+      copy_reversed_by_bytes(sizeof(PixelType),
+                             src_last - static_cast<ptrdiff_t>(index),
+                             dst + index, length - index);
     });
   }
 
@@ -281,18 +283,18 @@ class ReversedPixelCopier : public ContiguousByteCopier {
     loop.unroll_twice(copy_block_twice);
     loop.unroll_once(copy_block);
     loop.remaining([&](size_t index, size_t length) {
-      copy_reversed_by_bytes<kPixelSize>(
-          src_last - static_cast<ptrdiff_t>(index), dst + index,
-          length - index);
+      copy_reversed_by_bytes(kPixelSize,
+                             src_last - static_cast<ptrdiff_t>(index),
+                             dst + index, length - index);
     });
   }
 
-  template <size_t BytePixelSize>
-  static inline void copy_reversed_by_bytes(const uint8_t *src_last,
+  static inline void copy_reversed_by_bytes(size_t pixel_size,
+                                            const uint8_t *src_last,
                                             uint8_t *dst, size_t row_size) {
-    for (size_t offset = 0; offset < row_size; offset += BytePixelSize) {
+    for (size_t offset = 0; offset < row_size; offset += pixel_size) {
       copy_contiguous_bytes(src_last - static_cast<ptrdiff_t>(offset),
-                            dst + offset, BytePixelSize);
+                            dst + offset, pixel_size);
     }
   }
 };

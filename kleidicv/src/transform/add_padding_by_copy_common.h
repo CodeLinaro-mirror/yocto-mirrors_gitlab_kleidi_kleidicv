@@ -151,7 +151,8 @@ class AddPaddingByCopyConstant final : public AddPaddingByCopyHelpers {
     uint8_t *dst_row = dst_ + dst_y_begin * dst_stride_;
     for (size_t dst_y = dst_y_begin; dst_y < dst_y_end;
          ++dst_y, dst_row += dst_stride_) {
-      Backend::fill_repeated_pixel(border_value_, dst_row, row_size_);
+      Backend::fill_repeated_pixel(pixel_size_, border_value_, dst_row,
+                                   row_size_);
     }
   }
 
@@ -167,11 +168,12 @@ class AddPaddingByCopyConstant final : public AddPaddingByCopyHelpers {
 
   void fill_constant_body_row(const uint8_t *src_row,
                               uint8_t *dst_row) const KLEIDICV_STREAMING {
-    Backend::fill_repeated_pixel(border_value_, dst_row, left_size_);
+    Backend::fill_repeated_pixel(pixel_size_, border_value_, dst_row,
+                                 left_size_);
     Backend::copy_contiguous_bytes(src_row, dst_row + inner_offset_,
                                    inner_size_);
-    Backend::fill_repeated_pixel(border_value_, dst_row + right_offset_,
-                                 right_size_);
+    Backend::fill_repeated_pixel(pixel_size_, border_value_,
+                                 dst_row + right_offset_, right_size_);
   }
 
   const uint8_t *const border_value_;
@@ -228,11 +230,12 @@ class AddPaddingByCopyReplicate final : public AddPaddingByCopyHelpers {
     const uint8_t *const leftmost_src_pixel = src_row;
     const uint8_t *const rightmost_src_pixel =
         src_row + inner_size_ - pixel_size_;
-    Backend::fill_repeated_pixel(leftmost_src_pixel, dst_row, left_size_);
+    Backend::fill_repeated_pixel(pixel_size_, leftmost_src_pixel, dst_row,
+                                 left_size_);
     Backend::copy_contiguous_bytes(src_row, dst_row + inner_offset_,
                                    inner_size_);
-    Backend::fill_repeated_pixel(rightmost_src_pixel, dst_row + right_offset_,
-                                 right_size_);
+    Backend::fill_repeated_pixel(pixel_size_, rightmost_src_pixel,
+                                 dst_row + right_offset_, right_size_);
   }
 };
 
@@ -262,16 +265,16 @@ class AddPaddingByCopyReflect final : public AddPaddingByCopyHelpers {
                 uint8_t *dst_row) const KLEIDICV_STREAMING {
     const uint8_t *const left_border_last_src_pixel =
         src_row + (left_size_ == 0 ? 0 : left_size_ - pixel_size_);
-    Backend::copy_reversed_pixels(left_border_last_src_pixel, dst_row,
-                                  left_size_);
+    Backend::copy_reversed_pixels(pixel_size_, left_border_last_src_pixel,
+                                  dst_row, left_size_);
 
     Backend::copy_contiguous_bytes(src_row, dst_row + inner_offset_,
                                    inner_size_);
 
     const uint8_t *const rightmost_src_pixel =
         src_row + (right_size_ == 0 ? 0 : inner_size_ - pixel_size_);
-    Backend::copy_reversed_pixels(rightmost_src_pixel, dst_row + right_offset_,
-                                  right_size_);
+    Backend::copy_reversed_pixels(pixel_size_, rightmost_src_pixel,
+                                  dst_row + right_offset_, right_size_);
   }
 
   void process_mapped_stripe(size_t body_begin, size_t body_end,
@@ -315,15 +318,15 @@ class AddPaddingByCopyReverse final : public AddPaddingByCopyHelpers {
 
     const uint8_t *const left_border_last_src_pixel =
         src_row + (left_size_ == 0 ? 0 : left_size_);
-    Backend::copy_reversed_pixels(left_border_last_src_pixel, dst_row,
-                                  left_size_);
+    Backend::copy_reversed_pixels(pixel_size_, left_border_last_src_pixel,
+                                  dst_row, left_size_);
 
     Backend::copy_contiguous_bytes(src_row, dst_row + inner_offset_,
                                    inner_size_);
 
     const uint8_t *const right_border_last_src_pixel =
         src_row + (right_size_ == 0 ? 0 : inner_size_ - two_pixel_size);
-    Backend::copy_reversed_pixels(right_border_last_src_pixel,
+    Backend::copy_reversed_pixels(pixel_size_, right_border_last_src_pixel,
                                   dst_row + right_offset_, right_size_);
   }
 
@@ -609,31 +612,27 @@ static AddPaddingByCopyOpPointer allocate_operation(
   return AddPaddingByCopyOpPointer{static_cast<AddPaddingByCopyBase *>(state)};
 }
 
-template <template <size_t> class Operation, size_t PixelSize>
-static AddPaddingByCopyOpPointer allocate_matching_pixel_size_operation(
-    const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING {
-  constexpr size_t kMaxPixelSize =
-      static_cast<size_t>(KLEIDICV_MAXIMUM_TYPE_SIZE) *
-      KLEIDICV_MAXIMUM_CHANNEL_COUNT;
-
-  if constexpr (PixelSize > kMaxPixelSize) {
-    return nullptr;
-  } else {
-    if (parameters.pixel_size == PixelSize) {
-      return allocate_operation<Operation<PixelSize>>(parameters);
-    }
-    return allocate_matching_pixel_size_operation<Operation, PixelSize + 1>(
-        parameters);
-  }
-}
-
 template <template <size_t> class Operation>
 static AddPaddingByCopyOpPointer allocate_pixel_size_operation(
     const AddPaddingByCopyParameters &parameters) KLEIDICV_STREAMING {
-  // The factory passes a border strategy template here, for example
-  // ConstantBorder. Select the specialization that matches the runtime
-  // pixel_size, then allocate that concrete operation.
-  return allocate_matching_pixel_size_operation<Operation, 1>(parameters);
+  switch (parameters.pixel_size) {
+    case sizeof(uint8_t):
+      return allocate_operation<Operation<sizeof(uint8_t)>>(parameters);
+    case sizeof(uint16_t):
+      return allocate_operation<Operation<sizeof(uint16_t)>>(parameters);
+    case sizeof(uint32_t):
+      return allocate_operation<Operation<sizeof(uint32_t)>>(parameters);
+    case sizeof(uint64_t):
+      return allocate_operation<Operation<sizeof(uint64_t)>>(parameters);
+    case 3 * sizeof(uint8_t):
+      return allocate_operation<Operation<3 * sizeof(uint8_t)>>(parameters);
+    case 3 * sizeof(uint16_t):
+      return allocate_operation<Operation<3 * sizeof(uint16_t)>>(parameters);
+    case 3 * sizeof(uint32_t):
+      return allocate_operation<Operation<3 * sizeof(uint32_t)>>(parameters);
+    default:
+      return allocate_operation<Operation<0>>(parameters);
+  }
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
