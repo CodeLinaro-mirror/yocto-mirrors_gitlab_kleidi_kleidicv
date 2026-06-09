@@ -42,7 +42,7 @@ static kleidicv_error_t add_padding_by_copy(
   auto operation =
       kleidicv_create_add_padding_by_copy_operation(parameters, strategy);
   if (!operation) {
-    return KLEIDICV_ERROR_RANGE;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   return operation->process_stripe(0, dst_height);

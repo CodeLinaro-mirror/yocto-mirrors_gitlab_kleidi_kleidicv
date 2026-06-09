@@ -341,7 +341,8 @@ TEST(AddPaddingByCopyThreadValidation, Range) {
 }
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
-TEST(AddPaddingByCopyThreadValidation, ReturnsRangeWhenHeapAllocationFails) {
+TEST(AddPaddingByCopyThreadValidation,
+     ReturnsAllocationWhenHeapAllocationFails) {
   constexpr size_t kIndexedLeftPadding = 4;
   constexpr size_t kIndexedRightPadding = 0;
 
@@ -355,7 +356,7 @@ TEST(AddPaddingByCopyThreadValidation, ReturnsRangeWhenHeapAllocationFails) {
       kIndexedLeftPadding, kIndexedRightPadding, 1, KLEIDICV_BORDER_TYPE_WRAP,
       nullptr, mt);
   MockMallocToFail::disable();
-  EXPECT_EQ(KLEIDICV_ERROR_RANGE, result);
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, result);
 }
 #endif
 

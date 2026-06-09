@@ -335,7 +335,7 @@ kleidicv_error_t kleidicv_thread_add_padding_by_copy(
       kleidicv_create_add_padding_by_copy_operation(parameters, strategy);
 
   if (!operation) {
-    return KLEIDICV_ERROR_RANGE;
+    return KLEIDICV_ERROR_ALLOCATION;
   }
 
   auto callback = [&operation](unsigned begin, unsigned end) {
