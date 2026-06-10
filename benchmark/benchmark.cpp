@@ -5,6 +5,7 @@
 #include <benchmark/benchmark.h>
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <random>
@@ -22,6 +23,15 @@ template <int PixelSize, int Value>
 uint8_t* get_buffer() {
   static std::vector<uint8_t> result(image_width * image_height * PixelSize,
                                      Value);
+  return result.data();
+}
+
+// Get a buffer suitable for using as a padded destination buffer.
+template <int PixelSize, int Value, int ExtraWidth, int ExtraHeight>
+uint8_t* get_padded_buffer() {
+  static std::vector<uint8_t> result(
+      (image_width + ExtraWidth) * (image_height + ExtraHeight) * PixelSize,
+      Value);
   return result.data();
 }
 
@@ -54,6 +64,14 @@ template <typename T, int kChannels = 1>
 T* get_destination_buffer_a() {
   // Value argument is only used here to differentiate from the source buffers.
   return reinterpret_cast<T*>(get_buffer<sizeof(T) * kChannels, 0xC1>());
+}
+
+// Get a destination buffer with extra space for operations that grow the image.
+template <typename T, int kChannels = 1, int ExtraWidth = 0,
+          int ExtraHeight = 0>
+T* get_padded_destination_buffer_a() {
+  return reinterpret_cast<T*>(get_padded_buffer<sizeof(T) * kChannels, 0xC1,
+                                                ExtraWidth, ExtraHeight>());
 }
 
 // Get a buffer suitable for using as the second destination buffer.
@@ -248,6 +266,55 @@ BENCH_TRANSPOSE(transpose_u32, uint32_t);
 BENCH_TRANSPOSE(transpose_u64, uint64_t);
 BENCH_TRANSPOSE(transpose_u24, uint8_t[3]);
 BENCH_TRANSPOSE(transpose_u48, uint16_t[3]);
+
+template <typename T, int kChannels, kleidicv_border_type_t BorderType>
+static void bench_add_padding_by_copy(benchmark::State& state) {
+  constexpr size_t top_padding = 8;
+  constexpr size_t bottom_padding = 8;
+  constexpr size_t left_padding = 8;
+  constexpr size_t right_padding = 8;
+  constexpr int kExtraWidth = static_cast<int>(left_padding + right_padding);
+  constexpr int kExtraHeight = static_cast<int>(top_padding + bottom_padding);
+  static const std::array<uint8_t, sizeof(T) * kChannels> border_value = {};
+
+  bench_functor(state, []() {
+    (void)kleidicv_add_padding_by_copy(
+        get_source_buffer_a<T, kChannels>(),
+        image_width * sizeof(T) * kChannels,
+        get_padded_destination_buffer_a<T, kChannels, kExtraWidth,
+                                        kExtraHeight>(),
+        (image_width + kExtraWidth) * sizeof(T) * kChannels, image_width,
+        image_height, top_padding, bottom_padding, left_padding, right_padding,
+        sizeof(T) * kChannels, BorderType,
+        BorderType == KLEIDICV_BORDER_TYPE_CONSTANT ? border_value.data()
+                                                    : nullptr);
+  });
+}
+
+#define BENCH_ADD_PADDING_BY_COPY(name, type, channels, border_type) \
+  static void name(benchmark::State& state) {                        \
+    bench_add_padding_by_copy<type, channels, border_type>(state);   \
+  }                                                                  \
+  BENCHMARK(name)
+
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u8_1ch_constant, uint8_t, 1,
+                          KLEIDICV_BORDER_TYPE_CONSTANT);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u8_3ch_constant, uint8_t, 3,
+                          KLEIDICV_BORDER_TYPE_CONSTANT);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_f32_4ch_constant, float, 4,
+                          KLEIDICV_BORDER_TYPE_CONSTANT);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u8_1ch_replicate, uint8_t, 1,
+                          KLEIDICV_BORDER_TYPE_REPLICATE);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u8_1ch_reflect, uint8_t, 1,
+                          KLEIDICV_BORDER_TYPE_REFLECT);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u8_1ch_reflect_101, uint8_t, 1,
+                          KLEIDICV_BORDER_TYPE_REVERSE);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u8_1ch_wrap, uint8_t, 1,
+                          KLEIDICV_BORDER_TYPE_WRAP);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u8_3ch_reflect_101, uint8_t, 3,
+                          KLEIDICV_BORDER_TYPE_REVERSE);
+BENCH_ADD_PADDING_BY_COPY(add_padding_by_copy_u16_3ch_reflect_101, uint16_t, 3,
+                          KLEIDICV_BORDER_TYPE_REVERSE);
 
 template <typename T, size_t kChannels>
 static void bench_split(benchmark::State& state) {

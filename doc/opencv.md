@@ -32,7 +32,7 @@ their supported parameter constraints.
 | Filters     | `cv::GaussianBlur`, `cv::Sobel`, `cv::medianBlur`, `cv::sepFilter2D` |
 | Morphology  | `cv::dilate`, `cv::erode` |
 | Resize      | `cv::resize`, `cv::pyrDown`, `cv::buildOpticalFlowPyramid` |
-| Transform   | `cv::transpose`, `cv::rotate`, `cv::remap`, `cv::warpPerspective` |
+| Transform   | `cv::copyMakeBorder`, `cv::transpose`, `cv::rotate`, `cv::remap`, `cv::warpPerspective` |
 
 Detailed per-API behavior and parameter constraints are documented in
 the Modules section below.
@@ -414,6 +414,9 @@ Notes on parameters:
 ### Transform
 
 Geometric transform operations in the OpenCV HAL.
+
+#### [`cv::copyMakeBorder()`](https://docs.opencv.org/4.13.0/d2/de8/group__core__array.html#gaa0c0f1c6f151c3bd03ee0b9958d5b8c7)
+Copies the source image into the destination and fills the destination border.
 
 #### [`cv::transpose()`](https://docs.opencv.org/4.10.0/d2/de8/group__core__array.html#ga46630ed6c0ea6254a35f447289bd7404)
 Transposes a matrix.

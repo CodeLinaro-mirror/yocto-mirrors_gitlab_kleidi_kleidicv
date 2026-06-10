@@ -18,6 +18,7 @@ This changelog aims to follow the guiding principles of
 ### Added
 - Rotate +-90 and transpose support for 3-channel images.
 - Resize to quarter 4 channels.
+- Neon implementation of add padding by copy.
 
 ### Changed
 - The `kleidicv_thread` threading API is now documented as part of the public API.

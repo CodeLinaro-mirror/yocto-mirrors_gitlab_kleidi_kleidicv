@@ -178,6 +178,12 @@ Geometric transform operations.
 |-------------------------------|-------|--------|--------|--------|--------|--------|
 | Transpose                     |   x   |    x   |    x   |    x   |    x   |    x   |
 | Rotate (+-90 degrees)         |   x   |    x   |    x   |    x   |    x   |    x   |
+| Add padding by copy (examples)|   x   |    x   |    x   |    x   |    x   |    x   |
+
+Note: `Add padding by copy` is not limited by channel count in the same way as
+the other operations in this table. It supports any positive pixel size, so the
+listed 8/16/24/32/48/64-bit entries are examples rather than the full set of
+supported channel packings.
 
 ### Remap
 

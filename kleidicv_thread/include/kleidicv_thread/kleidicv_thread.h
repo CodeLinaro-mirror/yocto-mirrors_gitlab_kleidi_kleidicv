@@ -445,6 +445,15 @@ kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,
                                         size_t pixel_size,
                                         kleidicv_thread_multithreading mt);
 
+/// @copydoc kleidicv_add_padding_by_copy
+/// @param mt Caller-provided threading backend.
+kleidicv_error_t kleidicv_thread_add_padding_by_copy(
+    const void *src, size_t src_stride, void *dst, size_t dst_stride,
+    size_t src_width, size_t src_height, size_t top_padding,
+    size_t bottom_padding, size_t left_padding, size_t right_padding,
+    size_t pixel_size, kleidicv_border_type_t border_type,
+    const void *border_value, kleidicv_thread_multithreading mt);
+
 /// @copydoc kleidicv_gaussian_blur_u8
 /// @param mt Caller-provided threading backend.
 kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
