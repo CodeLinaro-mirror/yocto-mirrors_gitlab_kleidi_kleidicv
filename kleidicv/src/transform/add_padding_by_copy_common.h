@@ -14,6 +14,16 @@
 
 namespace KLEIDICV_TARGET_NAMESPACE {
 
+// GCC 14+ rejects placing these template-generated virtual overrides in
+// the same custom target section as non-COMDAT entry points. Leaving the
+// section attribute off lets GCC emit each specialization in its normal
+// COMDAT text section, while older GCC and Clang keep the target section.
+#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ >= 14)
+#define KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS
+#else
+#define KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS KLEIDICV_TARGET_FN_ATTRS
+#endif
+
 template <size_t PixelSize, typename Backend>
 class AddPaddingByCopyConstant final : public AddPaddingByCopyBase {
  public:
@@ -403,7 +413,7 @@ class AddPaddingByCopyIndexed final : public AddPaddingByCopyBase {
 // Common process_stripe definitions
 // -----------------------------------------------------------------------------
 template <size_t PixelSize, typename Backend>
-KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
+KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS kleidicv_error_t
 AddPaddingByCopyConstant<PixelSize, Backend>::process_stripe(
     size_t dst_y_begin, size_t dst_y_end) const {
   if (inner_size_ == 0) {
@@ -420,7 +430,7 @@ AddPaddingByCopyConstant<PixelSize, Backend>::process_stripe(
 }
 
 template <size_t PixelSize, typename Backend>
-KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
+KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS kleidicv_error_t
 AddPaddingByCopyReplicate<PixelSize, Backend>::process_stripe(
     size_t dst_y_begin, size_t dst_y_end) const {
   const auto [body_begin, body_end] = split_body_rows(dst_y_begin, dst_y_end);
@@ -432,7 +442,7 @@ AddPaddingByCopyReplicate<PixelSize, Backend>::process_stripe(
 }
 
 template <size_t PixelSize, typename Backend>
-KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
+KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS kleidicv_error_t
 AddPaddingByCopyReflect<PixelSize, Backend>::process_stripe(
     size_t dst_y_begin, size_t dst_y_end) const {
   const auto [body_begin, body_end] = split_body_rows(dst_y_begin, dst_y_end);
@@ -442,7 +452,7 @@ AddPaddingByCopyReflect<PixelSize, Backend>::process_stripe(
 }
 
 template <size_t PixelSize, typename Backend>
-KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
+KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS kleidicv_error_t
 AddPaddingByCopyReverse<PixelSize, Backend>::process_stripe(
     size_t dst_y_begin, size_t dst_y_end) const {
   const auto [body_begin, body_end] = split_body_rows(dst_y_begin, dst_y_end);
@@ -452,7 +462,7 @@ AddPaddingByCopyReverse<PixelSize, Backend>::process_stripe(
 }
 
 template <size_t PixelSize, typename Backend>
-KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
+KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS kleidicv_error_t
 AddPaddingByCopyWrap<PixelSize, Backend>::process_stripe(
     size_t dst_y_begin, size_t dst_y_end) const {
   const auto [body_begin, body_end] = split_body_rows(dst_y_begin, dst_y_end);
@@ -462,7 +472,7 @@ AddPaddingByCopyWrap<PixelSize, Backend>::process_stripe(
 }
 
 template <size_t PixelSize, typename Backend>
-KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
+KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS kleidicv_error_t
 AddPaddingByCopyIndexed<PixelSize, Backend>::process_stripe(
     size_t dst_y_begin, size_t dst_y_end) const {
   const auto [body_begin, body_end] = split_body_rows(dst_y_begin, dst_y_end);
@@ -522,5 +532,7 @@ static AddPaddingByCopyOpPointer allocate_pixel_size_operation(
 }
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
+
+#undef KLEIDICV_ADD_PADDING_BY_COPY_FN_ATTRS
 
 #endif  // KLEIDICV_SRC_TRANSFORM_ADD_PADDING_BY_COPY_COMMON_H
