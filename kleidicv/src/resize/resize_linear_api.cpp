@@ -22,35 +22,34 @@ KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_2x2_stripe_u8,
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_4x4_stripe_u8,
                           kleidicv_resize_4x4_stripe_u8);
 
-#define DEFINE_RESIZEDOWN_API_ALL_VECLEN_16_64(R, CH)                   \
-  KLEIDICV_MULTIVERSION_C_API_VECLEN(                                   \
-      kleidicv_resize_##CH##ch_r##R##_stripe_u8,                        \
-      (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<R, CH>),      \
-      KLEIDICV_SVE2_IMPL_IF(                                            \
-          (&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<R, CH>)), \
-      (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<R, CH>),       \
-      (&kleidicv::sme2::kleidicv_resize_generic_stripe_u8<R, CH>), 16, 64);
+#define KLEIDICV_UPSIZE_down false
+#define KLEIDICV_UPSIZE_up true
+#define KLEIDICV_UPSIZE(DIRECTION) KLEIDICV_UPSIZE_##DIRECTION
 
-DEFINE_RESIZEDOWN_API_ALL_VECLEN_16_64(2, 1);
-DEFINE_RESIZEDOWN_API_ALL_VECLEN_16_64(3, 1);
-DEFINE_RESIZEDOWN_API_ALL_VECLEN_16_64(2, 2);
-DEFINE_RESIZEDOWN_API_ALL_VECLEN_16_64(3, 2);
-DEFINE_RESIZEDOWN_API_ALL_VECLEN_16_64(2, 3);
-DEFINE_RESIZEDOWN_API_ALL_VECLEN_16_64(3, 3);
+// clang-format off
+#define DEFINE_RESIZE_API_ALL_VECLEN_16_64(R, CH, DIRECTION)                                                          \
+  KLEIDICV_MULTIVERSION_C_API_VECLEN(                                                                                 \
+      kleidicv_resize##DIRECTION##_##CH##ch_r##R##_stripe_u8,                                                         \
+      (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<R, CH, KLEIDICV_UPSIZE(DIRECTION)>),                        \
+      KLEIDICV_SVE2_IMPL_IF((&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<R, CH, KLEIDICV_UPSIZE(DIRECTION)>)), \
+      (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<R, CH, KLEIDICV_UPSIZE(DIRECTION)>),                         \
+      (&kleidicv::sme2::kleidicv_resize_generic_stripe_u8<R, CH, KLEIDICV_UPSIZE(DIRECTION)>),                        \
+      16, 64);
+// clang-format on
 
-// For upsizing, only Neon version implemented so far
-#define DEFINE_RESIZEUP_API_ALL_VECLEN_16_64(R, CH)                      \
-  KLEIDICV_MULTIVERSION_C_API_VECLEN(                                    \
-      kleidicv_resizeup_##CH##ch_r##R##_stripe_u8,                       \
-      (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<R, CH, true>), \
-      nullptr, nullptr, nullptr, 16, 64);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 1, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 1, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 2, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 2, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 3, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 3, down);
 
-DEFINE_RESIZEUP_API_ALL_VECLEN_16_64(1, 1);
-DEFINE_RESIZEUP_API_ALL_VECLEN_16_64(1, 2);
-DEFINE_RESIZEUP_API_ALL_VECLEN_16_64(1, 3);
-DEFINE_RESIZEUP_API_ALL_VECLEN_16_64(2, 1);
-DEFINE_RESIZEUP_API_ALL_VECLEN_16_64(2, 2);
-DEFINE_RESIZEUP_API_ALL_VECLEN_16_64(2, 3);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(1, 1, up);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(1, 2, up);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(1, 3, up);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 1, up);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 2, up);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 3, up);
 
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_linear_stripe_f32,
                           kleidicv_resize_linear_stripe_f32);
@@ -126,25 +125,12 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
                          dst_width, dst_height);
     }
 
-    // Downsizing horizontally but upsizing vertically is only supported by the
-    // Neon variant
-    if (dst_height >= src_height) {
-      if (dst_width * 2 >= src_width) {
-        return kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 1>(
-            src, src_stride, src_width, src_height, y_begin, y_end, dst,
-            dst_stride, dst_width, dst_height);
-      }
-      return kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 1>(
-          src, src_stride, src_width, src_height, y_begin, y_end, dst,
-          dst_stride, dst_width, dst_height);
-    }
-
     if (dst_width * 2 >= src_width) {
-      return CALL_RESIZE(kleidicv_resize_1ch_r2_stripe_u8, src, src_stride,
+      return CALL_RESIZE(kleidicv_resizedown_1ch_r2_stripe_u8, src, src_stride,
                          src_width, src_height, y_begin, y_end, dst, dst_stride,
                          dst_width, dst_height);
     }
-    return CALL_RESIZE(kleidicv_resize_1ch_r3_stripe_u8, src, src_stride,
+    return CALL_RESIZE(kleidicv_resizedown_1ch_r3_stripe_u8, src, src_stride,
                        src_width, src_height, y_begin, y_end, dst, dst_stride,
                        dst_width, dst_height);
   }
@@ -163,25 +149,12 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
                          dst_width, dst_height);
     }
 
-    // Downsizing horizontally but upsizing vertically is only supported by the
-    // Neon variant
-    if (dst_height >= src_height) {
-      if (dst_width * 2 >= src_width) {
-        return kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 2>(
-            src, src_stride, src_width, src_height, y_begin, y_end, dst,
-            dst_stride, dst_width, dst_height);
-      }
-      return kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 2>(
-          src, src_stride, src_width, src_height, y_begin, y_end, dst,
-          dst_stride, dst_width, dst_height);
-    }
-
     if (dst_width * 2 >= src_width) {
-      return CALL_RESIZE(kleidicv_resize_2ch_r2_stripe_u8, src, src_stride,
+      return CALL_RESIZE(kleidicv_resizedown_2ch_r2_stripe_u8, src, src_stride,
                          src_width, src_height, y_begin, y_end, dst, dst_stride,
                          dst_width, dst_height);
     }
-    return CALL_RESIZE(kleidicv_resize_2ch_r3_stripe_u8, src, src_stride,
+    return CALL_RESIZE(kleidicv_resizedown_2ch_r3_stripe_u8, src, src_stride,
                        src_width, src_height, y_begin, y_end, dst, dst_stride,
                        dst_width, dst_height);
   }
@@ -204,25 +177,12 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
   // Loading 3 vectors and TBL3 is faster than loading extra lanes
   // Use the r3 variant over 1/1.8
 
-  // Downsizing horizontally but upsizing vertically is only supported by the
-  // Neon variant
-  if (dst_height >= src_height) {
-    if (inverse_scale < 1.8) {
-      return kleidicv::neon::kleidicv_resize_generic_stripe_u8<2, 3>(
-          src, src_stride, src_width, src_height, y_begin, y_end, dst,
-          dst_stride, dst_width, dst_height);
-    }
-    return kleidicv::neon::kleidicv_resize_generic_stripe_u8<3, 3>(
-        src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
-        dst_width, dst_height);
-  }
-
   if (inverse_scale < 1.8) {
-    return CALL_RESIZE(kleidicv_resize_3ch_r2_stripe_u8, src, src_stride,
+    return CALL_RESIZE(kleidicv_resizedown_3ch_r2_stripe_u8, src, src_stride,
                        src_width, src_height, y_begin, y_end, dst, dst_stride,
                        dst_width, dst_height);
   }
-  return CALL_RESIZE(kleidicv_resize_3ch_r3_stripe_u8, src, src_stride,
+  return CALL_RESIZE(kleidicv_resizedown_3ch_r3_stripe_u8, src, src_stride,
                      src_width, src_height, y_begin, y_end, dst, dst_stride,
                      dst_width, dst_height);
 }

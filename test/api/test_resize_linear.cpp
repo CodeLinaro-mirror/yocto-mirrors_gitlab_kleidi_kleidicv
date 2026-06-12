@@ -645,26 +645,6 @@ class ResizeLinearU8 : public testing::TestWithParam<size_t> {};
 INSTANTIATE_TEST_SUITE_P(ResizeLinear, ResizeLinearU8,
                          testing::Values(1, 2, 3));
 
-TEST_P(ResizeLinearU8, LargeDimensionsUpsizeSmall) {
-  size_t channels = GetParam();
-  do_large_dimensions_test<uint8_t>(1987, 3, 2097, 5, channels);
-}
-
-TEST_P(ResizeLinearU8, LargeDimensionsUpsizeBig) {
-  size_t channels = GetParam();
-  do_large_dimensions_test<uint8_t>(1400, 3, 2097, 5, channels);
-}
-
-TEST_P(ResizeLinearU8, LargeDimensionsGeneric2) {
-  size_t channels = GetParam();
-  do_large_dimensions_test<uint8_t>(2097, 5, 1614, 3, channels);
-}
-
-TEST_P(ResizeLinearU8, LargeDimensionsGeneric3) {
-  size_t channels = GetParam();
-  do_large_dimensions_test<uint8_t>(2097, 5, 807, 2, channels);
-}
-
 TEST(ResizeLinearU8_3ch, InverseScaleWorksWithoutExtraLane_r2) {
   size_t src_span = (test::Options::vector_length() * 2) / 3;
   size_t dst_span = test::Options::vector_length() / 3;
@@ -838,6 +818,26 @@ TEST_P(ResizeLinearU8, CheckerboardGenericDownsize2) {
 TEST_P(ResizeLinearU8, CheckerboardGenericDownsize3) {
   size_t channels = GetParam();
   checkerboard_pattern_test<uint8_t>(266, 138, 115, 61, channels);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsUpsizeSmall) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(1987, 3, 2097, 5, channels);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsUpsizeBig) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(1400, 3, 2097, 5, channels);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsGeneric2) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(2097, 5, 1614, 3, channels);
+}
+
+TEST_P(ResizeLinearU8, LargeDimensionsGeneric3) {
+  size_t channels = GetParam();
+  do_large_dimensions_test<uint8_t>(2097, 5, 807, 2, channels);
 }
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
