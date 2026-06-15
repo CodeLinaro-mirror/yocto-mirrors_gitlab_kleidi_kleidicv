@@ -124,7 +124,7 @@ kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
 kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-template <int kRatio, int kChannels>
+template <int kRatio, int kChannels, bool kUpsize = false>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
@@ -146,7 +146,7 @@ kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
 kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-template <int kRatio, int kChannels>
+template <int kRatio, int kChannels, bool kUpsize = false>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
@@ -168,7 +168,7 @@ kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
 kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-template <int kRatio, int kChannels>
+template <int kRatio, int kChannels, bool kUpsize = false>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride,
