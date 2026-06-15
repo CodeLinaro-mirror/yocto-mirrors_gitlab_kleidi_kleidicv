@@ -7,9 +7,14 @@
 #include "kleidicv/transform/add_padding_by_copy.h"
 #include "kleidicv/utils.h"
 
-KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(
+KLEIDICV_MULTIVERSION_C_API_WITH_SME(
     kleidicv_create_add_padding_by_copy_operation,
-    &kleidicv::neon::create_add_padding_by_copy_operation, nullptr)
+    &kleidicv::neon::create_add_padding_by_copy_operation,
+    KLEIDICV_SVE2_IMPL_IF(
+        &kleidicv::sve2::create_add_padding_by_copy_operation),
+    &kleidicv::sme::create_add_padding_by_copy_operation,
+    KLEIDICV_SME2_IMPL_IF(
+        &kleidicv::sme2::create_add_padding_by_copy_operation))
 
 namespace kleidicv {
 
