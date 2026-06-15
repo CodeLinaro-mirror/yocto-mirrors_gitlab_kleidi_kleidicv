@@ -45,13 +45,13 @@ inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
 
   // Upsize linear generic: a minimal width is needed to execute vector
   // operations
-  if (channels <= 3 && dst_width >= src_width) {
+  if (channels <= 4 && dst_width >= src_width) {
     return src_width * channels >= 16;
   }
 
   // Downsize between horizontal ratios of 1/3 and 1/1: a minimal width is
   // needed to execute vector operations
-  if (channels <= 3 && dst_width * 3 >= src_width && dst_width < src_width) {
+  if (channels <= 4 && dst_width * 3 >= src_width && dst_width < src_width) {
     if (dst_width * channels < 8) {
       return false;
     }

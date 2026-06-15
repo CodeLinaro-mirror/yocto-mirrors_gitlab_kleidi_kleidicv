@@ -38,18 +38,22 @@ KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_4x4_stripe_u8,
 // clang-format on
 
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 1, down);
-DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 1, down);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 2, down);
-DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 2, down);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 3, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 4, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 1, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 2, down);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 3, down);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(3, 4, down);
 
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(1, 1, up);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(1, 2, up);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(1, 3, up);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(1, 4, up);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 1, up);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 2, up);
 DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 3, up);
+DEFINE_RESIZE_API_ALL_VECLEN_16_64(2, 4, up);
 
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_linear_stripe_f32,
                           kleidicv_resize_linear_stripe_f32);
@@ -159,30 +163,54 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
                        dst_width, dst_height);
   }
 
-  assert(channels == 3);
+  if (channels == 3) {
+    // Upscale loading 1vector
+    if (dst_width * 2 > src_width * 3) {
+      return CALL_RESIZE(kleidicv_resizeup_3ch_r1_stripe_u8, src, src_stride,
+                         src_width, src_height, y_begin, y_end, dst, dst_stride,
+                         dst_width, dst_height);
+    }
+    // Upscale loading 2vectors
+    if (dst_width >= src_width) {
+      return CALL_RESIZE(kleidicv_resizeup_3ch_r2_stripe_u8, src, src_stride,
+                         src_width, src_height, y_begin, y_end, dst, dst_stride,
+                         dst_width, dst_height);
+    }
+    double inverse_scale =
+        static_cast<double>(src_width) / static_cast<double>(dst_width);
+    // Loading 3 vectors and TBL3 is faster than loading extra lanes
+    // Use the r3 variant over 1/1.8
+
+    if (inverse_scale < 1.8) {
+      return CALL_RESIZE(kleidicv_resizedown_3ch_r2_stripe_u8, src, src_stride,
+                         src_width, src_height, y_begin, y_end, dst, dst_stride,
+                         dst_width, dst_height);
+    }
+    return CALL_RESIZE(kleidicv_resizedown_3ch_r3_stripe_u8, src, src_stride,
+                       src_width, src_height, y_begin, y_end, dst, dst_stride,
+                       dst_width, dst_height);
+  }
+
+  assert(channels == 4);
   // Upscale loading 1vector
   if (dst_width * 2 > src_width * 3) {
-    return CALL_RESIZE(kleidicv_resizeup_3ch_r1_stripe_u8, src, src_stride,
+    return CALL_RESIZE(kleidicv_resizeup_4ch_r1_stripe_u8, src, src_stride,
                        src_width, src_height, y_begin, y_end, dst, dst_stride,
                        dst_width, dst_height);
   }
   // Upscale loading 2vectors
   if (dst_width >= src_width) {
-    return CALL_RESIZE(kleidicv_resizeup_3ch_r2_stripe_u8, src, src_stride,
+    return CALL_RESIZE(kleidicv_resizeup_4ch_r2_stripe_u8, src, src_stride,
                        src_width, src_height, y_begin, y_end, dst, dst_stride,
                        dst_width, dst_height);
   }
-  double inverse_scale =
-      static_cast<double>(src_width) / static_cast<double>(dst_width);
-  // Loading 3 vectors and TBL3 is faster than loading extra lanes
-  // Use the r3 variant over 1/1.8
 
-  if (inverse_scale < 1.8) {
-    return CALL_RESIZE(kleidicv_resizedown_3ch_r2_stripe_u8, src, src_stride,
+  if (dst_width * 2 >= src_width) {
+    return CALL_RESIZE(kleidicv_resizedown_4ch_r2_stripe_u8, src, src_stride,
                        src_width, src_height, y_begin, y_end, dst, dst_stride,
                        dst_width, dst_height);
   }
-  return CALL_RESIZE(kleidicv_resizedown_3ch_r3_stripe_u8, src, src_stride,
+  return CALL_RESIZE(kleidicv_resizedown_4ch_r3_stripe_u8, src, src_stride,
                      src_width, src_height, y_begin, y_end, dst, dst_stride,
                      dst_width, dst_height);
 }

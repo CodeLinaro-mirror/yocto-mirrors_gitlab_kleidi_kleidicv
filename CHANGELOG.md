@@ -17,9 +17,9 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Rotate +-90 and transpose support for 3-channel images.
-- Resize to quarter 4 channels.
 - Neon implementation of add padding by copy.
-- Generic Linear Resize for upscaling (1-, 2- or 3-channel images).
+- Generic Linear Resize for 4 channels.
+- Generic Linear Resize for upscaling (1-2-3-4 channel images).
 
 ### Changed
 - The `kleidicv_thread` threading API is now documented as part of the public API.

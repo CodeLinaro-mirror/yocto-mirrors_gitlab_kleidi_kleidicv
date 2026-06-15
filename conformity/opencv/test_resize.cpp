@@ -214,6 +214,12 @@ std::vector<test>& resize_tests_get() {
 
     TEST("Resize0.5x0.5 uint8, INTER_AREA, 4 channels", (test_resize<500, CV_HAL_INTER_AREA, 5, 32, CV_8UC4>), (exec_resize<500, CV_HAL_INTER_AREA>)),
     TEST("Resize0.5x0.5 uint8, INTER_LINEAR, 4 channels", (test_resize<500, CV_HAL_INTER_LINEAR, 5, 32, CV_8UC4>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.777x0.777 uint8, INTER_LINEAR, 4 channels", (test_resize<777, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC4>), (exec_resize<777, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.444x0.444 uint8, INTER_LINEAR, 4 channels", (test_resize<444, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC4>), (exec_resize<444, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize0.3x0.3 uint8, INTER_LINEAR, 4 channels", (test_resize_to_third<CV_HAL_INTER_LINEAR, CV_8UC4>), (exec_resize_to_third<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize1.05x1.05 uint8, INTER_LINEAR, 4 channels", (test_resize<1050, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC4>), (exec_resize<1050, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize1.55x1.55 uint8, INTER_LINEAR, 4 channels", (test_resize<1550, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC4>), (exec_resize<1550, CV_HAL_INTER_LINEAR>)),
+    TEST("Resize random scale uint8, INTER_LINEAR, 4 channels", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC4, 334, 1999>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
 };
   // clang-format on
   return tests;

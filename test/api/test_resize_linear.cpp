@@ -643,7 +643,7 @@ TEST(ResizeLinearFloat, LargeDimensions8x8) {
 class ResizeLinearU8 : public testing::TestWithParam<size_t> {};
 
 INSTANTIATE_TEST_SUITE_P(ResizeLinear, ResizeLinearU8,
-                         testing::Values(1, 2, 3));
+                         testing::Values(1, 2, 3, 4));
 
 TEST(ResizeLinearU8_3ch, InverseScaleWorksWithoutExtraLane_r2) {
   size_t src_span = (test::Options::vector_length() * 2) / 3;
@@ -994,7 +994,7 @@ TEST_P(ResizeLinearU8Params, ResizePadSrc) {
 }
 
 TEST(ResizeLinearU8Params, InvalidChannelCount) {
-  size_t channels = 4;
+  size_t channels = 5;
   std::vector<uint8_t> src(48UL * 2UL * channels);
   std::vector<uint8_t> dst(32UL * 1UL * channels);
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,

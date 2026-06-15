@@ -2402,9 +2402,8 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8_sme, const uint8_t *src,
 ///
 /// Supported channels:
 /// - float32 data: 1 channel only
-/// - uint8 data: 1, 2, or 3 channels for horizontal scaling factor between 0.33
-///   and infinity, vertical scaling factor can be anything; 1-4 channels for
-///   0.5x0.5 downscaling
+/// - uint8 data: 1, 2, 3 or 4 channels for horizontal scaling factor between
+///   0.33 and infinity, vertical scaling factor can be anything
 ///
 /// Width and height of source and destination images must not exceed @ref
 /// KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT.
