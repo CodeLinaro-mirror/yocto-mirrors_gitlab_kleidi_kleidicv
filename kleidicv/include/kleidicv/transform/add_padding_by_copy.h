@@ -5,13 +5,11 @@
 #ifndef KLEIDICV_TRANSFORM_ADD_PADDING_BY_COPY_H
 #define KLEIDICV_TRANSFORM_ADD_PADDING_BY_COPY_H
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <type_traits>
-#include <utility>
 #include <variant>
 
 #include "kleidicv/kleidicv.h"
@@ -161,174 +159,16 @@ struct AddPaddingByCopyParameters {
   const void *border_value;
 };
 
-// Base operation class
+// Public operation interface. Keep this target-agnostic so the
+// multiversion C API can pass operation pointers across dispatch code without
+// binding the public type to one target namespace or streaming-mode linkage.
 class AddPaddingByCopyBase {
  public:
   virtual kleidicv_error_t process_stripe(size_t dst_y_begin,
                                           size_t dst_y_end) const = 0;
 
  protected:
-  explicit AddPaddingByCopyBase(const AddPaddingByCopyParameters &parameters)
-      KLEIDICV_STREAMING
-      : src_{parameters.src},
-        dst_{parameters.dst},
-        src_stride_{parameters.src_stride},
-        dst_stride_{parameters.dst_stride},
-        src_width_{parameters.src_width},
-        src_height_{parameters.src_height},
-        top_padding_{parameters.top_padding},
-        bottom_padding_{parameters.bottom_padding},
-        left_padding_{parameters.left_padding},
-        right_padding_{parameters.right_padding},
-        pixel_size_{parameters.pixel_size},
-        dst_width_{parameters.src_width + parameters.left_padding +
-                   parameters.right_padding},
-        dst_height_{parameters.src_height + parameters.top_padding +
-                    parameters.bottom_padding},
-        left_size_{parameters.left_padding * parameters.pixel_size},
-        inner_size_{parameters.src_width * parameters.pixel_size},
-        right_size_{parameters.right_padding * parameters.pixel_size},
-        inner_offset_{parameters.left_padding * parameters.pixel_size},
-        right_offset_{(parameters.left_padding + parameters.src_width) *
-                      parameters.pixel_size} {}
-
-  const uint8_t *const src_;
-  uint8_t *const dst_;
-  const size_t src_stride_;
-  const size_t dst_stride_;
-  const size_t src_width_;
-  const size_t src_height_;
-  const size_t top_padding_;
-  const size_t bottom_padding_;
-  const size_t left_padding_;
-  const size_t right_padding_;
-  const size_t pixel_size_;
-  const size_t dst_width_;
-  const size_t dst_height_;
-  const size_t left_size_;
-  const size_t inner_size_;
-  const size_t right_size_;
-  const size_t inner_offset_;
-  const size_t right_offset_;
-
   ~AddPaddingByCopyBase() = default;
-
-  // Intersect a destination stripe with the source-backed body rows.
-  std::pair<size_t, size_t> split_body_rows(
-      size_t dst_y_begin, size_t dst_y_end) const KLEIDICV_STREAMING {
-    const size_t body_begin_limit = top_padding_;
-    const size_t body_end_limit = top_padding_ + src_height_;
-
-    const size_t body_begin =
-        std::min(std::max(dst_y_begin, body_begin_limit), dst_y_end);
-    const size_t body_end =
-        std::max(body_begin, std::min(dst_y_end, body_end_limit));
-
-    return {body_begin, body_end};
-  }
-
-  static inline ptrdiff_t positive_remainder(ptrdiff_t value, ptrdiff_t period)
-      KLEIDICV_STREAMING {
-    ptrdiff_t remainder = value % period;
-    if (remainder < 0) {
-      remainder += period;
-    }
-    return remainder;
-  }
-
-  static inline size_t wrap_index(ptrdiff_t position,
-                                  size_t length) KLEIDICV_STREAMING {
-    const ptrdiff_t signed_length = static_cast<ptrdiff_t>(length);
-    return static_cast<size_t>(positive_remainder(position, signed_length));
-  }
-
-  static inline size_t reflect_index(ptrdiff_t position,
-                                     size_t length) KLEIDICV_STREAMING {
-    if (length == 1) {
-      return 0;
-    }
-
-    const ptrdiff_t period = static_cast<ptrdiff_t>(length << 1);
-    ptrdiff_t reflected = positive_remainder(position, period);
-    if (reflected >= static_cast<ptrdiff_t>(length)) {
-      reflected = period - reflected - 1;
-    }
-    return static_cast<size_t>(reflected);
-  }
-
-  static inline size_t reverse_index(ptrdiff_t position,
-                                     size_t length) KLEIDICV_STREAMING {
-    if (length == 1) {
-      return 0;
-    }
-
-    const ptrdiff_t period = static_cast<ptrdiff_t>((length - 1) << 1);
-    ptrdiff_t reflected = positive_remainder(position, period);
-    if (reflected >= static_cast<ptrdiff_t>(length)) {
-      reflected = period - reflected;
-    }
-    return static_cast<size_t>(reflected);
-  }
-
-  template <auto MapIndex>
-  static void build_coordinate_sequence(size_t *generated_indices, size_t count,
-                                        ptrdiff_t start,
-                                        size_t length) KLEIDICV_STREAMING {
-    for (size_t i = 0; i < count; ++i) {
-      generated_indices[i] =
-          MapIndex(start + static_cast<ptrdiff_t>(i), length);
-    }
-  }
-
-  template <auto MapIndex>
-  static void build_vertical_border_rows(size_t *generated_top_rows,
-                                         size_t top_padding,
-                                         size_t *generated_bottom_rows,
-                                         size_t bottom_padding,
-                                         size_t height) KLEIDICV_STREAMING {
-    build_coordinate_sequence<MapIndex>(generated_top_rows, top_padding,
-                                        -static_cast<ptrdiff_t>(top_padding),
-                                        height);
-    build_coordinate_sequence<MapIndex>(generated_bottom_rows, bottom_padding,
-                                        static_cast<ptrdiff_t>(height), height);
-  }
-
-  template <auto MapIndex>
-  static void build_horizontal_border_indices(size_t *generated_border_indices,
-                                              size_t left, size_t right,
-                                              size_t width) KLEIDICV_STREAMING {
-    build_coordinate_sequence<MapIndex>(generated_border_indices, left,
-                                        -static_cast<ptrdiff_t>(left), width);
-    build_coordinate_sequence<MapIndex>(generated_border_indices + left, right,
-                                        static_cast<ptrdiff_t>(width), width);
-  }
-
-  template <typename FillRow>
-  void process_vertical_mapped_stripe(
-      size_t body_begin, size_t body_end, const size_t *top_rows,
-      const size_t *bottom_rows, size_t dst_y_begin, size_t dst_y_end,
-      FillRow fill_row) const KLEIDICV_STREAMING {
-    uint8_t *dst_row = dst_ + dst_y_begin * dst_stride_;
-
-    for (size_t dst_y = dst_y_begin; dst_y < body_begin;
-         ++dst_y, dst_row += dst_stride_) {
-      fill_row(src_ + top_rows[dst_y] * src_stride_, dst_row);
-    }
-
-    if (body_begin < body_end) {
-      const uint8_t *src_row = src_ + (body_begin - top_padding_) * src_stride_;
-      for (size_t dst_y = body_begin; dst_y < body_end;
-           ++dst_y, dst_row += dst_stride_, src_row += src_stride_) {
-        fill_row(src_row, dst_row);
-      }
-    }
-
-    const size_t bottom_base = top_padding_ + src_height_;
-    for (size_t dst_y = body_end; dst_y < dst_y_end;
-         ++dst_y, dst_row += dst_stride_) {
-      fill_row(src_ + bottom_rows[dst_y - bottom_base] * src_stride_, dst_row);
-    }
-  }
 };
 
 struct AddPaddingByCopyBaseDeleter {
@@ -399,6 +239,30 @@ AddPaddingByCopyOpPointer create_add_padding_by_copy_operation(
     AddPaddingByCopyBorderStrategy strategy);
 
 }  // namespace neon
+
+namespace sve2 {
+
+AddPaddingByCopyOpPointer create_add_padding_by_copy_operation(
+    AddPaddingByCopyParameters parameters,
+    AddPaddingByCopyBorderStrategy strategy);
+
+}  // namespace sve2
+
+namespace sme {
+
+AddPaddingByCopyOpPointer create_add_padding_by_copy_operation(
+    AddPaddingByCopyParameters parameters,
+    AddPaddingByCopyBorderStrategy strategy);
+
+}  // namespace sme
+
+namespace sme2 {
+
+AddPaddingByCopyOpPointer create_add_padding_by_copy_operation(
+    AddPaddingByCopyParameters parameters,
+    AddPaddingByCopyBorderStrategy strategy);
+
+}  // namespace sme2
 
 using CreateAddPaddingByCopyOperation =
     AddPaddingByCopyOpPointer (*)(AddPaddingByCopyParameters parameters,

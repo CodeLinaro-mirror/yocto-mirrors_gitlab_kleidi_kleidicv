@@ -151,6 +151,7 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
  public:
   using typename VectorTypes<ScalarType>::VectorType;
   using typename VectorTypes<ScalarType>::Vector2Type;
+  using typename VectorTypes<ScalarType>::Vector4Type;
 
   // Number of lanes in a vector.
   static inline size_t num_lanes() KLEIDICV_STREAMING {
@@ -185,6 +186,28 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
 #endif
   }
 
+  // Loads four consecutive vectors from 'src'.
+  static inline void load_consecutive(Context ctx, const ScalarType *src,
+                                      VectorType &vec_0, VectorType &vec_1,
+                                      VectorType &vec_2,
+                                      VectorType &vec_3) KLEIDICV_STREAMING {
+#if KLEIDICV_TARGET_SME2
+    // Assuming that ctx contains a full predicate.
+    (void)ctx;
+    svcount_t p_counter = svptrue_c();
+    Vector4Type v = svld1_x4(p_counter, &src[0]);
+    vec_0 = svget4(v, 0);
+    vec_1 = svget4(v, 1);
+    vec_2 = svget4(v, 2);
+    vec_3 = svget4(v, 3);
+#else
+    vec_0 = svld1(ctx.predicate(), &src[0]);
+    vec_1 = svld1_vnum(ctx.predicate(), &src[0], 1);
+    vec_2 = svld1_vnum(ctx.predicate(), &src[0], 2);
+    vec_3 = svld1_vnum(ctx.predicate(), &src[0], 3);
+#endif
+  }
+
   // Stores a single vector to 'dst'.
   static inline void store(Context ctx, VectorType vec,
                            ScalarType *dst) KLEIDICV_STREAMING {
@@ -204,6 +227,25 @@ class VecTraitsBase : public VectorTypes<ScalarType> {
 #else
     svst1(ctx.predicate(), &dst[0], vec_0);
     svst1_vnum(ctx.predicate(), &dst[0], 1, vec_1);
+#endif
+  }
+
+  // Stores four consecutive vectors to 'dst'.
+  static inline void store_consecutive(Context ctx, VectorType vec_0,
+                                       VectorType vec_1, VectorType vec_2,
+                                       VectorType vec_3,
+                                       ScalarType *dst) KLEIDICV_STREAMING {
+#if KLEIDICV_TARGET_SME2
+    // Assuming that ctx contains a full predicate.
+    (void)ctx;
+    svcount_t p_counter = svptrue_c();
+    Vector4Type v = svcreate4(vec_0, vec_1, vec_2, vec_3);
+    svst1(p_counter, &dst[0], v);
+#else
+    svst1(ctx.predicate(), &dst[0], vec_0);
+    svst1_vnum(ctx.predicate(), &dst[0], 1, vec_1);
+    svst1_vnum(ctx.predicate(), &dst[0], 2, vec_2);
+    svst1_vnum(ctx.predicate(), &dst[0], 3, vec_3);
 #endif
   }
 

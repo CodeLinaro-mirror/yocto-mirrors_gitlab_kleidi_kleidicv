@@ -116,10 +116,22 @@ int border_interpolate(int p, int len, kleidicv_border_type_t border_type) {
 
 class AddPaddingByCopyTest : public testing::Test {
  protected:
+  static uint8_t border_value_byte(size_t byte) {
+    return static_cast<uint8_t>((byte * 37 + 11) & 0xff);
+  }
+
   static std::array<uint8_t, kMaximumPixelSize> border_value() {
     std::array<uint8_t, kMaximumPixelSize> border{};
     for (size_t byte = 0; byte < border.size(); ++byte) {
-      border[byte] = static_cast<uint8_t>((byte * 37 + 11) & 0xff);
+      border[byte] = border_value_byte(byte);
+    }
+    return border;
+  }
+
+  static std::vector<uint8_t> border_value(size_t pixel_size) {
+    std::vector<uint8_t> border(pixel_size);
+    for (size_t byte = 0; byte < border.size(); ++byte) {
+      border[byte] = border_value_byte(byte);
     }
     return border;
   }
@@ -213,6 +225,72 @@ class AddPaddingByCopyTest : public testing::Test {
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
 
+  static void run_operation_reference_test(
+      const AddPaddingByCopyParams& params) {
+    SCOPED_TRACE(::testing::Message()
+                 << "internal operation, w=" << params.width << ", h="
+                 << params.height << ", pixel_size=" << params.pixel_size
+                 << ", border_type=" << static_cast<int>(params.border_type));
+    const size_t alignment =
+        add_padding_by_copy_required_alignment(params.pixel_size);
+    const size_t src_row_width = params.width * params.pixel_size;
+    const size_t dst_width = params.width + params.left + params.right;
+    const size_t dst_height = params.height + params.top + params.bottom;
+    const size_t dst_row_width = dst_width * params.pixel_size;
+    const size_t src_padding = add_padding_by_copy_aligned_padding(
+        src_row_width, params.src_padding, alignment);
+    const size_t dst_padding = add_padding_by_copy_aligned_padding(
+        dst_row_width, params.dst_padding, alignment);
+
+    test::Array2D<uint8_t> src{src_row_width, params.height, src_padding,
+                               params.pixel_size};
+    test::Array2D<uint8_t> actual{dst_row_width, dst_height, dst_padding,
+                                  params.pixel_size};
+    test::Array2D<uint8_t> expected{dst_row_width, dst_height, dst_padding,
+                                    params.pixel_size};
+
+    const auto border = border_value(params.pixel_size);
+    fill_source(src, params.pixel_size);
+    actual.fill(0xa5);
+    calculate_expected(src, expected, params, border.data());
+
+    std::vector<uint64_t> src_storage = add_padding_by_copy_aligned_storage(
+        src.stride() * std::max<size_t>(params.height, 1));
+    std::vector<uint64_t> dst_storage = add_padding_by_copy_aligned_storage(
+        actual.stride() * std::max<size_t>(dst_height, 1));
+    uint8_t* src_data = reinterpret_cast<uint8_t*>(src_storage.data());
+    uint8_t* dst_data = reinterpret_cast<uint8_t*>(dst_storage.data());
+    copy_active_rows_to_raw(src, src_data, src.stride());
+
+    const kleidicv::AddPaddingByCopyBorderStrategy strategy =
+        kleidicv::resolve_border_strategy(params.width, params.left,
+                                          params.right, params.border_type);
+    const kleidicv::AddPaddingByCopyParameters operation_params{
+        src_data,
+        dst_data,
+        src.stride(),
+        actual.stride(),
+        params.width,
+        params.height,
+        params.top,
+        params.bottom,
+        params.left,
+        params.right,
+        params.pixel_size,
+        params.border_type,
+        params.border_type == KLEIDICV_BORDER_TYPE_CONSTANT ? border.data()
+                                                            : nullptr};
+
+    kleidicv::AddPaddingByCopyOpPointer operation =
+        kleidicv_create_add_padding_by_copy_operation(operation_params,
+                                                      strategy);
+    ASSERT_NE(nullptr, operation);
+    ASSERT_EQ(KLEIDICV_OK, operation->process_stripe(0, dst_height));
+
+    copy_active_rows_from_raw(dst_data, actual.stride(), actual);
+    EXPECT_EQ_ARRAY2D(expected, actual);
+  }
+
   static void copy_active_rows_to_raw(const test::Array2D<uint8_t>& src,
                                       uint8_t* dst, size_t dst_stride) {
     for (size_t row = 0; row < src.height(); ++row) {
@@ -276,6 +354,33 @@ TEST_F(AddPaddingByCopyTest, MatchesReferenceAtVectorLengthBoundaries) {
   for (const auto& params : cases) {
     run_reference_test(params);
   }
+}
+
+TEST_F(AddPaddingByCopyTest, MatchesReferenceForContextPredicateBranches) {
+  const std::vector<AddPaddingByCopyParams> typed_context_cases = {
+      {5, 3, 1, 1, 2, 2, 2, 1, 3, KLEIDICV_BORDER_TYPE_REPLICATE},
+      {5, 3, 1, 1, 2, 2, 4, 2, 1, KLEIDICV_BORDER_TYPE_REFLECT},
+      {4, 3, 1, 1, 2, 2, 6, 3, 5, KLEIDICV_BORDER_TYPE_REFLECT},
+      {4, 3, 1, 1, 2, 2, 8, 1, 3, KLEIDICV_BORDER_TYPE_REVERSE},
+      {3, 3, 1, 1, 2, 2, 12, 3, 1, KLEIDICV_BORDER_TYPE_REVERSE},
+  };
+
+  for (const auto& params : typed_context_cases) {
+    run_reference_test(params);
+  }
+
+  run_operation_reference_test({
+      3,
+      2,
+      1,
+      1,
+      2,
+      1,
+      test::Options::vector_length() + 1,
+      3,
+      5,
+      KLEIDICV_BORDER_TYPE_REFLECT,
+  });
 }
 
 TEST_F(AddPaddingByCopyTest, Misalignment) {

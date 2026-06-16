@@ -17,7 +17,7 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - Rotate +-90 and transpose support for 3-channel images.
-- Neon implementation of add padding by copy.
+- Add padding by copy implementation.
 - Generic Linear Resize for 4 channels.
 - Generic Linear Resize for upscaling (1-2-3-4 channel images).
 

@@ -15,6 +15,15 @@ namespace kleidicv::neon {
 
 class ContiguousByteCopier {
  public:
+  // Shared border code passes context for the SVE/SME backend state.
+  // Neon only needs memcpy here, and keeps the plain overload for
+  // local byte helpers that do not use predicate state.
+  static inline void copy_contiguous_bytes(const uint8_t *src, uint8_t *dst,
+                                           size_t size,
+                                           AddPaddingByCopyContext &) {
+    std::memcpy(dst, src, size);
+  }
+
   static inline void copy_contiguous_bytes(const uint8_t *src, uint8_t *dst,
                                            size_t size) {
     std::memcpy(dst, src, size);
@@ -27,7 +36,8 @@ class RepeatedPixelWriter : public ContiguousByteCopier {
   // Use the stripe-selected repeated-value writer for this pixel layout.
   static inline void fill_repeated_pixel(size_t pixel_size,
                                          const uint8_t *value_bytes,
-                                         uint8_t *dst, size_t row_size) {
+                                         uint8_t *dst, size_t row_size,
+                                         AddPaddingByCopyContext &) {
     if constexpr (PixelSize == sizeof(uint8_t)) {
       fill_single_channel<uint8_t>(value_bytes, dst, row_size);
     } else if constexpr (PixelSize == sizeof(uint16_t)) {
@@ -134,7 +144,8 @@ class ReversedPixelCopier : public ContiguousByteCopier {
   // Copy row_size bytes using the stripe-selected reverse-copy strategy.
   static inline void copy_reversed_pixels(size_t pixel_size,
                                           const uint8_t *src_last, uint8_t *dst,
-                                          size_t row_size) {
+                                          size_t row_size,
+                                          AddPaddingByCopyContext &) {
     if constexpr (PixelSize == sizeof(uint8_t)) {
       copy_reversed_packed<uint8_t>(src_last, dst, row_size);
     } else if constexpr (PixelSize == sizeof(uint16_t)) {
