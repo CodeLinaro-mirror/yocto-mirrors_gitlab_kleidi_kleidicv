@@ -475,14 +475,33 @@ static inline uint8x16_t vreinterpretq_u8(uint32x4_t vec) { return vreinterpretq
 static inline uint8x16_t vreinterpretq_u8(int64x2_t  vec) { return vreinterpretq_u8_s64(vec); }
 static inline uint8x16_t vreinterpretq_u8(uint64x2_t vec) { return vreinterpretq_u8_u64(vec); }
 
-template <typename T>
-static inline int8x16x2_t vreinterpretq_s8_x2(T vec) { return __builtin_bit_cast(int8x16x2_t, vec); }
+static inline int8x16_t vreinterpretq_s8(int8x16_t  vec) { return vec; }
+static inline int8x16_t vreinterpretq_s8(uint8x16_t vec) { return vreinterpretq_s8_u8(vec); }
+static inline int8x16_t vreinterpretq_s8(int16x8_t  vec) { return vreinterpretq_s8_s16(vec); }
+static inline int8x16_t vreinterpretq_s8(uint16x8_t vec) { return vreinterpretq_s8_u16(vec); }
+static inline int8x16_t vreinterpretq_s8(int32x4_t  vec) { return vreinterpretq_s8_s32(vec); }
+static inline int8x16_t vreinterpretq_s8(uint32x4_t vec) { return vreinterpretq_s8_u32(vec); }
+static inline int8x16_t vreinterpretq_s8(int64x2_t  vec) { return vreinterpretq_s8_s64(vec); }
+static inline int8x16_t vreinterpretq_s8(uint64x2_t vec) { return vreinterpretq_s8_u64(vec); }
+
+static inline int32x4_t vreinterpretq_s32(int8x16_t  vec) { return vreinterpretq_s32_s8(vec);}
+static inline int32x4_t vreinterpretq_s32(uint8x16_t vec) { return vreinterpretq_s32_u8(vec); }
+static inline int32x4_t vreinterpretq_s32(int16x8_t  vec) { return vreinterpretq_s32_s16(vec); }
+static inline int32x4_t vreinterpretq_s32(uint16x8_t vec) { return vreinterpretq_s32_u16(vec); }
+static inline int32x4_t vreinterpretq_s32(int32x4_t  vec) { return vec; }
+static inline int32x4_t vreinterpretq_s32(uint32x4_t vec) { return vreinterpretq_s32_u32(vec); }
+static inline int32x4_t vreinterpretq_s32(int64x2_t  vec) { return vreinterpretq_s32_s64(vec); }
+static inline int32x4_t vreinterpretq_s32(uint64x2_t vec) { return vreinterpretq_s32_u64(vec); }
 
 template <typename T>
-static inline uint8x16x2_t vreinterpretq_u8_x2(T vec) { return __builtin_bit_cast(uint8x16x2_t, vec); }
+static inline int8x16x2_t vreinterpretq_s8_x2(T vec) {  return {vreinterpretq_s8(vec.val[0]), vreinterpretq_s8(vec.val[1])}; }
 
 template <typename T>
-static inline int32x4x4_t vreinterpretq_s32_x4(T vec) { return __builtin_bit_cast(int32x4x4_t, vec); }
+static inline uint8x16x2_t vreinterpretq_u8_x2(T vec) { return {vreinterpretq_u8(vec.val[0]), vreinterpretq_u8(vec.val[1])};  }
+
+template <typename T>
+static inline int32x4x4_t vreinterpretq_s32_x4(T vec) { return {vreinterpretq_s32(vec.val[0]), vreinterpretq_s32(vec.val[1]),
+                                                                vreinterpretq_s32(vec.val[2]), vreinterpretq_s32(vec.val[3])};  }
 
 static inline uint64x2_t vreinterpretq_u64(int8x16_t  vec) { return vreinterpretq_u64_s8(vec); }
 static inline uint64x2_t vreinterpretq_u64(uint8x16_t vec) { return vreinterpretq_u64_u8(vec); }

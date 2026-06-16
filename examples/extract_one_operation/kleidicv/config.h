@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,9 +14,11 @@
 
 #ifdef __clang__
 #define KLEIDICV_FORCE_LOOP_UNROLL _Pragma("clang loop unroll(full)")
-#else
+#elif defined(__GNUC__) && (__GNUC__ >= 8)
 // GCC doesn't have clang's unroll(full). 16 is typically plenty.
 #define KLEIDICV_FORCE_LOOP_UNROLL _Pragma("GCC unroll 16")
+#else
+#define KLEIDICV_FORCE_LOOP_UNROLL
 #endif
 
 #if defined(__clang__) || defined(__GNUC__)
