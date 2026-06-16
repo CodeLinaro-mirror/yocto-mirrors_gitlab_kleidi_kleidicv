@@ -55,8 +55,8 @@ class RepeatedPixelWriter : public ContiguousByteCopier {
     using VectorType = typename VecTraits<ScalarType>::VectorType;
     using Vector2Type = typename VecTraits<ScalarType>::Vector2Type;
 
-    const ScalarType value = load_unaligned<ScalarType>(value_bytes);
-    const VectorType repeated_value = vdupq_n(value);
+    const VectorType repeated_value =
+        load_repeated_unaligned<ScalarType>(value_bytes);
     Vector2Type repeated_value_pair;
     repeated_value_pair.val[0] = repeated_value;
     repeated_value_pair.val[1] = repeated_value;
@@ -80,11 +80,11 @@ class RepeatedPixelWriter : public ContiguousByteCopier {
     using Vector3Type = typename VecTraits<ScalarType>::Vector3Type;
 
     Vector3Type vector_value;
-    vector_value.val[0] = vdupq_n(load_unaligned<ScalarType>(value_bytes));
+    vector_value.val[0] = load_repeated_unaligned<ScalarType>(value_bytes);
     vector_value.val[1] =
-        vdupq_n(load_unaligned<ScalarType>(value_bytes + sizeof(ScalarType)));
-    vector_value.val[2] = vdupq_n(
-        load_unaligned<ScalarType>(value_bytes + (2 * sizeof(ScalarType))));
+        load_repeated_unaligned<ScalarType>(value_bytes + sizeof(ScalarType));
+    vector_value.val[2] = load_repeated_unaligned<ScalarType>(
+        value_bytes + (2 * sizeof(ScalarType)));
 
     constexpr size_t kVectorStoreSize = 3 * kVectorLength;
 
@@ -114,10 +114,17 @@ class RepeatedPixelWriter : public ContiguousByteCopier {
 
   // Load a scalar from byte-addressed storage without assuming alignment.
   template <typename ScalarType>
-  static inline ScalarType load_unaligned(const uint8_t *src) {
-    ScalarType value;
-    std::memcpy(&value, src, sizeof(ScalarType));
-    return value;
+  static inline typename VecTraits<ScalarType>::VectorType
+  load_repeated_unaligned(const uint8_t *src) {
+    if constexpr (sizeof(ScalarType) == sizeof(uint8_t)) {
+      return vld1q_dup_u8(src);
+    } else if constexpr (sizeof(ScalarType) == sizeof(uint16_t)) {
+      return vld1q_dup_u16(reinterpret_cast<const uint16_t *>(src));
+    } else if constexpr (sizeof(ScalarType) == sizeof(uint32_t)) {
+      return vld1q_dup_u32(reinterpret_cast<const uint32_t *>(src));
+    } else {
+      return vld1q_dup_u64(reinterpret_cast<const uint64_t *>(src));
+    }
   }
 };
 
