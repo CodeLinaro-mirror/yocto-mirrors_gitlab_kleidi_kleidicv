@@ -409,7 +409,7 @@ class PrecalcIndicesFractions final {
 // - supported ratios:
 //   - kUpsize = false: 2, 3
 //   - kUpsize = true: 1, 2
-// - supported channels: 1, 2, 3
+// - supported channels: 1, 2, 3, 4
 // - kSetRightmostLanes: only with kUpsize=false, ratios=3, channels=3
 template <int kRatio, int kChannels, bool kSetRightmostLanes, bool kUpsize>
 class ResizeGenericU8Operation final {
@@ -765,7 +765,7 @@ class ResizeGenericU8Operation final {
 // - supported ratios:
 //   - kUpsize = false: 2, 3
 //   - kUpsize = true: 1, 2
-// - supported channels: 1, 2, 3
+// - supported channels: 1, 2, 3, 4
 template <int kRatio, int kChannels, bool kUpsize>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8_sc(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,

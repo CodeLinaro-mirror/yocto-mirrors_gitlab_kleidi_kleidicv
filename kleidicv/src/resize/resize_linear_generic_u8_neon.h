@@ -327,8 +327,10 @@ class RowInterpolationConstantsGenerator final
     }
 
     if constexpr (kChannels > 1) {
-      vsx0_idx = vshlq_n_u8(vsx0_idx, kChannels == 4 ? 2 : 1);
-      vsx1_idx = vshlq_n_u8(vsx1_idx, kChannels == 4 ? 2 : 1);
+      // Good for 2 and 4 channels, and does not add branches
+      constexpr uint8_t kChannelShift = kChannels / 2;
+      vsx0_idx = vshlq_n_u8(vsx0_idx, kChannelShift);
+      vsx1_idx = vshlq_n_u8(vsx1_idx, kChannelShift);
       uint8x16_t v_channel_offsets = vreinterpretq_u8_u32(
           vdupq_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100));
       vsx0_idx = vaddq_u8(vsx0_idx, v_channel_offsets);
@@ -373,8 +375,10 @@ class RowInterpolationConstantsGenerator final
     }
 
     if constexpr (kChannels > 1) {
-      vsx0_idx = vshl_n_u8(vsx0_idx, kChannels == 4 ? 2 : 1);
-      vsx1_idx = vshl_n_u8(vsx1_idx, kChannels == 4 ? 2 : 1);
+      // Good for 2 and 4 channels, and does not add branches
+      constexpr uint8_t kChannelShift = kChannels / 2;
+      vsx0_idx = vshl_n_u8(vsx0_idx, kChannelShift);
+      vsx1_idx = vshl_n_u8(vsx1_idx, kChannelShift);
       uint8x8_t v_channel_offsets = vreinterpret_u8_u32(
           vdup_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100));
       vsx0_idx = vadd_u8(vsx0_idx, v_channel_offsets);
@@ -676,8 +680,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
         constants.xfrac[j] = xfrac;
       }
       sx_fixp += sx_fixp_one_dst_pixel_;
-      src_element_index =
-          static_cast<int64_t>((sx_fixp >> kFixpBits) * kChannels);
+      src_element_index = (sx_fixp >> kFixpBits) * kChannels;
       src_indices = sx_indices(sx_fixp);
       src0 = src_indices.first;
       src1 = src_indices.second;
@@ -774,7 +777,7 @@ class ResizeGenericU8Operation final {
     uint16x8_t vsxfrac;
     VecTraits<uint16_t>::load(constants.xfrac, vsxfrac);
 
-    constexpr bool kLoadTwo = (kRatio == 3 || kChannels == 3) && !kUpsize;
+    constexpr bool kLoadTwo = (!kUpsize && kChannels == 3) || kRatio == 3;
     HalfSrcVecType<kLoadTwo> topsrc, bottomsrc;
     VecTraits<uint8_t>::load(&src_top[src_element_index], topsrc);
     VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);

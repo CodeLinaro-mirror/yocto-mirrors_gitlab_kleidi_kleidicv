@@ -161,9 +161,9 @@ Float32 data:
 Uint8 data:
 | Channels                               | 1 | 2 | 3 | 4 |
 |----------------------------------------|---|---|---|---|
-| Downsize 1/3 to 1                      | x | x | x |   |
+| Downsize 1/3 to 1                      | x | x | x | x |
 | Downsize 0.5x0.5                       | x | x | x | x |
-| Upsize                                 | x | x | x |   |
+| Upsize                                 | x | x | x | x |
 
 Note: For uint8 downsize and upsize, table specifies horizontal scaling. Vertical scaling factor is independent, it can be anything, even vertical upsizing is supported when the horizontal dimension is downsized, and vice versa.
 

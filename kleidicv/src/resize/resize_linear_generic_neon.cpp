@@ -15,7 +15,7 @@ namespace kleidicv::neon {
 
 // ratio: number of vectors to load and resize to 1 vector
 // supported ratio values: 1-2 for upsizing, 2-3 for downsizing
-// supported channel counts: 1, 2 and 3
+// supported channel counts: 1, 2, 3, 4
 // upsize: true if the operation is upsizing horizontally
 template <int kRatio, int kChannels, bool kUpsize>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
@@ -70,14 +70,18 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8(
 KLEIDICV_INSTANTIATE_TEMPLATE(1, 1, true);
 KLEIDICV_INSTANTIATE_TEMPLATE(1, 2, true);
 KLEIDICV_INSTANTIATE_TEMPLATE(1, 3, true);
+KLEIDICV_INSTANTIATE_TEMPLATE(1, 4, true);
 KLEIDICV_INSTANTIATE_TEMPLATE(2, 1, true);
 KLEIDICV_INSTANTIATE_TEMPLATE(2, 2, true);
 KLEIDICV_INSTANTIATE_TEMPLATE(2, 3, true);
+KLEIDICV_INSTANTIATE_TEMPLATE(2, 4, true);
 KLEIDICV_INSTANTIATE_TEMPLATE(2, 1, false);
 KLEIDICV_INSTANTIATE_TEMPLATE(2, 2, false);
 KLEIDICV_INSTANTIATE_TEMPLATE(2, 3, false);
+KLEIDICV_INSTANTIATE_TEMPLATE(2, 4, false);
 KLEIDICV_INSTANTIATE_TEMPLATE(3, 1, false);
 KLEIDICV_INSTANTIATE_TEMPLATE(3, 2, false);
 KLEIDICV_INSTANTIATE_TEMPLATE(3, 3, false);
+KLEIDICV_INSTANTIATE_TEMPLATE(3, 4, false);
 
 }  // namespace kleidicv::neon

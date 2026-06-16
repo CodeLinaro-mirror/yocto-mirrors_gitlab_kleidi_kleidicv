@@ -204,7 +204,7 @@ INSTANTIATE_TEST_SUITE_P(, ResizeThread,
 // clang-format on
 
 TEST(ResizeThreadTest, NotImplemented) {
-  for (size_t channels = 1; channels <= 3; ++channels) {
+  for (size_t channels = 1; channels <= 4; ++channels) {
     // Too small images
     uint8_t src[1] = {}, dst[1] = {};
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
@@ -236,7 +236,7 @@ TEST(ResizeThreadTest, NotImplemented) {
 
   {
     // Invalid channel count
-    size_t channels = 4;
+    size_t channels = 5;
     std::vector<uint8_t> src(48UL * 2UL * channels);
     std::vector<uint8_t> dst(32UL * 1UL * channels);
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
