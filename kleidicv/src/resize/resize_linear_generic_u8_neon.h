@@ -277,7 +277,7 @@ class RowInterpolationConstantsGenerator final
     for (size_t i = 0;
          i < row_interpolation_constants.num_of_vector_paths().half; ++i) {
       // If (dx + half vector length) would overrun the buffer, pull it back
-      size_t dx_pulled_back = std::min(dx, max_dx_half);
+      size_t dx_pulled_back = std::min(dx, static_cast<size_t>(max_dx_half));
       // Pull back sx if dx was pulled back
       sx_fixp -=
           static_cast<int64_t>(dx - dx_pulled_back) * sx_fixp_one_dst_pixel;
@@ -530,7 +530,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
 
       // If (dst index + half vector length) would overrun the buffer, pull it
       // back
-      dst_element_index = std::min(dst_element_index, max_dst_index_half);
+      dst_element_index =
+          std::min(dst_element_index, static_cast<size_t>(max_dst_index_half));
 
       size_t dx = dst_element_index / kChannels;
       unsigned in_pixel_index = dst_element_index % kChannels;
@@ -543,8 +544,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
 
       // Pull back src if it would overrun
       int64_t src_element_base = std::clamp(
-          std::min(src_element_index_pixel0, src_element_index_pixel1), 0L,
-          max_src_base_index);
+          std::min(src_element_index_pixel0, src_element_index_pixel1),
+          int64_t{0}, max_src_base_index);
 
       fill_half_constants_scalarly(constants, dst_element_index, in_pixel_index,
                                    src_element_index_pixel0, src_element_base,
@@ -606,7 +607,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
     int8_t idx2 = vgetq_lane_s8(vsx0_idx, 2);
     int8_t min_idx = std::min(std::min(idx0, idx1), idx2);
     ptrdiff_t final_base =
-        std::clamp(src_element_base + min_idx, 0L, max_src_base_index);
+        std::clamp(src_element_base + min_idx, int64_t{0}, max_src_base_index);
     constants.src_element_index = final_base;
     int8_t adjustment = static_cast<int8_t>(final_base - src_element_base);
     vsx0_idx = vsubq_u8(vsx0_idx, vdupq_n_s8(adjustment));
