@@ -187,15 +187,18 @@
     {
       "label": "SME API tests",
       "type": "process",
-      "command": "env",
+      "command": "qemu-aarch64",
       "args": [
-        "KLEIDICV_PREFER_SME_BACKEND=ON",
-        "qemu-aarch64",
         "-cpu",
         "max,sve128=on,sme512=on",
         "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
         "--vector-length=64"
       ],
+      "options": {
+        "env": {
+          "KLEIDICV_PREFER_SME_BACKEND": "ON"
+        }
+      },
       "dependsOn": [
         "Build KleidiCV"
       ],
@@ -206,16 +209,19 @@
     {
       "label": "SME2 API tests",
       "type": "process",
-      "command": "env",
+      "command": "armie",
       "args": [
-        "KLEIDICV_PREFER_SME_BACKEND=ON",
-        "armie",
         "-mvl=16",
         "-msvl=64",
         "-mfeatures=${workspaceFolder}/scripts/armie_features.txt",
         "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
         "--vector-length=64"
       ],
+      "options": {
+        "env": {
+          "KLEIDICV_PREFER_SME_BACKEND": "ON"
+        }
+      },
       "dependsOn": [
         "Build KleidiCV"
       ],
