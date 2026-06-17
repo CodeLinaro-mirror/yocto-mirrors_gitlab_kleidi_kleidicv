@@ -749,6 +749,127 @@ TEST(SmeApi, ResizeParity) {
   expect_same_array(resize_cpu_f32, resize_sme_f32);
 }
 
+TEST(SmeApi, TransposeParity) {
+  constexpr size_t kPixelSize = 3;
+  constexpr size_t kTransposeWidth = 17;
+  constexpr size_t kTransposeHeight = 11;
+  test::Array2D<uint8_t> transpose_src{kTransposeWidth * kPixelSize,
+                                       kTransposeHeight, kPixelSize};
+  test::Array2D<uint8_t> transpose_cpu{kTransposeHeight * kPixelSize,
+                                       kTransposeWidth, kPixelSize};
+  test::Array2D<uint8_t> transpose_sme{kTransposeHeight * kPixelSize,
+                                       kTransposeWidth, kPixelSize};
+  fill_array(transpose_src);
+
+  EXPECT_EQ(KLEIDICV_OK,
+            kleidicv_transpose(transpose_src.data(), transpose_src.stride(),
+                               transpose_cpu.data(), transpose_cpu.stride(),
+                               kTransposeWidth, kTransposeHeight, kPixelSize));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_transpose_sme(
+                             transpose_src.data(), transpose_src.stride(),
+                             transpose_sme.data(), transpose_sme.stride(),
+                             kTransposeWidth, kTransposeHeight, kPixelSize));
+  expect_same_array(transpose_cpu, transpose_sme);
+
+  constexpr size_t kInPlaceSize = 13;
+  test::Array2D<uint8_t> in_place_src{kInPlaceSize * kPixelSize, kInPlaceSize,
+                                      kPixelSize};
+  test::Array2D<uint8_t> in_place_expected{kInPlaceSize * kPixelSize,
+                                           kInPlaceSize, kPixelSize};
+  fill_array(in_place_src);
+  test::Array2D<uint8_t> in_place_cpu = in_place_src;
+  test::Array2D<uint8_t> in_place_sme = in_place_src;
+
+  EXPECT_EQ(
+      KLEIDICV_OK,
+      kleidicv_transpose(in_place_src.data(), in_place_src.stride(),
+                         in_place_expected.data(), in_place_expected.stride(),
+                         kInPlaceSize, kInPlaceSize, kPixelSize));
+  EXPECT_EQ(KLEIDICV_OK,
+            kleidicv_transpose(in_place_cpu.data(), in_place_cpu.stride(),
+                               in_place_cpu.data(), in_place_cpu.stride(),
+                               kInPlaceSize, kInPlaceSize, kPixelSize));
+  EXPECT_EQ(KLEIDICV_OK,
+            kleidicv_transpose_sme(in_place_sme.data(), in_place_sme.stride(),
+                                   in_place_sme.data(), in_place_sme.stride(),
+                                   kInPlaceSize, kInPlaceSize, kPixelSize));
+  expect_same_array(in_place_expected, in_place_cpu);
+  expect_same_array(in_place_expected, in_place_sme);
+}
+
+TEST(SmeApi, RotateParity) {
+  constexpr size_t kPixelSize = 3;
+  constexpr size_t kRotateWidth = 13;
+  constexpr size_t kRotateHeight = 9;
+  test::Array2D<uint8_t> rotate_src{kRotateWidth * kPixelSize, kRotateHeight,
+                                    kPixelSize};
+  fill_array(rotate_src);
+  for (int angle : {90, -90}) {
+    test::Array2D<uint8_t> rotate_cpu{kRotateHeight * kPixelSize, kRotateWidth,
+                                      kPixelSize};
+    test::Array2D<uint8_t> rotate_sme{kRotateHeight * kPixelSize, kRotateWidth,
+                                      kPixelSize};
+
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_rotate(rotate_src.data(), rotate_src.stride(),
+                              kRotateWidth, kRotateHeight, rotate_cpu.data(),
+                              rotate_cpu.stride(), angle, kPixelSize));
+    EXPECT_EQ(KLEIDICV_OK, kleidicv_rotate_sme(
+                               rotate_src.data(), rotate_src.stride(),
+                               kRotateWidth, kRotateHeight, rotate_sme.data(),
+                               rotate_sme.stride(), angle, kPixelSize));
+    expect_same_array(rotate_cpu, rotate_sme);
+  }
+}
+
+TEST(SmeApi, AddPaddingByCopyParity) {
+  auto run_add_padding_by_copy_case = [](const char* name,
+                                         kleidicv_border_type_t border_type) {
+    constexpr size_t kPixelSize = 3;
+    constexpr size_t kSrcWidth = 14;
+    constexpr size_t kSrcHeight = 7;
+    constexpr size_t kTopPadding = 2;
+    constexpr size_t kBottomPadding = 3;
+    constexpr size_t kLeftPadding = 4;
+    constexpr size_t kRightPadding = 5;
+    constexpr size_t kDstWidth = kSrcWidth + kLeftPadding + kRightPadding;
+    constexpr size_t kDstHeight = kSrcHeight + kTopPadding + kBottomPadding;
+    constexpr size_t kBorderValueSize =
+        static_cast<size_t>(KLEIDICV_MAXIMUM_TYPE_SIZE) *
+        KLEIDICV_MAXIMUM_CHANNEL_COUNT;
+    constexpr std::array<uint8_t, kBorderValueSize> kBorderValue{9, 17, 25};
+    test::Array2D<uint8_t> src{kSrcWidth * kPixelSize, kSrcHeight, kPixelSize};
+    test::Array2D<uint8_t> cpu_dst{kDstWidth * kPixelSize, kDstHeight,
+                                   kPixelSize};
+    test::Array2D<uint8_t> sme_dst{kDstWidth * kPixelSize, kDstHeight,
+                                   kPixelSize};
+    fill_array(src);
+    SCOPED_TRACE(name);
+
+    EXPECT_EQ(
+        KLEIDICV_OK,
+        kleidicv_add_padding_by_copy(
+            src.data(), src.stride(), cpu_dst.data(), cpu_dst.stride(),
+            kSrcWidth, kSrcHeight, kTopPadding, kBottomPadding, kLeftPadding,
+            kRightPadding, kPixelSize, border_type, kBorderValue.data()))
+        << name;
+    EXPECT_EQ(
+        KLEIDICV_OK,
+        kleidicv_add_padding_by_copy_sme(
+            src.data(), src.stride(), sme_dst.data(), sme_dst.stride(),
+            kSrcWidth, kSrcHeight, kTopPadding, kBottomPadding, kLeftPadding,
+            kRightPadding, kPixelSize, border_type, kBorderValue.data()))
+        << name;
+    expect_same_array(cpu_dst, sme_dst);
+  };
+
+  run_add_padding_by_copy_case("constant", KLEIDICV_BORDER_TYPE_CONSTANT);
+  run_add_padding_by_copy_case("replicate", KLEIDICV_BORDER_TYPE_REPLICATE);
+  run_add_padding_by_copy_case("reflect", KLEIDICV_BORDER_TYPE_REFLECT);
+  run_add_padding_by_copy_case("wrap", KLEIDICV_BORDER_TYPE_WRAP);
+  run_add_padding_by_copy_case("reverse", KLEIDICV_BORDER_TYPE_REVERSE);
+}
+
 TEST(SmeApi, GradientParity) {
   constexpr size_t kSobelWidth = 43;
   constexpr size_t kSobelHeight = 9;

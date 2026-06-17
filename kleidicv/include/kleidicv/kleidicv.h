@@ -2543,6 +2543,11 @@ kleidicv_error_t kleidicv_resize_linear_f32_sme(
 KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
                          void *dst, size_t dst_stride, size_t src_width,
                          size_t src_height, size_t pixel_size);
+/// @copydoc kleidicv_transpose
+KLEIDICV_API_DECLARATION(kleidicv_transpose_sme, const void *src,
+                         size_t src_stride, void *dst, size_t dst_stride,
+                         size_t src_width, size_t src_height,
+                         size_t pixel_size);
 
 /// Matrix rotate operation.
 /// In-place operation is not supported.
@@ -2575,6 +2580,11 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose, const void *src, size_t src_stride,
 KLEIDICV_API_DECLARATION(kleidicv_rotate, const void *src, size_t src_stride,
                          size_t width, size_t height, void *dst,
                          size_t dst_stride, int angle, size_t pixel_size);
+/// @copydoc kleidicv_rotate
+KLEIDICV_API_DECLARATION(kleidicv_rotate_sme, const void *src,
+                         size_t src_stride, size_t width, size_t height,
+                         void *dst, size_t dst_stride, int angle,
+                         size_t pixel_size);
 
 /// Copies the source image into the destination image, which includes padding
 /// around the source, and fills the padding according to the specified border
@@ -2628,6 +2638,13 @@ KLEIDICV_API_DECLARATION(kleidicv_rotate, const void *src, size_t src_stride,
 /// @param border_value   Border value if the border_type is
 ///                       @ref KLEIDICV_BORDER_TYPE_CONSTANT.
 kleidicv_error_t kleidicv_add_padding_by_copy(
+    const void *src, size_t src_stride, void *dst, size_t dst_stride,
+    size_t src_width, size_t src_height, size_t top_padding,
+    size_t bottom_padding, size_t left_padding, size_t right_padding,
+    size_t pixel_size, kleidicv_border_type_t border_type,
+    const void *border_value);
+/// @copydoc kleidicv_add_padding_by_copy
+kleidicv_error_t kleidicv_add_padding_by_copy_sme(
     const void *src, size_t src_stride, void *dst, size_t dst_stride,
     size_t src_width, size_t src_height, size_t top_padding,
     size_t bottom_padding, size_t left_padding, size_t right_padding,

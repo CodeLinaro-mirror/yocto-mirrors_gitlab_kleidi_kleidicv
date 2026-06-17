@@ -21,7 +21,8 @@ static kleidicv_error_t add_padding_by_copy(
     size_t src_width, size_t src_height, size_t top_padding,
     size_t bottom_padding, size_t left_padding, size_t right_padding,
     size_t pixel_size, kleidicv_border_type_t border_type,
-    const void *border_value) {
+    const void *border_value,
+    CreateAddPaddingByCopyOperation create_operation) {
   const auto *src_bytes = reinterpret_cast<const uint8_t *>(src);
   auto *dst_bytes = reinterpret_cast<uint8_t *>(dst);
 
@@ -42,8 +43,7 @@ static kleidicv_error_t add_padding_by_copy(
       src_height, top_padding, bottom_padding, left_padding, right_padding,
       pixel_size, border_type, border_value};
 
-  auto operation =
-      kleidicv_create_add_padding_by_copy_operation(parameters, strategy);
+  auto operation = create_operation(parameters, strategy);
   if (!operation) {
     return KLEIDICV_ERROR_ALLOCATION;
   }
@@ -64,7 +64,19 @@ kleidicv_error_t kleidicv_add_padding_by_copy(
   return kleidicv::add_padding_by_copy(
       src, src_stride, dst, dst_stride, src_width, src_height, top_padding,
       bottom_padding, left_padding, right_padding, pixel_size, border_type,
-      border_value);
+      border_value, kleidicv_create_add_padding_by_copy_operation);
+}
+
+kleidicv_error_t kleidicv_add_padding_by_copy_sme(
+    const void *src, size_t src_stride, void *dst, size_t dst_stride,
+    size_t src_width, size_t src_height, size_t top_padding,
+    size_t bottom_padding, size_t left_padding, size_t right_padding,
+    size_t pixel_size, kleidicv_border_type_t border_type,
+    const void *border_value) {
+  return kleidicv::add_padding_by_copy(
+      src, src_stride, dst, dst_stride, src_width, src_height, top_padding,
+      bottom_padding, left_padding, right_padding, pixel_size, border_type,
+      border_value, kleidicv_create_add_padding_by_copy_operation_sme);
 }
 
 }  // extern "C"
