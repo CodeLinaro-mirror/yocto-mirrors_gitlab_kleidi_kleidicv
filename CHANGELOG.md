@@ -25,6 +25,10 @@ This changelog aims to follow the guiding principles of
 - The `kleidicv_thread` threading API is now documented as part of the public API.
 - Resize to quarter 2 and 3 channels: optimized.
 
+### Fixed
+- In WarpPerspective, map pixels to source coordinate (0, 0) when the perspective
+  weight is zero, avoiding division by zero.
+
 ## 26.03 - 2026-03-26
 
 ### Added
