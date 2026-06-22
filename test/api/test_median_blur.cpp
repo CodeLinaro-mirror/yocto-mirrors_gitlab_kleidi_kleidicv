@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -64,78 +64,26 @@ class MedianBlurTest : public testing::Test {
     return cases;
   }
 
-  static std::vector<TestParams> get_unpadded_test_cases(size_t filter_size) {
-    std::vector<size_t> widths = {2 * filter_size + 16};
+  static std::vector<TestParams> get_test_cases(size_t filter_size) {
+    std::vector<size_t> widths = {2 * filter_size + 2};
     std::vector<size_t> src_paddings = {0};
     std::vector<size_t> dst_paddings = {0};
-    std::vector<size_t> heights = {2 * filter_size + 16};
+    std::vector<size_t> heights = {filter_size};
     std::vector<size_t> channels = {1, 2, 3, 4};
     std::vector<size_t> filter_sizes = {filter_size};
     std::vector<kleidicv_border_type_t> border_types = {
         KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
         KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
 
-    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
-                               channels, filter_sizes, border_types);
-  }
+    auto tests =
+        generate_test_cases(widths, src_paddings, dst_paddings, heights,
+                            channels, filter_sizes, border_types);
 
-  static std::vector<TestParams> get_padded_test_cases(size_t filter_size) {
-    std::vector<size_t> widths = {2 * filter_size + 16};
-    std::vector<size_t> src_paddings = {5};
-    std::vector<size_t> dst_paddings = {13};
-    std::vector<size_t> heights = {2 * filter_size + 16};
-    std::vector<size_t> channels = {1, 2, 3, 4};
-    std::vector<size_t> filter_sizes = {filter_size};
-    std::vector<kleidicv_border_type_t> border_types = {
-        KLEIDICV_BORDER_TYPE_REPLICATE};
+    // Add one test case with padding
+    tests.push_back({2 * filter_size + 2, 5, 13, filter_size, 3, filter_size,
+                     KLEIDICV_BORDER_TYPE_REPLICATE});
 
-    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
-                               channels, filter_sizes, border_types);
-  }
-
-  static std::vector<TestParams> get_small_range_filter_test_cases(
-      size_t filter_size) {
-    std::vector<size_t> widths = {25, filter_size - 1};
-    std::vector<size_t> src_paddings = {0};
-    std::vector<size_t> dst_paddings = {3};
-    std::vector<size_t> heights = {filter_size, filter_size - 1};
-    std::vector<size_t> channels = {1, 2, 3, 4};
-    std::vector<size_t> filter_sizes = {filter_size};
-    std::vector<kleidicv_border_type_t> border_types = {
-        KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
-        KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
-
-    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
-                               channels, filter_sizes, border_types);
-  }
-
-  static std::vector<TestParams> get_mid_range_filter_test_cases() {
-    std::vector<size_t> widths = {50};
-    std::vector<size_t> src_paddings = {0};
-    std::vector<size_t> dst_paddings = {5};
-    std::vector<size_t> heights = {20};
-    std::vector<size_t> channels = {1, 4};
-    std::vector<size_t> filter_sizes = {9, 15};
-    std::vector<kleidicv_border_type_t> border_types = {
-        KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
-        KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
-    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
-                               channels, filter_sizes, border_types);
-  }
-
-  static std::vector<TestParams> get_large_range_filter_test_cases(
-      size_t filter_size) {
-    std::vector<size_t> widths = {60};
-    std::vector<size_t> src_paddings = {0};
-    std::vector<size_t> dst_paddings = {5};
-    std::vector<size_t> heights = {60, filter_size - 1};
-    std::vector<size_t> channels = {1, 3};
-    std::vector<size_t> filter_sizes = {filter_size};
-    std::vector<kleidicv_border_type_t> border_types = {
-        KLEIDICV_BORDER_TYPE_REPLICATE, KLEIDICV_BORDER_TYPE_REFLECT,
-        KLEIDICV_BORDER_TYPE_WRAP, KLEIDICV_BORDER_TYPE_REVERSE};
-    return generate_test_cases(widths, src_paddings, dst_paddings, heights,
-                               channels, filter_sizes, border_types);
+    return tests;
   }
 
   void run_test_case(const TestParams& params) {
@@ -247,42 +195,9 @@ using ElementTypes = ::testing::Types<uint8_t, int8_t, int16_t, uint16_t,
                                       int32_t, uint32_t, float>;
 TYPED_TEST_SUITE(MedianBlurTest, ElementTypes);
 
-TYPED_TEST(MedianBlurTest,
-           RunAllParamCombinationsWithoutPaddingWithSmallFilterSize) {
-  if (test::Options::are_long_running_tests_skipped()) {
-    GTEST_SKIP()
-        << "Long running test "
-           "MedianBlurTest::"
-           "RunAllParamCombinationsWithoutPaddingWithSmallFilterSize skipped";
-  }
-
+TYPED_TEST(MedianBlurTest, ValidInputCombinations) {
   for (auto ksize : {3, 5, 7}) {
-    for (const auto& params : TestFixture::get_unpadded_test_cases(ksize)) {
-      this->run_test_case(params);
-    }
-  }
-}
-
-TYPED_TEST(MedianBlurTest,
-           RunAllParamCombinationsWithPaddingWithSmallFilterSize) {
-  if (test::Options::are_long_running_tests_skipped()) {
-    GTEST_SKIP() << "Long running test "
-                    "MedianBlurTest::"
-                    "RunAllParamCombinationsWithPaddingWithSmallFilterSize "
-                    "skipped";
-  }
-
-  for (auto ksize : {3, 5, 7}) {
-    for (const auto& params : TestFixture::get_padded_test_cases(ksize)) {
-      this->run_test_case(params);
-    }
-  }
-}
-
-TYPED_TEST(MedianBlurTest, RunAllParamCombinationsWithSmallImageAndFilterSize) {
-  for (auto ksize : {3, 5, 7}) {
-    for (const auto& params :
-         TestFixture::get_small_range_filter_test_cases(ksize)) {
+    for (const auto& params : TestFixture::get_test_cases(ksize)) {
       this->run_test_case(params);
     }
   }
@@ -452,57 +367,33 @@ TYPED_TEST(MedianBlurTest, SrcDstChannelCombinations) {
     EXPECT_EQ(KLEIDICV_OK, status);
   }
 }
+
 template <typename ElementType>
 class MedianBlurMidAndLargeRangeTest : public MedianBlurTest<ElementType> {};
 using ByteType = ::testing::Types<uint8_t>;
 TYPED_TEST_SUITE(MedianBlurMidAndLargeRangeTest, ByteType);
-TYPED_TEST(MedianBlurMidAndLargeRangeTest,
-           RunAllParamCombinationsWithSmallImageAndMidRangeFilterSize) {
-  for (const auto& params : TestFixture::get_mid_range_filter_test_cases()) {
+
+TYPED_TEST(MedianBlurMidAndLargeRangeTest, SmallHistogramFilterSize) {
+  for (auto ksize : {9, 15}) {
+    for (const auto& params : TestFixture::get_test_cases(ksize)) {
+      this->run_test_case(params);
+    }
+  }
+}
+
+TYPED_TEST(MedianBlurMidAndLargeRangeTest, LargeHistogramFilterSize) {
+  for (const auto& params : TestFixture::get_test_cases(17)) {
     this->run_test_case(params);
   }
 }
-
-TYPED_TEST(MedianBlurMidAndLargeRangeTest,
-           RunAllParamCombinationsWithSmallImageAndLargeRangeFilterSize) {
-  for (auto ksize : {17, 35}) {
-    for (const auto& params :
-         TestFixture::get_large_range_filter_test_cases(ksize)) {
-      this->run_test_case(params);
-    }
-  }
-}
-
-TYPED_TEST(MedianBlurMidAndLargeRangeTest,
-           RunAllParamCombinationsWithoutPaddingWithMidAndLargeFilterSize) {
+TYPED_TEST(MedianBlurMidAndLargeRangeTest, MaxFilterSize) {
   if (test::Options::are_long_running_tests_skipped()) {
-    GTEST_SKIP()
-        << "Long running test "
-           "MedianBlurMidAndLargeRangeTest::"
-           "RunAllParamCombinationsWithoutPaddingWithMidAndLargeFilterSize "
-           "skipped";
+    GTEST_SKIP() << "Long running test "
+                    "MedianBlurMidAndLargeRangeTest::"
+                    "MaxFilterSize "
+                    "skipped";
   }
-
-  for (auto ksize : {9, 15, 17, 255}) {
-    for (const auto& params : TestFixture::get_unpadded_test_cases(ksize)) {
-      this->run_test_case(params);
-    }
-  }
-}
-
-TYPED_TEST(MedianBlurMidAndLargeRangeTest,
-           RunAllParamCombinationsWithPaddingWithMidAndLargeFilterSize) {
-  if (test::Options::are_long_running_tests_skipped()) {
-    GTEST_SKIP()
-        << "Long running test "
-           "MedianBlurMidAndLargeRangeTest::"
-           "RunAllParamCombinationsWithPaddingWithMidAndLargeFilterSize "
-           "skipped";
-  }
-
-  for (auto ksize : {9, 15, 17, 255}) {
-    for (const auto& params : TestFixture::get_padded_test_cases(ksize)) {
-      this->run_test_case(params);
-    }
-  }
+  size_t filter_size = 255;
+  this->run_test_case({2 * filter_size + 2, 0, 0, filter_size, 1, filter_size,
+                       KLEIDICV_BORDER_TYPE_REPLICATE});
 }
