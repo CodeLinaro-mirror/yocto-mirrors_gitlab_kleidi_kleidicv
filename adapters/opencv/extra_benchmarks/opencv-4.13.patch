@@ -739,7 +739,7 @@ index bd2129d233..0ce3d9c870 100644
      SANITY_CHECK(dst);
  }
 diff --git a/modules/imgproc/perf/perf_resize.cpp b/modules/imgproc/perf/perf_resize.cpp
-index 0f470a5f81..a427348f89 100644
+index 0f470a5f81..087d771047 100644
 --- a/modules/imgproc/perf/perf_resize.cpp
 +++ b/modules/imgproc/perf/perf_resize.cpp
 @@ -67,7 +67,18 @@ PERF_TEST_P(MatInfo_SizePair, resizeUpLinearNonExact,
@@ -778,11 +778,13 @@ index 0f470a5f81..a427348f89 100644
                      )
                  )
              )
-@@ -173,7 +191,7 @@ typedef TestBaseWithParam<MatInfo_Size_Scale_t> MatInfo_Size_Scale;
+@@ -172,8 +190,8 @@ typedef TestBaseWithParam<MatInfo_Size_Scale_t> MatInfo_Size_Scale;
+ 
  PERF_TEST_P(MatInfo_Size_Scale, ResizeAreaFast,
              testing::Combine(
-                 testing::Values(CV_8UC1, CV_8UC3, CV_8UC4, CV_16UC1, CV_16UC3, CV_16UC4),
+-                testing::Values(CV_8UC1, CV_8UC3, CV_8UC4, CV_16UC1, CV_16UC3, CV_16UC4),
 -                testing::Values(szVGA, szqHD, sz720p, sz1080p),
++                testing::Values(CV_8UC1, CV_8UC2, CV_8UC3, CV_8UC4, CV_16UC1, CV_16UC3, CV_16UC4),
 +                testing::Values(szVGA, szqHD, sz720p, sz1080p, sz2160p),
                  testing::Values(2)
                  )
