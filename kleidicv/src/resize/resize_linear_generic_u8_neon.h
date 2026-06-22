@@ -708,18 +708,44 @@ class ResizeGenericU8Operation final {
  public:
   ResizeGenericU8Operation(const uint8_t *src, size_t src_stride,
                            size_t src_height, size_t y_begin, size_t y_end,
-                           uint8_t *dst, size_t dst_stride, size_t dst_height)
+                           uint8_t *dst, size_t dst_stride, size_t dst_width,
+                           size_t dst_height)
       : src_rows_{src, src_stride, kChannels},
         dst_rows_{dst, dst_stride, kChannels},
         src_height_{src_height},
         y_begin_{y_begin},
         y_end_{y_end},
-        dst_height_{dst_height} {}
+        dst_length_{static_cast<ptrdiff_t>(dst_width * kChannels)},
+        dst_height_{dst_height},
+        hbuffer_{nullptr, std::free},
+        hbuffer1_{nullptr},
+        hbuffer2_{nullptr},
+        hbuffer_sy_{-2} {}
 
-  void process_rows(RowInterpolationConstants &row_interpolation_constants) {
+  kleidicv_error_t process_rows_separated(
+      RowInterpolationConstants &row_interpolation_constants) {
+    uint8_t *allocation = static_cast<uint8_t *>(malloc(dst_length_ * 2));
+    if (!allocation) {
+      return KLEIDICV_ERROR_ALLOCATION;
+    }
+    hbuffer_.reset(allocation);
+    hbuffer1_ = allocation;
+    hbuffer2_ = allocation + dst_length_;
+    // invalid value to force buffers processed first
+    hbuffer_sy_ = -2;
+
+    for (size_t dst_y = y_begin_; dst_y < y_end_; ++dst_y) {
+      process_row_separated(dst_y, row_interpolation_constants);
+    }
+    return KLEIDICV_OK;
+  }
+
+  kleidicv_error_t process_rows(
+      RowInterpolationConstants &row_interpolation_constants) {
     for (size_t dst_y = y_begin_; dst_y < y_end_; ++dst_y) {
       process_row(dst_y, row_interpolation_constants);
     }
+    return KLEIDICV_OK;
   }
 
  private:
@@ -769,39 +795,145 @@ class ResizeGenericU8Operation final {
     }
   }
 
-  uint8x8_t vector_path_half(const HalfVectorInterpolationConstants &constants,
-                             uint16_t yfrac, const uint8_t *src_top,
-                             const uint8_t *src_bottom) const {
+  void process_row_separated(
+      size_t dy, RowInterpolationConstants &row_interpolation_constants) {
+    int64_t sy_fixp = to_src_y(dy);
+    ptrdiff_t sy = static_cast<ptrdiff_t>(sy_fixp >> kFixpBits);
+    const ptrdiff_t max_sy = static_cast<ptrdiff_t>(src_height_ - 1);
+    ptrdiff_t sy_top = std::clamp(sy, ptrdiff_t{0}, max_sy);
+    ptrdiff_t sy_bottom = std::clamp(sy + 1, ptrdiff_t{0}, max_sy);
+    if (sy_top != hbuffer_sy_) {
+      if (sy_top == hbuffer_sy_ + 1) {
+        std::swap(hbuffer1_, hbuffer2_);
+      } else {
+        process_row_horizontal(&src_rows_.at(sy_top)[0], hbuffer1_,
+                               row_interpolation_constants);
+      }
+      hbuffer_sy_ = sy_top;
+      if (sy_top < max_sy) {
+        process_row_horizontal(&src_rows_.at(sy_top + 1)[0], hbuffer2_,
+                               row_interpolation_constants);
+      }
+    }
+
+    const uint8_t *inter_top = hbuffer1_;
+    const uint8_t *inter_bottom =
+        sy_bottom == hbuffer_sy_ ? hbuffer1_ : hbuffer2_;
+    uint8_t *dst = &dst_rows_.at(static_cast<ptrdiff_t>(dy))[0];
+    // Get the highest 8 bits of the fractional part
+    // This is a good compromise between accuracy and performance
+    // Because the result is 8bits, the error only affects the least
+    // significant 1-2 bits, see the accuracy calculation in kleidicv.h
+    const int64_t sy_fixp_base = sy * (int64_t{1} << kFixpBits);
+    uint16_t yfrac =
+        static_cast<uint16_t>((sy_fixp - sy_fixp_base) >> (kFixpBits - 8));
+    process_row_vertical(inter_top, inter_bottom, dst, dst_length_, yfrac);
+    // hbuffer_ owns the allocation from process_rows(); clang-analyzer loses
+    // that member ownership on this template path.
+  }  // NOLINT(clang-analyzer-unix.Malloc)
+
+  void process_row_horizontal(
+      const uint8_t *src, uint8_t *dst,
+      RowInterpolationConstants &row_interpolation_constants) {
+    VectorPathNums num_of_vector_paths =
+        row_interpolation_constants.num_of_vector_paths();
+    auto *full_array =
+        row_interpolation_constants.full_vector_constants_array();
+    auto *half_array =
+        row_interpolation_constants.half_vector_constants_array();
+    ptrdiff_t dst_element_index = 0;
+
+    for (size_t i = 0; i < num_of_vector_paths.two_x; i += 1) {
+      uint8x16x2_t res{};
+      res.val[0] = horizontal_vector_path(full_array[i * 2], src);
+      res.val[1] = horizontal_vector_path(full_array[(i * 2) + 1], src);
+      VecTraits<uint8_t>::store(res, &dst[dst_element_index]);
+      dst_element_index += kStep * 2;
+    }
+
+    for (size_t i = 0; i < num_of_vector_paths.half; i += 1) {
+      auto res = horizontal_vector_path_half(half_array[i], src);
+      vst1(&dst[half_array[i].dst_element_index], res);
+    }
+  }
+
+  void process_row_vertical(const uint8_t *inter_top,
+                            const uint8_t *inter_bottom, uint8_t *dst,
+                            ptrdiff_t dst_len, uint16_t yfrac) {
+    ptrdiff_t dst_element_index = 0, max2x = dst_len - 2 * kStep;
+
+    for (; dst_element_index <= max2x; dst_element_index += kStep * 2) {
+      uint8x16x2_t top, bottom;
+      VecTraits<uint8_t>::load(&inter_top[dst_element_index], top);
+      VecTraits<uint8_t>::load(&inter_bottom[dst_element_index], bottom);
+
+      uint8x16x2_t res = lerp1d(top, bottom, yfrac);
+      VecTraits<uint8_t>::store(res, &dst[dst_element_index]);
+    }
+
+    for (; dst_element_index < dst_len; dst_element_index += kHalfStep) {
+      dst_element_index = std::min(dst_element_index, dst_len - kHalfStep);
+      uint8x8_t top = vld1_u8(&inter_top[dst_element_index]);
+      uint8x8_t bottom = vld1_u8(&inter_bottom[dst_element_index]);
+      uint8x8_t res = lerp1d(top, bottom, yfrac);
+      vst1(&dst[dst_element_index], res);
+    }
+  }
+
+  uint8x16_t horizontal_vector_path(
+      const FullVectorInterpolationConstants &constants,
+      const uint8_t *src) const {
+    uint8x16_t vsx0_idx = vld1q(constants.idx0);
+    uint8x16_t vsx1_idx = vld1q(constants.idx1);
+    uint16x8x2_t vsxfrac2;
+    VecTraits<uint16_t>::load(constants.xfrac, vsxfrac2);
+    ptrdiff_t src_element_index = constants.src_element_index;
+    SrcVecType<kRatio> src_data;
+    VecTraits<uint8_t>::load(&src[src_element_index], src_data);
+    uint8x16_t a, b;
+    if constexpr (kRatio == 1) {
+      a = vqtbl1q_u8(src_data, vsx0_idx);
+      b = vqtbl1q_u8(src_data, vsx1_idx);
+      static_assert(!kSetRightmostLanes);
+    } else if constexpr (kRatio == 2) {
+      a = vqtbl2q_u8(src_data, vsx0_idx);
+      b = vqtbl2q_u8(src_data, vsx1_idx);
+      static_assert(!kSetRightmostLanes);
+    } else if constexpr (kRatio == 3) {
+      a = vqtbl3q_u8(src_data, vsx0_idx);
+      b = vqtbl3q_u8(src_data, vsx1_idx);
+      // table lookup would overindex src_data
+      if constexpr (kSetRightmostLanes) {
+        ptrdiff_t last_right_elem_idx = src_element_index + constants.idx1[15];
+        b = vsetq_lane_u8(src[last_right_elem_idx], b, 15);
+      }
+    }
+    return lerp1d(a, b, vsxfrac2);
+  }
+
+  uint8x8_t horizontal_vector_path_half(
+      const HalfVectorInterpolationConstants &constants,
+      const uint8_t *src) const {
     uint8x8_t vsx0_idx = vld1_u8(constants.idx0);
     uint8x8_t vsx1_idx = vld1_u8(constants.idx1);
     ptrdiff_t src_element_index = constants.src_element_index;
     uint16x8_t vsxfrac;
     VecTraits<uint16_t>::load(constants.xfrac, vsxfrac);
 
-    constexpr bool kLoadTwo = (!kUpsize && kChannels == 3) || kRatio == 3;
-    HalfSrcVecType<kLoadTwo> topsrc, bottomsrc;
-    VecTraits<uint8_t>::load(&src_top[src_element_index], topsrc);
-    VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);
+    constexpr bool kLoadTwo =
+        (!kUpsize && kChannels == 3) || kRatio == 3;  // GCOVR_EXCL_LINE
+    HalfSrcVecType<kLoadTwo> src_data;
+    VecTraits<uint8_t>::load(&src[src_element_index], src_data);
 
-    uint8x8_t a, b, c, d;
+    uint8x8_t a, b;
     if constexpr (!kLoadTwo) {
-      a = vqtbl1_u8(topsrc, vsx0_idx);
-      b = vqtbl1_u8(topsrc, vsx1_idx);
-      c = vqtbl1_u8(bottomsrc, vsx0_idx);
-      d = vqtbl1_u8(bottomsrc, vsx1_idx);
+      a = vqtbl1_u8(src_data, vsx0_idx);
+      b = vqtbl1_u8(src_data, vsx1_idx);
     } else if constexpr (kLoadTwo) {
-      a = vqtbl2_u8(topsrc, vsx0_idx);
-      b = vqtbl2_u8(topsrc, vsx1_idx);
-      c = vqtbl2_u8(bottomsrc, vsx0_idx);
-      d = vqtbl2_u8(bottomsrc, vsx1_idx);
+      a = vqtbl2_u8(src_data, vsx0_idx);
+      b = vqtbl2_u8(src_data, vsx1_idx);
     }
-    uint8x8_t left =
-        vraddhn_u16(vshll_n_u8(a, 8), vmulq_n_u16(vsubl_u8(c, a), yfrac));
-    uint8x8_t right =
-        vraddhn_u16(vshll_n_u8(b, 8), vmulq_n_u16(vsubl_u8(d, b), yfrac));
-    uint8x8_t res = vraddhn_u16(vshll_n_u8(left, 8),
-                                vmulq_u16(vsubl_u8(right, left), vsxfrac));
-    return res;
+    return lerp1d(a, b, vsxfrac);
   }
 
   uint8x16_t vector_path(const FullVectorInterpolationConstants &constants,
@@ -841,28 +973,72 @@ class ResizeGenericU8Operation final {
         d = vsetq_lane_u8(src_bottom[last_right_elem_idx], d, 15);
       }
     }
-    uint8x8_t left_lo = lerp_low_half(a, c, yfrac);
-    uint8x8_t left_hi = lerp_high_half(a, c, yfrac);
-    uint8x8_t right_lo = lerp_low_half(b, d, yfrac);
-    uint8x8_t right_hi = lerp_high_half(b, d, yfrac);
-    uint8x8_t res_lo = lerp_full(left_lo, right_lo, vsxfrac2.val[0]);
-    uint8x8_t res_hi = lerp_full(left_hi, right_hi, vsxfrac2.val[1]);
-    return vcombine_u8(res_lo, res_hi);
+    uint8x16_t top = lerp1d(a, b, vsxfrac2);
+    uint8x16_t bottom = lerp1d(c, d, vsxfrac2);
+    return lerp1d(top, bottom, yfrac);
   }
 
-  static uint8x8_t lerp_low_half(uint8x16_t a, uint8x16_t b, uint16_t w) {
-    return vraddhn_u16(
-        vshll_n_u8(vget_low_u8(a), 8),
-        vmulq_n_u16(vsubl_u8(vget_low_u8(b), vget_low_u8(a)), w));
+  uint8x8_t vector_path_half(const HalfVectorInterpolationConstants &constants,
+                             uint16_t yfrac, const uint8_t *src_top,
+                             const uint8_t *src_bottom) const {
+    uint8x8_t vsx0_idx = vld1_u8(constants.idx0);
+    uint8x8_t vsx1_idx = vld1_u8(constants.idx1);
+    ptrdiff_t src_element_index = constants.src_element_index;
+    uint16x8_t vsxfrac;
+    VecTraits<uint16_t>::load(constants.xfrac, vsxfrac);
+
+    constexpr bool kLoadTwo =
+        (!kUpsize && kChannels == 3) || kRatio == 3;  // GCOVR_EXCL_LINE
+    HalfSrcVecType<kLoadTwo> topsrc, bottomsrc;
+    VecTraits<uint8_t>::load(&src_top[src_element_index], topsrc);
+    VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);
+
+    uint8x8_t a, b, c, d;
+    if constexpr (!kLoadTwo) {
+      a = vqtbl1_u8(topsrc, vsx0_idx);
+      b = vqtbl1_u8(topsrc, vsx1_idx);
+      c = vqtbl1_u8(bottomsrc, vsx0_idx);
+      d = vqtbl1_u8(bottomsrc, vsx1_idx);
+    } else if constexpr (kLoadTwo) {
+      a = vqtbl2_u8(topsrc, vsx0_idx);
+      b = vqtbl2_u8(topsrc, vsx1_idx);
+      c = vqtbl2_u8(bottomsrc, vsx0_idx);
+      d = vqtbl2_u8(bottomsrc, vsx1_idx);
+    }
+    uint8x8_t top = lerp1d(a, b, vsxfrac);
+    uint8x8_t bottom = lerp1d(c, d, vsxfrac);
+    return lerp1d(top, bottom, yfrac);
   }
 
-  static uint8x8_t lerp_high_half(uint8x16_t a, uint8x16_t b, uint16_t w) {
-    return vraddhn_u16(vshll_high_n_u8(a, 8),
-                       vmulq_n_u16(vsubl_high_u8(b, a), w));
+  static uint8x8_t lerp1d(uint8x8_t a, uint8x8_t b, uint16_t w) {
+    return vraddhn_u16(vshll_n_u8(a, 8), vmulq_n_u16(vsubl_u8(b, a), w));
   }
 
-  static uint8x8_t lerp_full(uint8x8_t a, uint8x8_t b, uint16x8_t w) {
+  static uint8x8_t lerp1d(uint8x8_t a, uint8x8_t b, uint16x8_t w) {
     return vraddhn_u16(vshll_n_u8(a, 8), vmulq_u16(vsubl_u8(b, a), w));
+  }
+
+  static uint8x16_t lerp1d(uint8x16_t a, uint8x16_t b, uint16_t w) {
+    uint8x8_t lo = lerp1d(vget_low_u8(a), vget_low_u8(b), w);
+    uint8x8_t hi = lerp1d(vget_high_u8(a), vget_high_u8(b), w);
+    return vcombine_u8(lo, hi);
+  }
+
+  static uint8x16x2_t lerp1d(uint8x16x2_t a, uint8x16x2_t b, uint16_t w) {
+    uint8x8_t res0_lo = lerp1d(vget_low_u8(a.val[0]), vget_low_u8(b.val[0]), w);
+    uint8x8_t res0_hi =
+        lerp1d(vget_high_u8(a.val[0]), vget_high_u8(b.val[0]), w);
+    uint8x8_t res1_lo = lerp1d(vget_low_u8(a.val[1]), vget_low_u8(b.val[1]), w);
+    uint8x8_t res1_hi =
+        lerp1d(vget_high_u8(a.val[1]), vget_high_u8(b.val[1]), w);
+    return uint8x16x2_t{vcombine_u8(res0_lo, res0_hi),
+                        vcombine_u8(res1_lo, res1_hi)};
+  }
+
+  static uint8x16_t lerp1d(uint8x16_t a, uint8x16_t b, uint16x8x2_t w) {
+    uint8x8_t lo = lerp1d(vget_low_u8(a), vget_low_u8(b), w.val[0]);
+    uint8x8_t hi = lerp1d(vget_high_u8(a), vget_high_u8(b), w.val[1]);
+    return vcombine_u8(lo, hi);
   }
 
   const Rows<const uint8_t> src_rows_;
@@ -870,7 +1046,15 @@ class ResizeGenericU8Operation final {
   const size_t src_height_;
   const size_t y_begin_;
   const size_t y_end_;
+  // number of elements in a row
+  const ptrdiff_t dst_length_;
   const size_t dst_height_;
+  using FreeDeleter = decltype(&std::free);
+  std::unique_ptr<uint8_t, FreeDeleter> hbuffer_;
+  uint8_t *hbuffer1_, *hbuffer2_;
+  // index of the top row stored at hbuffer1_; hbuffer2_ is
+  // always the next row
+  ptrdiff_t hbuffer_sy_;
 };  // template class ResizeGenericU8Operation
 
 }  // namespace kleidicv::neon::resize_linear_generic_u8

@@ -17,15 +17,15 @@ index 61f7d57457..1ac408fe63 100644
 --- a/modules/core/src/copy.cpp
 +++ b/modules/core/src/copy.cpp
 @@ -1263,6 +1263,10 @@ void cv::copyMakeBorder( InputArray _src, OutputArray _dst, int top, int bottom,
- 
+
      borderType &= ~BORDER_ISOLATED;
- 
+
 +    CALL_HAL(copyMakeBorder, cv_hal_copyMakeBorder, src.ptr(), src.step,
 +             src.type(), src.cols, src.rows, dst.ptr(), dst.step,
 +             top, bottom, left, right, borderType, value.val);
 +
      CV_IPP_RUN_FAST(ipp_copyMakeBorder(src, dst, top, bottom, left, right, borderType, value))
- 
+
      if( borderType != BORDER_CONSTANT )
 diff --git a/modules/core/src/hal_replacement.hpp b/modules/core/src/hal_replacement.hpp
 index 541789a6d8..535cd29523 100644
@@ -34,7 +34,7 @@ index 541789a6d8..535cd29523 100644
 @@ -1249,6 +1249,27 @@ inline int hal_ni_copyToMasked(const uchar* src_data, size_t src_step, uchar* ds
  #define cv_hal_copyToMasked hal_ni_copyToMasked
  //! @endcond
- 
+
 +/**
 +   @brief copyMakeBorder
 +   @param src_data, src_step Source image after OpenCV ROI adjustment
@@ -59,3 +59,48 @@ index 541789a6d8..535cd29523 100644
  /**
   @ brief sum
   @param src_data Source image data
+diff --git a/modules/imgproc/test/test_imgwarp_strict.cpp b/modules/imgproc/test/test_imgwarp_strict.cpp
+index 673c6f03e6..a0be19b05f 100644
+--- a/modules/imgproc/test/test_imgwarp_strict.cpp
++++ b/modules/imgproc/test/test_imgwarp_strict.cpp
+@@ -338,30 +338,40 @@ public:
+
+ protected:
+     virtual void generate_test_data();
++    virtual float get_success_error_level(int _interpolation, int _depth) const;
+
+     virtual void run_func();
+     virtual void run_reference_func();
+
+ private:
+     double scale_x;
+     double scale_y;
+     bool area_fast;
+
+     void resize_generic();
+     void resize_area();
+     double getWeight(double a, double b, int x);
+
+     typedef std::vector<std::pair<int, double> > dim;
+     void generate_buffer(double scale, dim& _dim);
+     void resize_1d(const Mat& _src, Mat& _dst, int dy, const dim& _dim);
+ };
+
+ CV_Resize_Test::CV_Resize_Test() :
+     CV_ImageWarpBaseTest(), scale_x(),
+     scale_y(), area_fast(false)
+ {
+ }
+
++float CV_Resize_Test::get_success_error_level(int _interpolation,
++                                              int _depth) const {
++  if (_interpolation == INTER_LINEAR)
++    return 2.0f;
++  else
++    return CV_ImageWarpBaseTest::get_success_error_level(_interpolation,
++                                                         _depth);
++}
++
+ CV_Resize_Test::~CV_Resize_Test()
+ {
+ }

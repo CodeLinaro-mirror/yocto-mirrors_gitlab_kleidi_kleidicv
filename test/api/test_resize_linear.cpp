@@ -720,6 +720,13 @@ TEST_P(ResizeLinearU8, GenericDownsizeTiny3) {
   do_large_dimensions_test<uint8_t>(src_width, 3, dst_width, 2, channels);
 }
 
+TEST_P(ResizeLinearU8, GenericDownsizeSmall3ExtraLanes) {
+  size_t channels = GetParam();
+  size_t src_width = 38;
+  size_t dst_width = 13;
+  do_large_dimensions_test<uint8_t>(src_width, 3, dst_width, 2, channels);
+}
+
 TEST_P(ResizeLinearU8, GenericUpsizeSmall) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t>(43, 11, 47, 19, channels);

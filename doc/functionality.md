@@ -165,10 +165,11 @@ Uint8 data:
 | Downsize 0.5x0.5                       | x | x | x | x |
 | Upsize                                 | x | x | x | x |
 
-Note: For uint8 downsize and upsize, table specifies horizontal scaling. Vertical scaling factor is independent, it can be anything, even vertical upsizing is supported when the horizontal dimension is downsized, and vice versa.
+Note: For uint8 downsize and upsize, table specifies horizontal scaling. Vertical scaling factor is independent,
+it can be anything, even vertical upsizing is supported when the horizontal dimension is downsized, and vice versa.
 
-Note: For the linear upsize, horizontal scaling factor practically has no limit, but for
-bigger factors the performance is worse.
+Note: For the linear upsize, horizontal scaling factor practically has no limit, but for bigger factors
+and when horizontal and vertical scaling differs much, the performance has to be checked.
 
 ## Transform
 

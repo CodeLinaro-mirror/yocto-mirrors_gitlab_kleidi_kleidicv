@@ -9,7 +9,9 @@
 #include <string>
 #include <vector>
 
+#include "framework/utils.h"
 #include "kleidicv/src/resize/resize_linear_generic_u8_neon.h"
+#include "test_config.h"
 
 // As the tests reuse internals of the implementations the tests are added to
 // the production namespace
@@ -242,7 +244,83 @@ void generator_test(int xfrac_tolerance = 0) {
   compare_constants(actual_half, ref_half, xfrac_tolerance);
 }
 
+#ifdef KLEIDICV_ALLOCATION_TESTS
+template <size_t kChannels, size_t kSrcWidth, size_t kDstWidth>
+void rowbuffer_allocation_test() {
+  constexpr size_t kRatio =
+      kDstWidth > kSrcWidth && kDstWidth * 14 <= kSrcWidth * 15
+          ? 2
+          : (kSrcWidth / kDstWidth) + 1;
+  constexpr bool kUpsize = kDstWidth >= kSrcWidth;
+  constexpr size_t kSrcHeight = 2;
+  constexpr size_t kDstHeight = 2;
+  constexpr size_t kSrcStride = kSrcWidth * kChannels;
+  constexpr size_t kDstStride = kDstWidth * kChannels;
+  static_assert(kRatio >= 1 && kRatio <= 3);
+
+  RowInterpolationConstantsGenerator<kRatio, kChannels, kUpsize> generator{
+      kSrcWidth, kDstWidth};
+  auto constants_variant = generator();
+  auto* ptr = std::get_if<RowInterpolationConstants>(&constants_variant);
+  ASSERT_NE(nullptr, ptr);
+  auto& row_interpolation_constants = *ptr;
+
+  std::vector<uint8_t> src(kSrcStride * kSrcHeight);
+  std::vector<uint8_t> dst(kDstStride * kDstHeight);
+  ResizeGenericU8Operation<kRatio, kChannels, false, kUpsize> operation(
+      src.data(), kSrcStride, kSrcHeight, 0, 1, dst.data(), kDstStride,
+      kDstWidth, kDstHeight);
+
+  MockMallocToFail::enable();
+  auto res = operation.process_rows_separated(row_interpolation_constants);
+  MockMallocToFail::disable();
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, res);
+}
+#endif  // KLEIDICV_ALLOCATION_TESTS
 }  // namespace kleidicv::neon::resize_linear_generic_u8
+
+#ifdef KLEIDICV_ALLOCATION_TESTS
+TEST(GenericResize_u8, CannotAllocateRowBuffer) {
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<1, 16,
+                                                                      17>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<2, 16,
+                                                                      17>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<3, 16,
+                                                                      17>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<4, 16,
+                                                                      17>();
+
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<1, 16,
+                                                                      28>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<2, 16,
+                                                                      28>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<3, 16,
+                                                                      28>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<4, 16,
+                                                                      28>();
+
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<1, 16,
+                                                                      9>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<2, 16,
+                                                                      9>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<3, 16,
+                                                                      9>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<4, 16,
+                                                                      9>();
+
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<1, 25,
+                                                                      9>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<2, 25,
+                                                                      9>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<3, 25,
+                                                                      9>();
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<4, 25,
+                                                                      9>();
+
+  kleidicv::neon::resize_linear_generic_u8::rowbuffer_allocation_test<3, 26,
+                                                                      9>();
+}
+#endif  // KLEIDICV_ALLOCATION_TESTS
 
 TEST(GenericResize_u8, rounding_div) {
   EXPECT_EQ(1, kleidicv::neon::resize_linear_generic_u8::rounding_div(4, 5));

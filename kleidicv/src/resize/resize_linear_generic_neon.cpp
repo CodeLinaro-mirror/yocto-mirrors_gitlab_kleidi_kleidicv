@@ -36,6 +36,9 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8(
       *std::get_if<resize_linear_generic_u8::RowInterpolationConstants>(
           &row_interpolation_constants_variant);
 
+  double inverse_vertical_scale =
+      static_cast<double>(src_height) / static_cast<double>(dst_height);
+
   if constexpr (kChannels == 3 && kRatio == 3 && !kUpsize) {
     double inverse_scale =
         static_cast<double>(src_width) / static_cast<double>(dst_width);
@@ -45,19 +48,26 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8(
       resize_linear_generic_u8::ResizeGenericU8Operation<kRatio, kChannels,
                                                          true, kUpsize>
           operation(src, src_stride, src_height, y_begin, y_end, dst,
-                    dst_stride, dst_height);
-      operation.process_rows(row_interpolation_constants);
-      return KLEIDICV_OK;
+                    dst_stride, dst_width, dst_height);
+
+      // For smaller ratios (upsizing and slighter downsizing), this is faster
+      if (inverse_vertical_scale < 1.6) {
+        return operation.process_rows_separated(row_interpolation_constants);
+      }
+      return operation.process_rows(row_interpolation_constants);
     }
   }
 
   resize_linear_generic_u8::ResizeGenericU8Operation<kRatio, kChannels, false,
                                                      kUpsize>
       operation(src, src_stride, src_height, y_begin, y_end, dst, dst_stride,
-                dst_height);
-  operation.process_rows(row_interpolation_constants);
+                dst_width, dst_height);
 
-  return KLEIDICV_OK;
+  // For smaller ratios (upsizing and slighter downsizing), this is faster
+  if (inverse_vertical_scale < 1.6) {
+    return operation.process_rows_separated(row_interpolation_constants);
+  }
+  return operation.process_rows(row_interpolation_constants);
 }
 
 #define KLEIDICV_INSTANTIATE_TEMPLATE(ratio, channels, up)           \
