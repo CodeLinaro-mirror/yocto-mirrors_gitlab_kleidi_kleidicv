@@ -32,15 +32,9 @@ inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
     return true;
   }
 
-  if (channels == 1) {
-    const std::array<size_t, 2> implemented_ratios = {2, 4};
-    if (std::any_of(implemented_ratios.begin(), implemented_ratios.end(),
-                    [&](size_t ratio) {
-                      return src_width * ratio == dst_width &&
-                             src_height * ratio == dst_height;
-                    })) {
-      return true;
-    }
+  if (channels == 1 && src_width * 2 == dst_width &&
+      src_height * 2 == dst_height) {
+    return true;
   }
 
   // Upsize linear generic: a minimal width is needed to execute vector
@@ -99,9 +93,6 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
 template <int kRatio, int kChannels, bool kUpsize = false>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -119,9 +110,6 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       uint8_t *dst, size_t dst_stride,
                                       size_t channels);
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
 template <int kRatio, int kChannels, bool kUpsize = false>
@@ -143,9 +131,6 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
 template <int kRatio, int kChannels, bool kUpsize = false>
 kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
@@ -163,9 +148,6 @@ kleidicv_error_t resize_to_quarter_u8(const uint8_t *src, size_t src_stride,
                                       uint8_t *dst, size_t dst_stride,
                                       size_t channels);
 kleidicv_error_t kleidicv_resize_2x2_stripe_u8(
-    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
-    size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
-kleidicv_error_t kleidicv_resize_4x4_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
     size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
 template <int kRatio, int kChannels, bool kUpsize = false>

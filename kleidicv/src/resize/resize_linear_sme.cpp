@@ -17,15 +17,6 @@ kleidicv_resize_2x2_stripe_u8(const uint8_t *src, size_t src_stride,
                                    y_begin, y_end, dst, dst_stride);
 }
 
-KLEIDICV_LOCALLY_STREAMING KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t
-kleidicv_resize_4x4_stripe_u8(const uint8_t *src, size_t src_stride,
-                              size_t src_width, size_t src_height,
-                              size_t y_begin, size_t y_end, uint8_t *dst,
-                              size_t dst_stride) {
-  return kleidicv_resize_4x4_u8_sc(src, src_stride, src_width, src_height,
-                                   y_begin, y_end, dst, dst_stride);
-}
-
 template <int kRatio, int kChannels, bool kUpsize>
 KLEIDICV_LOCALLY_STREAMING kleidicv_error_t kleidicv_resize_generic_stripe_u8(
     const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,

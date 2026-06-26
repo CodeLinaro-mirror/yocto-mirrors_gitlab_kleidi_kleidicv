@@ -32,8 +32,9 @@ class ResizeThread : public testing::TestWithParam<P> {
     }
   }
   void test_resize_u8_4x4() {
-    size_t src_width = 0, src_height = 0, thread_count = 0, channels = 0;
-    std::tie(src_width, src_height, thread_count, channels) = GetParam();
+    size_t test_width = 0, src_height = 0, thread_count = 0, channels = 0;
+    std::tie(test_width, src_height, thread_count, channels) = GetParam();
+    size_t src_width = test_width + 15;
     if (channels <= 1) {
       check<uint8_t>(kleidicv_resize_linear_u8,
                      kleidicv_thread_resize_linear_u8, thread_count, src_width,

@@ -19,8 +19,6 @@
 
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_2x2_stripe_u8,
                           kleidicv_resize_2x2_stripe_u8);
-KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_4x4_stripe_u8,
-                          kleidicv_resize_4x4_stripe_u8);
 
 #define KLEIDICV_UPSIZE_down false
 #define KLEIDICV_UPSIZE_up true
@@ -107,11 +105,6 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
   if (channels == 1) {
     if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
       return CALL_RESIZE(kleidicv_resize_2x2_stripe_u8, src, src_stride,
-                         src_width, src_height, y_begin, y_end, dst,
-                         dst_stride);
-    }
-    if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
-      return CALL_RESIZE(kleidicv_resize_4x4_stripe_u8, src, src_stride,
                          src_width, src_height, y_begin, y_end, dst,
                          dst_stride);
     }
@@ -233,12 +226,11 @@ kleidicv_error_t resize_linear_u8(const uint8_t *src, size_t src_stride,
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  // The exact 2x2 and 4x4 upsampling kernels iterate over source rows,
+  // The exact 2x2 upsampling kernel iterate over source rows,
   // while the generic resize kernels iterate over destination rows.
   const bool process_by_src_rows =
       channels == 1 &&
-      ((src_width * 2 == dst_width && src_height * 2 == dst_height) ||
-       (src_width * 4 == dst_width && src_height * 4 == dst_height));
+      (src_width * 2 == dst_width && src_height * 2 == dst_height);
   size_t y_end = process_by_src_rows ? src_height : dst_height;
 
   return resize_linear_stripe_u8<kUseSME>(src, src_stride, src_width,

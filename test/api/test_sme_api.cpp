@@ -720,7 +720,7 @@ TEST(SmeApi, ResizeParity) {
   // Drive all kUseSME branches in resize_linear_api.cpp
   run_resize_u8_case("ch1_quarter", 10, 10, 5, 5, 1);
   run_resize_u8_case("ch1_2x2", 9, 7, 18, 14, 1);
-  run_resize_u8_case("ch1_4x4", 8, 8, 32, 32, 1);
+  run_resize_u8_case("ch1_4x4", 16, 16, 64, 64, 1);
   run_resize_u8_case("ch1_r2", 16, 16, 9, 9, 1);
   run_resize_u8_case("ch1_r3", 32, 16, 12, 9, 1);
   run_resize_u8_case("ch2_r2", 16, 16, 9, 9, 2);
