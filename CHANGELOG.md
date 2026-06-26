@@ -13,7 +13,7 @@ KleidiCV uses [Calendar Versioning](https://calver.org/) with the format of 0Y.0
 This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 26.06 - not yet released
+## 26.06 - 2026-06-26
 
 ### Added
 - Rotate +-90 and transpose support for 3-channel images.
