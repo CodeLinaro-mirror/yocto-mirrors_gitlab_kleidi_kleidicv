@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <utility>
 
 #include "kleidicv/config.h"
 #include "kleidicv/sve2.h"
@@ -429,7 +430,11 @@ class ResizeGenericU8Operation final {
         dst_length_{static_cast<ptrdiff_t>(dst_width * kChannels)},
         dst_height_{dst_height},
         kStep_{static_cast<ptrdiff_t>(svcntb())},
-        precalc_{src_width, dst_width, kStep_} {}
+        precalc_{src_width, dst_width, kStep_},
+        hbuffer_{nullptr, std::free},
+        hbuffer1_{nullptr},
+        hbuffer2_{nullptr},
+        hbuffer_sy_{-2} {}
 
   kleidicv_error_t process_rows() KLEIDICV_STREAMING {
     bool precalc_success = false;
@@ -447,6 +452,34 @@ class ResizeGenericU8Operation final {
       process_row(dst_y);
     }
 
+    return KLEIDICV_OK;
+  }
+
+  kleidicv_error_t process_rows_separated() KLEIDICV_STREAMING {
+    bool precalc_success = false;
+    if constexpr (kChannels == 3) {
+      precalc_success =
+          precalc_.precalculate_indices_fractions_srcindices_3ch();
+    } else {
+      precalc_success = precalc_.precalculate_indices_fractions_srcindices();
+    }
+    if (!precalc_success) {
+      return KLEIDICV_ERROR_ALLOCATION;
+    }
+
+    uint8_t *allocation = static_cast<uint8_t *>(malloc(dst_length_ * 2));
+    if (!allocation) {
+      return KLEIDICV_ERROR_ALLOCATION;
+    }
+    hbuffer_.reset(allocation);
+    hbuffer1_ = allocation;
+    hbuffer2_ = allocation + dst_length_;
+    // invalid value to force buffers processed first
+    hbuffer_sy_ = -2;
+
+    for (uint64_t dst_y = y_begin_; dst_y < y_end_; ++dst_y) {
+      process_row_separated(dst_y);
+    }
     return KLEIDICV_OK;
   }
 
@@ -552,6 +585,14 @@ class ResizeGenericU8Operation final {
     vsxfrac_b = svld1(svptrue_b16(), pcit.frac_ptr_);
     vsxfrac_t = svld1_vnum(svptrue_b16(), pcit.frac_ptr_, 1);
 #endif
+  }
+
+  svuint8_t interpolate1d(const PrecalcIterator<kRatio> &pcit, svuint8_t a,
+                          svuint8_t b) const KLEIDICV_STREAMING {
+    svuint16_t vsxfrac_b, vsxfrac_t;
+    load_xfrac(pcit, vsxfrac_b, vsxfrac_t);
+    svuint16_t half = svdup_n_u16(128);
+    return interpolate_horizontal(a, b, vsxfrac_b, vsxfrac_t, half);
   }
 
   svuint8_t interpolate2d(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
@@ -766,6 +807,233 @@ class ResizeGenericU8Operation final {
     }
   }
 
+  void process_row_separated(uint64_t dy) KLEIDICV_STREAMING {
+    int64_t sy_fixp = to_src_y(dy);
+    ptrdiff_t sy = static_cast<ptrdiff_t>(sy_fixp >> kFixpBits);
+    const ptrdiff_t max_sy = static_cast<ptrdiff_t>(src_height_ - 1);
+    ptrdiff_t sy_top = std::clamp(sy, ptrdiff_t{0}, max_sy);
+    ptrdiff_t sy_bottom = std::clamp(sy + 1, ptrdiff_t{0}, max_sy);
+    if (sy_top != hbuffer_sy_) {
+      if (sy_top == hbuffer_sy_ + 1) {
+        std::swap(hbuffer1_, hbuffer2_);
+      } else {
+        process_row_horizontal(&src_rows_.at(sy_top)[0], hbuffer1_);
+      }
+      hbuffer_sy_ = sy_top;
+      if (sy_top < max_sy) {
+        process_row_horizontal(&src_rows_.at(sy_top + 1)[0], hbuffer2_);
+      }
+    }
+
+    const uint8_t *inter_top = hbuffer1_;
+    const uint8_t *inter_bottom =
+        sy_bottom == hbuffer_sy_ ? hbuffer1_ : hbuffer2_;
+    uint8_t *dst = &dst_rows_.at(static_cast<ptrdiff_t>(dy))[0];
+    // Get the highest 8 bits of the fractional part
+    // This is a good compromise between accuracy and performance
+    // Because the result is 8bits, the error only affects the least
+    // significant 1-2 bits, see the accuracy calculation in kleidicv.h
+    const int64_t sy_fixp_base = sy * (int64_t{1} << kFixpBits);
+    uint16_t yfrac =
+        static_cast<uint16_t>((sy_fixp - sy_fixp_base) >> (kFixpBits - 8));
+    process_row_vertical(inter_top, inter_bottom, dst, yfrac);
+    // hbuffer_ owns the allocation from process_rows(); clang-analyzer loses
+    // that member ownership on this template path.
+  }  // NOLINT(clang-analyzer-unix.Malloc)
+
+  void process_row_horizontal(const uint8_t *src,
+                              uint8_t *dst) const KLEIDICV_STREAMING {
+    uint8_t *dst_end = dst + dst_length_;
+    auto pcit = precalc_.begin();
+    while (pcit.index_ + 1 < precalc_.n_iterations_2x()) {
+      svuint8_t res0, res1;
+      res0 = vector_path_horizontal(pcit, src);
+      ++pcit;
+      res1 = vector_path_horizontal(pcit, src);
+      ++pcit;
+#if KLEIDICV_TARGET_SME2
+      svst1(svptrue_c8(), dst, svcreate2(res0, res1));
+#else
+      svst1(svptrue_b8(), dst, res0);
+      svst1_vnum(svptrue_b8(), dst, 1, res1);
+#endif  // KLEIDICV_TARGET_SME2
+      dst += 2 * kStep_;
+    }
+
+    // similar to above, but only a single vector path and with predicates
+    while (pcit.index_ < precalc_.n_iterations()) {
+      svbool_t pgdst = svwhilelt_b8_s64(0L, dst_end - dst);
+      svuint8_t res = remaining_path_horizontal(pcit, src);
+      svst1(pgdst, dst, res);
+      ++pcit;
+      dst += kStep_;
+    }
+  }
+
+  svuint8_t common_vector_path_horizontal_r1(
+      const PrecalcIterator<kRatio> &pcit,
+      svuint8_t src) const KLEIDICV_STREAMING {
+    svuint8_t vsx0_idx = svld1(svptrue_b8(), pcit.idx0_ptr_);
+    svuint8_t vsx1_idx = svld1(svptrue_b8(), pcit.idx1_ptr_);
+    svuint8_t a = svtbl_u8(src, vsx0_idx);
+    svuint8_t b = svtbl_u8(src, vsx1_idx);
+    return interpolate1d(pcit, a, b);
+  }
+
+  svuint8_t vector_path_horizontal_r1(const PrecalcIterator<kRatio> &pcit,
+                                      const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8_t src_data = svld1(svptrue_b8(), &src[src_index]);
+    return common_vector_path_horizontal_r1(pcit, src_data);
+  }
+
+  svuint8_t remaining_path_horizontal_r1(const PrecalcIterator<kRatio> &pcit,
+                                         const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svbool_t pg = svwhilelt_b8(src_index, src_width_ * kChannels);
+    svuint8_t src_data = svld1(pg, &src[src_index]);
+    return common_vector_path_horizontal_r1(pcit, src_data);
+  }
+
+  svuint8_t common_vector_path_horizontal_r2(
+      const PrecalcIterator<kRatio> &pcit,
+      svuint8x2_t src) const KLEIDICV_STREAMING {
+    svuint8_t vsx0_idx = svld1(svptrue_b8(), pcit.idx0_ptr_);
+    svuint8_t vsx1_idx = svld1(svptrue_b8(), pcit.idx1_ptr_);
+    svuint8_t a = svtbl2_u8(src, vsx0_idx);
+    svuint8_t b = svtbl2_u8(src, vsx1_idx);
+    return interpolate1d(pcit, a, b);
+  }
+
+  svuint8_t vector_path_horizontal_r2(const PrecalcIterator<kRatio> &pcit,
+                                      const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    // Load 2*step elements, that's enough for 1/2 < scale < 1.0
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x2_t src_data = load8x2_u8(&src[src_index]);
+    return common_vector_path_horizontal_r2(pcit, src_data);
+  }
+
+  svuint8_t remaining_path_horizontal_r2(const PrecalcIterator<kRatio> &pcit,
+                                         const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    // Load 2*step elements, that's enough for 1/2 < scale < 1.0
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x2_t src_data =
+        load8x2_while_u8(&src[src_index], src_index, src_width_ * kChannels);
+    return common_vector_path_horizontal_r2(pcit, src_data);
+  }
+
+  svuint8_t common_vector_path_horizontal_r3(
+      const PrecalcIterator<kRatio> &pcit, svuint8x3_t src,
+      const uint8_t *src_ptr) const KLEIDICV_STREAMING {
+    svuint8_t vsx0_idx = svld1(svptrue_b8(), pcit.idx0_ptr_);
+    svuint8_t vsx1_idx = svld1(svptrue_b8(), pcit.idx1_ptr_);
+    if constexpr (kSetRightmostLanes) {
+      // Make room for the last one, which is loaded separately and put together
+      // using EXT, for better performance
+      vsx1_idx = svinsr_n_u8(vsx1_idx, 0);
+    }
+    svuint8_t a =
+        svtbl2_u8(svcreate2(svget3(src, 0), svget3(src, 1)), vsx0_idx);
+    svuint8_t b =
+        svtbl2_u8(svcreate2(svget3(src, 0), svget3(src, 1)), vsx1_idx);
+
+    vsx0_idx =
+        svsub_n_u8_x(svptrue_b8(), vsx0_idx, static_cast<uint8_t>(2 * kStep_));
+    vsx1_idx =
+        svsub_n_u8_x(svptrue_b8(), vsx1_idx, static_cast<uint8_t>(2 * kStep_));
+    a = svtbx_u8(a, svget3(src, 2), vsx0_idx);
+    b = svtbx_u8(b, svget3(src, 2), vsx1_idx);
+    if constexpr (kSetRightmostLanes) {
+      svbool_t pg = svptrue_pat_b8(SV_VL1);
+      ptrdiff_t last_index =
+          std::min(src_width_ * kChannels - 1,
+                   static_cast<size_t>(pcit.idx1_ptr_[kStep_ - 1] +
+                                       *pcit.src_index_ptr_));
+      b = svext_u8(b, svld1_u8(pg, src_ptr + last_index), 1UL);
+    }
+    return interpolate1d(pcit, a, b);
+  }
+
+  svuint8_t vector_path_horizontal_r3(const PrecalcIterator<kRatio> &pcit,
+                                      const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    // Load 3*2*step elements, that's enough for 1/3 < scale < 1.0
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x3_t src_data = load8x3_u8(&src[src_index]);
+    return common_vector_path_horizontal_r3(pcit, src_data, src);
+  }
+
+  svuint8_t remaining_path_horizontal_r3(const PrecalcIterator<kRatio> &pcit,
+                                         const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    // Load 3*step elements, that's enough for 1/3 < scale < 1.0
+    uint64_t src_index = *pcit.src_index_ptr_;
+    svuint8x3_t src_data =
+        load8x3_while_u8(&src[src_index], src_index, src_width_ * kChannels);
+    return common_vector_path_horizontal_r3(pcit, src_data, src);
+  }
+
+  svuint8_t vector_path_horizontal(const PrecalcIterator<kRatio> &pcit,
+                                   const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    if constexpr (kRatio == 3) {
+      return vector_path_horizontal_r3(pcit, src);
+    } else if constexpr (kRatio == 2) {
+      return vector_path_horizontal_r2(pcit, src);
+    } else {
+      static_assert(kRatio == 1);
+      return vector_path_horizontal_r1(pcit, src);
+    }
+  }
+
+  svuint8_t remaining_path_horizontal(const PrecalcIterator<kRatio> &pcit,
+                                      const uint8_t *src) const
+      KLEIDICV_STREAMING {
+    if constexpr (kRatio == 3) {
+      return remaining_path_horizontal_r3(pcit, src);
+    } else if constexpr (kRatio == 2) {
+      return remaining_path_horizontal_r2(pcit, src);
+    } else {
+      static_assert(kRatio == 1);
+      return remaining_path_horizontal_r1(pcit, src);
+    }
+  }
+  void process_row_vertical(const uint8_t *inter_top,
+                            const uint8_t *inter_bottom, uint8_t *dst,
+                            uint16_t yfrac) const KLEIDICV_STREAMING {
+    ptrdiff_t dst_element_index = 0, max2x = dst_length_ - 2 * kStep_;
+    svuint16_t half = svdup_n_u16(128);
+
+    for (; dst_element_index <= max2x; dst_element_index += kStep_ * 2) {
+      svuint8x2_t top = load8x2_u8(&inter_top[dst_element_index]);
+      svuint8x2_t bottom = load8x2_u8(&inter_bottom[dst_element_index]);
+
+      svuint8_t res0 =
+          interpolate_vertical(svget2(top, 0), svget2(bottom, 0), half, yfrac);
+      svuint8_t res1 =
+          interpolate_vertical(svget2(top, 1), svget2(bottom, 1), half, yfrac);
+
+#if KLEIDICV_TARGET_SME2
+      svst1(svptrue_c8(), &dst[dst_element_index], svcreate2(res0, res1));
+#else
+      svst1(svptrue_b8(), &dst[dst_element_index], res0);
+      svst1_vnum(svptrue_b8(), &dst[dst_element_index], 1, res1);
+#endif  // KLEIDICV_TARGET_SME2
+    }
+
+    for (; dst_element_index < dst_length_; dst_element_index += kStep_) {
+      svbool_t pg = svwhilelt_b8_s64(dst_element_index, dst_length_);
+      svuint8_t top = svld1_u8(pg, &inter_top[dst_element_index]);
+      svuint8_t bottom = svld1_u8(pg, &inter_bottom[dst_element_index]);
+      svuint8_t res = interpolate_vertical(top, bottom, half, yfrac);
+      svst1(pg, &dst[dst_element_index], res);
+    }
+  }
+
   const Rows<const uint8_t> src_rows_;
   const Rows<uint8_t> dst_rows_;
   const size_t src_width_;
@@ -777,6 +1045,12 @@ class ResizeGenericU8Operation final {
   const size_t dst_height_;
   const ptrdiff_t kStep_;
   PrecalcIndicesFractions<kRatio, kChannels, kUpsize> precalc_;
+  using FreeDeleter = decltype(&std::free);
+  std::unique_ptr<uint8_t, FreeDeleter> hbuffer_;
+  uint8_t *hbuffer1_, *hbuffer2_;
+  // index of the top row stored at hbuffer1_; hbuffer2_ is
+  // always the next row
+  ptrdiff_t hbuffer_sy_;
 };
 
 }  // namespace resize_generic_u8
@@ -792,6 +1066,9 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8_sc(
     size_t y_begin, size_t y_end,
     uint8_t *dst,  // NOLINT
     size_t dst_stride, size_t dst_width, size_t dst_height) KLEIDICV_STREAMING {
+  double inverse_vertical_scale =
+      static_cast<double>(src_height) / static_cast<double>(dst_height);
+
   if constexpr (kChannels == 3 && kRatio == 3 && !kUpsize) {
     double inverse_scale =
         static_cast<double>(src_width) / static_cast<double>(dst_width);
@@ -802,6 +1079,11 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8_sc(
                                                   kUpsize>
           operation(src, src_stride, src_width, src_height, y_begin, y_end, dst,
                     dst_stride, dst_width, dst_height);
+
+      // For smaller ratios (upsizing and slighter downsizing), this is faster
+      if (inverse_vertical_scale < 1.5) {
+        return operation.process_rows_separated();
+      }
       return operation.process_rows();
     }
   }
@@ -809,6 +1091,10 @@ kleidicv_error_t kleidicv_resize_generic_stripe_u8_sc(
   resize_generic_u8::ResizeGenericU8Operation<kRatio, kChannels, false, kUpsize>
       operation(src, src_stride, src_width, src_height, y_begin, y_end, dst,
                 dst_stride, dst_width, dst_height);
+  // For smaller ratios(upsizing and slighter downsizing), this is faster
+  if (inverse_vertical_scale < 1.5) {
+    return operation.process_rows_separated();
+  }
   return operation.process_rows();
 }
 
