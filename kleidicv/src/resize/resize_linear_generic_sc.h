@@ -426,7 +426,7 @@ class ResizeGenericU8Operation final {
         src_height_{src_height},
         y_begin_{y_begin},
         y_end_{y_end},
-        dst_width_{dst_width},
+        dst_length_{static_cast<ptrdiff_t>(dst_width * kChannels)},
         dst_height_{dst_height},
         kStep_{static_cast<ptrdiff_t>(svcntb())},
         precalc_{src_width, dst_width, kStep_} {}
@@ -522,33 +522,47 @@ class ResizeGenericU8Operation final {
 #endif
   }
 
-  svuint8_t interpolate(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
-                        svuint8_t a, svuint8_t b, svuint8_t c,
-                        svuint8_t d) const KLEIDICV_STREAMING {
+  svuint8_t interpolate_vertical(svuint8_t top, svuint8_t bottom,
+                                 svuint16_t half,
+                                 uint16_t yfrac) const KLEIDICV_STREAMING {
+    svuint8_t res = svaddhnb(
+        svshll8b(top),
+        svmla_n_u16_x(svptrue_b16(), half, svsublb(bottom, top), yfrac));
+    return svaddhnt(
+        res, svshll8t(top),
+        svmla_n_u16_x(svptrue_b16(), half, svsublt(bottom, top), yfrac));
+  }
+
+  svuint8_t interpolate_horizontal(svuint8_t a, svuint8_t b,
+                                   svuint16_t vsxfrac_b, svuint16_t vsxfrac_t,
+                                   svuint16_t half) const KLEIDICV_STREAMING {
+    svuint8_t res = svaddhnb(
+        svshll8b(a), svmla_x(svptrue_b16(), half, svsublb(b, a), vsxfrac_b));
+    return svaddhnt(res, svshll8t(a),
+                    svmla_x(svptrue_b16(), half, svsublt(b, a), vsxfrac_t));
+  }
+
+  void load_xfrac(const PrecalcIterator<kRatio> &pcit, svuint16_t &vsxfrac_b,
+                  svuint16_t &vsxfrac_t) const KLEIDICV_STREAMING {
 #if KLEIDICV_TARGET_SME2
     svuint16x2_t vsxfrac = svld1_x2(svptrue_c8(), pcit.frac_ptr_);
-    svuint16_t vsxfrac_b = svget2(vsxfrac, 0);
-    svuint16_t vsxfrac_t = svget2(vsxfrac, 1);
+    vsxfrac_b = svget2(vsxfrac, 0);
+    vsxfrac_t = svget2(vsxfrac, 1);
 #else
-    svuint16_t vsxfrac_b = svld1(svptrue_b16(), pcit.frac_ptr_);
-    svuint16_t vsxfrac_t = svld1_vnum(svptrue_b16(), pcit.frac_ptr_, 1);
+    vsxfrac_b = svld1(svptrue_b16(), pcit.frac_ptr_);
+    vsxfrac_t = svld1_vnum(svptrue_b16(), pcit.frac_ptr_, 1);
 #endif
-    svuint16_t half = svdup_n_u16(128);
-    svuint8_t left = svaddhnb(
-        svshll8b(a), svmla_n_u16_x(svptrue_b16(), half, svsublb(c, a), yfrac));
-    svuint8_t right = svaddhnb(
-        svshll8b(b), svmla_n_u16_x(svptrue_b16(), half, svsublb(d, b), yfrac));
-    left = svaddhnt(left, svshll8t(a),
-                    svmla_n_u16_x(svptrue_b16(), half, svsublt(c, a), yfrac));
-    right = svaddhnt(right, svshll8t(b),
-                     svmla_n_u16_x(svptrue_b16(), half, svsublt(d, b), yfrac));
+  }
 
-    svuint8_t res =
-        svaddhnb(svshll8b(left),
-                 svmla_x(svptrue_b16(), half, svsublb(right, left), vsxfrac_b));
-    return svaddhnt(
-        res, svshll8t(left),
-        svmla_x(svptrue_b16(), half, svsublt(right, left), vsxfrac_t));
+  svuint8_t interpolate2d(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
+                          svuint8_t a, svuint8_t b, svuint8_t c,
+                          svuint8_t d) const KLEIDICV_STREAMING {
+    svuint16_t vsxfrac_b, vsxfrac_t;
+    load_xfrac(pcit, vsxfrac_b, vsxfrac_t);
+    svuint16_t half = svdup_n_u16(128);
+    svuint8_t top = interpolate_horizontal(a, b, vsxfrac_b, vsxfrac_t, half);
+    svuint8_t bottom = interpolate_horizontal(c, d, vsxfrac_b, vsxfrac_t, half);
+    return interpolate_vertical(top, bottom, half, yfrac);
   }
 
   svuint8_t common_vector_path_r1(
@@ -560,7 +574,7 @@ class ResizeGenericU8Operation final {
     svuint8_t b = svtbl_u8(topsrc, vsx1_idx);
     svuint8_t c = svtbl_u8(bottomsrc, vsx0_idx);
     svuint8_t d = svtbl_u8(bottomsrc, vsx1_idx);
-    return interpolate(pcit, yfrac, a, b, c, d);
+    return interpolate2d(pcit, yfrac, a, b, c, d);
   }
 
   svuint8_t vector_path_r1(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
@@ -592,7 +606,7 @@ class ResizeGenericU8Operation final {
     svuint8_t b = svtbl2_u8(topsrc, vsx1_idx);
     svuint8_t c = svtbl2_u8(bottomsrc, vsx0_idx);
     svuint8_t d = svtbl2_u8(bottomsrc, vsx1_idx);
-    return interpolate(pcit, yfrac, a, b, c, d);
+    return interpolate2d(pcit, yfrac, a, b, c, d);
   }
 
   svuint8_t vector_path_r2(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
@@ -655,7 +669,7 @@ class ResizeGenericU8Operation final {
       b = svext_u8(b, svld1_u8(pg, src_top_ptr + last_index), 1UL);
       d = svext_u8(d, svld1_u8(pg, src_bottom_ptr + last_index), 1UL);
     }
-    return interpolate(pcit, yfrac, a, b, c, d);
+    return interpolate2d(pcit, yfrac, a, b, c, d);
   }
 
   svuint8_t vector_path_r3(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
@@ -683,6 +697,32 @@ class ResizeGenericU8Operation final {
                                  src_bottom);
   }
 
+  svuint8_t vector_path(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
+                        const uint8_t *src_top,
+                        const uint8_t *src_bottom) const KLEIDICV_STREAMING {
+    if constexpr (kRatio == 3) {
+      return vector_path_r3(pcit, yfrac, src_top, src_bottom);
+    } else if constexpr (kRatio == 2) {
+      return vector_path_r2(pcit, yfrac, src_top, src_bottom);
+    } else {
+      static_assert(kRatio == 1);
+      return vector_path_r1(pcit, yfrac, src_top, src_bottom);
+    }
+  }
+
+  svuint8_t remaining_path(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
+                           const uint8_t *src_top,
+                           const uint8_t *src_bottom) const KLEIDICV_STREAMING {
+    if constexpr (kRatio == 3) {
+      return remaining_path_r3(pcit, yfrac, src_top, src_bottom);
+    } else if constexpr (kRatio == 2) {
+      return remaining_path_r2(pcit, yfrac, src_top, src_bottom);
+    } else {
+      static_assert(kRatio == 1);
+      return remaining_path_r1(pcit, yfrac, src_top, src_bottom);
+    }
+  }
+
   void process_row(uint64_t dy) const KLEIDICV_STREAMING {
     int64_t sy_fixp = to_src_y(dy);
     ptrdiff_t sy = static_cast<ptrdiff_t>(sy_fixp >> kFixpBits);
@@ -692,7 +732,7 @@ class ResizeGenericU8Operation final {
     const uint8_t *src_top = &src_rows_.at(sy_top)[0];
     const uint8_t *src_bottom = &src_rows_.at(sy_bottom)[0];
     uint8_t *dst = &dst_rows_.at(static_cast<ptrdiff_t>(dy))[0];
-    uint8_t *dst_end = dst + dst_width_ * kChannels;
+    uint8_t *dst_end = dst + dst_length_;
     // Get the highest 8 bits of the fractional part
     // This is a good compromise between accuracy and performance
     // Because the result is 8bits, the error only affects the least
@@ -703,23 +743,10 @@ class ResizeGenericU8Operation final {
     auto pcit = precalc_.begin();
     while (pcit.index_ + 1 < precalc_.n_iterations_2x()) {
       svuint8_t res0, res1;
-      if constexpr (kRatio == 3) {
-        res0 = vector_path_r3(pcit, yfrac, src_top, src_bottom);
-        ++pcit;
-        res1 = vector_path_r3(pcit, yfrac, src_top, src_bottom);
-        ++pcit;
-      } else if constexpr (kRatio == 2) {
-        res0 = vector_path_r2(pcit, yfrac, src_top, src_bottom);
-        ++pcit;
-        res1 = vector_path_r2(pcit, yfrac, src_top, src_bottom);
-        ++pcit;
-      } else {
-        static_assert(kRatio == 1);
-        res0 = vector_path_r1(pcit, yfrac, src_top, src_bottom);
-        ++pcit;
-        res1 = vector_path_r1(pcit, yfrac, src_top, src_bottom);
-        ++pcit;
-      }
+      res0 = vector_path(pcit, yfrac, src_top, src_bottom);
+      ++pcit;
+      res1 = vector_path(pcit, yfrac, src_top, src_bottom);
+      ++pcit;
 #if KLEIDICV_TARGET_SME2
       svst1(svptrue_c8(), dst, svcreate2(res0, res1));
 #else
@@ -732,15 +759,7 @@ class ResizeGenericU8Operation final {
     // similar to above, but only a single vector path and with predicates
     while (pcit.index_ < precalc_.n_iterations()) {
       svbool_t pgdst = svwhilelt_b8_s64(0L, dst_end - dst);
-      svuint8_t res;
-      if constexpr (kRatio == 3) {
-        res = remaining_path_r3(pcit, yfrac, src_top, src_bottom);
-      } else if constexpr (kRatio == 2) {
-        res = remaining_path_r2(pcit, yfrac, src_top, src_bottom);
-      } else {
-        static_assert(kRatio == 1);
-        res = remaining_path_r1(pcit, yfrac, src_top, src_bottom);
-      }
+      svuint8_t res = remaining_path(pcit, yfrac, src_top, src_bottom);
       svst1(pgdst, dst, res);
       ++pcit;
       dst += kStep_;
@@ -753,7 +772,8 @@ class ResizeGenericU8Operation final {
   const size_t src_height_;
   const size_t y_begin_;
   const size_t y_end_;
-  const size_t dst_width_;
+  // number of elements in a row
+  const ptrdiff_t dst_length_;
   const size_t dst_height_;
   const ptrdiff_t kStep_;
   PrecalcIndicesFractions<kRatio, kChannels, kUpsize> precalc_;
