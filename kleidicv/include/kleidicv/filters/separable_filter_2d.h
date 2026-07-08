@@ -31,16 +31,6 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u16,
                          const uint16_t *kernel_x, size_t kernel_width,
                          const uint16_t *kernel_y, size_t kernel_height,
                          kleidicv::FixedBorderType border_type);
-// For internal use only. See instead kleidicv_separable_filter_2d_s16.
-// Filter a horizontal stripe across an image. The stripe is defined by the
-// range (y_begin, y_end].
-KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_s16,
-                         const int16_t *src, size_t src_stride, int16_t *dst,
-                         size_t dst_stride, size_t width, size_t height,
-                         size_t y_begin, size_t y_end, size_t channels,
-                         const int16_t *kernel_x, size_t kernel_width,
-                         const int16_t *kernel_y, size_t kernel_height,
-                         kleidicv::FixedBorderType border_type);
 }
 
 namespace kleidicv {
