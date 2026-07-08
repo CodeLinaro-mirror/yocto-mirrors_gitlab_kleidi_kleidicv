@@ -769,13 +769,13 @@ TEST_P(Thread, remap_f32_u8_border_replicate) {
 }
 
 TEST_P(Thread, remap_f32_u8_border_constant) {
-  const uint8_t border_value = 0;
+  const uint8_t border_value[2] = {0, 0};
   check_remap_f32<uint8_t>(kleidicv_remap_f32_u8, kleidicv_thread_remap_f32_u8,
                            1, KLEIDICV_INTERPOLATION_LINEAR,
-                           KLEIDICV_BORDER_TYPE_CONSTANT, &border_value);
+                           KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
   check_remap_f32<uint8_t>(kleidicv_remap_f32_u8, kleidicv_thread_remap_f32_u8,
                            2, KLEIDICV_INTERPOLATION_LINEAR,
-                           KLEIDICV_BORDER_TYPE_CONSTANT, &border_value);
+                           KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
 }
 
 TEST_P(Thread, remap_f32_u16_border_replicate) {
@@ -788,15 +788,15 @@ TEST_P(Thread, remap_f32_u16_border_replicate) {
 }
 
 TEST_P(Thread, remap_f32_u16_border_constant) {
-  const uint16_t border_value = 0;
+  const uint16_t border_value[2] = {0, 0};
   check_remap_f32<uint16_t>(kleidicv_remap_f32_u16,
                             kleidicv_thread_remap_f32_u16, 1,
                             KLEIDICV_INTERPOLATION_LINEAR,
-                            KLEIDICV_BORDER_TYPE_CONSTANT, &border_value);
+                            KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
   check_remap_f32<uint16_t>(kleidicv_remap_f32_u16,
                             kleidicv_thread_remap_f32_u16, 2,
                             KLEIDICV_INTERPOLATION_LINEAR,
-                            KLEIDICV_BORDER_TYPE_CONSTANT, &border_value);
+                            KLEIDICV_BORDER_TYPE_CONSTANT, border_value);
 }
 
 template <typename T, typename MultithreadedFunc>
