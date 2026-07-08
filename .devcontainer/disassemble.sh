@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -30,14 +30,18 @@ else
   exit 1
 fi
 
+OUTPUT_FILE_STEM="$(basename "${FILE_PATH}" .cpp)"
+
 if [[ "${COMPILER}" == "gcc" ]]; then
   BASE_BUILD_DIRECTORY="build/kleidicv-gcc/kleidicv/CMakeFiles"
-  OUTPUT_FILE=disasm-gcc.txt
+  OUTPUT_FILE="gitignored/disassembly/disasm-gcc-${OUTPUT_FILE_STEM}.txt"
 else
   BASE_BUILD_DIRECTORY="build/kleidicv/kleidicv/CMakeFiles"
-  OUTPUT_FILE=disasm.txt
+  OUTPUT_FILE="gitignored/disassembly/disasm-${OUTPUT_FILE_STEM}.txt"
 fi
 
 OBJECT_PATH="${BASE_BUILD_DIRECTORY}/${SIMD_BUILD_DIRECTORY}/${FILE_PATH#kleidicv/}.o"
 
-llvm-objdump -C -d -r --mattr=+sme2 "${OBJECT_PATH}" | tee ${OUTPUT_FILE}
+mkdir -p "$(dirname "${OUTPUT_FILE}")"
+
+llvm-objdump -C -d -r --mattr=+sme2 "${OBJECT_PATH}" | tee "${OUTPUT_FILE}"
