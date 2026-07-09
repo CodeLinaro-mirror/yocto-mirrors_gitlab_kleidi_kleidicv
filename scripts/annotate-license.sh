@@ -25,36 +25,104 @@
 
 set -u
 
-RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 COPYRIGHT="Arm Limited and/or its affiliates <open-source-office@arm.com>"
 LICENSE="Apache-2.0"
+: "${STAGED_ONLY:=OFF}"
+
+has_license_header() {
+    local file=$1
+    local license_tag="SPDX-License-""Identifier"
+
+    grep -Fq "${COPYRIGHT}" "${file}" && grep -Fq "${license_tag}: ${LICENSE}" "${file}"
+}
+
+update_copyright_year() {
+    local file=$1
+    local current_year
+    local tmp
+
+    current_year=$(date +%Y)
+    tmp=$(mktemp)
+
+    awk -v copyright="${COPYRIGHT}" -v current_year="${current_year}" '
+        index($0, "SPDX-FileCopyrightText:") && index($0, copyright) {
+            prefix = $0
+            sub(/SPDX-FileCopyrightText:.*/, "", prefix)
+            rest = $0
+            sub(/^.*SPDX-FileCopyrightText: /, "", rest)
+            copyright_pos = index(rest, copyright)
+            years = substr(rest, 1, copyright_pos - 2)
+            split(years, range, /[[:space:]]*-[[:space:]]*/)
+            if (range[1] == current_year) {
+                $0 = prefix "SPDX-FileCopyrightText: " current_year " " copyright
+            } else {
+                $0 = prefix "SPDX-FileCopyrightText: " range[1] " - " current_year " " copyright
+            }
+        }
+        { print }
+    ' "${file}" > "${tmp}" && cat "${tmp}" > "${file}"
+    local exit_code=$?
+
+    rm -f "${tmp}"
+    return "${exit_code}"
+}
 
 # Use `reuse` to check for copyrights.
 # Suppresses `reuse` stderr not to spam console with `reuse -h` prompts for
-# unrecognised formats
+# unrecognised formats.
 annotate() {
     local file=$1
-    out=$(reuse annotate -c "${COPYRIGHT}" --license "${LICENSE}" --merge-copyrights "${file}" 2> >(cat))
-    if [ $? -eq 2 ]; then
-        echo -e "${RED}Failed to annotate ${file}, enforcing c-style comment${NC}"
-        reuse annotate -c "${COPYRIGHT}" --license "${LICENSE}" --merge-copyrights --style c "${file}"
-    else
-        echo "${out}"
+    local out
+    local exit_code
+    local annotate_args=(-c "${COPYRIGHT}" --license "${LICENSE}" --merge-copyrights)
+
+    if has_license_header "${file}"; then
+        update_copyright_year "${file}"
+        return $?
     fi
+
+    out=$(reuse annotate "${annotate_args[@]}" "${file}" 2>&1)
+    exit_code=$?
+
+    if [ "${exit_code}" -ne 2 ]; then
+        echo "${out}"
+        return "${exit_code}"
+    fi
+
+    out=$(reuse annotate "${annotate_args[@]}" --style c "${file}" 2>&1)
+    exit_code=$?
+
+    if [ "${exit_code}" -eq 0 ]; then
+        echo "${out}"
+        return 0
+    fi
+
+    if has_license_header "${file}"; then
+        update_copyright_year "${file}"
+        return $?
+    fi
+
+    echo "${out}"
+    return "${exit_code}"
 }
 
 UNSTAGED=$(git diff --name-only)
-STAGED=$(git diff --cached --name-only)
-for file in $STAGED; do
-    annotate "${file}"
+mapfile -d '' STAGED < <(git diff --cached --name-only --diff-filter=ACMR -z)
+EXIT_CODE=0
+for file in "${STAGED[@]}"; do
+    if ! annotate "${file}"; then
+        EXIT_CODE=1
+    fi
 done
 
-# Run license check on the entire codebase
-reuse lint
-EXIT_CODE="${?}"
+if [[ "${STAGED_ONLY}" != "ON" ]]; then
+    # Run license check on the entire codebase.
+    reuse lint
+    EXIT_CODE=$((EXIT_CODE | $?))
+fi
 
 # Notify user if there were changes made to staging files
 for file in $(git diff --name-only); do

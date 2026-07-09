@@ -9,6 +9,7 @@
 # Options:
 #   CHECK_ONLY:             If set to 'ON', the script exists with non-zero value if source is not formatted. Defaults to 'OFF'.
 #   CLANG_FORMAT_BIN_PATH:  Clang-format binary, defaults to 'clang-format=20'.
+#   SOURCE_FILES:           Newline-separated source files to format/check. Defaults to all source files.
 #   VERBOSE:                If set to 'ON', verbose output is printed. Defaults to 'OFF'.
 # ------------------------------------------------------------------------------
 
@@ -24,20 +25,30 @@ KLEIDICV_ROOT_PATH="$(realpath "${SCRIPT_PATH}"/..)"
 
 : "${CHECK_ONLY:=OFF}"
 : "${CLANG_FORMAT_BIN_PATH:=clang-format-${CLANG_FORMAT_VERSION}}"
+: "${SOURCE_FILES:=}"
 : "${VERBOSE:=OFF}"
 
 # ------------------------------------------------------------------------------
 
-SOURCES="$(find \
-    "${KLEIDICV_ROOT_PATH}/adapters" \
-    "${KLEIDICV_ROOT_PATH}/benchmark" \
-    "${KLEIDICV_ROOT_PATH}/kleidicv" \
-    "${KLEIDICV_ROOT_PATH}/kleidicv_thread" \
-    "${KLEIDICV_ROOT_PATH}/test" \
-    "${KLEIDICV_ROOT_PATH}/conformity/opencv" \
-    "${KLEIDICV_ROOT_PATH}/examples" \
-    \( -name \*.cpp -o -name \*.c -o -name \*.h -o -name \*.h.in \) \
-    -print)"
+SOURCES=()
+if [[ -n "${SOURCE_FILES}" ]]; then
+  mapfile -t SOURCES <<< "${SOURCE_FILES}"
+else
+  mapfile -d '' SOURCES < <(find \
+      "${KLEIDICV_ROOT_PATH}/adapters" \
+      "${KLEIDICV_ROOT_PATH}/benchmark" \
+      "${KLEIDICV_ROOT_PATH}/kleidicv" \
+      "${KLEIDICV_ROOT_PATH}/kleidicv_thread" \
+      "${KLEIDICV_ROOT_PATH}/test" \
+      "${KLEIDICV_ROOT_PATH}/conformity/opencv" \
+      "${KLEIDICV_ROOT_PATH}/examples" \
+      \( -name \*.cpp -o -name \*.c -o -name \*.h -o -name \*.h.in \) \
+      -print0)
+fi
+
+if [[ ${#SOURCES[@]} -eq 0 ]]; then
+  exit 0
+fi
 
 if [[ "${CHECK_ONLY}" == "ON" ]]; then
   FORMAT_FLAGS="--dry-run -Werror"
@@ -50,8 +61,8 @@ if [[ "${VERBOSE}" == "ON" ]]; then
 fi
 
 # shellcheck disable=2086
-# Split ${SOURCES} and ${FORMAT_FLAGS}.
-"${CLANG_FORMAT_BIN_PATH}" ${FORMAT_FLAGS} ${SOURCES}
+# Split ${FORMAT_FLAGS}.
+"${CLANG_FORMAT_BIN_PATH}" ${FORMAT_FLAGS} "${SOURCES[@]}"
 
 # ------------------------------------------------------------------------------
 # End of script

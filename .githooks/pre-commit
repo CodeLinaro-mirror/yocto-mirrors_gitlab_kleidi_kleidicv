@@ -6,17 +6,58 @@
 
 set -euo pipefail
 
-# Check licences
-./scripts/annotate-license.sh
+# Nothing staged means there is no commit content for this hook to validate.
+if git diff --cached --quiet; then
+  exit 0
+fi
 
-# Verifies that source files are formatted
-CHECK_ONLY=ON ./scripts/format.sh
+mapfile -d '' STAGED_FILES < <(git diff --cached --name-only -z --diff-filter=ACMR)
+SOURCE_FILES=()
+SCRIPT_FILES=()
 
-# Verifies that scripts are somewhat correct
-shellcheck $(find scripts -name '*.sh' | tr '\n' ' ')
+for file in "${STAGED_FILES[@]}"; do
+  case "${file}" in
+    adapters/*.cpp | adapters/*.c | adapters/*.h | adapters/*.h.in | \
+      benchmark/*.cpp | benchmark/*.c | benchmark/*.h | benchmark/*.h.in | \
+      kleidicv/*.cpp | kleidicv/*.c | kleidicv/*.h | kleidicv/*.h.in | \
+      kleidicv_thread/*.cpp | kleidicv_thread/*.c | kleidicv_thread/*.h | kleidicv_thread/*.h.in | \
+      test/*.cpp | test/*.c | test/*.h | test/*.h.in | \
+      conformity/opencv/*.cpp | conformity/opencv/*.c | conformity/opencv/*.h | conformity/opencv/*.h.in | \
+      examples/*.cpp | examples/*.c | examples/*.h | examples/*.h.in)
+      SOURCE_FILES+=("${file}")
+      ;;
+  esac
 
-# Check staged files for non-ASCII characters or tab
-if git diff --cached --name-only -z | xargs -0 grep -n '[^ -~]'; then
+  case "${file}" in
+    scripts/*.sh)
+      SCRIPT_FILES+=("${file}")
+      ;;
+  esac
+done
+
+# Check licences.
+if [[ ${#STAGED_FILES[@]} -gt 0 ]]; then
+  STAGED_ONLY=ON ./scripts/annotate-license.sh
+fi
+
+# Verifies that source files are formatted.
+if [[ ${#SOURCE_FILES[@]} -gt 0 ]]; then
+  SOURCE_FILES="$(printf '%s\n' "${SOURCE_FILES[@]}")" CHECK_ONLY=ON ./scripts/format.sh
+fi
+
+# Verifies that scripts are somewhat correct.
+if [[ ${#SCRIPT_FILES[@]} -gt 0 ]]; then
+  shellcheck "${SCRIPT_FILES[@]}"
+fi
+
+# Check staged files for non-ASCII characters or tab.
+if [[ ${#STAGED_FILES[@]} -gt 0 ]] && grep -n '[^ -~]' -- "${STAGED_FILES[@]}"; then
   echo "ERROR: non-ASCII characters or tab found in staged files."
+  exit 1
+fi
+
+# Check staged files for trailing whitespace.
+if [[ ${#STAGED_FILES[@]} -gt 0 ]] && grep -n '[[:blank:]]$' -- "${STAGED_FILES[@]}"; then
+  echo "ERROR: trailing whitespace found in staged files."
   exit 1
 fi
