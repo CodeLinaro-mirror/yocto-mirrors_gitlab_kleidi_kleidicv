@@ -2549,6 +2549,39 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose_sme, const void *src,
                          size_t src_width, size_t src_height,
                          size_t pixel_size);
 
+/// Matrix flip operation.
+/// In-place operation is supported.
+///
+/// Only horizontal flip (`flip_mode > 0`) is supported.
+/// Other flip modes return KLEIDICV_ERROR_NOT_IMPLEMENTED.
+///
+/// Number of pixels is limited to @ref KLEIDICV_MAX_IMAGE_PIXELS.
+///
+/// @param src          Pointer to the source data. Must be non-null.
+///                     Must be aligned to `pixel_size`.
+/// @param src_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the source data.
+///                     Must be a multiple of `pixel_size` and no less than
+///                     `width * pixel_size`, except for single-row images.
+/// @param width        Number of columns in the source data.
+/// @param height       Number of rows in the source data.
+/// @param dst          Pointer to the destination data. Must be non-null.
+///                     Must be aligned to `pixel_size`.
+/// @param dst_stride   Distance in bytes from the start of one row to the
+///                     start of the next row for the destination data.
+///                     Must be a multiple of `pixel_size` and no less than
+///                     `width * pixel_size`, except for single-row images.
+/// @param flip_mode    Flip mode. Must be positive (horizontal flip).
+/// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 3, 4, 6 or 8.
+///
+KLEIDICV_API_DECLARATION(kleidicv_flip, const void *src, size_t src_stride,
+                         size_t width, size_t height, void *dst,
+                         size_t dst_stride, int flip_mode, size_t pixel_size);
+/// @copydoc kleidicv_flip
+KLEIDICV_API_DECLARATION(kleidicv_flip_sme, const void *src, size_t src_stride,
+                         size_t width, size_t height, void *dst,
+                         size_t dst_stride, int flip_mode, size_t pixel_size);
+
 /// Matrix rotate operation.
 /// In-place operation is not supported.
 /// Supports 90-degree clockwise and 90-degree counter-clockwise rotation.

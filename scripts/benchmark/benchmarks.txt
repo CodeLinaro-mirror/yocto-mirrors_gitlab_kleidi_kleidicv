@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -181,6 +181,13 @@ ScharrInterleaved_8UC1: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 
 ScharrInterleaved_8UC2: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 8UC2)'
 ScharrInterleaved_8UC3: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 8UC3)'
 ScharrInterleaved_8UC4: opencv_perf_video '*calcScharrDeriv/*' '($PIXEL_FORMAT, 8UC4)'
+
+Flip_HORIZONTAL_8UC1:  opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 8UC1, FLIP_Y)'
+Flip_HORIZONTAL_16SC1: opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 16SC1, FLIP_Y)'
+Flip_HORIZONTAL_8UC3:  opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 8UC3, FLIP_Y)'
+Flip_HORIZONTAL_16SC3: opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 16SC3, FLIP_Y)'
+Flip_HORIZONTAL_8UC4:  opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 8UC4, FLIP_Y)'
+Flip_HORIZONTAL_16SC4: opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 16SC4, FLIP_Y)'
 
 Rotate_90_CLOCKWISE_8UC1:  opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 8UC1)'
 Rotate_90_CLOCKWISE_16SC1: opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 16SC1)'

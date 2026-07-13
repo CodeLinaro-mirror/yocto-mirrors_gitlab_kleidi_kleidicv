@@ -32,6 +32,7 @@ std::vector<test>& median_blur_tests_get();
 std::vector<test>& rgb2yuv420_tests_get();
 std::vector<test>& rgb_to_yuv_422_tests_get();
 std::vector<test>& standalone_lucas_kanade_alg_tests_get();
+std::vector<test>& flip_tests_get();
 std::vector<test>& rotate_tests_get();
 std::vector<test>& transpose_tests_get();
 std::vector<test>& add_padding_by_copy_tests_get();

@@ -112,6 +112,8 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
     '*Core_And/*'
     '*Core_Mul/*'
     '*Core_Sub/*'
+    '*Core_Flip/*'
+    '*Core_FlipInplace/*'
     '*Core_Rotate/*'
     '*Core_Transpose/*'
     '*MinMaxLoc*'

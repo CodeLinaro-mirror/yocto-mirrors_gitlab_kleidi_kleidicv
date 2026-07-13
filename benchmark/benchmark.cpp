@@ -216,6 +216,29 @@ static void count_nonzeros_u8(benchmark::State& state) {
 }
 BENCHMARK(count_nonzeros_u8);
 
+template <typename T, int FlipMode>
+static void bench_flip(benchmark::State& state) {
+  bench_functor(state, []() {
+    (void)kleidicv_flip(get_source_buffer_a<T>(), image_width * sizeof(T),
+                        image_width, image_height,
+                        get_destination_buffer_a<T>(), image_width * sizeof(T),
+                        FlipMode, sizeof(T));
+  });
+}
+
+#define BENCH_FLIP(name, type, flip_mode)     \
+  static void name(benchmark::State& state) { \
+    bench_flip<type, flip_mode>(state);       \
+  }                                           \
+  BENCHMARK(name)
+
+BENCH_FLIP(flip_u8, uint8_t, 1);
+BENCH_FLIP(flip_u16, uint16_t, 1);
+BENCH_FLIP(flip_u24, uint8_t[3], 1);
+BENCH_FLIP(flip_u32, uint32_t, 1);
+BENCH_FLIP(flip_u48, uint16_t[3], 1);
+BENCH_FLIP(flip_u64, uint64_t, 1);
+
 template <typename T, int kAngle>
 static void bench_rotate(benchmark::State& state) {
   bench_functor(state, []() {

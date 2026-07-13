@@ -1088,6 +1088,21 @@ int sum(const uchar *src_data, size_t src_step, int src_type, int width,
   return CV_HAL_ERROR_NOT_IMPLEMENTED;
 }
 
+int flip(int src_type, const uchar *src_data, size_t src_step, int src_width,
+         int src_height, uchar *dst_data, size_t dst_step, int flip_mode) {
+  if (src_width == 0 || src_height == 0) {
+    return KLEIDICV_OK;
+  }
+
+  // Pixel sizes supported (in bytes): 1, 2, 3, 4, 6 or 8
+  const size_t element_size = CV_ELEM_SIZE(src_type);
+
+  return convert_error(kleidicv_flip(
+      reinterpret_cast<const void *>(src_data), src_step,
+      static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+      reinterpret_cast<void *>(dst_data), dst_step, flip_mode, element_size));
+}
+
 int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int angle) {
   // This file uses OpenCV's style, so this is kept as element_size, but in

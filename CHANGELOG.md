@@ -15,6 +15,9 @@ This changelog aims to follow the guiding principles of
 
 ## 26.09 - not yet released
 
+### Added
+- NEON-optimised kernel for horizontal image flip (`flip_mode > 0`).
+
 ## 26.06 - 2026-06-26
 
 ### Added

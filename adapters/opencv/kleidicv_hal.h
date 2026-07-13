@@ -142,6 +142,9 @@ int add_padding_by_copy(const uchar *src_data, size_t src_step, int src_type,
 int sum(const uchar *src_data, size_t src_step, int src_type, int width,
         int height, double *result);
 
+int flip(int src_type, const uchar *src_data, size_t src_step, int src_width,
+         int src_height, uchar *dst_data, size_t dst_step, int flip_mode);
+
 int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,
            int src_height, uchar *dst_data, size_t dst_step, int angle);
 
@@ -517,6 +520,19 @@ static inline int kleidicv_sum_with_fallback(const uchar *src_data,
 #undef cv_hal_sum
 #define cv_hal_sum kleidicv_sum_with_fallback
 #endif  // KLEIDICV_ENABLE_ALL_OPENCV_HAL
+
+// flip
+static inline int kleidicv_flip_with_fallback(int src_type,
+                                              const uchar *src_data,
+                                              size_t src_step, int src_width,
+                                              int src_height, uchar *dst_data,
+                                              size_t dst_step, int flip_mode) {
+  return KLEIDICV_HAL_FALLBACK_FORWARD(flip, cv_hal_flip, src_type, src_data,
+                                       src_step, src_width, src_height,
+                                       dst_data, dst_step, flip_mode);
+}
+#undef cv_hal_flip
+#define cv_hal_flip kleidicv_flip_with_fallback
 
 // rotate
 static inline int kleidicv_rotate_with_fallback(int src_type,

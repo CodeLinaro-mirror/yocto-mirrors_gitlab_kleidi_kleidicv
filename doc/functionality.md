@@ -184,6 +184,7 @@ Geometric transform operations.
 |-------------------------------|-------|--------|--------|--------|--------|--------|
 | Transpose                     |   x   |    x   |    x   |    x   |    x   |    x   |
 | Rotate (+-90 degrees)         |   x   |    x   |    x   |    x   |    x   |    x   |
+| Flip (horizontal)             |   x   |    x   |    x   |    x   |    x   |    x   |
 | Add padding by copy (examples)|   x   |    x   |    x   |    x   |    x   |    x   |
 
 Note: `Add padding by copy` is not limited by channel count in the same way as
