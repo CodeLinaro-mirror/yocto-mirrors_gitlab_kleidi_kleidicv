@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -644,7 +644,7 @@ class OperationAdapter : public OperationBase<OperationType> {
     Vector2Type vdst_a, vdst_b;
 
     operation().vector_path(ctx, &src[0], vdst_a.val[0], vdst_b.val[0]);
-    operation().vector_path(ctx, &src.at(num_lanes() * 2)[0], vdst_a.val[1],
+    operation().vector_path(ctx, &src.at(num_lanes())[0], vdst_a.val[1],
                             vdst_b.val[1]);
 
     store(vdst_a, &dst_a[0]);
@@ -681,7 +681,7 @@ class OperationAdapter : public OperationBase<OperationType> {
                  ColumnType dst_b, ColumnType dst_c) KLEIDICV_STREAMING {
     operation().vector_path(ctx, &src[0], &dst_a[0], &dst_b[0], &dst_c[0]);
     operation().vector_path(
-        ctx, &src.at(num_lanes() * 3)[0], &dst_a.at(num_lanes())[0],
+        ctx, &src.at(num_lanes())[0], &dst_a.at(num_lanes())[0],
         &dst_b.at(num_lanes())[0], &dst_c.at(num_lanes())[0]);
   }
 
@@ -697,7 +697,7 @@ class OperationAdapter : public OperationBase<OperationType> {
 
     operation().vector_path(ctx, &src[0], vdst_a.val[0], vdst_b.val[0],
                             vdst_c.val[0]);
-    operation().vector_path(ctx, &src.at(num_lanes() * 3)[0], vdst_a.val[1],
+    operation().vector_path(ctx, &src.at(num_lanes())[0], vdst_a.val[1],
                             vdst_b.val[1], vdst_c.val[1]);
 
     store(vdst_a, &dst_a[0]);
@@ -741,7 +741,7 @@ class OperationAdapter : public OperationBase<OperationType> {
     operation().vector_path(ctx, &src[0], &dst_a[0], &dst_b[0], &dst_c[0],
                             &dst_d[0]);
     operation().vector_path(
-        ctx, &src.at(num_lanes() * 4)[0], &dst_a.at(num_lanes())[0],
+        ctx, &src.at(num_lanes())[0], &dst_a.at(num_lanes())[0],
         &dst_b.at(num_lanes())[0], &dst_c.at(num_lanes())[0],
         &dst_d.at(num_lanes())[0]);
   }
@@ -764,7 +764,7 @@ class OperationAdapter : public OperationBase<OperationType> {
     operation().vector_path(ctx, &src[0], vdst_a.val[0], vdst_b.val[0],
                             vdst_c.val[0], vdst_d.val[0]);
 
-    operation().vector_path(ctx, &src.at(num_lanes() * 4)[0], vdst_a.val[1],
+    operation().vector_path(ctx, &src.at(num_lanes())[0], vdst_a.val[1],
                             vdst_b.val[1], vdst_c.val[1], vdst_d.val[1]);
 
     store(vdst_a, &dst_a[0]);
