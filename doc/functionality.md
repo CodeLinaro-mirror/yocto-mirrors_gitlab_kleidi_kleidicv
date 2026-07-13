@@ -156,9 +156,11 @@ Resize operations.
 Resize operations using linear interpolation.
 
 Float32 data:
+
 * 1-channel 2x2, 4x4 and 8x8 upsize
 
 Uint8 data:
+
 | Channels                               | 1 | 2 | 3 | 4 |
 |----------------------------------------|---|---|---|---|
 | Downsize 1/3 to 1                      | x | x | x | x |
