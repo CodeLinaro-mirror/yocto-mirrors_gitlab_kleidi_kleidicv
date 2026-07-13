@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -26,7 +26,6 @@ class RGBToBGR final {
 
     loop.unroll_once([&](size_t step) {
       KLEIDICV_PREFETCH(&src[0] + 1024);
-      uint8x16x3_t dst_vect;
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE || defined(__clang__)
       uint8x16x3_t src_vect;
 #endif  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE || defined(__clang__)
@@ -34,8 +33,9 @@ class RGBToBGR final {
 #if KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
       src_vect = vld3q(&src[0]);
       std::swap(src_vect.val[0], src_vect.val[2]);
-      vst3q(&dst[0], dst_vect);
+      vst3q(&dst[0], src_vect);
 #else  // KLEIDICV_PREFER_INTERLEAVING_LOAD_STORE
+      uint8x16x3_t dst_vect;
 #if defined(__clang__)
       VecTraits::load(&src[0], src_vect);
 
