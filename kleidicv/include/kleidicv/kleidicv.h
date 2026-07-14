@@ -1504,9 +1504,9 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8_sme, const uint8_t *src,
                          size_t src_stride, uint8_t *dst, size_t dst_stride,
                          size_t width, size_t height);
 
-/// Converts a YUV image (planar or interleaved) to RGB, RGBA, BGR, or BGRA
-/// format. All channels are 8-bit wide. If the output format includes an
-/// alpha channel, the alpha value is set to 0xFF.
+/// Converts a YUV image to RGB, RGBA, BGR, or BGRA format. All channels are
+/// 8-bit wide. If the output format includes an alpha channel, the alpha value
+/// is set to 0xFF.
 ///
 /// Source formats:
 ///
@@ -1518,6 +1518,21 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8_sme, const uint8_t *src,
 ///   - V plane: quarter resolution, `size = (width / 2) x (height / 2)`
 ///
 ///   The layout order (Y + U + V or Y + V + U) is determined by `color_format`.
+///
+/// - Semi-planar YUV420 (NV12 or NV21 layout)
+///
+///   The input buffer consists of two planes stored sequentially in memory:
+///   - Y plane: full resolution, `size = width x height`
+///   - UV plane: half resolution, where
+///     `size = ((width + 1)/2) x ((height + 1)/2) x 2`
+///
+///   The UV plane begins at `src + src_stride * height` and uses the same
+///   stride as the Y plane. It contains interleaved chroma samples:
+///   - NV12: UVUVUV...
+///   - NV21: VUVUVU...
+///
+///   For Y and UV/VU planes that are not contiguous in memory, use
+///   @ref kleidicv_yuv_semiplanar_to_rgb_u8.
 ///
 /// - Interleaved YUV444
 ///
@@ -1562,6 +1577,9 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8_sme, const uint8_t *src,
 ///                     in the source data.
 ///                     For planar YUV420, this is the stride of the Y plane,
 ///                     and the U and V planes follow sequentially in memory.
+///                     For semi-planar YUV420, this is the shared stride of the
+///                     Y and UV/VU planes. The UV/VU plane follows the Y plane
+///                     sequentially in memory.
 ///                     For interleaved YUV444, this must be at least
 ///                     `3 * width`, unless the image has only one row.
 ///                     For interleaved YUV422, Must be at least `width * 2`
@@ -1573,8 +1591,8 @@ KLEIDICV_API_DECLARATION(kleidicv_rgba_to_rgb_u8_sme, const uint8_t *src,
 /// @param width        Number of pixels in a row.
 /// @param height       Number of rows in the data.
 /// @param color_format Specifies the color conversion type, defining both the
-///                     source YUV layout (e.g., I420, YV12, YUV444) and the
-///                     destination RGB(A)/BGR(A) format.
+///                     source YUV layout (e.g., I420, YV12, NV12, NV21,
+///                     YUV444) and the destination RGB(A)/BGR(A) format.
 ///                     Must be one of @ref kleidicv_color_conversion_t.
 kleidicv_error_t kleidicv_yuv_to_rgb_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
@@ -1594,7 +1612,8 @@ kleidicv_error_t kleidicv_yuv_to_rgb_u8_sme(
 ///
 ///   The input consists of two planes:
 ///   - Y plane:  full resolution, `size = width x height`
-///   - UV plane: half resolution, `size = (width / 2) x (height / 2)`
+///   - UV plane: half resolution, where
+///     `size = ((width + 1)/2) x ((height + 1)/2) x 2`
 ///
 ///   The UV plane contains interleaved chroma samples:
 ///   - NV12: UVUVUV...

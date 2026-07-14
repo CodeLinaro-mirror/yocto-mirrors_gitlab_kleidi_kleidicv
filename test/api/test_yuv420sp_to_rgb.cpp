@@ -1,8 +1,10 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
+
+#include <type_traits>
 
 #include "framework/array.h"
 #include "framework/utils.h"
@@ -34,6 +36,8 @@ class YuvSpTest final {
   }
 
  private:
+  using SingleArrayFunc = decltype(&kleidicv_yuv_to_rgb_u8);
+
   template <typename F>
   void execute_test(F impl, size_t logical_width,
                     kleidicv_color_conversion_t color_format, size_t padding) {
@@ -52,6 +56,12 @@ class YuvSpTest final {
     input_uv.set(1, 0, {0, 1, 3, 4});
     input_uv.set(2, 0, {7, 8, 9, 10});
 
+    test::Array2D<uint8_t> input_yuv{
+        input_uv.width(), input_y.height() + input_uv.height(), padding};
+    input_yuv.fill(0);
+    input_yuv.set(0, 0, &input_y);
+    input_yuv.set(input_y.height(), 0, &input_uv);
+
     test::Array2D<uint8_t> expected{logical_width * channel_number_,
                                     input_y.height(), padding};
     expected.fill(0);
@@ -60,58 +70,60 @@ class YuvSpTest final {
     test::Array2D<uint8_t> actual{logical_width * channel_number_,
                                   input_y.height(), padding};
     actual.fill(42);
-    auto err = impl(input_y.data(), input_y.stride(), input_uv.data(),
-                    input_uv.stride(), actual.data(), actual.stride(),
-                    expected.width() / channel_number_, expected.height(),
-                    color_format);
+
+    auto invoke = [&](size_t width, size_t height,
+                      kleidicv_color_conversion_t format) {
+      if constexpr (std::is_same_v<F, SingleArrayFunc>) {
+        return impl(input_yuv.data(), input_yuv.stride(), actual.data(),
+                    actual.stride(), width, height, format);
+      } else {
+        return impl(input_y.data(), input_y.stride(), input_uv.data(),
+                    input_uv.stride(), actual.data(), actual.stride(), width,
+                    height, format);
+      }
+    };
+
+    auto err = invoke(logical_width, expected.height(), color_format);
 
     ASSERT_EQ(KLEIDICV_OK, err);
     EXPECT_EQ_ARRAY2D(expected, actual);
 
-    test::test_null_args(impl, input_y.data(), input_y.stride(),
-                         input_uv.data(), input_uv.stride(), actual.data(),
-                         actual.stride(), expected.width() / channel_number_,
-                         expected.height(), color_format);
+    if constexpr (std::is_same_v<F, SingleArrayFunc>) {
+      test::test_null_args(impl, input_yuv.data(), input_yuv.stride(),
+                           actual.data(), actual.stride(), logical_width,
+                           expected.height(), color_format);
+    } else {
+      test::test_null_args(impl, input_y.data(), input_y.stride(),
+                           input_uv.data(), input_uv.stride(), actual.data(),
+                           actual.stride(), logical_width, expected.height(),
+                           color_format);
+    }
 
-    EXPECT_EQ(KLEIDICV_OK,
-              impl(input_y.data(), input_y.stride(), input_uv.data(),
-                   input_uv.stride(), actual.data(), actual.stride(), 0, 1,
-                   color_format));
+    EXPECT_EQ(KLEIDICV_OK, invoke(0, 1, color_format));
 
-    EXPECT_EQ(KLEIDICV_OK,
-              impl(input_y.data(), input_y.stride(), input_uv.data(),
-                   input_uv.stride(), actual.data(), actual.stride(), 1, 0,
-                   color_format));
-
-    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              impl(input_y.data(), input_y.stride(), input_uv.data(),
-                   input_uv.stride(), actual.data(), actual.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, color_format));
+    EXPECT_EQ(KLEIDICV_OK, invoke(1, 0, color_format));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              impl(input_y.data(), input_y.stride(), input_uv.data(),
-                   input_uv.stride(), actual.data(), actual.stride(),
-                   KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
-                   color_format));
+              invoke(KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, color_format));
+
+    EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+              invoke(KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS,
+                     color_format));
 
     EXPECT_EQ(
         KLEIDICV_ERROR_NOT_IMPLEMENTED,
-        impl(input_y.data(), input_y.stride(), input_uv.data(),
-             input_uv.stride(), actual.data(), actual.stride(), actual.width(),
-             actual.height(), kleidicv_color_conversion_t{}));
+        invoke(actual.width(), actual.height(), kleidicv_color_conversion_t{}));
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              impl(input_y.data(), input_y.stride(), input_uv.data(),
-                   input_uv.stride(), actual.data(), actual.stride(),
-                   actual.width(), actual.height(),
-                   static_cast<kleidicv_color_conversion_t>(
-                       KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
-                       KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST)));
+              invoke(actual.width(), actual.height(),
+                     static_cast<kleidicv_color_conversion_t>(
+                         KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST)));
   }
 
-  void calculate_expected(test::Array2D<uint8_t> &y_arr,
-                          test::Array2D<uint8_t> &uv_arr,
-                          test::Array2D<uint8_t> &exp_arr,
+  void calculate_expected(test::Array2D<uint8_t>& y_arr,
+                          test::Array2D<uint8_t>& uv_arr,
+                          test::Array2D<uint8_t>& exp_arr,
                           kleidicv_color_conversion_t color_format) const {
     bool is_nv21 = false;
     switch (color_format) {
@@ -179,94 +191,110 @@ TEST(YuvSp, NV12_TO_RGB_SCALAR) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_RGB);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_RGB);
 }
 
 TEST(YuvSp, NV12_TO_RGB_VECTOR) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_RGB);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_RGB);
 }
 
 TEST(YuvSp, NV21_TO_RGB_SCALAR) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_RGB);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_RGB);
 }
 
 TEST(YuvSp, NV21_TO_RGB_VECTOR) {
   YuvSpTest yuv_test(3, false);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_RGB);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_RGB);
 }
 
 TEST(YuvSp, NV12_TO_BGR_SCALAR) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_BGR);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_BGR);
 }
 
 TEST(YuvSp, NV12_TO_BGR_VECTOR) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_BGR);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_BGR);
 }
 
 TEST(YuvSp, NV21_TO_BGR_SCALAR) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_BGR);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_BGR);
 }
 
 TEST(YuvSp, NV21_TO_BGR_VECTOR) {
   YuvSpTest yuv_test(3, true);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_BGR);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_BGR);
 }
 
 TEST(YuvSp, NV12_TO_RGBA_SCALAR) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_RGBA);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_RGBA);
 }
 
 TEST(YuvSp, NV12_TO_RGBA_VECTOR) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_RGBA);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_RGBA);
 }
 
 TEST(YuvSp, NV21_TO_RGBA_SCALAR) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_RGBA);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_RGBA);
 }
 
 TEST(YuvSp, NV21_TO_RGBA_VECTOR) {
   YuvSpTest yuv_test(4, false);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_RGBA);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_RGBA);
 }
 
 TEST(YuvSp, NV12_TO_BGRA_SCALAR) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_BGRA);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_BGRA);
 }
 
 TEST(YuvSp, NV12_TO_BGRA_VECTOR) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV12_TO_BGRA);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV12_TO_BGRA);
 }
 
 TEST(YuvSp, NV21_TO_BGRA_SCALAR) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_scalar_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_BGRA);
+  yuv_test.execute_scalar_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_BGRA);
 }
 
 TEST(YuvSp, NV21_TO_BGRA_VECTOR) {
   YuvSpTest yuv_test(4, true);
   yuv_test.execute_vector_test(kleidicv_yuv_semiplanar_to_rgb_u8,
                                KLEIDICV_NV21_TO_BGRA);
+  yuv_test.execute_vector_test(kleidicv_yuv_to_rgb_u8, KLEIDICV_NV21_TO_BGRA);
 }

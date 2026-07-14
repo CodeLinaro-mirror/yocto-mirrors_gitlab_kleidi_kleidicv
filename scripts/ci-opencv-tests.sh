@@ -89,6 +89,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
     '*Imgproc_ColorGray*'
     '*Imgproc_ColorRGB*'
     '*Imgproc_ColorYUV*'
+    '*ImgProc_cvtColorTwoPlane*'
     '*Imgproc_cvtColor_BE*'
     '*Imgproc_Threshold*'
     '*Imgproc_Morphology*'

@@ -490,9 +490,12 @@ TEST(SmeApi, YuvRgbConversionParity) {
   constexpr size_t kWidth = 34;
   constexpr size_t kHeight = 8;
 
-  test::Array2D<uint8_t> yuv444{kWidth * 3, kHeight, 3};
+  // Reuse the same output buffers for all YUV-to-RGB conversions below.
   test::Array2D<uint8_t> rgb_cpu{kWidth * 3, kHeight, 1};
   test::Array2D<uint8_t> rgb_sme{kWidth * 3, kHeight, 1};
+
+  // Drive YUV444 branch in yuv_to_rgb_api.cpp
+  test::Array2D<uint8_t> yuv444{kWidth * 3, kHeight, 3};
   fill_array(yuv444);
   EXPECT_EQ(KLEIDICV_OK,
             kleidicv_yuv_to_rgb_u8(yuv444.data(), yuv444.stride(),
@@ -506,51 +509,58 @@ TEST(SmeApi, YuvRgbConversionParity) {
 
   // Drive YUV420P branch in yuv_to_rgb_api.cpp
   test::Array2D<uint8_t> yuv420p{kWidth, (kHeight * 3 + 1) / 2, 3};
-  test::Array2D<uint8_t> rgb420p_cpu{kWidth * 3, kHeight, 1};
-  test::Array2D<uint8_t> rgb420p_sme{kWidth * 3, kHeight, 1};
   fill_array(yuv420p);
   EXPECT_EQ(KLEIDICV_OK,
             kleidicv_yuv_to_rgb_u8(yuv420p.data(), yuv420p.stride(),
-                                   rgb420p_cpu.data(), rgb420p_cpu.stride(),
-                                   kWidth, kHeight, KLEIDICV_IYUV_TO_RGB));
+                                   rgb_cpu.data(), rgb_cpu.stride(), kWidth,
+                                   kHeight, KLEIDICV_IYUV_TO_RGB));
   EXPECT_EQ(KLEIDICV_OK,
             kleidicv_yuv_to_rgb_u8_sme(yuv420p.data(), yuv420p.stride(),
-                                       rgb420p_sme.data(), rgb420p_sme.stride(),
-                                       kWidth, kHeight, KLEIDICV_IYUV_TO_RGB));
-  expect_same_array(rgb420p_cpu, rgb420p_sme);
+                                       rgb_sme.data(), rgb_sme.stride(), kWidth,
+                                       kHeight, KLEIDICV_IYUV_TO_RGB));
+  expect_same_array(rgb_cpu, rgb_sme);
+
+  // Drive YUV420SP branch in yuv_to_rgb_api.cpp
+  test::Array2D<uint8_t> yuv420sp{kWidth, kHeight + kHeight / 2, 3};
+  fill_array(yuv420sp);
+  EXPECT_EQ(KLEIDICV_OK,
+            kleidicv_yuv_to_rgb_u8(yuv420sp.data(), yuv420sp.stride(),
+                                   rgb_cpu.data(), rgb_cpu.stride(), kWidth,
+                                   kHeight, KLEIDICV_NV12_TO_RGB));
+  EXPECT_EQ(KLEIDICV_OK,
+            kleidicv_yuv_to_rgb_u8_sme(yuv420sp.data(), yuv420sp.stride(),
+                                       rgb_sme.data(), rgb_sme.stride(), kWidth,
+                                       kHeight, KLEIDICV_NV12_TO_RGB));
+  expect_same_array(rgb_cpu, rgb_sme);
 
   // Drive YUV422 branch in yuv_to_rgb_api.cpp
   test::Array2D<uint8_t> yuv422{kWidth * 2, kHeight, 3};
-  test::Array2D<uint8_t> rgb422_cpu{kWidth * 3, kHeight, 1};
-  test::Array2D<uint8_t> rgb422_sme{kWidth * 3, kHeight, 1};
   fill_array(yuv422);
   EXPECT_EQ(KLEIDICV_OK,
             kleidicv_yuv_to_rgb_u8(yuv422.data(), yuv422.stride(),
-                                   rgb422_cpu.data(), rgb422_cpu.stride(),
-                                   kWidth, kHeight, KLEIDICV_YUYV_TO_RGB));
+                                   rgb_cpu.data(), rgb_cpu.stride(), kWidth,
+                                   kHeight, KLEIDICV_YUYV_TO_RGB));
   EXPECT_EQ(KLEIDICV_OK,
             kleidicv_yuv_to_rgb_u8_sme(yuv422.data(), yuv422.stride(),
-                                       rgb422_sme.data(), rgb422_sme.stride(),
-                                       kWidth, kHeight, KLEIDICV_YUYV_TO_RGB));
-  expect_same_array(rgb422_cpu, rgb422_sme);
+                                       rgb_sme.data(), rgb_sme.stride(), kWidth,
+                                       kHeight, KLEIDICV_YUYV_TO_RGB));
+  expect_same_array(rgb_cpu, rgb_sme);
 
   test::Array2D<uint8_t> y_plane{kWidth, kHeight, 1};
   test::Array2D<uint8_t> uv_plane{kWidth, kHeight / 2, 1};
-  test::Array2D<uint8_t> rgb_nv_cpu{kWidth * 3, kHeight, 1};
-  test::Array2D<uint8_t> rgb_nv_sme{kWidth * 3, kHeight, 1};
   fill_array(y_plane);
   fill_array(uv_plane);
   EXPECT_EQ(KLEIDICV_OK,
             kleidicv_yuv_semiplanar_to_rgb_u8(
                 y_plane.data(), y_plane.stride(), uv_plane.data(),
-                uv_plane.stride(), rgb_nv_cpu.data(), rgb_nv_cpu.stride(),
-                kWidth, kHeight, KLEIDICV_NV12_TO_RGB));
+                uv_plane.stride(), rgb_cpu.data(), rgb_cpu.stride(), kWidth,
+                kHeight, KLEIDICV_NV12_TO_RGB));
   EXPECT_EQ(KLEIDICV_OK,
             kleidicv_yuv_semiplanar_to_rgb_u8_sme(
                 y_plane.data(), y_plane.stride(), uv_plane.data(),
-                uv_plane.stride(), rgb_nv_sme.data(), rgb_nv_sme.stride(),
-                kWidth, kHeight, KLEIDICV_NV12_TO_RGB));
-  expect_same_array(rgb_nv_cpu, rgb_nv_sme);
+                uv_plane.stride(), rgb_sme.data(), rgb_sme.stride(), kWidth,
+                kHeight, KLEIDICV_NV12_TO_RGB));
+  expect_same_array(rgb_cpu, rgb_sme);
 
   test::Array2D<uint8_t> rgb_src{kWidth * 3, kHeight, 3};
   test::Array2D<uint8_t> yuv_cpu{kWidth * 3, kHeight, 1};

@@ -286,10 +286,15 @@ int bgr_to_bgr(const uchar *src_data, size_t src_step, uchar *dst_data,
 int yuv_to_bgr_sp(const uchar *src_data, size_t src_step, uchar *dst_data,
                   size_t dst_step, int dst_width, int dst_height, int dcn,
                   bool swapBlue, int uIdx) {
-  const uchar *uv_data =
-      reinterpret_cast<const uint8_t *>(src_data) + dst_height * src_step;
-  return yuv_to_bgr_sp_ex(src_data, src_step, uv_data, src_step, dst_data,
-                          dst_step, dst_width, dst_height, dcn, swapBlue, uIdx);
+  const bool is_nv21 = (uIdx != 0);
+  auto mt = get_multithreading();
+  const kleidicv_color_conversion_t color_format = make_color_conversion_type(
+      dcn, !swapBlue, is_nv21, false, KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP);
+
+  return convert_error(kleidicv_thread_yuv_to_rgb_u8(
+      reinterpret_cast<const uint8_t *>(src_data), src_step,
+      reinterpret_cast<uint8_t *>(dst_data), dst_step, dst_width, dst_height,
+      color_format, mt));
 }
 
 int yuv_to_bgr_sp_ex(const uchar *y_data, size_t y_step, const uchar *uv_data,

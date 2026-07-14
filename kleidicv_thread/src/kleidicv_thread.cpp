@@ -416,6 +416,16 @@ kleidicv_error_t kleidicv_thread_yuv_to_rgb_u8(
                                          height, color_format);
   }
 
+  if (base_format == KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP) {
+    if (src == nullptr) {
+      return KLEIDICV_ERROR_NULL_POINTER;
+    }
+    const uint8_t *src_uv = src + src_stride * height;
+    return kleidicv_thread_yuv_semiplanar_to_rgb_u8(
+        src, src_stride, src_uv, src_stride, dst, dst_stride, width, height,
+        color_format, mt);
+  }
+
   auto callback = [=](unsigned begin, unsigned end) {
     return kleidicv_yuv420p_to_rgb_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, color_format,
@@ -469,6 +479,10 @@ kleidicv_error_t kleidicv_thread_yuv_semiplanar_to_rgb_u8(
     size_t src_uv_stride, uint8_t *dst, size_t dst_stride, size_t width,
     size_t height, kleidicv_color_conversion_t color_format,
     kleidicv_thread_multithreading mt) {
+  if (src_y == nullptr || src_uv == nullptr || dst == nullptr) {
+    return KLEIDICV_ERROR_NULL_POINTER;
+  }
+
   auto callback = [=](unsigned begin, unsigned end) {
     size_t row_begin = size_t{begin} * 2;
     size_t row_end = std::min<size_t>(height, size_t{end} * 2);

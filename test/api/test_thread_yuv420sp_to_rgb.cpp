@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <thread>
+#include <type_traits>
 
 #include "framework/array.h"
 #include "framework/generator.h"
@@ -17,6 +18,9 @@
 typedef std::tuple<unsigned, unsigned, unsigned> P;
 
 class YuvSpThread : public testing::TestWithParam<P> {
+ private:
+  using SingleArrayFunc = decltype(&kleidicv_thread_yuv_to_rgb_u8);
+
  public:
   static inline int get_dcn(kleidicv_color_conversion_t color) {
     return (color & KLEIDICV_COLOR_CONVERSION_FLAG_ALPHA) ? 4 : 3;
@@ -28,23 +32,38 @@ class YuvSpThread : public testing::TestWithParam<P> {
     unsigned width = 0, height = 0, thread_count = 0;
     std::tie(width, height, thread_count) = GetParam();
     size_t channels = get_dcn(color_format);
-    test::Array2D<uint8_t> src_y(width, height),
-        src_uv((width + 1) & ~1, (height + 1) / 2),
-        dst_single(size_t{width} * channels, height),
+    test::Array2D<uint8_t> dst_single(size_t{width} * channels, height),
         dst_multi(size_t{width} * channels, height);
 
     test::PseudoRandomNumberGenerator<uint8_t> generator;
-    src_y.fill(generator);
-    src_uv.fill(generator);
+    kleidicv_error_t single_result = KLEIDICV_ERROR_NOT_IMPLEMENTED;
+    kleidicv_error_t multi_result = KLEIDICV_ERROR_NOT_IMPLEMENTED;
 
-    kleidicv_error_t single_result = single_threaded_func(
-        src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
-        dst_single.data(), dst_single.stride(), width, height, color_format);
+    if constexpr (std::is_same_v<MultithreadedFunc, SingleArrayFunc>) {
+      size_t src_width = (width + 1) & ~size_t{1};
+      test::Array2D<uint8_t> src(src_width, height + (height + 1) / 2);
+      src.fill(generator);
 
-    kleidicv_error_t multi_result = multithreaded_func(
-        src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
-        dst_multi.data(), dst_multi.stride(), width, height, color_format,
-        get_multithreading_fake(thread_count));
+      single_result = single_threaded_func(
+          src.data(), src.stride(), dst_single.data(), dst_single.stride(),
+          width, height, color_format);
+      multi_result = multithreaded_func(
+          src.data(), src.stride(), dst_multi.data(), dst_multi.stride(), width,
+          height, color_format, get_multithreading_fake(thread_count));
+    } else {
+      test::Array2D<uint8_t> src_y(width, height);
+      test::Array2D<uint8_t> src_uv((width + 1) & ~1, (height + 1) / 2);
+      src_y.fill(generator);
+      src_uv.fill(generator);
+
+      single_result = single_threaded_func(
+          src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
+          dst_single.data(), dst_single.stride(), width, height, color_format);
+      multi_result = multithreaded_func(
+          src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
+          dst_multi.data(), dst_multi.stride(), width, height, color_format,
+          get_multithreading_fake(thread_count));
+    }
 
     EXPECT_EQ(KLEIDICV_OK, single_result);
     EXPECT_EQ(KLEIDICV_OK, multi_result);
@@ -56,81 +75,117 @@ class YuvSpThread : public testing::TestWithParam<P> {
     size_t channels = get_dcn(color_format);
     test::Array2D<uint8_t> src_y{20, 10};
     test::Array2D<uint8_t> src_uv{20, 5};
-
+    test::Array2D<uint8_t> src{20, 15};
     test::Array2D<uint8_t> dst{20 * channels, 10, 0, channels};
 
-    EXPECT_EQ(KLEIDICV_OK, impl(src_y.data(), src_y.stride(), src_uv.data(),
-                                src_uv.stride(), dst.data(), dst.stride(), 0, 1,
-                                color_format, get_multithreading_fake(2)));
+    auto invoke = [&](size_t width, size_t height,
+                      kleidicv_color_conversion_t format,
+                      unsigned thread_count) {
+      if constexpr (std::is_same_v<Func, SingleArrayFunc>) {
+        return impl(src.data(), src.stride(), dst.data(), dst.stride(), width,
+                    height, format, get_multithreading_fake(thread_count));
+      } else {
+        return impl(src_y.data(), src_y.stride(), src_uv.data(),
+                    src_uv.stride(), dst.data(), dst.stride(), width, height,
+                    format, get_multithreading_fake(thread_count));
+      }
+    };
 
-    EXPECT_EQ(KLEIDICV_OK, impl(src_y.data(), src_y.stride(), src_uv.data(),
-                                src_uv.stride(), dst.data(), dst.stride(), 1, 0,
-                                color_format, get_multithreading_fake(2)));
+    EXPECT_EQ(KLEIDICV_OK, invoke(0, 1, color_format, 2));
+
+    EXPECT_EQ(KLEIDICV_OK, invoke(1, 0, color_format, 2));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              impl(src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
-                   dst.data(), dst.stride(), KLEIDICV_MAX_IMAGE_PIXELS + 1, 1,
-                   color_format, get_multithreading_fake(2)));
+              invoke(KLEIDICV_MAX_IMAGE_PIXELS + 1, 1, color_format, 2));
 
     EXPECT_EQ(KLEIDICV_ERROR_RANGE,
-              impl(src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
-                   dst.data(), dst.stride(), KLEIDICV_MAX_IMAGE_PIXELS,
-                   KLEIDICV_MAX_IMAGE_PIXELS - 1, color_format,
-                   get_multithreading_fake(1)));
+              invoke(KLEIDICV_MAX_IMAGE_PIXELS, KLEIDICV_MAX_IMAGE_PIXELS - 1,
+                     color_format, 1));
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              impl(src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
-                   dst.data(), dst.stride(), 20, 10,
-                   kleidicv_color_conversion_t{}, get_multithreading_fake(2)));
+              invoke(20, 10, kleidicv_color_conversion_t{}, 2));
 
     EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
-              impl(src_y.data(), src_y.stride(), src_uv.data(), src_uv.stride(),
-                   dst.data(), dst.stride(), 20, 10,
-                   static_cast<kleidicv_color_conversion_t>(
-                       KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
-                       KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST),
-                   get_multithreading_fake(2)));
+              invoke(20, 10,
+                     static_cast<kleidicv_color_conversion_t>(
+                         KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP |
+                         KLEIDICV_COLOR_CONVERSION_FLAG_CHROMA_FIRST),
+                     2));
   }
 };
 
 TEST_P(YuvSpThread, NV12_TO_BGR) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV12_TO_BGR);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV12_TO_BGR);
 }
 
 TEST_P(YuvSpThread, NV21_TO_BGR) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV21_TO_BGR);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV21_TO_BGR);
 }
 
 TEST_P(YuvSpThread, NV12_TO_BGRA) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV12_TO_BGRA);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV12_TO_BGRA);
 }
 
 TEST_P(YuvSpThread, NV21_TO_BGRA) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV21_TO_BGRA);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV21_TO_BGRA);
 }
 
 TEST_P(YuvSpThread, NV12_TO_RGB) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV12_TO_RGB);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV12_TO_RGB);
 }
 
 TEST_P(YuvSpThread, NV21_TO_RGB) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV21_TO_RGB);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV21_TO_RGB);
 }
 
 TEST_P(YuvSpThread, NV12_TO_RGBA) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV12_TO_RGBA);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV12_TO_RGBA);
 }
 
 TEST_P(YuvSpThread, NV21_TO_RGBA) {
   check(kleidicv_yuv_semiplanar_to_rgb_u8,
         kleidicv_thread_yuv_semiplanar_to_rgb_u8, KLEIDICV_NV21_TO_RGBA);
+  check(kleidicv_yuv_to_rgb_u8, kleidicv_thread_yuv_to_rgb_u8,
+        KLEIDICV_NV21_TO_RGBA);
+}
+
+TEST_F(YuvSpThread, NullPointers) {
+  constexpr size_t kWidth = 20;
+  constexpr size_t kHeight = 10;
+  test::Array2D<uint8_t> src_y{kWidth, kHeight},
+      src_uv{kWidth, (kHeight + 1) / 2},
+      src{kWidth, kHeight + (kHeight + 1) / 2}, dst{kWidth * 3, kHeight};
+  const auto mt = get_multithreading_fake(2);
+
+  test::test_null_args(kleidicv_thread_yuv_semiplanar_to_rgb_u8, src_y.data(),
+                       src_y.stride(), src_uv.data(), src_uv.stride(),
+                       dst.data(), dst.stride(), kWidth, kHeight,
+                       KLEIDICV_NV12_TO_BGR, mt);
+
+  test::test_null_args(kleidicv_thread_yuv_to_rgb_u8, src.data(), src.stride(),
+                       dst.data(), dst.stride(), kWidth, kHeight,
+                       KLEIDICV_NV12_TO_BGR, mt);
 }
 
 TEST_F(YuvSpThread, ReturnsErrorForUnsupportedCombinations) {
@@ -150,6 +205,14 @@ TEST_F(YuvSpThread, ReturnsErrorForUnsupportedCombinations) {
                   KLEIDICV_NV21_TO_BGRA);
   run_unsupported(kleidicv_thread_yuv_semiplanar_to_rgb_u8,
                   KLEIDICV_NV21_TO_RGBA);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV12_TO_BGR);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV12_TO_RGB);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV12_TO_BGRA);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV12_TO_RGBA);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV21_TO_BGR);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV21_TO_RGB);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV21_TO_BGRA);
+  run_unsupported(kleidicv_thread_yuv_to_rgb_u8, KLEIDICV_NV21_TO_RGBA);
 }
 
 INSTANTIATE_TEST_SUITE_P(, YuvSpThread,

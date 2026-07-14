@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,8 +11,27 @@ static cv::Mat exec_cvtcolor(cv::Mat& input) {
   return result;
 }
 
+template <int Code>
+static cv::Mat exec_cvtcolor_two_plane(cv::Mat& input) {
+  const int height = input.rows * 2 / 3;
+  cv::Mat y_plane(height, input.cols, CV_8UC1, input.data, input.step);
+  cv::Mat uv_input(height / 2, input.cols / 2, CV_8UC2, input.ptr(height),
+                   input.step);
+
+  // Use a different UV stride to exercise yuv_to_bgr_sp_ex directly.
+  cv::Mat uv_storage(height / 2, input.cols + 2, CV_8UC1);
+  cv::Mat uv_plane(height / 2, input.cols / 2, CV_8UC2, uv_storage.data,
+                   uv_storage.step);
+  uv_input.copyTo(uv_plane);
+
+  cv::Mat result;
+  cv::cvtColorTwoPlane(y_plane, uv_plane, result, Code);
+  return result;
+}
+
 #if MANAGER
-template <int Code, int input_channel>
+template <int Code, int input_channel,
+          cv::Mat (*Exec)(cv::Mat&) = exec_cvtcolor<Code>>
 bool test_yuv42x_to_rgb(int index, RecreatedMessageQueue& request_queue,
                         RecreatedMessageQueue& reply_queue) {
   cv::RNG rng(0);
@@ -22,7 +41,7 @@ bool test_yuv42x_to_rgb(int index, RecreatedMessageQueue& request_queue,
     cv::Mat input(y * 3 / 2, x, CV_8UC(input_channel));
     rng.fill(input, cv::RNG::UNIFORM, 0, 255);
 
-    cv::Mat actual = exec_cvtcolor<Code>(input);
+    cv::Mat actual = Exec(input);
     cv::Mat expected =
         get_expected_from_subordinate(index, request_queue, reply_queue, input);
 
@@ -57,6 +76,12 @@ bool test_yuv42x_to_rgb(int index, RecreatedMessageQueue& request_queue,
   TEST(#code, (test_yuv42x_to_rgb<cv::COLOR_##code, channel>), \
        exec_cvtcolor<cv::COLOR_##code>)
 
+#define CVTCOLOR_TWO_PLANE_TEST(code)                                   \
+  TEST(#code "_TWO_PLANE",                                              \
+       (test_yuv42x_to_rgb<cv::COLOR_##code, 1,                         \
+                           exec_cvtcolor_two_plane<cv::COLOR_##code>>), \
+       exec_cvtcolor_two_plane<cv::COLOR_##code>)
+
 std::vector<test>& yuv42x_to_rgb_tests_get() {
   // clang-format off
   static std::vector<test> tests = {
@@ -87,6 +112,14 @@ std::vector<test>& yuv42x_to_rgb_tests_get() {
       CVTCOLOR_TEST(YUV2RGB_NV21, 1),
       CVTCOLOR_TEST(YUV2BGRA_NV21, 1),
       CVTCOLOR_TEST(YUV2RGBA_NV21, 1),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2BGR_NV12),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2RGB_NV12),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2BGRA_NV12),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2RGBA_NV12),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2BGR_NV21),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2RGB_NV21),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2BGRA_NV21),
+      CVTCOLOR_TWO_PLANE_TEST(YUV2RGBA_NV21),
   };
   // clang-format on
   return tests;

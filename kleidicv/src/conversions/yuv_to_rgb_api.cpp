@@ -58,6 +58,21 @@ kleidicv_error_t kleidicv_yuv_to_rgb_u8(
                                              height);
   }
 
+  if (base_format == KLEIDICV_COLOR_CONVERSION_FMT_YUV420SP) {
+    if (src == nullptr) {
+      return KLEIDICV_ERROR_NULL_POINTER;
+    }
+    const uint8_t* src_uv = src + src_stride * height;
+    if constexpr (kUseSME) {
+      return kleidicv_yuv_semiplanar_to_rgb_u8_sme(src, src_stride, src_uv,
+                                                   src_stride, dst, dst_stride,
+                                                   width, height, color_format);
+    }
+    return kleidicv_yuv_semiplanar_to_rgb_u8(src, src_stride, src_uv,
+                                             src_stride, dst, dst_stride, width,
+                                             height, color_format);
+  }
+
   if constexpr (kUseSME) {
     return kleidicv_yuv422_to_rgb_u8_sme(src, src_stride, dst, dst_stride,
                                          width, height, color_format);
