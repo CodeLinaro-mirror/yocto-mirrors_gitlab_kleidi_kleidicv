@@ -86,13 +86,6 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
                                          uint8_t *dst, size_t dst_stride,
                                          size_t dst_width, size_t dst_height,
                                          size_t channels) {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
-
-  if (src_width == 0 || src_height == 0) {
-    return KLEIDICV_OK;
-  }
-
   if (src_width == 2 * dst_width && src_height == 2 * dst_height) {
     size_t src_begin = y_begin * 2;
     size_t src_end = std::min<size_t>(src_height, y_end * 2);
@@ -105,17 +98,6 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
   }
 
   if (channels == 1) {
-    if (src_width * 2 == dst_width && src_height * 2 == dst_height) {
-      return CALL_RESIZE(kleidicv_resize_2x2_stripe_u8, src, src_stride,
-                         src_width, src_height, y_begin, y_end, dst,
-                         dst_stride);
-    }
-    if (src_width * 4 == dst_width && src_height * 4 == dst_height) {
-      return CALL_RESIZE(kleidicv_resize_4x4_stripe_u8, src, src_stride,
-                         src_width, src_height, y_begin, y_end, dst,
-                         dst_stride);
-    }
-
     // Upscale loading 1vector
     if (dst_width * 14 > src_width * 15) {
       return CALL_RESIZE(kleidicv_resizeup_1ch_r1_stripe_u8, src, src_stride,
@@ -237,17 +219,27 @@ kleidicv_error_t resize_linear_u8(const uint8_t *src, size_t src_stride,
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  // The exact 2x2 and 4x4 upsampling kernels iterate over source rows,
-  // while the generic resize kernels iterate over destination rows.
-  const bool process_by_src_rows =
-      channels == 1 &&
-      ((src_width * 2 == dst_width && src_height * 2 == dst_height) ||
-       (src_width * 4 == dst_width && src_height * 4 == dst_height));
-  size_t y_end = process_by_src_rows ? src_height : dst_height;
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, dst_height);
 
-  return resize_linear_stripe_u8<kUseSME>(src, src_stride, src_width,
-                                          src_height, 0, y_end, dst, dst_stride,
-                                          dst_width, dst_height, channels);
+  if (src_width == 0 || src_height == 0) {
+    return KLEIDICV_OK;
+  }
+
+  if (resize_linear_u8_is_2x2(src_width, src_height, dst_width, dst_height,
+                              channels)) {
+    return CALL_RESIZE(kleidicv_resize_2x2_stripe_u8, src, src_stride,
+                       src_width, src_height, 0, src_height, dst, dst_stride);
+  }
+  if (resize_linear_u8_is_4x4(src_width, src_height, dst_width, dst_height,
+                              channels)) {
+    return CALL_RESIZE(kleidicv_resize_4x4_stripe_u8, src, src_stride,
+                       src_width, src_height, 0, src_height, dst, dst_stride);
+  }
+
+  return resize_linear_stripe_u8<kUseSME>(
+      src, src_stride, src_width, src_height, 0, dst_height, dst, dst_stride,
+      dst_width, dst_height, channels);
 }
 
 template <auto &StripeFunction>

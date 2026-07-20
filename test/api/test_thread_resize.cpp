@@ -203,6 +203,25 @@ INSTANTIATE_TEST_SUITE_P(, ResizeThread,
                                          P{1, 7, 4, 1}, P{12, 34, 5, 2}, P{ 7, 17, 5, 3}, P{11, 19, 3, 4}));
 // clang-format on
 
+TEST(ResizeThreadTest, ZeroImageSize) {
+  uint8_t src[1] = {}, dst[1] = {};
+  const auto mt = get_multithreading_fake(2);
+
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_thread_resize_linear_u8(src, 0, 0, 0, dst, 0,
+                                                          0, 0, 1, mt));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_thread_resize_linear_u8(src, 1, 1, 0, dst, 2,
+                                                          2, 0, 1, mt));
+  EXPECT_EQ(KLEIDICV_OK, kleidicv_thread_resize_linear_u8(src, 0, 0, 1, dst, 0,
+                                                          0, 2, 1, mt));
+}
+
+TEST(ResizeThreadTest, NullPointer) {
+  uint8_t src[2] = {}, dst[8] = {};
+
+  test::test_null_args(kleidicv_thread_resize_linear_u8, src, 1, 1, 2, dst, 2,
+                       2, 4, 1, get_multithreading_fake(2));
+}
+
 TEST(ResizeThreadTest, NotImplemented) {
   for (size_t channels = 1; channels <= 4; ++channels) {
     // Too small images

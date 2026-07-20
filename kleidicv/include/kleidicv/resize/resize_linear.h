@@ -64,6 +64,20 @@ inline bool resize_linear_u8_is_implemented(size_t src_width, size_t src_height,
   return false;
 }
 
+inline bool resize_linear_u8_is_2x2(size_t src_width, size_t src_height,
+                                    size_t dst_width, size_t dst_height,
+                                    size_t channels) {
+  return channels == 1 && src_width * 2 == dst_width &&
+         src_height * 2 == dst_height;
+}
+
+inline bool resize_linear_u8_is_4x4(size_t src_width, size_t src_height,
+                                    size_t dst_width, size_t dst_height,
+                                    size_t channels) {
+  return channels == 1 && src_width * 4 == dst_width &&
+         src_height * 4 == dst_height;
+}
+
 inline bool resize_linear_f32_is_implemented(size_t src_width,
                                              size_t src_height,
                                              size_t dst_width,
@@ -179,6 +193,12 @@ kleidicv_error_t kleidicv_resize_linear_stripe_f32(
     size_t dst_width, size_t dst_height);
 }  // namespace sme2
 
+// Fixed-scale kernels use source-row bounds for y_begin and y_end.
+using ResizeLinearFixedScaleStripeU8 = kleidicv_error_t (*)(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    size_t y_begin, size_t y_end, uint8_t *dst, size_t dst_stride);
+
+// The generic stripe dispatcher uses destination-row bounds.
 template <bool kUseSME>
 kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
                                          size_t src_width, size_t src_height,
@@ -192,6 +212,15 @@ kleidicv_error_t resize_linear_stripe_u8(const uint8_t *src, size_t src_stride,
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
+
+/// Internal - not part of the public API and its direct use is not
+/// supported. These are used by the multithreaded function.
+extern kleidicv::ResizeLinearFixedScaleStripeU8 kleidicv_resize_2x2_stripe_u8;
+extern kleidicv::ResizeLinearFixedScaleStripeU8
+    kleidicv_resize_2x2_stripe_u8_sme;
+extern kleidicv::ResizeLinearFixedScaleStripeU8 kleidicv_resize_4x4_stripe_u8;
+extern kleidicv::ResizeLinearFixedScaleStripeU8
+    kleidicv_resize_4x4_stripe_u8_sme;
 
 /// Internal - not part of the public API and its direct use is not
 /// supported. It is used by the multithreaded function.
