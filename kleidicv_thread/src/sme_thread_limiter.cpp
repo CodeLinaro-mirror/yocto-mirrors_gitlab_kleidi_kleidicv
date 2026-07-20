@@ -17,10 +17,8 @@
 #include <cerrno>
 #include <charconv>
 #include <cstddef>
-#include <cstdlib>
 #include <cstring>
 #include <limits>
-#include <new>
 #include <optional>
 
 namespace kleidicv::thread_internal {
@@ -506,31 +504,6 @@ SmeThreadLimiter::SmeThreadLimiter(SmcuTopology topology)
     available_slots_[domain].store(topology_.slot_count(domain),
                                    std::memory_order_relaxed);
   }
-}
-
-namespace {
-
-SmeThreadLimiter *create_sme_thread_limiter() {
-  auto topology = SmcuTopology::detect();
-  if (!topology || !topology->has_allowed_cpu()) {
-    return nullptr;
-  }
-
-  void *storage = std::malloc(sizeof(SmeThreadLimiter));
-  if (!storage) {
-    return nullptr;
-  }
-  return ::new (storage) SmeThreadLimiter{std::move(*topology)};
-}
-
-// This process-lifetime instance avoids C++ static destruction. Allocation
-// failure safely leaves all work on the CPU backend.
-const SmeThreadLimiter *const kSmeThreadLimiter = create_sme_thread_limiter();
-
-}  // namespace
-
-const SmeThreadLimiter *SmeThreadLimiter::instance() {
-  return kSmeThreadLimiter;
 }
 
 int SmeThreadLimiter::current_cpu() { return sched_getcpu(); }

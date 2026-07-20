@@ -7,7 +7,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
+#include <new>
+#include <utility>
 
 #include "heap_array.h"
 #include "kleidicv/arithmetics/scale.h"
@@ -86,27 +89,110 @@ inline kleidicv_error_t parallel_batches(Callback callback,
 }
 
 #if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
-const bool kHwCapsHasSme = kleidicv::is_sme_supported();
+namespace kleidicv::thread_internal {
+namespace {
+
+// Keep the limiter in this translation unit so it is initialized before the
+// dispatch function below is resolved during static initialization.
+SmeThreadLimiter *create_sme_thread_limiter() {
+  auto topology = SmcuTopology::detect();
+  if (!topology || !topology->has_allowed_cpu()) {
+    return nullptr;
+  }
+
+  void *storage = std::malloc(sizeof(SmeThreadLimiter));
+  if (!storage) {
+    return nullptr;
+  }
+  return ::new (storage) SmeThreadLimiter{std::move(*topology)};
+}
+
+// This process-lifetime instance avoids C++ static destruction. Allocation
+// failure safely leaves all work on the CPU backend.
+const SmeThreadLimiter *const kSmeThreadLimiter = create_sme_thread_limiter();
+
+}  // namespace
+
+const SmeThreadLimiter *SmeThreadLimiter::instance() {
+  return kSmeThreadLimiter;
+}
+
+}  // namespace kleidicv::thread_internal
+
+// Erase callback types so scheduler selection can be resolved once.
+// mt.parallel completes synchronously, so the callback context remains valid
+// until dispatch returns.
+using ErasedBatchCallback = kleidicv_error_t (*)(void *, size_t, size_t);
+using ParallelBatchesDispatch =
+    kleidicv_error_t (*)(void *, ErasedBatchCallback, ErasedBatchCallback,
+                         kleidicv_thread_multithreading, size_t, size_t);
+
+static kleidicv_error_t parallel_batches_cpu_only(
+    void *callback_context, ErasedBatchCallback cpu_callback,
+    ErasedBatchCallback, kleidicv_thread_multithreading mt, size_t count,
+    size_t min_batch_size) {
+  auto callback = [=](size_t begin, size_t end) {
+    return cpu_callback(callback_context, begin, end);
+  };
+  return parallel_batches(callback, mt, count, min_batch_size);
+}
+
+static kleidicv_error_t parallel_batches_hybrid(
+    void *callback_context, ErasedBatchCallback cpu_callback,
+    ErasedBatchCallback sme_callback, kleidicv_thread_multithreading mt,
+    size_t count, size_t min_batch_size) {
+  const auto *limiter = kleidicv::thread_internal::SmeThreadLimiter::instance();
+  auto callback = [=](size_t begin, size_t end) {
+    auto result = limiter->try_to_run(
+        [=]() { return sme_callback(callback_context, begin, end); });
+    return result.accepted ? result.error
+                           : cpu_callback(callback_context, begin, end);
+  };
+  return parallel_batches(callback, mt, count, min_batch_size);
+}
+
+static ParallelBatchesDispatch resolve_parallel_batches_dispatch() {
+  return kleidicv::is_sme_supported() &&
+                 kleidicv::thread_internal::SmeThreadLimiter::instance()
+             ? parallel_batches_hybrid
+             : parallel_batches_cpu_only;
+}
+
+// Keep a constant-initialized CPU fallback so calls made before dynamic
+// initialization cannot dispatch through a null function pointer.
+static ParallelBatchesDispatch kParallelBatchesDispatch =  // NOLINT
+    parallel_batches_cpu_only;
+
+struct ParallelBatchesDispatchInitializer {
+  ParallelBatchesDispatchInitializer() {
+    kParallelBatchesDispatch = resolve_parallel_batches_dispatch();
+  }
+};
+
+const ParallelBatchesDispatchInitializer kParallelBatchesDispatchInitializer;
 
 template <typename CpuCallback, typename SmeCallback>
 inline kleidicv_error_t parallel_batches_with_sme(
     CpuCallback cpu_callback, SmeCallback sme_callback,
     kleidicv_thread_multithreading mt, size_t count,
     size_t min_batch_size = 1) {
-  if (!kHwCapsHasSme) {
-    return parallel_batches(cpu_callback, mt, count, min_batch_size);
-  }
-
-  const auto *limiter = kleidicv::thread_internal::SmeThreadLimiter::instance();
-  if (!limiter) {
-    return parallel_batches(cpu_callback, mt, count, min_batch_size);
-  }
-  auto callback = [=](size_t begin, size_t end) {
-    auto result =
-        limiter->try_to_run([=]() { return sme_callback(begin, end); });
-    return result.accepted ? result.error : cpu_callback(begin, end);
+  struct CallbackContext {
+    CpuCallback *cpu;
+    SmeCallback *sme;
   };
-  return parallel_batches(callback, mt, count, min_batch_size);
+
+  CallbackContext context{&cpu_callback, &sme_callback};
+  auto cpu_thunk = [](void *opaque, size_t begin, size_t end) {
+    auto *callbacks = static_cast<CallbackContext *>(opaque);
+    return (*callbacks->cpu)(begin, end);
+  };
+  auto sme_thunk = [](void *opaque, size_t begin, size_t end) {
+    auto *callbacks = static_cast<CallbackContext *>(opaque);
+    return (*callbacks->sme)(begin, end);
+  };
+
+  return kParallelBatchesDispatch(&context, cpu_thunk, sme_thunk, mt, count,
+                                  min_batch_size);
 }
 #endif  // KLEIDICV_ENABLE_SME_THREAD_DISPATCH
 
