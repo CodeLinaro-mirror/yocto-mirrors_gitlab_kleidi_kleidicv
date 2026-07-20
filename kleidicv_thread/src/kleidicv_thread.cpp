@@ -209,6 +209,27 @@ inline kleidicv_error_t kleidicv_thread_unary_op_impl(
   return parallel_batches(callback, mt, height);
 }
 
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+template <typename SrcT, typename DstT, typename CpuFunction,
+          typename SmeFunction, typename... Args>
+inline kleidicv_error_t kleidicv_thread_unary_op_with_sme_impl(
+    CpuFunction cpu_function, SmeFunction sme_function,
+    kleidicv_thread_multithreading mt, const SrcT *src, size_t src_stride,
+    DstT *dst, size_t dst_stride, size_t width, size_t height, Args... args) {
+  auto make_callback = [=](auto function) {
+    return [=](size_t begin, size_t end) {
+      return function(
+          src + static_cast<ptrdiff_t>(begin * src_stride / sizeof(SrcT)),
+          src_stride,
+          dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(DstT)),
+          dst_stride, width, end - begin, args...);
+    };
+  };
+  return parallel_batches_with_sme(make_callback(cpu_function),
+                                   make_callback(sme_function), mt, height);
+}
+#endif  // KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+
 template <typename SrcT, typename DstT, typename F, typename... Args>
 inline kleidicv_error_t kleidicv_thread_binary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src_a,
@@ -246,11 +267,24 @@ KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_bgra_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgb_to_rgba_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_bgr_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(rgba_to_rgb_u8, uint8_t, uint8_t);
-KLEIDICV_THREAD_UNARY_OP_IMPL(exp_f32, float, float);
 KLEIDICV_THREAD_UNARY_OP_IMPL(f32_to_s8, float, int8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(f32_to_u8, float, uint8_t);
 KLEIDICV_THREAD_UNARY_OP_IMPL(s8_to_f32, int8_t, float);
 KLEIDICV_THREAD_UNARY_OP_IMPL(u8_to_f32, uint8_t, float);
+
+kleidicv_error_t kleidicv_thread_exp_f32(const float *src, size_t src_stride,
+                                         float *dst, size_t dst_stride,
+                                         size_t width, size_t height,
+                                         kleidicv_thread_multithreading mt) {
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+  return kleidicv_thread_unary_op_with_sme_impl(
+      kleidicv_exp_f32, kleidicv_exp_f32_sme, mt, src, src_stride, dst,
+      dst_stride, width, height);
+#else
+  return kleidicv_thread_unary_op_impl(kleidicv_exp_f32, mt, src, src_stride,
+                                       dst, dst_stride, width, height);
+#endif
+}
 
 #define KLEIDICV_THREAD_INRANGE_OP_IMPL(suffix, src_type, dst_type)          \
   kleidicv_error_t kleidicv_thread_##suffix(                                 \
@@ -262,8 +296,22 @@ KLEIDICV_THREAD_UNARY_OP_IMPL(u8_to_f32, uint8_t, float);
                                          height, lower_bound, upper_bound);  \
   }
 
-KLEIDICV_THREAD_INRANGE_OP_IMPL(in_range_u8, uint8_t, uint8_t);
 KLEIDICV_THREAD_INRANGE_OP_IMPL(in_range_f32, float, uint8_t);
+
+kleidicv_error_t kleidicv_thread_in_range_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, uint8_t lower_bound, uint8_t upper_bound,
+    kleidicv_thread_multithreading mt) {
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+  return kleidicv_thread_unary_op_with_sme_impl(
+      kleidicv_in_range_u8, kleidicv_in_range_u8_sme, mt, src, src_stride, dst,
+      dst_stride, width, height, lower_bound, upper_bound);
+#else
+  return kleidicv_thread_unary_op_impl(kleidicv_in_range_u8, mt, src,
+                                       src_stride, dst, dst_stride, width,
+                                       height, lower_bound, upper_bound);
+#endif
+}
 
 kleidicv_error_t kleidicv_thread_threshold_binary_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
@@ -649,6 +697,41 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
   return return_val;
 }
 
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+template <typename ScalarType, typename CpuFunction, typename SmeFunction>
+kleidicv_error_t parallel_min_max_with_sme(
+    CpuFunction cpu_function, SmeFunction sme_function, const ScalarType *src,
+    size_t src_stride, size_t width, size_t height, ScalarType *p_min_value,
+    ScalarType *p_max_value, kleidicv_thread_multithreading mt) {
+  const size_t value_count = std::max<size_t>(1, height);
+  kleidicv::thread_internal::HeapArray<ScalarType> min_values;
+  kleidicv::thread_internal::HeapArray<ScalarType> max_values;
+  if ((p_min_value &&
+       !min_values.allocate_and_fill(value_count,
+                                     std::numeric_limits<ScalarType>::max())) ||
+      (p_max_value &&
+       !max_values.allocate_and_fill(
+           value_count, std::numeric_limits<ScalarType>::lowest()))) {
+    return KLEIDICV_ERROR_ALLOCATION;
+  }
+
+  auto make_callback = [&](auto function) {
+    return [&, function](size_t begin, size_t end) {
+      return function(src + begin * (src_stride / sizeof(ScalarType)),
+                      src_stride, width, end - begin,
+                      p_min_value ? min_values.data() + begin : nullptr,
+                      p_max_value ? max_values.data() + begin : nullptr);
+    };
+  };
+
+  auto return_val = parallel_batches_with_sme(
+      make_callback(cpu_function), make_callback(sme_function), mt, height);
+  reduce_min(min_values.data(), height, p_min_value);
+  reduce_max(max_values.data(), height, p_max_value);
+  return return_val;
+}
+#endif  // KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+
 #define DEFINE_KLEIDICV_THREAD_MIN_MAX(suffix, type)                           \
   kleidicv_error_t kleidicv_thread_min_max_##suffix(                           \
       const type *src, size_t src_stride, size_t width, size_t height,         \
@@ -658,12 +741,28 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
                             height, p_min_value, p_max_value, mt);             \
   }
 
-DEFINE_KLEIDICV_THREAD_MIN_MAX(u8, uint8_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(s8, int8_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(u16, uint16_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(s16, int16_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(s32, int32_t);
+
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+#define DEFINE_KLEIDICV_THREAD_MIN_MAX_WITH_SME(suffix, type)            \
+  kleidicv_error_t kleidicv_thread_min_max_##suffix(                     \
+      const type *src, size_t src_stride, size_t width, size_t height,   \
+      type *p_min_value, type *p_max_value,                              \
+      kleidicv_thread_multithreading mt) {                               \
+    return parallel_min_max_with_sme(                                    \
+        kleidicv_min_max_##suffix, kleidicv_min_max_##suffix##_sme, src, \
+        src_stride, width, height, p_min_value, p_max_value, mt);        \
+  }
+
+DEFINE_KLEIDICV_THREAD_MIN_MAX_WITH_SME(u8, uint8_t);
+DEFINE_KLEIDICV_THREAD_MIN_MAX_WITH_SME(f32, float);
+#else
+DEFINE_KLEIDICV_THREAD_MIN_MAX(u8, uint8_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(f32, float);
+#endif
 
 template <typename ScalarType, typename Compare>
 void reduce_offset(const ScalarType *src, size_t src_stride,
@@ -1027,7 +1126,16 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
   };
 
   // height is decremented by 2 as the result has less rows.
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+  auto sme_callback = [=](size_t y_begin, size_t y_end) {
+    return kleidicv_scharr_interleaved_stripe_s16_u8_sme(
+        src, src_stride, src_width, src_height, src_channels, dst, dst_stride,
+        y_begin, y_end);
+  };
+  return parallel_batches_with_sme(callback, sme_callback, mt, src_height - 2);
+#else
   return parallel_batches(callback, mt, src_height - 2);
+#endif
 }
 
 inline kleidicv_error_t kleidicv_thread_resize_linear_fixed_scale_u8(
