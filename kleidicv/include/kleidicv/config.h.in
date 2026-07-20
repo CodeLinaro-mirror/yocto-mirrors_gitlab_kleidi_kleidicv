@@ -31,10 +31,6 @@
 
 #cmakedefine01 KLEIDICV_NEON_USE_CONTINUOUS_MULTIVEC_LS
 
-// clang-format off
-#cmakedefine KLEIDICV_MAX_SME_THREADS (@KLEIDICV_MAX_SME_THREADS@)
-// clang-format on
-
 // Set to '1' if compiling NEON code paths, otherwise it is set to '0'.
 #ifndef KLEIDICV_TARGET_NEON
 #define KLEIDICV_TARGET_NEON 0
@@ -136,5 +132,12 @@
 #endif
 
 #define KLEIDICV_PREFETCH(address) __builtin_prefetch(address)
+
+#if (KLEIDICV_ENABLE_SME || KLEIDICV_ENABLE_SME2) && \
+    (defined(__linux__) || defined(__ANDROID__))
+#define KLEIDICV_ENABLE_SME_THREAD_DISPATCH 1
+#else
+#define KLEIDICV_ENABLE_SME_THREAD_DISPATCH 0
+#endif
 
 #endif  // KLEIDICV_CONFIG_H

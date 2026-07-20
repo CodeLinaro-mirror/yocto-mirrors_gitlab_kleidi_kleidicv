@@ -19,6 +19,8 @@ This changelog aims to follow the guiding principles of
 - `kleidicv_yuv_to_rgb_u8` now supports YUV 4:2:0 semi-planar (YUV420SP) input.
 - In-place and out-of-place image flip support.
 - Support for OpenCV 4.14.
+- SME dispatch for multithreaded APIs when SME or SME2 backends are enabled at build time,
+  with topology-aware concurrency limits for shared SME compute units.
 
 ### Changed
 - Improved generic uint8 linear resize accuracy using Q15 interpolation weights

@@ -60,7 +60,6 @@ option(
  By default operations are only enabled in the HAL if benchmarks show a measurable performance uplift."
   OFF
 )
-set(KLEIDICV_MAX_SME_THREADS 1 CACHE STRING "Maximum number of concurrent SME or SME2 threads if kleidicv_thread is used.")
 
 option(KLEIDICV_CHECK_BANNED_FUNCTIONS "Internal - Check source for deprecated or obsolescent functions" OFF)
 option(KLEIDICV_ASSUME_128BIT_SVE2 "Internal - If turned ON 128-bit SVE2 vector length is assumed" OFF)
