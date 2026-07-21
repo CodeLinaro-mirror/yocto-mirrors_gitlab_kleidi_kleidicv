@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -108,10 +108,7 @@ class ScaleUint8ToFloat16Calc16 {
                    Columns<DstType> dst) const KLEIDICV_STREAMING {
     svbool_t p16 = svptrue_b16();
     svuint8_t svzero = svdup_n_u8(0);
-#if KLEIDICV_TARGET_SME2
-    svcount_t pc8 = SrcVecTraits::svptrue_c();
-    svcount_t pc16 = DstVecTraits::svptrue_c();
-#else
+#if !KLEIDICV_TARGET_SME2
     svbool_t p8 = svptrue_b8();
 #endif
     auto vector_path = [&](svuint16_t src) KLEIDICV_STREAMING {
@@ -122,6 +119,8 @@ class ScaleUint8ToFloat16Calc16 {
     LoopUnroll{width, SrcVecTraits::num_lanes()}
         .unroll_twice([&](size_t step) KLEIDICV_STREAMING {
 #if KLEIDICV_TARGET_SME2
+          svcount_t pc8 = SrcVecTraits::svptrue_c();
+          svcount_t pc16 = DstVecTraits::svptrue_c();
           SrcVector2Type src_2vec = svld1_x2(pc8, &src[0]);
           svuint8_t src0 = svget2(src_2vec, 0);
           svuint8_t src1 = svget2(src_2vec, 1);
@@ -192,10 +191,7 @@ class ScaleUint8ToFloat16Calc32 {
     svbool_t p16 = svptrue_b16();
     svbool_t p32 = svptrue_b32();
     svuint8_t svzero = svdup_n_u8(0);
-#if KLEIDICV_TARGET_SME2
-    svcount_t pc8 = SrcVecTraits::svptrue_c();
-    svcount_t pc16 = DstVecTraits::svptrue_c();
-#else
+#if !KLEIDICV_TARGET_SME2
     svbool_t p8 = svptrue_b8();
 #endif
     auto vector_path = [&](svuint8_t src) KLEIDICV_STREAMING {
@@ -223,6 +219,8 @@ class ScaleUint8ToFloat16Calc32 {
     LoopUnroll{width, SrcVecTraits::num_lanes()}
         .unroll_twice([&](size_t step) KLEIDICV_STREAMING {
 #if KLEIDICV_TARGET_SME2
+          svcount_t pc8 = SrcVecTraits::svptrue_c();
+          svcount_t pc16 = DstVecTraits::svptrue_c();
           SrcVector2Type src_2vec = svld1_x2(pc8, &src[0]);
           svuint8_t src0 = svget2(src_2vec, 0);
           svuint8_t src1 = svget2(src_2vec, 1);

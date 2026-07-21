@@ -74,16 +74,78 @@ LLVM_COV=llvm-cov scripts/generate_coverage_report.py build/ci/clang | tee build
 mkdir -p build/ci/html/coverage
 mv build/ci/clang/html/coverage build/ci/html
 
-# Sanitizers don't work when run through qemu so must be run natively.
+# Run sanitizers on native hardware where possible. Use ArmIE for unavailable
+# backends or when runtime dispatch cannot select the required backend.
 if [[ $(dpkg --print-architecture) = arm64 ]]; then
-  # Clang address & undefined behaviour sanitizers.
-  cmake -S . -B build/ci/sanitize -G Ninja \
+  SANITIZE_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
+  ARMIE_ASAN_OPTIONS=abort_on_error=1:symbolize=0
+
+  # Neon: build without scalable backends and run natively.
+  SANITIZE_NEON_DIR=build/ci/sanitize-neon
+  SANITIZE_NEON_TEST="${SANITIZE_NEON_DIR}/test/api/kleidicv-api-test"
+  cmake -S . -B "${SANITIZE_NEON_DIR}" -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
+    -DKLEIDICV_ENABLE_SVE2=OFF \
     -DKLEIDICV_ENABLE_SME=OFF \
-    -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -Wno-pass-failed"
-  ninja -C build/ci/sanitize kleidicv-api-test
-  build/ci/sanitize/test/api/kleidicv-api-test
+    -DKLEIDICV_ENABLE_SME2=OFF \
+    -DCMAKE_CXX_FLAGS="${SANITIZE_FLAGS}"
+  ninja -C "${SANITIZE_NEON_DIR}" kleidicv-api-test
+  "${SANITIZE_NEON_TEST}" --vector-length=16
+
+  # Build SVE2, SME and SME2 implementations.
+  SANITIZE_SCALABLE_DIR=build/ci/sanitize-scalable
+  SANITIZE_SCALABLE_TEST="${SANITIZE_SCALABLE_DIR}/test/api/kleidicv-api-test"
+  cmake -S . -B "${SANITIZE_SCALABLE_DIR}" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
+    -DKLEIDICV_ENABLE_SVE2=ON \
+    -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF \
+    -DKLEIDICV_ENABLE_SME=ON \
+    -DKLEIDICV_ENABLE_SME2=ON \
+    -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF \
+    -DCMAKE_CXX_FLAGS="${SANITIZE_FLAGS}"
+  ninja -C "${SANITIZE_SCALABLE_DIR}" kleidicv-api-test
+
+  SANITIZE_SVE2_FEATURES="${SANITIZE_SCALABLE_DIR}/armie_features_sve2.txt"
+  sed -e 's/^FEAT_SME=1$/FEAT_SME=0/' \
+    -e 's/^FEAT_SME2=1$/FEAT_SME2=0/' \
+    -e 's/^FEAT_SVE=0$/FEAT_SVE=1/' \
+    -e 's/^FEAT_SVE2=0$/FEAT_SVE2=1/' \
+    scripts/armie_features.txt >"${SANITIZE_SVE2_FEATURES}"
+
+  # SVE2 VL128: use native hardware when available, otherwise use ArmIE.
+  if [[ -r /proc/cpuinfo ]] && grep -qw sve2 /proc/cpuinfo; then
+    KLEIDICV_PREFER_SME_BACKEND=OFF \
+      "${SANITIZE_SCALABLE_TEST}" --vector-length=16
+  else
+    ASAN_OPTIONS="${ARMIE_ASAN_OPTIONS}" \
+      KLEIDICV_PREFER_SME_BACKEND=OFF \
+      armie -mvl=16 -mfeatures="${SANITIZE_SVE2_FEATURES}" -- \
+      "${SANITIZE_SCALABLE_TEST}" --vector-length=16
+  fi
+
+  # SVE2 VL256: run through ArmIE.
+  ASAN_OPTIONS="${ARMIE_ASAN_OPTIONS}" \
+    KLEIDICV_PREFER_SME_BACKEND=OFF \
+    armie -mvl=32 -mfeatures="${SANITIZE_SVE2_FEATURES}" -- \
+    "${SANITIZE_SCALABLE_TEST}" --vector-length=32
+
+  # SME: disable SME2 and run through ArmIE.
+  SANITIZE_SME_FEATURES="${SANITIZE_SCALABLE_DIR}/armie_features_sme.txt"
+  sed -e 's/^FEAT_SME2=1$/FEAT_SME2=0/' \
+    scripts/armie_features.txt >"${SANITIZE_SME_FEATURES}"
+
+  ASAN_OPTIONS="${ARMIE_ASAN_OPTIONS}" \
+    KLEIDICV_PREFER_SME_BACKEND=ON \
+    armie -mvl=16 -msvl=64 -mfeatures="${SANITIZE_SME_FEATURES}" -- \
+    "${SANITIZE_SCALABLE_TEST}" --vector-length=64
+
+  # SME2: run through ArmIE.
+  ASAN_OPTIONS="${ARMIE_ASAN_OPTIONS}" \
+    KLEIDICV_PREFER_SME_BACKEND=ON \
+    armie -mvl=16 -msvl=64 -mfeatures=scripts/armie_features.txt -- \
+    "${SANITIZE_SCALABLE_TEST}" --vector-length=64
 fi
 
 # Build benchmarks and without continuous load/store code path, just to prevent bitrot.

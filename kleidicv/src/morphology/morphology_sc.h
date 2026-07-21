@@ -126,12 +126,13 @@ class VerticalOp final {
       const ScalarType *src_row0 = &src_rows.at(0)[index];
       const ScalarType *src_row1 = &src_rows.at(1)[index];
 #if KLEIDICV_TARGET_SME2
-      v = svld1_x4(p_counter, src_row0);
+      svcount_t local_p_counter = VecTraits::svptrue_c();
+      v = svld1_x4(local_p_counter, src_row0);
       auto row00 = svget4(v, 0);
       auto row01 = svget4(v, 1);
       auto row02 = svget4(v, 2);
       auto row03 = svget4(v, 3);
-      v = svld1_x4(p_counter, src_row1);
+      v = svld1_x4(local_p_counter, src_row1);
       auto row10 = svget4(v, 0);
       auto row11 = svget4(v, 1);
       auto row12 = svget4(v, 2);
@@ -161,7 +162,8 @@ class VerticalOp final {
               KLEIDICV_STREAMING {
                 const ScalarType *src_row = &src_rows[index];
 #if KLEIDICV_TARGET_SME2
-                v = svld1_x4(p_counter, &src_row[0]);
+                svcount_t local_p_counter = VecTraits::svptrue_c();
+                v = svld1_x4(local_p_counter, &src_row[0]);
                 auto row0 = svget4(v, 0);
                 auto row1 = svget4(v, 1);
                 auto row2 = svget4(v, 2);
@@ -275,8 +277,9 @@ class VerticalOp final {
       const ScalarType *src_row0 = &src_rows.at(0)[index];
       const ScalarType *src_row1 = &src_rows.at(1)[index];
 #if KLEIDICV_TARGET_SME2
-      Vector2Type v0 = svld1_x2(p_counter, src_row0);
-      Vector2Type v1 = svld1_x2(p_counter, src_row1);
+      svcount_t local_p_counter = VecTraits::svptrue_c();
+      Vector2Type v0 = svld1_x2(local_p_counter, src_row0);
+      Vector2Type v1 = svld1_x2(local_p_counter, src_row1);
       auto row00 = svget2(v0, 0);
       auto row01 = svget2(v0, 1);
       auto row10 = svget2(v1, 0);
@@ -298,7 +301,8 @@ class VerticalOp final {
               KLEIDICV_STREAMING {
                 const ScalarType *src_row = &src_rows[index];
 #if KLEIDICV_TARGET_SME2
-                v = svld1_x2(p_counter, &src_row[0]);
+                svcount_t local_p_counter = VecTraits::svptrue_c();
+                v = svld1_x2(local_p_counter, &src_row[0]);
                 auto row0 = svget2(v, 0);
                 auto row1 = svget2(v, 1);
 #else
