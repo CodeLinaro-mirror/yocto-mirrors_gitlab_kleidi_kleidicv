@@ -880,7 +880,17 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u8(
         channels, kernel_x, kernel_width, kernel_y, kernel_height,
         validation.fixed_border_type);
   };
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+  auto sme_callback = [=](size_t y_begin, size_t y_end) {
+    return kleidicv_separable_filter_2d_stripe_u8_sme(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_x, kernel_width, kernel_y, kernel_height,
+        validation.fixed_border_type);
+  };
+  return parallel_batches_with_sme(callback, sme_callback, mt, height);
+#else
   return parallel_batches(callback, mt, height);
+#endif
 }
 
 kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
@@ -901,7 +911,17 @@ kleidicv_error_t kleidicv_thread_separable_filter_2d_u16(
         channels, kernel_x, kernel_width, kernel_y, kernel_height,
         validation.fixed_border_type);
   };
+#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
+  auto sme_callback = [=](size_t y_begin, size_t y_end) {
+    return kleidicv_separable_filter_2d_stripe_u16_sme(
+        src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
+        channels, kernel_x, kernel_width, kernel_y, kernel_height,
+        validation.fixed_border_type);
+  };
+  return parallel_batches_with_sme(callback, sme_callback, mt, height);
+#else
   return parallel_batches(callback, mt, height);
+#endif
 }
 
 kleidicv_error_t kleidicv_thread_blur_and_downsample_u8(
