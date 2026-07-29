@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -32,6 +32,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     kleidicv-c-example
     -Wl,--whole-archive
     kleidicv
+    kleidicv_thread
     -Wl,--no-whole-archive
     m
   )
@@ -39,5 +40,6 @@ else()
   target_link_libraries(
     kleidicv-c-example
     kleidicv
+    kleidicv_thread
   )
 endif()

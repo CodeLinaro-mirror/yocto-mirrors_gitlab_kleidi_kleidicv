@@ -29,8 +29,14 @@ ninja -C build/ci/gcc
 
 # Run tests on GCC build.
 TESTRESULT=0
+qemu-aarch64 build/ci/gcc/test/framework/kleidicv-framework-test --gtest_output=xml:build/ci/test-results/gcc-framework/ || TESTRESULT=1
+qemu-aarch64 build/ci/gcc/test/unit_thread/kleidicv-thread-unit-test --gtest_output=xml:build/ci/test-results/gcc-unit-thread/ || TESTRESULT=1
+qemu-aarch64 -cpu cortex-a35 build/ci/gcc/test/unit_neon/kleidicv-neon-unit-test --gtest_output=xml:build/ci/test-results/gcc-unit-neon/ || TESTRESULT=1
 qemu-aarch64 -cpu cortex-a35 build/ci/gcc/test/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/gcc-neon/ || TESTRESULT=1
 
+scripts/prefix_testsuite_names.py build/ci/test-results/gcc-framework/kleidicv-framework-test.xml "gcc-framework." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/gcc-unit-thread/kleidicv-thread-unit-test.xml "gcc-unit-thread." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/gcc-unit-neon/kleidicv-neon-unit-test.xml "gcc-unit-neon." || TESTRESULT=1
 scripts/prefix_testsuite_names.py build/ci/test-results/gcc-neon/kleidicv-api-test.xml "gcc-neon."
 
 exit $TESTRESULT

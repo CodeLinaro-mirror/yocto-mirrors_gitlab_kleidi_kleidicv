@@ -1,10 +1,11 @@
-// SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <limits>
 #include <thread>
 
 #include "framework/array.h"
@@ -22,6 +23,20 @@ KLEIDICV_MIN_MAX_LOC(uint8_t, u8);
   KLEIDICV_API(thread_min_max_loc, kleidicv_thread_min_max_loc_##suffix, type)
 
 KLEIDICV_THREAD_MIN_MAX_LOC(uint8_t, u8);
+
+TEST(MinMaxLocThread, AllocationFailure) {
+  uint8_t src = 0;
+  size_t offset = 0;
+  const size_t excessive_height = std::numeric_limits<size_t>::max();
+  const auto mt = get_multithreading_fake(2);
+
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
+            kleidicv_thread_min_max_loc_u8(
+                &src, sizeof(src), 1, excessive_height, &offset, nullptr, mt));
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
+            kleidicv_thread_min_max_loc_u8(
+                &src, sizeof(src), 1, excessive_height, nullptr, &offset, mt));
+}
 
 template <typename ElementType>
 class MinMaxLocThread : public testing::Test {};

@@ -43,6 +43,8 @@ LLVM_PROFILE_FILE="${LLVM_PROFILE_DIR}/api-neon-%p.profraw" qemu-aarch64 -cpu co
 PIDS+=("$!")
 LLVM_PROFILE_FILE="${LLVM_PROFILE_DIR}/unit-neon-%p.profraw" qemu-aarch64 -cpu cortex-a35 ${TEST_DIR}/unit_neon/kleidicv-neon-unit-test &
 PIDS+=("$!")
+LLVM_PROFILE_FILE="${LLVM_PROFILE_DIR}/unit-thread-%p.profraw" qemu-aarch64 ${TEST_DIR}/unit_thread/kleidicv-thread-unit-test &
+PIDS+=("$!")
 LLVM_PROFILE_FILE="${LLVM_PROFILE_DIR}/api-sve128-%p.profraw" qemu-aarch64 -cpu max,sve128=on,sme=off ${TEST_DIR}/api/kleidicv-api-test --vector-length=16 &
 PIDS+=("$!")
 LLVM_PROFILE_FILE="${LLVM_PROFILE_DIR}/api-sve2048-%p.profraw" qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \

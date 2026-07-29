@@ -73,6 +73,8 @@ TESTRESULT=0
 PIDS=()
 LLVM_PROFILE_FILE="${PROFILE_DIR}/framework-%p.profraw" qemu-aarch64 ${TEST_DIR}/framework/kleidicv-framework-test --gtest_output=xml:build/ci/test-results/clang-framework/ &
 PIDS+=("$!")
+LLVM_PROFILE_FILE="${PROFILE_DIR}/unit-thread-%p.profraw" qemu-aarch64 ${TEST_DIR}/unit_thread/kleidicv-thread-unit-test --gtest_output=xml:build/ci/test-results/clang-unit-thread/ &
+PIDS+=("$!")
 LLVM_PROFILE_FILE="${PROFILE_DIR}/unit-neon-%p.profraw" qemu-aarch64 -cpu cortex-a35 ${TEST_DIR}/unit_neon/kleidicv-neon-unit-test --gtest_output=xml:build/ci/test-results/clang-unit-neon/ &
 PIDS+=("$!")
 LLVM_PROFILE_FILE="${PROFILE_DIR}/api-neon-%p.profraw" qemu-aarch64 -cpu cortex-a35 ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-neon/ &
@@ -98,13 +100,15 @@ for PID in "${PIDS[@]}"; do
   wait "${PID}" || TESTRESULT=1
 done
 
-scripts/prefix_testsuite_names.py build/ci/test-results/clang-unit-neon/kleidicv-neon-unit-test.xml "clang-unit-neon."
-scripts/prefix_testsuite_names.py build/ci/test-results/clang-neon/kleidicv-api-test.xml "clang-neon."
-scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve128/kleidicv-api-test.xml "clang-sve128."
-scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve2048/kleidicv-api-test.xml "clang-sve2048."
-scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme/kleidicv-api-test.xml "clang-sme."
-scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme-api/kleidicv-api-test.xml "clang-sme-api."
-scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme2/kleidicv-api-test.xml "clang-sme2."
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-framework/kleidicv-framework-test.xml "clang-framework." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-unit-thread/kleidicv-thread-unit-test.xml "clang-unit-thread." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-unit-neon/kleidicv-neon-unit-test.xml "clang-unit-neon." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-neon/kleidicv-api-test.xml "clang-neon." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve128/kleidicv-api-test.xml "clang-sve128." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-sve2048/kleidicv-api-test.xml "clang-sve2048." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme/kleidicv-api-test.xml "clang-sme." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme-api/kleidicv-api-test.xml "clang-sme-api." || TESTRESULT=1
+scripts/prefix_testsuite_names.py build/ci/test-results/clang-sme2/kleidicv-api-test.xml "clang-sme2." || TESTRESULT=1
 
 # Generate test coverage report.
 LLVM_COV=llvm-cov scripts/generate_coverage_report.py build/ci/clang | tee build/ci/coverage-summary.txt

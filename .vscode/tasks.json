@@ -294,6 +294,20 @@
       }
     },
     {
+      "label": "Thread unit tests",
+      "type": "process",
+      "command": "qemu-aarch64",
+      "args": [
+        "${workspaceFolder}/build/kleidicv/test/unit_thread/kleidicv-thread-unit-test"
+      ],
+      "dependsOn": [
+        "Build KleidiCV"
+      ],
+      "group": {
+        "kind": "test"
+      }
+    },
+    {
       "label": "Format source",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/format.sh",

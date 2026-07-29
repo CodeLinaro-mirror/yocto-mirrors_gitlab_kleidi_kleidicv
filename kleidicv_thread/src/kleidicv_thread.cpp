@@ -5,14 +5,13 @@
 #include "kleidicv_thread/kleidicv_thread.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <limits>
-#include <utility>
-#include <vector>
 
+#include "heap_array.h"
 #include "kleidicv/arithmetics/scale.h"
 #include "kleidicv/conversions/rgb_to_yuv.h"
 #include "kleidicv/conversions/yuv_to_rgb.h"
@@ -33,13 +32,26 @@
 #include "kleidicv/dispatch.h"
 #endif  // KLEIDICV_ENABLE_SME
 
-typedef std::function<kleidicv_error_t(size_t, size_t)> FunctionCallback;
+template <typename Callback>
+struct BatchContext {
+  Callback *callback;
+  size_t count;
+  size_t min_batch_size;
+  size_t task_count;
+};
 
-static kleidicv_error_t kleidicv_thread_std_function_callback(size_t task_begin,
-                                                              size_t task_end,
-                                                              void *data) {
-  auto *callback = reinterpret_cast<FunctionCallback *>(data);
-  return (*callback)(task_begin, task_end);
+template <typename Callback>
+static kleidicv_error_t kleidicv_thread_batch_callback(size_t task_begin,
+                                                       size_t task_end,
+                                                       void *data) {
+  auto *context = static_cast<BatchContext<Callback> *>(data);
+  size_t begin = task_begin * context->min_batch_size;
+  size_t end = task_end * context->min_batch_size;
+  if (task_end == context->task_count) {
+    end = context->count;
+  }
+
+  return (*context->callback)(begin, end);
 }
 
 // Operations in the Neon backend have both a vector path and a scalar path.
@@ -67,15 +79,9 @@ inline kleidicv_error_t parallel_batches(Callback callback,
                                          kleidicv_thread_multithreading mt,
                                          size_t count,
                                          size_t min_batch_size = 1) {
-  const size_t task_count = std::max(size_t{1}, count / min_batch_size);
-  FunctionCallback f = [=](size_t task_begin, size_t task_end) {
-    size_t begin = task_begin * min_batch_size, end = task_end * min_batch_size;
-    if (task_end == task_count) {
-      end = count;
-    }
-    return callback(begin, end);
-  };
-  return mt.parallel(kleidicv_thread_std_function_callback, &f,
+  const size_t task_count = std::max(size_t{1}, (count) / min_batch_size);
+  BatchContext<Callback> context{&callback, count, min_batch_size, task_count};
+  return mt.parallel(kleidicv_thread_batch_callback<Callback>, &context,
                      mt.parallel_data, task_count);
 }
 
@@ -95,47 +101,36 @@ inline kleidicv_error_t kleidicv_thread_unary_op_impl(
 #if KLEIDICV_ENABLE_SME
 const bool kHwCapsHasSme = kleidicv::is_sme_supported();
 
-class SmeThreadLimiter {
- public:
-  static std::pair<bool, kleidicv_error_t> try_to_run_sme_thread(
-      const std::function<kleidicv_error_t()> &callback) {
-    static SmeThreadLimiter sme_thread_limiter;
+static std::atomic<int> &available_sme_thread_num() {
+  static std::atomic<int> value{KLEIDICV_MAX_SME_THREADS};
+  return value;
+}
 
-    return sme_thread_limiter.try_to_run_sme_thread_(callback);
+struct SmeThreadRunResult {
+  bool did_run;
+  kleidicv_error_t error;
+};
+
+template <typename Callback>
+SmeThreadRunResult try_to_run_sme_thread(Callback callback) {
+  auto &available_threads = available_sme_thread_num();
+  int thread_num_local = available_threads.load();
+  // Attempt to atomically decrement available_sme_thread_num if we think we
+  // have more than zero threads, else update the local value.
+  while (thread_num_local > 0 && !available_threads.compare_exchange_strong(
+                                     thread_num_local, thread_num_local - 1)) {
   }
 
- private:
-  SmeThreadLimiter() : available_sme_thread_num_{KLEIDICV_MAX_SME_THREADS} {};
-
-  std::pair<bool, kleidicv_error_t> try_to_run_sme_thread_(
-      const std::function<kleidicv_error_t()> &callback) {
-    int thread_num_local = available_sme_thread_num_.load();
-    // Attempt to atomically decrement available_sme_thread_num_ if we think we
-    // have more than zero threads, else update the local value.
-    while (thread_num_local > 0 &&
-           !available_sme_thread_num_.compare_exchange_strong(
-               thread_num_local, thread_num_local - 1)) {
-    }
-
-    if (thread_num_local > 0) {
-      // As exceptions are turned off at build time it is fine to run the
-      // callback and plainly increase the thread counter afterwards.
-      kleidicv_error_t r = callback();
-      available_sme_thread_num_++;
-      return std::make_pair(true, r);
-    }
-
-    return std::make_pair(false, kleidicv_error_t{});
+  if (thread_num_local > 0) {
+    // As exceptions are turned off at build time it is fine to run the callback
+    // and plainly increase the thread counter afterwards.
+    kleidicv_error_t r = callback();
+    available_threads++;
+    return SmeThreadRunResult{true, r};
   }
 
-  std::atomic<int> available_sme_thread_num_;
-
- public:
-  // These are not strictly needed as an object reference cannot be get outside
-  // the class, but as this class is a Singleton the reader might expect these.
-  SmeThreadLimiter(SmeThreadLimiter const &) = delete;
-  void operator=(SmeThreadLimiter const &) = delete;
-};  // end of class SmeThreadLimiter
+  return SmeThreadRunResult{false, kleidicv_error_t{}};
+}
 
 #endif  // KLEIDICV_ENABLE_SME
 
@@ -496,6 +491,28 @@ kleidicv_error_t kleidicv_thread_yuv_semiplanar_to_rgb_u8(
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
 
+template <typename T>
+void reduce_min(const T *values, size_t count, T *result) {
+  if (!result) {
+    return;
+  }
+  *result = std::numeric_limits<T>::max();
+  for (size_t i = 0; i < count; ++i) {
+    *result = std::min(*result, values[i]);
+  }
+}
+
+template <typename T>
+void reduce_max(const T *values, size_t count, T *result) {
+  if (!result) {
+    return;
+  }
+  *result = std::numeric_limits<T>::lowest();
+  for (size_t i = 0; i < count; ++i) {
+    *result = std::max(*result, values[i]);
+  }
+}
+
 template <typename ScalarType, typename FunctionType>
 kleidicv_error_t parallel_min_max(FunctionType min_max_func,
                                   const ScalarType *src, size_t src_stride,
@@ -503,10 +520,17 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
                                   ScalarType *p_min_value,
                                   ScalarType *p_max_value,
                                   kleidicv_thread_multithreading mt) {
-  std::vector<ScalarType> min_values(height,
-                                     std::numeric_limits<ScalarType>::max());
-  std::vector<ScalarType> max_values(height,
-                                     std::numeric_limits<ScalarType>::lowest());
+  const size_t value_count = std::max<size_t>(1, height);
+  kleidicv::thread_internal::HeapArray<ScalarType> min_values;
+  kleidicv::thread_internal::HeapArray<ScalarType> max_values;
+  if ((p_min_value &&
+       !min_values.allocate_and_fill(value_count,
+                                     std::numeric_limits<ScalarType>::max())) ||
+      (p_max_value &&
+       !max_values.allocate_and_fill(
+           value_count, std::numeric_limits<ScalarType>::lowest()))) {
+    return KLEIDICV_ERROR_ALLOCATION;
+  }
 
   auto callback = [&](size_t begin, size_t end) {
     return min_max_func(src + begin * (src_stride / sizeof(ScalarType)),
@@ -516,23 +540,8 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
   };
 
   auto return_val = parallel_batches(callback, mt, height);
-
-  if (p_min_value) {
-    *p_min_value = std::numeric_limits<ScalarType>::max();
-    for (ScalarType m : min_values) {
-      if (m < *p_min_value) {
-        *p_min_value = m;
-      }
-    }
-  }
-  if (p_max_value) {
-    *p_max_value = std::numeric_limits<ScalarType>::lowest();
-    for (ScalarType m : max_values) {
-      if (m > *p_max_value) {
-        *p_max_value = m;
-      }
-    }
-  }
+  reduce_min(min_values.data(), height, p_min_value);
+  reduce_max(max_values.data(), height, p_max_value);
   return return_val;
 }
 
@@ -552,6 +561,23 @@ DEFINE_KLEIDICV_THREAD_MIN_MAX(s16, int16_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(s32, int32_t);
 DEFINE_KLEIDICV_THREAD_MIN_MAX(f32, float);
 
+template <typename ScalarType, typename Compare>
+void reduce_offset(const ScalarType *src, size_t src_stride,
+                   const size_t *offsets, size_t count, size_t *result,
+                   Compare compare) {
+  if (!result) {
+    return;
+  }
+  *result = 0;
+  for (size_t i = 0; i < count; ++i) {
+    const size_t offset = offsets[i] + i * src_stride;
+    if (compare(src[offset / sizeof(ScalarType)],
+                src[*result / sizeof(ScalarType)])) {
+      *result = offset;
+    }
+  }
+}
+
 template <typename ScalarType, typename FunctionType>
 kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
                                       const ScalarType *src, size_t src_stride,
@@ -559,8 +585,13 @@ kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
                                       size_t *p_min_offset,
                                       size_t *p_max_offset,
                                       kleidicv_thread_multithreading mt) {
-  std::vector<size_t> min_offsets(height, 0);
-  std::vector<size_t> max_offsets(height, 0);
+  const size_t value_count = std::max<size_t>(1, height);
+  kleidicv::thread_internal::HeapArray<size_t> min_offsets;
+  kleidicv::thread_internal::HeapArray<size_t> max_offsets;
+  if ((p_min_offset && !min_offsets.allocate_and_fill(value_count, 0)) ||
+      (p_max_offset && !max_offsets.allocate_and_fill(value_count, 0))) {
+    return KLEIDICV_ERROR_ALLOCATION;
+  }
 
   auto callback = [&](size_t begin, size_t end) {
     return min_max_loc_func(
@@ -569,27 +600,10 @@ kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
         p_max_offset ? max_offsets.data() + begin : nullptr);
   };
   auto return_val = parallel_batches(callback, mt, height);
-
-  if (p_min_offset) {
-    *p_min_offset = 0;
-    for (size_t i = 0; i < min_offsets.size(); ++i) {
-      size_t offs = min_offsets[i] + i * src_stride;
-      if (src[offs / sizeof(ScalarType)] <
-          src[*p_min_offset / sizeof(ScalarType)]) {
-        *p_min_offset = offs;
-      }
-    }
-  }
-  if (p_max_offset) {
-    *p_max_offset = 0;
-    for (size_t i = 0; i < max_offsets.size(); ++i) {
-      size_t offs = max_offsets[i] + i * src_stride;
-      if (src[offs / sizeof(ScalarType)] >
-          src[*p_max_offset / sizeof(ScalarType)]) {
-        *p_max_offset = offs;
-      }
-    }
-  }
+  reduce_offset(src, src_stride, min_offsets.data(), height, p_min_offset,
+                [](ScalarType lhs, ScalarType rhs) { return lhs < rhs; });
+  reduce_offset(src, src_stride, max_offsets.data(), height, p_max_offset,
+                [](ScalarType lhs, ScalarType rhs) { return lhs > rhs; });
   return return_val;
 }
 
@@ -629,10 +643,9 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
               *fixed_border_type);
         };
 
-        auto sme_call_result_pair =
-            SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-        if (sme_call_result_pair.first) {
-          return sme_call_result_pair.second;
+        auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+        if (sme_call_result_pair.did_run) {
+          return sme_call_result_pair.error;
         }
 
         return kleidicv_gaussian_blur_fixed_stripe_u8(
@@ -747,10 +760,9 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
             channels);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
@@ -794,10 +806,9 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
               channels, kernel_width, kernel_height, fixed_border_type);
         };
 
-        auto sme_call_result_pair =
-            SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-        if (sme_call_result_pair.first) {
-          return sme_call_result_pair.second;
+        auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+        if (sme_call_result_pair.did_run) {
+          return sme_call_result_pair.error;
         }
 
         return kleidicv_median_blur_sorting_network_stripe_u8(
@@ -857,10 +868,9 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
             channels, kernel_width, kernel_height, fixed_border_type);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return kleidicv_median_blur_sorting_network_stripe_s16(
@@ -903,10 +913,9 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
             channels, kernel_width, kernel_height, fixed_border_type);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return kleidicv_median_blur_sorting_network_stripe_u16(
@@ -949,10 +958,9 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
             channels, kernel_width, kernel_height, fixed_border_type);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return kleidicv_median_blur_sorting_network_stripe_f32(
@@ -987,10 +995,9 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
             channels);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return kleidicv_sobel_3x3_vertical_stripe_s16_u8(
@@ -1043,10 +1050,9 @@ inline kleidicv_error_t kleidicv_thread_resize_linear_fixed_scale_u8(
                                    y_begin, stripe_y_end, dst, dst_stride);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return stripe_function(src, src_stride, src_width, src_height, y_begin,
@@ -1104,10 +1110,9 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
             dst_stride, dst_width, dst_height, channels);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return kleidicv::resize_linear_stripe_u8<false>(
@@ -1145,10 +1150,9 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
             dst_height);
       };
 
-      auto sme_call_result_pair =
-          SmeThreadLimiter::try_to_run_sme_thread(sme_callback);
-      if (sme_call_result_pair.first) {
-        return sme_call_result_pair.second;
+      auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
+      if (sme_call_result_pair.did_run) {
+        return sme_call_result_pair.error;
       }
 
       return kleidicv_resize_linear_stripe_f32(

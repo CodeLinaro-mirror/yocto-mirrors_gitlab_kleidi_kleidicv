@@ -37,6 +37,10 @@ set(KLEIDICV_TEST_FRAMEWORK_SOURCES
 )
 
 if (KLEIDICV_ALLOCATION_TESTS)
+  list(APPEND KLEIDICV_TEST_CXX_FLAGS
+    "-fno-builtin-malloc"
+    "-fno-builtin-calloc"
+  )
   list(APPEND KLEIDICV_TEST_FRAMEWORK_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/framework/wrap_allocations.cpp
   )
@@ -58,11 +62,13 @@ FetchContent_MakeAvailable(googletest)
 add_subdirectory(api)
 add_subdirectory(framework)
 add_subdirectory(unit_neon)
+add_subdirectory(unit_thread)
 
 # Target to build all tests.
 add_custom_target(
   kleidicv-test
   DEPENDS kleidicv-framework-test kleidicv-api-test kleidicv-neon-unit-test
+          kleidicv-thread-unit-test
 )
 
 # Target to build and run all tests.
@@ -71,6 +77,7 @@ add_custom_target(
   COMMAND kleidicv-framework-test
   COMMAND kleidicv-api-test
   COMMAND kleidicv-neon-unit-test
+  COMMAND kleidicv-thread-unit-test
   DEPENDS kleidicv-test
   USES_TERMINAL
 )

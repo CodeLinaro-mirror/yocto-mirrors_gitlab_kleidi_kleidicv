@@ -1217,6 +1217,11 @@ kleidicv_error_t call_min_max(SingleThreadFunc min_max_func_st,
                             static_cast<size_t>(width),
                             static_cast<size_t>(height), p_min_value,
                             p_max_value, mt);
+
+  if (err != KLEIDICV_OK) {
+    return err;
+  }
+
   if (min_value) {
     *min_value = static_cast<double>(tmp_min_value);
   }
@@ -1246,6 +1251,11 @@ kleidicv_error_t call_min_max_loc(
                                 src_stride, static_cast<size_t>(width),
                                 static_cast<size_t>(height), p_min_offset,
                                 p_max_offset, mt);
+
+  if (err != KLEIDICV_OK) {
+    return err;
+  }
+
   if (min_value) {
     *min_value = static_cast<double>(src_data[tmp_min_offset]);
   }
