@@ -13,24 +13,53 @@
 // Using TestWithParam to run tests with different inputs
 class Flip : public testing::TestWithParam<size_t> {
  public:
-  void scalar_test(size_t padding) {
-    size_t first_dim = test::Options::vector_lanes<uint8_t>() - 1;
-    size_t second_dim = test::Options::vector_lanes<uint8_t>() + 1;
-    test_horizontal(first_dim, second_dim, padding);
-    test_horizontal(second_dim, first_dim, padding);
+  size_t scalars_in_full_vec() const {
+    switch (GetParam()) {
+      case sizeof(uint8_t):
+      case sizeof(uint8_t) * 3:
+        return test::Options::vector_lanes<uint8_t>();
+      case sizeof(uint16_t):
+      case sizeof(uint16_t) * 3:
+        return test::Options::vector_lanes<uint16_t>();
+      case sizeof(uint32_t):
+        return test::Options::vector_lanes<uint32_t>();
+      case sizeof(uint64_t):
+        return test::Options::vector_lanes<uint64_t>();
+      default:
+        ADD_FAILURE() << "Unsupported pixel size for flip test.";
+        return 1;
+    }
   }
 
-  void vector_test(size_t padding) {
-    // At least two full vector passes
-    size_t width = 2 * test::Options::vector_lanes<uint8_t>();
-    size_t height = 3 * test::Options::vector_lanes<uint8_t>();
-    test_horizontal(width, height, padding);
+  // Width 1 is especially important as it's a no-op
+  void minimum_widths_test(size_t padding) {
+    constexpr size_t height = 3;
+    test_horizontal(1, height, padding);
+    test_horizontal(2, height, padding);
   }
 
-  void vector_plus_scalar_test(size_t padding) {
-    size_t width = 3 * test::Options::vector_lanes<uint8_t>() - 1;
-    size_t height = 3 * test::Options::vector_lanes<uint8_t>() - 1;
-    test_horizontal(width, height, padding);
+  void around_vector_length_test(size_t padding) {
+    constexpr size_t height = 3;
+    const size_t vector_lanes = scalars_in_full_vec();
+    test_horizontal(vector_lanes - 1, height, padding);
+    test_horizontal(vector_lanes, height, padding);
+    test_horizontal(vector_lanes + 1, height, padding);
+  }
+
+  void around_two_vector_boundary_test(size_t padding) {
+    constexpr size_t height = 3;
+    const size_t boundary = 2 * scalars_in_full_vec();
+    test_horizontal(boundary - 1, height, padding);
+    test_horizontal(boundary, height, padding);
+    test_horizontal(boundary + 1, height, padding);
+  }
+
+  void around_four_vector_boundary_test(size_t padding) {
+    constexpr size_t height = 3;
+    const size_t boundary = 4 * scalars_in_full_vec();
+    test_horizontal(boundary - 1, height, padding);
+    test_horizontal(boundary, height, padding);
+    test_horizontal(boundary + 1, height, padding);
   }
 
  protected:
@@ -43,7 +72,6 @@ class Flip : public testing::TestWithParam<size_t> {
   void calculate_expected(const uint8_t *src, size_t src_stride, size_t width,
                           size_t height, uint8_t *dst, size_t dst_stride,
                           int flip_mode, size_t pixel_size) const {
-    // Only implementing horizontal flip for now
     if (flip_mode <= 0) {
       FAIL() << "Only horizontal flip is supported at this time.";
     }
@@ -66,11 +94,8 @@ class Flip : public testing::TestWithParam<size_t> {
     const size_t pixel_size = sizeof(ScalarType) * kScalarPerPixel;
 
     // Generate a random source image
-    test::Array2D<ScalarType> source(
-        width_scalars,  // ScalarType values per row
-        height,
-        padding_scalars,  // extra ScalarType values after each row
-        kScalarPerPixel);
+    test::Array2D<ScalarType> source(width_scalars, height, padding_scalars,
+                                     kScalarPerPixel);
     test::PseudoRandomNumberGenerator<ScalarType> input_value_random_range;
     source.fill(input_value_random_range);
 
@@ -79,8 +104,6 @@ class Flip : public testing::TestWithParam<size_t> {
 
     test::Array2D<ScalarType> expected(width_scalars, height, padding_scalars,
                                        kScalarPerPixel);
-
-    // Perform reference calculation to check validity of result
     calculate_expected(reinterpret_cast<const uint8_t *>(source.data()),
                        source.stride(), width, height,
                        reinterpret_cast<uint8_t *>(expected.data()),
@@ -90,16 +113,12 @@ class Flip : public testing::TestWithParam<size_t> {
     if (!in_place) {
       actual = test::Array2D<ScalarType>(width_scalars, height, padding_scalars,
                                          kScalarPerPixel);
-
-      // Check that the implementation returns KLEIDICV_OK
       ASSERT_EQ(
           KLEIDICV_OK,
           kleidicv_flip(source.data(), source.stride(), width, height,
                         actual.data(), actual.stride(), flip_mode, pixel_size));
     } else {
       actual = source;  // Deep copy
-
-      // Check that the implementation returns KLEIDICV_OK
       ASSERT_EQ(
           KLEIDICV_OK,
           kleidicv_flip(actual.data(), actual.stride(), width, height,
@@ -120,9 +139,7 @@ class Flip : public testing::TestWithParam<size_t> {
     EXPECT_EQ_ARRAY2D(expected, actual);
   }
 
-  // Dispatches test for different pixel_sizes
   void test(size_t width, size_t height, size_t padding, bool in_place) const {
-    // Switch on the many pixel_sizes passed in
     switch (GetParam()) {
       case sizeof(uint8_t):
         test_impl<uint8_t, 1>(width, height, padding, in_place);
@@ -148,17 +165,29 @@ class Flip : public testing::TestWithParam<size_t> {
   }
 };
 
-TEST_P(Flip, ScalarNoPadding) { scalar_test(0); }
+TEST_P(Flip, MinimumWidthsNoPadding) { minimum_widths_test(0); }
 
-TEST_P(Flip, VectorNoPadding) { vector_test(0); }
+TEST_P(Flip, MinimumWidthsWithPadding) { minimum_widths_test(1); }
 
-TEST_P(Flip, ScalarWithPadding) { scalar_test(1); }
+TEST_P(Flip, AroundVectorLengthNoPadding) { around_vector_length_test(0); }
 
-TEST_P(Flip, VectorWithPadding) { vector_test(1); }
+TEST_P(Flip, AroundVectorLengthWithPadding) { around_vector_length_test(1); }
 
-TEST_P(Flip, VectorPlusScalarNoPadding) { vector_plus_scalar_test(0); }
+TEST_P(Flip, AroundTwoVectorBoundaryNoPadding) {
+  around_two_vector_boundary_test(0);
+}
 
-TEST_P(Flip, VectorPlusScalarWithPadding) { vector_plus_scalar_test(1); }
+TEST_P(Flip, AroundTwoVectorBoundaryWithPadding) {
+  around_two_vector_boundary_test(1);
+}
+
+TEST_P(Flip, AroundFourVectorBoundaryNoPadding) {
+  around_four_vector_boundary_test(0);
+}
+
+TEST_P(Flip, AroundFourVectorBoundaryWithPadding) {
+  around_four_vector_boundary_test(1);
+}
 
 TEST_P(Flip, VerticalNotImplemented) {
   std::vector<uint8_t> src(1, 0);
@@ -187,6 +216,7 @@ TEST_P(Flip, NullPointer) {
 
   // Just testing horizontal flip for now
   const int flip_mode = 1;
+
   test::test_null_args(kleidicv_flip, src.data(), pixel_size, 1, 1, dst.data(),
                        pixel_size, flip_mode, pixel_size);
 }
@@ -198,6 +228,7 @@ TEST_P(Flip, ZeroImageSize) {
 
   // Just testing horizontal flip for now
   const int flip_mode = 1;
+
   EXPECT_EQ(KLEIDICV_OK, kleidicv_flip(src.data(), pixel_size, 0, 1, dst.data(),
                                        pixel_size, flip_mode, pixel_size));
   EXPECT_EQ(KLEIDICV_OK, kleidicv_flip(src.data(), pixel_size, 1, 0, dst.data(),
@@ -211,6 +242,7 @@ TEST_P(Flip, OversizeImage) {
 
   // Just testing horizontal flip for now
   const int flip_mode = 1;
+
   EXPECT_EQ(
       KLEIDICV_ERROR_RANGE,
       kleidicv_flip(src.data(), pixel_size, 1, KLEIDICV_MAX_IMAGE_PIXELS + 1,

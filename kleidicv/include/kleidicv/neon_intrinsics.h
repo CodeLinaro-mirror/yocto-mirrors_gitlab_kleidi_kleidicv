@@ -539,6 +539,15 @@ static inline int64x2_t  vrev64q(int64x2_t  src) { return src; }
 static inline uint64x2_t vrev64q(uint64x2_t src) { return src; }
 
 // -----------------------------------------------------------------------------
+// vextq*
+// -----------------------------------------------------------------------------
+
+template <int n> static inline uint8x16_t vextq(uint8x16_t a, uint8x16_t b) { return vextq_u8(a, b, n); }
+template <int n> static inline uint16x8_t vextq(uint16x8_t a, uint16x8_t b) { return vextq_u16(a, b, n); }
+template <int n> static inline uint32x4_t vextq(uint32x4_t a, uint32x4_t b) { return vextq_u32(a, b, n); }
+template <int n> static inline uint64x2_t vextq(uint64x2_t a, uint64x2_t b) { return vextq_u64(a, b, n); }
+
+// -----------------------------------------------------------------------------
 // vcvt*
 // -----------------------------------------------------------------------------
 
