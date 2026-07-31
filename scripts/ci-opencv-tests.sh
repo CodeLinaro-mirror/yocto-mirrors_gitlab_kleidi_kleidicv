@@ -17,7 +17,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
   : "${OPENCV_VERSION:=4.13.0}"
   : "${OPENCV_URL:=/opt/opencv-${OPENCV_VERSION}.tar.gz}"
 
-  # Try to build unpatched OpenCV with KleidiCV.
+  # Try to build unpatched OpenCV with KleidiCV. Some OpenCV warnings need to be suppressed.
   rm -rf build/ci/unpatched-opencv*
   mkdir -p build/ci/unpatched-opencv-src
   tar -xzf "${OPENCV_URL}" -C build/ci/unpatched-opencv-src
@@ -58,6 +58,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
     -DWITH_LAPACK=OFF \
     -DOPENCV_PYTHON_SKIP_DETECTION=ON \
     -DOPENCV_ALGO_HINT_DEFAULT=ALGO_HINT_APPROX \
+    -DCMAKE_CXX_FLAGS_RELEASE_INIT=-Wno-unused-template \
     -DCMAKE_COMPILE_WARNING_AS_ERROR=ON" \
   ./scripts/build-opencv.sh
 

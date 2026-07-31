@@ -31,6 +31,7 @@ common_cmake_args=(
   "-DBUILD_TESTS=ON"
   "-DBUILD_PERF_TESTS=OFF"
   "-DBUILD_LIST=imgproc,core,video,ts"
+  "-DCMAKE_BUILD_TYPE=Release"
   "-DCMAKE_EXE_LINKER_FLAGS=${LDFLAGS}"
 
   "-DCV_TRACE=OFF"
@@ -62,6 +63,7 @@ common_cmake_args=(
   "-DWITH_LAPACK=OFF"
   "-DOPENCV_PYTHON_SKIP_DETECTION=ON"
   "-DOPENCV_ALGO_HINT_DEFAULT=ALGO_HINT_APPROX"
+  "-DCMAKE_CXX_FLAGS_RELEASE_INIT=-Wno-unused-template" # Needed to suppress OpenCV warnings
 )
 
 if [[ -n "${OPENCV_VERSION}" ]]; then

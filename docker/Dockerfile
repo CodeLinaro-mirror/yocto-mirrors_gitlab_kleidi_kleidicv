@@ -33,7 +33,7 @@ RUN apt-get update \
 # Install latest version of most LLVM tools except clang-format and clang-tidy
 # because we prioritise stability when it comes to how we format our code and
 # which cland-tidy checks we expect.
-ENV LLVM_VERSION=23
+ENV LLVM_VERSION=24
 ENV CLANG_FORMAT_VERSION=20
 ENV CLANG_TIDY_VERSION=20
 

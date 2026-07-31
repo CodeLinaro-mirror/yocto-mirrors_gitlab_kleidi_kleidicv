@@ -20,7 +20,7 @@ namespace KLEIDICV_TARGET_NAMESPACE {
 template <typename S, typename U,
           std::enable_if_t<std::numeric_limits<S>::is_signed, bool> = true,
           std::enable_if_t<not std::numeric_limits<U>::is_signed, bool> = true>
-static U saturating_cast(S value) KLEIDICV_STREAMING {
+U saturating_cast(S value) KLEIDICV_STREAMING {
   if (value > std::numeric_limits<U>::max()) {
     return std::numeric_limits<U>::max();
   }
@@ -36,14 +36,14 @@ template <
     typename SrcType, typename DstType,
     std::enable_if_t<std::is_unsigned_v<DstType> && std::is_unsigned_v<SrcType>,
                      bool> = true>
-static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
+DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
   return static_cast<DstType>(value);
 }
 
 // Saturating cast to signed type.
 template <typename SrcType, typename DstType,
           std::enable_if_t<std::is_signed_v<DstType>, bool> = true>
-static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
+DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
   if (value > static_cast<SrcType>(std::numeric_limits<DstType>::max())) {
     return std::numeric_limits<DstType>::max();
   }
@@ -59,7 +59,7 @@ static DstType saturating_cast(SrcType value) KLEIDICV_STREAMING {
 
 // Saturating subtract for unsigned types
 template <typename T, std::enable_if_t<std::is_unsigned_v<T>, bool> = true>
-static T saturating_sub(T a, T b) KLEIDICV_STREAMING {
+T saturating_sub(T a, T b) KLEIDICV_STREAMING {
   if (b > a) {
     return static_cast<T>(0);
   }
@@ -68,7 +68,7 @@ static T saturating_sub(T a, T b) KLEIDICV_STREAMING {
 
 // Rounding shift right.
 template <typename T>
-static T rounding_shift_right(T value, size_t shift) KLEIDICV_STREAMING {
+T rounding_shift_right(T value, size_t shift) KLEIDICV_STREAMING {
   return (value + (T{1} << (shift - 1))) >> shift;
 }
 

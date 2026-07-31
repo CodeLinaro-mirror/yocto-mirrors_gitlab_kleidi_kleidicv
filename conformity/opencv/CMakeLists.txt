@@ -99,6 +99,7 @@ target_compile_options(
     "-Werror"
     "-Wall"
     "-Wextra"
+    "-Wno-unused-template" # Needed to suppress OpenCV warnings
 )
 
 # Subordinate
@@ -136,4 +137,5 @@ target_compile_options(
     "-Werror"
     "-Wall"
     "-Wextra"
+    "-Wno-unused-template" # Needed to suppress OpenCV warnings
 )
