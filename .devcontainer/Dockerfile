@@ -7,6 +7,7 @@ FROM registry.gitlab.arm.com/kleidi/kleidicv:25
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+    bubblewrap \
     ccache \
     clangd-${LLVM_VERSION} \
     gdb-multiarch \
