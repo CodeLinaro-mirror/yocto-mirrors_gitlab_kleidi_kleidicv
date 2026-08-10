@@ -188,6 +188,13 @@ Flip_HORIZONTAL_16SC3: opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 16SC3, FLIP_Y
 Flip_HORIZONTAL_8UC4:  opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 8UC4, FLIP_Y)'
 Flip_HORIZONTAL_16SC4: opencv_perf_core '*flip/*' '($PIXEL_FORMAT, 16SC4, FLIP_Y)'
 
+Flip_HORIZONTAL_8UC1_InPlace:  opencv_perf_core '*flipInPlace/*' '($PIXEL_FORMAT, 8UC1, FLIP_Y)'
+Flip_HORIZONTAL_16SC1_InPlace: opencv_perf_core '*flipInPlace/*' '($PIXEL_FORMAT, 16SC1, FLIP_Y)'
+Flip_HORIZONTAL_8UC3_InPlace:  opencv_perf_core '*flipInPlace/*' '($PIXEL_FORMAT, 8UC3, FLIP_Y)'
+Flip_HORIZONTAL_16SC3_InPlace: opencv_perf_core '*flipInPlace/*' '($PIXEL_FORMAT, 16SC3, FLIP_Y)'
+Flip_HORIZONTAL_8UC4_InPlace:  opencv_perf_core '*flipInPlace/*' '($PIXEL_FORMAT, 8UC4, FLIP_Y)'
+Flip_HORIZONTAL_16SC4_InPlace: opencv_perf_core '*flipInPlace/*' '($PIXEL_FORMAT, 16SC4, FLIP_Y)'
+
 Rotate_90_CLOCKWISE_8UC1:  opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 8UC1)'
 Rotate_90_CLOCKWISE_16SC1: opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 16SC1)'
 Rotate_90_CLOCKWISE_8UC3:  opencv_perf_core '*rotate/*' '($PIXEL_FORMAT, 0, 8UC3)'
