@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026: Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 // SPDX-FileCopyrightText: Copyright (C) 2000-2022, Intel Corporation, all rights reserved.
 // SPDX-FileCopyrightText: Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
 // SPDX-FileCopyrightText: Copyright (C) 2009-2016, NVIDIA Corporation, all rights reserved.
@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 diff --git a/modules/core/include/opencv2/core/fast_math.hpp b/modules/core/include/opencv2/core/fast_math.hpp
-index 370f5b439b..9d209320a3 100644
+index 108d64b987..90e4cd5a50 100644
 --- a/modules/core/include/opencv2/core/fast_math.hpp
 +++ b/modules/core/include/opencv2/core/fast_math.hpp
-@@ -346,7 +346,8 @@ CV_INLINE int cvRound(float value)
+@@ -350,7 +350,8 @@ CV_INLINE int cvRound(float value)
        defined CV__FASTMATH_ENABLE_CLANG_MATH_BUILTINS
      return (int)__builtin_lrintf(value);
  #else
@@ -26,3 +26,4 @@ index 370f5b439b..9d209320a3 100644
 +    std::clamp(lrintf(value), (long)INT_MIN, (long)INT_MAX));
  #endif
  }
+ 

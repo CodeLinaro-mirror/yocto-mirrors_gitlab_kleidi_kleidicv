@@ -92,7 +92,7 @@ ENV PATH=${PATH}:/usr/lib/llvm-${LLVM_VERSION}/bin:/root/.local/bin:/opt/arm/arm
 ENV CC=clang-${LLVM_VERSION}
 ENV CXX=clang++-${LLVM_VERSION}
 
-ARG OPENCV_VERSION=4.13.0
+ARG OPENCV_VERSION=4.14.0
 RUN wget \
   https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.tar.gz \
   -O /opt/opencv-${OPENCV_VERSION}.tar.gz

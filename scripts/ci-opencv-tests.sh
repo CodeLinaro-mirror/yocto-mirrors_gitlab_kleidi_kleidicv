@@ -14,7 +14,7 @@ SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 cd "${SCRIPT_PATH}/.."
 
 if [[ $(dpkg --print-architecture) = arm64 ]]; then
-  : "${OPENCV_VERSION:=4.13.0}"
+  : "${OPENCV_VERSION:=4.14.0}"
   : "${OPENCV_URL:=/opt/opencv-${OPENCV_VERSION}.tar.gz}"
 
   # Try to build unpatched OpenCV with KleidiCV. Some OpenCV warnings need to be suppressed.

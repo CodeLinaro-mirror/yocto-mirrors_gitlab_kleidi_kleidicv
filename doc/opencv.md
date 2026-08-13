@@ -313,7 +313,7 @@ Notes on parameters:
 * `ksize` - for `CV_8U`, supported kernel sizes are 3x3 to 255x255.\
   For other types, only 3x3, 5x5 and 7x7 are supported.
 
-#### [`cv::sepFilter2D()`](https://docs.opencv.org/4.13.0/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d)
+#### [`cv::sepFilter2D()`](https://docs.opencv.org/4.14.0/d4/d86/group__imgproc__filter.html#ga910e29ff7d7b105057d1625a4bf6318d)
 Applies a separable filter to a given image.
 
 In-place filtering is not supported i.e. `src` and `dst` must be different (non-overlapping) images.
@@ -322,12 +322,12 @@ If `src` is a submatrix, the operation is not supported unless `cv::BORDER_ISOLA
 
 Notes on parameters:
 
-* `src.depth()` - only supports `CV_8U`, `CV_16U` and `CV_16S`.
+* `src.depth()` - only supports `CV_8U` and `CV_16U`.
 * `src.type()`, `dst.type()`, `kernelX.type()` and `kernelY.type()` must be the same.
 * `ddepth` must be `-1`.
 * `anchor` must be `(-1, -1)`.
 * `delta` must be `0.0`.
-* `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.13.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
+* `borderType` - supported [OpenCV border types](https://docs.opencv.org/4.14.0/d2/de8/group__core__array.html#ga209f2f4869e304c82d07739337eae7c5) are:
 
   - `cv::BORDER_REPLICATE`
   - `cv::BORDER_REFLECT`
@@ -419,10 +419,10 @@ Notes on parameters:
 
 Geometric transform operations in the OpenCV HAL.
 
-#### [`cv::copyMakeBorder()`](https://docs.opencv.org/4.13.0/d2/de8/group__core__array.html#gaa0c0f1c6f151c3bd03ee0b9958d5b8c7)
+#### [`cv::copyMakeBorder()`](https://docs.opencv.org/4.14.0/d2/de8/group__core__array.html#gaa0c0f1c6f151c3bd03ee0b9958d5b8c7)
 Copies the source image into the destination and fills the destination border.
 
-#### [`cv::flip()`](https://docs.opencv.org/4.13.0/d2/de8/group__core__array.html#gaca7be533e3dac7feb70fc60635adf441)
+#### [`cv::flip()`](https://docs.opencv.org/4.14.0/d2/de8/group__core__array.html#gaca7be533e3dac7feb70fc60635adf441)
 Flips a 2D array around vertical, horizontal, or both axes.
 
 Notes on parameters:

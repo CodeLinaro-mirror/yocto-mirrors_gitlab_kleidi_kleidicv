@@ -9,7 +9,7 @@ project("OpenCV Conformity" CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # Please update SECURITY.md if adding, removing or changing the version of third party content.
-set(OPENCV_VERSION "4.13.0" CACHE STRING "Version of OpenCV")
+set(OPENCV_VERSION "4.14.0" CACHE STRING "Version of OpenCV")
 set(OPENCV_URL "https://github.com/opencv/opencv/archive/refs/tags/${OPENCV_VERSION}.tar.gz" CACHE STRING "URL of OpenCV")
 
 # Remove the last part of the version number (e.g., 4.9.0 -> 4.9)
@@ -18,7 +18,6 @@ string(REGEX REPLACE "\.[^\.]+$" "" OPENCV_PATCH_VERSION ${OPENCV_VERSION})
 # List of patch files to apply (add new patches here).
 set(OPENCV_PATCH_FILES
     "${CMAKE_CURRENT_LIST_DIR}/../../adapters/opencv/opencv-${OPENCV_PATCH_VERSION}.patch"
-    "${CMAKE_CURRENT_LIST_DIR}/opencv-${OPENCV_PATCH_VERSION}-gaussianblur.patch"
     "${CMAKE_CURRENT_LIST_DIR}/opencv-${OPENCV_PATCH_VERSION}-fast-math-rounding.patch")
 
 # Check if a patch file has non-comment content.

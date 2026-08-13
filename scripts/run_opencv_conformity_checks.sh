@@ -11,7 +11,7 @@ set -exu
 SCRIPT_PATH="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 
 : "${CLEAN:=OFF}"
-: "${OPENCV_VERSION:=4.13.0}"
+: "${OPENCV_VERSION:=4.14.0}"
 : "${OPENCV_URL:=/opt/opencv-${OPENCV_VERSION}.tar.gz}"
 : "${BUILD_PATH:=${SCRIPT_PATH}/../build/conformity}"
 

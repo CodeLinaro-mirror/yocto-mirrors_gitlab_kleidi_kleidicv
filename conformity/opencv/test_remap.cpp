@@ -237,8 +237,7 @@ bool test_remap_f32(int index, RecreatedMessageQueue& request_queue,
 template <typename T>
 cv::Mat exec_remap_f32_linear_accuracy(cv::Mat& map) {
   // These vaules can trigger biggest difference in the result.
-  cv::Mat source =
-      (cv::Mat_<T>(2, 2) << 0, 0, 0, std::numeric_limits<T>::max());
+  cv::Mat_<T> source({2, 2}, {0, 0, 0, std::numeric_limits<T>::max()});
   cv::Mat result;
   // Same map used for both x and y directions.
   remap(source, result, map, map, cv::INTER_LINEAR, cv::BORDER_REPLICATE);
@@ -279,7 +278,7 @@ bool test_remap_f32_linear_accuracy(int index,
   // operation and fallback happens to OpenCV's implementation. But for this
   // accuracy test only the first pixel counts. This map is used for both x and
   // y directions.
-  cv::Mat map = (cv::Mat_<float>(1, 4) << map_value, 0, 0, 0);
+  cv::Mat_<float> map({1, 4}, {map_value, 0, 0, 0});
 
   // KleidiCV results after float calculations
   T expected_kleidicv_value = std::is_same_v<T, uint8_t> ? 247 : 63503;
@@ -304,7 +303,7 @@ bool test_remap_f32_linear_accuracy(int index,
   // Map value is decreased by the smallest possible value to trigger the change
   // of OpenCV results.
   map_value = std::nextafterf(map_value, 0.0);
-  map = (cv::Mat_<float>(1, 4) << map_value, 0, 0, 0);
+  map = cv::Mat_<float>({1, 4}, {map_value, 0, 0, 0});
 
   // New expected OpenCV results
   expected_opencv_value = std::is_same_v<T, uint8_t> ? 239 : 61503;
