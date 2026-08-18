@@ -15,13 +15,32 @@ if(KLEIDICV_BENCHMARK)
 include(FetchContent)
 
 # Please update SECURITY.md if adding, removing or changing the version of third party content.
-FetchContent_Declare(
-  benchmark
-  URL https://github.com/google/benchmark/archive/refs/tags/v1.9.2.tar.gz
-  URL_HASH SHA256=409075176168dc46bbb81b74c1b4b6900385b5d16bfc181d678afb060d928bd3
-  # Patch error handling of getloadavg
-  PATCH_COMMAND cd <SOURCE_DIR> && patch --strip=1 --input=${CMAKE_CURRENT_SOURCE_DIR}/patches/benchmark.patch
-)
+set(KLEIDICV_GOOGLE_BENCHMARK_GIT_REPOSITORY "$ENV{KLEIDICV_GOOGLE_BENCHMARK_GIT_REPOSITORY}" CACHE STRING
+  "Git repository from which to fetch Google Benchmark instead of the public release archive")
+set(KLEIDICV_GOOGLE_BENCHMARK_GIT_TAG_PREFIX "$ENV{KLEIDICV_GOOGLE_BENCHMARK_GIT_TAG_PREFIX}" CACHE STRING
+  "Prefix for the Google Benchmark Git tag when fetching from a Git repository")
+set(KLEIDICV_GOOGLE_BENCHMARK_VERSION "v1.9.2")
+
+if (KLEIDICV_GOOGLE_BENCHMARK_GIT_REPOSITORY)
+  message(STATUS "Fetching Google Benchmark from ${KLEIDICV_GOOGLE_BENCHMARK_GIT_REPOSITORY} at tag ${KLEIDICV_GOOGLE_BENCHMARK_GIT_TAG_PREFIX}${KLEIDICV_GOOGLE_BENCHMARK_VERSION}")
+  FetchContent_Declare(
+    benchmark
+    GIT_REPOSITORY "${KLEIDICV_GOOGLE_BENCHMARK_GIT_REPOSITORY}"
+    GIT_TAG "${KLEIDICV_GOOGLE_BENCHMARK_GIT_TAG_PREFIX}${KLEIDICV_GOOGLE_BENCHMARK_VERSION}"
+    GIT_SHALLOW TRUE
+    # Patch error handling of getloadavg
+    PATCH_COMMAND cd <SOURCE_DIR> && patch --strip=1 --input=${CMAKE_CURRENT_SOURCE_DIR}/patches/benchmark.patch
+  )
+else()
+  message(STATUS "Fetching Google Benchmark from https://github.com/google/benchmark/archive/refs/tags/${KLEIDICV_GOOGLE_BENCHMARK_VERSION}.tar.gz")
+  FetchContent_Declare(
+    benchmark
+    URL "https://github.com/google/benchmark/archive/refs/tags/${KLEIDICV_GOOGLE_BENCHMARK_VERSION}.tar.gz"
+    URL_HASH SHA256=409075176168dc46bbb81b74c1b4b6900385b5d16bfc181d678afb060d928bd3
+    # Patch error handling of getloadavg
+    PATCH_COMMAND cd <SOURCE_DIR> && patch --strip=1 --input=${CMAKE_CURRENT_SOURCE_DIR}/patches/benchmark.patch
+  )
+endif()
 FetchContent_MakeAvailable(benchmark)
 # In case of very recent clang the following warning needs to be turned off
 target_compile_options(benchmark PRIVATE -Wno-c2y-extensions)
