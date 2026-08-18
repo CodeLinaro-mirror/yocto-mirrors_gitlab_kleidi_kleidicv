@@ -293,11 +293,11 @@ TYPED_TEST(BlurAndDownsample, Allocation) {
   TypeParam src[width * height] = {};
   TypeParam dst[width * height] = {};
 
-  MockMallocToFail::enable();
+  AllocationFailureMock::enable();
   auto ret = blur_and_downsample<TypeParam>()(
       src, sizeof(TypeParam) * width, width, height, dst, sizeof(TypeParam), 1,
       KLEIDICV_BORDER_TYPE_REPLICATE);
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
 }
 #endif

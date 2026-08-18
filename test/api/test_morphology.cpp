@@ -501,24 +501,25 @@ TYPED_TEST(Morphology, UnsupportedChannels) {
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TYPED_TEST(Morphology, CannotAllocateImage) {
-  MockMallocToFail::enable();
   kleidicv_rectangle_t kernel{3, 3}, image{3072, 2048};
   kleidicv_border_type_t border = KLEIDICV_BORDER_TYPE_REPLICATE;
   const uint8_t border_value[] = {0, 0, 1, 1};
   kleidicv_point_t anchor{1, 1};
   TypeParam src[1] = {}, dst[1] = {};
 
-  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
-            DilateParams<TypeParam>::api()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), image.width,
-                image.height, 1, kernel.width, kernel.height, anchor.x,
-                anchor.y, border, border_value, 1));
-  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION,
-            ErodeParams<TypeParam>::api()(
-                src, sizeof(TypeParam), dst, sizeof(TypeParam), image.width,
-                image.height, 1, kernel.width, kernel.height, anchor.x,
-                anchor.y, border, border_value, 1));
-  MockMallocToFail::disable();
+  AllocationFailureMock::enable();
+  const auto dilate_result = DilateParams<TypeParam>::api()(
+      src, sizeof(TypeParam), dst, sizeof(TypeParam), image.width, image.height,
+      1, kernel.width, kernel.height, anchor.x, anchor.y, border, border_value,
+      1);
+  const auto erode_result = ErodeParams<TypeParam>::api()(
+      src, sizeof(TypeParam), dst, sizeof(TypeParam), image.width, image.height,
+      1, kernel.width, kernel.height, anchor.x, anchor.y, border, border_value,
+      1);
+  AllocationFailureMock::disable();
+
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, dilate_result);
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, erode_result);
 }
 #endif
 

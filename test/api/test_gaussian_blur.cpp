@@ -1047,43 +1047,43 @@ TYPED_TEST(GaussianBlur, Allocation) {
 
   for (size_t kernel_size : fixed_sizes) {
     const size_t stride = kernel_size * sizeof(uint8_t);
-    MockMallocToFail::enable();
+    AllocationFailureMock::enable();
     auto ret = gaussian_blur<TypeParam>()(
         src, stride, dst, stride, kernel_size, kernel_size, /*ch*/ 1,
         kernel_size, kernel_size, sigma_binomial, sigma_binomial,
         KLEIDICV_BORDER_TYPE_REPLICATE);
-    MockMallocToFail::disable();
+    AllocationFailureMock::disable();
     EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
   }
 
   for (size_t kernel_size : fixed_sizes) {
     const size_t stride = kernel_size * sizeof(uint8_t);
-    MockMallocToFail::enable();
+    AllocationFailureMock::enable();
     auto ret = gaussian_blur<TypeParam>()(
         src, stride, dst, stride, kernel_size, kernel_size, /*ch*/ 1,
         kernel_size, kernel_size, sigma_non_binomial, sigma_non_binomial,
         KLEIDICV_BORDER_TYPE_REPLICATE);
-    MockMallocToFail::disable();
+    AllocationFailureMock::disable();
     EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
   }
 
   constexpr size_t non_binomial_sizes[] = {15, 21};
   for (size_t kernel_size : non_binomial_sizes) {
     const size_t stride = kernel_size * sizeof(uint8_t);
-    MockMallocToFail::enable();
+    AllocationFailureMock::enable();
     auto ret = gaussian_blur<TypeParam>()(
         src, stride, dst, stride, kernel_size, kernel_size, /*ch*/ 1,
         kernel_size, kernel_size, sigma_non_binomial, sigma_non_binomial,
         KLEIDICV_BORDER_TYPE_REPLICATE);
-    MockMallocToFail::disable();
+    AllocationFailureMock::disable();
     EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
   }
 
-  MockMallocToFail::enable();
+  AllocationFailureMock::enable();
   auto ret11 =
       gaussian_blur<TypeParam>()(src, 13, dst, 13, 13, 13, /*ch*/ 1, 11, 11,
                                  0.0, 0.0, KLEIDICV_BORDER_TYPE_REPLICATE);
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret11);
 }
 #endif

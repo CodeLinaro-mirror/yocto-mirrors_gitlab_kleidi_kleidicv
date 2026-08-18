@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -30,7 +30,7 @@ target_include_directories(
 if (KLEIDICV_ALLOCATION_TESTS)
   target_link_options(
     kleidicv-framework-test
-    PRIVATE -Wl,--wrap,malloc
+    PRIVATE -Wl,--wrap,malloc -Wl,--wrap,calloc
   )
 endif()
 

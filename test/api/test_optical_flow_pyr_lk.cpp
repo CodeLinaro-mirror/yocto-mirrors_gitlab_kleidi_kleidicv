@@ -706,11 +706,11 @@ TEST(CalcOpticalFlowPyrLk, FromPyramidScratchAllocationFailure) {
   float next_points[2] = {4.0F, 4.0F};
   uint8_t status[1] = {1};
 
-  MockMallocToFail::enable();
+  AllocationFailureMock::enable();
   const kleidicv_error_t ret = kleidicv_optical_flow_pyr_lk_u8_from_pyramid(
       prev_pyramid, next_pyramid, prev_points, next_points, 1, status, nullptr,
       context);
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
 
   ASSERT_EQ(KLEIDICV_OK,

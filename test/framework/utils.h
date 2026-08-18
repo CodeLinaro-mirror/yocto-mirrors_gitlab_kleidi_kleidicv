@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -48,7 +48,7 @@
     return;                            \
   }
 
-class MockMallocToFail {
+class AllocationFailureMock {
  public:
   static void enable() { enabled = true; }
   static void disable() { enabled = false; }

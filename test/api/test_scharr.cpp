@@ -197,10 +197,10 @@ TEST(ScharrInterleaved, ChannelNumber) {
 TEST(ScharrInterleaved, Allocation) {
   uint8_t src[1] = {};
   int16_t dst[1];
-  MockMallocToFail::enable();
+  AllocationFailureMock::enable();
   kleidicv_error_t ret = kleidicv_scharr_interleaved_s16_u8(
       src, sizeof(uint8_t), 3, 3, 1, dst, sizeof(int16_t));
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
 
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
 }

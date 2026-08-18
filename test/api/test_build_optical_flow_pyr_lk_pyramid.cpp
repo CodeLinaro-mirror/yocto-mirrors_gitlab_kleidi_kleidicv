@@ -901,10 +901,10 @@ TEST(BuildOpticalFlowPyrLkPyramidBuild, Allocation) {
   ASSERT_TRUE(src.valid());
   kleidicv_optical_flow_pyr_lk_pyramid_t* pyramid = nullptr;
 
-  MockMallocToFail::enable();
+  AllocationFailureMock::enable();
   const auto ret = kleidicv_build_optical_flow_pyr_lk_pyramid(
       &pyramid, src.data(), src.stride(), 3, 3, 1, 1, 3, 3);
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
 
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
   EXPECT_EQ(nullptr, pyramid);

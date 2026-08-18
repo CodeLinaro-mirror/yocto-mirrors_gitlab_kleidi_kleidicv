@@ -43,7 +43,7 @@ target_compile_definitions(
 if (KLEIDICV_ALLOCATION_TESTS)
   target_link_options(
     kleidicv-neon-unit-test
-    PRIVATE -Wl,--wrap,malloc
+    PRIVATE -Wl,--wrap,malloc -Wl,--wrap,calloc
   )
 endif()
 

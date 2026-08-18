@@ -730,12 +730,12 @@ TEST_F(AddPaddingByCopyTest, ReturnsAllocationWhenHeapAllocationFails) {
     test::Array2D<uint8_t> src{3, 2};
     test::Array2D<uint8_t> dst{3 + kIndexedLeftPadding + kIndexedRightPadding,
                                2};
-    MockMallocToFail::enable();
+    AllocationFailureMock::enable();
     const kleidicv_error_t result = kleidicv_add_padding_by_copy(
         src.data(), src.stride(), dst.data(), dst.stride(), 3, 2, 0, 0,
         kIndexedLeftPadding, kIndexedRightPadding, 1, KLEIDICV_BORDER_TYPE_WRAP,
         nullptr);
-    MockMallocToFail::disable();
+    AllocationFailureMock::disable();
     EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, result);
   }
 }

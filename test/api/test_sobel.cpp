@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -224,24 +224,22 @@ TYPED_TEST(Sobel, UndersizeImage) {
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TYPED_TEST(Sobel, CannotAllocateImageHorizontal) {
-  MockMallocToFail::enable();
   using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
   size_t validSize = 2;
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_ALLOCATION,
-      sobel_3x3_horizontal<TypeParam>()(
-          src, sizeof(src), dst, sizeof(dst), KLEIDICV_MAX_IMAGE_PIXELS / 2,
-          validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT));
+  AllocationFailureMock::enable();
+  const auto horizontal_result = sobel_3x3_horizontal<TypeParam>()(
+      src, sizeof(src), dst, sizeof(dst), KLEIDICV_MAX_IMAGE_PIXELS / 2,
+      validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT);
+  const auto vertical_result = sobel_3x3_vertical<TypeParam>()(
+      src, sizeof(src), dst, sizeof(dst), KLEIDICV_MAX_IMAGE_PIXELS / 2,
+      validSize, KLEIDICV_MAXIMUM_CHANNEL_COUNT);
+  AllocationFailureMock::disable();
 
-  EXPECT_EQ(
-      KLEIDICV_ERROR_ALLOCATION,
-      sobel_3x3_vertical<TypeParam>()(src, sizeof(src), dst, sizeof(dst),
-                                      KLEIDICV_MAX_IMAGE_PIXELS / 2, validSize,
-                                      KLEIDICV_MAXIMUM_CHANNEL_COUNT));
-  MockMallocToFail::disable();
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, horizontal_result);
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, vertical_result);
 }
 #endif
 

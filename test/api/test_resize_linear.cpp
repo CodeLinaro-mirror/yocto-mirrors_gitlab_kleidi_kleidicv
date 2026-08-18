@@ -848,20 +848,20 @@ TEST_P(ResizeLinearU8, CannotAllocateBuffer) {
 
   src.resize(64UL * 2UL * channels);
   dst.resize(36UL * 1UL * channels);
-  MockMallocToFail::enable();
+  AllocationFailureMock::enable();
   auto ret0 =
       kleidicv_resize_linear(src.data(), 64 * channels, 64, 2, dst.data(),
                              36 * channels, 36, 1, channels);
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret0);
 
   src.resize(100UL * 2UL * channels);
   dst.resize(36UL * 1UL * channels);
-  MockMallocToFail::enable();
+  AllocationFailureMock::enable();
   auto ret1 =
       kleidicv_resize_linear(src.data(), 100 * channels, 100, 2, dst.data(),
                              36 * channels, 36, 1, channels);
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
   EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret1);
 }
 #endif

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@
 #include <limits>
 #include <type_traits>
 
-bool MockMallocToFail::enabled = false;
+bool AllocationFailureMock::enabled = false;
 
 bool test::Options::are_long_running_tests_skipped_ = true;
 

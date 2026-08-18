@@ -1030,7 +1030,6 @@ TEST(StandaloneLKAlgTest, ZeroChannelsNotAllowed) {
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TEST(StandaloneLKAlgTest, CannotAllocateWindow) {
-  MockMallocToFail::enable();
   const ptrdiff_t width = 1, height = 1;
   const ptrdiff_t window_width = 100, window_height = 100;
   const ptrdiff_t padded_width = width + window_width * 2,
@@ -1043,6 +1042,7 @@ TEST(StandaloneLKAlgTest, CannotAllocateWindow) {
   float next_points[kPointCount * 2] = {};
   float err[kPointCount];
   uint8_t status[kPointCount];
+  AllocationFailureMock::enable();
   kleidicv_error_t ret = kleidicv_standalone_lucas_kanade_alg_u8(
       prev_image + padded_width * window_height + window_width, padded_width,
       scharr + (window_height * 2 * padded_width) + (window_width * 2),
@@ -1052,7 +1052,7 @@ TEST(StandaloneLKAlgTest, CannotAllocateWindow) {
       window_width, window_height, DEFAULT_TERMINATION_COUNT,
       DEFAULT_TERMINATION_EPSILON * DEFAULT_TERMINATION_EPSILON, false,
       DEFAULT_MIN_EIGEN_VALS_THRESHOLD);
-  MockMallocToFail::disable();
+  AllocationFailureMock::disable();
   ASSERT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
 }
 #endif

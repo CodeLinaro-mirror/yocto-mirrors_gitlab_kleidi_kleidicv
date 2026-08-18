@@ -38,7 +38,7 @@ set(KLEIDICV_TEST_FRAMEWORK_SOURCES
 
 if (KLEIDICV_ALLOCATION_TESTS)
   list(APPEND KLEIDICV_TEST_FRAMEWORK_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/framework/wrap_malloc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/framework/wrap_allocations.cpp
   )
 endif()
 

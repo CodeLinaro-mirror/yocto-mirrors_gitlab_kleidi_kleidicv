@@ -550,7 +550,6 @@ TYPED_TEST(SeparableFilter2D, InvalidBorderType) {
 
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TYPED_TEST(SeparableFilter2D, CannotAllocate) {
-  MockMallocToFail::enable();
   using KernelTestParams = SeparableFilter2DKernelTestParams<TypeParam, 5>;
   typename KernelTestParams::InputType src[1] = {};
   typename KernelTestParams::OutputType dst[1];
@@ -558,12 +557,13 @@ TYPED_TEST(SeparableFilter2D, CannotAllocate) {
   TypeParam kernel[kernel_size] = {};
   size_t validSize = 4;
 
+  AllocationFailureMock::enable();
   auto ret = separable_filter_2d<TypeParam>()(
       src, sizeof(TypeParam) * validSize, dst, sizeof(TypeParam) * validSize,
       validSize, validSize, 1, kernel, kernel_size, kernel, kernel_size,
       KLEIDICV_BORDER_TYPE_REPLICATE);
-  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
+  AllocationFailureMock::disable();
 
-  MockMallocToFail::disable();
+  EXPECT_EQ(KLEIDICV_ERROR_ALLOCATION, ret);
 }
 #endif
