@@ -46,20 +46,33 @@ PROFILE_DIR=build/ci/clang/profiles
 TEST_DIR=build/ci/clang/test
 mkdir -p "${PROFILE_DIR}"
 TESTRESULT=0
-LLVM_PROFILE_FILE="${PROFILE_DIR}/framework-%p.profraw" qemu-aarch64 ${TEST_DIR}/framework/kleidicv-framework-test --gtest_output=xml:build/ci/test-results/clang-framework/ || TESTRESULT=1
-LLVM_PROFILE_FILE="${PROFILE_DIR}/unit-neon-%p.profraw" qemu-aarch64 -cpu cortex-a35 ${TEST_DIR}/unit_neon/kleidicv-neon-unit-test --gtest_output=xml:build/ci/test-results/clang-unit-neon/ || TESTRESULT=1
-LLVM_PROFILE_FILE="${PROFILE_DIR}/api-neon-%p.profraw" qemu-aarch64 -cpu cortex-a35 ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-neon/ || TESTRESULT=1
+PIDS=()
+LLVM_PROFILE_FILE="${PROFILE_DIR}/framework-%p.profraw" qemu-aarch64 ${TEST_DIR}/framework/kleidicv-framework-test --gtest_output=xml:build/ci/test-results/clang-framework/ &
+PIDS+=("$!")
+LLVM_PROFILE_FILE="${PROFILE_DIR}/unit-neon-%p.profraw" qemu-aarch64 -cpu cortex-a35 ${TEST_DIR}/unit_neon/kleidicv-neon-unit-test --gtest_output=xml:build/ci/test-results/clang-unit-neon/ &
+PIDS+=("$!")
+LLVM_PROFILE_FILE="${PROFILE_DIR}/api-neon-%p.profraw" qemu-aarch64 -cpu cortex-a35 ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-neon/ &
+PIDS+=("$!")
 # To test whether the right backend is chosen KLEIDICV_PREFER_SME_BACKEND is set while there is no SME backend.
 LLVM_PROFILE_FILE="${PROFILE_DIR}/api-sve128-%p.profraw" KLEIDICV_PREFER_SME_BACKEND=ON qemu-aarch64 -cpu max,sve128=on,sme=off \
-  ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sve128/ --vector-length=16 || TESTRESULT=1
+  ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sve128/ --vector-length=16 &
+PIDS+=("$!")
 LLVM_PROFILE_FILE="${PROFILE_DIR}/api-sve2048-%p.profraw" qemu-aarch64 -cpu max,sve2048=on,sve-default-vector-length=256,sme=off \
-  ${TEST_DIR}/api/kleidicv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --gtest_output=xml:build/ci/test-results/clang-sve2048/ --vector-length=256 || TESTRESULT=1
+  ${TEST_DIR}/api/kleidicv-api-test --gtest_filter="${LONG_VECTOR_TESTS}" --gtest_output=xml:build/ci/test-results/clang-sve2048/ --vector-length=256 &
+PIDS+=("$!")
 LLVM_PROFILE_FILE="${PROFILE_DIR}/api-sme-%p.profraw" KLEIDICV_PREFER_SME_BACKEND=ON qemu-aarch64 -cpu max,sve128=on,sme512=on \
-  ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme/ --vector-length=64 || TESTRESULT=1
+  ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme/ --vector-length=64 &
+PIDS+=("$!")
 LLVM_PROFILE_FILE="${PROFILE_DIR}/api-sme-api-%p.profraw" KLEIDICV_PREFER_SME_BACKEND=OFF qemu-aarch64 -cpu max,sve128=on,sme512=on \
-  ${TEST_DIR}/api/kleidicv-api-test --gtest_filter="${SME_API_TESTS}" --gtest_output=xml:build/ci/test-results/clang-sme-api/ --vector-length=64 || TESTRESULT=1
+  ${TEST_DIR}/api/kleidicv-api-test --gtest_filter="${SME_API_TESTS}" --gtest_output=xml:build/ci/test-results/clang-sme-api/ --vector-length=64 &
+PIDS+=("$!")
 LLVM_PROFILE_FILE="${PROFILE_DIR}/api-sme2-%p.profraw" KLEIDICV_PREFER_SME_BACKEND=ON armie -mvl=16 -msvl=64 -mfeatures=scripts/armie_features.txt \
-  ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme2/ --vector-length=64 || TESTRESULT=1
+  ${TEST_DIR}/api/kleidicv-api-test --gtest_output=xml:build/ci/test-results/clang-sme2/ --vector-length=64 &
+PIDS+=("$!")
+
+for PID in "${PIDS[@]}"; do
+  wait "${PID}" || TESTRESULT=1
+done
 
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-unit-neon/kleidicv-neon-unit-test.xml "clang-unit-neon."
 scripts/prefix_testsuite_names.py build/ci/test-results/clang-neon/kleidicv-api-test.xml "clang-neon."
