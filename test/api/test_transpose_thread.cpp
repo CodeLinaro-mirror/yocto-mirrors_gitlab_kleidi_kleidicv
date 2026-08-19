@@ -115,3 +115,25 @@ TEST(TransposeThreadNotImplemented, ElementSize) {
                                       width, height, element_size,
                                       get_multithreading_fake(thread_count)));
 }
+
+TEST(TransposeThreadNotImplemented, InPlaceNonSquare) {
+  const size_t width = 2;
+  const size_t height = 3;
+  uint8_t data[width * height] = {};
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      kleidicv_thread_transpose(data, width, data, height, width, height,
+                                sizeof(uint8_t), get_multithreading_fake(2)));
+}
+
+TEST(TransposeThreadInPlace, Square) {
+  const size_t width = 2;
+  uint8_t data[width * width] = {1, 2, 3, 4};
+  const uint8_t expected[width * width] = {1, 3, 2, 4};
+
+  ASSERT_EQ(KLEIDICV_OK, kleidicv_thread_transpose(
+                             data, width, data, width, width, width,
+                             sizeof(uint8_t), get_multithreading_fake(2)));
+  EXPECT_THAT(data, testing::ElementsAreArray(expected));
+}

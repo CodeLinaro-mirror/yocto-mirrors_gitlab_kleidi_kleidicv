@@ -366,6 +366,8 @@ TEST_P(Thread, gaussian_blur_fixed_u8) {
   (void)thread_count;
   check_gaussian_blur_u8(5);
   check_gaussian_blur_u8(9);
+  check_gaussian_blur_u8(15);
+  check_gaussian_blur_u8(21);
 }
 
 TEST_P(Thread, gaussian_blur_arbitrary_u8) {
@@ -936,6 +938,22 @@ TEST(ThreadScaleU8, OversizeImage) {
       src.data(), src.stride(), dst.data(), dst.stride(),
       KLEIDICV_MAX_IMAGE_PIXELS + 1, 2, 2, 0, get_multithreading_fake(2));
   EXPECT_EQ(KLEIDICV_ERROR_RANGE, result);
+}
+
+TEST(ThreadScaleU8, InvalidArguments) {
+  uint8_t src[2] = {}, dst[2] = {};
+  const auto mt = get_multithreading_fake(2);
+
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            kleidicv_thread_scale_u8(nullptr, sizeof(src), dst, sizeof(dst), 1,
+                                     2, 2, 0, mt));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            kleidicv_thread_scale_u8(src, sizeof(src), nullptr, sizeof(dst), 1,
+                                     2, 2, 0, mt));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            kleidicv_thread_scale_u8(src, sizeof(src), dst, sizeof(dst),
+                                     KLEIDICV_MAX_IMAGE_PIXELS,
+                                     KLEIDICV_MAX_IMAGE_PIXELS, 2, 0, mt));
 }
 
 TEST(ThreadScaleU8, ZerosizeImage) {
