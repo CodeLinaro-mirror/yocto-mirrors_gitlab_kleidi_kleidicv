@@ -154,7 +154,7 @@ class SeparableFilterWorkspace {
     size_t margin = kernel_size / 2;
 
     // Process top rows, affected by border
-    for (size_t row_index = y_begin; row_index < std::max(y_begin, margin);
+    for (size_t row_index = y_begin; row_index < std::min(y_end, margin);
          ++row_index) {
       filter.process_arbitrary_border_vertical(rect_.width(), src_rows,
                                                row_index, buffer_rows);
@@ -172,7 +172,7 @@ class SeparableFilterWorkspace {
     }
 
     // Process bottom rows, affected by border
-    for (size_t row_index = std::min(y_end, rect_.height() - margin);
+    for (size_t row_index = std::max(y_begin, rect_.height() - margin);
          row_index < y_end; ++row_index) {
       filter.process_arbitrary_border_vertical(rect_.width(), src_rows,
                                                row_index, buffer_rows);

@@ -12,6 +12,7 @@
 #include "framework/kernel.h"
 #include "framework/utils.h"
 #include "kleidicv/ctypes.h"
+#include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/sigma.h"
 #include "kleidicv/kleidicv.h"
 #include "test_config.h"
@@ -348,6 +349,40 @@ TYPED_TEST(GaussianBlur, 11x11_CustomSigma) {
                    kReplicateBorder, kToleranceOne}
       .with_sigma(0.01)
       .test_with_generated_mask();
+}
+
+TEST(GaussianBlurArbitraryStripe, HonorsRowRange) {
+  constexpr size_t kKernelSize = 11;
+  constexpr size_t kWidth = 13;
+  constexpr size_t kHeight = 16;
+  constexpr size_t kChannels = 1;
+  constexpr uint8_t kSentinel = 0xFF;
+  test::Array2D<uint8_t> src{kWidth, kHeight};
+  test::Array2D<uint8_t> dst{kWidth, kHeight};
+  test::Array2D<uint8_t> expected{kWidth, kHeight};
+  src.fill(0);
+
+  auto test_stripe = [&](size_t y_begin, size_t y_end) {
+    SCOPED_TRACE(testing::Message()
+                 << "stripe [" << y_begin << ", " << y_end << ")");
+    dst.fill(kSentinel);
+    expected.fill(kSentinel);
+    for (size_t row = y_begin; row < y_end; ++row) {
+      for (size_t column = 0; column < kWidth; ++column) {
+        *expected.at(row, column) = 0;
+      }
+    }
+
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_gaussian_blur_arbitrary_stripe_u8(
+                  src.data(), src.stride(), dst.data(), dst.stride(), kWidth,
+                  kHeight, y_begin, y_end, kChannels, kKernelSize, kKernelSize,
+                  0.0F, 0.0F, kleidicv::FixedBorderType::REPLICATE));
+    EXPECT_EQ_ARRAY2D(expected, dst);
+  };
+
+  test_stripe(0, 1);
+  test_stripe(kHeight - 1, kHeight);
 }
 
 // Tests gaussian_blur_15x15_<input_type> API. It always uses CustomSigma.
