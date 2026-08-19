@@ -13,7 +13,7 @@
 extern "C" {
 // For internal use only. See instead kleidicv_separable_filter_2d_u8.
 // Filter a horizontal stripe across an image. The stripe is defined by the
-// range (y_begin, y_end].
+// range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u8,
                          const uint8_t *src, size_t src_stride, uint8_t *dst,
                          size_t dst_stride, size_t width, size_t height,
@@ -23,7 +23,7 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u8,
                          kleidicv::FixedBorderType border_type);
 // For internal use only. See instead kleidicv_separable_filter_2d_u16.
 // Filter a horizontal stripe across an image. The stripe is defined by the
-// range (y_begin, y_end].
+// range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u16,
                          const uint16_t *src, size_t src_stride, uint16_t *dst,
                          size_t dst_stride, size_t width, size_t height,

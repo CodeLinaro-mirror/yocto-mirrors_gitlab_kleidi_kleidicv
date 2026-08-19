@@ -13,7 +13,7 @@
 extern "C" {
 // For internal use only. See instead kleidicv_blur_and_downsample_u8.
 // Blurs and downsamples a horizontal stripe across an image. The stripe is
-// defined by the range (y_begin, y_end].
+// defined by the range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_blur_and_downsample_stripe_u8,
                          const uint8_t *src, size_t src_stride,
                          size_t src_width, size_t src_height, uint8_t *dst,

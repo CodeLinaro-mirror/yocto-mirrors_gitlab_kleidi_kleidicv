@@ -15,7 +15,7 @@
 extern "C" {
 // For internal use only. See instead kleidicv_gaussian_blur_u8.
 // Blur a horizontal stripe across an image. The stripe is defined by the
-// range (y_begin, y_end].
+// range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_fixed_stripe_u8,
                          const uint8_t *src, size_t src_stride, uint8_t *dst,
                          size_t dst_stride, size_t width, size_t height,
@@ -26,7 +26,7 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_fixed_stripe_u8,
 
 // For internal use only. See instead kleidicv_gaussian_blur_u8.
 // Blur a horizontal stripe across an image. The stripe is defined by the
-// range (y_begin, y_end].
+// range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_fixed_stripe_u8_sme,
                          const uint8_t *src, size_t src_stride, uint8_t *dst,
                          size_t dst_stride, size_t width, size_t height,
@@ -37,7 +37,7 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_fixed_stripe_u8_sme,
 
 // For internal use only. See instead kleidicv_gaussian_blur_u8.
 // Blur a horizontal stripe across an image. The stripe is defined by the
-// range (y_begin, y_end].
+// range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_arbitrary_stripe_u8,
                          const uint8_t *src, size_t src_stride, uint8_t *dst,
                          size_t dst_stride, size_t width, size_t height,

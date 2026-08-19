@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,7 +13,7 @@
 extern "C" {
 // For internal use only. See kleidicv_warp_perspective_u8 instead.
 // Calculates a stripe of the `dst` image that is a transformed part of `src`.
-// The stripe is defined by the range (y_begin, y_end].
+// The stripe is defined by the range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_warp_perspective_stripe_u8,
                          const uint8_t *src, size_t src_stride,
                          size_t src_width, size_t src_height, uint8_t *dst,

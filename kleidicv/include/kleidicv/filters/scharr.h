@@ -11,7 +11,7 @@
 extern "C" {
 // For internal use only. See instead kleidicv_scharr_interleaved_s16_u8.
 // Filter a horizontal stripe across an image. The stripe is defined by the
-// range (y_begin, y_end].
+// range [y_begin, y_end).
 KLEIDICV_API_DECLARATION(kleidicv_scharr_interleaved_stripe_s16_u8,
                          const uint8_t *src, size_t src_stride,
                          size_t src_width, size_t src_height,
