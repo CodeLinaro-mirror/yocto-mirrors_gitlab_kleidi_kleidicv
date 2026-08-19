@@ -14,7 +14,7 @@
         "env": {
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
           "CMAKE_C_FLAGS": "--target=aarch64-linux-gnu",
-          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
+          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt --unwindlib=libunwind -static -fuse-ld=lld",
           "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SME2=ON -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=1"
         }
       },
@@ -36,8 +36,28 @@
           "BUILD_ID": "kleidicv-debug",
           "CMAKE_BUILD_TYPE": "Debug",
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
-          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
-          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF"
+          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt --unwindlib=libunwind -static -fuse-ld=lld",
+          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SME2=ON -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Build KleidiCV without SME2",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build.sh",
+      "problemMatcher": "$gcc",
+      "args": [
+        "kleidicv-api-test"
+      ],
+      "options": {
+        "env": {
+          "BUILD_ID": "kleidicv-no-sme2",
+          "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
+          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt --unwindlib=libunwind -static -fuse-ld=lld",
+          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SVE2=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_ENABLE_SME2=OFF"
         }
       },
       "group": {
@@ -67,6 +87,27 @@
       }
     },
     {
+      "label": "Build KleidiCV without SME2 for debug",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build.sh",
+      "problemMatcher": "$gcc",
+      "args": [
+        "kleidicv-test"
+      ],
+      "options": {
+        "env": {
+          "BUILD_ID": "kleidicv-debug-no-sme2",
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
+          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt --unwindlib=libunwind -static -fuse-ld=lld",
+          "EXTRA_CMAKE_ARGS": "-DKLEIDICV_ENABLE_SVE2=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_ENABLE_SME2=OFF"
+        }
+      },
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
       "label": "Build threading example",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
@@ -79,7 +120,7 @@
           "BUILD_ID": "kleidicv-threading-example",
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
           "CMAKE_C_FLAGS": "--target=aarch64-linux-gnu",
-          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
+          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt --unwindlib=libunwind -static -fuse-ld=lld",
           "EXTRA_CMAKE_ARGS": "-DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF"
         }
       },
@@ -99,7 +140,7 @@
         "env": {
           "BUILD_ID": "kleidicv-benchmark",
           "CMAKE_CXX_FLAGS": "--target=aarch64-linux-gnu",
-          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt -static -fuse-ld=lld",
+          "CMAKE_EXE_LINKER_FLAGS": "--rtlib=compiler-rt --unwindlib=libunwind -static -fuse-ld=lld",
           "EXTRA_CMAKE_ARGS": "-DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64 -DKLEIDICV_ENABLE_SME2=ON -DKLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_ENABLE_SME=ON -DKLEIDICV_LIMIT_SVE2_TO_SELECTED_ALGORITHMS=OFF -DKLEIDICV_BENCHMARK=ON"
         }
       },
@@ -192,12 +233,12 @@
         "KLEIDICV_PREFER_SME_BACKEND=ON",
         "qemu-aarch64",
         "-cpu",
-        "max,sve128=on,sme512=on",
-        "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
+        "max,sve128=on,sve-default-vector-length=16,sme512=on,sme-default-vector-length=64",
+        "${workspaceFolder}/build/kleidicv-no-sme2/test/api/kleidicv-api-test",
         "--vector-length=64"
       ],
       "dependsOn": [
-        "Build KleidiCV"
+        "Build KleidiCV without SME2"
       ],
       "group": {
         "kind": "test"
@@ -209,10 +250,9 @@
       "command": "env",
       "args": [
         "KLEIDICV_PREFER_SME_BACKEND=ON",
-        "armie",
-        "-mvl=16",
-        "-msvl=64",
-        "-mfeatures=${workspaceFolder}/scripts/armie_features.txt",
+        "qemu-aarch64",
+        "-cpu",
+        "max,sve128=on,sve-default-vector-length=16,sme512=on,sme-default-vector-length=64",
         "${workspaceFolder}/build/kleidicv/test/api/kleidicv-api-test",
         "--vector-length=64"
       ],

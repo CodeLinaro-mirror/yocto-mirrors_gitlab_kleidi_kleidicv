@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,4 +14,4 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 set(CMAKE_BUILD_RPATH "")
 set(CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld ${CMAKE_SHARED_LINKER_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "--rtlib=compiler-rt -fuse-ld=lld -static ${CMAKE_EXE_LINKER_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "--rtlib=compiler-rt --unwindlib=libunwind -fuse-ld=lld -static ${CMAKE_EXE_LINKER_FLAGS}")

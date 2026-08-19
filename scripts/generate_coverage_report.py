@@ -84,7 +84,7 @@ def main():
         print("No test binary found")
         sys.exit(1)
 
-    generated_config = re.escape(os.path.abspath(build_dir)) + r"/kleidicv/include/kleidicv/config.h$"
+    generated_config = re.escape(os.path.abspath(build_dir)) + r"/(.*/)?kleidicv/include/kleidicv/config.h$"
     ignore_pattern = rf".*/test(/.*|$)|.*/(googletest|gmock|gtest|_deps)/.*|{generated_config}"
     export_command = [
         "llvm-cov",
@@ -135,12 +135,14 @@ def main():
         html_dir,
         "--prefix",
         source_dir,
-        "--source-directory",
-        source_dir,
         "--branch-coverage",
         "--no-function-coverage",
         "--show-details",
         "--legend",
+        # LLVM can report line hits without an evaluated branch on the same
+        # line, which lcov 2.0 otherwise rejects as inconsistent.
+        "--ignore-errors",
+        "inconsistent",
         "--quiet",
     ], check=True, text=True, capture_output=True)
 

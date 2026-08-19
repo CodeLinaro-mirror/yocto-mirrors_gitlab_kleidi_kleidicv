@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # If changing this image ID, please also change it in .gitlab-ci.yml
-FROM registry.gitlab.arm.com/kleidi/kleidicv:26
+FROM registry.gitlab.arm.com/kleidi/kleidicv:27
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
@@ -12,6 +12,7 @@ RUN apt-get update && \
     clangd-${LLVM_VERSION} \
     gdb-multiarch \
     git-email \
+    gnu-coreutils \
     libemail-valid-perl \
     nano \
     openssh-client \
@@ -20,6 +21,10 @@ RUN apt-get update && \
     sudo \
     vim \
     zsh
+
+# Avoid Ubuntu 26.04's uutils dd aborting when VS Code Dev Containers forwards
+# an empty remainder. Keep the compatibility change limited to dd.
+RUN ln -s /usr/bin/gnudd /usr/local/bin/dd
 
 # Needed to run pipx packages originally installed for the root user
 RUN chmod +x /root
