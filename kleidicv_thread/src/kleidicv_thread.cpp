@@ -33,7 +33,7 @@
 #include "kleidicv/dispatch.h"
 #endif  // KLEIDICV_ENABLE_SME
 
-typedef std::function<kleidicv_error_t(unsigned, unsigned)> FunctionCallback;
+typedef std::function<kleidicv_error_t(size_t, size_t)> FunctionCallback;
 
 static kleidicv_error_t kleidicv_thread_std_function_callback(
     unsigned task_begin, unsigned task_end, void *data) {
@@ -67,9 +67,8 @@ inline kleidicv_error_t parallel_batches(Callback callback,
                                          unsigned count,
                                          unsigned min_batch_size = 1) {
   const unsigned task_count = std::max(1U, (count) / min_batch_size);
-  FunctionCallback f = [=](unsigned task_begin, unsigned task_end) {
-    unsigned begin = task_begin * min_batch_size,
-             end = task_end * min_batch_size;
+  FunctionCallback f = [=](size_t task_begin, size_t task_end) {
+    size_t begin = task_begin * min_batch_size, end = task_end * min_batch_size;
     if (task_end == task_count) {
       end = count;
     }
@@ -83,7 +82,7 @@ template <typename SrcT, typename DstT, typename F, typename... Args>
 inline kleidicv_error_t kleidicv_thread_unary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src, size_t src_stride,
     DstT *dst, size_t dst_stride, size_t width, size_t height, Args... args) {
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return f(src + static_cast<ptrdiff_t>(begin * src_stride / sizeof(SrcT)),
              src_stride,
              dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(DstT)),
@@ -144,7 +143,7 @@ inline kleidicv_error_t kleidicv_thread_binary_op_impl(
     F f, kleidicv_thread_multithreading mt, const SrcT *src_a,
     size_t src_a_stride, const SrcT *src_b, size_t src_b_stride, DstT *dst,
     size_t dst_stride, size_t width, size_t height, Args... args) {
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return f(
         src_a + static_cast<ptrdiff_t>(begin * src_a_stride / sizeof(SrcT)),
         src_a_stride,
@@ -327,7 +326,7 @@ kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
     default:
       return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return kleidicv_transpose(
         static_cast<const uint8_t *>(src) + begin * pixel_size, src_stride,
         static_cast<uint8_t *>(dst) + begin * dst_stride, dst_stride,
@@ -345,7 +344,7 @@ kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
   // reading in columns and writing out rows tends to perform better
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     const size_t dst_column_offset = (angle == 90) ? begin : (width - end);
     return kleidicv_rotate(
         static_cast<const uint8_t *>(src) + begin * pixel_size, src_stride,
@@ -390,7 +389,7 @@ kleidicv_error_t kleidicv_thread_add_padding_by_copy(
     return KLEIDICV_ERROR_ALLOCATION;
   }
 
-  auto callback = [&operation](unsigned begin, unsigned end) {
+  auto callback = [&operation](size_t begin, size_t end) {
     return operation->process_stripe(begin, end);
   };
 
@@ -426,10 +425,10 @@ kleidicv_error_t kleidicv_thread_yuv_to_rgb_u8(
         color_format, mt);
   }
 
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_yuv420p_to_rgb_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, color_format,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
+  auto callback = [=](size_t begin, size_t end) {
+    return kleidicv_yuv420p_to_rgb_stripe_u8(src, src_stride, dst, dst_stride,
+                                             width, height, color_format, begin,
+                                             end);
   };
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
@@ -439,10 +438,10 @@ kleidicv_error_t kleidicv_thread_rgb_to_yuv_semiplanar_u8(
     uint8_t *uv_dst, size_t uv_stride, size_t width, size_t height,
     kleidicv_color_conversion_t color_format,
     kleidicv_thread_multithreading mt) {
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_rgb_to_yuv420sp_stripe_u8(
-        src, src_stride, y_dst, y_stride, uv_dst, uv_stride, width, height,
-        color_format, static_cast<size_t>(begin), static_cast<size_t>(end));
+  auto callback = [=](size_t begin, size_t end) {
+    return kleidicv_rgb_to_yuv420sp_stripe_u8(src, src_stride, y_dst, y_stride,
+                                              uv_dst, uv_stride, width, height,
+                                              color_format, begin, end);
   };
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
@@ -466,10 +465,10 @@ kleidicv_error_t kleidicv_thread_rgb_to_yuv_u8(
                                          height, color_format);
   }
 
-  auto callback = [=](unsigned begin, unsigned end) {
-    return kleidicv_rgb_to_yuv420p_stripe_u8(
-        src, src_stride, dst, dst_stride, width, height, color_format,
-        static_cast<size_t>(begin), static_cast<size_t>(end));
+  auto callback = [=](size_t begin, size_t end) {
+    return kleidicv_rgb_to_yuv420p_stripe_u8(src, src_stride, dst, dst_stride,
+                                             width, height, color_format, begin,
+                                             end);
   };
   return parallel_batches(callback, mt, (height + 1) / 2);
 }
@@ -483,9 +482,9 @@ kleidicv_error_t kleidicv_thread_yuv_semiplanar_to_rgb_u8(
     return KLEIDICV_ERROR_NULL_POINTER;
   }
 
-  auto callback = [=](unsigned begin, unsigned end) {
-    size_t row_begin = size_t{begin} * 2;
-    size_t row_end = std::min<size_t>(height, size_t{end} * 2);
+  auto callback = [=](size_t begin, size_t end) {
+    size_t row_begin = begin * 2;
+    size_t row_end = std::min<size_t>(height, end * 2);
     size_t row_uv = begin;
     return kleidicv_yuv_semiplanar_to_rgb_u8(
         src_y + row_begin * src_y_stride, src_y_stride,
@@ -508,7 +507,7 @@ kleidicv_error_t parallel_min_max(FunctionType min_max_func,
   std::vector<ScalarType> max_values(height,
                                      std::numeric_limits<ScalarType>::lowest());
 
-  auto callback = [&](unsigned begin, unsigned end) {
+  auto callback = [&](size_t begin, size_t end) {
     return min_max_func(src + begin * (src_stride / sizeof(ScalarType)),
                         src_stride, width, end - begin,
                         p_min_value ? min_values.data() + begin : nullptr,
@@ -562,7 +561,7 @@ kleidicv_error_t parallel_min_max_loc(FunctionType min_max_loc_func,
   std::vector<size_t> min_offsets(height, 0);
   std::vector<size_t> max_offsets(height, 0);
 
-  auto callback = [&](unsigned begin, unsigned end) {
+  auto callback = [&](size_t begin, size_t end) {
     return min_max_loc_func(
         src + begin * (src_stride / sizeof(ScalarType)), src_stride, width,
         end - begin, p_min_offset ? min_offsets.data() + begin : nullptr,
@@ -621,7 +620,7 @@ kleidicv_error_t kleidicv_thread_gaussian_blur_u8(
   if (kernel_width <= 9 || kernel_width == 15 || kernel_width == 21) {
 #if KLEIDICV_ENABLE_SME
     if (kHwCapsHasSme) {
-      auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto callback = [=](size_t y_begin, size_t y_end) {
         auto sme_callback = [=]() {
           return kleidicv_gaussian_blur_fixed_stripe_u8_sme(
               src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -722,7 +721,7 @@ kleidicv_error_t kleidicv_thread_blur_and_downsample_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_blur_and_downsample_stripe_u8(
         src, src_stride, src_width, src_height, dst, dst_stride, y_begin, y_end,
         channels, *fixed_border_type);
@@ -740,7 +739,7 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
 
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       auto sme_callback = [=]() {
         return kleidicv_sobel_3x3_horizontal_stripe_s16_u8_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -761,7 +760,7 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_horizontal_s16_u8(
   }
 #endif
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_sobel_3x3_horizontal_stripe_s16_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels);
@@ -787,7 +786,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
   if (kernel_width <= 7) {
 #if KLEIDICV_ENABLE_SME
     if (kHwCapsHasSme) {
-      auto callback = [=](unsigned y_begin, unsigned y_end) {
+      auto callback = [=](size_t y_begin, size_t y_end) {
         auto sme_callback = [=]() {
           return kleidicv_median_blur_sorting_network_stripe_u8_sme(
               src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -808,7 +807,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
     }
 #endif
 
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       return kleidicv_median_blur_sorting_network_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
           channels, kernel_width, kernel_height, fixed_border_type);
@@ -817,7 +816,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
   }
 
   if (kernel_width > 7 && kernel_width <= 15) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       return kleidicv_median_blur_small_hist_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
           channels, kernel_width, kernel_height, fixed_border_type);
@@ -825,7 +824,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
     return parallel_batches(callback, mt, height);
   }
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_large_hist_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, fixed_border_type);
@@ -850,7 +849,7 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
 
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       auto sme_callback = [=]() {
         return kleidicv_median_blur_sorting_network_stripe_s16_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -871,7 +870,7 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
   }
 #endif
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_sorting_network_stripe_s16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, fixed_border_type);
@@ -896,7 +895,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
 
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       auto sme_callback = [=]() {
         return kleidicv_median_blur_sorting_network_stripe_u16_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -917,7 +916,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
   }
 #endif
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_sorting_network_stripe_u16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, fixed_border_type);
@@ -942,7 +941,7 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
 
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       auto sme_callback = [=]() {
         return kleidicv_median_blur_sorting_network_stripe_f32_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -962,7 +961,7 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
     return parallel_batches(callback, mt, height);
   }
 #endif
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_sorting_network_stripe_f32(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
         channels, kernel_width, kernel_height, fixed_border_type);
@@ -980,7 +979,7 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
 
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       auto sme_callback = [=]() {
         return kleidicv_sobel_3x3_vertical_stripe_s16_u8_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
@@ -1001,7 +1000,7 @@ kleidicv_error_t kleidicv_thread_sobel_3x3_vertical_s16_u8(
   }
 #endif
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_sobel_3x3_vertical_stripe_s16_u8(src, src_stride, dst,
                                                      dst_stride, width, height,
                                                      y_begin, y_end, channels);
@@ -1018,7 +1017,7 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_scharr_interleaved_stripe_s16_u8(
         src, src_stride, src_width, src_height, src_channels, dst, dst_stride,
         y_begin, y_end);
@@ -1036,7 +1035,7 @@ inline kleidicv_error_t kleidicv_thread_resize_linear_fixed_scale_u8(
     kleidicv_thread_multithreading mt) {
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       const size_t stripe_y_end = std::min<size_t>(src_height, y_end + 1);
       auto sme_callback = [=]() {
         return sme_stripe_function(src, src_stride, src_width, src_height,
@@ -1058,7 +1057,7 @@ inline kleidicv_error_t kleidicv_thread_resize_linear_fixed_scale_u8(
   static_cast<void>(sme_stripe_function);
 #endif
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return stripe_function(src, src_stride, src_width, src_height, y_begin,
                            std::min<size_t>(src_height, y_end + 1), dst,
                            dst_stride);
@@ -1097,7 +1096,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
 
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       auto sme_callback = [=]() {
         return kleidicv::resize_linear_stripe_u8<true>(
             src, src_stride, src_width, src_height, y_begin, y_end, dst,
@@ -1118,7 +1117,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_u8(
   }
 #endif
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv::resize_linear_stripe_u8<false>(
         src, src_stride, src_width, src_height, y_begin, y_end, dst, dst_stride,
         dst_width, dst_height, channels);
@@ -1137,7 +1136,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
 
 #if KLEIDICV_ENABLE_SME
   if (kHwCapsHasSme) {
-    auto callback = [=](unsigned y_begin, unsigned y_end) {
+    auto callback = [=](size_t y_begin, size_t y_end) {
       auto sme_callback = [=]() {
         return kleidicv_resize_linear_stripe_f32_sme(
             src, src_stride, src_width, src_height, y_begin,
@@ -1160,7 +1159,7 @@ kleidicv_error_t kleidicv_thread_resize_linear_f32(
   }
 #endif
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_resize_linear_stripe_f32(
         src, src_stride, src_width, src_height, y_begin,
         std::min<size_t>(src_height, y_end + 1), dst, dst_stride, dst_width,
@@ -1180,7 +1179,7 @@ kleidicv_error_t kleidicv_thread_remap_s16_u8(
                                                    border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return kleidicv_remap_s16_u8(
         src, src_stride, src_width, src_height,
         dst + begin * dst_stride / sizeof(uint8_t), dst_stride, dst_width,
@@ -1202,7 +1201,7 @@ kleidicv_error_t kleidicv_thread_remap_s16_u16(
                                                     border_type, channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return kleidicv_remap_s16_u16(
         src, src_stride, src_width, src_height,
         dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint16_t)),
@@ -1225,7 +1224,7 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u8(
           channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return kleidicv_remap_s16point5_u8(
         src, src_stride, src_width, src_height,
         dst + begin * dst_stride / sizeof(uint8_t), dst_stride, dst_width,
@@ -1251,7 +1250,7 @@ kleidicv_error_t kleidicv_thread_remap_s16point5_u16(
           channels)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return kleidicv_remap_s16point5_u16(
         src, src_stride, src_width, src_height,
         dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint16_t)),
@@ -1277,7 +1276,7 @@ kleidicv_error_t kleidicv_thread_remap_f32_u8(
           channels, interpolation)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return kleidicv_remap_f32_u8(
         src, src_stride, src_width, src_height,
         dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint8_t)),
@@ -1302,7 +1301,7 @@ kleidicv_error_t kleidicv_thread_remap_f32_u16(
           channels, interpolation)) {
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
-  auto callback = [=](unsigned begin, unsigned end) {
+  auto callback = [=](size_t begin, size_t end) {
     return kleidicv_remap_f32_u16(
         src, src_stride, src_width, src_height,
         dst + static_cast<ptrdiff_t>(begin * dst_stride / sizeof(uint16_t)),
@@ -1327,7 +1326,7 @@ kleidicv_error_t kleidicv_thread_warp_perspective_u8(
     return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }
 
-  auto callback = [=](unsigned y_begin, unsigned y_end) {
+  auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_warp_perspective_stripe_u8(
         src, src_stride, src_width, src_height, dst, dst_stride, dst_width,
         dst_height, y_begin, std::min<size_t>(dst_height, y_end + 1),
