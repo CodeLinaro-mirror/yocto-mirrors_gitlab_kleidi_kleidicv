@@ -35,8 +35,9 @@
 
 typedef std::function<kleidicv_error_t(size_t, size_t)> FunctionCallback;
 
-static kleidicv_error_t kleidicv_thread_std_function_callback(
-    unsigned task_begin, unsigned task_end, void *data) {
+static kleidicv_error_t kleidicv_thread_std_function_callback(size_t task_begin,
+                                                              size_t task_end,
+                                                              void *data) {
   auto *callback = reinterpret_cast<FunctionCallback *>(data);
   return (*callback)(task_begin, task_end);
 }
@@ -64,9 +65,9 @@ static kleidicv_error_t kleidicv_thread_std_function_callback(
 template <typename Callback>
 inline kleidicv_error_t parallel_batches(Callback callback,
                                          kleidicv_thread_multithreading mt,
-                                         unsigned count,
-                                         unsigned min_batch_size = 1) {
-  const unsigned task_count = std::max(1U, (count) / min_batch_size);
+                                         size_t count,
+                                         size_t min_batch_size = 1) {
+  const size_t task_count = std::max(size_t{1}, count / min_batch_size);
   FunctionCallback f = [=](size_t task_begin, size_t task_end) {
     size_t begin = task_begin * min_batch_size, end = task_end * min_batch_size;
     if (task_end == task_count) {
@@ -393,7 +394,7 @@ kleidicv_error_t kleidicv_thread_add_padding_by_copy(
     return operation->process_stripe(begin, end);
   };
 
-  return parallel_batches(callback, mt, static_cast<unsigned>(dst_height), 4);
+  return parallel_batches(callback, mt, dst_height, 4);
 }
 
 kleidicv_error_t kleidicv_thread_yuv_to_rgb_u8(

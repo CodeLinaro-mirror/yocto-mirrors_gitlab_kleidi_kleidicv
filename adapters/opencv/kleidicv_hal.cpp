@@ -160,16 +160,32 @@ static int get_border_value(const double border_f64[4], int type,
 
 static kleidicv_error_t parallel(kleidicv_thread_callback callback,
                                  void *callback_data, void * /*parallel_data*/,
-                                 unsigned task_count) {
+                                 size_t task_count) {
+  if (KLEIDICV_UNLIKELY(task_count == 0)) {
+    return KLEIDICV_OK;
+  }
+
+  if (KLEIDICV_UNLIKELY(task_count >
+                        static_cast<size_t>(std::numeric_limits<int>::max()))) {
+    // OpenCV's parallel_for_ expects the task count as an int. Correctly
+    // handling a task count greater than INT_MAX in parallel would be complex
+    // and is practically unnecessary, so fall back to the single-threaded
+    // implementation.
+    return callback(0, task_count, callback_data);
+  }
+
   std::atomic<kleidicv_error_t> shared_result{KLEIDICV_OK};
 
   auto invoke_callback = [&](const cv::Range &range) {
-    kleidicv_error_t result = callback(range.start, range.end, callback_data);
+    kleidicv_error_t result =
+        callback(static_cast<size_t>(range.start),
+                 static_cast<size_t>(range.end), callback_data);
     if (result != KLEIDICV_OK) {
       shared_result.store(result);
     }
   };
-  cv::parallel_for_(cv::Range(0, task_count), invoke_callback);
+  cv::parallel_for_(cv::Range(0, static_cast<int>(task_count)),
+                    invoke_callback);
   return shared_result;
 }
 

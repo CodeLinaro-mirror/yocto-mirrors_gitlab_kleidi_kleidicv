@@ -52,8 +52,8 @@ extern "C" {
 /// @param end Index one past the last task in the range, exclusive.
 /// @param data Opaque pointer supplied by KleidiCV. The scheduler must pass it
 ///             unchanged to this callback.
-typedef kleidicv_error_t (*kleidicv_thread_callback)(unsigned begin,
-                                                     unsigned end, void *data);
+typedef kleidicv_error_t (*kleidicv_thread_callback)(size_t begin, size_t end,
+                                                     void *data);
 
 /// Signature of a function to invoke callbacks in parallel.
 ///
@@ -81,7 +81,7 @@ typedef kleidicv_error_t (*kleidicv_thread_callback)(unsigned begin,
 /// @param task_count Number of task indices requested by KleidiCV.
 typedef kleidicv_error_t (*kleidicv_thread_parallel)(
     kleidicv_thread_callback callback, void *callback_data, void *parallel_data,
-    unsigned task_count);
+    size_t task_count);
 
 /// Encapsulates the caller-provided threading backend.
 typedef struct {

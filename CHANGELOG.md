@@ -20,6 +20,13 @@ This changelog aims to follow the guiding principles of
 - NEON-optimised kernel for horizontal image flip (`flip_mode > 0`).
 - Support for OpenCV 4.14.
 
+### Changed
+- The `begin` and `end` parameters of `kleidicv_thread_callback` and the
+  `task_count` parameter of `kleidicv_thread_parallel` now use `size_t` instead
+  of `unsigned`, aligning scheduler task ranges with the `size_t` dimensions and
+  stripe ranges used by existing KleidiCV APIs. This breaks source and ABI
+  compatibility for custom threading backends.
+
 ### Removed
 - Support for OpenCV 4.13.
 

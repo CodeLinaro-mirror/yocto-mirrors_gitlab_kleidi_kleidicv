@@ -74,7 +74,7 @@ callback call:
 
 static kleidicv_error_t serial_parallel(
     kleidicv_thread_callback callback, void *callback_data,
-    void *parallel_data, unsigned task_count) {
+    void *parallel_data, size_t task_count) {
   (void)parallel_data;
   return callback(0, task_count, callback_data);
 }

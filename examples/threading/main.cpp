@@ -4,7 +4,7 @@
 
 #include <algorithm>
 #include <cerrno>
-#include <climits>
+#include <cinttypes>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -21,23 +21,29 @@
 namespace {
 
 struct ThreadingContext {
-  unsigned thread_count;
+  size_t thread_count;
 };
 
-bool parse_thread_count(const char *text, unsigned *thread_count) {
+bool parse_thread_count(const char *text, size_t *thread_count) {
+  // Accept only non-negative decimal input without leading whitespace or a
+  // sign.
+  if (text == nullptr || text[0] < '0' || text[0] > '9') {
+    return false;
+  }
+
   errno = 0;
   char *end = nullptr;
-  // Parse only base-10 values accepted fully by strtoul.
-  uint64_t parsed = std::strtoul(text, &end, 10);
+  // Parse only base-10 values accepted fully by strtoumax.
+  uintmax_t parsed = std::strtoumax(text, &end, 10);
 
   // Reject conversion errors, empty input, trailing characters, zero, and
   // values that do not fit in the output type.
   if (errno != 0 || end == text || *end != '\0' || parsed == 0 ||
-      parsed > UINT_MAX) {
+      parsed > SIZE_MAX) {
     return false;
   }
 
-  *thread_count = static_cast<unsigned>(parsed);
+  *thread_count = static_cast<size_t>(parsed);
   return true;
 }
 
@@ -51,7 +57,7 @@ void join_workers(std::vector<std::thread> *workers) {
 
 kleidicv_error_t parallel(kleidicv_thread_callback callback,
                           void *callback_data, void *parallel_data,
-                          unsigned task_count) {
+                          size_t task_count) {
   // KleidiCV calls this function when a threaded operation has work to run.
   // task_count is the number of independent task indices KleidiCV created.
   const auto *context = static_cast<const ThreadingContext *>(parallel_data);
@@ -61,18 +67,18 @@ kleidicv_error_t parallel(kleidicv_thread_callback callback,
 
   // Do not create more workers than tasks, otherwise some workers would have no
   // range to execute.
-  const unsigned worker_count = std::min(context->thread_count, task_count);
+  const size_t worker_count = std::min(context->thread_count, task_count);
   std::vector<std::thread> workers;
   std::vector<kleidicv_error_t> results(worker_count, KLEIDICV_OK);
   workers.reserve(worker_count);
 
-  for (unsigned index = 0; index < worker_count; ++index) {
+  for (size_t index = 0; index < worker_count; ++index) {
     // Split the KleidiCV task index range evenly between workers. Each worker
     // receives the half-open range [begin, end).
-    const unsigned begin = index * task_count / worker_count;
-    const unsigned end = (index + 1 == worker_count)
-                             ? task_count
-                             : (index + 1) * task_count / worker_count;
+    const size_t begin = index * task_count / worker_count;
+    const size_t end = (index + 1 == worker_count)
+                           ? task_count
+                           : (index + 1) * task_count / worker_count;
 
     // emplace_back constructs a std::thread in the vector. The new thread
     // starts immediately and calls the KleidiCV callback for its range.
@@ -97,7 +103,7 @@ kleidicv_error_t parallel(kleidicv_thread_callback callback,
 int main(int argc, char **argv) {
   // Use the hardware thread count as a default. The user can override it with
   // the optional command-line argument.
-  unsigned thread_count = std::thread::hardware_concurrency();
+  size_t thread_count = std::thread::hardware_concurrency();
   if (thread_count == 0) {
     thread_count = 1;
   }
