@@ -8,6 +8,7 @@
 #include "kleidicv/config.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
+#include "kleidicv/utils.h"
 #include "kleidicv/workspace/border_types.h"
 
 extern "C" {
@@ -24,11 +25,37 @@ KLEIDICV_API_DECLARATION(kleidicv_blur_and_downsample_stripe_u8,
 
 namespace kleidicv {
 
-inline bool blur_and_downsample_is_implemented(size_t src_width,
-                                               size_t src_height,
-                                               size_t channels) {
-  return (src_width >= 4 && src_height >= 4) && (channels >= 1) &&
-         (channels <= KLEIDICV_MAXIMUM_CHANNEL_COUNT);
+inline kleidicv_error_t blur_and_downsample_checks(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, src_height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, (src_height + 1) / 2);
+  CHECK_IMAGE_SIZE(src_width, src_height);
+
+  return KLEIDICV_OK;
+}
+
+inline FixedBorderTypeValidationResult blur_and_downsample_validate(
+    const uint8_t *src, size_t src_stride, size_t src_width, size_t src_height,
+    uint8_t *dst, size_t dst_stride, size_t channels,
+    kleidicv_border_type_t border_type) {
+  if (src_width < 4 || src_height < 4 || channels < 1 ||
+      channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  auto fixed_border_type = get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  const kleidicv_error_t check_error = blur_and_downsample_checks(
+      src, src_stride, src_width, src_height, dst, dst_stride);
+  if (check_error != KLEIDICV_OK) {
+    return {check_error, FixedBorderType{}};
+  }
+
+  return {KLEIDICV_OK, *fixed_border_type};
 }
 
 namespace neon {

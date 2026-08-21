@@ -6,6 +6,7 @@
 #define KLEIDICV_FILTERS_SOBEL_H
 
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/utils.h"
 
 extern "C" {
 // For internal use only. See instead kleidicv_sobel_3x3_horizontal_s16_u8.
@@ -40,9 +41,23 @@ KLEIDICV_API_DECLARATION(kleidicv_sobel_3x3_vertical_stripe_s16_u8_sme,
 
 namespace kleidicv {
 
-inline bool sobel_is_implemented(size_t width, size_t height,
-                                 size_t kernel_size) {
-  return width >= kernel_size - 1 && height >= kernel_size - 1;
+inline kleidicv_error_t sobel_validate(const uint8_t *src, size_t src_stride,
+                                       int16_t *dst, size_t dst_stride,
+                                       size_t width, size_t height,
+                                       size_t channels) {
+  if (width < 2 || height < 2) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+
+  return KLEIDICV_OK;
 }
 
 namespace neon {

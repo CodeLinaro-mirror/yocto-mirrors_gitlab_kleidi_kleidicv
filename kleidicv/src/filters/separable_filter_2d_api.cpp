@@ -16,18 +16,16 @@ kleidicv_error_t separable_filter_2d(const T *src, size_t src_stride, T *dst,
                                      const T *kernel_x, size_t kernel_width,
                                      const T *kernel_y, size_t kernel_height,
                                      kleidicv_border_type_t border_type) {
-  if (!kleidicv::separable_filter_2d_is_implemented(width, height, kernel_width,
-                                                    kernel_height)) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
-  if (!fixed_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  const auto validation = separable_filter_2d_validate(
+      src, src_stride, dst, dst_stride, width, height, channels, kernel_x,
+      kernel_width, kernel_y, kernel_height, border_type);
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
   return StripeFunction(src, src_stride, dst, dst_stride, width, height, 0,
                         height, channels, kernel_x, kernel_width, kernel_y,
-                        kernel_height, *fixed_border_type);
+                        kernel_height, validation.fixed_border_type);
 }
 
 }  // namespace kleidicv

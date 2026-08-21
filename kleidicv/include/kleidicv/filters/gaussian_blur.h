@@ -49,54 +49,6 @@ KLEIDICV_API_DECLARATION(kleidicv_gaussian_blur_arbitrary_stripe_u8,
 
 namespace kleidicv {
 
-inline bool gaussian_blur_is_implemented(
-    size_t width, size_t height, size_t kernel_width, size_t kernel_height,
-    float sigma_x, float sigma_y, size_t channels,
-    kleidicv::FixedBorderType border_type) {
-  if (kernel_width != kernel_height) {
-    return false;
-  }
-
-  if (kernel_width < 3 || kernel_width > 255) {
-    return false;
-  }
-
-  if ((kernel_width & 1) != 1) {
-    return false;
-  }
-
-  if (sigma_x != sigma_y) {
-    return false;
-  }
-
-  if (width < kernel_width - 1 || height < kernel_width - 1) {
-    return false;
-  }
-
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return false;
-  }
-
-  if (kernel_width > 9 && kernel_width != 15 && kernel_width != 21) {
-    if (border_type != FixedBorderType::REPLICATE) {
-      return false;
-    }
-
-    size_t margin = kernel_width / 2;
-    // Number of 16bit elements in a 128-bit vector
-    size_t max_border_length = 8;
-    size_t aligned_margin = (margin + max_border_length - 1) /
-                            max_border_length * max_border_length;
-    if (width < aligned_margin + margin) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// Does not include checks for whether the operation is implemented.
-// This must be done earlier, by gaussian_blur_is_implemented.
 template <typename T>
 kleidicv_error_t gaussian_blur_checks(const T *src, size_t src_stride, T *dst,
                                       size_t dst_stride, size_t width,
@@ -106,6 +58,64 @@ kleidicv_error_t gaussian_blur_checks(const T *src, size_t src_stride, T *dst,
   CHECK_IMAGE_SIZE(width, height);
 
   return KLEIDICV_OK;
+}
+
+template <typename T>
+FixedBorderTypeValidationResult gaussian_blur_validate(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t channels, size_t kernel_width, size_t kernel_height,
+    float sigma_x, float sigma_y, kleidicv_border_type_t border_type) {
+  auto fixed_border_type = get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  if (kernel_width != kernel_height) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  if (kernel_width < 3 || kernel_width > 255) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  if ((kernel_width & 1) != 1) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  if (sigma_x != sigma_y) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  if (width < kernel_width - 1 || height < kernel_width - 1) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  if (kernel_width > 9 && kernel_width != 15 && kernel_width != 21) {
+    if (*fixed_border_type != FixedBorderType::REPLICATE) {
+      return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+    }
+
+    size_t margin = kernel_width / 2;
+    // Number of 16bit elements in a 128-bit vector
+    size_t max_border_length = 8;
+    size_t aligned_margin = (margin + max_border_length - 1) /
+                            max_border_length * max_border_length;
+    if (width < aligned_margin + margin) {
+      return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+    }
+  }
+
+  const kleidicv_error_t check_error =
+      gaussian_blur_checks(src, src_stride, dst, dst_stride, width, height);
+  if (check_error != KLEIDICV_OK) {
+    return {check_error, FixedBorderType{}};
+  }
+
+  return {KLEIDICV_OK, *fixed_border_type};
 }
 
 namespace neon {

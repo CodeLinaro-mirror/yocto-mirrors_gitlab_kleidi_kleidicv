@@ -607,7 +607,7 @@ static kleidicv_error_t gaussian_blur_fixed(
       return gaussian_blur_fixed_kernel_size<21, false>(
           src, src_stride, dst, dst_stride, rect, y_begin, y_end, channels,
           sigma, border_type);
-      // gaussian_blur_is_implemented checked the kernel size already.
+      // gaussian_blur_validate checked the kernel size already.
     // GCOVR_EXCL_START
     default:
       assert(!"kernel size not implemented");
@@ -622,12 +622,6 @@ kleidicv_error_t gaussian_blur_fixed_stripe_u8(
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t /*kernel_height*/, float sigma_x,
     float /*sigma_y*/, FixedBorderType fixed_border_type) {
-  if (auto result =
-          gaussian_blur_checks(src, src_stride, dst, dst_stride, width, height);
-      result != KLEIDICV_OK) {
-    return result;
-  }
-
   Rectangle rect{width, height};
 
   if (sigma_x == 0.0) {

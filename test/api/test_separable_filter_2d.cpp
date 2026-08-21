@@ -439,6 +439,34 @@ TYPED_TEST(SeparableFilter2D, NullPointer) {
                        5, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE);
 }
 
+TYPED_TEST(SeparableFilter2D, ErrorPrecedence) {
+  TypeParam src[1] = {}, dst[1] = {}, kernel[5] = {};
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(
+                nullptr, sizeof(TypeParam), dst, sizeof(TypeParam), 4, 4, 1,
+                kernel, 3, kernel, 5, KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            separable_filter_2d<TypeParam>()(
+                nullptr, sizeof(TypeParam), dst, sizeof(TypeParam), 4, 4, 1,
+                kernel, 5, kernel, 5, KLEIDICV_BORDER_TYPE_TRANSPARENT));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            separable_filter_2d<TypeParam>()(
+                nullptr, sizeof(TypeParam), dst, sizeof(TypeParam),
+                KLEIDICV_MAX_IMAGE_PIXELS, 4, 1, kernel, 5, kernel, 5,
+                KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            separable_filter_2d<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam),
+                KLEIDICV_MAX_IMAGE_PIXELS, 4, 1, nullptr, 5, kernel, 5,
+                KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            separable_filter_2d<TypeParam>()(
+                src, sizeof(TypeParam), dst, sizeof(TypeParam), 4, 4,
+                KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, nullptr, 5, kernel, 5,
+                KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
 TYPED_TEST(SeparableFilter2D, ZeroImageSize) {
   TypeParam src[1] = {}, dst[1], kernel[5] = {};
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,

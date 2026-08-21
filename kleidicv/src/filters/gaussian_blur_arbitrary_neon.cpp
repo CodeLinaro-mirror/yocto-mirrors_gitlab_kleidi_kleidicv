@@ -435,12 +435,6 @@ kleidicv_error_t gaussian_blur_arbitrary_stripe_u8(
     size_t width, size_t height, size_t y_begin, size_t y_end, size_t channels,
     size_t kernel_width, size_t /*kernel_height*/, float sigma_x,
     float /*sigma_y*/, FixedBorderType fixed_border_type) {
-  if (auto result =
-          gaussian_blur_checks(src, src_stride, dst, dst_stride, width, height);
-      result != KLEIDICV_OK) {
-    return result;
-  }
-
   Rectangle rect{width, height};
 
   return gaussian_blur_arbitrary_kernel_size(

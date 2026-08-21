@@ -222,6 +222,24 @@ TYPED_TEST(Sobel, UndersizeImage) {
                                             validWidth, underSize, 1));
 }
 
+TYPED_TEST(Sobel, ErrorPrecedence) {
+  using KernelTestParams = SobelKernelTestParams<TypeParam, true>;
+  typename KernelTestParams::InputType src[1] = {};
+  typename KernelTestParams::OutputType dst[1] = {};
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            sobel_3x3_horizontal<TypeParam>()(nullptr, sizeof(src), dst,
+                                              sizeof(dst), 1, 3, 1));
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NULL_POINTER,
+      sobel_3x3_horizontal<TypeParam>()(nullptr, sizeof(src), dst, sizeof(dst),
+                                        KLEIDICV_MAX_IMAGE_PIXELS, 3, 1));
+  EXPECT_EQ(KLEIDICV_ERROR_RANGE,
+            sobel_3x3_horizontal<TypeParam>()(
+                src, sizeof(src), dst, sizeof(dst), KLEIDICV_MAX_IMAGE_PIXELS,
+                3, KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1));
+}
+
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TYPED_TEST(Sobel, CannotAllocateImageHorizontal) {
   using KernelTestParams = SobelKernelTestParams<TypeParam, true>;

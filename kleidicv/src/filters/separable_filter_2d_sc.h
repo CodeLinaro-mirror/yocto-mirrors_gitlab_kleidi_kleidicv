@@ -300,15 +300,6 @@ kleidicv_error_t separable_filter_2d_stripe_sc(
     const T *kernel_x, size_t /*kernel_width*/, const T *kernel_y,
     size_t /*kernel_height*/,
     FixedBorderType fixed_border_type) KLEIDICV_STREAMING {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
-  CHECK_IMAGE_SIZE(width, height);
-  CHECK_POINTERS(kernel_x, kernel_y);
-
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
   Rectangle rect{width, height};
 
   using SeparableFilterClass = SeparableFilter2D<T, 5>;

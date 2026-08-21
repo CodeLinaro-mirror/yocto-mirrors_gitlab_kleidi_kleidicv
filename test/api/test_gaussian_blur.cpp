@@ -633,6 +633,24 @@ TYPED_TEST(GaussianBlur, NullPointer) {
                        0.0, KLEIDICV_BORDER_TYPE_REPLICATE);
 }
 
+TYPED_TEST(GaussianBlur, ErrorPrecedence) {
+  TypeParam dst[1] = {};
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur<TypeParam>()(nullptr, sizeof(TypeParam), dst,
+                                       sizeof(TypeParam), 3, 3, 1, 3, 3, 0.0,
+                                       0.0, KLEIDICV_BORDER_TYPE_TRANSPARENT));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            gaussian_blur<TypeParam>()(nullptr, sizeof(TypeParam), dst,
+                                       sizeof(TypeParam), 1, 3, 1, 3, 3, 0.0,
+                                       0.0, KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            gaussian_blur<TypeParam>()(
+                nullptr, sizeof(TypeParam), dst, sizeof(TypeParam),
+                KLEIDICV_MAX_IMAGE_PIXELS, 3, 1, 3, 3, 0.0, 0.0,
+                KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
 TYPED_TEST(GaussianBlur, Misalignment) {
   if (sizeof(TypeParam) == 1) {
     // misalignment impossible

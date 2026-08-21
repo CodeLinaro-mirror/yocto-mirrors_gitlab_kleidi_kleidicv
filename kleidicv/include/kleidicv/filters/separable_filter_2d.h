@@ -8,6 +8,7 @@
 #include "kleidicv/config.h"
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
+#include "kleidicv/utils.h"
 #include "kleidicv/workspace/border_types.h"
 
 extern "C" {
@@ -35,18 +36,50 @@ KLEIDICV_API_DECLARATION(kleidicv_separable_filter_2d_stripe_u16,
 
 namespace kleidicv {
 
-inline bool separable_filter_2d_is_implemented(size_t width, size_t height,
-                                               size_t kernel_width,
-                                               size_t kernel_height) {
+template <typename T>
+kleidicv_error_t separable_filter_2d_checks(const T *src, size_t src_stride,
+                                            T *dst, size_t dst_stride,
+                                            size_t width, size_t height,
+                                            const T *kernel_x,
+                                            const T *kernel_y) {
+  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
+  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
+  CHECK_IMAGE_SIZE(width, height);
+  CHECK_POINTERS(kernel_x, kernel_y);
+
+  return KLEIDICV_OK;
+}
+
+template <typename T>
+FixedBorderTypeValidationResult separable_filter_2d_validate(
+    const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
+    size_t height, size_t channels, const T *kernel_x, size_t kernel_width,
+    const T *kernel_y, size_t kernel_height,
+    kleidicv_border_type_t border_type) {
   if (kernel_width != 5 || kernel_height != 5) {
-    return false;
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
   }
 
   if (width < kernel_width - 1 || height < kernel_width - 1) {
-    return false;
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
   }
 
-  return true;
+  auto fixed_border_type = get_fixed_border_type(border_type);
+  if (!fixed_border_type) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  const kleidicv_error_t check_error = separable_filter_2d_checks(
+      src, src_stride, dst, dst_stride, width, height, kernel_x, kernel_y);
+  if (check_error != KLEIDICV_OK) {
+    return {check_error, FixedBorderType{}};
+  }
+
+  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
+    return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
+  }
+
+  return {KLEIDICV_OK, *fixed_border_type};
 }
 
 namespace neon {

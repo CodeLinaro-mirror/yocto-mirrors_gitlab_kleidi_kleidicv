@@ -23,9 +23,11 @@ template <auto &StripeFunction>
 kleidicv_error_t sobel_3x3_s16_u8(const uint8_t *src, size_t src_stride,
                                   int16_t *dst, size_t dst_stride, size_t width,
                                   size_t height, size_t channels) {
-  if (!kleidicv::sobel_is_implemented(width, height, 3)) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  if (kleidicv_error_t err = sobel_validate(src, src_stride, dst, dst_stride,
+                                            width, height, channels)) {
+    return err;
   }
+
   return StripeFunction(src, src_stride, dst, dst_stride, width, height, 0,
                         height, channels);
 }

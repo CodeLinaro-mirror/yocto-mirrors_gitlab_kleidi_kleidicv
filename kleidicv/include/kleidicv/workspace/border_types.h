@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -16,6 +16,11 @@ enum class FixedBorderType {
   REFLECT,
   WRAP,
   REVERSE,
+};
+
+struct FixedBorderTypeValidationResult {
+  kleidicv_error_t error;
+  FixedBorderType fixed_border_type;
 };
 
 inline std::optional<FixedBorderType> get_fixed_border_type(

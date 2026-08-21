@@ -147,6 +147,22 @@ TEST(ScharrInterleaved, NullPointer) {
                        3, 3, 1, dst, sizeof(int16_t));
 }
 
+TEST(ScharrInterleaved, ErrorPrecedence) {
+  int16_t dst[1] = {};
+
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_scharr_interleaved_s16_u8(nullptr, sizeof(uint8_t), 2, 3,
+                                               1, dst, sizeof(int16_t)));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            kleidicv_scharr_interleaved_s16_u8(
+                nullptr, sizeof(uint8_t), 3, 3,
+                KLEIDICV_MAXIMUM_CHANNEL_COUNT + 1, dst, sizeof(int16_t)));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            kleidicv_scharr_interleaved_s16_u8(nullptr, sizeof(uint8_t),
+                                               KLEIDICV_MAX_IMAGE_PIXELS, 3, 1,
+                                               dst, sizeof(int16_t)));
+}
+
 TEST(ScharrInterleaved, Misalignment) {
   uint8_t src[1] = {};
   int16_t dst[1];

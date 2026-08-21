@@ -20,17 +20,15 @@ kleidicv_error_t blur_and_downsample_u8(const uint8_t *src, size_t src_stride,
                                         uint8_t *dst, size_t dst_stride,
                                         size_t channels,
                                         kleidicv_border_type_t border_type) {
-  if (!kleidicv::blur_and_downsample_is_implemented(src_width, src_height,
-                                                    channels)) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  const auto validation = kleidicv::blur_and_downsample_validate(
+      src, src_stride, src_width, src_height, dst, dst_stride, channels,
+      border_type);
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
-  auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
-  if (!fixed_border_type) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
   return StripeFunction(src, src_stride, src_width, src_height, dst, dst_stride,
-                        0, src_height, channels, *fixed_border_type);
+                        0, src_height, channels, validation.fixed_border_type);
 }
 
 }  // namespace kleidicv

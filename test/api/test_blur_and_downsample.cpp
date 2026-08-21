@@ -226,6 +226,25 @@ TYPED_TEST(BlurAndDownsample, NullPointer) {
                        1, KLEIDICV_BORDER_TYPE_REPLICATE);
 }
 
+TYPED_TEST(BlurAndDownsample, ErrorPrecedence) {
+  TypeParam dst[1] = {};
+
+  EXPECT_EQ(
+      KLEIDICV_ERROR_NOT_IMPLEMENTED,
+      blur_and_downsample<TypeParam>()(
+          nullptr, sizeof(TypeParam), kMinWidthHeight - 1, kMinWidthHeight, dst,
+          sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_REPLICATE));
+  EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+            blur_and_downsample<TypeParam>()(
+                nullptr, sizeof(TypeParam), kMinWidthHeight, kMinWidthHeight,
+                dst, sizeof(TypeParam), 1, KLEIDICV_BORDER_TYPE_TRANSPARENT));
+  EXPECT_EQ(KLEIDICV_ERROR_NULL_POINTER,
+            blur_and_downsample<TypeParam>()(
+                nullptr, sizeof(TypeParam), KLEIDICV_MAX_IMAGE_PIXELS,
+                kMinWidthHeight, dst, sizeof(TypeParam), 1,
+                KLEIDICV_BORDER_TYPE_REPLICATE));
+}
+
 TYPED_TEST(BlurAndDownsample, Misalignment) {
   if (sizeof(TypeParam) == 1) {
     // misalignment impossible

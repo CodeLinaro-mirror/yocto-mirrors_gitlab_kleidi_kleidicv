@@ -124,14 +124,6 @@ static kleidicv_error_t sobel_3x3_horizontal_stripe_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end,
     size_t channels) KLEIDICV_STREAMING {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
-  CHECK_IMAGE_SIZE(width, height);
-
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<int16_t> dst_rows{dst, dst_stride, channels};
@@ -158,14 +150,6 @@ static kleidicv_error_t sobel_3x3_vertical_stripe_s16_u8_sc(
     const uint8_t *src, size_t src_stride, int16_t *dst, size_t dst_stride,
     size_t width, size_t height, size_t y_begin, size_t y_end,
     size_t channels) KLEIDICV_STREAMING {
-  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
-  CHECK_IMAGE_SIZE(width, height);
-
-  if (channels > KLEIDICV_MAXIMUM_CHANNEL_COUNT) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
   Rectangle rect{width, height};
   Rows<const uint8_t> src_rows{src, src_stride, channels};
   Rows<int16_t> dst_rows{dst, dst_stride, channels};

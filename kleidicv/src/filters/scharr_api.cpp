@@ -22,8 +22,10 @@ kleidicv_error_t scharr_interleaved_s16_u8(const uint8_t *src,
                                            size_t src_height,
                                            size_t src_channels, int16_t *dst,
                                            size_t dst_stride) {
-  if (!scharr_interleaved_is_implemented(src_width, src_height, src_channels)) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  if (kleidicv_error_t err =
+          scharr_interleaved_validate(src, src_stride, src_width, src_height,
+                                      src_channels, dst, dst_stride)) {
+    return err;
   }
 
   // height is decremented by 2 as the result has less rows.
