@@ -777,14 +777,11 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
-  auto result_pair = kleidicv::median_blur_is_implemented(
+  const auto validation = kleidicv::median_blur_validate(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
-
-  auto checks_result = result_pair.first;
-  auto fixed_border_type = result_pair.second;
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
   if (kernel_width <= 7) {
@@ -794,7 +791,8 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
         auto sme_callback = [=]() {
           return kleidicv_median_blur_sorting_network_stripe_u8_sme(
               src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-              channels, kernel_width, kernel_height, fixed_border_type);
+              channels, kernel_width, kernel_height,
+              validation.fixed_border_type);
         };
 
         auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
@@ -804,7 +802,8 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
 
         return kleidicv_median_blur_sorting_network_stripe_u8(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-            channels, kernel_width, kernel_height, fixed_border_type);
+            channels, kernel_width, kernel_height,
+            validation.fixed_border_type);
       };
       return parallel_batches(callback, mt, height);
     }
@@ -813,7 +812,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
     auto callback = [=](size_t y_begin, size_t y_end) {
       return kleidicv_median_blur_sorting_network_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-          channels, kernel_width, kernel_height, fixed_border_type);
+          channels, kernel_width, kernel_height, validation.fixed_border_type);
     };
     return parallel_batches(callback, mt, height);
   }
@@ -822,7 +821,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
     auto callback = [=](size_t y_begin, size_t y_end) {
       return kleidicv_median_blur_small_hist_stripe_u8(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-          channels, kernel_width, kernel_height, fixed_border_type);
+          channels, kernel_width, kernel_height, validation.fixed_border_type);
     };
     return parallel_batches(callback, mt, height);
   }
@@ -830,7 +829,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u8(
   auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_large_hist_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_width, kernel_height, fixed_border_type);
+        channels, kernel_width, kernel_height, validation.fixed_border_type);
   };
   return parallel_batches(callback, mt, height);
 }
@@ -840,14 +839,11 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
-  auto result_pair = kleidicv::median_blur_is_implemented(
+  const auto validation = kleidicv::median_blur_validate(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
-
-  auto checks_result = result_pair.first;
-  auto fixed_border_type = result_pair.second;
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
 #if KLEIDICV_ENABLE_SME
@@ -856,7 +852,8 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
       auto sme_callback = [=]() {
         return kleidicv_median_blur_sorting_network_stripe_s16_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-            channels, kernel_width, kernel_height, fixed_border_type);
+            channels, kernel_width, kernel_height,
+            validation.fixed_border_type);
       };
 
       auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
@@ -866,7 +863,7 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
 
       return kleidicv_median_blur_sorting_network_stripe_s16(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-          channels, kernel_width, kernel_height, fixed_border_type);
+          channels, kernel_width, kernel_height, validation.fixed_border_type);
     };
     return parallel_batches(callback, mt, height);
   }
@@ -875,7 +872,7 @@ kleidicv_error_t kleidicv_thread_median_blur_s16(
   auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_sorting_network_stripe_s16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_width, kernel_height, fixed_border_type);
+        channels, kernel_width, kernel_height, validation.fixed_border_type);
   };
   return parallel_batches(callback, mt, height);
 }
@@ -885,14 +882,11 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
-  auto result_pair = kleidicv::median_blur_is_implemented(
+  const auto validation = kleidicv::median_blur_validate(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
-
-  auto checks_result = result_pair.first;
-  auto fixed_border_type = result_pair.second;
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
 #if KLEIDICV_ENABLE_SME
@@ -901,7 +895,8 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
       auto sme_callback = [=]() {
         return kleidicv_median_blur_sorting_network_stripe_u16_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-            channels, kernel_width, kernel_height, fixed_border_type);
+            channels, kernel_width, kernel_height,
+            validation.fixed_border_type);
       };
 
       auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
@@ -911,7 +906,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
 
       return kleidicv_median_blur_sorting_network_stripe_u16(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-          channels, kernel_width, kernel_height, fixed_border_type);
+          channels, kernel_width, kernel_height, validation.fixed_border_type);
     };
     return parallel_batches(callback, mt, height);
   }
@@ -920,7 +915,7 @@ kleidicv_error_t kleidicv_thread_median_blur_u16(
   auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_sorting_network_stripe_u16(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_width, kernel_height, fixed_border_type);
+        channels, kernel_width, kernel_height, validation.fixed_border_type);
   };
   return parallel_batches(callback, mt, height);
 }
@@ -930,14 +925,11 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
     size_t width, size_t height, size_t channels, size_t kernel_width,
     size_t kernel_height, kleidicv_border_type_t border_type,
     kleidicv_thread_multithreading mt) {
-  auto result_pair = kleidicv::median_blur_is_implemented(
+  const auto validation = kleidicv::median_blur_validate(
       src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
       kernel_height, border_type);
-
-  auto checks_result = result_pair.first;
-  auto fixed_border_type = result_pair.second;
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
 #if KLEIDICV_ENABLE_SME
@@ -946,7 +938,8 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
       auto sme_callback = [=]() {
         return kleidicv_median_blur_sorting_network_stripe_f32_sme(
             src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-            channels, kernel_width, kernel_height, fixed_border_type);
+            channels, kernel_width, kernel_height,
+            validation.fixed_border_type);
       };
 
       auto sme_call_result_pair = try_to_run_sme_thread(sme_callback);
@@ -956,7 +949,7 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
 
       return kleidicv_median_blur_sorting_network_stripe_f32(
           src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-          channels, kernel_width, kernel_height, fixed_border_type);
+          channels, kernel_width, kernel_height, validation.fixed_border_type);
     };
     return parallel_batches(callback, mt, height);
   }
@@ -964,7 +957,7 @@ kleidicv_error_t kleidicv_thread_median_blur_f32(
   auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_median_blur_sorting_network_stripe_f32(
         src, src_stride, dst, dst_stride, width, height, y_begin, y_end,
-        channels, kernel_width, kernel_height, fixed_border_type);
+        channels, kernel_width, kernel_height, validation.fixed_border_type);
   };
   return parallel_batches(callback, mt, height);
 }

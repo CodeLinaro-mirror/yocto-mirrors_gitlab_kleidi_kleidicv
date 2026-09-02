@@ -45,17 +45,16 @@ kleidicv_error_t median_blur(const T *src, size_t src_stride, T *dst,
                              size_t channels, size_t kernel_width,
                              size_t kernel_height,
                              kleidicv_border_type_t border_type) {
-  auto [checks_result, fixed_border_type] = median_blur_is_implemented(
-      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
-      kernel_height, border_type);
-
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+  const auto validation =
+      median_blur_validate(src, src_stride, dst, dst_stride, width, height,
+                           channels, kernel_width, kernel_height, border_type);
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
   return StripeFunction(src, src_stride, dst, dst_stride, width, height, 0,
                         height, channels, kernel_width, kernel_height,
-                        fixed_border_type);
+                        validation.fixed_border_type);
 }
 
 template <bool kUseSME>
@@ -64,34 +63,33 @@ kleidicv_error_t median_blur_u8(const uint8_t *src, size_t src_stride,
                                 size_t height, size_t channels,
                                 size_t kernel_width, size_t kernel_height,
                                 kleidicv_border_type_t border_type) {
-  auto [checks_result, fixed_border_type] = median_blur_is_implemented(
-      src, src_stride, dst, dst_stride, width, height, channels, kernel_width,
-      kernel_height, border_type);
-
-  if (checks_result != KLEIDICV_OK) {
-    return checks_result;
+  const auto validation =
+      median_blur_validate(src, src_stride, dst, dst_stride, width, height,
+                           channels, kernel_width, kernel_height, border_type);
+  if (validation.error != KLEIDICV_OK) {
+    return validation.error;
   }
 
   if (kernel_width <= 7) {
     if constexpr (kUseSME) {
       return kleidicv_median_blur_sorting_network_stripe_u8_sme(
           src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-          kernel_width, kernel_height, fixed_border_type);
+          kernel_width, kernel_height, validation.fixed_border_type);
     }
     return kleidicv_median_blur_sorting_network_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-        kernel_width, kernel_height, fixed_border_type);
+        kernel_width, kernel_height, validation.fixed_border_type);
   }
 
   if (kernel_width > 7 && kernel_width <= 15) {
     return kleidicv_median_blur_small_hist_stripe_u8(
         src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-        kernel_width, kernel_height, fixed_border_type);
+        kernel_width, kernel_height, validation.fixed_border_type);
   }
 
   return kleidicv_median_blur_large_hist_stripe_u8(
       src, src_stride, dst, dst_stride, width, height, 0, height, channels,
-      kernel_width, kernel_height, fixed_border_type);
+      kernel_width, kernel_height, validation.fixed_border_type);
 }
 }  // namespace kleidicv
 

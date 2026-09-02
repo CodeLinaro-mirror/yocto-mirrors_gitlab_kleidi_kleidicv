@@ -5,7 +5,7 @@
 #ifndef KLEIDICV_FILTERS_MEDIAN_BLUR_H
 #define KLEIDICV_FILTERS_MEDIAN_BLUR_H
 
-#include <utility>
+#include <type_traits>
 
 #include "kleidicv/config.h"
 #include "kleidicv/kleidicv.h"
@@ -186,14 +186,13 @@ kleidicv_error_t median_blur_sorting_network_stripe(
 }  // namespace sme
 
 template <typename T>
-inline kleidicv_error_t check_ptrs_strides_imagesizes(const T *src,
-                                                      size_t src_stride, T *dst,
-                                                      size_t dst_stride,
-                                                      size_t width,
-                                                      size_t height) {
+inline kleidicv_error_t median_blur_checks(const T *src, size_t src_stride,
+                                           T *dst, size_t dst_stride,
+                                           size_t width, size_t height) {
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
+
   return KLEIDICV_OK;
 }
 
@@ -210,14 +209,14 @@ inline bool is_kernel_size_supported(size_t kernel_width,
 }
 
 template <typename T>
-inline std::pair<kleidicv_error_t, FixedBorderType> median_blur_is_implemented(
+inline FixedBorderTypeValidationResult median_blur_validate(
     const T *src, size_t src_stride, T *dst, size_t dst_stride, size_t width,
     size_t height, size_t channels, size_t kernel_width, size_t kernel_height,
     kleidicv_border_type_t border_type) {
-  auto image_check = check_ptrs_strides_imagesizes(src, src_stride, dst,
-                                                   dst_stride, width, height);
-  if (image_check != KLEIDICV_OK) {
-    return std::make_pair(image_check, FixedBorderType{});
+  auto check_error =
+      median_blur_checks(src, src_stride, dst, dst_stride, width, height);
+  if (check_error != KLEIDICV_OK) {
+    return {check_error, FixedBorderType{}};
   }
 
   auto fixed_border_type = kleidicv::get_fixed_border_type(border_type);
@@ -226,10 +225,10 @@ inline std::pair<kleidicv_error_t, FixedBorderType> median_blur_is_implemented(
       (height >= kernel_height - 1) && (width >= kernel_width - 1) &&
       is_kernel_size_supported<T>(kernel_width, kernel_height) &&
       fixed_border_type.has_value()) {
-    return std::make_pair(KLEIDICV_OK, *fixed_border_type);
+    return {KLEIDICV_OK, *fixed_border_type};
   }
 
-  return std::make_pair(KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{});
+  return {KLEIDICV_ERROR_NOT_IMPLEMENTED, FixedBorderType{}};
 }
 
 }  // namespace kleidicv
