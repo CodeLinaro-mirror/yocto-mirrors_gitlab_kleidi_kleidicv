@@ -329,18 +329,15 @@ class BlurAndDownsample {
     });
 
     loop.remaining([&](ptrdiff_t column, ptrdiff_t length) KLEIDICV_STREAMING {
-      column = align_up(column, 2UL);
-      if (column < length) {
-        svbool_t pg_src_0 = BufferVecTraits::svwhilelt(column, length);
-        svbool_t pg_src_1 =
-            BufferVecTraits::svwhilelt(column + vec_lanes, length);
-        size_t dst_length = (width + 1) / 2;
-        svbool_t pg_dst = svwhilelt_b8(static_cast<uint64_t>(column / 2),
-                                       static_cast<uint64_t>(dst_length));
-        horizontal_vector_path_3_channel_2x(pg_src_0, pg_src_1, pg_dst,
-                                            src_rows, dst_rows, border_offsets,
-                                            column, vec_stride);
-      }
+      svbool_t pg_src_0 = BufferVecTraits::svwhilelt(column, length);
+      svbool_t pg_src_1 =
+          BufferVecTraits::svwhilelt(column + vec_lanes, length);
+      size_t dst_length = (width + 1) / 2;
+      svbool_t pg_dst = svwhilelt_b8(static_cast<uint64_t>(column / 2),
+                                     static_cast<uint64_t>(dst_length));
+      horizontal_vector_path_3_channel_2x(pg_src_0, pg_src_1, pg_dst, src_rows,
+                                          dst_rows, border_offsets, column,
+                                          vec_stride);
     });
   }
 
