@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "framework/array.h"
 #include "kleidicv/filters/blur_and_downsample.h"
 #include "kleidicv/filters/gaussian_blur.h"
 #include "kleidicv/filters/scharr.h"
@@ -257,6 +258,50 @@ TEST(FilterStripeWorkers, GaussianBlurFixedHonorsRowRange) {
 
   copy_rows(expected, expected_partial, kWidth, kBegin, kEnd);
   EXPECT_EQ(expected_partial, actual);
+}
+
+TEST(GaussianBlurArbitraryStripe, HonorsRowRange) {
+  constexpr size_t kKernelSize = 11;
+  constexpr size_t kWidth = 13;
+  constexpr size_t kHeight = 16;
+  constexpr size_t kChannels = 1;
+  constexpr uint8_t kSentinel = 0xFF;
+  test::Array2D<uint8_t> src{kWidth, kHeight};
+  test::Array2D<uint8_t> dst{kWidth, kHeight};
+  test::Array2D<uint8_t> expected{kWidth, kHeight};
+  test::Array2D<uint8_t> expected_partial{kWidth, kHeight};
+  src.fill([=](size_t row, size_t column) {
+    size_t index = row * kWidth + column;
+    return static_cast<uint8_t>((index * index + 17 * index + 3) % 251);
+  });
+
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_gaussian_blur_u8(src.data(), src.stride(), expected.data(),
+                                      expected.stride(), kWidth, kHeight,
+                                      kChannels, kKernelSize, kKernelSize, 0.0F,
+                                      0.0F, KLEIDICV_BORDER_TYPE_REPLICATE));
+
+  auto test_stripe = [&](size_t y_begin, size_t y_end) {
+    SCOPED_TRACE(testing::Message()
+                 << "stripe [" << y_begin << ", " << y_end << ")");
+    dst.fill(kSentinel);
+    expected_partial.fill(kSentinel);
+    for (size_t row = y_begin; row < y_end; ++row) {
+      for (size_t column = 0; column < kWidth; ++column) {
+        *expected_partial.at(row, column) = *expected.at(row, column);
+      }
+    }
+
+    ASSERT_EQ(KLEIDICV_OK,
+              kleidicv_gaussian_blur_arbitrary_stripe_u8(
+                  src.data(), src.stride(), dst.data(), dst.stride(), kWidth,
+                  kHeight, y_begin, y_end, kChannels, kKernelSize, kKernelSize,
+                  0.0F, 0.0F, kleidicv::FixedBorderType::REPLICATE));
+    EXPECT_EQ_ARRAY2D(expected_partial, dst);
+  };
+
+  test_stripe(0, 1);
+  test_stripe(kHeight - 1, kHeight);
 }
 
 TEST(FilterStripeWorkers, SeparableFilterU8HonorsRowRange) {
