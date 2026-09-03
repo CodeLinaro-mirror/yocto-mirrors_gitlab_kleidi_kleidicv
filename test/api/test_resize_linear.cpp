@@ -454,7 +454,7 @@ static uint8_t kleidicv_resize_linear_u8_accuracy(size_t src_width,
     return 0;
   }
 
-  return 2;
+  return 1;
 }
 
 template <typename T, bool kPadding = true>
@@ -760,6 +760,14 @@ TEST_P(ResizeLinearU8, GenericUpsizeBiggerVerticalDownCheckerboard) {
   checkerboard_pattern_test<uint8_t>(40, 14, 51, 10, channels);
 }
 
+TEST_P(ResizeLinearU8, Q32CoordinatePrecisionCheckerboard) {
+  size_t channels = GetParam();
+  // A Q16 block step is almost exactly halfway between two integers for this
+  // ratio. Its old iterative rounding error reached 128 Q15 weight units;
+  // the Q32 coordinate recurrence keeps the final output within one level.
+  checkerboard_pattern_test<uint8_t>(9697, 1, 11381, 1, channels);
+}
+
 TEST_P(ResizeLinearU8, GenericDownsize2) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t>(66, 19, 37, 13, channels);
@@ -840,6 +848,29 @@ TEST_P(ResizeLinearU8, LargeDimensionsGeneric3) {
   do_large_dimensions_test<uint8_t>(2097, 5, 807, 2, channels);
 }
 
+TEST_P(ResizeLinearU8, Q15VerticalRounding) {
+  size_t channels = GetParam();
+  constexpr size_t src_width = 16, src_height = 2;
+  constexpr size_t dst_width = 17, dst_height = 5;
+  size_t src_stride = src_width * channels;
+  size_t dst_stride = dst_width * channels;
+
+  std::vector<uint8_t> src(src_stride * src_height, 0);
+  std::fill(src.begin() + static_cast<ptrdiff_t>(src_stride), src.end(), 64);
+  std::vector<uint8_t> dst(dst_stride * dst_height);
+
+  ASSERT_EQ(KLEIDICV_OK,
+            kleidicv_resize_linear(src.data(), src_stride, src_width,
+                                   src_height, dst.data(), dst_stride,
+                                   dst_width, dst_height, channels));
+
+  // At dy=1 the ideal vertical weight is 0.1. Q15 produces round(64 * 0.1)
+  // = 6, whereas the previous Q8 coefficient rounded the result to 7.
+  for (size_t x = 0; x < dst_stride; ++x) {
+    EXPECT_EQ(6, dst[dst_stride + x]) << "Element #" << x;
+  }
+}
+
 #ifdef KLEIDICV_ALLOCATION_TESTS
 TEST_P(ResizeLinearU8, CannotAllocateBuffer) {
   size_t channels = GetParam();
@@ -866,12 +897,12 @@ TEST_P(ResizeLinearU8, CannotAllocateBuffer) {
 }
 #endif
 
-TEST_P(ResizeLinearU8, RecalibrateMechanism2) {
+TEST_P(ResizeLinearU8, CoordinatePrecisionLargeDownsize2) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t>(503900, 2, 314300, 1, channels);
 }
 
-TEST_P(ResizeLinearU8, RecalibrateMechanism3) {
+TEST_P(ResizeLinearU8, CoordinatePrecisionLargeDownsize3) {
   size_t channels = GetParam();
   do_large_dimensions_test<uint8_t>(867500, 2, 321711, 1, channels);
 }

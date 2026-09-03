@@ -2427,48 +2427,26 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8_sme, const uint8_t *src,
 /// Width and height of source and destination images must not exceed @ref
 /// KLEIDICV_RESIZE_MAX_WIDTH_OR_HEIGHT.
 ///
-/// \par Generic downsizing algorithm accuracy for uint8 data:
-/// For the best performance, 2-D linear interpolation uses 8-bit weights.
-/// Its maximum error from the exact value can be calculated as below.<br>
-/// The weights are rounded to 8-bit integers, this leads to this error:
-/// > `E = 1 / 2`
+/// \par Generic algorithm accuracy for uint8 data:
+/// The 2-D interpolation uses signed Q15 weights. Each one-dimensional step is
+/// evaluated as:
+/// > `R = round(A + ((B - A) * W) / 32768)`
 ///
-/// The 8-bit weight is therefore the exact weight `We` plus the error:
-/// > `W = We + E`
+/// Coordinates are first rounded to Q16, introducing at most `1 / 131072` of
+/// a source pixel of error. Rounding the fractional part to Q15 adds at most
+/// `1 / 65536`, so the combined contribution is at most `3 * 255 / 131072` of
+/// an output level per dimension. The vertical intermediate is rounded to
+/// uint8 before the horizontal step; its error is blended by the horizontal
+/// weights instead of being added for both source columns. For directly
+/// calculated coordinates these effects can change the final rounded result
+/// by at most `1`.
 ///
-/// 1-D interpolation with 8-bit weights is done according to this formula:
-/// > `R = A + ((B - A) * W) / 256`
-///
-/// The maximum error happens at `A = 0` and `B = 255`, substituting these the
-/// error is the difference between the result `R` and the exact result `Re`,
-/// plus a rounding error of `1 / 2`:
-/// > `E1D = Re - R = (255 * E) / 256 + 1 / 2 = 511 / 512`
-///
-/// For two dimensions (i.e. doing the horizontal interpolation after the
-/// vertical one), the formula is the same, but here `A` and `B` are the results
-/// of the 1D calculation above, so they also have some error:
-/// > `A = Ae + E1D`<br>
-/// > `B = Be + E1D`<br>
-/// > `W = We + E`<br>
-///
-/// Calculating the error from
-/// > `R = A + ((B - A) * W) / 256`
-///
-/// The total error comes from the following addends
-/// (note that the error is always added, not allowed to subtract it):
-/// > `A ---> E1D`<br>
-/// > `(((Be - Ae) + E1D + E1D) * (We + E)) / 256
-/// >   ---> ((Be - Ae) * E) / 256 + (2 * E1D * We) / 256`
-/// >   (as `E1D*E` is very small and it can be ignored)<br>
-/// > `1/2` (rounding error)
-///
-/// From these, `(Be - Ae) <= 255` and `We <= 255`, so the total theoretical
-/// error is:
-///  > `E2D = E1D + (2 * E1D) + (E * 255) / 256 + 1 / 2 = 4 * E1D = 2044 / 512`
-///
-/// But this theoretical error cannot be triggered, as the error components are
-/// not independent. So the biggest difference compared to a perfect 8-bit
-/// result can be `2`.
+/// Horizontal vector coordinates are advanced in Q32 fixed point and rounded
+/// to Q16 when interpolation constants are emitted. Across the maximum
+/// supported width, recurrence deviation is at most `1 / 2048` of a source
+/// pixel; composing the Q16 vector-lane offsets can add at most `1 / 65536`.
+/// Including those effects, the biggest difference compared to a perfect
+/// uint8 result is `1`.
 ///
 /// @param src          Pointer to the source data. Must be non-null.
 /// @param src_stride   Distance in bytes from the start of one row to the

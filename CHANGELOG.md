@@ -21,6 +21,9 @@ This changelog aims to follow the guiding principles of
 - Support for OpenCV 4.14.
 
 ### Changed
+- Improved generic uint8 linear resize accuracy using Q15 interpolation weights
+  and Q32 coordinate advancement. Results differ from correctly rounded exact
+  bilinear interpolation by at most one output level.
 - The `begin` and `end` parameters of `kleidicv_thread_callback` and the
   `task_count` parameter of `kleidicv_thread_parallel` now use `size_t` instead
   of `unsigned`, aligning scheduler task ranges with the `size_t` dimensions and

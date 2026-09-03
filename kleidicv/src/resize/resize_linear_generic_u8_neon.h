@@ -21,23 +21,22 @@
 namespace kleidicv::neon::resize_linear_generic_u8 {
 
 //------------------------------------------------------
-/// Generic resize for ratios 1/3 to 1/1, u8
+/// Generic uint8 linear downscaling and upscaling for 1-4 channels.
+/// Supports horizontal scaling factors >= 1/3 and any vertical scaling factor.
 //------------------------------------------------------
 
-// For the coordinate calculation, fixed-point format is used, for better
-// performance. Fixed-point format:
-// - lowest 16 bits are the fractional part, that is the kFixpBits constant
-// - at interpolation, the high 8 bits are used from the fractional part
-//   (this is a good compromise between accuracy and performance: because the
-//   result is 8bits, the error only affects the least significant 1-2 bits, see
-//   the accuracy calculation in kleidicv.h
+// Fixed-point coordinates are used for better performance:
+// - horizontal vector anchors are advanced in Q32, then narrowed to Q16
+// - in Q16 coordinates the lowest kFixpBits bits are the fractional part
+// - at interpolation, the high 15 bits are used from the fractional part
 // - to get the integer part, right shift by 16 bits, or zip/unzip/tbl etc. to
 //   get the bytes needed
-// - for better accuracy, rounding is needed everywhere, i.e. adding 0.5, which
-//   is 1 << 15
+// - center alignment uses 0.5 in Q16, which is 1 << 15
 
 static constexpr ptrdiff_t kFixpBits = 16;
 static constexpr ptrdiff_t kFixpHalf = (1UL << (kFixpBits - 1));
+static constexpr ptrdiff_t kInterpolationBits = 15;
+static constexpr ptrdiff_t kCoordinateBits = 32;
 static constexpr ptrdiff_t kStep = kVectorLength / sizeof(uint8_t);
 static constexpr ptrdiff_t kHalfStep = kStep / 2;
 
@@ -79,12 +78,44 @@ static T rounding_div(size_t nom, size_t denom) {
 
 // Scale coordinate using this formula, so the center is aligned:
 //   source_x = (destination_x + 0.5) / scale - 0.5;
-//   plus 1/256/2 for later rounding the fractional part to 8bits
+//   plus half a Q15 step for later rounding the fractional part
 // Note: return value is in fixed point format using kFixpBits for the
 // fractional part
 static inline int64_t aligned_scale(size_t x, size_t nom, size_t denom) {
   return rounding_div<int64_t>(((x << kFixpBits) + kFixpHalf) * nom, denom) -
-         kFixpHalf + (1 << (kFixpBits - 9));
+         kFixpHalf + (1 << (kFixpBits - kInterpolationBits - 1));
+}
+
+// Keep the repeatedly advanced coordinate in Q32. The bias combines rounding
+// to Q16 with the half-Q15-step bias used by the direct Q16 calculation.
+static inline int64_t initial_coordinate(size_t nom, size_t denom) {
+  constexpr int64_t kNarrowingBias = int64_t{3}
+                                     << (kCoordinateBits - kFixpBits - 1);
+  return rounding_div<int64_t>(nom << (kCoordinateBits - 1), denom) -
+         (int64_t{1} << (kCoordinateBits - 1)) + kNarrowingBias;
+}
+
+static inline int64_t coordinate_step(size_t destination_pixels, size_t nom,
+                                      size_t denom) {
+  // This numerator, including rounding, fits uint64_t at the maximum supported
+  // width and the architectural maximum 256-byte scalable vector length.
+  return rounding_div<int64_t>((nom * destination_pixels) << kCoordinateBits,
+                               denom);
+}
+
+static inline int64_t narrow_coordinate(int64_t coordinate) {
+  return coordinate >> (kCoordinateBits - kFixpBits);
+}
+
+static inline uint16_t interpolation_fraction(int64_t coordinate) {
+  return static_cast<uint16_t>(coordinate) >> (kFixpBits - kInterpolationBits);
+}
+
+static inline uint16x8_t interpolation_fraction(int32x4_t coordinate0,
+                                                int32x4_t coordinate1) {
+  return vshrq_n_u16(vuzp1q_u16(vreinterpretq_u16_s32(coordinate0),
+                                vreinterpretq_u16_s32(coordinate1)),
+                     kFixpBits - kInterpolationBits);
 }
 
 class RowInterpolationConstants {
@@ -139,9 +170,7 @@ class RowInterpolationConstantsGeneratorBase {
   RowInterpolationConstantsGeneratorBase(size_t src_width, size_t dst_width)
       : src_width_{src_width},
         dst_width_{dst_width},
-        vsidx_tbl_{2, 6, 10, 14, 18, 22, 26, 30},
-        vsfrac_tbl_{1,  255, 5,  255, 9,  255, 13, 255,
-                    17, 255, 21, 255, 25, 255, 29, 255} {}
+        vsidx_tbl_{2, 6, 10, 14, 18, 22, 26, 30} {}
 
   std::pair<size_t, size_t> calculate_num_of_vector_paths() {
     size_t two_x = ((src_width_ * kChannels) >= sizeof(SrcVecType<kRatio>))
@@ -171,7 +200,6 @@ class RowInterpolationConstantsGeneratorBase {
   const size_t src_width_;
   const size_t dst_width_;
   const uint8x8_t vsidx_tbl_;
-  const uint8x16_t vsfrac_tbl_;
 };
 
 template <int kRatio, int kChannels, bool kUpsize>
@@ -218,24 +246,16 @@ class RowInterpolationConstantsGenerator final
     const int64_t max_sx_fullvector = static_cast<int64_t>(
         (Base::src_width_ * kChannels - kFullVectorSrcReadSize) / kChannels);
 
-    // Difference in source x coordinate for one vector path
-    const int64_t sx_fixp_vector_step = rounding_div<int64_t>(
-        (Base::src_width_ * kStep / kChannels) << kFixpBits, Base::dst_width_);
+    // Q32 difference in source x coordinate for one vector path. Q32 keeps
+    // accumulated error smaller while avoiding periodic recalibration.
+    const int64_t sx_coordinate_step =
+        coordinate_step(kStep / kChannels, Base::src_width_, Base::dst_width_);
+    int64_t sx_coordinate =
+        initial_coordinate(Base::src_width_, Base::dst_width_);
 
     for (size_t i = 0;
          i < row_interpolation_constants.num_of_vector_paths().two_x; ++i) {
-      // Repeatedly adding sx_fixp_vector_step is faster than scaling dx to sx,
-      // but it accumulates fixed-point error; periodic recalibration resets it.
-      // The maximum per-addition error of sx_fixp_vector_step is 0.5 / (1 <<
-      // 16). Only the upper 8 bits of the 16-bit fractional part are used for
-      // interpolation, so once the accumulated error reaches 1 / (1 << 8), it
-      // can affect later stages. This corresponds to 512 additions. Since two
-      // additions are performed per cycle, we recalibrate every 256 cycles,
-      // calculated by this mask.
-      constexpr uint64_t kRecalibrateCycleMask = ((1 << 8) - 1);
-      if ((i & kRecalibrateCycleMask) == 0) {
-        sx_fixp = Base::to_src_x(dx);
-      }
+      sx_fixp = narrow_coordinate(sx_coordinate);
 
       // Pull back sx if it would overrun
       int64_t sx_candidate = sx_fixp >> kFixpBits;
@@ -243,17 +263,18 @@ class RowInterpolationConstantsGenerator final
       calculate_indices_fractions_base_fullvector(
           row_interpolation_constants.full_vector_constants_array()[i * 2],
           sx_base, sx_fixp);
-      sx_fixp += sx_fixp_vector_step;
+      sx_coordinate += sx_coordinate_step;
       dx += kStep / kChannels;
 
       // Pull back sx if it would overrun
+      sx_fixp = narrow_coordinate(sx_coordinate);
       sx_candidate = sx_fixp >> kFixpBits;
       sx_base = Base::clamp_src_x(sx_candidate, max_sx_fullvector);
       calculate_indices_fractions_base_fullvector(
           row_interpolation_constants
               .full_vector_constants_array()[(i * 2) + 1],
           sx_base, sx_fixp);
-      sx_fixp += sx_fixp_vector_step;
+      sx_coordinate += sx_coordinate_step;
       dx += kStep / kChannels;
     }
 
@@ -341,14 +362,10 @@ class RowInterpolationConstantsGenerator final
     vst1q(constants.idx0, vsx0_idx);
     vst1q(constants.idx1, vsx1_idx);
     uint16x8x2_t vsxfrac;
-    // It is safe to reinterpret delta to unsigned, because it is only the
-    // integer part that's affected by signedness, fraction is always between
-    // [0, 1), so these values are between 0 and 255
-    // e.g.  -0.3 = -1 (integer part) + 0.7 (fractional part)
-    vsxfrac.val[0] = vreinterpretq_u16_u8(
-        vqtbl2q_u8(vreinterpretq_u8_x2(vsx_delta_lo), Base::vsfrac_tbl_));
-    vsxfrac.val[1] = vreinterpretq_u16_u8(
-        vqtbl2q_u8(vreinterpretq_u8_x2(vsx_delta_hi), Base::vsfrac_tbl_));
+    vsxfrac.val[0] =
+        interpolation_fraction(vsx_delta_lo.val[0], vsx_delta_lo.val[1]);
+    vsxfrac.val[1] =
+        interpolation_fraction(vsx_delta_hi.val[0], vsx_delta_hi.val[1]);
     VecTraits<uint16_t>::store(vsxfrac, constants.xfrac);
   }
 
@@ -388,8 +405,8 @@ class RowInterpolationConstantsGenerator final
     constants.src_element_index = src_element_index;
     vst1(constants.idx0, vsx0_idx);
     vst1(constants.idx1, vsx1_idx);
-    uint16x8_t vsxfrac = vreinterpretq_u16_u8(
-        vqtbl2q_u8(vreinterpretq_u8_x2(vsx_delta), Base::vsfrac_tbl_));
+    uint16x8_t vsxfrac =
+        interpolation_fraction(vsx_delta.val[0], vsx_delta.val[1]);
     VecTraits<uint16_t>::store(vsxfrac, constants.xfrac);
     constants.dst_element_index = static_cast<ptrdiff_t>(dx * kChannels);
   }
@@ -463,25 +480,13 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
       const int64_t max_src_base_index = static_cast<int64_t>(
           saturating_sub(Base::src_width_ * kChannels, kFullVectorSrcReadSize));
 
-      const int64_t sx_fixp_triplet_step = rounding_div<int64_t>(
-          Base::src_width_ << (kFixpBits + 4), Base::dst_width_);
+      const int64_t sx_coordinate_triplet_step =
+          coordinate_step(kStep, Base::src_width_, Base::dst_width_);
 
-      sx_fixp = Base::to_src_x(0);
-      unsigned recalibrate_cnt = 0;
+      int64_t sx_coordinate =
+          initial_coordinate(Base::src_width_, Base::dst_width_);
       while (handled_full_vector_paths < num_of_full_vector_constants) {
-        // Repeatedly adding the 16-destination-pixel step is faster than
-        // scaling dx to sx, but it accumulates fixed-point error; periodic
-        // recalibration resets it. The maximum per-addition error is
-        // 0.5 / (1 << 16). Only the upper 8 bits of the 16-bit fractional
-        // part are used for interpolation, so once the accumulated error
-        // reaches 1 / (1 << 8), it can affect later stages. This corresponds
-        // to 512 additions.
-        if (recalibrate_cnt == 512) {
-          sx_fixp = Base::to_src_x(dst_element_index / 3);
-          recalibrate_cnt = 0;
-        } else {
-          recalibrate_cnt++;
-        }
+        sx_fixp = narrow_coordinate(sx_coordinate);
 
         fill_full_constants_vectorially(
             row_interpolation_constants
@@ -510,7 +515,7 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
         handled_full_vector_paths++;
         dst_element_index += kStep;
 
-        sx_fixp += sx_fixp_triplet_step;
+        sx_coordinate += sx_coordinate_triplet_step;
       }
     }
 
@@ -617,10 +622,10 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
 
     // Get fraction from coordinate
     uint16x8x2_t vsxfrac;
-    vsxfrac.val[0] = vreinterpretq_u16_u8(
-        vqtbl2q_u8(vreinterpretq_u8_x2(vsx_delta_lo), Base::vsfrac_tbl_));
-    vsxfrac.val[1] = vreinterpretq_u16_u8(
-        vqtbl2q_u8(vreinterpretq_u8_x2(vsx_delta_hi), Base::vsfrac_tbl_));
+    vsxfrac.val[0] =
+        interpolation_fraction(vsx_delta_lo.val[0], vsx_delta_lo.val[1]);
+    vsxfrac.val[1] =
+        interpolation_fraction(vsx_delta_hi.val[0], vsx_delta_hi.val[1]);
     VecTraits<uint16_t>::store(vsxfrac, constants.xfrac);
   }
 
@@ -648,10 +653,9 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
 
     unsigned j = 0;
     auto [src0, src1] = sx_indices(sx_fixp);
-    uint16_t xfrac =
-        (src_element_index < src_element_base)
-            ? 0
-            : (sx_fixp & ((1 << kFixpBits) - 1)) >> (kFixpBits / 2);
+    uint16_t xfrac = (src_element_index < src_element_base)
+                         ? 0
+                         : interpolation_fraction(sx_fixp);
 
     for (; j < (kChannels - in_pixel_index); ++j) {
       constants.idx0[j] =
@@ -662,12 +666,10 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
     }
 
     sx_fixp += sx_fixp_one_dst_pixel_;
-    src_element_index =
-        static_cast<int64_t>((sx_fixp >> kFixpBits) * kChannels);
     auto src_indices = sx_indices(sx_fixp);
     src0 = src_indices.first;
     src1 = src_indices.second;
-    xfrac = (sx_fixp & ((1 << kFixpBits) - 1)) >> (kFixpBits / 2);
+    xfrac = interpolation_fraction(sx_fixp);
 
     constexpr size_t idx_frac_elem_num =
         sizeof(constants.xfrac) / sizeof(constants.xfrac[0]);
@@ -681,13 +683,11 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
         constants.xfrac[j] = xfrac;
       }
       sx_fixp += sx_fixp_one_dst_pixel_;
-      src_element_index = (sx_fixp >> kFixpBits) * kChannels;
       src_indices = sx_indices(sx_fixp);
       src0 = src_indices.first;
       src1 = src_indices.second;
-      xfrac = (src_element_index < src_element_base)
-                  ? 0
-                  : (sx_fixp & ((1 << kFixpBits) - 1)) >> (kFixpBits / 2);
+      // Later source pixels are at or beyond the load base.
+      xfrac = interpolation_fraction(sx_fixp);
     }
   }
 
@@ -723,6 +723,8 @@ class ResizeGenericU8Operation final {
   }
 
  private:
+  static constexpr bool kLoadTwo = (!kUpsize && kChannels == 3) || kRatio == 3;
+
   int64_t to_src_y(size_t dy) const {
     return aligned_scale(dy, src_height_, dst_height_);
   }
@@ -744,13 +746,7 @@ class ResizeGenericU8Operation final {
     const uint8_t *src_top = &src_rows_.at(sy_top)[0];
     const uint8_t *src_bottom = &src_rows_.at(sy_bottom)[0];
     uint8_t *dst = &dst_rows_.at(static_cast<ptrdiff_t>(dy))[0];
-    // Get the highest 8 bits of the fractional part
-    // This is a good compromise between accuracy and performance
-    // Because the result is 8bits, the error only affects the least
-    // significant 1-2 bits, see the accuracy calculation in kleidicv.h
-    const int64_t sy_fixp_base = sy * (int64_t{1} << kFixpBits);
-    uint16_t yfrac =
-        static_cast<uint16_t>((sy_fixp - sy_fixp_base) >> (kFixpBits - 8));
+    uint16_t yfrac = interpolation_fraction(sy_fixp);
 
     ptrdiff_t dst_element_index = 0;
 
@@ -778,7 +774,6 @@ class ResizeGenericU8Operation final {
     uint16x8_t vsxfrac;
     VecTraits<uint16_t>::load(constants.xfrac, vsxfrac);
 
-    constexpr bool kLoadTwo = (!kUpsize && kChannels == 3) || kRatio == 3;
     HalfSrcVecType<kLoadTwo> topsrc, bottomsrc;
     VecTraits<uint8_t>::load(&src_top[src_element_index], topsrc);
     VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);
@@ -795,12 +790,9 @@ class ResizeGenericU8Operation final {
       c = vqtbl2_u8(bottomsrc, vsx0_idx);
       d = vqtbl2_u8(bottomsrc, vsx1_idx);
     }
-    uint8x8_t left =
-        vraddhn_u16(vshll_n_u8(a, 8), vmulq_n_u16(vsubl_u8(c, a), yfrac));
-    uint8x8_t right =
-        vraddhn_u16(vshll_n_u8(b, 8), vmulq_n_u16(vsubl_u8(d, b), yfrac));
-    uint8x8_t res = vraddhn_u16(vshll_n_u8(left, 8),
-                                vmulq_u16(vsubl_u8(right, left), vsxfrac));
+    uint8x8_t left = lerp(a, c, yfrac);
+    uint8x8_t right = lerp(b, d, yfrac);
+    uint8x8_t res = lerp(left, right, vsxfrac);
     return res;
   }
 
@@ -841,28 +833,45 @@ class ResizeGenericU8Operation final {
         d = vsetq_lane_u8(src_bottom[last_right_elem_idx], d, 15);
       }
     }
-    uint8x8_t left_lo = lerp_low_half(a, c, yfrac);
-    uint8x8_t left_hi = lerp_high_half(a, c, yfrac);
-    uint8x8_t right_lo = lerp_low_half(b, d, yfrac);
-    uint8x8_t right_hi = lerp_high_half(b, d, yfrac);
-    uint8x8_t res_lo = lerp_full(left_lo, right_lo, vsxfrac2.val[0]);
-    uint8x8_t res_hi = lerp_full(left_hi, right_hi, vsxfrac2.val[1]);
-    return vcombine_u8(res_lo, res_hi);
+    uint8x16_t left = lerp(a, c, yfrac);
+    uint8x16_t right = lerp(b, d, yfrac);
+    return lerp(left, right, vsxfrac2);
   }
 
-  static uint8x8_t lerp_low_half(uint8x16_t a, uint8x16_t b, uint16_t w) {
-    return vraddhn_u16(
-        vshll_n_u8(vget_low_u8(a), 8),
-        vmulq_n_u16(vsubl_u8(vget_low_u8(b), vget_low_u8(a)), w));
+  static int16x8_t lerp_delta(uint8x8_t a, uint8x8_t b, uint16_t w) {
+    int16x8_t difference = vreinterpretq_s16_u16(vsubl_u8(b, a));
+    return vqrdmulhq_n_s16(difference, static_cast<int16_t>(w));
   }
 
-  static uint8x8_t lerp_high_half(uint8x16_t a, uint8x16_t b, uint16_t w) {
-    return vraddhn_u16(vshll_high_n_u8(a, 8),
-                       vmulq_n_u16(vsubl_high_u8(b, a), w));
+  static int16x8_t lerp_delta(uint8x8_t a, uint8x8_t b, uint16x8_t w) {
+    int16x8_t difference = vreinterpretq_s16_u16(vsubl_u8(b, a));
+    return vqrdmulhq_s16(difference, vreinterpretq_s16_u16(w));
   }
 
-  static uint8x8_t lerp_full(uint8x8_t a, uint8x8_t b, uint16x8_t w) {
-    return vraddhn_u16(vshll_n_u8(a, 8), vmulq_u16(vsubl_u8(b, a), w));
+  static uint8x8_t lerp(uint8x8_t a, uint8x8_t b, uint16_t w) {
+    int16x8_t delta = lerp_delta(a, b, w);
+    return vadd_u8(a, vreinterpret_u8_s8(vmovn_s16(delta)));
+  }
+
+  static uint8x8_t lerp(uint8x8_t a, uint8x8_t b, uint16x8_t w) {
+    int16x8_t delta = lerp_delta(a, b, w);
+    return vadd_u8(a, vreinterpret_u8_s8(vmovn_s16(delta)));
+  }
+
+  static uint8x16_t lerp(uint8x16_t a, uint8x16_t b, uint16_t w) {
+    int16x8_t delta_lo = lerp_delta(vget_low_u8(a), vget_low_u8(b), w);
+    int16x8_t delta_hi = lerp_delta(vget_high_u8(a), vget_high_u8(b), w);
+    uint8x16_t delta = vuzp1q_u8(vreinterpretq_u8_s16(delta_lo),
+                                 vreinterpretq_u8_s16(delta_hi));
+    return vaddq_u8(a, delta);
+  }
+
+  static uint8x16_t lerp(uint8x16_t a, uint8x16_t b, uint16x8x2_t w) {
+    int16x8_t delta_lo = lerp_delta(vget_low_u8(a), vget_low_u8(b), w.val[0]);
+    int16x8_t delta_hi = lerp_delta(vget_high_u8(a), vget_high_u8(b), w.val[1]);
+    uint8x16_t delta = vuzp1q_u8(vreinterpretq_u8_s16(delta_lo),
+                                 vreinterpretq_u8_s16(delta_hi));
+    return vaddq_u8(a, delta);
   }
 
   const Rows<const uint8_t> src_rows_;

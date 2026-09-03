@@ -47,8 +47,7 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
     for (size_t i = 0; i < kStep; ++i, ++dst_index) {
       dx = dst_index / kChannels;
       int64_t sx = to_src_x(dx);
-      // Get the high half of the fractional part
-      constants.xfrac[i] = (sx & ((1 << kFixpBits) - 1)) >> (kFixpBits - 8);
+      constants.xfrac[i] = interpolation_fraction(sx);
 
       unsigned in_pixel_index = dst_index % kChannels;
       int64_t sx0 = sx >> kFixpBits;
@@ -112,9 +111,7 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
     for (size_t i = 0; i < kHalfStep; ++i, ++dst_index) {
       dx = dst_index / kChannels;
       int64_t sx_fixp = to_src_x(dx);
-      // Get the high half of the fractional part
-      constants.xfrac[i] =
-          (sx_fixp & ((1 << kFixpBits) - 1)) >> (kFixpBits - 8);
+      constants.xfrac[i] = interpolation_fraction(sx_fixp);
 
       unsigned in_pixel_index = dst_index % kChannels;
       ptrdiff_t sx0 = sx_fixp >> kFixpBits;
@@ -189,6 +186,9 @@ void compare_constants(ConstantsStruct* actual_array,
     compare_idx(expected.idx1, actual.idx1, "idx1");
 
     for (size_t xfrac_index = 0; xfrac_index < kIdxFracLen; ++xfrac_index) {
+      EXPECT_LE(actual.xfrac[xfrac_index], 32767)
+          << vector_name_log_message << i << "].xfrac[" << xfrac_index
+          << "] is not a valid Q15 weight";
       if (std::abs(static_cast<int>(expected.xfrac[xfrac_index]) -
                    static_cast<int>(actual.xfrac[xfrac_index])) >
           xfrac_tolerance) {
@@ -202,8 +202,10 @@ void compare_constants(ConstantsStruct* actual_array,
   }
 }
 
+// The focused dimensions below differ from direct division by at most one Q15
+// weight unit unless a test explicitly supplies another tolerance.
 template <size_t kChannels, size_t kSrcWidth, size_t kDstWidth>
-void generator_test(int xfrac_tolerance = 0) {
+void generator_test(int xfrac_tolerance = 1) {
   constexpr size_t kRatio =
       kDstWidth > kSrcWidth && kDstWidth * 14 <= kSrcWidth * 15
           ? 2
@@ -246,6 +248,15 @@ void generator_test(int xfrac_tolerance = 0) {
 
 TEST(GenericResize_u8, rounding_div) {
   EXPECT_EQ(1, kleidicv::neon::resize_linear_generic_u8::rounding_div(4, 5));
+}
+
+TEST(GenericResize_u8, q15_fraction_carry) {
+  using kleidicv::neon::resize_linear_generic_u8::aligned_scale;
+  using kleidicv::neon::resize_linear_generic_u8::interpolation_fraction;
+  int64_t coordinate = aligned_scale(13888, 26548, 34717);
+  EXPECT_EQ(0x297C0000, coordinate);
+  EXPECT_EQ(0, interpolation_fraction(coordinate));
+  EXPECT_EQ(32767, interpolation_fraction(0xFFFF));
 }
 
 TEST(GenericResize_u8_Generator, 1channel_r1_short) {
@@ -297,7 +308,7 @@ TEST(GenericResize_u8_Generator, 2channels_half_only_with_pullback) {
 }
 
 TEST(GenericResize_u8_Generator, 2channels_long) {
-  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 149, 101>();
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 149, 101>(3);
 }
 
 TEST(GenericResize_u8_Generator, 2channels_r2_short) {
@@ -341,7 +352,7 @@ TEST(GenericResize_u8_Generator, 3channels_r1_mid2) {
 }
 
 TEST(GenericResize_u8_Generator, 3channels_r1_long) {
-  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 142, 283>(1);
+  kleidicv::neon::resize_linear_generic_u8::generator_test<3, 142, 283>(4);
 }
 
 TEST(GenericResize_u8_Generator, 3channels_r2_long) {
@@ -365,25 +376,11 @@ TEST(GenericResize_u8_Generator, 3channels_r3_long2) {
 }
 
 TEST(GenericResize_u8_Generator, 2channels_extra_long) {
-  // For this test, the tolerance is set to 1 because it cannot be guaranteed
-  // that the reference implementation produces exactly the same values as the
-  // actual algorithm.
-  //
-  // Reasoning:
-  // The reference implementation computes results directly using the simplified
-  // formula:
-  //      source_x = destination_x * source_width / destination_width
-  // ---> rounded to integers.
-  //
-  // The actual algorithm uses an iterative approach instead of multiplication
-  // and division (for better performance), which introduces very small errors,
-  // i.e. on the order of 1/256 in the xfrac values.
-  //
-  // In some corner cases, these small errors can affect rounding. For example,
-  // a reference value of 0.4996 may be rounded down, while the actual value is
-  // slightly higher and rounded up to 1.
-  //
-  // These differences are negligible in practice; they only increase the xfrac
-  // error from approximately 0.5 to about 0.504.
-  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 1479, 813>(1);
+  kleidicv::neon::resize_linear_generic_u8::generator_test<2, 1479, 813>();
+}
+
+TEST(GenericResize_u8_Generator, q32_coordinate_precision) {
+  // This ratio maximizes the rounding error of the old Q16 vector step. Q32
+  // keeps every generated weight within one Q15 unit of direct calculation.
+  kleidicv::neon::resize_linear_generic_u8::generator_test<1, 9697, 11381>();
 }

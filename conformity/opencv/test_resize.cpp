@@ -43,6 +43,15 @@ cv::Mat exec_resize_to_third(cv::Mat& input_mat) {
   return result;
 }
 
+template <size_t DstWidth, size_t DstHeight, int Type>
+cv::Mat exec_resize_to_size(cv::Mat& input_mat) {
+  cv::Mat result;
+  resize(input_mat, result,
+         cv::Size(static_cast<int>(DstWidth), static_cast<int>(DstHeight)), 0,
+         0, Type);
+  return result;
+}
+
 #if MANAGER
 template <typename T>
 static T get_threshold(int, size_t);
@@ -59,9 +68,45 @@ uint8_t get_threshold(int Factor, size_t channels) {
     return 1;
   }
 
-  // OpenCV uses 7 bit fractional part for interpolation, that results in a
-  // bigger error
+  if (channels == 2 || channels == 3) {
+    // Q32 coordinate advancement removes the extra level previously caused by
+    // accumulated Q16 step rounding.
+    return 1;
+  }
+
+  // Empirical tolerance for the finite registered OpenCV 4.14 corpus. The
+  // 1- and 4-channel Carotene path uses Q7 interpolation. This is not a bound
+  // for every API-supported width because Carotene computes coordinates in
+  // float32.
   return 4;
+}
+
+template <size_t SrcWidth, size_t SrcHeight, size_t DstWidth, size_t DstHeight,
+          int Type, size_t Format>
+bool test_resize_checkerboard_compatibility(
+    int index, RecreatedMessageQueue& request_queue,
+    RecreatedMessageQueue& reply_queue) {
+  cv::Mat input_mat(static_cast<int>(SrcHeight), static_cast<int>(SrcWidth),
+                    Format);
+  const size_t channels = CV_MAT_CN(Format);
+
+  // Checkerboard values exercise deterministic high-delta cases without
+  // relying on random data.
+  for (size_t y = 0; y < SrcHeight; ++y) {
+    uint8_t* src = input_mat.ptr<uint8_t>(static_cast<int>(y));
+    for (size_t x = 0; x < SrcWidth; ++x) {
+      for (size_t channel = 0; channel < channels; ++channel) {
+        src[x * channels + channel] = ((x + y + channel) & 1U) ? 255 : 0;
+      }
+    }
+  }
+
+  cv::Mat actual_mat =
+      exec_resize_to_size<DstWidth, DstHeight, Type>(input_mat);
+  cv::Mat expected_mat = get_expected_from_subordinate(index, request_queue,
+                                                       reply_queue, input_mat);
+  return are_matrices_different<uint8_t>(get_threshold<uint8_t>(0, channels),
+                                         actual_mat, expected_mat);
 }
 
 template <int Factor, int Type, int MinSize, int MaxSize, size_t Format>
@@ -134,7 +179,8 @@ bool test_resize_random_scale(int index, RecreatedMessageQueue& request_queue,
     cv::Mat expected_mat = get_expected_from_subordinate(
         index, request_queue, reply_queue, input_mat);
 
-    if (are_matrices_different<uint8_t>(10, actual_mat, expected_mat)) {
+    uint8_t threshold = get_threshold<uint8_t>(0, input_mat.channels());
+    if (are_matrices_different<uint8_t>(threshold, actual_mat, expected_mat)) {
       std::cout << "Failed for src_width=" << input_mat.cols
                 << " src_height=" << (input_mat.rows - 2)
                 << "  dst_width=" << expected_mat.cols
@@ -162,7 +208,8 @@ bool test_resize_to_third(int index, RecreatedMessageQueue& request_queue,
     cv::Mat expected_mat = get_expected_from_subordinate(
         index, request_queue, reply_queue, input_mat);
 
-    if (are_matrices_different<uint8_t>(5, actual_mat, expected_mat)) {
+    uint8_t threshold = get_threshold<uint8_t>(0, input_mat.channels());
+    if (are_matrices_different<uint8_t>(threshold, actual_mat, expected_mat)) {
       fail_print_matrices(dst_height, dst_width, input_mat, actual_mat,
                           expected_mat);
       return true;
@@ -193,6 +240,7 @@ std::vector<test>& resize_tests_get() {
     // TEST("Resize random scale uint8, INTER_LINEAR, 1 channel", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC1, 334, 1400>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
     TEST("Resize random scale uint8, INTER_LINEAR, 1 channel, downscale", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC1, 334, 999>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
     TEST("Resize random scale uint8, INTER_LINEAR, 1 channel, upscale", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC1, 1000, 1400>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize checkerboard compatibility uint8, INTER_LINEAR, 1 channel", (test_resize_checkerboard_compatibility<2852, 2, 3491, 53, CV_HAL_INTER_LINEAR, CV_8UC1>), (exec_resize_to_size<3491, 53, CV_HAL_INTER_LINEAR>)),
 
     TEST("Resize0.5x0.5 uint8, INTER_AREA, 2 channels", (test_resize<500, CV_HAL_INTER_AREA, 5, 32, CV_8UC2>), (exec_resize<500, CV_HAL_INTER_AREA>)),
     TEST("Resize0.5x0.5 uint8, INTER_LINEAR, 2 channels", (test_resize<500, CV_HAL_INTER_LINEAR, 5, 32, CV_8UC2>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
@@ -202,6 +250,7 @@ std::vector<test>& resize_tests_get() {
     TEST("Resize1.05x1.05 uint8, INTER_LINEAR, 2 channels", (test_resize<1050, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC2>), (exec_resize<1050, CV_HAL_INTER_LINEAR>)),
     TEST("Resize1.55x1.55 uint8, INTER_LINEAR, 2 channels", (test_resize<1550, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC2>), (exec_resize<1550, CV_HAL_INTER_LINEAR>)),
     TEST("Resize random scale uint8, INTER_LINEAR, 2 channels", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC2, 334, 1999>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize checkerboard compatibility uint8, INTER_LINEAR, 2 channels", (test_resize_checkerboard_compatibility<11869, 1, 8987, 1, CV_HAL_INTER_LINEAR, CV_8UC2>), (exec_resize_to_size<8987, 1, CV_HAL_INTER_LINEAR>)),
 
     TEST("Resize0.5x0.5 uint8, INTER_AREA, 3 channels", (test_resize<500, CV_HAL_INTER_AREA, 5, 32, CV_8UC3>), (exec_resize<500, CV_HAL_INTER_AREA>)),
     TEST("Resize0.5x0.5 uint8, INTER_LINEAR, 3 channels", (test_resize<500, CV_HAL_INTER_LINEAR, 5, 32, CV_8UC3>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
@@ -211,6 +260,7 @@ std::vector<test>& resize_tests_get() {
     TEST("Resize1.05x1.05 uint8, INTER_LINEAR, 3 channels", (test_resize<1050, CV_HAL_INTER_LINEAR, 11, 32, CV_8UC3>), (exec_resize<1050, CV_HAL_INTER_LINEAR>)),
     TEST("Resize1.55x1.55 uint8, INTER_LINEAR, 3 channels", (test_resize<1550, CV_HAL_INTER_LINEAR, 8, 32, CV_8UC3>), (exec_resize<1550, CV_HAL_INTER_LINEAR>)),
     TEST("Resize random scale uint8, INTER_LINEAR, 3 channels", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC3, 334, 1999>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize checkerboard compatibility uint8, INTER_LINEAR, 3 channels", (test_resize_checkerboard_compatibility<20540, 1, 9434, 1, CV_HAL_INTER_LINEAR, CV_8UC3>), (exec_resize_to_size<9434, 1, CV_HAL_INTER_LINEAR>)),
 
     TEST("Resize0.5x0.5 uint8, INTER_AREA, 4 channels", (test_resize<500, CV_HAL_INTER_AREA, 5, 32, CV_8UC4>), (exec_resize<500, CV_HAL_INTER_AREA>)),
     TEST("Resize0.5x0.5 uint8, INTER_LINEAR, 4 channels", (test_resize<500, CV_HAL_INTER_LINEAR, 5, 32, CV_8UC4>), (exec_resize<500, CV_HAL_INTER_LINEAR>)),
@@ -220,6 +270,7 @@ std::vector<test>& resize_tests_get() {
     TEST("Resize1.05x1.05 uint8, INTER_LINEAR, 4 channels", (test_resize<1050, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC4>), (exec_resize<1050, CV_HAL_INTER_LINEAR>)),
     TEST("Resize1.55x1.55 uint8, INTER_LINEAR, 4 channels", (test_resize<1550, CV_HAL_INTER_LINEAR, 16, 32, CV_8UC4>), (exec_resize<1550, CV_HAL_INTER_LINEAR>)),
     TEST("Resize random scale uint8, INTER_LINEAR, 4 channels", (test_resize_random_scale<CV_HAL_INTER_LINEAR, CV_8UC4, 334, 1999>), (exec_resize_random_scale<CV_HAL_INTER_LINEAR>)),
+    TEST("Resize checkerboard compatibility uint8, INTER_LINEAR, 4 channels", (test_resize_checkerboard_compatibility<3614, 2, 4569, 13, CV_HAL_INTER_LINEAR, CV_8UC4>), (exec_resize_to_size<4569, 13, CV_HAL_INTER_LINEAR>)),
 };
   // clang-format on
   return tests;

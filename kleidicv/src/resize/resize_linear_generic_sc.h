@@ -15,25 +15,29 @@
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 //------------------------------------------------------
-/// Generic resize for ratios 1/3 to 1/1, u8, 1channel
+/// Generic uint8 linear downscaling and upscaling for 1-4 channels.
+/// Supports horizontal scaling factors >= 1/3 and any vertical scaling factor.
 //------------------------------------------------------
 
 namespace resize_generic_u8 {
 
-// For the coordinate calculation, fixed-point format is used, for better
-// performance. Fixed-point format:
-// - lowest 16 bits are the fractional part, that is the kFixpBits constant
-// - at interpolation, the high 8 bits are used from the fractional part
-//   (this is a good compromise between accuracy and performance: because the
-//   result is 8bits, the error only affects the least significant 1-2 bits, see
-//   the accuracy calculation in kleidicv.h
+// Fixed-point coordinates are used for better performance:
+// - horizontal vector anchors are advanced in Q32, then narrowed to Q16
+// - in Q16 coordinates the lowest kFixpBits bits are the fractional part
+// - at interpolation, the high 15 bits are used from the fractional part
+//   with signed Q15 rounded multiplication
 // - to get the integer part, right shift by 16 bits, or zip/unzip/tbl etc. to
 //   get the bytes needed
-// - for better accuracy, rounding is needed everywhere, i.e. adding 0.5, which
-//   is 1 << 15
+// - center alignment uses 0.5 in Q16, which is 1 << 15
 
 static constexpr ptrdiff_t kFixpBits = 16;
 static constexpr ptrdiff_t kFixpHalf = (1UL << (kFixpBits - 1));
+static constexpr ptrdiff_t kInterpolationBits = 15;
+static constexpr ptrdiff_t kCoordinateBits = 32;
+
+static uint16_t interpolation_fraction(int64_t coordinate) KLEIDICV_STREAMING {
+  return static_cast<uint16_t>(coordinate) >> (kFixpBits - kInterpolationBits);
+}
 
 static svint8_t make_channel_offsets(size_t start) KLEIDICV_STREAMING {
   svbool_t pg = svptrue_b8();
@@ -110,45 +114,26 @@ class PrecalcIndicesFractions final {
     svint32_t vsx0t = make_vsx0(1);
     svint32_t vsx1b = make_vsx0(2 * svcntw());
     svint32_t vsx1t = make_vsx0(2 * svcntw() + 1);
-    // from each even 16bit element, take the low byte, and the high is 0
-    svuint8_t vsxfrac_bottom_tbl =
-        svreinterpret_u8_u16(svindex_u16(0xFF00, 0x0004));
-    // from each odd 16bit element, take the low byte, and the high is 0
-    svuint8_t vsxfrac_top_tbl =
-        svreinterpret_u8_u16(svindex_u16(0xFF02, 0x0004));
 
     svint8_t vchannels = svreinterpret_s8_u32(
         svdup_n_u32(kChannels == 4 ? 0x03020100U : 0x01000100));
 
-    // Difference in source x coordinate, for one vector path
-    const int64_t sx_fixp_step = rounding_div(
-        ((src_width_ * kStep_ / kChannels) << kFixpBits), dst_width_);
-    int64_t sx_fixp = to_src_x(0);
+    // Q32 difference in source x coordinate for one vector path. Q32 keeps
+    // accumulated error smaller while avoiding periodic recalibration.
+    const int64_t sx_coordinate_step =
+        coordinate_step(kStep_ / kChannels, src_width_, dst_width_);
+    int64_t sx_coordinate = initial_coordinate(src_width_, dst_width_);
     const int64_t max_src_index =
         std::max<int64_t>(src_width_ * kChannels - kSrcReadSize, 0L);
-    // For 1,2,4 channels dx can be iterated vector by vector, but not for 3
-    size_t dx = 0;
-    for (auto pcit = begin(); pcit.index_ < n_iterations_;
-         ++pcit, dx += kStep_ / kChannels) {
-      // Repeatedly adding sx_fixp_vector_step is faster than scaling dx to sx,
-      // but it accumulates fixed-point error; periodic recalibration resets it.
-      // The maximum per-addition error of sx_fixp_vector_step is 0.5 / (1 <<
-      // 16). Only the upper 8 bits of the 16-bit fractional part are used for
-      // interpolation, so once the accumulated error reaches 1 / (1 << 8), it
-      // can affect later stages. This corresponds to 512 additions, which is
-      // calculated by this mask.
-      constexpr uint64_t kRecalibrateCycleMask = ((1 << 9) - 1);
-      if ((pcit.index_ & kRecalibrateCycleMask) == 0) {
-        sx_fixp = to_src_x(dx);
-      }
+    for (auto pcit = begin(); pcit.index_ < n_iterations_; ++pcit) {
+      int64_t sx_fixp = narrow_coordinate(sx_coordinate);
 
       n_iterations_2x_ = (sx_fixp >> kFixpBits) * kChannels <= max_src_index
                              ? pcit.index_
                              : n_iterations_2x_;
       calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b, vsx0t, vsx1b,
-                                           vsx1t, vsxfrac_bottom_tbl,
-                                           vsxfrac_top_tbl, vchannels);
-      sx_fixp += sx_fixp_step;
+                                           vsx1t, vchannels);
+      sx_coordinate += sx_coordinate_step;
     }
     return true;
   }
@@ -181,38 +166,19 @@ class PrecalcIndicesFractions final {
     svint8_t vchannels_G = make_channel_offsets(kVL);
     svint8_t vchannels_B = make_channel_offsets(2 * kVL);
 
-    // from each even 16bit element, take the low byte, and the high is 0
-    svuint8_t vsxfrac_bottom_tbl =
-        svreinterpret_u8_u16(svindex_u16(0xFF00, 0x0004));
-    // from each odd 16bit element, take the low byte, and the high is 0
-    svuint8_t vsxfrac_top_tbl =
-        svreinterpret_u8_u16(svindex_u16(0xFF02, 0x0004));
-
     // Difference in source x coordinate, for three vector paths (one iteration
     // in this calculation)
-    const int64_t sx_fixp_step3 =
-        rounding_div((src_width_ * kStep_) << kFixpBits, dst_width_);
-    int64_t sx_fixp = to_src_x(0);
+    const int64_t sx_coordinate_step3 =
+        coordinate_step(kStep_, src_width_, dst_width_);
+    int64_t sx_coordinate = initial_coordinate(src_width_, dst_width_);
     const uint64_t max_src_index =
         std::max<int64_t>(src_width_ * kChannels - kStep_ * kRatio, 0L);
-    ptrdiff_t dx = 0;
     auto pcit = begin();
     while (pcit.index_ < n_iterations_) {
-      // Repeatedly adding sx_fixp_vector_step is faster than multiplication,
-      // but it accumulates fixed-point error; periodic recalibration resets
-      // it. The maximum per-addition error of sx_fixp_vector_step is 0.5 / (1
-      // << 16). Only the upper 8 bits of the 16-bit fractional part are used
-      // for interpolation, so once the accumulated error reaches 1 / (1 <<
-      // 8), it can affect later stages. This corresponds to 512 additions,
-      // but it will trigger each 3rd time, so the mask should be set to 128.
-      constexpr uint64_t kRecalibrateCycleMask = ((1 << 7) - 1);
-      if ((pcit.index_ & kRecalibrateCycleMask) == 0) {
-        sx_fixp = to_src_x(dx);
-      }
+      int64_t sx_fixp = narrow_coordinate(sx_coordinate);
 
       calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b_R, vsx0t_R,
-                                           vsx1b_R, vsx1t_R, vsxfrac_bottom_tbl,
-                                           vsxfrac_top_tbl, vchannels_R);
+                                           vsx1b_R, vsx1t_R, vchannels_R);
       n_iterations_2x_ = *pcit.src_index_ptr_ <= max_src_index
                              ? pcit.index_
                              : n_iterations_2x_;
@@ -221,8 +187,7 @@ class PrecalcIndicesFractions final {
         break;
       }
       calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b_G, vsx0t_G,
-                                           vsx1b_G, vsx1t_G, vsxfrac_bottom_tbl,
-                                           vsxfrac_top_tbl, vchannels_G);
+                                           vsx1b_G, vsx1t_G, vchannels_G);
       n_iterations_2x_ = *pcit.src_index_ptr_ <= max_src_index
                              ? pcit.index_
                              : n_iterations_2x_;
@@ -231,14 +196,12 @@ class PrecalcIndicesFractions final {
         break;
       }
       calculate_indices_fractions_srcindex(pcit, sx_fixp, vsx0b_B, vsx0t_B,
-                                           vsx1b_B, vsx1t_B, vsxfrac_bottom_tbl,
-                                           vsxfrac_top_tbl, vchannels_B);
+                                           vsx1b_B, vsx1t_B, vchannels_B);
       n_iterations_2x_ = *pcit.src_index_ptr_ <= max_src_index
                              ? pcit.index_
                              : n_iterations_2x_;
       ++pcit;
-      sx_fixp += sx_fixp_step3;
-      dx += kStep_;
+      sx_coordinate += sx_coordinate_step3;
     }
     return true;
   }
@@ -276,19 +239,27 @@ class PrecalcIndicesFractions final {
     return static_cast<T>((nom + denom / 2) / denom);
   }
 
-  // Scale coordinate using this formula, so the center is aligned:
-  //   source_x = (destination_x + 0.5) / scale - 0.5;
-  //   plus 1/256/2 for later rounding the fractional part to 8bits
-  // Note: return value is in fixed point format using kFixpBits for the
-  // fractional part
-  static int64_t aligned_scale(uint64_t x, uint64_t nom,
-                               uint64_t denom) KLEIDICV_STREAMING {
-    return rounding_div<int64_t>(((x << kFixpBits) + kFixpHalf) * nom, denom) -
-           kFixpHalf + (1 << (kFixpBits - 9));
+  // Keep the repeatedly advanced coordinate in Q32. The bias combines
+  // rounding to Q16 with the half-Q15-step bias used by direct Q16 calculation.
+  static int64_t initial_coordinate(size_t nom,
+                                    size_t denom) KLEIDICV_STREAMING {
+    constexpr int64_t kNarrowingBias =
+        (int64_t{1} << (kCoordinateBits - kFixpBits - 1)) +
+        (int64_t{1} << (kCoordinateBits - kFixpBits));
+    return rounding_div<int64_t>(nom << (kCoordinateBits - 1), denom) -
+           (int64_t{1} << (kCoordinateBits - 1)) + kNarrowingBias;
   }
 
-  int64_t to_src_x(size_t dx) const KLEIDICV_STREAMING {
-    return aligned_scale(dx, src_width_, dst_width_);
+  static int64_t coordinate_step(size_t destination_pixels, size_t nom,
+                                 size_t denom) KLEIDICV_STREAMING {
+    // This numerator, including rounding, fits uint64_t at the maximum
+    // supported width and architectural maximum 256-byte vector length.
+    return rounding_div<int64_t>((nom * destination_pixels) << kCoordinateBits,
+                                 denom);
+  }
+
+  static int64_t narrow_coordinate(int64_t coordinate) KLEIDICV_STREAMING {
+    return coordinate >> (kCoordinateBits - kFixpBits);
   }
 
   uint64_t clamp_src_x(int64_t sx, int64_t max_sx) const KLEIDICV_STREAMING {
@@ -302,11 +273,10 @@ class PrecalcIndicesFractions final {
   }
 
   svint32_t make_vsx0(uint64_t dx) const KLEIDICV_STREAMING {
-    // Creates source x coordinates starting with dx, stepping by 2
-    // and finally shifted left by 8, to support the later svaddhn operation
+    // Creates Q16 source x coordinates starting with dx and stepping by 2.
     int32_t sx[64];  // maximum possible vector length with 32-bit lanes
     for (size_t i = 0; i < svcntw(); ++i) {
-      sx[i] = static_cast<int32_t>(scale_x((dx + 2 * i) / kChannels) << 8);
+      sx[i] = static_cast<int32_t>(scale_x((dx + 2 * i) / kChannels));
     }
     return svld1(svptrue_b32(), sx);
   }
@@ -314,31 +284,35 @@ class PrecalcIndicesFractions final {
   void calculate_indices_fractions_srcindex(
       PrecalcIterator<kRatio> &pcit, int64_t sx_fixp, const svint32_t &vsx0b,
       const svint32_t &vsx0t, const svint32_t &vsx1b, const svint32_t &vsx1t,
-      const svuint8_t &vsxfrac_bottom_tbl, const svuint8_t &vsxfrac_top_tbl,
       [[maybe_unused]] const svint8_t &vchannels) const KLEIDICV_STREAMING {
-    // << 8: to prepare for addhn, have the fractional part in the high half
-    int32_t xfrac0 =
-        static_cast<int32_t>((sx_fixp & ((1 << kFixpBits) - 1)) << 8);
-    // get the interesting part: 8+8 bits of integer and fractional part
+    int32_t xfrac0 = static_cast<uint16_t>(sx_fixp);
+    svbool_t pg32 = svptrue_b32();
+    svint32_t vsx0b_coord = svadd_n_s32_x(pg32, vsx0b, xfrac0);
+    svint32_t vsx0t_coord = svadd_n_s32_x(pg32, vsx0t, xfrac0);
+    svint32_t vsx1b_coord = svadd_n_s32_x(pg32, vsx1b, xfrac0);
+    svint32_t vsx1t_coord = svadd_n_s32_x(pg32, vsx1t, xfrac0);
+
+    // Interleave the high halfwords containing the integer coordinates.
     svint16x2_t vsx_delta =
-        svcreate2(svaddhnt_n_s32(svaddhnb_n_s32(vsx0b, xfrac0), vsx0t, xfrac0),
-                  svaddhnt_n_s32(svaddhnb_n_s32(vsx1b, xfrac0), vsx1t, xfrac0));
+        svcreate2(svtrn2_s16(svreinterpret_s16_s32(vsx0b_coord),
+                             svreinterpret_s16_s32(vsx0t_coord)),
+                  svtrn2_s16(svreinterpret_s16_s32(vsx1b_coord),
+                             svreinterpret_s16_s32(vsx1t_coord)));
     if constexpr (kChannels == 3) {
       // When vsx0 starts from other than zero, this offset must be subtracted
       // It is done before multiplying with channels to prevent 8-bit overflow
       int16_t start{};
       svst1(svptrue_pat_b16(SV_VL1), &start, svget2(vsx_delta, 0));
-      start = static_cast<int16_t>(static_cast<uint16_t>(start) & 0xFF00U);
       vsx_delta =
           svcreate2(svsub_n_s16_x(svptrue_b16(), svget2(vsx_delta, 0), start),
                     svsub_n_s16_x(svptrue_b16(), svget2(vsx_delta, 1), start));
-      sx_fixp += (start >> 8) << kFixpBits;
+      sx_fixp += static_cast<int64_t>(start) * (int64_t{1} << kFixpBits);
     }
     svint8x2_t vsx_delta8 =
         svcreate2(svreinterpret_s8_s16(svget2(vsx_delta, 0)),
                   svreinterpret_s8_s16(svget2(vsx_delta, 1)));
     // left pixels' indices: integer part
-    svint8_t vsx0_idx = svuzp2_s8(svget2(vsx_delta8, 0), svget2(vsx_delta8, 1));
+    svint8_t vsx0_idx = svuzp1_s8(svget2(vsx_delta8, 0), svget2(vsx_delta8, 1));
     svint8_t vsx1_idx = svadd_n_s8_x(svptrue_b8(), vsx0_idx, 1);
 
     if constexpr (kUpsize) {
@@ -387,11 +361,20 @@ class PrecalcIndicesFractions final {
     svst1(svptrue_b8(), pcit.idx0_ptr_, svreinterpret_u8_s8(vsx0_idx));
     svst1(svptrue_b8(), pcit.idx1_ptr_, svreinterpret_u8_s8(vsx1_idx));
 
-    // fractional part is widened to 16 bits for further operations
+    // Extract the low halfwords containing the Q16 fractional coordinates,
+    // then convert them to Q15. The bottom and top vectors hold the weights
+    // for the even and odd byte lanes, respectively.
+    svbool_t pg16 = svptrue_b16();
     svuint16_t vsxfrac_b =
-        svreinterpret_u16_s8(svtbl2_s8(vsx_delta8, vsxfrac_bottom_tbl));
+        svlsr_n_u16_x(pg16,
+                      svuzp1_u16(svreinterpret_u16_s32(vsx0b_coord),
+                                 svreinterpret_u16_s32(vsx1b_coord)),
+                      kFixpBits - kInterpolationBits);
     svuint16_t vsxfrac_t =
-        svreinterpret_u16_s8(svtbl2_s8(vsx_delta8, vsxfrac_top_tbl));
+        svlsr_n_u16_x(pg16,
+                      svuzp1_u16(svreinterpret_u16_s32(vsx0t_coord),
+                                 svreinterpret_u16_s32(vsx1t_coord)),
+                      kFixpBits - kInterpolationBits);
     svst1(svptrue_b16(), pcit.frac_ptr_, vsxfrac_b);
     svst1_vnum(svptrue_b16(), pcit.frac_ptr_, 1, vsxfrac_t);
   }
@@ -458,22 +441,15 @@ class ResizeGenericU8Operation final {
 
   // Scale coordinate using this formula, so the center is aligned:
   //   source_x = (destination_x + 0.5) / scale - 0.5;
-  //   plus 1/256/2 for later rounding the fractional part to 8bits
+  //   plus half a Q15 step for later rounding the fractional part
   static int64_t aligned_scale(size_t x, size_t nom,
                                size_t denom) KLEIDICV_STREAMING {
     return rounding_div<int64_t>(((x << kFixpBits) + kFixpHalf) * nom, denom) -
-           kFixpHalf + (1 << (kFixpBits - 9));
+           kFixpHalf + (1 << (kFixpBits - kInterpolationBits - 1));
   }
 
   int64_t to_src_y(size_t dy) const KLEIDICV_STREAMING {
     return aligned_scale(dy, src_height_, dst_height_);
-  }
-
-  static svuint16_t svshll8b(svuint8_t a) KLEIDICV_STREAMING {
-    return svreinterpret_u16_u8(svtrn1(svdup_n_u8(0), a));
-  }
-  static svuint16_t svshll8t(svuint8_t a) KLEIDICV_STREAMING {
-    return svreinterpret_u16_u8(svtrn2(svdup_n_u8(0), a));
   }
 
   static svuint8x2_t load8x2_u8(const uint8_t *p) KLEIDICV_STREAMING {
@@ -522,6 +498,42 @@ class ResizeGenericU8Operation final {
 #endif
   }
 
+  static svint16x2_t lerp_delta(svuint8_t a, svuint8_t b,
+                                int16_t weight) KLEIDICV_STREAMING {
+    svint16_t delta_b = svreinterpret_s16_u16(svsublb(b, a));
+    svint16_t delta_t = svreinterpret_s16_u16(svsublt(b, a));
+    return svcreate2(svqrdmulh_n_s16(delta_b, weight),
+                     svqrdmulh_n_s16(delta_t, weight));
+  }
+
+  static svint16x2_t lerp_delta(svuint8_t a, svuint8_t b, svuint16_t weight_b,
+                                svuint16_t weight_t) KLEIDICV_STREAMING {
+    svint16_t delta_b = svreinterpret_s16_u16(svsublb(b, a));
+    svint16_t delta_t = svreinterpret_s16_u16(svsublt(b, a));
+    return svcreate2(svqrdmulh_s16(delta_b, svreinterpret_s16_u16(weight_b)),
+                     svqrdmulh_s16(delta_t, svreinterpret_s16_u16(weight_t)));
+  }
+
+  static svuint8_t lerp(svuint8_t a, svuint8_t b,
+                        int16_t weight) KLEIDICV_STREAMING {
+    svint16x2_t delta = lerp_delta(a, b, weight);
+
+    // Interleave the low bytes of the even- and odd-lane signed deltas.
+    svint8_t packed_delta = svtrn1_s8(svreinterpret_s8_s16(svget2(delta, 0)),
+                                      svreinterpret_s8_s16(svget2(delta, 1)));
+    return svadd_u8_x(svptrue_b8(), a, svreinterpret_u8_s8(packed_delta));
+  }
+
+  static svuint8_t lerp(svuint8_t a, svuint8_t b, svuint16_t weight_b,
+                        svuint16_t weight_t) KLEIDICV_STREAMING {
+    svint16x2_t delta = lerp_delta(a, b, weight_b, weight_t);
+
+    // Interleave the low bytes of the even- and odd-lane signed deltas.
+    svint8_t packed_delta = svtrn1_s8(svreinterpret_s8_s16(svget2(delta, 0)),
+                                      svreinterpret_s8_s16(svget2(delta, 1)));
+    return svadd_u8_x(svptrue_b8(), a, svreinterpret_u8_s8(packed_delta));
+  }
+
   svuint8_t interpolate(const PrecalcIterator<kRatio> &pcit, uint16_t yfrac,
                         svuint8_t a, svuint8_t b, svuint8_t c,
                         svuint8_t d) const KLEIDICV_STREAMING {
@@ -533,22 +545,9 @@ class ResizeGenericU8Operation final {
     svuint16_t vsxfrac_b = svld1(svptrue_b16(), pcit.frac_ptr_);
     svuint16_t vsxfrac_t = svld1_vnum(svptrue_b16(), pcit.frac_ptr_, 1);
 #endif
-    svuint16_t half = svdup_n_u16(128);
-    svuint8_t left = svaddhnb(
-        svshll8b(a), svmla_n_u16_x(svptrue_b16(), half, svsublb(c, a), yfrac));
-    svuint8_t right = svaddhnb(
-        svshll8b(b), svmla_n_u16_x(svptrue_b16(), half, svsublb(d, b), yfrac));
-    left = svaddhnt(left, svshll8t(a),
-                    svmla_n_u16_x(svptrue_b16(), half, svsublt(c, a), yfrac));
-    right = svaddhnt(right, svshll8t(b),
-                     svmla_n_u16_x(svptrue_b16(), half, svsublt(d, b), yfrac));
-
-    svuint8_t res =
-        svaddhnb(svshll8b(left),
-                 svmla_x(svptrue_b16(), half, svsublb(right, left), vsxfrac_b));
-    return svaddhnt(
-        res, svshll8t(left),
-        svmla_x(svptrue_b16(), half, svsublt(right, left), vsxfrac_t));
+    svuint8_t left = lerp(a, c, static_cast<int16_t>(yfrac));
+    svuint8_t right = lerp(b, d, static_cast<int16_t>(yfrac));
+    return lerp(left, right, vsxfrac_b, vsxfrac_t);
   }
 
   svuint8_t common_vector_path_r1(
@@ -693,13 +692,8 @@ class ResizeGenericU8Operation final {
     const uint8_t *src_bottom = &src_rows_.at(sy_bottom)[0];
     uint8_t *dst = &dst_rows_.at(static_cast<ptrdiff_t>(dy))[0];
     uint8_t *dst_end = dst + dst_width_ * kChannels;
-    // Get the highest 8 bits of the fractional part
-    // This is a good compromise between accuracy and performance
-    // Because the result is 8bits, the error only affects the least
-    // significant 1-2 bits, see the accuracy calculation in kleidicv.h
-    const int64_t sy_fixp_base = sy * (int64_t{1} << kFixpBits);
-    uint16_t yfrac =
-        static_cast<uint16_t>((sy_fixp - sy_fixp_base) >> (kFixpBits - 8));
+    // Convert the fractional part to the Q15 interpolation weight.
+    uint16_t yfrac = interpolation_fraction(sy_fixp);
     auto pcit = precalc_.begin();
     while (pcit.index_ + 1 < precalc_.n_iterations_2x()) {
       svuint8_t res0, res1;
