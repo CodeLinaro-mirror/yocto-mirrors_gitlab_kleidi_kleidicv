@@ -82,6 +82,12 @@ static kleidicv_error_t validate_standalone_lucas_kanade_alg_u8_args(
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
+#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ >= 14)
+#define KLEIDICV_LUCAS_KANADE_FN_ATTRS
+#else
+#define KLEIDICV_LUCAS_KANADE_FN_ATTRS KLEIDICV_TARGET_FN_ATTRS
+#endif
+
 template <typename Impl>
 class LucasKanadeLevelTracker {
  public:
@@ -92,7 +98,7 @@ class LucasKanadeLevelTracker {
   // multi-channel image. Uses precomputed Scharr derivatives of the previous
   // frame and
   // iteratively refines `next_points`.
-  static KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t compute(
+  static KLEIDICV_LUCAS_KANADE_FN_ATTRS kleidicv_error_t compute(
       int16_t *window, int16_t *scharr_window, const uint8_t *prev_data,
       size_t prev_data_stride, const int16_t *scharr_data,
       size_t scharr_stride_bytes, const uint8_t *next_data, size_t next_stride,
@@ -414,5 +420,7 @@ class LucasKanadePatchBuffer {
 };
 
 }  // namespace KLEIDICV_TARGET_NAMESPACE
+
+#undef KLEIDICV_LUCAS_KANADE_FN_ATTRS
 
 #endif  // KLEIDICV_STANDALONE_LUCAS_KANADE_ALG_COMMON_H
