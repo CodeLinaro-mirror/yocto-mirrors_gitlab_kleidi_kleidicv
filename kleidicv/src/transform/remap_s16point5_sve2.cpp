@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -759,11 +759,12 @@ class RemapS16Point5Replicate4ch<uint16_t> {
       // Fractions are doubled, 00112233... (will be doubled again later)
       svuint16_t frac = svtrn1(rawfrac, rawfrac);
 
-      xfrac = svand_x(pg, frac, svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
-      yfrac = svand_x(pg, svlsr_n_u16_x(pg, frac, REMAP16POINT5_FRAC_BITS),
+      svbool_t pg16 = svptrue_b16();
+      xfrac = svand_x(pg16, frac, svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+      yfrac = svand_x(pg16, svlsr_n_u16_x(pg16, frac, REMAP16POINT5_FRAC_BITS),
                       svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
-      nxfrac = svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
-      nyfrac = svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac);
+      nxfrac = svsub_u16_x(pg16, svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
+      nyfrac = svsub_u16_x(pg16, svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac);
     }
 
     svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
@@ -1119,11 +1120,12 @@ class RemapS16Point5Constant4ch<uint16_t> {
       // Fractions are doubled, 00112233... (will be doubled again later)
       svuint16_t frac = svtrn1(rawfrac, rawfrac);
 
-      xfrac = svand_x(pg, frac, svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
-      yfrac = svand_x(pg, svlsr_n_u16_x(pg, frac, REMAP16POINT5_FRAC_BITS),
+      svbool_t pg16 = svptrue_b16();
+      xfrac = svand_x(pg16, frac, svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
+      yfrac = svand_x(pg16, svlsr_n_u16_x(pg16, frac, REMAP16POINT5_FRAC_BITS),
                       svdup_n_u16(REMAP16POINT5_FRAC_MAX - 1));
-      nxfrac = svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
-      nyfrac = svsub_u16_x(pg, svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac);
+      nxfrac = svsub_u16_x(pg16, svdup_n_u16(REMAP16POINT5_FRAC_MAX), xfrac);
+      nyfrac = svsub_u16_x(pg16, svdup_n_u16(REMAP16POINT5_FRAC_MAX), yfrac);
     }
 
     svuint32_t bias = svdup_n_u32(REMAP16POINT5_FRAC_MAX_SQUARE / 2);
