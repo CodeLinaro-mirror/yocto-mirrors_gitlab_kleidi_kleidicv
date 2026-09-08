@@ -19,6 +19,17 @@
 #endif
 #include "kleidicv/transform/add_padding_by_copy.h"
 
+// Keep padding linkable from C without a C++ runtime. GCC before 11 emits a
+// strong __cxa_pure_virtual reference for the abstract operation's vtable.
+// The handler is only a diagnostic aid for invalid pure-virtual calls;
+// valid calls use the concrete overrides. Match GCC 11+ by making the reference
+// weak: if no handler is linked, the reference resolves to null. An invalid
+// call then crashes without the runtime diagnostic.
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 11 && \
+    defined(__ELF__)
+__asm__(".weak __cxa_pure_virtual");
+#endif
+
 namespace KLEIDICV_TARGET_NAMESPACE {
 
 // GCC 14+ rejects placing these template-generated virtual overrides in
