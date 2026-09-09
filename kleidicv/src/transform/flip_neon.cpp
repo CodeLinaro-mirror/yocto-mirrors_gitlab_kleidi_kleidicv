@@ -13,8 +13,10 @@
 
 namespace kleidicv::neon {
 
+namespace {
+
 template <typename VectorTraits>
-static inline typename VectorTraits::VectorType reverse_lanes(
+inline typename VectorTraits::VectorType reverse_lanes(
     typename VectorTraits::VectorType vector) {
   constexpr size_t kHalfNumLanes = VectorTraits::num_lanes() / 2;
   vector = vrev64q(vector);
@@ -22,7 +24,7 @@ static inline typename VectorTraits::VectorType reverse_lanes(
 }
 
 template <typename VectorTraits>
-static inline typename VectorTraits::Vector3Type reverse_3_lanes(
+inline typename VectorTraits::Vector3Type reverse_lanes(
     typename VectorTraits::Vector3Type vectors) {
   vectors.val[0] = reverse_lanes<VectorTraits>(vectors.val[0]);
   vectors.val[1] = reverse_lanes<VectorTraits>(vectors.val[1]);
@@ -31,93 +33,82 @@ static inline typename VectorTraits::Vector3Type reverse_3_lanes(
 }
 
 template <typename ScalarType, size_t kScalarsPerPixel>
-static inline void swap_reversed_1_block_pair(ScalarType *left,
-                                              ScalarType *right) {
+inline void swap_reversed_pixel_block_pair(ScalarType *forward_block,
+                                           ScalarType *backward_block) {
   using VectorTraits = VecTraits<ScalarType>;
   using Vector = typename VectorTraits::VectorType;
   using Vector3 = typename VectorTraits::Vector3Type;
 
   if constexpr (kScalarsPerPixel == 3) {
-    Vector3 left_vectors = vld3q(left);
-    Vector3 right_vectors = vld3q(right);
-    vst3q(right, reverse_3_lanes<VectorTraits>(left_vectors));
-    vst3q(left, reverse_3_lanes<VectorTraits>(right_vectors));
-
-    return;
+    Vector3 fwd = vld3q(forward_block);
+    Vector3 bwd = vld3q(backward_block);
+    vst3q(backward_block, reverse_lanes<VectorTraits>(fwd));
+    vst3q(forward_block, reverse_lanes<VectorTraits>(bwd));
+  } else {
+    // kScalarsPerPixel == 1
+    Vector fwd = vld1q(forward_block);
+    Vector bwd = vld1q(backward_block);
+    vst1q(backward_block, reverse_lanes<VectorTraits>(fwd));
+    vst1q(forward_block, reverse_lanes<VectorTraits>(bwd));
   }
-
-  // kScalarsPerPixel == 1
-  Vector left_pixels = vld1q(left);
-  Vector right_pixels = vld1q(right);
-  vst1q(right, reverse_lanes<VectorTraits>(left_pixels));
-  vst1q(left, reverse_lanes<VectorTraits>(right_pixels));
 }
 
-// [L0 L1 ... R0 R1] -> [rev(R1) rev(R0) ... rev(L1) rev(L0)]
-// NOTE: 2x unroll is only used in-place for 1-scalar-per-pixel blocks
 template <typename ScalarType>
-static inline void swap_reversed_2_block_pairs(ScalarType *left,
-                                               ScalarType *right) {
+inline void swap_reversed_vector_pair_2x(ScalarType *forward_vectors,
+                                         ScalarType *backward_vectors) {
   using VectorTraits = VecTraits<ScalarType>;
   using Vector = typename VectorTraits::VectorType;
 
-  Vector left_0, left_1, right_0, right_1;
-  VectorTraits::load_consecutive(left, left_0, left_1);
-  VectorTraits::load_consecutive(right, right_0, right_1);
+  Vector fwd_0, fwd_1, bwd_0, bwd_1;
+  VectorTraits::load_consecutive(forward_vectors, fwd_0, fwd_1);
+  VectorTraits::load_consecutive(backward_vectors, bwd_0, bwd_1);
 
-  VectorTraits::store_consecutive(reverse_lanes<VectorTraits>(right_1),
-                                  reverse_lanes<VectorTraits>(right_0), left);
-  VectorTraits::store_consecutive(reverse_lanes<VectorTraits>(left_1),
-                                  reverse_lanes<VectorTraits>(left_0), right);
+  VectorTraits::store_consecutive(reverse_lanes<VectorTraits>(bwd_1),
+                                  reverse_lanes<VectorTraits>(bwd_0),
+                                  forward_vectors);
+  VectorTraits::store_consecutive(reverse_lanes<VectorTraits>(fwd_1),
+                                  reverse_lanes<VectorTraits>(fwd_0),
+                                  backward_vectors);
 }
 
 template <typename ScalarType, size_t kScalarsPerPixel>
-static kleidicv_error_t flip_horizontal_in_place(Rectangle rect,
-                                                 Rows<ScalarType> rows) {
+inline void copy_row_to_dst(const ScalarType *src_row, ScalarType *dst_row,
+                            size_t row_width_in_pixels) {
   using VectorTraits = VecTraits<ScalarType>;
+  using Vector = typename VectorTraits::VectorType;
 
-  constexpr size_t kNumLanes = VectorTraits::num_lanes();
-  constexpr size_t kScalarsPerBlock = kNumLanes * kScalarsPerPixel;
-  constexpr size_t kScalarsPer2Blocks = kScalarsPerBlock * 2;
+  constexpr size_t kScalarsPerVec = VectorTraits::num_lanes();
+  constexpr size_t kScalarsPer2Vecs = kScalarsPerVec * 2;
 
-  // Two-pointer approach since swapping needed for in-place
-  for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
-    // For odd lengths the remaining middle pixel can stay in its place
-    LoopUnroll2 col_loop{rect.width() / 2, kNumLanes};
+  LoopUnroll2 column_loop{row_width_in_pixels * kScalarsPerPixel,
+                          kScalarsPerVec};
+  const ScalarType *src = src_row;
+  ScalarType *dst = dst_row;
 
-    // Factor out .at usage since expensive within unroll loop
-    ScalarType *left = &rows.at(row_idx, 0)[0];
-    ScalarType *right =
-        left + rect.width() * kScalarsPerPixel;  // avoids dereferencing
+  column_loop.unroll_twice([&](size_t) {
+    Vector scalars_0, scalars_1;
+    VectorTraits::load_consecutive(src, scalars_0, scalars_1);
+    VectorTraits::store_consecutive(scalars_0, scalars_1, dst);
+    src += kScalarsPer2Vecs;
+    dst += kScalarsPer2Vecs;
+  });
 
-    // 2x unroll to encourage ldp/stp
-    col_loop.unroll_twice_if<kScalarsPerPixel != 3>([&](size_t) {
-      right -= kScalarsPer2Blocks;
-      swap_reversed_2_block_pairs<ScalarType>(left, right);
-      left += kScalarsPer2Blocks;
-    });
+  column_loop.unroll_once([&](size_t) {
+    Vector scalars = vld1q(src);
+    vst1q(dst, scalars);
+    src += kScalarsPerVec;
+    dst += kScalarsPerVec;
+  });
 
-    col_loop.unroll_once([&](size_t) {
-      right -= kScalarsPerBlock;
-      swap_reversed_1_block_pair<ScalarType, kScalarsPerPixel>(left, right);
-      left += kScalarsPerBlock;
-    });
-
-    // Pixel-by-pixel, swap pixel with one occupying reversed position
-    col_loop.tail([&](size_t) {
-      right -= kScalarsPerPixel;
-      std::swap_ranges(left, left + kScalarsPerPixel, right);
-      left += kScalarsPerPixel;
-    });
-  }
-
-  return KLEIDICV_OK;
+  column_loop.remaining([&](size_t tail_begin, size_t tail_end) {
+    std::copy_n(src, tail_end - tail_begin, dst);
+  });
 }
 
 template <typename ScalarType, size_t kScalarsPerPixel>
-static kleidicv_error_t flip_horizontal_to_dst(Rectangle rect,
-                                               Rows<const ScalarType> src_rows,
-                                               Rows<ScalarType> dst_rows) {
+inline void copy_reversed_row_to_dst(const ScalarType *src_row,
+                                     ScalarType *dst_row,
+                                     size_t row_width_in_pixels) {
   using VectorTraits = VecTraits<ScalarType>;
   using Vector = typename VectorTraits::VectorType;
   using Vector3 = typename VectorTraits::Vector3Type;
@@ -126,93 +117,249 @@ static kleidicv_error_t flip_horizontal_to_dst(Rectangle rect,
   constexpr size_t kScalarsPerBlock = kNumLanes * kScalarsPerPixel;
   constexpr size_t kScalarsPer2Blocks = kScalarsPerBlock * 2;
 
-  for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
-    // Left-to-right has better performance for out-of-place
-    LoopUnroll2 col_loop{rect.width(), kNumLanes};
+  LoopUnroll2 column_loop{row_width_in_pixels, kNumLanes};
+  const ScalarType *src = src_row;
+  ScalarType *dst = dst_row + row_width_in_pixels * kScalarsPerPixel;
 
-    // Factor out .at usage since expensive within unroll loop
-    const ScalarType *src = &src_rows.at(row_idx, 0)[0];
-    ScalarType *dst = &dst_rows.at(row_idx, 0)[0] +
-                      rect.width() * kScalarsPerPixel;  // avoids dereferencing
+  column_loop.unroll_twice([&](size_t) {
+    dst -= kScalarsPer2Blocks;
+    if constexpr (kScalarsPerPixel == 3) {
+      // 2x unroll to encourage out-of-order optimisation
+      Vector3 vectors_0 = vld3q(src);
+      Vector3 vectors_1 = vld3q(src + kScalarsPerBlock);
+      vst3q(dst, reverse_lanes<VectorTraits>(vectors_1));
+      vst3q(dst + kScalarsPerBlock, reverse_lanes<VectorTraits>(vectors_0));
+    } else {
+      // 2x unroll to encourage ldp/stp
+      Vector pixels_0, pixels_1;
+      VectorTraits::load_consecutive(src, pixels_0, pixels_1);
+      VectorTraits::store_consecutive(reverse_lanes<VectorTraits>(pixels_1),
+                                      reverse_lanes<VectorTraits>(pixels_0),
+                                      dst);
+    }
+    src += kScalarsPer2Blocks;
+  });
 
-    col_loop.unroll_twice([&](size_t) {
-      dst -= kScalarsPer2Blocks;
+  column_loop.unroll_once([&](size_t) {
+    dst -= kScalarsPerBlock;
+    if constexpr (kScalarsPerPixel == 3) {
+      Vector3 vectors = vld3q(src);
+      vst3q(dst, reverse_lanes<VectorTraits>(vectors));
+    } else {
+      Vector pixels = vld1q(src);
+      vst1q(dst, reverse_lanes<VectorTraits>(pixels));
+    }
+    src += kScalarsPerBlock;
+  });
 
-      if constexpr (kScalarsPerPixel == 3) {
-        // 2x unroll to encourage out-of-order optimisation
-        Vector3 vectors_0 = vld3q(src);
-        Vector3 vectors_1 = vld3q(src + kScalarsPerBlock);
-        vst3q(dst, reverse_3_lanes<VectorTraits>(vectors_1));
-        vst3q(dst + kScalarsPerBlock, reverse_3_lanes<VectorTraits>(vectors_0));
-      } else {
-        // 2x unroll to encourage ldp/stp
-        Vector pixels_0, pixels_1;
-        VectorTraits::load_consecutive(src, pixels_0, pixels_1);
-        VectorTraits::store_consecutive(reverse_lanes<VectorTraits>(pixels_1),
-                                        reverse_lanes<VectorTraits>(pixels_0),
-                                        dst);
-      }
-
-      src += kScalarsPer2Blocks;
-    });
-
-    col_loop.unroll_once([&](size_t) {
-      dst -= kScalarsPerBlock;
-
-      if constexpr (kScalarsPerPixel == 3) {
-        Vector3 vectors = vld3q(src);
-        vst3q(dst, reverse_3_lanes<VectorTraits>(vectors));
-      } else {
-        Vector pixels = vld1q(src);
-        vst1q(dst, reverse_lanes<VectorTraits>(pixels));
-      }
-
-      src += kScalarsPerBlock;
-    });
-
-    // Copy to reversed position pixel-by-pixel
-    col_loop.tail([&](size_t) {
-      dst -= kScalarsPerPixel;
-      std::copy_n(src, kScalarsPerPixel, dst);
-      src += kScalarsPerPixel;
-    });
-  }
-
-  return KLEIDICV_OK;
+  // Copy to reversed position pixel-by-pixel
+  column_loop.tail([&](size_t) {
+    dst -= kScalarsPerPixel;
+    std::copy_n(src, kScalarsPerPixel, dst);
+    src += kScalarsPerPixel;
+  });
 }
 
 template <typename ScalarType, size_t kScalarsPerPixel>
-static kleidicv_error_t flip(const void *src_void, size_t src_stride,
-                             size_t width, size_t height, void *dst_void,
-                             size_t dst_stride, int flip_mode) {
+inline void swap_row_pair_in_place(ScalarType *top_row, ScalarType *bottom_row,
+                                   size_t row_width_in_pixels) {
+  using VectorTraits = VecTraits<ScalarType>;
+  using Vector = typename VectorTraits::VectorType;
+
+  constexpr size_t kScalarsPerVec = VectorTraits::num_lanes();
+  constexpr size_t kScalarsPer2Vecs = kScalarsPerVec * 2;
+
+  LoopUnroll2 column_loop{row_width_in_pixels * kScalarsPerPixel,
+                          kScalarsPerVec};
+
+  column_loop.unroll_twice([&](size_t) {
+    Vector top_scalars_0, top_scalars_1, bottom_scalars_0, bottom_scalars_1;
+    VectorTraits::load_consecutive(top_row, top_scalars_0, top_scalars_1);
+    VectorTraits::load_consecutive(bottom_row, bottom_scalars_0,
+                                   bottom_scalars_1);
+    VectorTraits::store_consecutive(top_scalars_0, top_scalars_1, bottom_row);
+    VectorTraits::store_consecutive(bottom_scalars_0, bottom_scalars_1,
+                                    top_row);
+    top_row += kScalarsPer2Vecs;
+    bottom_row += kScalarsPer2Vecs;
+  });
+
+  column_loop.unroll_once([&](size_t) {
+    Vector top_scalars = vld1q(top_row);
+    Vector bottom_scalars = vld1q(bottom_row);
+    vst1q(top_row, bottom_scalars);
+    vst1q(bottom_row, top_scalars);
+    top_row += kScalarsPerVec;
+    bottom_row += kScalarsPerVec;
+  });
+
+  column_loop.remaining([&](size_t tail_begin, size_t tail_end) {
+    std::swap_ranges(top_row, top_row + (tail_end - tail_begin), bottom_row);
+  });
+}
+
+template <typename ScalarType, size_t kScalarsPerPixel>
+inline void swap_reversed_row_pair_in_place(ScalarType *top_row_start,
+                                            ScalarType *bottom_row_start,
+                                            size_t row_width_in_pixels,
+                                            size_t num_pixels_to_swap) {
+  using VectorTraits = VecTraits<ScalarType>;
+
+  constexpr size_t kScalarsPerVector = VectorTraits::num_lanes();
+  constexpr size_t kScalarsPerBlock = kScalarsPerVector * kScalarsPerPixel;
+  constexpr size_t kScalarsPer2Blocks = kScalarsPerBlock * 2;
+
+  LoopUnroll2 column_loop{num_pixels_to_swap, kScalarsPerVector};
+  ScalarType *forward = top_row_start;
+  ScalarType *backward =
+      bottom_row_start + row_width_in_pixels * kScalarsPerPixel;
+
+  // 2x unroll to encourage ldp/stp
+  column_loop.unroll_twice_if<kScalarsPerPixel != 3>([&](size_t) {
+    backward -= kScalarsPer2Blocks;
+    swap_reversed_vector_pair_2x<ScalarType>(forward, backward);
+    forward += kScalarsPer2Blocks;
+  });
+
+  column_loop.unroll_once([&](size_t) {
+    backward -= kScalarsPerBlock;
+    swap_reversed_pixel_block_pair<ScalarType, kScalarsPerPixel>(forward,
+                                                                 backward);
+    forward += kScalarsPerBlock;
+  });
+
+  // Pixel-by-pixel, swap pixel with one occupying reversed position
+  column_loop.tail([&](size_t) {
+    backward -= kScalarsPerPixel;
+    std::swap_ranges(forward, forward + kScalarsPerPixel, backward);
+    forward += kScalarsPerPixel;
+  });
+}
+
+template <typename ScalarType, size_t kScalarsPerPixel>
+kleidicv_error_t flip_to_dst(Rectangle rect, Rows<const ScalarType> src_rows,
+                             Rows<ScalarType> dst_rows,
+                             kleidicv_flip_mode_t flip_mode) {
+  switch (flip_mode) {
+    case KLEIDICV_FLIP_HORIZONTAL:
+      for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
+        const ScalarType *src_row = &src_rows.at(row_idx, 0)[0];
+        ScalarType *dst_row = &dst_rows.at(row_idx, 0)[0];
+
+        copy_reversed_row_to_dst<ScalarType, kScalarsPerPixel>(src_row, dst_row,
+                                                               rect.width());
+      }
+      return KLEIDICV_OK;
+
+    case KLEIDICV_FLIP_VERTICAL:
+      for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
+        const ScalarType *src_row = &src_rows.at(row_idx, 0)[0];
+        ScalarType *dst_row = &dst_rows.at(rect.height() - row_idx - 1, 0)[0];
+
+        copy_row_to_dst<ScalarType, kScalarsPerPixel>(src_row, dst_row,
+                                                      rect.width());
+      }
+      return KLEIDICV_OK;
+
+    case KLEIDICV_FLIP_BOTH:
+      for (size_t src_row_idx = 0; src_row_idx < rect.height(); ++src_row_idx) {
+        const ScalarType *src_row = &src_rows.at(src_row_idx, 0)[0];
+        ScalarType *dst_row =
+            &dst_rows.at(rect.height() - src_row_idx - 1, 0)[0];
+
+        copy_reversed_row_to_dst<ScalarType, kScalarsPerPixel>(src_row, dst_row,
+                                                               rect.width());
+      }
+      return KLEIDICV_OK;
+
+    default:
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+}
+
+template <typename ScalarType, size_t kScalarsPerPixel>
+kleidicv_error_t flip_in_place(Rectangle rect, Rows<ScalarType> rows,
+                               kleidicv_flip_mode_t flip_mode) {
+  switch (flip_mode) {
+    case KLEIDICV_FLIP_HORIZONTAL:
+      for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
+        ScalarType *row = &rows.at(row_idx, 0)[0];
+
+        // For odd-width same-row, the middle pixel can stay in its place
+        swap_reversed_row_pair_in_place<ScalarType, kScalarsPerPixel>(
+            row, row, rect.width(), rect.width() / 2);
+      }
+      return KLEIDICV_OK;
+
+    case KLEIDICV_FLIP_VERTICAL:
+      // For odd heights, the middle row will stay in its place unchanged
+      for (size_t top_row_idx = 0, bottom_row_idx = rect.height() - 1;
+           top_row_idx < rect.height() / 2; ++top_row_idx, --bottom_row_idx) {
+        ScalarType *top_row = &rows.at(top_row_idx, 0)[0];
+        ScalarType *bottom_row = &rows.at(bottom_row_idx, 0)[0];
+
+        swap_row_pair_in_place<ScalarType, kScalarsPerPixel>(
+            top_row, bottom_row, rect.width());
+      }
+      return KLEIDICV_OK;
+
+    case KLEIDICV_FLIP_BOTH:
+      for (size_t row_idx = 0; row_idx < rect.height() / 2; ++row_idx) {
+        ScalarType *top_row = &rows.at(row_idx, 0)[0];
+        ScalarType *bottom_row = &rows.at(rect.height() - row_idx - 1, 0)[0];
+
+        swap_reversed_row_pair_in_place<ScalarType, kScalarsPerPixel>(
+            top_row, bottom_row, rect.width(), rect.width());
+      }
+
+      // Middle row (for odd heights) can be processed more efficiently
+      if (rect.height() % 2 != 0) {
+        ScalarType *middle_row = &rows.at(rect.height() / 2, 0)[0];
+
+        swap_reversed_row_pair_in_place<ScalarType, kScalarsPerPixel>(
+            middle_row, middle_row, rect.width(), rect.width() / 2);
+      }
+
+      return KLEIDICV_OK;
+
+    default:
+      return KLEIDICV_ERROR_NOT_IMPLEMENTED;
+  }
+}
+
+template <typename ScalarType, size_t kScalarsPerPixel>
+kleidicv_error_t flip(const void *src_void, size_t src_stride, size_t width,
+                      size_t height, void *dst_void, size_t dst_stride,
+                      kleidicv_flip_mode_t flip_mode) {
   MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src, src_void);
   MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst, dst_void);
   CHECK_POINTER_AND_STRIDE(src, src_stride, height);
   CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
   CHECK_IMAGE_SIZE(width, height);
 
+  const bool in_place = (src == dst);
+  if (in_place && src_stride != dst_stride) {
+    return KLEIDICV_ERROR_RANGE;
+  }
+
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride, kScalarsPerPixel};
   Rows<ScalarType> dst_rows{dst, dst_stride, kScalarsPerPixel};
 
-  const bool in_place = (src == dst);
-
-  if (flip_mode <= 0) {
-    return KLEIDICV_ERROR_NOT_IMPLEMENTED;
-  }
-
   if (in_place) {
-    return flip_horizontal_in_place<ScalarType, kScalarsPerPixel>(rect,
-                                                                  dst_rows);
+    return flip_in_place<ScalarType, kScalarsPerPixel>(rect, dst_rows,
+                                                       flip_mode);
   }
-  return flip_horizontal_to_dst<ScalarType, kScalarsPerPixel>(rect, src_rows,
-                                                              dst_rows);
+  return flip_to_dst<ScalarType, kScalarsPerPixel>(rect, src_rows, dst_rows,
+                                                   flip_mode);
 }
+
+}  // namespace
 
 KLEIDICV_TARGET_FN_ATTRS
 kleidicv_error_t flip(const void *src, size_t src_stride, size_t width,
                       size_t height, void *dst, size_t dst_stride,
-                      int flip_mode, size_t pixel_size) {
+                      kleidicv_flip_mode_t flip_mode, size_t pixel_size) {
   switch (pixel_size) {
     case sizeof(uint8_t):
       return flip<uint8_t, 1>(src, src_stride, width, height, dst, dst_stride,

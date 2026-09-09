@@ -17,7 +17,7 @@ This changelog aims to follow the guiding principles of
 
 ### Added
 - `kleidicv_yuv_to_rgb_u8` now supports YUV 4:2:0 semi-planar (YUV420SP) input.
-- NEON-optimised kernel for horizontal image flip (`flip_mode > 0`).
+- In-place and out-of-place image flip support.
 - Support for OpenCV 4.14.
 
 ### Changed

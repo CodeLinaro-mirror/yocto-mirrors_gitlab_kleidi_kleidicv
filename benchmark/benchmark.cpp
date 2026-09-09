@@ -216,13 +216,13 @@ static void count_nonzeros_u8(benchmark::State& state) {
 }
 BENCHMARK(count_nonzeros_u8);
 
-template <typename T, int FlipMode>
+template <typename T, kleidicv_flip_mode_t kFlipMode>
 static void bench_flip(benchmark::State& state) {
   bench_functor(state, []() {
     (void)kleidicv_flip(get_source_buffer_a<T>(), image_width * sizeof(T),
                         image_width, image_height,
                         get_destination_buffer_a<T>(), image_width * sizeof(T),
-                        FlipMode, sizeof(T));
+                        kFlipMode, sizeof(T));
   });
 }
 
@@ -232,12 +232,26 @@ static void bench_flip(benchmark::State& state) {
   }                                           \
   BENCHMARK(name)
 
-BENCH_FLIP(flip_u8, uint8_t, 1);
-BENCH_FLIP(flip_u16, uint16_t, 1);
-BENCH_FLIP(flip_u24, uint8_t[3], 1);
-BENCH_FLIP(flip_u32, uint32_t, 1);
-BENCH_FLIP(flip_u48, uint16_t[3], 1);
-BENCH_FLIP(flip_u64, uint64_t, 1);
+BENCH_FLIP(flip_horizontal_u8, uint8_t, KLEIDICV_FLIP_HORIZONTAL);
+BENCH_FLIP(flip_horizontal_u16, uint16_t, KLEIDICV_FLIP_HORIZONTAL);
+BENCH_FLIP(flip_horizontal_u24, uint8_t[3], KLEIDICV_FLIP_HORIZONTAL);
+BENCH_FLIP(flip_horizontal_u32, uint32_t, KLEIDICV_FLIP_HORIZONTAL);
+BENCH_FLIP(flip_horizontal_u48, uint16_t[3], KLEIDICV_FLIP_HORIZONTAL);
+BENCH_FLIP(flip_horizontal_u64, uint64_t, KLEIDICV_FLIP_HORIZONTAL);
+
+BENCH_FLIP(flip_vertical_u8, uint8_t, KLEIDICV_FLIP_VERTICAL);
+BENCH_FLIP(flip_vertical_u16, uint16_t, KLEIDICV_FLIP_VERTICAL);
+BENCH_FLIP(flip_vertical_u24, uint8_t[3], KLEIDICV_FLIP_VERTICAL);
+BENCH_FLIP(flip_vertical_u32, uint32_t, KLEIDICV_FLIP_VERTICAL);
+BENCH_FLIP(flip_vertical_u48, uint16_t[3], KLEIDICV_FLIP_VERTICAL);
+BENCH_FLIP(flip_vertical_u64, uint64_t, KLEIDICV_FLIP_VERTICAL);
+
+BENCH_FLIP(flip_both_u8, uint8_t, KLEIDICV_FLIP_BOTH);
+BENCH_FLIP(flip_both_u16, uint16_t, KLEIDICV_FLIP_BOTH);
+BENCH_FLIP(flip_both_u24, uint8_t[3], KLEIDICV_FLIP_BOTH);
+BENCH_FLIP(flip_both_u32, uint32_t, KLEIDICV_FLIP_BOTH);
+BENCH_FLIP(flip_both_u48, uint16_t[3], KLEIDICV_FLIP_BOTH);
+BENCH_FLIP(flip_both_u64, uint64_t, KLEIDICV_FLIP_BOTH);
 
 template <typename T, int kAngle>
 static void bench_rotate(benchmark::State& state) {

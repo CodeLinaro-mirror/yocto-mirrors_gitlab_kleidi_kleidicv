@@ -450,6 +450,9 @@ class VecTraits<int8_t> : public VecTraitsBase<int8_t> {
   static inline svint8_t svdup(int8_t v) KLEIDICV_STREAMING {
     return svdup_s8(v);
   }
+  static inline svint8_t svindex(int8_t base, int8_t step) KLEIDICV_STREAMING {
+    return svindex_s8(base, step);
+  }
   static inline svint8_t svreinterpret(svuint8_t v) KLEIDICV_STREAMING {
     return svreinterpret_s8(v);
   }
@@ -464,6 +467,10 @@ class VecTraits<uint8_t> : public VecTraitsBase<uint8_t> {
  public:
   static inline svuint8_t svdup(uint8_t v) KLEIDICV_STREAMING {
     return svdup_u8(v);
+  }
+  static inline svuint8_t svindex(uint8_t base,
+                                  uint8_t step) KLEIDICV_STREAMING {
+    return svindex_u8(base, step);
   }
   static inline svuint8_t svreinterpret(svint8_t v) KLEIDICV_STREAMING {
     return svreinterpret_u8(v);
@@ -484,6 +491,10 @@ class VecTraits<int16_t> : public VecTraitsBase<int16_t> {
   static inline svint16_t svdup(int16_t v) KLEIDICV_STREAMING {
     return svdup_s16(v);
   }
+  static inline svint16_t svindex(int16_t base,
+                                  int16_t step) KLEIDICV_STREAMING {
+    return svindex_s16(base, step);
+  }
   static inline svint16_t svreinterpret(svuint16_t v) KLEIDICV_STREAMING {
     return svreinterpret_s16(v);
   }
@@ -494,6 +505,10 @@ class VecTraits<uint16_t> : public VecTraitsBase<uint16_t> {
  public:
   static inline svuint16_t svdup(uint16_t v) KLEIDICV_STREAMING {
     return svdup_u16(v);
+  }
+  static inline svuint16_t svindex(uint16_t base,
+                                   uint16_t step) KLEIDICV_STREAMING {
+    return svindex_u16(base, step);
   }
   static inline svuint16_t svreinterpret(svint16_t v) KLEIDICV_STREAMING {
     return svreinterpret_u16(v);
@@ -506,6 +521,10 @@ class VecTraits<int32_t> : public VecTraitsBase<int32_t> {
   static inline svint32_t svdup(int32_t v) KLEIDICV_STREAMING {
     return svdup_s32(v);
   }
+  static inline svint32_t svindex(int32_t base,
+                                  int32_t step) KLEIDICV_STREAMING {
+    return svindex_s32(base, step);
+  }
   static inline svint32_t svreinterpret(svuint32_t v) KLEIDICV_STREAMING {
     return svreinterpret_s32(v);
   }
@@ -516,6 +535,10 @@ class VecTraits<uint32_t> : public VecTraitsBase<uint32_t> {
  public:
   static inline svuint32_t svdup(uint32_t v) KLEIDICV_STREAMING {
     return svdup_u32(v);
+  }
+  static inline svuint32_t svindex(uint32_t base,
+                                   uint32_t step) KLEIDICV_STREAMING {
+    return svindex_u32(base, step);
   }
   static inline svuint32_t svreinterpret(svint32_t v) KLEIDICV_STREAMING {
     return svreinterpret_u32(v);
@@ -528,6 +551,10 @@ class VecTraits<int64_t> : public VecTraitsBase<int64_t> {
   static inline svint64_t svdup(int64_t v) KLEIDICV_STREAMING {
     return svdup_s64(v);
   }
+  static inline svint64_t svindex(int64_t base,
+                                  int64_t step) KLEIDICV_STREAMING {
+    return svindex_s64(base, step);
+  }
   static inline svint64_t svreinterpret(svuint64_t v) KLEIDICV_STREAMING {
     return svreinterpret_s64(v);
   }
@@ -538,6 +565,10 @@ class VecTraits<uint64_t> : public VecTraitsBase<uint64_t> {
  public:
   static inline svuint64_t svdup(uint64_t v) KLEIDICV_STREAMING {
     return svdup_u64(v);
+  }
+  static inline svuint64_t svindex(uint64_t base,
+                                   uint64_t step) KLEIDICV_STREAMING {
+    return svindex_u64(base, step);
   }
   static inline svuint64_t svreinterpret(svint64_t v) KLEIDICV_STREAMING {
     return svreinterpret_u64(v);

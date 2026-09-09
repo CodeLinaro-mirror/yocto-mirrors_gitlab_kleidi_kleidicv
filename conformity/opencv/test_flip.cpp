@@ -106,6 +106,47 @@ std::vector<test>& flip_tests_get() {
       FLIP_INPLACE_TEST(uint16_t, 2, "Horizontal", 1, "U16"),
       FLIP_INPLACE_TEST(uint16_t, 3, "Horizontal", 1, "U16"),
       FLIP_INPLACE_TEST(uint16_t, 4, "Horizontal", 1, "U16"),
+
+      FLIP_TEST(uint8_t, 1, "Vertical", 0, "U8"),
+      FLIP_TEST(uint8_t, 2, "Vertical", 0, "U8"),
+      FLIP_TEST(uint8_t, 3, "Vertical", 0, "U8"),
+      FLIP_TEST(uint8_t, 4, "Vertical", 0, "U8"),
+      FLIP_TEST(uint16_t, 1, "Vertical", 0, "U16"),
+      FLIP_TEST(uint16_t, 2, "Vertical", 0, "U16"),
+      FLIP_TEST(uint16_t, 3, "Vertical", 0, "U16"),
+      FLIP_TEST(uint16_t, 4, "Vertical", 0, "U16"),
+
+      FLIP_INPLACE_TEST(uint8_t, 1, "Vertical", 0, "U8"),
+      FLIP_INPLACE_TEST(uint8_t, 2, "Vertical", 0, "U8"),
+      FLIP_INPLACE_TEST(uint8_t, 3, "Vertical", 0, "U8"),
+      FLIP_INPLACE_TEST(uint8_t, 4, "Vertical", 0, "U8"),
+      FLIP_INPLACE_TEST(uint16_t, 1, "Vertical", 0, "U16"),
+      FLIP_INPLACE_TEST(uint16_t, 2, "Vertical", 0, "U16"),
+      FLIP_INPLACE_TEST(uint16_t, 3, "Vertical", 0, "U16"),
+      FLIP_INPLACE_TEST(uint16_t, 4, "Vertical", 0, "U16"),
+
+      FLIP_TEST(uint8_t, 1, "Both", -1, "U8"),
+      FLIP_TEST(uint8_t, 2, "Both", -1, "U8"),
+      FLIP_TEST(uint8_t, 3, "Both", -1, "U8"),
+      FLIP_TEST(uint8_t, 4, "Both", -1, "U8"),
+      FLIP_TEST(uint16_t, 1, "Both", -1, "U16"),
+      FLIP_TEST(uint16_t, 2, "Both", -1, "U16"),
+      FLIP_TEST(uint16_t, 3, "Both", -1, "U16"),
+      FLIP_TEST(uint16_t, 4, "Both", -1, "U16"),
+
+      FLIP_INPLACE_TEST(uint8_t, 1, "Both", -1, "U8"),
+      FLIP_INPLACE_TEST(uint8_t, 2, "Both", -1, "U8"),
+      FLIP_INPLACE_TEST(uint8_t, 3, "Both", -1, "U8"),
+      FLIP_INPLACE_TEST(uint8_t, 4, "Both", -1, "U8"),
+      FLIP_INPLACE_TEST(uint16_t, 1, "Both", -1, "U16"),
+      FLIP_INPLACE_TEST(uint16_t, 2, "Both", -1, "U16"),
+      FLIP_INPLACE_TEST(uint16_t, 3, "Both", -1, "U16"),
+      FLIP_INPLACE_TEST(uint16_t, 4, "Both", -1, "U16"),
+
+      // Verify that the HAL converts OpenCV flipCode values to the
+      // corresponding KleidiCV flip modes
+      FLIP_TEST(uint8_t, 1, "Horizontal (FlipCode=2)", 2, "U8"),
+      FLIP_TEST(uint8_t, 1, "Both (FlipCode=-2)", -2, "U8"),
   };
 
   return tests;

@@ -1118,10 +1118,20 @@ int flip(int src_type, const uchar *src_data, size_t src_step, int src_width,
   // Pixel sizes supported (in bytes): 1, 2, 3, 4, 6 or 8
   const size_t element_size = CV_ELEM_SIZE(src_type);
 
+  kleidicv_flip_mode_t kleidicv_flip_mode;
+  if (flip_mode == 0) {
+    kleidicv_flip_mode = KLEIDICV_FLIP_VERTICAL;
+  } else if (flip_mode > 0) {
+    kleidicv_flip_mode = KLEIDICV_FLIP_HORIZONTAL;
+  } else {
+    kleidicv_flip_mode = KLEIDICV_FLIP_BOTH;
+  }
+
   return convert_error(kleidicv_flip(
       reinterpret_cast<const void *>(src_data), src_step,
       static_cast<size_t>(src_width), static_cast<size_t>(src_height),
-      reinterpret_cast<void *>(dst_data), dst_step, flip_mode, element_size));
+      reinterpret_cast<void *>(dst_data), dst_step, kleidicv_flip_mode,
+      element_size));
 }
 
 int rotate(int src_type, const uchar *src_data, size_t src_step, int src_width,

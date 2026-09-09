@@ -759,6 +759,51 @@ TEST(SmeApi, ResizeParity) {
   expect_same_array(resize_cpu_f32, resize_sme_f32);
 }
 
+TEST(SmeApi, FlipParity) {
+  constexpr size_t kPixelSize = 3;
+  constexpr size_t kFlipWidth = 17;
+  constexpr size_t kFlipHeight = 11;
+
+  // Generate test image
+  test::Array2D<uint8_t> flip_src{kFlipWidth * kPixelSize, kFlipHeight,
+                                  kPixelSize};
+  fill_array(flip_src);
+
+  for (kleidicv_flip_mode_t flip_mode :
+       {KLEIDICV_FLIP_HORIZONTAL, KLEIDICV_FLIP_VERTICAL, KLEIDICV_FLIP_BOTH}) {
+    test::Array2D<uint8_t> flip_cpu{kFlipWidth * kPixelSize, kFlipHeight,
+                                    kPixelSize};
+    test::Array2D<uint8_t> flip_sme{kFlipWidth * kPixelSize, kFlipHeight,
+                                    kPixelSize};
+
+    // Try default & SME-preferred dispatch routes
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_flip(flip_src.data(), flip_src.stride(), kFlipWidth,
+                            kFlipHeight, flip_cpu.data(), flip_cpu.stride(),
+                            flip_mode, kPixelSize));
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_flip_sme(flip_src.data(), flip_src.stride(), kFlipWidth,
+                                kFlipHeight, flip_sme.data(), flip_sme.stride(),
+                                flip_mode, kPixelSize));
+
+    expect_same_array(flip_cpu, flip_sme);
+
+    // Also test in-place on independent deep copies
+    test::Array2D<uint8_t> in_place_cpu = flip_src;
+    test::Array2D<uint8_t> in_place_sme = flip_src;
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_flip(in_place_cpu.data(), in_place_cpu.stride(),
+                            kFlipWidth, kFlipHeight, in_place_cpu.data(),
+                            in_place_cpu.stride(), flip_mode, kPixelSize));
+    EXPECT_EQ(KLEIDICV_OK,
+              kleidicv_flip_sme(in_place_sme.data(), in_place_sme.stride(),
+                                kFlipWidth, kFlipHeight, in_place_sme.data(),
+                                in_place_sme.stride(), flip_mode, kPixelSize));
+    expect_same_array(flip_cpu, in_place_cpu);
+    expect_same_array(flip_cpu, in_place_sme);
+  }
+}
+
 TEST(SmeApi, TransposeParity) {
   constexpr size_t kPixelSize = 3;
   constexpr size_t kTransposeWidth = 17;

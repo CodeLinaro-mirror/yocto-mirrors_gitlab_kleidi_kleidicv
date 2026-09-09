@@ -7,4 +7,6 @@
 #include "kleidicv/transform/flip.h"
 
 KLEIDICV_MULTIVERSION_C_API_WITH_SME(kleidicv_flip, &kleidicv::neon::flip,
-                                     nullptr, nullptr, nullptr);
+                                     &kleidicv::sve2::flip,
+                                     &kleidicv::sme::flip,
+                                     &kleidicv::sme2::flip);

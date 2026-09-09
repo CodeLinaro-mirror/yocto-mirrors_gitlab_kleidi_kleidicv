@@ -86,6 +86,16 @@ typedef enum {
   KLEIDICV_INTERPOLATION_LINEAR,
 } kleidicv_interpolation_type_t;
 
+/// KleidiCV flip modes
+typedef enum {
+  /// Flip horizontally
+  KLEIDICV_FLIP_HORIZONTAL = 1 << 0,
+  /// Flip vertically
+  KLEIDICV_FLIP_VERTICAL = 1 << 1,
+  /// Flip both horizontally and vertically
+  KLEIDICV_FLIP_BOTH = KLEIDICV_FLIP_HORIZONTAL | KLEIDICV_FLIP_VERTICAL,
+} kleidicv_flip_mode_t;
+
 /// Internal structure where optical flow LK pyramid stores its state
 typedef struct kleidicv_optical_flow_pyr_lk_pyramid_t_
     kleidicv_optical_flow_pyr_lk_pyramid_t;
