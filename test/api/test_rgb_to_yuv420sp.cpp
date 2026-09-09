@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -257,6 +257,21 @@ class RGB2YUV420SpTest : public testing::Test {
 
 TEST_F(RGB2YUV420SpTest, ConvertspaddedInputsWithAllParamCombinations) {
   for (const auto& params : get_test_cases()) {
+    run_test_case(params);
+  }
+}
+
+TEST_F(RGB2YUV420SpTest, ChromaVectorBoundaries) {
+  const size_t vector_pixels = test::Options::vector_lanes<uint8_t>();
+  const auto cases = generate_test_cases(
+      {vector_pixels - 1, vector_pixels, vector_pixels + 1,
+       2 * vector_pixels - 1, 2 * vector_pixels, 2 * vector_pixels + 1},
+      {3}, {2}, {3, 4}, {3, 4}, {true, false}, {true, false});
+  for (const auto& params : cases) {
+    SCOPED_TRACE(testing::Message()
+                 << "width=" << params.width << " height=" << params.height
+                 << " channels=" << params.channels
+                 << " nv21=" << params.is_nv21 << " rgb=" << params.is_rgb);
     run_test_case(params);
   }
 }

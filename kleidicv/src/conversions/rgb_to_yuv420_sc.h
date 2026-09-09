@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -269,8 +269,9 @@ class RGBxorBGRxToYUV420 {
     svint16_t uv_t =
         svuzp2_s16(svreinterpret_s16(uv(2)), svreinterpret_s16(uv(3)));
 
-    uv_b = svasr_n_s16_x(pg, uv_b, kWeightScale - 16);
-    uv_t = svasr_n_s16_x(pg, uv_t, kWeightScale - 16);
+    svbool_t pg16 = svptrue_b16();
+    uv_b = svasr_n_s16_x(pg16, uv_b, kWeightScale - 16);
+    uv_t = svasr_n_s16_x(pg16, uv_t, kWeightScale - 16);
 
     return svuzp1_u8(svreinterpret_u8(uv_b), svreinterpret_u8(uv_t));
   }
@@ -311,7 +312,8 @@ class RGBxorBGRxToYUV420 {
     svint16_t output =
         svuzp2_s16(svreinterpret_s16(uv(0)), svreinterpret_s16(uv(1)));
 
-    output = svasr_n_s16_x(pg, output, kWeightScale - 16);
+    svbool_t pg16 = svptrue_b16();
+    output = svasr_n_s16_x(pg16, output, kWeightScale - 16);
 
     return svuzp1_u8(svreinterpret_u8(output), svreinterpret_u8(output));
   }

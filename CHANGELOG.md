@@ -27,6 +27,14 @@ This changelog aims to follow the guiding principles of
   stripe ranges used by existing KleidiCV APIs. This breaks source and ABI
   compatibility for custom threading backends.
 
+### Fixed
+- Incorrect use of 32-bit predicates for 16-bit arithmetic, affecting
+  interpolation in SVE2 four-channel `uint16_t` fixed-point remap with replicated
+  or constant borders, and chroma values in SVE2/SME-family RGB-to-YUV 4:2:0
+  planar and semi-planar conversions. These caused failures with older compilers
+  such as Clang 12, while newer compilers such as Clang 17.0.1 masked the bug by
+  generating unpredicated instructions.
+
 ### Removed
 - Support for OpenCV 4.13.
 
