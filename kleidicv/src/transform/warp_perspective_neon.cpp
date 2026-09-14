@@ -57,7 +57,7 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
       float32x4_t fx = vcvtq_f32_u32(vaddq_u32(x0123_, vdupq_n_u32(x)));
       float32x4_t tx = vmlaq_n_f32(tx0, fx, transform[0]);
       float32x4_t ty = vmlaq_n_f32(ty0, fx, transform[3]);
-      float32x4_t tw = vmlaq_n_f32(tw0, fx, transform[6]);
+      float32x4_t tw = vfmaq_n_f32(tw0, fx, transform[6]);
 
       // Calculate inverse weight because division is expensive
       float32x4_t iw;
@@ -99,7 +99,7 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
       // ty = (T3*x + T4*y + T5) / tw
       tx0 = vdupq_n_f32(transform[1] * dy + transform[2]);
       ty0 = vdupq_n_f32(transform[4] * dy + transform[5]);
-      tw0 = vdupq_n_f32(transform[7] * dy + transform[8]);
+      tw0 = vdupq_n_f32(perspective_weight_at_x0(transform, dy));
 
       static const size_t kStep = VecTraits<float>::num_lanes();
       LoopUnroll2<TryToAvoidTailLoop> loop{dst_width, kStep};

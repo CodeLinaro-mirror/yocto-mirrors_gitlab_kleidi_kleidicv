@@ -235,6 +235,72 @@ class WarpPerspectiveBase : public testing::Test {
     }
   }
 
+  static void test_zero_weight_at_stripe_boundary() {
+    // Fused evaluation gives an exact zero at (7, 7). A differently ordered
+    // precheck can see a negative maximum and incorrectly skip the zero check.
+    // clang-format off
+    const float transform[] = {
+      0, 0, 8,
+      0, 0, 4,
+      1, -0.3F, -4.9F
+    };
+    // clang-format on
+
+    test::Array2D<ScalarType> source(8, 8), actual(8, 9, 3), expected(8, 9, 3);
+    source.fill(100);
+    source.set(0, 0, {23});
+
+    for (auto [border_type, border_value] : get_borders<ScalarType>()) {
+      SCOPED_TRACE(border_type);
+      actual.fill(42);
+      expected.fill(42);
+      // Use explicit pixels: the general reference calculation uses different
+      // weight arithmetic and does not produce an exact zero at this corner.
+      // Negative weights map outside the top-left corner; zero maps to (0, 0).
+      for (size_t x = 0; x < 7; ++x) {
+        *expected.at(7, x) =
+            border_type == KLEIDICV_BORDER_TYPE_CONSTANT ? border_value[0] : 23;
+      }
+      expected.set(7, 7, {23});
+      ASSERT_EQ(
+          KLEIDICV_OK,
+          kleidicv_warp_perspective_stripe_u8(
+              source.data(), source.stride(), source.width(), source.height(),
+              actual.data(), actual.stride(), actual.width(), actual.height(),
+              7, 8, transform, 1, Interpolation, border_type, border_value));
+      EXPECT_EQ_ARRAY2D(actual, expected);
+    }
+  }
+
+  static void test_zero_weight_with_overflowing_extrema() {
+    // All coefficients are finite, but the maximum weight overflows. Testing
+    // the product of the extrema would yield 0 * infinity (NaN) and miss zero.
+    // clang-format off
+    const float transform[] = {
+      0, 0, 8,
+      0, 0, 4,
+      std::numeric_limits<float>::max(), 0, 0
+    };
+    // clang-format on
+
+    test::Array2D<ScalarType> source(8, 8), actual(8, 1), expected(8, 1);
+    source.fill(100);
+    source.set(0, 0, {23});
+    expected.fill(23);
+
+    for (auto [border_type, border_value] : get_borders<ScalarType>()) {
+      SCOPED_TRACE(border_type);
+      actual.fill(42);
+      ASSERT_EQ(
+          KLEIDICV_OK,
+          kleidicv_warp_perspective_u8(
+              source.data(), source.stride(), source.width(), source.height(),
+              actual.data(), actual.stride(), actual.width(), actual.height(),
+              transform, 1, Interpolation, border_type, border_value));
+      EXPECT_EQ_ARRAY2D(actual, expected);
+    }
+  }
+
  private:
   static void calculate_expected(test::Array2D<ScalarType> &src, size_t y_begin,
                                  size_t y_end, const float transform[9],
@@ -379,6 +445,14 @@ TYPED_TEST(WarpPerspectiveNearest, DivisionByZero) {
     TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1,
                       border_type, border_value, 3);
   }
+}
+
+TYPED_TEST(WarpPerspectiveNearest, ZeroWeightAtStripeBoundary) {
+  TestFixture::test_zero_weight_at_stripe_boundary();
+}
+
+TYPED_TEST(WarpPerspectiveNearest, ZeroWeightWithOverflowingExtrema) {
+  TestFixture::test_zero_weight_with_overflowing_extrema();
 }
 
 static const size_t kBigWidth = 1ULL << 17, kBigHeight = 1ULL << 17;
@@ -814,6 +888,14 @@ TYPED_TEST(WarpPerspectiveLinear, DivisionByZero) {
     TestFixture::test(src_w, src_h, dst_w, dst_h, transform_div_by_zero, 1,
                       border_type, border_value, 3);
   }
+}
+
+TYPED_TEST(WarpPerspectiveLinear, ZeroWeightAtStripeBoundary) {
+  TestFixture::test_zero_weight_at_stripe_boundary();
+}
+
+TYPED_TEST(WarpPerspectiveLinear, ZeroWeightWithOverflowingExtrema) {
+  TestFixture::test_zero_weight_with_overflowing_extrema();
 }
 
 template <class ScalarType>

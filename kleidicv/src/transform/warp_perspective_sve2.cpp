@@ -188,7 +188,7 @@ void transform_operation(Rows<const ScalarType> src_rows, size_t src_width,
       // ty = (T3*x + T4*y + T5) / tw
       tx0 = svdup_n_f32(fmaf(transform[1], fy, transform[2]));
       ty0 = svdup_n_f32(fmaf(transform[4], fy, transform[5]));
-      tw0 = svdup_n_f32(fmaf(transform[7], fy, transform[8]));
+      tw0 = svdup_n_f32(perspective_weight_at_x0(transform, fy));
 
       Columns<ScalarType> dst = dst_rows.as_columns();
       LoopUnroll2 loop{dst_width, kStep};

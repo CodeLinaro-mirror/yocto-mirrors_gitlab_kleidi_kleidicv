@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 #include "kleidicv/types.h"
@@ -14,19 +15,26 @@ bool is_image_large(const Rows<T> &rows, size_t height) {
   return rows.stride() * height >= 1ULL << 32;
 }
 
+static inline float perspective_weight_at_x0(const float transform[9],
+                                             float y) {
+  return std::fma(transform[7], y, transform[8]);
+}
+
+// Keep this operation order consistent with the vector kernels.
+static inline float perspective_weight(const float transform[9], float x,
+                                       float y) {
+  return std::fma(transform[6], x, perspective_weight_at_x0(transform, y));
+}
+
 static inline bool weight_may_be_zero(const float transform[9],
                                       size_t dst_width, size_t y_begin,
                                       size_t y_end) {
-  auto calculate_weight = [&](float x, float y) {
-    return transform[6] * x + transform[7] * y + transform[8];
-  };
-
   const float x0 = 0.F;
   const float x1 = static_cast<float>(dst_width - 1);
   const float y0 = static_cast<float>(y_begin);
   const float y1 = static_cast<float>(y_end - 1);
 
-  float min_weight = calculate_weight(x0, y0);
+  float min_weight = perspective_weight(transform, x0, y0);
   float max_weight = min_weight;
 
   auto update_minmax = [&](float weight) {
@@ -34,11 +42,11 @@ static inline bool weight_may_be_zero(const float transform[9],
     max_weight = std::max(weight, max_weight);
   };
 
-  update_minmax(calculate_weight(x1, y0));
-  update_minmax(calculate_weight(x0, y1));
-  update_minmax(calculate_weight(x1, y1));
+  update_minmax(perspective_weight(transform, x1, y0));
+  update_minmax(perspective_weight(transform, x0, y1));
+  update_minmax(perspective_weight(transform, x1, y1));
 
-  return min_weight * max_weight <= 0.F;
+  return min_weight <= 0.F && max_weight >= 0.F;
 }
 
 // Convert channels to a template argument.
