@@ -1320,8 +1320,8 @@ kleidicv_error_t kleidicv_thread_warp_perspective_u8(
   auto callback = [=](size_t y_begin, size_t y_end) {
     return kleidicv_warp_perspective_stripe_u8(
         src, src_stride, src_width, src_height, dst, dst_stride, dst_width,
-        dst_height, y_begin, std::min<size_t>(dst_height, y_end + 1),
-        transformation, channels, interpolation, border_type, border_value);
+        dst_height, y_begin, y_end, transformation, channels, interpolation,
+        border_type, border_value);
   };
   return parallel_batches(callback, mt, dst_height);
 }
