@@ -708,7 +708,8 @@ TEST(SmeApi, MorphologyAndFilterParity) {
 TEST(SmeApi, ResizeParity) {
   auto run_resize_u8_case = [](const char* name, size_t src_width,
                                size_t src_height, size_t dst_width,
-                               size_t dst_height, size_t channels) {
+                               size_t dst_height, size_t channels,
+                               uint8_t tolerance) {
     test::Array2D<uint8_t> src{src_width * channels, src_height, 3};
     test::Array2D<uint8_t> cpu_dst{dst_width * channels, dst_height, 1};
     test::Array2D<uint8_t> sme_dst{dst_width * channels, dst_height, 1};
@@ -724,19 +725,24 @@ TEST(SmeApi, ResizeParity) {
                                sme_dst.data(), sme_dst.stride(), dst_width,
                                dst_height, channels))
         << name;
-    expect_same_array(cpu_dst, sme_dst);
+    EXPECT_EQ_ARRAY2D_WITH_TOLERANCE(tolerance, cpu_dst, sme_dst);
   };
 
   // Drive all kUseSME branches in resize_linear_api.cpp
-  run_resize_u8_case("ch1_quarter", 10, 10, 5, 5, 1);
-  run_resize_u8_case("ch1_2x2", 9, 7, 18, 14, 1);
-  run_resize_u8_case("ch1_4x4", 8, 8, 32, 32, 1);
-  run_resize_u8_case("ch1_r2", 16, 16, 9, 9, 1);
-  run_resize_u8_case("ch1_r3", 32, 16, 12, 9, 1);
-  run_resize_u8_case("ch2_r2", 16, 16, 9, 9, 2);
-  run_resize_u8_case("ch2_r3", 32, 16, 12, 9, 2);
-  run_resize_u8_case("ch3_r2", 32, 20, 18, 12, 3);
-  run_resize_u8_case("ch3_r3", 32, 20, 14, 12, 3);
+  run_resize_u8_case("ch1_quarter", 10, 10, 5, 5, 1, 0);
+  run_resize_u8_case("ch1_2x2", 9, 7, 18, 14, 1, 0);
+  run_resize_u8_case("ch1_4x4", 8, 8, 32, 32, 1, 0);
+
+  // Generic resize's Neon tail and scalable vector paths round intermediate
+  // horizontal coordinates separately. Q15 weights retain these small
+  // differences, which can move the interpolated value across a rounding
+  // boundary. Allow a one-level difference for these generic resize cases.
+  run_resize_u8_case("ch1_r2", 16, 16, 9, 9, 1, 1);
+  run_resize_u8_case("ch1_r3", 32, 16, 12, 9, 1, 1);
+  run_resize_u8_case("ch2_r2", 16, 16, 9, 9, 2, 1);
+  run_resize_u8_case("ch2_r3", 32, 16, 12, 9, 2, 1);
+  run_resize_u8_case("ch3_r2", 32, 20, 18, 12, 3, 1);
+  run_resize_u8_case("ch3_r3", 32, 20, 14, 12, 3, 1);
 
   constexpr size_t kSrcWidth = 4;
   constexpr size_t kSrcHeight = 4;
