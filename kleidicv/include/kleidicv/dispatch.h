@@ -129,15 +129,20 @@ static inline bool is_prefer_sme_backend_env_var_set() {
 #define KLEIDICV_SME2_RESOLVE_VECLEN(x, sme_len)
 #endif  // KLEIDICV_ENABLE_SME2
 
-#define KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(api_name, neon_impl, \
-                                                sve2_impl)           \
-  static decltype(neon_impl) api_name##_resolver() {                 \
-    KLEIDICV_SVE2_RESOLVE(sve2_impl);                                \
-    return neon_impl;                                                \
-  }                                                                  \
-  extern "C" {                                                       \
-  decltype(neon_impl) api_name = api_name##_resolver();              \
-  }
+#define KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(api_name, neon_impl,        \
+                                                sve2_impl)                  \
+  static decltype(neon_impl) api_name##_resolver() {                        \
+    KLEIDICV_SVE2_RESOLVE(sve2_impl);                                       \
+    return neon_impl;                                                       \
+  }                                                                         \
+  extern "C" {                                                              \
+  decltype(neon_impl) api_name = neon_impl;                                 \
+  }                                                                         \
+  struct api_name##_dispatch_initializer {                                  \
+    api_name##_dispatch_initializer() { api_name = api_name##_resolver(); } \
+  };                                                                        \
+  static const api_name##_dispatch_initializer                              \
+      api_name##_dispatch_initializer_instance;
 
 #define KLEIDICV_MULTIVERSION_C_API_WITH_SME(api_name, neon_impl, sve2_impl, \
                                              sme_impl, sme2_impl)            \
@@ -156,9 +161,17 @@ static inline bool is_prefer_sme_backend_env_var_set() {
     return neon_impl;                                                        \
   }                                                                          \
   extern "C" {                                                               \
-  decltype(neon_impl) api_name = api_name##_resolver_default();              \
-  decltype(neon_impl) api_name##_sme = api_name##_resolver_for_sme();        \
-  }
+  decltype(neon_impl) api_name = neon_impl;                                  \
+  decltype(neon_impl) api_name##_sme = neon_impl;                            \
+  }                                                                          \
+  struct api_name##_dispatch_initializer {                                   \
+    api_name##_dispatch_initializer() {                                      \
+      api_name = api_name##_resolver_default();                              \
+      api_name##_sme = api_name##_resolver_for_sme();                        \
+    }                                                                        \
+  };                                                                         \
+  static const api_name##_dispatch_initializer                               \
+      api_name##_dispatch_initializer_instance;
 
 #define KLEIDICV_MULTIVERSION_C_API_VECLEN(                                \
     api_name, neon_impl, sve2_impl, sme_impl, sme2_impl, sve_len, sme_len) \
@@ -177,11 +190,19 @@ static inline bool is_prefer_sme_backend_env_var_set() {
     return neon_impl;                                                      \
   }                                                                        \
   extern "C" {                                                             \
-  decltype(neon_impl) api_name = api_name##_resolver_default();            \
-  decltype(neon_impl) api_name##_sme = api_name##_resolver_for_sme();      \
-  }
+  decltype(neon_impl) api_name = neon_impl;                                \
+  decltype(neon_impl) api_name##_sme = neon_impl;                          \
+  }                                                                        \
+  struct api_name##_dispatch_initializer {                                 \
+    api_name##_dispatch_initializer() {                                    \
+      api_name = api_name##_resolver_default();                            \
+      api_name##_sme = api_name##_resolver_for_sme();                      \
+    }                                                                      \
+  };                                                                       \
+  static const api_name##_dispatch_initializer                             \
+      api_name##_dispatch_initializer_instance;
 
-#else  // KLEIDICV_HAVE_SVE2 || KLEIDICV_HAVE_SME || KLEIDICV_HAVE_SME2
+#else  // KLEIDICV_ENABLE_SME2 || KLEIDICV_ENABLE_SME ||  KLEIDICV_ENABLE_SVE2
 
 #define KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(api_name, neon_impl, \
                                                 sve2_impl)           \

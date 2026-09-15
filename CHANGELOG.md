@@ -37,6 +37,9 @@ This changelog aims to follow the guiding principles of
   planar and semi-planar conversions. These caused failures with older compilers
   such as Clang 12, while newer compilers such as Clang 17.0.1 masked the bug by
   generating unpredicated instructions.
+- Dispatch pointers now default to Neon implementations until runtime backend
+  resolution completes, allowing APIs to be called safely during C++ dynamic
+  initialization.
 
 ### Removed
 - Support for OpenCV 4.13.
