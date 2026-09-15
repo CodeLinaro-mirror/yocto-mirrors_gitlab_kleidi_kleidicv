@@ -202,14 +202,14 @@ template <typename ScalarType, size_t kScalarsPerPixel>
 inline void swap_reversed_row_pair_in_place(ScalarType *top_row_start,
                                             ScalarType *bottom_row_start,
                                             size_t row_width_in_pixels,
-                                            size_t num_pixels_to_swap) {
+                                            size_t num_pixel_pairs_to_swap) {
   using VectorTraits = VecTraits<ScalarType>;
 
   constexpr size_t kScalarsPerVector = VectorTraits::num_lanes();
   constexpr size_t kScalarsPerBlock = kScalarsPerVector * kScalarsPerPixel;
   constexpr size_t kScalarsPer2Blocks = kScalarsPerBlock * 2;
 
-  LoopUnroll2 column_loop{num_pixels_to_swap, kScalarsPerVector};
+  LoopUnroll2 column_loop{num_pixel_pairs_to_swap, kScalarsPerVector};
   ScalarType *forward = top_row_start;
   ScalarType *backward =
       bottom_row_start + row_width_in_pixels * kScalarsPerPixel;
@@ -236,15 +236,18 @@ inline void swap_reversed_row_pair_in_place(ScalarType *top_row_start,
   });
 }
 
+// Out-of-place flip: each row is an independent work item
 template <typename ScalarType, size_t kScalarsPerPixel>
 kleidicv_error_t flip_to_dst(Rectangle rect, Rows<const ScalarType> src_rows,
                              Rows<ScalarType> dst_rows,
-                             kleidicv_flip_mode_t flip_mode) {
+                             kleidicv_flip_mode_t flip_mode,
+                             size_t work_items_begin, size_t work_items_end) {
   switch (flip_mode) {
     case KLEIDICV_FLIP_HORIZONTAL:
-      for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
-        const ScalarType *src_row = &src_rows.at(row_idx, 0)[0];
-        ScalarType *dst_row = &dst_rows.at(row_idx, 0)[0];
+      for (size_t src_row_idx = work_items_begin; src_row_idx < work_items_end;
+           ++src_row_idx) {
+        const ScalarType *src_row = &src_rows.at(src_row_idx, 0)[0];
+        ScalarType *dst_row = &dst_rows.at(src_row_idx, 0)[0];
 
         copy_reversed_row_to_dst<ScalarType, kScalarsPerPixel>(src_row, dst_row,
                                                                rect.width());
@@ -252,9 +255,11 @@ kleidicv_error_t flip_to_dst(Rectangle rect, Rows<const ScalarType> src_rows,
       return KLEIDICV_OK;
 
     case KLEIDICV_FLIP_VERTICAL:
-      for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
-        const ScalarType *src_row = &src_rows.at(row_idx, 0)[0];
-        ScalarType *dst_row = &dst_rows.at(rect.height() - row_idx - 1, 0)[0];
+      for (size_t src_row_idx = work_items_begin; src_row_idx < work_items_end;
+           ++src_row_idx) {
+        const ScalarType *src_row = &src_rows.at(src_row_idx, 0)[0];
+        ScalarType *dst_row =
+            &dst_rows.at(rect.height() - src_row_idx - 1, 0)[0];
 
         copy_row_to_dst<ScalarType, kScalarsPerPixel>(src_row, dst_row,
                                                       rect.width());
@@ -262,7 +267,8 @@ kleidicv_error_t flip_to_dst(Rectangle rect, Rows<const ScalarType> src_rows,
       return KLEIDICV_OK;
 
     case KLEIDICV_FLIP_BOTH:
-      for (size_t src_row_idx = 0; src_row_idx < rect.height(); ++src_row_idx) {
+      for (size_t src_row_idx = work_items_begin; src_row_idx < work_items_end;
+           ++src_row_idx) {
         const ScalarType *src_row = &src_rows.at(src_row_idx, 0)[0];
         ScalarType *dst_row =
             &dst_rows.at(rect.height() - src_row_idx - 1, 0)[0];
@@ -279,10 +285,13 @@ kleidicv_error_t flip_to_dst(Rectangle rect, Rows<const ScalarType> src_rows,
 
 template <typename ScalarType, size_t kScalarsPerPixel>
 kleidicv_error_t flip_in_place(Rectangle rect, Rows<ScalarType> rows,
-                               kleidicv_flip_mode_t flip_mode) {
+                               kleidicv_flip_mode_t flip_mode,
+                               size_t work_items_begin, size_t work_items_end) {
   switch (flip_mode) {
+    // In-place horizontal flip can treat each row as an independent work item
     case KLEIDICV_FLIP_HORIZONTAL:
-      for (size_t row_idx = 0; row_idx < rect.height(); ++row_idx) {
+      for (size_t row_idx = work_items_begin; row_idx < work_items_end;
+           ++row_idx) {
         ScalarType *row = &rows.at(row_idx, 0)[0];
 
         // For odd-width same-row, the middle pixel can stay in its place
@@ -291,10 +300,12 @@ kleidicv_error_t flip_in_place(Rectangle rect, Rows<ScalarType> rows,
       }
       return KLEIDICV_OK;
 
+    // Each in-place vertical-flip work item owns two mirrored rows.
+    // For odd heights, the centre row is unchanged and has no work item.
     case KLEIDICV_FLIP_VERTICAL:
-      // For odd heights, the middle row will stay in its place unchanged
-      for (size_t top_row_idx = 0, bottom_row_idx = rect.height() - 1;
-           top_row_idx < rect.height() / 2; ++top_row_idx, --bottom_row_idx) {
+      for (size_t top_row_idx = work_items_begin; top_row_idx < work_items_end;
+           ++top_row_idx) {
+        const size_t bottom_row_idx = rect.height() - top_row_idx - 1;
         ScalarType *top_row = &rows.at(top_row_idx, 0)[0];
         ScalarType *bottom_row = &rows.at(bottom_row_idx, 0)[0];
 
@@ -303,21 +314,22 @@ kleidicv_error_t flip_in_place(Rectangle rect, Rows<ScalarType> rows,
       }
       return KLEIDICV_OK;
 
+    // Each in-place both-axes-flip work item owns two mirrored rows, except
+    // for odd heights, where the final work item owns only the centre row.
     case KLEIDICV_FLIP_BOTH:
-      for (size_t row_idx = 0; row_idx < rect.height() / 2; ++row_idx) {
-        ScalarType *top_row = &rows.at(row_idx, 0)[0];
-        ScalarType *bottom_row = &rows.at(rect.height() - row_idx - 1, 0)[0];
+      for (size_t top_row_idx = work_items_begin; top_row_idx < work_items_end;
+           ++top_row_idx) {
+        const size_t bottom_row_idx = rect.height() - top_row_idx - 1;
+        ScalarType *top_row = &rows.at(top_row_idx, 0)[0];
+        ScalarType *bottom_row = &rows.at(bottom_row_idx, 0)[0];
 
+        // For odd heights, the final work item owns the centre row and only
+        // needs to iterate up to half way as pixels will be swapped with those
+        // on the other side of the row.
+        const size_t num_pixel_pairs_to_swap =
+            top_row_idx == bottom_row_idx ? rect.width() / 2 : rect.width();
         swap_reversed_row_pair_in_place<ScalarType, kScalarsPerPixel>(
-            top_row, bottom_row, rect.width(), rect.width());
-      }
-
-      // Middle row (for odd heights) can be processed more efficiently
-      if (rect.height() % 2 != 0) {
-        ScalarType *middle_row = &rows.at(rect.height() / 2, 0)[0];
-
-        swap_reversed_row_pair_in_place<ScalarType, kScalarsPerPixel>(
-            middle_row, middle_row, rect.width(), rect.width() / 2);
+            top_row, bottom_row, rect.width(), num_pixel_pairs_to_swap);
       }
 
       return KLEIDICV_OK;
@@ -328,57 +340,62 @@ kleidicv_error_t flip_in_place(Rectangle rect, Rows<ScalarType> rows,
 }
 
 template <typename ScalarType, size_t kScalarsPerPixel>
-kleidicv_error_t flip(const void *src_void, size_t src_stride, size_t width,
-                      size_t height, void *dst_void, size_t dst_stride,
-                      kleidicv_flip_mode_t flip_mode) {
-  MAKE_POINTER_CHECK_ALIGNMENT(const ScalarType, src, src_void);
-  MAKE_POINTER_CHECK_ALIGNMENT(ScalarType, dst, dst_void);
-  CHECK_POINTER_AND_STRIDE(src, src_stride, height);
-  CHECK_POINTER_AND_STRIDE(dst, dst_stride, height);
-  CHECK_IMAGE_SIZE(width, height);
-
-  const bool in_place = (src == dst);
-  if (in_place && src_stride != dst_stride) {
-    return KLEIDICV_ERROR_RANGE;
-  }
+kleidicv_error_t flip_work_items_impl(const void *src_void, size_t src_stride,
+                                      size_t width, size_t height,
+                                      void *dst_void, size_t dst_stride,
+                                      kleidicv_flip_mode_t flip_mode,
+                                      size_t work_items_begin,
+                                      size_t work_items_end) {
+  const auto *src = static_cast<const ScalarType *>(src_void);
+  auto *dst = static_cast<ScalarType *>(dst_void);
 
   Rectangle rect{width, height};
   Rows<const ScalarType> src_rows{src, src_stride, kScalarsPerPixel};
   Rows<ScalarType> dst_rows{dst, dst_stride, kScalarsPerPixel};
 
-  if (in_place) {
-    return flip_in_place<ScalarType, kScalarsPerPixel>(rect, dst_rows,
-                                                       flip_mode);
+  if (src == dst) {
+    return flip_in_place<ScalarType, kScalarsPerPixel>(
+        rect, dst_rows, flip_mode, work_items_begin, work_items_end);
   }
-  return flip_to_dst<ScalarType, kScalarsPerPixel>(rect, src_rows, dst_rows,
-                                                   flip_mode);
+  return flip_to_dst<ScalarType, kScalarsPerPixel>(
+      rect, src_rows, dst_rows, flip_mode, work_items_begin, work_items_end);
 }
 
 }  // namespace
 
+// The half-open work-item range follows the mapping documented in flip.h.
 KLEIDICV_TARGET_FN_ATTRS
-kleidicv_error_t flip(const void *src, size_t src_stride, size_t width,
-                      size_t height, void *dst, size_t dst_stride,
-                      kleidicv_flip_mode_t flip_mode, size_t pixel_size) {
+kleidicv_error_t flip_work_items(const void *src, size_t src_stride,
+                                 size_t width, size_t height, void *dst,
+                                 size_t dst_stride,
+                                 kleidicv_flip_mode_t flip_mode,
+                                 size_t pixel_size, size_t work_items_begin,
+                                 size_t work_items_end) {
   switch (pixel_size) {
     case sizeof(uint8_t):
-      return flip<uint8_t, 1>(src, src_stride, width, height, dst, dst_stride,
-                              flip_mode);
+      return flip_work_items_impl<uint8_t, 1>(src, src_stride, width, height,
+                                              dst, dst_stride, flip_mode,
+                                              work_items_begin, work_items_end);
     case sizeof(uint16_t):
-      return flip<uint16_t, 1>(src, src_stride, width, height, dst, dst_stride,
-                               flip_mode);
+      return flip_work_items_impl<uint16_t, 1>(
+          src, src_stride, width, height, dst, dst_stride, flip_mode,
+          work_items_begin, work_items_end);
     case sizeof(uint32_t):
-      return flip<uint32_t, 1>(src, src_stride, width, height, dst, dst_stride,
-                               flip_mode);
+      return flip_work_items_impl<uint32_t, 1>(
+          src, src_stride, width, height, dst, dst_stride, flip_mode,
+          work_items_begin, work_items_end);
     case sizeof(uint64_t):
-      return flip<uint64_t, 1>(src, src_stride, width, height, dst, dst_stride,
-                               flip_mode);
+      return flip_work_items_impl<uint64_t, 1>(
+          src, src_stride, width, height, dst, dst_stride, flip_mode,
+          work_items_begin, work_items_end);
     case sizeof(uint8_t) * 3:
-      return flip<uint8_t, 3>(src, src_stride, width, height, dst, dst_stride,
-                              flip_mode);
+      return flip_work_items_impl<uint8_t, 3>(src, src_stride, width, height,
+                                              dst, dst_stride, flip_mode,
+                                              work_items_begin, work_items_end);
     case sizeof(uint16_t) * 3:
-      return flip<uint16_t, 3>(src, src_stride, width, height, dst, dst_stride,
-                               flip_mode);
+      return flip_work_items_impl<uint16_t, 3>(
+          src, src_stride, width, height, dst, dst_stride, flip_mode,
+          work_items_begin, work_items_end);
     default:
       return KLEIDICV_ERROR_NOT_IMPLEMENTED;
   }

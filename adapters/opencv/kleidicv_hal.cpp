@@ -44,6 +44,9 @@ enum {
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8 = 13000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_U8_F16 = 9000,
   MULTITHREAD_MIN_ELEMENTS_SCALE_F32 = 20000,
+  MULTITHREAD_MIN_ELEMENTS_FLIP_REVERSE_3_CHANNEL = 320 * 240,  // QVGA
+  MULTITHREAD_MIN_ELEMENTS_FLIP_OUT_OF_PLACE = 640 * 480,       // VGA
+  MULTITHREAD_MIN_ELEMENTS_FLIP_IN_PLACE_OR_U8 = 1920 * 1080,   // FHD
   MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_ROTATE_U8 = 50000,
   MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_ROTATE_U16 = 40000,
   MULTITHREAD_MIN_ELEMENTS_TRANSPOSE_ROTATE_U32 = 20000,
@@ -1125,6 +1128,27 @@ int flip(int src_type, const uchar *src_data, size_t src_step, int src_width,
     kleidicv_flip_mode = KLEIDICV_FLIP_HORIZONTAL;
   } else {
     kleidicv_flip_mode = KLEIDICV_FLIP_BOTH;
+  }
+
+  size_t multithread_min_elements;
+  if ((kleidicv_flip_mode != KLEIDICV_FLIP_VERTICAL) &&
+      (element_size == 3 || element_size == 6)) {
+    // Packed three-channel reversal benefits from threading even at QVGA
+    multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_FLIP_REVERSE_3_CHANNEL;
+  } else if (src_data == dst_data || element_size == 1) {
+    // Smaller in-place and one-byte-pixel flips have mixed threading results
+    multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_FLIP_IN_PLACE_OR_U8;
+  } else {
+    multithread_min_elements = MULTITHREAD_MIN_ELEMENTS_FLIP_OUT_OF_PLACE;
+  }
+
+  if (static_cast<size_t>(src_width) * static_cast<size_t>(src_height) >=
+      multithread_min_elements) {
+    return convert_error(kleidicv_thread_flip(
+        reinterpret_cast<const void *>(src_data), src_step,
+        static_cast<size_t>(src_width), static_cast<size_t>(src_height),
+        reinterpret_cast<void *>(dst_data), dst_step, kleidicv_flip_mode,
+        element_size, get_multithreading()));
   }
 
   return convert_error(kleidicv_flip(

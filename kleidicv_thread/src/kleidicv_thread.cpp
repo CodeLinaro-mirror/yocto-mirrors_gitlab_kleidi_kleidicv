@@ -25,6 +25,7 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/resize/resize_linear.h"
 #include "kleidicv/transform/add_padding_by_copy.h"
+#include "kleidicv/transform/flip.h"
 #include "kleidicv/transform/remap.h"
 #include "kleidicv/transform/rotate.h"
 #include "kleidicv/transform/warp_perspective.h"
@@ -329,6 +330,35 @@ kleidicv_error_t kleidicv_thread_transpose(const void *src, size_t src_stride,
         end - begin, src_height, pixel_size);
   };
   return parallel_batches(callback, mt, src_width, 64);
+}
+
+kleidicv_error_t kleidicv_thread_flip(const void *src, size_t src_stride,
+                                      size_t width, size_t height, void *dst,
+                                      size_t dst_stride,
+                                      kleidicv_flip_mode_t flip_mode,
+                                      size_t pixel_size,
+                                      kleidicv_thread_multithreading mt) {
+  kleidicv_error_t error = kleidicv::flip_validate(
+      src, src_stride, width, height, dst, dst_stride, flip_mode, pixel_size);
+  if (error != KLEIDICV_OK) {
+    return error;
+  }
+  if (width == 0 || height == 0) {
+    return KLEIDICV_OK;
+  }
+
+  const size_t work_item_count =
+      kleidicv::flip_work_item_count(height, src == dst, flip_mode);
+  if (work_item_count == 0) {
+    return KLEIDICV_OK;
+  }
+
+  auto callback = [=](size_t work_items_begin, size_t work_items_end) {
+    return kleidicv_flip_work_items(src, src_stride, width, height, dst,
+                                    dst_stride, flip_mode, pixel_size,
+                                    work_items_begin, work_items_end);
+  };
+  return parallel_batches(callback, mt, work_item_count);
 }
 
 kleidicv_error_t kleidicv_thread_rotate(const void *src, size_t src_stride,

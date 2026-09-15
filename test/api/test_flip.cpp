@@ -8,6 +8,7 @@
 #include "framework/generator.h"
 #include "framework/utils.h"
 #include "kleidicv/kleidicv.h"
+#include "kleidicv/transform/flip.h"
 
 static constexpr kleidicv_flip_mode_t kFlipModes[3]{
     KLEIDICV_FLIP_HORIZONTAL, KLEIDICV_FLIP_VERTICAL, KLEIDICV_FLIP_BOTH};
@@ -430,6 +431,49 @@ TEST_P(Flip, InvalidFlipMode) {
   EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
             kleidicv_flip(dst.data(), pixel_size, 1, 1, dst.data(), pixel_size,
                           kleidicv_flip_mode_t{}, pixel_size));
+}
+
+// Bypass public validation to exercise the defensive backend error paths.
+TEST_P(Flip, WorkItemsInvalidFlipMode) {
+  const size_t pixel_size = GetParam();
+  const std::vector<uint8_t> original_src(pixel_size, 0x12);
+  const std::vector<uint8_t> original_dst(pixel_size, 0x34);
+
+  for (auto flip_work_items :
+       {kleidicv_flip_work_items, kleidicv_flip_work_items_sme}) {
+    for (bool in_place : {false, true}) {
+      auto src = original_src;
+      auto dst = original_dst;
+      EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+                flip_work_items(src.data(), pixel_size, 1, 1,
+                                in_place ? src.data() : dst.data(), pixel_size,
+                                kleidicv_flip_mode_t{}, pixel_size, 0, 1));
+      EXPECT_EQ(original_src, src);
+      EXPECT_EQ(original_dst, dst);
+    }
+  }
+}
+
+TEST(FlipNotImplemented, WorkItemsElementSize) {
+  constexpr size_t kPixelSize = 16;
+  const std::vector<uint8_t> original_src(kPixelSize, 0x12);
+  const std::vector<uint8_t> original_dst(kPixelSize, 0x34);
+
+  for (auto flip_work_items :
+       {kleidicv_flip_work_items, kleidicv_flip_work_items_sme}) {
+    for (kleidicv_flip_mode_t flip_mode : kFlipModes) {
+      for (bool in_place : {false, true}) {
+        auto src = original_src;
+        auto dst = original_dst;
+        EXPECT_EQ(KLEIDICV_ERROR_NOT_IMPLEMENTED,
+                  flip_work_items(src.data(), kPixelSize, 1, 1,
+                                  in_place ? src.data() : dst.data(),
+                                  kPixelSize, flip_mode, kPixelSize, 0, 1));
+        EXPECT_EQ(original_src, src);
+        EXPECT_EQ(original_dst, dst);
+      }
+    }
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(, Flip, testing::Values(1, 2, 3, 4, 6, 8),

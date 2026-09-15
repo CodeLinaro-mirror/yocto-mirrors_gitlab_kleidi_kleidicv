@@ -2571,15 +2571,16 @@ KLEIDICV_API_DECLARATION(kleidicv_transpose_sme, const void *src,
 ///                     @ref kleidicv_flip_mode_t.
 /// @param pixel_size   Size of one pixel in bytes. Must be 1, 2, 3, 4, 6 or 8.
 ///
-KLEIDICV_API_DECLARATION(kleidicv_flip, const void *src, size_t src_stride,
-                         size_t width, size_t height, void *dst,
-                         size_t dst_stride, kleidicv_flip_mode_t flip_mode,
-                         size_t pixel_size);
+kleidicv_error_t kleidicv_flip(const void *src, size_t src_stride, size_t width,
+                               size_t height, void *dst, size_t dst_stride,
+                               kleidicv_flip_mode_t flip_mode,
+                               size_t pixel_size);
 /// @copydoc kleidicv_flip
-KLEIDICV_API_DECLARATION(kleidicv_flip_sme, const void *src, size_t src_stride,
-                         size_t width, size_t height, void *dst,
-                         size_t dst_stride, kleidicv_flip_mode_t flip_mode,
-                         size_t pixel_size);
+kleidicv_error_t kleidicv_flip_sme(const void *src, size_t src_stride,
+                                   size_t width, size_t height, void *dst,
+                                   size_t dst_stride,
+                                   kleidicv_flip_mode_t flip_mode,
+                                   size_t pixel_size);
 
 /// Matrix rotate operation.
 /// In-place operation is not supported.
