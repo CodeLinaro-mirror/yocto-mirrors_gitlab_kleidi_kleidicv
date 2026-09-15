@@ -40,6 +40,9 @@ This changelog aims to follow the guiding principles of
 - Dispatch pointers now default to Neon implementations until runtime backend
   resolution completes, allowing APIs to be called safely during C++ dynamic
   initialization.
+- WarpPerspective zero-weight detection at stripe boundaries and when
+  other perspective weights overflow, ensuring zero-weight pixels map to source
+  coordinate (0, 0).
 
 ### Removed
 - Support for OpenCV 4.13.
