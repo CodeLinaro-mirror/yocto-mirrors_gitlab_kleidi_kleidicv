@@ -42,7 +42,8 @@ static inline bool query_sysctl(const char* attribute_name) {
 }
 
 static inline bool is_sve2_supported() {
-  return query_sysctl("hw.optional.arm.FEAT_SVE2");
+  return query_sysctl("hw.optional.arm.FEAT_SVE") &&
+         query_sysctl("hw.optional.arm.FEAT_SVE2");
 }
 
 static inline bool is_sme_supported() {
@@ -50,13 +51,14 @@ static inline bool is_sme_supported() {
 }
 
 static inline bool is_sme2_supported() {
-  return query_sysctl("hw.optional.arm.FEAT_SME2");
+  return is_sme_supported() && query_sysctl("hw.optional.arm.FEAT_SME2");
 }
 
 #else  // __APPLE__
 
 static inline bool is_sve2_supported() {
-  return getauxval(AT_HWCAP2) & (1UL << 1);
+  return (getauxval(AT_HWCAP) & (1UL << 22)) &&
+         (getauxval(AT_HWCAP2) & (1UL << 1));
 }
 
 static inline bool is_sme_supported() {
@@ -64,7 +66,7 @@ static inline bool is_sme_supported() {
 }
 
 static inline bool is_sme2_supported() {
-  return getauxval(AT_HWCAP2) & (1UL << 37);
+  return is_sme_supported() && (getauxval(AT_HWCAP2) & (1UL << 37));
 }
 
 #endif  // __APPLE__
