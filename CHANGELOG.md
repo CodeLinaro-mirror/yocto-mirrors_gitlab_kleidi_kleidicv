@@ -8,7 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 
 This file documents significant changes between KleidiCV releases.
 
-KleidiCV uses [Calendar Versioning](https://calver.org/) with the format of 0Y.0M.
+KleidiCV uses [Calendar Versioning](https://calver.org/) with the format of `0Y.0M[.MICRO]`.
 
 This changelog aims to follow the guiding principles of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
