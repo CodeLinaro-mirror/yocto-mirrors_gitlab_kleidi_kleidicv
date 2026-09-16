@@ -326,6 +326,18 @@
       "problemMatcher": []
     },
     {
+      "label": "Run Sanitizers CI",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ci-sanitizers.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Benchmarks and Examples CI",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ci-benchmarks-examples.sh",
+      "problemMatcher": []
+    },
+    {
       "label": "Run GCC CI",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/ci-gcc.sh",

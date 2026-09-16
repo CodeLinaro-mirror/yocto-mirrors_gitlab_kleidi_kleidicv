@@ -10,7 +10,7 @@ set -exu
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Ensure we're doing a clean build.
-rm -rf build/ci
+rm -rf build/ci/gcc build/ci/test-results/gcc-*
 mkdir -p build/ci
 
 if ! command -v qemu-aarch64; then

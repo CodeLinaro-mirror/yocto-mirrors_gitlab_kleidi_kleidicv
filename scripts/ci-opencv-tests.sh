@@ -18,7 +18,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
   : "${OPENCV_URL:=/opt/opencv-${OPENCV_VERSION}.tar.gz}"
 
   # Try to build unpatched OpenCV with KleidiCV. Some OpenCV warnings need to be suppressed.
-  rm -rf build/ci/unpatched-opencv*
+  rm -rf build/ci/unpatched-opencv build/ci/unpatched-opencv-src
   mkdir -p build/ci/unpatched-opencv-src
   tar -xzf "${OPENCV_URL}" -C build/ci/unpatched-opencv-src
   BUILD_ID="ci/unpatched-opencv" \
@@ -71,7 +71,7 @@ if [[ $(dpkg --print-architecture) = arm64 ]]; then
     opencv_test_core \
     opencv_test_video
 
-  rm -rf build/ci/opencv_extra*
+  rm -rf build/ci/opencv_extra "build/ci/opencv_extra-${OPENCV_VERSION}"
   tar xf "/opt/opencv-extra-${OPENCV_VERSION}.tar.gz" -C build/ci
   mv "build/ci/opencv_extra-${OPENCV_VERSION}" build/ci/opencv_extra
 

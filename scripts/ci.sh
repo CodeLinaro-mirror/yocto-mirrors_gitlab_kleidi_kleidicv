@@ -13,6 +13,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 scripts/ci-lint-docs.sh
 scripts/ci-clang.sh
+scripts/ci-sanitizers.sh
+scripts/ci-benchmarks-examples.sh
 scripts/ci-gcc.sh
 
 # TODO: Cross-build OpenCV

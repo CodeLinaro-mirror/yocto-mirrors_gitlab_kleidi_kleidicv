@@ -14,10 +14,6 @@ if [[ -n "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ]]; then
   python3 scripts/check_commit_messages.py --range "${CI_MERGE_REQUEST_DIFF_BASE_SHA}..${CI_COMMIT_SHA}"
 fi
 
-# Ensure we're starting clean.
-rm -rf build/ci
-mkdir -p build/ci
-
 # Check format of C++ files.
 CHECK_ONLY=ON VERBOSE=ON scripts/format.sh
 

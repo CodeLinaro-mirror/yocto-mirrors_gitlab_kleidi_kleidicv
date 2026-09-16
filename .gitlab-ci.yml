@@ -44,6 +44,22 @@ clang-build-test:
       - build/ci/coverage-summary.txt
   coverage: /^line and branch coverage:\s+([\d\.]+\%)/
 
+clang-sanitizers:
+  extends: .common
+  variables:
+    KUBERNETES_CPU_REQUEST: "16"
+    KUBERNETES_MEMORY_REQUEST: "16Gi"
+  script:
+    - scripts/ci-sanitizers.sh
+
+benchmarks-examples-build:
+  extends: .common
+  variables:
+    KUBERNETES_CPU_REQUEST: "8"
+    KUBERNETES_MEMORY_REQUEST: "8Gi"
+  script:
+    - scripts/ci-benchmarks-examples.sh
+
 gcc-build-test:
   extends: .common
   variables:
@@ -92,14 +108,14 @@ opencv-tests:
 # On the main branch publish pages.
 pages:
   extends: .common
+  stage: deploy
   variables:
     KUBERNETES_CPU_REQUEST: "2"
     KUBERNETES_MEMORY_REQUEST: "4Gi"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  needs:
-    - job: clang-build-test
-      artifacts: true
+  dependencies:
+    - clang-build-test
   script:
     - echo "Publishing pages"
     - cat build/ci/coverage-summary.txt
