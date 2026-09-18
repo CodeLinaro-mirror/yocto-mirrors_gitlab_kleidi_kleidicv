@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -101,6 +101,7 @@ class FixedBorderInfo<T, 7UL> final {
   // Returns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t column_index) const
       KLEIDICV_STREAMING {
+    const ptrdiff_t wrap_offset = -static_cast<ptrdiff_t>(height_);
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == (height_ - 3)) {
@@ -124,11 +125,12 @@ class FixedBorderInfo<T, 7UL> final {
 
       case FixedBorderType::WRAP:
         if (column_index == (height_ - 3)) {
-          return get(-3, -2, -1, 0, 1, 2, 3 - height_);
+          return get(-3, -2, -1, 0, 1, 2, 3 + wrap_offset);
         } else if (column_index == (height_ - 2)) {
-          return get(-3, -2, -1, 0, 1, 2 - height_, 3 - height_);
+          return get(-3, -2, -1, 0, 1, 2 + wrap_offset, 3 + wrap_offset);
         } else {
-          return get(-3, -2, -1, 0, 1 - height_, 2 - height_, 3 - height_);
+          return get(-3, -2, -1, 0, 1 + wrap_offset, 2 + wrap_offset,
+                     3 + wrap_offset);
         }
         break;
 

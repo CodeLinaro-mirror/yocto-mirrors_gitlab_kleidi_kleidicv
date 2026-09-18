@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -223,6 +223,7 @@ class FixedBorderInfo<T, 21UL> final {
   // Returns offsets for columns affected by right border.
   Offsets offsets_with_right_border(size_t column_index) const
       KLEIDICV_STREAMING {
+    const ptrdiff_t wrap_offset = -static_cast<ptrdiff_t>(width_);
     switch (border_type_) {
       case FixedBorderType::REPLICATE:
         if (column_index == (width_ - 10)) {
@@ -295,40 +296,46 @@ class FixedBorderInfo<T, 21UL> final {
       case FixedBorderType::WRAP:
         if (column_index == (width_ - 10)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-                     6, 7, 8, 9, 10 - width_);
+                     6, 7, 8, 9, 10 + wrap_offset);
         } else if (column_index == (width_ - 9)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-                     6, 7, 8, 9 - width_, 10 - width_);
+                     6, 7, 8, 9 + wrap_offset, 10 + wrap_offset);
         } else if (column_index == (width_ - 8)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-                     6, 7, 8 - width_, 9 - width_, 10 - width_);
+                     6, 7, 8 + wrap_offset, 9 + wrap_offset, 10 + wrap_offset);
         } else if (column_index == (width_ - 7)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-                     6, 7 - width_, 8 - width_, 9 - width_, 10 - width_);
+                     6, 7 + wrap_offset, 8 + wrap_offset, 9 + wrap_offset,
+                     10 + wrap_offset);
         } else if (column_index == (width_ - 6)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5,
-                     6 - width_, 7 - width_, 8 - width_, 9 - width_,
-                     10 - width_);
+                     6 + wrap_offset, 7 + wrap_offset, 8 + wrap_offset,
+                     9 + wrap_offset, 10 + wrap_offset);
         } else if (column_index == (width_ - 5)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4,
-                     5 - width_, 6 - width_, 7 - width_, 8 - width_, 9 - width_,
-                     10 - width_);
+                     5 + wrap_offset, 6 + wrap_offset, 7 + wrap_offset,
+                     8 + wrap_offset, 9 + wrap_offset, 10 + wrap_offset);
         } else if (column_index == (width_ - 4)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3,
-                     4 - width_, 5 - width_, 6 - width_, 7 - width_, 8 - width_,
-                     9 - width_, 10 - width_);
+                     4 + wrap_offset, 5 + wrap_offset, 6 + wrap_offset,
+                     7 + wrap_offset, 8 + wrap_offset, 9 + wrap_offset,
+                     10 + wrap_offset);
         } else if (column_index == (width_ - 3)) {
           return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2,
-                     3 - width_, 4 - width_, 5 - width_, 6 - width_, 7 - width_,
-                     8 - width_, 9 - width_, 10 - width_);
+                     3 + wrap_offset, 4 + wrap_offset, 5 + wrap_offset,
+                     6 + wrap_offset, 7 + wrap_offset, 8 + wrap_offset,
+                     9 + wrap_offset, 10 + wrap_offset);
         } else if (column_index == (width_ - 2)) {
-          return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2 - width_,
-                     3 - width_, 4 - width_, 5 - width_, 6 - width_, 7 - width_,
-                     8 - width_, 9 - width_, 10 - width_);
+          return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1,
+                     2 + wrap_offset, 3 + wrap_offset, 4 + wrap_offset,
+                     5 + wrap_offset, 6 + wrap_offset, 7 + wrap_offset,
+                     8 + wrap_offset, 9 + wrap_offset, 10 + wrap_offset);
         } else {
-          return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1 - width_,
-                     2 - width_, 3 - width_, 4 - width_, 5 - width_, 6 - width_,
-                     7 - width_, 8 - width_, 9 - width_, 10 - width_);
+          return get(-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0,
+                     1 + wrap_offset, 2 + wrap_offset, 3 + wrap_offset,
+                     4 + wrap_offset, 5 + wrap_offset, 6 + wrap_offset,
+                     7 + wrap_offset, 8 + wrap_offset, 9 + wrap_offset,
+                     10 + wrap_offset);
         }
         break;
 
