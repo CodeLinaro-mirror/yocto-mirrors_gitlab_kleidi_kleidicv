@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -85,8 +85,8 @@ static void constant(const Bordered *bordered, const ElementType *border_value,
       // Prepare right border columns.
       for (size_t column = 0; column < bordered->right(); ++column) {
         size_t dst_column =
-            elements->width() +
-            (column - bordered->right()) * elements->channels() + channel;
+            elements->width() -
+            (bordered->right() - column) * elements->channels() + channel;
         elements->at(row, dst_column)[0] = border_value[channel];
       }
     }

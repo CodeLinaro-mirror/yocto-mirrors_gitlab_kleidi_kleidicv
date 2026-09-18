@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -36,7 +36,18 @@ class GenerateLinearSeries : public Generator<ElementType> {
   explicit GenerateLinearSeries(ElementType start_from)
       : counter_{start_from} {}
 
-  std::optional<ElementType> next() override { return counter_++; }
+  std::optional<ElementType> next() override {
+    ElementType value = counter_;
+    if constexpr (std::is_integral_v<ElementType>) {
+      // Cycle through the type's range without overflowing the counter.
+      counter_ = counter_ == std::numeric_limits<ElementType>::max()
+                     ? std::numeric_limits<ElementType>::lowest()
+                     : static_cast<ElementType>(counter_ + 1);
+    } else {
+      ++counter_;
+    }
+    return value;
+  }
 
  private:
   ElementType counter_;

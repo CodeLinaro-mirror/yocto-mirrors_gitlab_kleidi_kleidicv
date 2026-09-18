@@ -126,14 +126,16 @@ static std::vector<T> pad_image_border_reverse(const T *src, size_t width,
   std::vector<T> dst(dst_stride * (height + pad_y * 2));
   for (size_t y = 0; y < height + pad_y * 2; ++y) {
     ptrdiff_t src_y = index_for_reverse_border(
-        static_cast<ptrdiff_t>(y - pad_y), static_cast<ptrdiff_t>(height));
+        static_cast<ptrdiff_t>(y) - static_cast<ptrdiff_t>(pad_y),
+        static_cast<ptrdiff_t>(height));
     const T *src_row = src + src_y * width;
 
     T *dst_row = dst.data() + y * dst_stride;
 
     for (size_t x = 0; x < dst_stride; ++x) {
       dst_row[x] = src_row[index_for_reverse_border(
-          static_cast<ptrdiff_t>(x - pad_left), static_cast<ptrdiff_t>(width))];
+          static_cast<ptrdiff_t>(x) - static_cast<ptrdiff_t>(pad_left),
+          static_cast<ptrdiff_t>(width))];
     }
   }
   return dst;

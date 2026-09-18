@@ -134,7 +134,7 @@ class Thread : public testing::TestWithParam<P> {
     test::PseudoRandomNumberGenerator<T> src_generator;
     src.fill(src_generator);
     test::PseudoRandomNumberGeneratorIntRange<int16_t> coord_generator{
-        static_cast<int16_t>(-src_width / 4),
+        static_cast<int16_t>(-static_cast<int64_t>(src_width) / 4),
         static_cast<int16_t>(src_width * 4 / 3)};
     mapxy.fill(coord_generator);
 
@@ -970,12 +970,8 @@ void check_scale_u8_consistency(size_t width, size_t height, float scale,
       dst_multi(width, height);
 
   // Check full input data range
-  uint8_t counter = 0;
-  for (size_t row = 0; row < height; ++row) {
-    for (size_t col = 0; col < width; ++col) {
-      *src.at(row, col) = counter++;
-    }
-  }
+  test::GenerateLinearSeries<uint8_t> generator(0);
+  src.fill(generator);
 
   kleidicv_error_t single_result =
       kleidicv_scale_u8(src.data(), src.stride(), dst_single.data(),

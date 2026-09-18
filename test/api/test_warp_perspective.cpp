@@ -460,10 +460,14 @@ static const size_t kPartWidth = 21, kPartHeight = 21;
 
 template <class ScalarType>
 static void part_initializer(test::Array2D<ScalarType> &source) {
-  ScalarType counter = 0;
+  test::GenerateLinearSeries<ScalarType> generator(1);
   for (size_t y = kBigHeight; y < kBigHeight + kPartHeight; ++y) {
     for (size_t x = kBigWidth; x < kBigWidth + kPartWidth; ++x) {
-      *source.at(y, x) = ++counter;
+      auto value = generator.next();
+      if (!value.has_value()) {
+        FAIL() << "Linear-series generator unexpectedly exhausted";
+      }
+      *source.at(y, x) = value.value();
     }
   }
 }
@@ -530,10 +534,14 @@ TYPED_TEST(WarpPerspectiveNearest, BigHeightDestination) {
 
 template <class ScalarType>
 static void huge_height_part_initializer(test::Array2D<ScalarType> &source) {
-  ScalarType counter = 0;
+  test::GenerateLinearSeries<ScalarType> generator(1);
   for (size_t y = kHugeHeight - kPartHeight; y < kHugeHeight; ++y) {
     for (size_t x = 0; x < 17; ++x) {
-      *source.at(y, x) = ++counter;
+      auto value = generator.next();
+      if (!value.has_value()) {
+        FAIL() << "Linear-series generator unexpectedly exhausted";
+      }
+      *source.at(y, x) = value.value();
     }
   }
 }
@@ -564,10 +572,14 @@ static const size_t oneline_part_width = 16, oneline_part_offset = 1ULL << 17,
 
 template <class ScalarType>
 static void oneline_part_initializer(test::Array2D<ScalarType> &source) {
-  ScalarType counter = 0;
+  test::GenerateLinearSeries<ScalarType> generator(1);
   for (size_t x = oneline_part_offset;
        x < oneline_part_offset + oneline_part_width; ++x) {
-    *source.at(0, x) = ++counter;
+    auto value = generator.next();
+    if (!value.has_value()) {
+      FAIL() << "Linear-series generator unexpectedly exhausted";
+    }
+    *source.at(0, x) = value.value();
   }
 }
 

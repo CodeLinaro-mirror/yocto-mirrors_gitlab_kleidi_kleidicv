@@ -1,13 +1,32 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstdint>
+#include <limits>
 #include <optional>
 
 #include "framework/generator.h"
+
+template <typename T>
+class GenerateLinearSeriesTest : public testing::Test {};
+
+using IntegerTypes = testing::Types<int8_t, uint8_t, int16_t, uint16_t, int32_t,
+                                    uint32_t, int64_t, uint64_t>;
+TYPED_TEST_SUITE(GenerateLinearSeriesTest, IntegerTypes);
+
+TYPED_TEST(GenerateLinearSeriesTest, WrapsAtMaximum) {
+  constexpr TypeParam kMaximum = std::numeric_limits<TypeParam>::max();
+  constexpr TypeParam kLowest = std::numeric_limits<TypeParam>::lowest();
+  test::GenerateLinearSeries<TypeParam> generator(kMaximum - 1);
+  EXPECT_EQ(generator.next(), kMaximum - 1);
+  EXPECT_EQ(generator.next(), kMaximum);
+  EXPECT_EQ(generator.next(), kLowest);
+  EXPECT_EQ(generator.next(), kLowest + 1);
+}
 
 // Tests test::PseudoRandomNumberGenerator::reset() works.
 TEST(PseudoRandomNumberGenerator, Reset) {

@@ -59,17 +59,6 @@ class CompareTestLinear final {
   }
 
  private:
-  class GenerateLinearSeries : public test::Generator<ElementType> {
-   public:
-    explicit GenerateLinearSeries(ElementType start_from)
-        : counter_{start_from} {}
-
-    std::optional<ElementType> next() override { return counter_++; }
-
-   private:
-    ElementType counter_;
-  };  // end of class GenerateLinearSeries
-
   // Number of padding bytes at the end of rows.
   size_t padding_{0};
 
@@ -83,8 +72,8 @@ class CompareTestLinear final {
     test::Array2D<ElementType> actual =
         test::Array2D<ElementType>(width, height, padding_, 1);
 
-    GenerateLinearSeries generator_a(lowest());
-    GenerateLinearSeries generator_b(128);
+    test::GenerateLinearSeries<ElementType> generator_a(lowest());
+    test::GenerateLinearSeries<ElementType> generator_b(128);
 
     source_a.fill(generator_a);
     source_b.fill(generator_b);

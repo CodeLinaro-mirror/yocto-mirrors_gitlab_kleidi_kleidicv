@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -76,7 +76,8 @@ class RemapS16 : public testing::Test {
                                   size_t padding) {
     test::Array2D<int16_t> mapxy{2 * dst_w, dst_h, padding, 2};
     test::PseudoRandomNumberGeneratorIntRange<int16_t> coord_generator{
-        static_cast<int16_t>(-src_w), static_cast<int16_t>(2 * src_w)};
+        static_cast<int16_t>(-static_cast<ptrdiff_t>(src_w)),
+        static_cast<int16_t>(2 * src_w)};
     mapxy.fill(coord_generator);
     execute_test(mapxy, src_w, src_h, dst_w, dst_h, channels, border_type,
                  border_value, padding);
@@ -451,7 +452,8 @@ class RemapS16Point5 : public testing::Test {
                                   size_t padding) {
     test::Array2D<int16_t> mapxy(2 * dst_w, dst_h, padding, 2);
     test::PseudoRandomNumberGeneratorIntRange<int16_t> coord_generator{
-        static_cast<int16_t>(-src_w), static_cast<int16_t>(2 * src_w)};
+        static_cast<int16_t>(-static_cast<ptrdiff_t>(src_w)),
+        static_cast<int16_t>(2 * src_w)};
     mapxy.fill(coord_generator);
     test::Array2D<uint16_t> mapfrac(dst_w, dst_h, padding);
     test::PseudoRandomNumberGeneratorIntRange<uint16_t> frac_generator(
@@ -601,12 +603,8 @@ class RemapS16Point5 : public testing::Test {
     test::Array2D<ScalarType> actual{dst_total_width, dst_h, padding, channels};
     test::Array2D<ScalarType> expected{dst_total_width, dst_h, padding,
                                        channels};
-    ScalarType counter = 0;
-    for (size_t y = 0; y < src_h; ++y) {
-      for (size_t x = 0; x < src_total_width; ++x) {
-        *source.at(y, x) = ++counter;
-      }
-    }
+    test::GenerateLinearSeries<ScalarType> generator(1);
+    source.fill(generator);
     actual.fill(42);
 
     calculate_expected(source, mapxy, mapfrac, border_type, border_value,

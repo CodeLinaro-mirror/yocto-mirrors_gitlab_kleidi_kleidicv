@@ -52,7 +52,7 @@ class YuvSpThread : public testing::TestWithParam<P> {
           height, color_format, get_multithreading_fake(thread_count));
     } else {
       test::Array2D<uint8_t> src_y(width, height);
-      test::Array2D<uint8_t> src_uv((width + 1) & ~1, (height + 1) / 2);
+      test::Array2D<uint8_t> src_uv((width + 1) & ~1U, (height + 1) / 2);
       src_y.fill(generator);
       src_uv.fill(generator);
 
