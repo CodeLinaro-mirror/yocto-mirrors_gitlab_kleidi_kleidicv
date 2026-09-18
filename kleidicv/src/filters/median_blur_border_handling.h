@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2025 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -11,14 +11,14 @@
 
 namespace kleidicv::neon {
 
-static ptrdiff_t get_physical_index(size_t index, size_t limit,
+static ptrdiff_t get_physical_index(ptrdiff_t index, size_t limit,
                                     FixedBorderType border_type) {
-  int result = 0;
-  int signed_index = static_cast<int>(index);
-  int signed_limit = static_cast<int>(limit);
+  ptrdiff_t result = 0;
+  ptrdiff_t signed_index = index;
+  ptrdiff_t signed_limit = static_cast<ptrdiff_t>(limit);
 
   if (signed_index >= 0 && signed_index < signed_limit) {
-    return static_cast<ptrdiff_t>(index);
+    return index;
   }
   switch (border_type) {
     case FixedBorderType::REFLECT: {
@@ -48,12 +48,12 @@ static ptrdiff_t get_physical_index(size_t index, size_t limit,
       break;
     }
     default: /* FixedBorderType::REPLICATE */ {
-      result = std::clamp(signed_index, 0, signed_limit - 1);
+      result = std::clamp(signed_index, ptrdiff_t{0}, signed_limit - 1);
       break;
     }
   }
 
-  return static_cast<ptrdiff_t>(result);
+  return result;
 }
 
 }  // namespace kleidicv::neon

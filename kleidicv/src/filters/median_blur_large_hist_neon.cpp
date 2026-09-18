@@ -50,9 +50,10 @@ class MedianBlurLargeHist {
         // This extra initial load enables a single update phase and avoids
         // splitting the logic into separate steps.
         for (size_t r = 0; r < ksize; ++r) {
-          const ptrdiff_t valid_h =
-              get_physical_index(starting_coordinates.y() + r - kMargin,
-                                 image_dimensions.height(), border_type);
+          const ptrdiff_t valid_h = get_physical_index(
+              static_cast<ptrdiff_t>(starting_coordinates.y() + r) -
+                  static_cast<ptrdiff_t>(kMargin),
+              image_dimensions.height(), border_type);
           initialize_patched_histogram_without_horizontal_borders(
               src_rows, c, valid_h, total_patch_span, w, kMargin);
         }
@@ -64,10 +65,12 @@ class MedianBlurLargeHist {
       for (size_t h = starting_coordinates.y() + 1; h < ending_coordinates.y();
            ++h) {
         const ptrdiff_t valid_old_h = get_physical_index(
-            h - kMargin - 1, image_dimensions.height(), border_type);
+            static_cast<ptrdiff_t>(h) - static_cast<ptrdiff_t>(kMargin) - 1,
+            image_dimensions.height(), border_type);
 
-        const ptrdiff_t valid_new_h = get_physical_index(
-            h + kMargin, image_dimensions.height(), border_type);
+        const ptrdiff_t valid_new_h =
+            get_physical_index(static_cast<ptrdiff_t>(h + kMargin),
+                               image_dimensions.height(), border_type);
 
         for (ptrdiff_t c = 0; c < static_cast<ptrdiff_t>(src_rows.channels());
              ++c) {
@@ -108,9 +111,10 @@ class MedianBlurLargeHist {
         // This extra initial load enables a single update phase and avoids
         // splitting the logic into separate steps.
         for (size_t r = 0; r < ksize; ++r) {
-          const ptrdiff_t valid_h =
-              get_physical_index(starting_coordinates.y() + r - kMargin,
-                                 image_dimensions.height(), border_type);
+          const ptrdiff_t valid_h = get_physical_index(
+              static_cast<ptrdiff_t>(starting_coordinates.y() + r) -
+                  static_cast<ptrdiff_t>(kMargin),
+              image_dimensions.height(), border_type);
           initialize_patched_histogram_with_horizontal_borders(
               src_rows, c, valid_h, total_patch_span, w, kMargin,
               image_dimensions.width(), border_type);
@@ -123,9 +127,11 @@ class MedianBlurLargeHist {
       for (size_t h = starting_coordinates.y() + 1; h < ending_coordinates.y();
            ++h) {
         const ptrdiff_t valid_old_h = get_physical_index(
-            h - kMargin - 1, image_dimensions.height(), border_type);
-        const ptrdiff_t valid_new_h = get_physical_index(
-            h + kMargin, image_dimensions.height(), border_type);
+            static_cast<ptrdiff_t>(h) - static_cast<ptrdiff_t>(kMargin) - 1,
+            image_dimensions.height(), border_type);
+        const ptrdiff_t valid_new_h =
+            get_physical_index(static_cast<ptrdiff_t>(h + kMargin),
+                               image_dimensions.height(), border_type);
         for (ptrdiff_t c = 0; c < static_cast<ptrdiff_t>(src_rows.channels());
              ++c) {
           clear_lookup_table();
@@ -248,7 +254,9 @@ class MedianBlurLargeHist {
     for (size_t patch_offset = 0; patch_offset < total_patch_span;
          ++patch_offset) {
       ptrdiff_t valid_w = get_physical_index(
-          starting_width + patch_offset - kMargin, width, border_type);
+          static_cast<ptrdiff_t>(starting_width + patch_offset) -
+              static_cast<ptrdiff_t>(kMargin),
+          width, border_type);
 
       auto incoming_pixel = src_rows.at(valid_h, valid_w)[c];
 
@@ -359,7 +367,9 @@ class MedianBlurLargeHist {
     for (size_t patch_offset = 0; patch_offset < total_patch_span;
          ++patch_offset) {
       const ptrdiff_t valid_w = get_physical_index(
-          starting_width + patch_offset - kMargin, width, border_type);
+          static_cast<ptrdiff_t>(starting_width + patch_offset) -
+              static_cast<ptrdiff_t>(kMargin),
+          width, border_type);
       auto outgoing_pixel = src_rows.at(valid_old_h, valid_w)[c];
       auto incoming_pixel = src_rows.at(valid_new_h, valid_w)[c];
       scalar_update_patch_histogram(outgoing_pixel, incoming_pixel, c,

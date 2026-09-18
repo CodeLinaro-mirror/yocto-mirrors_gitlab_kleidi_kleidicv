@@ -35,11 +35,13 @@ class MedianBlurSmallHist {
         // splitting the logic into separate steps.
         for (size_t r = 0; r < ksize; r++) {
           for (size_t c = 0; c < ksize; c++) {
-            const ptrdiff_t valid_h =
-                get_physical_index(starting_coordinates.y() + r - kMargin,
-                                   image_dimensions.height(), border_type);
+            const ptrdiff_t valid_h = get_physical_index(
+                static_cast<ptrdiff_t>(starting_coordinates.y() + r) -
+                    static_cast<ptrdiff_t>(kMargin),
+                image_dimensions.height(), border_type);
             const ptrdiff_t valid_w = get_physical_index(
-                w + c - kMargin, image_dimensions.width(), border_type);
+                static_cast<ptrdiff_t>(w + c) - static_cast<ptrdiff_t>(kMargin),
+                image_dimensions.width(), border_type);
 
             uint8_t pixel = src_rows.at(valid_h, valid_w)[ch];
 
@@ -54,15 +56,18 @@ class MedianBlurSmallHist {
 
         for (size_t h = starting_coordinates.y() + 1;
              h < ending_coordinates.y(); h++) {
-          const ptrdiff_t valid_new_h = get_physical_index(
-              h + kMargin, image_dimensions.height(), border_type);
+          const ptrdiff_t valid_new_h =
+              get_physical_index(static_cast<ptrdiff_t>(h + kMargin),
+                                 image_dimensions.height(), border_type);
 
           const ptrdiff_t valid_old_h = get_physical_index(
-              h - kMargin - 1, image_dimensions.height(), border_type);
+              static_cast<ptrdiff_t>(h) - static_cast<ptrdiff_t>(kMargin) - 1,
+              image_dimensions.height(), border_type);
 
           for (size_t c = 0; c < ksize; c++) {
             const ptrdiff_t valid_w = get_physical_index(
-                w + c - kMargin, image_dimensions.width(), border_type);
+                static_cast<ptrdiff_t>(w + c) - static_cast<ptrdiff_t>(kMargin),
+                image_dimensions.width(), border_type);
 
             uint8_t incoming_pixel = src_rows.at(valid_new_h, valid_w)[ch];
 
@@ -97,9 +102,10 @@ class MedianBlurSmallHist {
       // This extra initial load enables a single update phase and avoids
       // splitting the logic into separate steps.
       for (size_t r = 0; r < ksize; r++) {
-        const ptrdiff_t vertical_index =
-            get_physical_index(starting_coordinates.y() + r - KMargin_h,
-                               image_dimensions.height(), border_type);
+        const ptrdiff_t vertical_index = get_physical_index(
+            static_cast<ptrdiff_t>(starting_coordinates.y() + r) -
+                static_cast<ptrdiff_t>(KMargin_h),
+            image_dimensions.height(), border_type);
 
         for (size_t c = 0; c < ksize; c++) {
           const size_t horizontal_index =
@@ -119,11 +125,13 @@ class MedianBlurSmallHist {
 
       for (size_t h = starting_coordinates.y() + 1; h < ending_coordinates.y();
            ++h) {
-        const ptrdiff_t vertical_index_new = get_physical_index(
-            h + KMargin_h, image_dimensions.height(), border_type);
+        const ptrdiff_t vertical_index_new =
+            get_physical_index(static_cast<ptrdiff_t>(h + KMargin_h),
+                               image_dimensions.height(), border_type);
 
         const ptrdiff_t vertical_index_old = get_physical_index(
-            h - KMargin_h - 1, image_dimensions.height(), border_type);
+            static_cast<ptrdiff_t>(h) - static_cast<ptrdiff_t>(KMargin_h) - 1,
+            image_dimensions.height(), border_type);
 
         for (size_t c = 0; c < ksize; c++) {
           size_t horizontal_index = w + c * src_rows.channels() - KMargin_w;
