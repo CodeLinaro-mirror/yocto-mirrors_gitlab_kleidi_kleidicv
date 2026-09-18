@@ -202,7 +202,7 @@ class StandaloneLucasKanadeAlg {
   static int16x4_t vld1ub_s16(const uint8_t *ptr) {
     uint32_t a = 0;
     memcpy(&a, ptr, sizeof(a));
-    uint32x2_t b = vset_lane_u32(a, vdup_n_s32(0), 0);
+    uint32x2_t b{a, 0};
     uint8x8_t c = vreinterpret_u8_u32(b);
     return vget_low_s16(vmovl_u8(c));
   }

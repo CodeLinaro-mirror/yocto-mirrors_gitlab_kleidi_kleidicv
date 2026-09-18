@@ -229,25 +229,26 @@ static inline void copy_reversed_row_to_dst(
         src += num_lanes * kScalarsPerPixel;
       });
 
-  column_loop.remaining(
-      [&](size_t tail_begin, size_t tail_end) KLEIDICV_STREAMING {
-        const size_t tail_length = tail_end - tail_begin;
-        dst -= tail_length * kScalarsPerPixel;
+  column_loop.remaining([&](size_t tail_begin,
+                            size_t tail_end) KLEIDICV_STREAMING {
+    const size_t tail_length = tail_end - tail_begin;
+    dst -= tail_length * kScalarsPerPixel;
 
-        // Predicate & manual reversal indices for partial vector
-        svbool_t pred = VectorTraits::svwhilelt(tail_begin, tail_end);
-        Vector rev_indices = VectorTraits::svindex(tail_length - 1, -1);
+    // Predicate & manual reversal indices for partial vector
+    svbool_t pred = VectorTraits::svwhilelt(tail_begin, tail_end);
+    constexpr ScalarType kReverseStep = static_cast<ScalarType>(-1);
+    Vector rev_indices = VectorTraits::svindex(tail_length - 1, kReverseStep);
 
-        if constexpr (kScalarsPerPixel == 3) {
-          Vector3 vectors = svld3(pred, src);
-          svst3(pred, dst,
-                apply_tbl_per_vector<VectorTraits>(vectors, rev_indices));
-        } else {
-          Vector pixels = svld1(pred, src);
-          Vector rev_pixels = svtbl(pixels, rev_indices);
-          svst1(pred, dst, rev_pixels);
-        }
-      });
+    if constexpr (kScalarsPerPixel == 3) {
+      Vector3 vectors = svld3(pred, src);
+      svst3(pred, dst,
+            apply_tbl_per_vector<VectorTraits>(vectors, rev_indices));
+    } else {
+      Vector pixels = svld1(pred, src);
+      Vector rev_pixels = svtbl(pixels, rev_indices);
+      svst1(pred, dst, rev_pixels);
+    }
+  });
 }
 
 template <typename ScalarType, size_t kScalarsPerPixel>
@@ -372,7 +373,9 @@ static inline void swap_reversed_row_pair_in_place(
 
     // Predicate & manual reversal indices for partial vector
     svbool_t pg = VectorTraits::svwhilelt(tail_begin, tail_end);
-    Vector reversal_indices = VectorTraits::svindex(tail_length - 1, -1);
+    constexpr ScalarType kReverseStep = static_cast<ScalarType>(-1);
+    Vector reversal_indices =
+        VectorTraits::svindex(tail_length - 1, kReverseStep);
 
     if constexpr (kScalarsPerPixel == 3) {
       Vector3 forward_vectors = svld3(pg, forward);

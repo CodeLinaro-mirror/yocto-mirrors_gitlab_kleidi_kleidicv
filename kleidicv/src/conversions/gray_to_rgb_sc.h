@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -173,7 +173,8 @@ class GrayToRGBAWithLookUpTable final : public UnrollTwice,
 
  private:
   Vector4Type common_vector_path(VectorType src_vect) KLEIDICV_STREAMING {
-    svuint8x2_t src_and_alpha = svcreate2(src_vect, VecTraits::svdup(-1));
+    svuint8x2_t src_and_alpha =
+        svcreate2(src_vect, VecTraits::svdup(static_cast<ScalarType>(-1)));
     // Convert from gray to RGBA using table-lookups.
     return svcreate4(svtbl2(src_and_alpha, svget4(indices_, 0)),
                      svtbl2(src_and_alpha, svget4(indices_, 1)),
