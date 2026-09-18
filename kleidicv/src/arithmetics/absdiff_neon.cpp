@@ -1,8 +1,9 @@
-// SPDX-FileCopyrightText: 2023 - 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2023 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <type_traits>
+#include <algorithm>
+#include <limits>
 
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/neon.h"
@@ -25,13 +26,11 @@ class SaturatingAbsDiff final : public UnrollTwice {
   }
 
   ScalarType scalar_path(ScalarType src_a, ScalarType src_b) {
-    using UnsignedScalarType = std::make_unsigned_t<ScalarType>;
-    // Calculate unsigned difference and then apply saturating cast.
-    UnsignedScalarType u_src_a = static_cast<UnsignedScalarType>(src_a);
-    UnsignedScalarType u_src_b = static_cast<UnsignedScalarType>(src_b);
-    UnsignedScalarType difference =
-        src_a > src_b ? u_src_a - u_src_b : u_src_b - u_src_a;
-    return saturating_cast<UnsignedScalarType, ScalarType>(difference);
+    ScalarType difference;
+    return __builtin_sub_overflow(std::max(src_a, src_b),
+                                  std::min(src_a, src_b), &difference)
+               ? std::numeric_limits<ScalarType>::max()
+               : difference;
   }
 };  // end of class SaturatingAbsDiff<ScalarType>
 
