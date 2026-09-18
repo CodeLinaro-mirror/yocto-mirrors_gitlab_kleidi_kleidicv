@@ -237,7 +237,12 @@ class RowBase {
   [[nodiscard]] static P *add_stride(P *ptr,
                                      ptrdiff_t stride) KLEIDICV_STREAMING {
     uintptr_t intptr = reinterpret_cast<uintptr_t>(ptr);
-    intptr += stride;
+    if (stride >= 0) {
+      intptr += static_cast<uintptr_t>(stride);
+    } else {
+      // Avoid negating PTRDIFF_MIN when computing the offset magnitude.
+      intptr -= static_cast<uintptr_t>(-(stride + 1)) + 1;
+    }
     // NOLINTBEGIN(performance-no-int-to-ptr)
     return reinterpret_cast<P *>(intptr);
     // NOLINTEND(performance-no-int-to-ptr)
@@ -248,7 +253,12 @@ class RowBase {
   [[nodiscard]] static P *subtract_stride(P *ptr,
                                           ptrdiff_t stride) KLEIDICV_STREAMING {
     uintptr_t intptr = reinterpret_cast<uintptr_t>(ptr);
-    intptr -= stride;
+    if (stride >= 0) {
+      intptr -= static_cast<uintptr_t>(stride);
+    } else {
+      // Avoid negating PTRDIFF_MIN when computing the offset magnitude.
+      intptr += static_cast<uintptr_t>(-(stride + 1)) + 1;
+    }
     // NOLINTBEGIN(performance-no-int-to-ptr)
     return reinterpret_cast<P *>(intptr);
     // NOLINTEND(performance-no-int-to-ptr)
@@ -454,8 +464,10 @@ class ParallelRows final : public RowBase<T> {
 
   // Addition assignment operator to navigate among rows.
   ParallelRows<T> &operator+=(ptrdiff_t diff) KLEIDICV_STREAMING {
-    ptrs_[0] = RowBase<T>::add_stride(ptrs_[0], diff * stride());
-    ptrs_[1] = RowBase<T>::add_stride(ptrs_[1], diff * stride());
+    ptrs_[0] = RowBase<T>::add_stride(ptrs_[0],
+                                      diff * static_cast<ptrdiff_t>(stride()));
+    ptrs_[1] = RowBase<T>::add_stride(ptrs_[1],
+                                      diff * static_cast<ptrdiff_t>(stride()));
     return *this;
   }
 
