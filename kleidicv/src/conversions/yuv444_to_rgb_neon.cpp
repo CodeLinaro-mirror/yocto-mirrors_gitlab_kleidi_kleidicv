@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,9 +23,9 @@ class YUVToRGBAll final : public UnrollOnce, public TryToAvoidTailLoop {
       typename std::conditional<kAlpha, uint8x16x4_t, uint8x16x3_t>::type;
 
   explicit YUVToRGBAll()
-      : b_delta4_(vdupq_n_u32(kBDelta4)),
-        g_delta4_(vdupq_n_u32(kGDelta4)),
-        r_delta4_(vdupq_n_u32(kRDelta4)) {}
+      : b_delta4_(vdupq_n_s32(kBDelta4)),
+        g_delta4_(vdupq_n_s32(kGDelta4)),
+        r_delta4_(vdupq_n_s32(kRDelta4)) {}
 
   // Returns the number of channels in the output image.
   static constexpr size_t output_channels() {

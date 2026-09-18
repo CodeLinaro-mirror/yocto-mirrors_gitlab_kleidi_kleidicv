@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 - 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+// SPDX-FileCopyrightText: 2024 - 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -148,7 +148,7 @@ class RGBToYUVAll final : public UnrollOnce, public TryToAvoidTailLoop {
   static constexpr size_t g_index_ = 1;
   static constexpr size_t b_index_ = BGR ? 0 : 2;
   static constexpr size_t step_ = kAlpha ? 4 : 3;
-  static constexpr uint32_t half_ =
+  static constexpr int32_t half_ =
       (std::numeric_limits<uint8_t>::max() / 2 + 1U) << kWeightScale;
 
   KLEIDICV_FORCE_INLINE
