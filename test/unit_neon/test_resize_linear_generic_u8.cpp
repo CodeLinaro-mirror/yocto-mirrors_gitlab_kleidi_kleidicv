@@ -35,7 +35,8 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
     int64_t dx = dst_index / kChannels;
     int64_t sx_base = to_src_x(dx);
     ptrdiff_t src_element_base = static_cast<ptrdiff_t>(
-        (sx_base >> kFixpBits) * kChannels + (dst_index % kChannels));
+        (sx_base >> kFixpBits) * static_cast<int64_t>(kChannels) +
+        (dst_index % static_cast<int64_t>(kChannels)));
 
     // Pullback if needed
     ptrdiff_t max_src_base_index =
@@ -59,10 +60,10 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
           static_cast<int64_t>((sx0 * kChannels) + in_pixel_index);
       int64_t src_index1 =
           static_cast<int64_t>((sx1 * kChannels) + in_pixel_index);
-      constants.idx0[i] =
-          saturating_cast<int64_t, int8_t>(src_index0 - src_element_base);
-      constants.idx1[i] =
-          saturating_cast<int64_t, int8_t>(src_index1 - src_element_base);
+      constants.idx0[i] = static_cast<uint8_t>(
+          saturating_cast<int64_t, int8_t>(src_index0 - src_element_base));
+      constants.idx1[i] = static_cast<uint8_t>(
+          saturating_cast<int64_t, int8_t>(src_index1 - src_element_base));
     }
 
     if constexpr (kChannels == 3) {
@@ -95,9 +96,9 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
 
     int64_t dx = dst_index / kChannels;
     int64_t sx_base_fixp = to_src_x(dx);
-    ptrdiff_t src_element_base_index =
-        static_cast<ptrdiff_t>(((sx_base_fixp >> kFixpBits) * kChannels) +
-                               (!kUpsize ? (dst_index % kChannels) : 0));
+    ptrdiff_t src_element_base_index = static_cast<ptrdiff_t>(
+        ((sx_base_fixp >> kFixpBits) * static_cast<int64_t>(kChannels)) +
+        (!kUpsize ? (dst_index % static_cast<int64_t>(kChannels)) : 0));
 
     // Pullback / pull front src if needed
     size_t src_read_size =
@@ -123,10 +124,10 @@ reference_interpolation_constants(size_t src_width, size_t dst_width) {
           static_cast<ptrdiff_t>((sx0 * kChannels) + in_pixel_index);
       ptrdiff_t src_index1 =
           static_cast<ptrdiff_t>((sx1 * kChannels) + in_pixel_index);
-      constants.idx0[i] =
-          saturating_cast<int64_t, int8_t>(src_index0 - src_element_base_index);
-      constants.idx1[i] =
-          saturating_cast<int64_t, int8_t>(src_index1 - src_element_base_index);
+      constants.idx0[i] = static_cast<uint8_t>(saturating_cast<int64_t, int8_t>(
+          src_index0 - src_element_base_index));
+      constants.idx1[i] = static_cast<uint8_t>(saturating_cast<int64_t, int8_t>(
+          src_index1 - src_element_base_index));
     }
   }
 

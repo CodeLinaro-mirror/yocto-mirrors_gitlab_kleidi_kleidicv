@@ -124,7 +124,7 @@ class PrecalcIndicesFractions final {
         coordinate_step(kStep_ / kChannels, src_width_, dst_width_);
     int64_t sx_coordinate = initial_coordinate(src_width_, dst_width_);
     const int64_t max_src_index =
-        std::max<int64_t>(src_width_ * kChannels - kSrcReadSize, 0L);
+        saturating_sub(src_width_ * kChannels, kSrcReadSize);
     for (auto pcit = begin(); pcit.index_ < n_iterations_; ++pcit) {
       int64_t sx_fixp = narrow_coordinate(sx_coordinate);
 
@@ -171,8 +171,8 @@ class PrecalcIndicesFractions final {
     const int64_t sx_coordinate_step3 =
         coordinate_step(kStep_, src_width_, dst_width_);
     int64_t sx_coordinate = initial_coordinate(src_width_, dst_width_);
-    const uint64_t max_src_index =
-        std::max<int64_t>(src_width_ * kChannels - kStep_ * kRatio, 0L);
+    const uint64_t max_src_index = saturating_sub(
+        src_width_ * kChannels, static_cast<size_t>(kStep_ * kRatio));
     auto pcit = begin();
     while (pcit.index_ < n_iterations_) {
       int64_t sx_fixp = narrow_coordinate(sx_coordinate);
@@ -326,8 +326,8 @@ class PrecalcIndicesFractions final {
       svint8_t min_idx = svdup_n_s8(saturating_cast<int64_t, int8_t>(-sx_base));
       vsx0_idx = svmax_x(svptrue_b8(), vsx0_idx, min_idx);
       vsx1_idx = svmax_x(svptrue_b8(), vsx1_idx, min_idx);
-      svint8_t max_idx = svdup_n_s8(
-          saturating_cast<int64_t, int8_t>(src_width_ - 1 - sx_base));
+      svint8_t max_idx = svdup_n_s8(saturating_cast<int64_t, int8_t>(
+          static_cast<int64_t>(src_width_) - 1 - sx_base));
       vsx0_idx = svmin_x(svptrue_b8(), vsx0_idx, max_idx);
       vsx1_idx = svmin_x(svptrue_b8(), vsx1_idx, max_idx);
     }

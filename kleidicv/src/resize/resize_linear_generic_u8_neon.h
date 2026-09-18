@@ -242,9 +242,11 @@ class RowInterpolationConstantsGenerator final
 
     // Calculate constants for full vectors
 
-    // Maximum source coordinate for full vector path
+    // Maximum source coordinate for full vector path. Small images skip this
+    // path, so clamp its otherwise negative bound to zero.
     const int64_t max_sx_fullvector = static_cast<int64_t>(
-        (Base::src_width_ * kChannels - kFullVectorSrcReadSize) / kChannels);
+        saturating_sub(Base::src_width_ * kChannels, kFullVectorSrcReadSize) /
+        kChannels);
 
     // Q32 difference in source x coordinate for one vector path. Q32 keeps
     // accumulated error smaller while avoiding periodic recalibration.
@@ -283,17 +285,17 @@ class RowInterpolationConstantsGenerator final
     sx_fixp = Base::to_src_x(dx);
 
     // Difference in source x coordinate for one destination pixel
-    const uint64_t sx_fixp_one_dst_pixel =
-        rounding_div(Base::src_width_ << kFixpBits, Base::dst_width_);
+    const int64_t sx_fixp_one_dst_pixel =
+        rounding_div<int64_t>(Base::src_width_ << kFixpBits, Base::dst_width_);
     // Maximum source coordinate for half vector path
     const uint64_t max_sx_half =
         (Base::src_width_ * kChannels - kHalfVectorSrcReadSize) / kChannels;
     // Maximum destination coordinate for half vector path
     const uint64_t max_dx_half = Base::dst_width_ - (kHalfStep / kChannels);
     // Difference in source x coordinate for the half vector path
-    const uint64_t sx_fixp_half_step =
-        rounding_div((Base::src_width_ * kHalfStep / kChannels) << kFixpBits,
-                     Base::dst_width_);
+    const int64_t sx_fixp_half_step = rounding_div<int64_t>(
+        (Base::src_width_ * kHalfStep / kChannels) << kFixpBits,
+        Base::dst_width_);
 
     for (size_t i = 0;
          i < row_interpolation_constants.num_of_vector_paths().half; ++i) {
@@ -592,8 +594,8 @@ class RowInterpolationConstantsGenerator<kRatio, 3, kUpsize> final
           vdupq_n_s8(saturating_cast<int64_t, int8_t>(-sx_base));
       vsx0_idx = vmaxq_s8(vsx0_idx, vminidx);
       vsx1_idx = vmaxq_s8(vsx1_idx, vminidx);
-      int8x16_t vmaxidx = vdupq_n_s8(
-          saturating_cast<size_t, int8_t>(Base::src_width_ - 1 - sx_base));
+      int8x16_t vmaxidx = vdupq_n_s8(saturating_cast<int64_t, int8_t>(
+          static_cast<int64_t>(Base::src_width_) - 1 - sx_base));
       vsx0_idx = vminq_s8(vsx0_idx, vmaxidx);
       vsx1_idx = vminq_s8(vsx1_idx, vmaxidx);
     }
@@ -843,8 +845,8 @@ class ResizeGenericU8Operation final {
         // the right neighbour of the last destination pixel remains within the
         // source row, so this direct scalar load cannot overread it.
         ptrdiff_t last_right_elem_idx = src_element_index + constants.idx1[15];
-        b = vsetq_lane_u8(src_top[last_right_elem_idx], b, 15);
-        d = vsetq_lane_u8(src_bottom[last_right_elem_idx], d, 15);
+        b[15] = src_top[last_right_elem_idx];
+        d[15] = src_bottom[last_right_elem_idx];
       }
     }
     uint8x16_t left = lerp(a, c, yfrac);
