@@ -2435,9 +2435,9 @@ KLEIDICV_API_DECLARATION(kleidicv_erode_u8_sme, const uint8_t *src,
 /// Coordinates are first rounded to Q16, introducing at most `1 / 131072` of
 /// a source pixel of error. Rounding the fractional part to Q15 adds at most
 /// `1 / 65536`, so the combined contribution is at most `3 * 255 / 131072` of
-/// an output level per dimension. The vertical intermediate is rounded to
-/// uint8 before the horizontal step; its error is blended by the horizontal
-/// weights instead of being added for both source columns. For directly
+/// an output level per dimension. The horizontal intermediate is rounded to
+/// uint8 before the vertical step; its error is blended by the vertical
+/// weights instead of being added for both source rows. For directly
 /// calculated coordinates these effects can change the final rounded result
 /// by at most `1`.
 ///

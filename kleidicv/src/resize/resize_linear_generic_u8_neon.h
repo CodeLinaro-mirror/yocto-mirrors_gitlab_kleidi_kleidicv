@@ -800,9 +800,9 @@ class ResizeGenericU8Operation final {
       c = vqtbl2_u8(bottomsrc, vsx0_idx);
       d = vqtbl2_u8(bottomsrc, vsx1_idx);
     }
-    uint8x8_t left = lerp(a, c, yfrac);
-    uint8x8_t right = lerp(b, d, yfrac);
-    uint8x8_t res = lerp(left, right, vsxfrac);
+    uint8x8_t top = lerp(a, b, vsxfrac);
+    uint8x8_t bottom = lerp(c, d, vsxfrac);
+    uint8x8_t res = lerp(top, bottom, yfrac);
     return res;
   }
 
@@ -849,9 +849,9 @@ class ResizeGenericU8Operation final {
         d[15] = src_bottom[last_right_elem_idx];
       }
     }
-    uint8x16_t left = lerp(a, c, yfrac);
-    uint8x16_t right = lerp(b, d, yfrac);
-    return lerp(left, right, vsxfrac2);
+    uint8x16_t top = lerp(a, b, vsxfrac2);
+    uint8x16_t bottom = lerp(c, d, vsxfrac2);
+    return lerp(top, bottom, yfrac);
   }
 
   static int16x8_t lerp_delta(uint8x8_t a, uint8x8_t b, uint16_t w) {

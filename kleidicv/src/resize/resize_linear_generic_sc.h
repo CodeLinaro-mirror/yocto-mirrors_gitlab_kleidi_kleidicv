@@ -549,9 +549,9 @@ class ResizeGenericU8Operation final {
     svuint16_t vsxfrac_b = svld1(svptrue_b16(), pcit.frac_ptr_);
     svuint16_t vsxfrac_t = svld1_vnum(svptrue_b16(), pcit.frac_ptr_, 1);
 #endif
-    svuint8_t left = lerp(a, c, static_cast<int16_t>(yfrac));
-    svuint8_t right = lerp(b, d, static_cast<int16_t>(yfrac));
-    return lerp(left, right, vsxfrac_b, vsxfrac_t);
+    svuint8_t top = lerp(a, b, vsxfrac_b, vsxfrac_t);
+    svuint8_t bottom = lerp(c, d, vsxfrac_b, vsxfrac_t);
+    return lerp(top, bottom, static_cast<int16_t>(yfrac));
   }
 
   svuint8_t common_vector_path_r1(
