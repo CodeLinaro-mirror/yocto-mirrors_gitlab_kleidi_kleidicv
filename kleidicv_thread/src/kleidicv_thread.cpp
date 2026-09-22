@@ -302,15 +302,9 @@ kleidicv_error_t kleidicv_thread_in_range_u8(
     const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
     size_t width, size_t height, uint8_t lower_bound, uint8_t upper_bound,
     kleidicv_thread_multithreading mt) {
-#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
-  return kleidicv_thread_unary_op_with_sme_impl(
-      kleidicv_in_range_u8, kleidicv_in_range_u8_sme, mt, src, src_stride, dst,
-      dst_stride, width, height, lower_bound, upper_bound);
-#else
   return kleidicv_thread_unary_op_impl(kleidicv_in_range_u8, mt, src,
                                        src_stride, dst, dst_stride, width,
                                        height, lower_bound, upper_bound);
-#endif
 }
 
 kleidicv_error_t kleidicv_thread_threshold_binary_u8(
@@ -1146,16 +1140,7 @@ kleidicv_error_t kleidicv_thread_scharr_interleaved_s16_u8(
   };
 
   // height is decremented by 2 as the result has less rows.
-#if KLEIDICV_ENABLE_SME_THREAD_DISPATCH
-  auto sme_callback = [=](size_t y_begin, size_t y_end) {
-    return kleidicv_scharr_interleaved_stripe_s16_u8_sme(
-        src, src_stride, src_width, src_height, src_channels, dst, dst_stride,
-        y_begin, y_end);
-  };
-  return parallel_batches_with_sme(callback, sme_callback, mt, src_height - 2);
-#else
   return parallel_batches(callback, mt, src_height - 2);
-#endif
 }
 
 inline kleidicv_error_t kleidicv_thread_resize_linear_fixed_scale_u8(
