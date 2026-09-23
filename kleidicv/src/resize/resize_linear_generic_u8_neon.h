@@ -741,6 +741,11 @@ class ResizeGenericU8Operation final {
     int64_t sy_fixp = to_src_y(dy);
     ptrdiff_t sy = static_cast<ptrdiff_t>(sy_fixp >> kFixpBits);
     const ptrdiff_t max_sy = static_cast<ptrdiff_t>(src_height_ - 1);
+
+    // Clamping is needed during downscaling too: fixed-point rounding can
+    // select the last row as sy_top instead of sy_bottom. This is valid because
+    // in that case yfrac is zero, so all interpolation weight is assigned to
+    // sy_top.
     ptrdiff_t sy_top = std::clamp(sy, ptrdiff_t{0}, max_sy);
     ptrdiff_t sy_bottom = std::clamp(sy + 1, ptrdiff_t{0}, max_sy);
     const uint8_t *src_top = &src_rows_.at(sy_top)[0];
@@ -779,6 +784,9 @@ class ResizeGenericU8Operation final {
     VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);
 
     uint8x8_t a, b, c, d;
+    // During downscaling, fixed-point rounding can put sx0 on the last source
+    // pixel, making sx1 an out-of-table index. TBL returns zero for that index,
+    // which is harmless because the corresponding horizontal weight is zero.
     if constexpr (!kLoadTwo) {
       a = vqtbl1_u8(topsrc, vsx0_idx);
       b = vqtbl1_u8(topsrc, vsx1_idx);
@@ -809,6 +817,9 @@ class ResizeGenericU8Operation final {
     VecTraits<uint8_t>::load(&src_top[src_element_index], topsrc);
     VecTraits<uint8_t>::load(&src_bottom[src_element_index], bottomsrc);
     uint8x16_t a, b, c, d;
+    // During downscaling, fixed-point rounding can put sx0 on the last source
+    // pixel, making sx1 an out-of-table index. TBL returns zero for that index,
+    // which is harmless because the corresponding horizontal weight is zero.
     if constexpr (kRatio == 1) {
       a = vqtbl1q_u8(topsrc, vsx0_idx);
       b = vqtbl1q_u8(topsrc, vsx1_idx);
@@ -828,6 +839,9 @@ class ResizeGenericU8Operation final {
       d = vqtbl3q_u8(bottomsrc, vsx1_idx);
       // table lookup would overindex topsrc and bottomsrc
       if constexpr (kSetRightmostLanes) {
+        // This path is used only for inverse scales of at least 2.8. Therefore,
+        // the right neighbour of the last destination pixel remains within the
+        // source row, so this direct scalar load cannot overread it.
         ptrdiff_t last_right_elem_idx = src_element_index + constants.idx1[15];
         b = vsetq_lane_u8(src_top[last_right_elem_idx], b, 15);
         d = vsetq_lane_u8(src_bottom[last_right_elem_idx], d, 15);

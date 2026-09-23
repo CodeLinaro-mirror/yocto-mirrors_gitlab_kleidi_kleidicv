@@ -315,6 +315,10 @@ class PrecalcIndicesFractions final {
     svint8_t vsx0_idx = svuzp1_s8(svget2(vsx_delta8, 0), svget2(vsx_delta8, 1));
     svint8_t vsx1_idx = svadd_n_s8_x(svptrue_b8(), vsx0_idx, 1);
 
+    // During downscaling, fixed-point rounding can put sx0 on the last source
+    // pixel, making sx1 an out-of-table index. TBL returns zero for that index,
+    // which is harmless because the corresponding horizontal weight is zero.
+
     if constexpr (kUpsize) {
       // Clamp coordinates
       // At this point the lanes contain x-coordinates based on sx_base.
@@ -686,6 +690,11 @@ class ResizeGenericU8Operation final {
     int64_t sy_fixp = to_src_y(dy);
     ptrdiff_t sy = static_cast<ptrdiff_t>(sy_fixp >> kFixpBits);
     const ptrdiff_t max_sy = static_cast<ptrdiff_t>(src_height_ - 1);
+
+    // Clamping is needed during downscaling too: fixed-point rounding can
+    // select the last row as sy_top instead of sy_bottom. This is valid because
+    // in that case yfrac is zero, so all interpolation weight is assigned to
+    // sy_top.
     ptrdiff_t sy_top = std::clamp(sy, ptrdiff_t{0}, max_sy);
     ptrdiff_t sy_bottom = std::clamp(sy + 1, ptrdiff_t{0}, max_sy);
     const uint8_t *src_top = &src_rows_.at(sy_top)[0];

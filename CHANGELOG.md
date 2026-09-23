@@ -45,6 +45,10 @@ This changelog aims to follow the guiding principles of
 - WarpPerspective zero-weight detection at stripe boundaries and when
   other perspective weights overflow, ensuring zero-weight pixels map to source
   coordinate (0, 0).
+- Generic `uint8_t` linear resize in KleidiCV 26.03 could access a row past the
+  bottom of the source image when the destination height was slightly smaller
+  than the source height (a vertical scaling factor just below 1.0), potentially
+  causing a segmentation fault. This issue was already fixed in 26.06.
 
 ### Removed
 - Support for OpenCV 4.13.
