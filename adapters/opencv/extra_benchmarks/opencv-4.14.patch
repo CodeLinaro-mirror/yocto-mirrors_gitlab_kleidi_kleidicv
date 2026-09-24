@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 diff --git a/modules/core/perf/perf_arithm.cpp b/modules/core/perf/perf_arithm.cpp
-index d8b65e1a08fb8b0f6a9134ce625d73bbe174a607..4b522146763fab1cea332b61771b653ae6eda7f3 100644
+index d8b65e1a08..d7a1f2e3a9 100644
 --- a/modules/core/perf/perf_arithm.cpp
 +++ b/modules/core/perf/perf_arithm.cpp
 @@ -525,7 +525,7 @@ PERF_TEST_P_(BinaryOpTest, transposeND_generic_move_tail_order)
@@ -25,17 +25,45 @@ index d8b65e1a08fb8b0f6a9134ce625d73bbe174a607..4b522146763fab1cea332b61771b653a
          testing::Values(CV_8UC1, CV_8UC3, CV_8UC4, CV_8SC1, CV_16SC1, CV_16SC2, CV_16SC3, CV_16SC4, CV_32SC1, CV_32FC1)
      )
  );
-@@ -826,7 +826,7 @@ PERF_TEST_P_(RotateTest, rotate)
+@@ -826,12 +826,35 @@ PERF_TEST_P_(RotateTest, rotate)
  
  INSTANTIATE_TEST_CASE_P(/*nothing*/ , RotateTest,
      testing::Combine(
 -        testing::Values(szVGA, sz720p, sz1080p),
-+        testing::Values(szVGA, sz720p, sz1080p, sz2160p),
++        testing::Values(szQVGA, szVGA, sz720p, sz1080p, sz2160p),
          testing::Values(ROTATE_180, ROTATE_90_CLOCKWISE, ROTATE_90_COUNTERCLOCKWISE),
          testing::Values(CV_8UC1, CV_8UC2, CV_8UC3, CV_8UC4, CV_8SC1, CV_16SC1, CV_16SC2, CV_16SC3, CV_16SC4, CV_32SC1, CV_32FC1)
      )
+ );
+ 
++typedef perf::TestBaseWithParam<std::tuple<cv::Size, int, perf::MatType>> RotateInPlaceTest;
++
++PERF_TEST_P_(RotateInPlaceTest, rotateInPlace)
++{
++    Size sz = get<0>(GetParam());
++    int rotatecode = get<1>(GetParam());
++    int type = get<2>(GetParam());
++    cv::Mat a(sz, type);
++
++    declare.in(a, WARMUP_RNG);
++
++    TEST_CYCLE() cv::rotate(a, a, rotatecode);
++
++    SANITY_CHECK_NOTHING();
++}
++
++INSTANTIATE_TEST_CASE_P(/*nothing*/, RotateInPlaceTest,
++    testing::Combine(
++        testing::Values(szQVGA, szVGA, sz720p, sz1080p, sz2160p),
++        testing::Values(ROTATE_180, ROTATE_90_CLOCKWISE, ROTATE_90_COUNTERCLOCKWISE),
++        testing::Values(CV_8UC1, CV_8UC2, CV_8UC3, CV_8UC4, CV_8SC1, CV_16SC1, CV_16SC2, CV_16SC3, CV_16SC4, CV_32SC1, CV_32FC1)
++    )
++);
+ 
+ ///////////// PatchNaNs ////////////////////////
+ 
 diff --git a/modules/core/perf/perf_compare.cpp b/modules/core/perf/perf_compare.cpp
-index be706e1a83fc7b24d9c54996f3787bd96a58dc13..862b8b7c35bef4036f46179b8c61df521e8ca685 100644
+index be706e1a83..862b8b7c35 100644
 --- a/modules/core/perf/perf_compare.cpp
 +++ b/modules/core/perf/perf_compare.cpp
 @@ -11,7 +11,7 @@ typedef perf::TestBaseWithParam<Size_MatType_CmpType_t> Size_MatType_CmpType;
@@ -48,7 +76,7 @@ index be706e1a83fc7b24d9c54996f3787bd96a58dc13..862b8b7c35bef4036f46179b8c61df52
                   CmpType::all()
                   )
 diff --git a/modules/core/perf/perf_convertTo.cpp b/modules/core/perf/perf_convertTo.cpp
-index 344d81cb8a596549e235c10e6c9711e7d0bcfce5..08d1f5ed97db367c0698d78142680c57884d149a 100644
+index 344d81cb8a..08d1f5ed97 100644
 --- a/modules/core/perf/perf_convertTo.cpp
 +++ b/modules/core/perf/perf_convertTo.cpp
 @@ -4,17 +4,18 @@ namespace opencv_test
@@ -96,7 +124,7 @@ index 344d81cb8a596549e235c10e6c9711e7d0bcfce5..08d1f5ed97db367c0698d78142680c57
      eps = eps * std::max(1.0, fabs(alpha));
 diff --git a/modules/core/perf/perf_exp.cpp b/modules/core/perf/perf_exp.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..6b20e19a0cec6a8f2b287ab18210fba093ea1fc0
+index 0000000000..6b20e19a0c
 --- /dev/null
 +++ b/modules/core/perf/perf_exp.cpp
 @@ -0,0 +1,59 @@
@@ -159,9 +187,46 @@ index 0000000000000000000000000000000000000000..6b20e19a0cec6a8f2b287ab18210fba0
 +}
 +
 +} // namespace
+diff --git a/modules/core/perf/perf_flip.cpp b/modules/core/perf/perf_flip.cpp
+index 6e89cd6e9a..aaa2c9b7a5 100644
+--- a/modules/core/perf/perf_flip.cpp
++++ b/modules/core/perf/perf_flip.cpp
+@@ -14,7 +14,7 @@ enum
+     FLIP_Y = 2,
+ };
+ 
+-#define FLIP_SIZES szQVGA, szVGA, sz1080p
++#define FLIP_SIZES szQVGA, szVGA, sz1080p, sz2160p
+ #define FLIP_TYPES CV_8UC1, CV_8UC2, CV_8UC3, CV_8UC4, CV_8SC1, CV_16SC1, CV_16SC2, CV_16SC3, CV_16SC4, CV_32SC1, CV_32FC1
+ #define FLIP_CODES FLIP_X, FLIP_Y, FLIP_XY
+ 
+@@ -42,4 +42,23 @@ PERF_TEST_P(Size_MatType_FlipCode,
+     SANITY_CHECK_NOTHING();
+ }
+ 
++PERF_TEST_P(Size_MatType_FlipCode,
++            flipInPlace,
++            testing::Combine(testing::Values(FLIP_SIZES),
++                             testing::Values(FLIP_TYPES),
++                             testing::Values(FLIP_CODES)))
++{
++    Size sz = get<0>(GetParam());
++    int matType = get<1>(GetParam());
++    int flipCode = get<2>(GetParam()) - 1;
++
++    Mat src(sz, matType);
++
++    declare.in(src, WARMUP_RNG);
++
++    TEST_CYCLE() cv::flip(src, src, flipCode);
++
++    SANITY_CHECK_NOTHING();
++}
++
+ }}  // namespace opencv_test
 diff --git a/modules/core/perf/perf_inRangeScalar.cpp b/modules/core/perf/perf_inRangeScalar.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ecca30b6cdaf8ba52797c74a5f9f7bf933904af
+index 0000000000..9ecca30b6c
 --- /dev/null
 +++ b/modules/core/perf/perf_inRangeScalar.cpp
 @@ -0,0 +1,34 @@
@@ -201,7 +266,7 @@ index 0000000000000000000000000000000000000000..9ecca30b6cdaf8ba52797c74a5f9f7bf
 +} // namespace
 diff --git a/modules/core/perf/perf_minMaxIdx.cpp b/modules/core/perf/perf_minMaxIdx.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..b5c4ddad05d789a6420db22fc42f314937dc97c1
+index 0000000000..b5c4ddad05
 --- /dev/null
 +++ b/modules/core/perf/perf_minMaxIdx.cpp
 @@ -0,0 +1,34 @@
@@ -241,7 +306,7 @@ index 0000000000000000000000000000000000000000..b5c4ddad05d789a6420db22fc42f3149
 +} // namespace
 diff --git a/modules/core/perf/perf_transpose.cpp b/modules/core/perf/perf_transpose.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..7c6a4afaf2f0458157242b4ecacc8b71ebe005b2
+index 0000000000..7c6a4afaf2
 --- /dev/null
 +++ b/modules/core/perf/perf_transpose.cpp
 @@ -0,0 +1,50 @@
@@ -296,7 +361,7 @@ index 0000000000000000000000000000000000000000..7c6a4afaf2f0458157242b4ecacc8b71
 +
 +} // namespace
 diff --git a/modules/imgproc/perf/perf_blur.cpp b/modules/imgproc/perf/perf_blur.cpp
-index fd649b08c68aa2ad883f7e59dfe33f31ae7c71bf..5c491bbb37a2fc819fdd6cda7459cb5056d7e6b4 100644
+index fd649b08c6..6b036ce4f8 100644
 --- a/modules/imgproc/perf/perf_blur.cpp
 +++ b/modules/imgproc/perf/perf_blur.cpp
 @@ -10,9 +10,9 @@ typedef perf::TestBaseWithParam<Size_MatType_kSize_t> Size_MatType_kSize;
@@ -311,20 +376,51 @@ index fd649b08c68aa2ad883f7e59dfe33f31ae7c71bf..5c491bbb37a2fc819fdd6cda7459cb50
                  )
              )
  {
-@@ -35,6 +35,7 @@ PERF_TEST_P(Size_MatType_kSize, medianBlur,
+@@ -35,6 +35,8 @@ PERF_TEST_P(Size_MatType_kSize, medianBlur,
  
  CV_ENUM(BorderType3x3, BORDER_REPLICATE, BORDER_CONSTANT)
  CV_ENUM(BorderType, BORDER_REPLICATE, BORDER_CONSTANT, BORDER_REFLECT, BORDER_REFLECT101)
 +CV_ENUM(BorderTypeKleidiCV, BORDER_REPLICATE, BORDER_REFLECT, BORDER_REFLECT101, BORDER_WRAP)
++CV_ENUM(CopyMakeBorderType, BORDER_CONSTANT , BORDER_REPLICATE, BORDER_REFLECT , BORDER_WRAP, BORDER_REFLECT_101 )
  
  typedef tuple<Size, MatType, BorderType3x3> Size_MatType_BorderType3x3_t;
  typedef perf::TestBaseWithParam<Size_MatType_BorderType3x3_t> Size_MatType_BorderType3x3;
-@@ -48,10 +49,12 @@ typedef perf::TestBaseWithParam<Size_ksize_BorderType_t> Size_ksize_BorderType;
+@@ -48,10 +50,42 @@ typedef perf::TestBaseWithParam<Size_ksize_BorderType_t> Size_ksize_BorderType;
  typedef tuple<Size, MatType, BorderType, int> Size_MatType_BorderType_ksize_t;
  typedef perf::TestBaseWithParam<Size_MatType_BorderType_ksize_t> Size_MatType_BorderType_ksize;
  
 +typedef tuple<Size, MatType, BorderTypeKleidiCV> Size_MatType_BorderTypeKleidiCV_t;
 +typedef perf::TestBaseWithParam<Size_MatType_BorderTypeKleidiCV_t> Size_MatType_BorderTypeKleidiCV;
++
++typedef tuple<Size, MatType, CopyMakeBorderType, int> Size_MatType_CopyMakeBorderType_BorderSize_t;
++typedef perf::TestBaseWithParam<Size_MatType_CopyMakeBorderType_BorderSize_t> Size_MatType_CopyMakeBorderType_BorderSize;
++
++PERF_TEST_P(Size_MatType_CopyMakeBorderType_BorderSize, copyMakeBorder,
++            testing::Combine(
++                testing::Values(szODD, szQVGA, szVGA, sz720p, sz1080p, sz2160p),
++                // One representative type per pixel-size branch in copy_make_border.
++                testing::Values(CV_8UC1, CV_16UC1, CV_8UC3, CV_32FC1, CV_16UC3, CV_32FC2, CV_32FC3, CV_32FC4),
++                CopyMakeBorderType::all(),
++                testing::Values(5, 9, 11, 15, 17, 21, 49, 125, 1025)
++                )
++            )
++{
++    const Size srcSize = get<0>(GetParam());
++    const int type = get<1>(GetParam());
++    const int borderType = get<2>(GetParam());
++    const int borderSize = get<3>(GetParam());
++
++    Mat src(srcSize, type);
++    Mat dst(srcSize + Size(borderSize * 2, borderSize * 2), type);
++
++    declare.in(src, WARMUP_RNG).out(dst);
++
++    TEST_CYCLE() cv::copyMakeBorder(src, dst, borderSize, borderSize,
++                                    borderSize, borderSize, borderType,
++                                    Scalar(1.0));
++
++    SANITY_CHECK(dst);
++}
  
  PERF_TEST_P(Size_MatType_BorderType3x3, gaussianBlur3x3,
              testing::Combine(
@@ -333,7 +429,7 @@ index fd649b08c68aa2ad883f7e59dfe33f31ae7c71bf..5c491bbb37a2fc819fdd6cda7459cb50
                  testing::Values(CV_8UC1, CV_8UC4, CV_16UC1, CV_16SC1, CV_32FC1),
                  BorderType3x3::all()
                  )
-@@ -71,6 +74,28 @@ PERF_TEST_P(Size_MatType_BorderType3x3, gaussianBlur3x3,
+@@ -71,6 +105,28 @@ PERF_TEST_P(Size_MatType_BorderType3x3, gaussianBlur3x3,
      SANITY_CHECK(dst, 1);
  }
  
@@ -362,7 +458,7 @@ index fd649b08c68aa2ad883f7e59dfe33f31ae7c71bf..5c491bbb37a2fc819fdd6cda7459cb50
  PERF_TEST_P(Size_MatType_BorderType3x3, blur3x3,
              testing::Combine(
                  testing::Values(szODD, szQVGA, szVGA, sz720p),
-@@ -198,7 +223,7 @@ PERF_TEST_P(Size_MatType_BorderType_ksize, box_inplace,
+@@ -198,7 +254,7 @@ PERF_TEST_P(Size_MatType_BorderType_ksize, box_inplace,
  
  PERF_TEST_P(Size_MatType_BorderType, gaussianBlur5x5,
              testing::Combine(
@@ -371,7 +467,7 @@ index fd649b08c68aa2ad883f7e59dfe33f31ae7c71bf..5c491bbb37a2fc819fdd6cda7459cb50
                  testing::Values(CV_8UC1, CV_8UC4, CV_16UC1, CV_16SC1, CV_32FC1),
                  BorderType::all()
                  )
-@@ -218,6 +243,204 @@ PERF_TEST_P(Size_MatType_BorderType, gaussianBlur5x5,
+@@ -218,6 +274,204 @@ PERF_TEST_P(Size_MatType_BorderType, gaussianBlur5x5,
      SANITY_CHECK(dst, 1);
  }
  
@@ -577,7 +673,7 @@ index fd649b08c68aa2ad883f7e59dfe33f31ae7c71bf..5c491bbb37a2fc819fdd6cda7459cb50
              testing::Combine(
                  testing::Values(szVGA, sz720p),
 diff --git a/modules/imgproc/perf/perf_cvt_color.cpp b/modules/imgproc/perf/perf_cvt_color.cpp
-index 5915b507ceb0df7513eb2d73e32d1f77cab8fa60..39db6d32512229954e490a8b3547dbbfe5915069 100644
+index 5915b507ce..39db6d3251 100644
 --- a/modules/imgproc/perf/perf_cvt_color.cpp
 +++ b/modules/imgproc/perf/perf_cvt_color.cpp
 @@ -319,7 +319,7 @@ typedef perf::TestBaseWithParam<Size_CvtMode_t> Size_CvtMode;
@@ -608,7 +704,7 @@ index 5915b507ceb0df7513eb2d73e32d1f77cab8fa60..39db6d32512229954e490a8b3547dbbf
                  )
              )
 diff --git a/modules/imgproc/perf/perf_morph.cpp b/modules/imgproc/perf/perf_morph.cpp
-index dc9e975a21fb35347041fff95a802f04d365349e..1b73c5eaeebb87286452ee552c3753a4fc882e88 100644
+index dc9e975a21..1b73c5eaee 100644
 --- a/modules/imgproc/perf/perf_morph.cpp
 +++ b/modules/imgproc/perf/perf_morph.cpp
 @@ -39,4 +39,64 @@ PERF_TEST_P(Size_MatType, dilate, TYPICAL_MATS_MORPH)
@@ -677,7 +773,7 @@ index dc9e975a21fb35347041fff95a802f04d365349e..1b73c5eaeebb87286452ee552c3753a4
 +
  } // namespace
 diff --git a/modules/imgproc/perf/perf_pyramids.cpp b/modules/imgproc/perf/perf_pyramids.cpp
-index 5dd5b9cece9333861bcfa3fbf15606e1a5642823..a96f2a30650d88540bfb11ad6935d70384cb75a4 100644
+index 5dd5b9cece..a96f2a3065 100644
 --- a/modules/imgproc/perf/perf_pyramids.cpp
 +++ b/modules/imgproc/perf/perf_pyramids.cpp
 @@ -6,8 +6,8 @@
@@ -692,7 +788,7 @@ index 5dd5b9cece9333861bcfa3fbf15606e1a5642823..a96f2a30650d88540bfb11ad6935d703
              )
  {
 diff --git a/modules/imgproc/perf/perf_remap.cpp b/modules/imgproc/perf/perf_remap.cpp
-index bd2129d233e401204104e12186aaeee742eecb4b..0ce3d9c8702d2c1826a0090531ac0bebe652d790 100644
+index bd2129d233..0ce3d9c870 100644
 --- a/modules/imgproc/perf/perf_remap.cpp
 +++ b/modules/imgproc/perf/perf_remap.cpp
 @@ -6,25 +6,28 @@
@@ -739,7 +835,7 @@ index bd2129d233e401204104e12186aaeee742eecb4b..0ce3d9c8702d2c1826a0090531ac0beb
      SANITY_CHECK(dst);
  }
 diff --git a/modules/imgproc/perf/perf_resize.cpp b/modules/imgproc/perf/perf_resize.cpp
-index 0f470a5f8156e5b1e54b99561dd8277ef8dd0171..087d7710475dfc978d5dd42beb67892bb51eb8cb 100644
+index 0f470a5f81..087d771047 100644
 --- a/modules/imgproc/perf/perf_resize.cpp
 +++ b/modules/imgproc/perf/perf_resize.cpp
 @@ -67,7 +67,18 @@ PERF_TEST_P(MatInfo_SizePair, resizeUpLinearNonExact,
@@ -790,7 +886,7 @@ index 0f470a5f8156e5b1e54b99561dd8277ef8dd0171..087d7710475dfc978d5dd42beb67892b
                  )
              )
 diff --git a/modules/imgproc/perf/perf_sepfilters.cpp b/modules/imgproc/perf/perf_sepfilters.cpp
-index 480aab9f20141baad2543ab156a8780b804b2b85..430d5387adce4f150c699f1c37efbffac6faa459 100644
+index 480aab9f20..d33a29d5ed 100644
 --- a/modules/imgproc/perf/perf_sepfilters.cpp
 +++ b/modules/imgproc/perf/perf_sepfilters.cpp
 @@ -5,7 +5,7 @@
@@ -812,7 +908,7 @@ index 480aab9f20141baad2543ab156a8780b804b2b85..430d5387adce4f150c699f1c37efbffa
 +PERF_TEST_P(SepFilter2D_KleidiCV, SepFilter2D,
 +            testing::Combine(
 +                testing::Values(sz1080p, sz2160p),
-+                testing::Values(CV_8UC1, CV_8UC4, CV_16UC1, CV_16UC4),
++                testing::Values(CV_8UC1, CV_8UC4, CV_16UC1, CV_16UC4, CV_16SC1, CV_16SC4),
 +                testing::Values(5),
 +                BorderMode_KleidiCV::all()
 +            )
@@ -836,7 +932,7 @@ index 480aab9f20141baad2543ab156a8780b804b2b85..430d5387adce4f150c699f1c37efbffa
 +
  } // namespace
 diff --git a/modules/imgproc/perf/perf_warp.cpp b/modules/imgproc/perf/perf_warp.cpp
-index cb4c32c905f27fa4980957133b8d366f2f5602b8..5ecb425729f8f982f7ca03bdb40a6e0cc79d351f 100644
+index cb4c32c905..5ecb425729 100644
 --- a/modules/imgproc/perf/perf_warp.cpp
 +++ b/modules/imgproc/perf/perf_warp.cpp
 @@ -79,7 +79,7 @@ PERF_TEST_P(TestWarpAffine, DISABLED_WarpAffine_ovx,
@@ -867,7 +963,7 @@ index cb4c32c905f27fa4980957133b8d366f2f5602b8..5ecb425729f8f982f7ca03bdb40a6e0c
                   BorderMode::all(),
                   Values( CV_8UC1, CV_8UC4 )
 diff --git a/modules/ts/include/opencv2/ts/ts_perf.hpp b/modules/ts/include/opencv2/ts/ts_perf.hpp
-index c2926c9c28a271672b7098864c05b86261c6d7c9..1cee467251a602f4dddf662c5f478229ce849722 100644
+index c2926c9c28..1cee467251 100644
 --- a/modules/ts/include/opencv2/ts/ts_perf.hpp
 +++ b/modules/ts/include/opencv2/ts/ts_perf.hpp
 @@ -78,7 +78,7 @@ const static cv::Size szSmall128 = cv::Size(128, 128);
@@ -880,7 +976,7 @@ index c2926c9c28a271672b7098864c05b86261c6d7c9..1cee467251a602f4dddf662c5f478229
  #define TYPICAL_MATS testing::Combine( testing::Values( TYPICAL_MAT_SIZES ), testing::Values( TYPICAL_MAT_TYPES ) )
  #define TYPICAL_MATS_C1 testing::Combine( testing::Values( TYPICAL_MAT_SIZES ), testing::Values( CV_8UC1, CV_32FC1 ) )
 diff --git a/modules/video/perf/perf_optflowpyrlk.cpp b/modules/video/perf/perf_optflowpyrlk.cpp
-index aca8a1399bef458d9a3dd99f8fb1e718f7ec9bd3..4ff055d1b0e8aa34e57995fc8797e51439ec4aca 100644
+index aca8a1399b..4ff055d1b0 100644
 --- a/modules/video/perf/perf_optflowpyrlk.cpp
 +++ b/modules/video/perf/perf_optflowpyrlk.cpp
 @@ -266,4 +266,32 @@ PERF_TEST_P(Path_Win_Deriv_Border_Reuse, OpticalFlowPyrLK_pyr, testing::Combine(
